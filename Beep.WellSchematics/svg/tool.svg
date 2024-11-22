@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!-- Copyright (c) 2006 by Interactive Network Technologies, Inc. -->
+<svg  x="-50%" y ="0%" width="100%" height="100%" viewBox="-100 0 200 100" preserveAspectRatio="none"
+    xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <desc>Generic Tool</desc>
+
+    <defs>
+      <linearGradient x1="0%" x2="50%" id="RedGradient" spreadMethod = "reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(201, 4, 4)" />
+        <stop offset="95%" stop-color="rgb(247, 100, 100)" />
+      </linearGradient>
+    </defs>
+
+  <rect x="-100" y="0" width="200" height="40"
+        fill="url(#RedGradient)"  stroke="black"  />
+
+  <rect x="-100" y="5" width="200" height="5"
+        fill="black"  stroke="black"  />
+
+  <rect x="-80" y="40" width="160" height="10"
+        fill="url(#RedGradient)"  stroke="black"  />
+
+  <rect x="-80" y="55" width="160" height="45"
+        fill="url(#RedGradient)"  stroke="black"  />
+
+
+  <rect x="-90" y="40" width="180" height="5"
+        fill="black"  stroke="black"  />
+
+
+  <rect x="-70" y="50" width="140" height="5"
+        fill="black"  stroke="black"  />
+
+
+</svg>
+

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<svg x="-50%" y="0%" width="100%" height="100%" viewBox="-100 0 200 200" xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="none">
+  <desc>Dual Tubing Hanger</desc>
+<!-- Copyright (c) 2006 Interactive Network Technologies, Inc. -->
+
+    <defs>
+      <linearGradient x1="0%" x2="50%" id="LightSilverGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(100, 100, 100)"/>
+        <stop offset="75%" stop-color="rgb(240, 240, 240)"/>
+      </linearGradient>
+      <linearGradient x1="0%" x2="50%" id="GreyGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(140, 140, 140)"/>
+        <stop offset="95%" stop-color="rgb(200, 200, 200)"/>
+      </linearGradient>
+    </defs>
+
+
+  <rect x="-80" y="0" width="160" height="50" fill="url(#LightSilverGradient)" stroke-width="1" stroke="black"/>
+  <polygon fill="url(#GreyGradient)" stroke-width="1" stroke="black"
+      points="-80, 50, 80, 50, 100, 60, -100, 60" />
+  <polygon fill="url(#LightSilverGradient)" stroke-width="1" stroke="black"
+      points="-100, 60, 100, 60, 80, 100 -80, 100" />
+  <rect x="-80" y="100" width="160" height="100" fill="url(#LightSilverGradient)" stroke-width="1" stroke="black"/>
+
+
+  
+</svg>

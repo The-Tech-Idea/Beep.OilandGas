@@ -1,0 +1,137 @@
+<?xml version="1.0"?>
+<svg x="-50%" y="0%" width="100%" height="100%" viewBox="-100 0 200 500" xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="none">
+<!-- Copyright (c) Interactive Network Technologies, Inc. -->
+  <desc>Downhole Choke</desc>
+    <defs>
+      <linearGradient x1="0%" x2="50%" id="GreyGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(120, 120, 120)"/>
+        <stop offset="95%" stop-color="white"/>
+      </linearGradient>
+      <linearGradient x1="0%" x2="50%" id="PurpleGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(152,68, 121)"/>
+        <stop offset="95%" stop-color="white"/>
+      </linearGradient>
+      <linearGradient x1="0%" x2="50%" id="DarkGreyGradient" spreadMethod = "reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(80, 80, 80)" />
+        <stop offset="95%" stop-color="rgb(150, 150, 150)" />
+      </linearGradient>
+
+      <linearGradient id="Gradient3R" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(120, 120, 120)"/>
+        <stop offset="95%" stop-color="white"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Begin Pipe -->
+    <rect x="-50" y="0"
+      width="100" height="250"
+      fill="url(#GreyGradient)"
+      stroke-width="1" stroke="black"/>
+
+
+    <polygon fill="url(#GreyGradient)"
+      stroke="black" stroke-width="1"
+      points="-50,250 -47.5,255 47.5,255 50,250"/>
+
+    <rect x="-47.5" y="255"
+      width="95" height="95"
+      fill="url(#GreyGradient)"
+      stroke-width="1" stroke="black"/>
+
+    <polygon fill="url(#GreyGradient)"
+      stroke="black" stroke-width="1"
+      points="-47.5,350 -40,375 40,375 47.5,350"/>
+
+  <rect x="-40" y="375"
+    width="80" height="30"
+    fill="url(#GreyGradient)"
+    stroke-width="1" stroke="black"/>
+
+  <polygon fill="url(#DarkGreyGradient)"
+    stroke="black" stroke-width="1"
+    points="-40,405 -43,410 42,410 40,405"/>
+
+  <rect x="-43" y="410"
+    width="85" height="90"
+    fill="url(#DarkGreyGradient)"
+    stroke-width="1" stroke="black"/>
+
+    <!-- End Pipe -->
+
+    <!-- Bar 1 -->
+  <rect x="-45" y="0"
+    width="12" height="210"
+    fill="url(#Gradient3R)"
+    stroke-width="0.5" stroke="black"/>
+
+  <polygon fill="url(#Gradient3R)"
+    stroke="black" stroke-width="0.5"
+    points="-33,0 -32,0 -32,210 -33,210"/>
+
+  <rect x="-45" y="220"
+    width="12" height="30"
+    fill="url(#Gradient3R)"
+    stroke-width="1" stroke="black"/>
+
+  <polygon fill="url(#Gradient3R)"
+    stroke="black" stroke-width="0.5"
+    points="-33,220 -32,220 -32,250 -33,250"/>
+
+    <!-- Bar 2 -->
+  <rect x="-25" y="0"
+    width="12" height="210"
+    fill="url(#Gradient3R)"
+    stroke-width="0.5" stroke="black"/>
+
+  <polygon fill="url(#Gradient3R)"
+    stroke="black" stroke-width="0.5"
+    points="-13,0 -12,0 -12,210 -13,210"/>
+
+  <rect x="-25" y="220"
+    width="12" height="30"
+    fill="url(#Gradient3R)"
+    stroke-width="1" stroke="black"/>
+
+  <polygon fill="url(#Gradient3R)"
+    stroke="black" stroke-width="0.5"
+    points="-13,220 -12,220 -12,250 -13,250"/>
+
+    <!-- Bar 3 -->
+  <rect x="15" y="0"
+    width="12" height="210"
+    fill="url(#Gradient3R)"
+    stroke-width="0.5" stroke="black"/>
+
+  <polygon fill="url(#Gradient3R)"
+    stroke="black" stroke-width="0.5"
+    points="14,0 15,0 15,210 14,210"/>
+
+  <rect x="15" y="220"
+    width="12" height="30"
+    fill="url(#Gradient3R)"
+    stroke-width="1" stroke="black"/>
+
+  <polygon fill="url(#Gradient3R)"
+    stroke="black" stroke-width="0.5"
+    points="14.0,220 15,220 15,250 14.0,250"/>
+
+    <!-- Bar 4 -->
+  <rect x="35" y="0"
+    width="12" height="210"
+    fill="url(#Gradient3R)"
+    stroke-width="0.5" stroke="black"/>
+
+  <polygon fill="url(#Gradient3R)"
+    stroke="black" stroke-width="0.5"
+    points="34,0 35,0 35,210 34,210"/>
+
+  <rect x="35" y="220"
+    width="12" height="30"
+    fill="url(#Gradient3R)"
+    stroke-width="1" stroke="black"/>
+
+  <polygon fill="url(#Gradient3R)"
+    stroke="black" stroke-width="0.5"
+    points="34,220 35,220 35,250 34,250"/>
+
+</svg>

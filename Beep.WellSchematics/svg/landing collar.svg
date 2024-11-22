@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<svg x="-50%" y="0%" width="100%" height="100%" viewBox="-100 0 200 200" xmlns="http://www.w3.org/2000/svg" version="1.1" preserveAspectRatio="none">
+  <desc>Landing Collar</desc>
+<!-- Copyright (c) 2006 Interactive Network Technologies, Inc. -->
+
+    <defs>
+      <linearGradient x1="0%" x2="50%" id="RedGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(201, 4, 4)"/>
+        <stop offset="95%" stop-color="rgb(247, 100, 100)"/>
+      </linearGradient>
+      <linearGradient x1="0%" x2="50%" id="DarkRedGradient" spreadMethod="reflect" gradientUnits="objectBoundingBox">
+        <stop offset="25%" stop-color="rgb(201, 4, 4)"/>
+        <stop offset="95%" stop-color="rgb(217, 108, 108)"/>
+      </linearGradient>
+    </defs>
+
+  <polygon fill="url(#DarkRedGradient)" stroke="black" stroke-width="1" 
+         points="-95, 0,  95, 0, 100, 5, -100, 5"/>
+  <rect x="-100" y="5" width="200" height="160" fill="url(#RedGradient)" stroke-width="1" stroke="black"/>
+  <polygon fill="url(#DarkRedGradient)" stroke="black" stroke-width="1" 
+         points="-100, 165, 100, 165, 85, 170, -85, 170"/>
+  <rect x="-85" y="170" width="170" height="30" fill="url(#RedGradient)" stroke-width="1" stroke="black"/>
+
+</svg>

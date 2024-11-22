@@ -1,0 +1,40 @@
+<?xml version="1.0" standalone="no"?>
+<svg  x="-50%" y ="0%" width="100%" height="100%" viewBox="-100 0 200 400" preserveAspectRatio="none"
+    xmlns="http://www.w3.org/2000/svg" version="1.1">
+  <desc>Gas Anchor</desc>
+<!-- Copyright (c) Interactive Network Technologies, Inc. -->
+    <defs>/
+      <linearGradient x1="0%" x2="50%" id="Gradient1" spreadMethod = "reflect" gradientUnits="objectBoundingBox">
+        <stop offset="5%" stop-color="rgb(23, 172, 65)" />
+        <stop offset="95%" stop-color="rgb(236, 197, 0)" />
+      </linearGradient>
+    </defs>
+
+  <rect x="-100" y="0" width="200" height="600"
+        fill="url(#Gradient1)"  stroke-width="2" stroke="black" />
+  <rect x="-100" y="100" width="200" height="200"
+        fill="rgb(170, 170, 170)"  stroke-width="2" stroke="black" />
+
+  <rect x="-75" y="130" width="16" height="60"
+        fill="rgb(215, 54, 41)"  stroke-width="3" stroke="black" />
+  <rect x="-35" y="130" width="16" height="60"
+        fill="rgb(215, 54, 41)"  stroke-width="3" stroke="black" />
+
+  <rect x="19" y="130" width="16" height="60"
+        fill="rgb(215, 54, 41)"  stroke-width="3" stroke="black" />
+  <rect x="59" y="130" width="16" height="60"
+        fill="rgb(215, 54, 41)"  stroke-width="3" stroke="black" />
+
+
+  <rect x="-75" y="210" width="16" height="60"
+        fill="rgb(215, 54, 41)"  stroke-width="3" stroke="black" />
+  <rect x="-35" y="210" width="16" height="60"
+        fill="rgb(215, 54, 41)"  stroke-width="3" stroke="black" />
+
+  <rect x="19" y="210" width="16" height="60"
+        fill="rgb(215, 54, 41)"  stroke-width="3" stroke="black" />
+  <rect x="59" y="210" width="16" height="60"
+        fill="rgb(215, 54, 41)"  stroke-width="3" stroke="black" />
+
+</svg>
+

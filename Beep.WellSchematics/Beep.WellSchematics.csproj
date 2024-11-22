@@ -1,0 +1,189 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<LangVersion>Latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<LangVersion>Latest</LangVersion>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Authors>The Tech Idea</Authors>
+		<Company>The Tech Idea</Company>
+		<Copyright>2022</Copyright>
+		<PackageProjectUrl>https://github.com/The-Tech-Idea/</PackageProjectUrl>
+		<PackageIcon>SimpleODM.png</PackageIcon>
+		<RepositoryUrl>https://github.com/The-Tech-Idea/</RepositoryUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Include="..\..\InstallationScripts\LogoGFx\128\SimpleODM.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<Target Name="CopyPackage" AfterTargets="Pack">
+		<Copy SourceFiles="$(OutputPath)$(PackageId).$(PackageVersion).nupkg" DestinationFolder="..\..\..\LocalNugetFiles" />
+	</Target>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<Copy SourceFiles="$(TargetDir)$(PackageId).dll" DestinationFolder="$(ProjectDir)..\..\outputDLL\$(PackageId)\$(TargetFramework)" SkipUnchangedFiles="false" />
+	</Target>
+
+
+	<ItemGroup>
+    <EmbeddedResource Include="svg\anchor catcher.svg" />
+    <EmbeddedResource Include="svg\anchor.svg" />
+    <EmbeddedResource Include="svg\blast joint.svg" />
+    <EmbeddedResource Include="svg\blind pipe.svg" />
+    <EmbeddedResource Include="svg\bridge plug.svg" />
+    <EmbeddedResource Include="svg\casing brush.svg" />
+    <EmbeddedResource Include="svg\cement.svg" />
+    <EmbeddedResource Include="svg\chemical injection mandrel.svg" />
+    <EmbeddedResource Include="svg\choke.svg" />
+    <EmbeddedResource Include="svg\circulating sleeve.svg" />
+    <EmbeddedResource Include="svg\circulating string.svg" />
+    <EmbeddedResource Include="svg\corod.svg" />
+    <EmbeddedResource Include="svg\crossover enlarging.svg" />
+    <EmbeddedResource Include="svg\crossover reducing.svg" />
+    <EmbeddedResource Include="svg\crossover.svg" />
+    <EmbeddedResource Include="svg\default.svg" />
+    <EmbeddedResource Include="svg\downhole_choke.svg" />
+    <EmbeddedResource Include="svg\drill bit.svg" />
+    <EmbeddedResource Include="svg\drill collar.svg" />
+    <EmbeddedResource Include="svg\drill pipe.svg" />
+    <EmbeddedResource Include="svg\dual tubing hanger.svg" />
+    <EmbeddedResource Include="svg\dual YTool.svg" />
+    <EmbeddedResource Include="svg\electric submersible pump.svg" />
+    <EmbeddedResource Include="svg\expandable sand screen.svg" />
+    <EmbeddedResource Include="svg\expansion_joint.svg" />
+    <EmbeddedResource Include="svg\expansion_joint2.svg" />
+    <EmbeddedResource Include="svg\external packer.svg" />
+    <EmbeddedResource Include="svg\float collar.svg" />
+    <EmbeddedResource Include="svg\flow.svg" />
+    <EmbeddedResource Include="svg\gas anchor.svg" />
+    <EmbeddedResource Include="svg\gas lift dummy.svg" />
+    <EmbeddedResource Include="svg\glm.svg" />
+    <EmbeddedResource Include="svg\gravel pack extension.svg" />
+    <EmbeddedResource Include="svg\gravel pack screen.svg" />
+    <EmbeddedResource Include="svg\gravel pack.svg" />
+    <EmbeddedResource Include="svg\guide.svg" />
+    <EmbeddedResource Include="svg\heavy weight drill pipe.svg" />
+    <EmbeddedResource Include="svg\hole.svg" />
+    <EmbeddedResource Include="svg\holed casing.svg" />
+    <EmbeddedResource Include="svg\hole_tub.svg" />
+    <EmbeddedResource Include="svg\hydraulic packer.svg" />
+    <EmbeddedResource Include="svg\icd.svg" />
+    <EmbeddedResource Include="svg\jar.svg" />
+    <EmbeddedResource Include="svg\jet pump.svg" />
+    <EmbeddedResource Include="svg\landing collar.svg" />
+    <EmbeddedResource Include="svg\landing_nipple.svg" />
+    <EmbeddedResource Include="svg\liner hanger.svg" />
+    <EmbeddedResource Include="svg\liner hanger2.svg" />
+    <EmbeddedResource Include="svg\liner slotted.svg" />
+    <EmbeddedResource Include="svg\liner tie-back.svg" />
+    <EmbeddedResource Include="svg\liner.svg" />
+    <EmbeddedResource Include="svg\locator sub.svg" />
+    <EmbeddedResource Include="svg\lwd.svg" />
+    <EmbeddedResource Include="svg\mandrel side pocket.svg" />
+    <EmbeddedResource Include="svg\mandrel.svg" />
+    <EmbeddedResource Include="svg\mud motor.svg" />
+    <EmbeddedResource Include="svg\mule shoe 2.svg" />
+    <EmbeddedResource Include="svg\mule shoe.svg" />
+    <EmbeddedResource Include="svg\nipple.svg" />
+    <EmbeddedResource Include="svg\nogo nipple.svg" />
+    <EmbeddedResource Include="svg\on-off tool.svg" />
+    <EmbeddedResource Include="svg\open hole.svg" />
+    <EmbeddedResource Include="svg\packer blue.svg" />
+    <EmbeddedResource Include="svg\packer dual.svg" />
+    <EmbeddedResource Include="svg\packer extension.svg" />
+    <EmbeddedResource Include="svg\packer HD.svg" />
+    <EmbeddedResource Include="svg\packer.svg" />
+    <EmbeddedResource Include="svg\PBR_Seal.svg" />
+    <EmbeddedResource Include="svg\perf sub.svg" />
+    <EmbeddedResource Include="svg\perf.svg" />
+    <EmbeddedResource Include="svg\perforated joint.svg" />
+    <EmbeddedResource Include="svg\plug.svg" />
+    <EmbeddedResource Include="svg\plug_cement.svg" />
+    <EmbeddedResource Include="svg\polished nipple.svg" />
+    <EmbeddedResource Include="svg\polished rod.svg" />
+    <EmbeddedResource Include="svg\pony rod.svg" />
+    <EmbeddedResource Include="svg\port collar.svg" />
+    <EmbeddedResource Include="svg\profile nipple.svg" />
+    <EmbeddedResource Include="svg\progressive gravity pump.svg" />
+    <EmbeddedResource Include="svg\pump barrel.svg" />
+    <EmbeddedResource Include="svg\pump.svg" />
+    <EmbeddedResource Include="svg\pup joint.svg" />
+    <EmbeddedResource Include="svg\reamer.svg" />
+    <EmbeddedResource Include="svg\reentry guide.svg" />
+    <EmbeddedResource Include="svg\rod green.svg" />
+    <EmbeddedResource Include="svg\rod pump 2.svg" />
+    <EmbeddedResource Include="svg\rod pump.svg" />
+    <EmbeddedResource Include="svg\safety valve.svg" />
+    <EmbeddedResource Include="svg\sand screen.svg" />
+    <EmbeddedResource Include="svg\scssv 1 sub.svg" />
+    <EmbeddedResource Include="svg\scssvsub.svg" />
+    <EmbeddedResource Include="svg\seal assembly 2.svg" />
+    <EmbeddedResource Include="svg\seal assembly.svg" />
+    <EmbeddedResource Include="svg\seal bore receptacle.svg" />
+    <EmbeddedResource Include="svg\seating nipple.svg" />
+    <EmbeddedResource Include="svg\shear tool.svg" />
+    <EmbeddedResource Include="svg\side pocket mandrel.svg" />
+    <EmbeddedResource Include="svg\sinker bar.svg" />
+    <EmbeddedResource Include="svg\sliding sleeve 2.svg" />
+    <EmbeddedResource Include="svg\sliding sleeve.svg" />
+    <EmbeddedResource Include="svg\spiral drill collar.svg" />
+    <EmbeddedResource Include="svg\sq.svg" />
+    <EmbeddedResource Include="svg\ssv.svg" />
+    <EmbeddedResource Include="svg\stabilizer.svg" />
+    <EmbeddedResource Include="svg\stator.svg" />
+    <EmbeddedResource Include="svg\sub surface safety valve.svg" />
+    <EmbeddedResource Include="svg\sucker rod.svg" />
+    <EmbeddedResource Include="svg\tail joint.svg" />
+    <EmbeddedResource Include="svg\tail pipe.svg" />
+    <EmbeddedResource Include="svg\tool.svg" />
+    <EmbeddedResource Include="svg\tub.svg" />
+    <EmbeddedResource Include="svg\tubing anchor.svg" />
+    <EmbeddedResource Include="svg\tubing gold.svg" />
+    <EmbeddedResource Include="svg\tubing green.svg" />
+    <EmbeddedResource Include="svg\tubing grey.svg" />
+    <EmbeddedResource Include="svg\tubing guns.svg" />
+    <EmbeddedResource Include="svg\tubing hanger.svg" />
+    <EmbeddedResource Include="svg\tubing HC.svg" />
+    <EmbeddedResource Include="svg\tubing red.svg" />
+    <EmbeddedResource Include="svg\valve.svg" />
+    <EmbeddedResource Include="svg\wireline guide.svg" />
+    <EmbeddedResource Include="svg\yblock.svg" />
+    <EmbeddedResource Include="svg\bare_foot.svg" />
+    <EmbeddedResource Include="svg\downhole_sensor.svg" />
+    <EmbeddedResource Include="svg\motor.svg" />
+    <EmbeddedResource Include="svg\suspended_off_bottom.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="2.88.9" />
+    <PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.2" />
+    <PackageReference Include="TheTechIdea.Beep.Vis.Modules" Version="1.0.128" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
+    <ProjectReference Include="..\Beep.WellSchematics.Models\Beep.WellSchematics.Models.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

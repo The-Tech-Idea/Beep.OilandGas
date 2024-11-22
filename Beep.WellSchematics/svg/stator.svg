@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   x="-50%"
+   y="0%"
+   width="100%"
+   height="100%"
+   viewBox="-100 0 200 500"
+   version="1.1"
+   preserveAspectRatio="none"
+   id="svg2"
+   inkscape:version="0.47 r22583"
+   sodipodi:docname="stator.svg">
+  <metadata
+     id="metadata21">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1440"
+     inkscape:window-height="838"
+     id="namedview19"
+     showgrid="false"
+     inkscape:snap-smooth-nodes="true"
+     inkscape:zoom="0.472"
+     inkscape:cx="100"
+     inkscape:cy="250"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg2" />
+  <desc
+     id="desc4">Tubing (green)</desc>
+  <!-- Copyright (c) Interactive Network Technologies, Inc. -->
+  <defs
+     id="defs6">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 250 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_z="200 : 250 : 1"
+       inkscape:persp3d-origin="100 : 166.66667 : 1"
+       id="perspective23" />
+    <linearGradient
+       x1="0%"
+       x2="50%"
+       id="Gradient"
+       spreadMethod="reflect"
+       gradientUnits="objectBoundingBox">
+      <stop
+         offset="5%"
+         stop-color="rgb(23, 172, 65)"
+         id="stop9" />
+      <stop
+         offset="95%"
+         stop-color="rgb(220, 238, 216)"
+         id="stop11" />
+    </linearGradient>
+    <inkscape:perspective
+       id="perspective2878"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2878-7"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2909"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2909-9"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+    <inkscape:perspective
+       id="perspective2940"
+       inkscape:persp3d-origin="0.5 : 0.33333333 : 1"
+       inkscape:vp_z="1 : 0.5 : 1"
+       inkscape:vp_y="0 : 1000 : 0"
+       inkscape:vp_x="0 : 0.5 : 1"
+       sodipodi:type="inkscape:persp3d" />
+  </defs>
+  <polygon
+     fill="url(#Gradient)"
+     stroke="black"
+     stroke-width="1"
+     points="-80, 0,  80, 0, 100, 20, -100, 20"
+     id="polygon13" />
+  <rect
+     x="-100"
+     y="20"
+     width="200"
+     height="460"
+     id="rect15"
+     stroke-width="1"
+     stroke="black"
+     fill="url(#Gradient)" />
+  <polygon
+     fill="url(#Gradient)"
+     stroke="black"
+     stroke-width="1"
+     points="-100, 480, 100, 480, 80, 500, -80, 500"
+     id="polygon17" />
+  <path
+     style="fill:#008000;stroke:#000000;stroke-width:1.23911643px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m -97.820174,325.09231 c 128.966219,-81.2284 0,-152.30328 0,-152.30328 l 0,152.30328 z"
+     id="path2868-1" />
+  <path
+     style="fill:#008000;stroke:#000000;stroke-width:1.23059416px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m -99.002408,478.69828 c 128.9854,-80.10301 0,-150.19315 0,-150.19315 l 0,150.19315 z"
+     id="path2868-1-0" />
+  <path
+     style="fill:#008000;stroke:#000000;stroke-width:1.23911655px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m -98.998139,169.37198 c 128.966221,-81.228408 0,-152.303281 0,-152.303281 l 0,152.303281 z"
+     id="path2868-1-4" />
+  <path
+     style="fill:#008000;stroke:#000000;stroke-width:1.23911643px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m 96.443056,327.21095 c -128.96622,-81.2284 0,-152.30328 0,-152.30328 l 0,152.30328 z"
+     id="path2868-1-8" />
+  <path
+     style="fill:#008000;stroke:#000000;stroke-width:1.23059416px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m 97.625286,480.81692 c -128.9854,-80.10301 0,-150.19315 0,-150.19315 l 0,150.19315 z"
+     id="path2868-1-0-8" />
+  <path
+     style="fill:#008000;stroke:#000000;stroke-width:1.23911655px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     d="m 97.621016,171.49062 c -128.96622,-81.228412 0,-152.303282 0,-152.303282 l 0,152.303282 z"
+     id="path2868-1-4-2" />
+</svg>
