@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="71.0882" height="71.2317" viewBox="0 0 71.0882 71.2317">
+  <g id="Layer_2" data-name="Layer 2">
+    <g id="Injecting">
+      <g>
+        <line x1="60.6232" y1="60.6222" x2="2.4142" y2="2.4142" fill="none" stroke="param(outline)" stroke-width="param(outline-width)"/>
+        <polygon points="64.746 51.427 69.674 69.818 51.283 64.89 64.746 51.427" fill="param(fill)" fill-opacity="param(fill-opacity)"/>
+        <polygon points="6.342 19.805 1.414 1.414 19.805 6.342 6.342 19.805" fill="param(fill)" fill-opacity="param(fill-opacity)"/>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,64 @@
+@page "/ppdm39/production/reserves"
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Reserves - PPDM39</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudText Typo="Typo.h4" Class="mb-4">Reserves</MudText>
+    
+    <MudPaper Class="pa-4">
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        
+        @if (_reserves != null && _reserves.Any())
+        {
+            <MudTable Items="@_reserves" Hover="true" Dense="true">
+                <HeaderContent>
+                    <MudTh>Reserve ID</MudTh>
+                    <MudTh>Reserve Date</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Reserve ID">@GetPropertyValue(context, "RESERVE_ID")</MudTd>
+                    <MudTd DataLabel="Reserve Date">@GetPropertyValue(context, "RESERVE_DATE")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<object>? _reserves;
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReserves();
+    }
+
+    private async Task LoadReserves()
+    {
+        _isLoading = true;
+        try
+        {
+            _reserves = await ApiClient.GetAsync<List<object>>("/api/production/reserves");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading reserves: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        var prop = obj.GetType().GetProperty(propertyName);
+        return prop?.GetValue(obj)?.ToString() ?? "N/A";
+    }
+}
+

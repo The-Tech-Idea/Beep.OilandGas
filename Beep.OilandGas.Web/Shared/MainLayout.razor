@@ -1,0 +1,115 @@
+﻿@inherits LayoutComponentBase
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<MudThemeProvider Theme="@_theme" IsDarkMode="@_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Style="background: var(--mud-palette-primary);">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6" Style="color: white; margin-left: 16px;">Beep Oil & Gas</MudText>
+        <MudSpacer />
+        
+        <!-- Horizontal Navigation Menu -->
+        <NavMenu />
+        
+        <MudSpacer />
+        
+        <!-- Theme Toggle -->
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit"
+                       Style="color: white;"
+                       OnClick="@ToggleDarkMode" />
+    </MudAppBar>
+    
+    <!-- Sidebar Drawer with PPDM Tree View -->
+    <MudDrawer @bind-Open="@_drawerOpen" Elevation="0" Variant="@DrawerVariant.Responsive" 
+               ClipMode="DrawerClipMode.Docked"
+               Style="width: 300px;">
+        <MudPaper Class="pa-2" Elevation="0" Style="height: 100%; overflow-y: auto;">
+            <MudText Typo="Typo.h6" Class="mb-2">PPDM39 Tables</MudText>
+            <PPDMTreeView OnTableSelected="OnTableSelected" />
+        </MudPaper>
+    </MudDrawer>
+    
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _isDarkMode = false;
+    private bool _drawerOpen = true;
+    private MudTheme _theme = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadThemePreference();
+        RefreshTheme();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadThemePreference();
+            RefreshTheme();
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadThemePreference()
+    {
+        try
+        {
+            var savedDarkMode = await LocalStorage.GetItemAsync<bool?>("dark-mode");
+            if (savedDarkMode.HasValue)
+            {
+                _isDarkMode = savedDarkMode.Value;
+            }
+        }
+        catch
+        {
+            // LocalStorage may not be available during prerender
+        }
+    }
+
+    private void RefreshTheme()
+    {
+        _theme = new MudTheme();
+    }
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void OnTableSelected(PPDMTreeNode tableNode)
+    {
+        // Handle table selection - could navigate to data management page
+        // or show the table in the main content area
+        if (tableNode.NodeType == PPDMTreeNodeType.Table)
+        {
+            // Optionally navigate to data management page with selected table
+            // NavigationManager.NavigateTo($"/ppdm39/data-management?table={tableNode.Text}");
+        }
+    }
+
+    private async Task ToggleDarkMode()
+    {
+        _isDarkMode = !_isDarkMode;
+        
+        try
+        {
+            await LocalStorage.SetItemAsync("dark-mode", _isDarkMode);
+        }
+        catch
+        {
+            // Ignore storage errors
+        }
+    }
+}

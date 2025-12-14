@@ -1,0 +1,65 @@
+@page "/ppdm39/production/reporting"
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Production Reporting - PPDM39</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudText Typo="Typo.h4" Class="mb-4">Production Reporting</MudText>
+    
+    <MudPaper Class="pa-4">
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        
+        @if (_reporting != null && _reporting.Any())
+        {
+            <MudTable Items="@_reporting" Hover="true" Dense="true">
+                <HeaderContent>
+                    <MudTh>Report ID</MudTh>
+                    <MudTh>Report Date</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Report ID">@GetPropertyValue(context, "REPORT_ID")</MudTd>
+                    <MudTd DataLabel="Report Date">@GetPropertyValue(context, "REPORT_DATE")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<object>? _reporting;
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReporting();
+    }
+
+    private async Task LoadReporting()
+    {
+        _isLoading = true;
+        try
+        {
+            _reporting = await ApiClient.GetAsync<List<object>>("/api/production/reporting");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading production reporting: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        var prop = obj.GetType().GetProperty(propertyName);
+        return prop?.GetValue(obj)?.ToString() ?? "N/A";
+    }
+}
+
+

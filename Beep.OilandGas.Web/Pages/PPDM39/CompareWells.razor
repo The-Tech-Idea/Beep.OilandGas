@@ -1,0 +1,124 @@
+@page "/ppdm39/wells/compare"
+@using Beep.OilandGas.PPDM39.Core.DTOs
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Compare Wells - PPDM39</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudText Typo="Typo.h4" Class="mb-4">Compare Wells</MudText>
+    
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-4">Select Wells to Compare</MudText>
+        
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudTextField @bind-Value="_well1Uwi" Label="Well 1 UWI" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudTextField @bind-Value="_well2Uwi" Label="Well 2 UWI" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudTextField @bind-Value="_well3Uwi" Label="Well 3 UWI (Optional)" Variant="Variant.Outlined" />
+            </MudItem>
+        </MudGrid>
+        
+        <MudButton Variant="Variant.Filled" 
+                  Color="Color.Primary" 
+                  StartIcon="@Icons.Material.Filled.CompareArrows"
+                  OnClick="PerformComparison"
+                  Class="mt-4"
+                  Disabled="@_isLoading">
+            Compare Wells
+        </MudButton>
+        
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        
+        @if (_comparison != null)
+        {
+            <MudCard Class="mt-4">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="mb-4">Comparison Results</MudText>
+                    
+                    <MudTable Items="@_comparison.ComparisonFields" Hover="true" Dense="true">
+                        <HeaderContent>
+                            <MudTh>Field</MudTh>
+                            @foreach (var well in _comparison.Wells)
+                            {
+                                <MudTh>@well.WellName</MudTh>
+                            }
+                            <MudTh>Differences</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Field">@context.DisplayLabel</MudTd>
+                            @foreach (var well in _comparison.Wells)
+                            {
+                                <MudTd DataLabel="@well.WellName">
+                                    @(well.FieldValues.ContainsKey(context.FieldName) 
+                                        ? well.FieldValues[context.FieldName]?.ToString() ?? "N/A" 
+                                        : "N/A")
+                                </MudTd>
+                            }
+                            <MudTd DataLabel="Differences">
+                                @if (context.HasDifferences)
+                                {
+                                    <MudChip T="string" Color="Color.Warning" Size="Size.Small">Different</MudChip>
+                                }
+                                else
+                                {
+                                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Same</MudChip>
+                                }
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                </MudCardContent>
+            </MudCard>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _well1Uwi = string.Empty;
+    private string _well2Uwi = string.Empty;
+    private string _well3Uwi = string.Empty;
+    private WellComparisonDTO? _comparison;
+    private bool _isLoading = false;
+
+    private async Task PerformComparison()
+    {
+        var wellIdentifiers = new List<string>();
+        if (!string.IsNullOrWhiteSpace(_well1Uwi)) wellIdentifiers.Add(_well1Uwi);
+        if (!string.IsNullOrWhiteSpace(_well2Uwi)) wellIdentifiers.Add(_well2Uwi);
+        if (!string.IsNullOrWhiteSpace(_well3Uwi)) wellIdentifiers.Add(_well3Uwi);
+
+        if (wellIdentifiers.Count < 2)
+        {
+            Snackbar.Add("Please enter at least 2 UWIs to compare", Severity.Warning);
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            var request = new { WellIdentifiers = wellIdentifiers, FieldNames = (List<string>?)null };
+            _comparison = await ApiClient.PostAsync<object, WellComparisonDTO>("/api/ppdm39/wells/compare", request);
+            
+            if (_comparison != null)
+            {
+                Snackbar.Add($"Compared {_comparison.Wells.Count} wells", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error comparing wells: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
+

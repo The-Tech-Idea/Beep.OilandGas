@@ -1,0 +1,65 @@
+@page "/ppdm39/seismic/acquisition"
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Seismic Acquisition - PPDM39</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudText Typo="Typo.h4" Class="mb-4">Seismic Acquisition</MudText>
+    
+    <MudPaper Class="pa-4">
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        
+        @if (_acquisition != null && _acquisition.Any())
+        {
+            <MudTable Items="@_acquisition" Hover="true" Dense="true">
+                <HeaderContent>
+                    <MudTh>Acquisition ID</MudTh>
+                    <MudTh>Acquisition Date</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Acquisition ID">@GetPropertyValue(context, "ACQUISITION_ID")</MudTd>
+                    <MudTd DataLabel="Acquisition Date">@GetPropertyValue(context, "ACQUISITION_DATE")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<object>? _acquisition;
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAcquisition();
+    }
+
+    private async Task LoadAcquisition()
+    {
+        _isLoading = true;
+        try
+        {
+            _acquisition = await ApiClient.GetAsync<List<object>>("/api/seismic/acquisition");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading seismic acquisition: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        var prop = obj.GetType().GetProperty(propertyName);
+        return prop?.GetValue(obj)?.ToString() ?? "N/A";
+    }
+}
+
+

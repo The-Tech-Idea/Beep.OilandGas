@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.1"
+   width="100"
+   height="100"
+   viewBox="0 0 100 100"
+   id="p_x26_a_drilling"
+   xml:space="preserve"><metadata
+   id="metadata13"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /><dc:title></dc:title><dc:creator><cc:Agent><dc:title>BlackBeard Data Services, LLC</dc:title></cc:Agent></dc:creator><cc:license
+         rdf:resource="http://creativecommons.org/licenses/by/3.0/" /></cc:Work><cc:License
+       rdf:about="http://creativecommons.org/licenses/by/3.0/"><cc:permits
+         rdf:resource="http://creativecommons.org/ns#Reproduction" /><cc:permits
+         rdf:resource="http://creativecommons.org/ns#Distribution" /><cc:requires
+         rdf:resource="http://creativecommons.org/ns#Notice" /><cc:requires
+         rdf:resource="http://creativecommons.org/ns#Attribution" /><cc:permits
+         rdf:resource="http://creativecommons.org/ns#DerivativeWorks" /></cc:License></rdf:RDF></metadata><defs
+   id="defs15" />
+<line
+   style="fill:none;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10"
+   x1="50"
+   y1="50"
+   x2="50"
+   y2="82.811996"
+   id="line3" />
+<line
+   style="fill:none;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10"
+   x1="17.188"
+   y1="50"
+   x2="82.811996"
+   y2="50"
+   id="line5" />
+<circle
+   cx="50"
+   cy="50"
+   r="16"
+   id="circle7"
+   style="fill:#ffffff;stroke:#000000;stroke-width:3;stroke-miterlimit:10" />
+<line
+   style="fill:none;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10"
+   x1="38.875"
+   y1="15.875"
+   x2="61.125"
+   y2="15.875"
+   id="line9" />
+<line
+   style="fill:none;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10"
+   x1="50"
+   y1="17.188"
+   x2="50"
+   y2="50"
+   id="line11" />
+</svg>

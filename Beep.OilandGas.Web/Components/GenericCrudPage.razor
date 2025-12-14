@@ -1,0 +1,778 @@
+
+<MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+    <MudText Typo="Typo.h5" Class="mb-4">@GetTableDisplayName()</MudText>
+    
+    <MudButtonGroup Class="mb-4">
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="CreateNew">
+            New Record
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" 
+                   Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   OnClick="LoadData">
+            Refresh
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" 
+                   Color="Color.Success" 
+                   StartIcon="@Icons.Material.Filled.FileDownload"
+                   OnClick="ExportToCsv"
+                   Disabled="@(_data == null || !_data.Any())">
+            Export CSV
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" 
+                   Color="Color.Success" 
+                   StartIcon="@Icons.Material.Filled.Upload"
+                   OnClick="ShowImportDialog">
+            Import CSV
+        </MudButton>
+    </MudButtonGroup>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+    }
+
+    @if (_showEditForm)
+    {
+        <MudCard Class="mb-4">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" Class="mb-3">
+                    @(_editingRecord == null ? "Create New Record" : "Edit Record")
+                </MudText>
+                <EditForm Model="@_editingRecord" OnValidSubmit="SaveRecord">
+                    <DataAnnotationsValidator />
+                    <MudGrid>
+                        @foreach (var prop in GetEditableProperties())
+                        {
+                            var propValue = GetPropertyValue(_editingRecord, prop.Name);
+                            var propType = prop.PropertyType;
+                            var isForeignKey = IsForeignKey(prop.Name);
+                            var foreignKeyInfo = isForeignKey ? GetForeignKeyInfo(prop.Name) : null;
+                            <MudItem xs="12" md="6">
+                                @if (prop.Name.Equals("ACTIVE_IND", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    // Checkbox for ACTIVE_IND with default value
+                                    var activeValue = propValue?.ToString() ?? GetDefaultValue("ACTIVE_IND");
+                                    var isActive = activeValue?.Equals("Y", StringComparison.OrdinalIgnoreCase) ?? true;
+                                    <MudCheckBox T="bool" Label="@GetPropertyDisplayName(prop)"
+                                               Checked="@isActive"
+                                               CheckedChanged="@((bool value) => { isActive = value; if (_editingRecord != null) SetPropertyValue(_editingRecord, prop.Name, value ? "Y" : "N"); })"
+                                               Color="Color.Primary" />
+                                }
+                                else if (isForeignKey && foreignKeyInfo != null)
+                                {
+                                    // Dropdown for foreign key fields
+                                    var cacheKey = $"{foreignKeyInfo.ReferencedTable}_{foreignKeyInfo.ReferencedPrimaryKey}";
+                                    var fkOptions = _foreignKeyOptionsCache.ContainsKey(cacheKey) 
+                                        ? _foreignKeyOptionsCache[cacheKey] 
+                                        : new List<KeyValuePair<string, string>>();
+                                    var currentFkValue = propValue?.ToString();
+                                    <MudSelect T="string" 
+                                             Label="@GetPropertyDisplayName(prop)"
+                                             Value="@currentFkValue"
+                                             ValueChanged="@((string value) => { if (_editingRecord != null) SetPropertyValue(_editingRecord, prop.Name, value); })"
+                                             Variant="Variant.Outlined"
+                                             Disabled="@IsReadOnlyProperty(prop)">
+                                        <MudSelectItem T="string" Value="@((string?)null)">-- Select --</MudSelectItem>
+                                        @foreach (var option in fkOptions)
+                                        {
+                                            <MudSelectItem T="string" Value="@option.Key">@option.Value</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                }
+                                else if (propType == typeof(DateTime) || propType == typeof(DateTime?))
+                                {
+                                    <MudDatePicker Label="@GetPropertyDisplayName(prop)"
+                                                  Date="@(propValue as DateTime?)"
+                                                  DateChanged="@((DateTime? date) => { if (_editingRecord != null) SetPropertyValue(_editingRecord, prop.Name, date); })"
+                                                  Variant="Variant.Outlined"
+                                                  Disabled="@IsReadOnlyProperty(prop)" />
+                                }
+                                else if (propType == typeof(bool) || propType == typeof(bool?))
+                                {
+                                    <MudSwitch T="bool?" Label="@GetPropertyDisplayName(prop)"
+                                             Checked="@(propValue as bool?)"
+                                             CheckedChanged="@((bool? value) => { if (_editingRecord != null) SetPropertyValue(_editingRecord, prop.Name, value); })"
+                                             Disabled="@IsReadOnlyProperty(prop)" />
+                                }
+                                else
+                                {
+                                    // Text field with default value if creating new record
+                                    var defaultValue = _editingRecord == null || string.IsNullOrEmpty(propValue?.ToString()) 
+                                        ? GetDefaultValue(prop.Name) 
+                                        : null;
+                                    <MudTextField Value="@(propValue?.ToString() ?? defaultValue ?? string.Empty)"
+                                                 ValueChanged="@((string value) => { if (_editingRecord != null) SetPropertyValue(_editingRecord, prop.Name, value); })"
+                                                 Label="@GetPropertyDisplayName(prop)"
+                                                 Variant="Variant.Outlined"
+                                                 Disabled="@IsReadOnlyProperty(prop)" />
+                                }
+                            </MudItem>
+                        }
+                    </MudGrid>
+                    <MudButtonGroup Class="mt-4">
+                        <MudButton ButtonType="ButtonType.Submit" 
+                                   Variant="Variant.Filled" 
+                                   Color="Color.Success">
+                            Save
+                        </MudButton>
+                        <MudButton Variant="Variant.Text" 
+                                   Color="Color.Default"
+                                   OnClick="CancelEdit">
+                            Cancel
+                        </MudButton>
+                    </MudButtonGroup>
+                </EditForm>
+            </MudCardContent>
+        </MudCard>
+    }
+
+    @if (_data != null && _data.Any())
+    {
+        <MudDataGrid Items="@_data" 
+                     Hover="true" 
+                     Dense="true"
+                     FilterMode="DataGridFilterMode.ColumnFilterRow"
+                     ReadOnly="false"
+                     CanCancelEdit="true"
+                     EditMode="DataGridEditMode.Cell">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">@GetTableDisplayName()</MudText>
+                <MudSpacer />
+                <MudTextField @bind-Value="_searchString" 
+                             Placeholder="Search..." 
+                             Adornment="Adornment.Start" 
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             Immediate="true" />
+                <MudButton Variant="Variant.Text" 
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.FileDownload"
+                           OnClick="ExportToCsv"
+                           Title="Export to CSV">
+                    Export
+                </MudButton>
+                <MudButton Variant="Variant.Text" 
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Upload"
+                           OnClick="ShowImportDialog"
+                           Title="Import from CSV">
+                    Import
+                </MudButton>
+            </ToolBarContent>
+            <Columns>
+                @foreach (var prop in GetDisplayProperties())
+                {
+                    var propName = prop.Name;
+                    <TemplateColumn Title="@GetPropertyDisplayName(prop)" Sortable="true" Filterable="true">
+                        <CellTemplate>
+                            @GetPropertyValue(context, propName)?.ToString()
+                        </CellTemplate>
+                    </TemplateColumn>
+                }
+                <TemplateColumn Title="Actions" Sortable="false" Filterable="false">
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                     Size="Size.Small" 
+                                     Color="Color.Primary"
+                                     OnClick="@(() => EditRecord(context))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                     Size="Size.Small" 
+                                     Color="Color.Error"
+                                     OnClick="@(() => DeleteRecord(context))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <PagerContent>
+                <MudDataGridPager T="object" />
+            </PagerContent>
+        </MudDataGrid>
+    }
+    else if (!_isLoading)
+    {
+        <MudText Typo="Typo.body1" Class="pa-4">No records found.</MudText>
+    }
+</MudContainer>
+
+@code {
+    [Parameter] public PPDMTreeNode? TableNode { get; set; }
+
+    private List<object>? _data;
+    private object? _editingRecord;
+    private bool _isLoading = false;
+    private bool _showEditForm = false;
+    private string _searchString = string.Empty;
+    private PPDMTableMetadata? _tableMetadata;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (TableNode != null)
+        {
+            await LoadTableMetadata();
+            await LoadData();
+        }
+    }
+
+    private async Task LoadTableMetadata()
+    {
+        if (TableNode?.Data != null && TableNode.Data.TryGetValue("TableMetadata", out var metadata))
+        {
+            _tableMetadata = metadata as PPDMTableMetadata;
+        }
+    }
+
+    private async Task LoadData()
+    {
+        if (TableNode == null || _tableMetadata == null) return;
+
+        _isLoading = true;
+        try
+        {
+            var tableName = _tableMetadata.TableName;
+            var apiEndpoint = GetApiEndpoint(tableName);
+            
+            if (!string.IsNullOrEmpty(apiEndpoint))
+            {
+                _data = await ApiClient.GetAsync<List<object>>($"/api/{apiEndpoint}");
+            }
+            else
+            {
+                Snackbar.Add($"API endpoint not configured for table: {tableName}", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task CreateNew()
+    {
+        Type? entityType = null;
+        if (_tableMetadata != null && !string.IsNullOrEmpty(_tableMetadata.EntityTypeName))
+        {
+            // Get the type from the entity type name
+            var assembly = typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly;
+            entityType = assembly.GetType($"Beep.OilandGas.PPDM39.Models.{_tableMetadata.EntityTypeName}") 
+                        ?? Type.GetType(_tableMetadata.EntityTypeName);
+        }
+        _editingRecord = Activator.CreateInstance(entityType ?? typeof(object));
+        ApplyDefaultsToNewRecord();
+        await PreloadForeignKeyOptions();
+        _showEditForm = true;
+    }
+
+    private void ApplyDefaultsToNewRecord()
+    {
+        if (_editingRecord == null) return;
+
+        var properties = _editingRecord.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        foreach (var prop in properties)
+        {
+            if (!prop.CanWrite) continue;
+
+            var currentValue = prop.GetValue(_editingRecord);
+            if (currentValue != null && !string.IsNullOrWhiteSpace(currentValue.ToString()))
+                continue; // Skip if value already set
+
+            var defaultValue = GetDefaultValue(prop.Name);
+            if (defaultValue != null)
+            {
+                try
+                {
+                    var convertedValue = ConvertDefaultValue(defaultValue, prop.PropertyType);
+                    prop.SetValue(_editingRecord, convertedValue);
+                }
+                catch
+                {
+                    // Ignore conversion errors
+                }
+            }
+        }
+    }
+
+    private async Task EditRecord(object record)
+    {
+        _editingRecord = record;
+        await PreloadForeignKeyOptions();
+        _showEditForm = true;
+    }
+
+    private async Task SaveRecord()
+    {
+        if (_editingRecord == null || _tableMetadata == null) return;
+
+        try
+        {
+            var tableName = _tableMetadata.TableName;
+            var apiEndpoint = GetApiEndpoint(tableName);
+            var recordId = GetRecordId(_editingRecord);
+
+            if (string.IsNullOrEmpty(recordId))
+            {
+                // Create new
+                await ApiClient.PostAsync<object, object>($"/api/{apiEndpoint}", _editingRecord);
+                Snackbar.Add("Record created successfully", Severity.Success);
+            }
+            else
+            {
+                // Update existing
+                await ApiClient.PutAsync<object, object>($"/api/{apiEndpoint}/{recordId}", _editingRecord);
+                Snackbar.Add("Record updated successfully", Severity.Success);
+            }
+
+            _showEditForm = false;
+            _editingRecord = null;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving record: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteRecord(object record)
+    {
+        if (_tableMetadata == null) return;
+
+        var recordId = GetRecordId(record);
+        if (string.IsNullOrEmpty(recordId)) return;
+
+        var result = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            $"Are you sure you want to delete this record?",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            try
+            {
+                var tableName = _tableMetadata.TableName;
+                var apiEndpoint = GetApiEndpoint(tableName);
+                await ApiClient.DeleteAsync($"/api/{apiEndpoint}/{recordId}");
+                Snackbar.Add("Record deleted successfully", Severity.Success);
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error deleting record: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private void CancelEdit()
+    {
+        _showEditForm = false;
+        _editingRecord = null;
+    }
+
+    private string GetTableDisplayName()
+    {
+        return TableNode?.Text ?? "Select a Table";
+    }
+
+    private string GetApiEndpoint(string tableName)
+    {
+        // Map table names to API endpoints
+        var endpointMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "STRAT_COLUMN", "stratigraphy/columns" },
+            { "STRAT_UNIT", "stratigraphy/units" },
+            { "STRAT_HIERARCHY", "stratigraphy/hierarchy" },
+            { "STRAT_WELL_SECTION", "stratigraphy/well-sections" },
+            { "WELL", "well" },
+            { "WELL_STATUS", "well/status" },
+            { "FIELD", "production/fields" },
+            { "POOL", "production/pools" },
+            { "SURVEY", "seismic/surveys" }
+        };
+
+        return endpointMap.TryGetValue(tableName, out var endpoint) ? endpoint : string.Empty;
+    }
+
+    private string? GetRecordId(object record)
+    {
+        if (_tableMetadata?.PrimaryKeyColumn == null) return null;
+        
+        var prop = record.GetType().GetProperty(_tableMetadata.PrimaryKeyColumn);
+        return prop?.GetValue(record)?.ToString();
+    }
+
+    private List<PropertyInfo> GetDisplayProperties()
+    {
+        if (_data == null || !_data.Any()) return new List<PropertyInfo>();
+        
+        var firstRecord = _data.First();
+        return firstRecord.GetType()
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.CanRead && !IsSystemProperty(p))
+            .Take(10) // Limit to first 10 properties for display
+            .ToList();
+    }
+
+    private List<PropertyInfo> GetEditableProperties()
+    {
+        if (_editingRecord == null) return new List<PropertyInfo>();
+        
+        return _editingRecord.GetType()
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.CanRead && p.CanWrite && !IsSystemProperty(p) && !IsReadOnlyProperty(p))
+            .ToList();
+    }
+
+    private bool IsSystemProperty(PropertyInfo prop)
+    {
+        var systemProps = new[] { "PPDM_GUID", "ROW_CREATED_BY", "ROW_CREATED_DATE", "ROW_CHANGED_BY", "ROW_CHANGED_DATE" };
+        return systemProps.Contains(prop.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private bool IsReadOnlyProperty(PropertyInfo prop)
+    {
+        if (_tableMetadata?.PrimaryKeyColumn != null && 
+            prop.Name.Equals(_tableMetadata.PrimaryKeyColumn, StringComparison.OrdinalIgnoreCase))
+        {
+            return _editingRecord != null && GetRecordId(_editingRecord) != null; // Read-only if editing existing record
+        }
+        return false;
+    }
+
+    private string GetPropertyDisplayName(PropertyInfo prop)
+    {
+        return prop.Name.Replace("_", " ");
+    }
+
+    private object? GetPropertyValue(object? obj, string propertyName)
+    {
+        if (obj == null) return null;
+        var prop = obj.GetType().GetProperty(propertyName);
+        return prop?.GetValue(obj);
+    }
+
+    private void SetPropertyValue(object obj, string propertyName, object? value)
+    {
+        var prop = obj.GetType().GetProperty(propertyName);
+        if (prop != null && prop.CanWrite)
+        {
+            prop.SetValue(obj, value);
+        }
+    }
+
+    private void SetPropertyValueFromString(object obj, PropertyInfo prop, string value)
+    {
+        if (prop == null || !prop.CanWrite) return;
+        
+        try
+        {
+            object? convertedValue = null;
+            if (prop.PropertyType == typeof(string))
+            {
+                convertedValue = value;
+            }
+            else if (prop.PropertyType == typeof(int) || prop.PropertyType == typeof(int?))
+            {
+                if (int.TryParse(value, out var intVal))
+                    convertedValue = intVal;
+            }
+            else if (prop.PropertyType == typeof(decimal) || prop.PropertyType == typeof(decimal?))
+            {
+                if (decimal.TryParse(value, out var decVal))
+                    convertedValue = decVal;
+            }
+            else if (prop.PropertyType == typeof(double) || prop.PropertyType == typeof(double?))
+            {
+                if (double.TryParse(value, out var dblVal))
+                    convertedValue = dblVal;
+            }
+            else if (prop.PropertyType == typeof(DateTime) || prop.PropertyType == typeof(DateTime?))
+            {
+                if (DateTime.TryParse(value, out var dtVal))
+                    convertedValue = dtVal;
+            }
+            else if (prop.PropertyType == typeof(bool) || prop.PropertyType == typeof(bool?))
+            {
+                if (bool.TryParse(value, out var boolVal))
+                    convertedValue = boolVal;
+            }
+            
+            if (convertedValue != null)
+            {
+                prop.SetValue(obj, convertedValue);
+            }
+        }
+        catch
+        {
+            // Ignore conversion errors
+        }
+    }
+
+    private async Task ExportToCsv()
+    {
+        if (_data == null || !_data.Any() || _tableMetadata == null)
+        {
+            Snackbar.Add("No data to export", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var csv = GenerateCsv(_data);
+            var fileName = $"{_tableMetadata.TableName}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+            await DownloadFile(fileName, csv, "text/csv");
+            Snackbar.Add($"Exported {_data.Count} records to {fileName}", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error exporting data: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private string GenerateCsv(List<object> data)
+    {
+        if (data == null || !data.Any()) return string.Empty;
+
+        var properties = GetDisplayProperties();
+        var csv = new StringBuilder();
+
+        // Header row
+        var headers = properties.Select(p => GetPropertyDisplayName(p));
+        csv.AppendLine(string.Join(",", headers.Select(h => EscapeCsvField(h))));
+
+        // Data rows
+        foreach (var record in data)
+        {
+            var values = properties.Select(p =>
+            {
+                var value = GetPropertyValue(record, p.Name);
+                return value?.ToString() ?? string.Empty;
+            });
+            csv.AppendLine(string.Join(",", values.Select(v => EscapeCsvField(v))));
+        }
+
+        return csv.ToString();
+    }
+
+    private string EscapeCsvField(string field)
+    {
+        if (string.IsNullOrEmpty(field)) return string.Empty;
+
+        // If field contains comma, quote, or newline, wrap in quotes and escape quotes
+        if (field.Contains(',') || field.Contains('"') || field.Contains('\n') || field.Contains('\r'))
+        {
+            return "\"" + field.Replace("\"", "\"\"") + "\"";
+        }
+
+        return field;
+    }
+
+    private async Task DownloadFile(string fileName, string content, string contentType)
+    {
+        var bytes = Encoding.UTF8.GetBytes(content);
+        var base64 = Convert.ToBase64String(bytes);
+        var dataUrl = $"data:{contentType};base64,{base64}";
+
+        await JSRuntime.InvokeVoidAsync("downloadFile", fileName, dataUrl);
+    }
+
+    private async Task ShowImportDialog()
+    {
+        if (_tableMetadata == null)
+        {
+            Snackbar.Add("Please select a table first", Severity.Warning);
+            return;
+        }
+
+        var parameters = new DialogParameters
+        {
+            ["TableName"] = _tableMetadata.TableName,
+            ["TableMetadata"] = _tableMetadata
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<ImportCsvWizard>("Import CSV Wizard", parameters, options);
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            await LoadData();
+        }
+    }
+
+    // Foreign key cache
+    private Dictionary<string, List<Dictionary<string, string>>> _foreignKeyCache = new();
+    private Dictionary<string, List<KeyValuePair<string, string>>> _foreignKeyOptionsCache = new();
+
+    private bool IsForeignKey(string propertyName)
+    {
+        if (_tableMetadata?.ForeignKeys == null) return false;
+        return _tableMetadata.ForeignKeys.Any(fk => 
+            fk.ForeignKeyColumn.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private PPDMForeignKey? GetForeignKeyInfo(string propertyName)
+    {
+        if (_tableMetadata?.ForeignKeys == null) return null;
+        return _tableMetadata.ForeignKeys.FirstOrDefault(fk => 
+            fk.ForeignKeyColumn.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task PreloadForeignKeyOptions()
+    {
+        if (_tableMetadata?.ForeignKeys == null) return;
+
+        foreach (var fk in _tableMetadata.ForeignKeys)
+        {
+            var cacheKey = $"{fk.ReferencedTable}_{fk.ReferencedPrimaryKey}";
+            if (!_foreignKeyOptionsCache.ContainsKey(cacheKey))
+            {
+                var options = await LoadForeignKeyOptions(fk);
+                _foreignKeyOptionsCache[cacheKey] = options;
+            }
+        }
+    }
+
+    private async Task<List<KeyValuePair<string, string>>> LoadForeignKeyOptions(PPDMForeignKey fkInfo)
+    {
+        var cacheKey = $"{fkInfo.ReferencedTable}_{fkInfo.ReferencedPrimaryKey}";
+        
+        if (!_foreignKeyCache.ContainsKey(cacheKey))
+        {
+            try
+            {
+                var apiEndpoint = GetApiEndpoint(fkInfo.ReferencedTable);
+                if (!string.IsNullOrEmpty(apiEndpoint))
+                {
+                    var data = await ApiClient.GetAsync<List<object>>($"/api/{apiEndpoint}");
+                    if (data != null)
+                    {
+                        var options = new List<Dictionary<string, string>>();
+                        foreach (var item in data)
+                        {
+                            var dict = new Dictionary<string, string>();
+                            var props = item.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                            foreach (var prop in props)
+                            {
+                                var value = prop.GetValue(item)?.ToString() ?? string.Empty;
+                                dict[prop.Name] = value;
+                            }
+                            options.Add(dict);
+                        }
+                        _foreignKeyCache[cacheKey] = options;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error loading options for {fkInfo.ReferencedTable}: {ex.Message}", Severity.Warning);
+                _foreignKeyCache[cacheKey] = new List<Dictionary<string, string>>();
+            }
+        }
+
+        var cachedData = _foreignKeyCache[cacheKey];
+        var result = new List<KeyValuePair<string, string>>();
+
+        foreach (var item in cachedData)
+        {
+            var pkValue = item.ContainsKey(fkInfo.ReferencedPrimaryKey) 
+                ? item[fkInfo.ReferencedPrimaryKey] 
+                : string.Empty;
+
+            if (string.IsNullOrEmpty(pkValue)) continue;
+
+            // Find name field (SHORT_NAME, LONG_NAME, NAME, etc.)
+            var nameValue = GetNameValue(item);
+            var displayText = !string.IsNullOrEmpty(nameValue) 
+                ? $"{nameValue} ({pkValue})" 
+                : pkValue;
+
+            result.Add(new KeyValuePair<string, string>(pkValue, displayText));
+        }
+
+        return result.OrderBy(kvp => kvp.Value).ToList();
+    }
+
+    private string GetNameValue(Dictionary<string, string> item)
+    {
+        // Try common name fields in order of preference
+        var nameFields = new[] { "SHORT_NAME", "LONG_NAME", "NAME", "STATUS", "DESCRIPTION" };
+        
+        foreach (var nameField in nameFields)
+        {
+            if (item.ContainsKey(nameField) && !string.IsNullOrWhiteSpace(item[nameField]))
+            {
+                return item[nameField];
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private string? GetDefaultValue(string propertyName)
+    {
+        // Map property names to default values
+        var defaults = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "ACTIVE_IND", "Y" },
+            { "ROW_QUALITY", "GOOD" },
+            { "PREFERRED_IND", "N" },
+            { "CERTIFIED_IND", "N" },
+            { "HIERARCHY_TYPE", "PARENT_CHILD" },
+            { "STRAT_COLUMN_TYPE", "STANDARD" },
+            { "STRAT_TYPE", "LITHOSTRATIGRAPHIC" },
+            { "STRAT_UNIT_TYPE", "FORMATION" },
+            { "STRAT_STATUS", "VALID" },
+            { "AREA_TYPE", "FIELD" },
+            { "DEPTH_OUOM", "M" },
+            { "PICK_DEPTH_OUOM", "M" },
+            { "AZIMUTH_NORTH_TYPE", "TRUE_NORTH" },
+            { "CONFORMITY_RELATIONSHIP", "CONFORMABLE" },
+            { "STRAT_INTERPRET_METHOD", "LOG_INTERPRETATION" },
+            { "PICK_QUALITY", "GOOD" },
+            { "PICK_VERSION_TYPE", "CURRENT" },
+            { "TVD_METHOD", "STANDARD" },
+            { "SOURCE", "SYSTEM" }
+        };
+
+        return defaults.TryGetValue(propertyName, out var value) ? value : null;
+    }
+
+    private object? ConvertDefaultValue(string defaultValue, Type targetType)
+    {
+        if (string.IsNullOrEmpty(defaultValue))
+        {
+            var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+            if (underlyingType.IsValueType && Nullable.GetUnderlyingType(targetType) == null)
+                return Activator.CreateInstance(underlyingType);
+            return null;
+        }
+
+        var underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+        if (underlying == typeof(string))
+            return defaultValue;
+        if (underlying == typeof(int))
+            return int.TryParse(defaultValue, out var i) ? i : 0;
+        if (underlying == typeof(bool))
+            return defaultValue.Equals("Y", StringComparison.OrdinalIgnoreCase) ||
+                   defaultValue.Equals("Yes", StringComparison.OrdinalIgnoreCase) ||
+                   defaultValue.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+                   defaultValue.Equals("True", StringComparison.OrdinalIgnoreCase);
+
+        return Convert.ChangeType(defaultValue, underlying, CultureInfo.InvariantCulture);
+    }
+
+    [Inject] IDialogService DialogService { get; set; } = null!;
+    [Inject] ApiClient ApiClient { get; set; } = null!;
+    [Inject] ISnackbar Snackbar { get; set; } = null!;
+    [Inject] IJSRuntime JSRuntime { get; set; } = null!;
+}

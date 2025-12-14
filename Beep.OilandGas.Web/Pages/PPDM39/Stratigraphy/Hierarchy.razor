@@ -1,0 +1,100 @@
+@page "/ppdm39/stratigraphy/hierarchy"
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Stratigraphic Hierarchy - PPDM39</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudText Typo="Typo.h4" Class="mb-4">Stratigraphic Hierarchy</MudText>
+    
+    <MudPaper Class="pa-4">
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        
+        @if (_hierarchy != null && _hierarchy.Any())
+        {
+            <MudTable Items="@_hierarchy" Hover="true" Dense="true">
+                <HeaderContent>
+                    <MudTh>Parent Unit</MudTh>
+                    <MudTh>Child Unit</MudTh>
+                    <MudTh>Hierarchy Type</MudTh>
+                    <MudTh>Active</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Parent Unit">@GetStratUnitName(context.PARENT_STRAT_UNIT_ID)</MudTd>
+                    <MudTd DataLabel="Child Unit">@GetStratUnitName(context.CHILD_STRAT_UNIT_ID)</MudTd>
+                    <MudTd DataLabel="Hierarchy Type">@GetPropertyValue(context, "STRAT_HIERARCHY_TYPE")</MudTd>
+                    <MudTd DataLabel="Active">
+                        <MudChip T="string" Color="@(context.ACTIVE_IND == "Y" ? Color.Success : Color.Default)" Size="Size.Small">
+                            @context.ACTIVE_IND
+                        </MudChip>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<STRAT_HIERARCHY>? _hierarchy;
+    private Dictionary<string, string> _stratUnitNames = new();
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _isLoading = true;
+        try
+        {
+            // Load hierarchy and strat units in parallel
+            var hierarchyTask = ApiClient.GetAsync<List<STRAT_HIERARCHY>>("/api/stratigraphy/hierarchy");
+            var unitsTask = ApiClient.GetAsync<List<STRAT_UNIT>>("/api/stratigraphy/units");
+            
+            await Task.WhenAll(hierarchyTask, unitsTask);
+            
+            _hierarchy = await hierarchyTask;
+            var units = await unitsTask;
+            
+            // Create lookup dictionary for strat unit names
+            if (units != null)
+            {
+                _stratUnitNames = units.ToDictionary(
+                    u => u.STRAT_UNIT_ID ?? string.Empty,
+                    u => !string.IsNullOrWhiteSpace(u.SHORT_NAME) ? u.SHORT_NAME : 
+                         !string.IsNullOrWhiteSpace(u.LONG_NAME) ? u.LONG_NAME : 
+                         u.STRAT_UNIT_ID ?? "N/A"
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetStratUnitName(string? unitId)
+    {
+        if (string.IsNullOrWhiteSpace(unitId))
+            return "N/A";
+        
+        return _stratUnitNames.TryGetValue(unitId, out var name) ? name : unitId;
+    }
+
+    private string GetPropertyValue(STRAT_HIERARCHY hierarchy, string propertyName)
+    {
+        var prop = hierarchy.GetType().GetProperty(propertyName);
+        return prop?.GetValue(hierarchy)?.ToString() ?? "N/A";
+    }
+}
+

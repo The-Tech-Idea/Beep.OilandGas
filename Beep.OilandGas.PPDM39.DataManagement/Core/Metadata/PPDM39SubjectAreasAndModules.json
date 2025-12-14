@@ -1,0 +1,263 @@
+{
+  "Support Modules": {
+    "Modules": [
+      {
+        "Name": "Additives Catalogue",
+        "Description": "Describes drilling additives used during field operations"
+      },
+      {
+        "Name": "Areas",
+        "Description": "Areas of any type, such as geographic, jurisdictional or project"
+      },
+      {
+        "Name": "Spatial Locations",
+        "Description": "Geographic and other location information for business objects"
+      },
+      {
+        "Name": "Spatial Parcels",
+        "Description": "Geographic and other location information for business objects"
+      },
+      {
+        "Name": "Entitlements",
+        "Description": "Describes the rights you have to data and information"
+      },
+      {
+        "Name": "Finances",
+        "Description": "Summarize cost information from your accounting systems"
+      },
+      {
+        "Name": "Rate Schedules",
+        "Description": "Outline fee schedules for functions and services"
+      },
+      {
+        "Name": "Source Documents and Bibliographies",
+        "Description": "Bibliographic reference for source documents"
+      },
+      {
+        "Name": "Equipment",
+        "Description": "Describes equipment used in the field, lab or office"
+      },
+      {
+        "Name": "Coordinate Systems",
+        "Description": "Geographic and cartographic spatial reference systems"
+      },
+      {
+        "Name": "Business Associates",
+        "Description": "Companies, people or organizations you do business with"
+      },
+      {
+        "Name": "Products and Substances",
+        "Description": "Composition of hydrocarbons and other substances"
+      },
+      {
+        "Name": "Projects",
+        "Description": "Capture and track task lists for operational activities"
+      },
+      {
+        "Name": "Work Orders and Requests",
+        "Description": "Tracks work orders that support business operations"
+      }
+    ]
+  },
+  "Data Management & Units of Measure": {
+    "Modules": [
+      {
+        "Name": "Data Management",
+        "Description": "Business rules, mappings, audit histories, QC history, metrics and more"
+      },
+      {
+        "Name": "Unit of Measure",
+        "Description": "Supports measured values in PPDM and conversions between unit systems"
+      },
+      {
+        "Name": "Volume Conversions",
+        "Description": "Hydrocarbon volumes by temperature and pressure regimes"
+      },
+      {
+        "Name": "Reference Table Management",
+        "Description": "Reference tables and lookup values used across the system"
+      }
+    ]
+  },
+  "Stratigraphy, Lithology & Sample Analysis": {
+    "Modules": [
+      {
+        "Name": "Ecozones and Environments",
+        "Description": "Paleontological ecozones or environment definitions"
+      },
+      {
+        "Name": "Lithology",
+        "Description": "Lithologic characteristics from rock analysis, such as color, porosity, grain size, etc."
+      },
+      {
+        "Name": "Paleontology",
+        "Description": "Results of a paleontological study of fossils found in lithologic samples"
+      },
+      {
+        "Name": "Interpretation",
+        "Description": "Information about fossils identified during study, and implications about biostratigraphic units"
+      },
+      {
+        "Name": "Fossils",
+        "Description": "Describes fossils and their discovery during analysis"
+      },
+      {
+        "Name": "Sample Management",
+        "Description": "Sample collection, preparation and usage summaries"
+      },
+      {
+        "Name": "Sample Analysis",
+        "Description": "Sample preparation and results such as geochemistry, water, oil and gas analysis"
+      }
+    ]
+  },
+  "Production & Reserves": {
+    "Modules": [
+      {
+        "Name": "Fields",
+        "Description": "Summary information about fields"
+      },
+      {
+        "Name": "Pools",
+        "Description": "Summary information about geologic or regulatory pools"
+      },
+      {
+        "Name": "Production Lease Units",
+        "Description": "A scaled-down land reporting subject suitable for production reporting"
+      },
+      {
+        "Name": "Production Reporting",
+        "Description": "Volumes reporting for all products, time periods, activities or methods"
+      },
+      {
+        "Name": "Production Strings",
+        "Description": "Describes the conduit between a hydrocarbon source and the surface"
+      },
+      {
+        "Name": "Spacing Units",
+        "Description": "Describes regulatory spacing unit specifications where applicable"
+      },
+      {
+        "Name": "Production-Related Facilities",
+        "Description": "Describes facilities such as pipelines, storage tanks or batteries"
+      },
+      {
+        "Name": "Reporting Hierarchies",
+        "Description": "Aggregated reporting, such as production reporting or reserves forecasts"
+      },
+      {
+        "Name": "Reserves Reporting",
+        "Description": "Summarizes reserves information, including forecasts"
+      }
+    ]
+  },
+  "Wells": {
+    "Modules": [
+      {
+        "Name": "Wells",
+        "Description": "Detailed life cycle information about wells and well bores"
+      },
+      {
+        "Name": "Well Logs",
+        "Description": "Describes acquisition, digital and raster logs. Describes standard log dictionaries"
+      },
+      {
+        "Name": "Legal Locations",
+        "Description": "Legal location information for wells"
+      }
+    ]
+  },
+  "Product Management & Classifications": {
+    "Modules": [
+      {
+        "Name": "Classification Systems",
+        "Description": "Faceted taxonomies for classifying records"
+      },
+      {
+        "Name": "Product and Information Management",
+        "Description": "Fully functional librarian module"
+      }
+    ]
+  },
+  "Seismic": {
+    "Modules": [
+      {
+        "Name": "Seismic",
+        "Description": "Life cycle management for seismic, from acquisition to divestment"
+      }
+    ]
+  },
+  "Support Facilities": {
+    "Modules": [
+      {
+        "Name": "Support Facilities",
+        "Description": "Descriptive information about support facilities such as rigs, roads or vessels"
+      }
+    ]
+  },
+  "Operations Support": {
+    "Modules": [
+      {
+        "Name": "Applications",
+        "Description": "Requests to obtain authorization to do work or complete an operation"
+      },
+      {
+        "Name": "Consents",
+        "Description": "Non-regulatory agreements between parties to conduct operations"
+      },
+      {
+        "Name": "Consultations & Negotiations",
+        "Description": "Discussions between various parties"
+      },
+      {
+        "Name": "Contests and Disputes",
+        "Description": "Summary information about legal disputes and their outcomes"
+      },
+      {
+        "Name": "Notifications",
+        "Description": "Details about notifications to partners or other parties"
+      },
+      {
+        "Name": "Health, Safety and Environment",
+        "Description": "Incident reporting summaries"
+      }
+    ]
+  },
+  "Paleontology & Biostratigraphy": {
+    "Modules": [
+      {
+        "Name": "Stratigraphy",
+        "Description": "Detailed descriptive information about stratigraphic units, such as formations"
+      }
+    ]
+  },
+  "Land & Legal Management": {
+    "Modules": [
+      {
+        "Name": "Contracts and Legal Agreements",
+        "Description": "Legal documents that govern operations"
+      },
+      {
+        "Name": "Obligations",
+        "Description": "Conditions that must be fulfilled, such as fees to be paid or work to be done"
+      },
+      {
+        "Name": "Instruments",
+        "Description": "Documents that physically document an interest or describe a legal entity"
+      },
+      {
+        "Name": "Interest Sets and Division of Interests",
+        "Description": "Partnerships and division of interests"
+      },
+      {
+        "Name": "Restrictions",
+        "Description": "Environmental or operational limitations on operations"
+      },
+      {
+        "Name": "Land Rights",
+        "Description": "Rights held to an area of the earth, onshore or offshore, surface or mineral"
+      }
+    ]
+  }
+}
+

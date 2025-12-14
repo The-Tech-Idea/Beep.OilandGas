@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.NodalAnalysis\Beep.OilandGas.NodalAnalysis.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.ProductionForecasting\Beep.OilandGas.ProductionForecasting.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.WellTestAnalysis\Beep.OilandGas.WellTestAnalysis.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.ProductionAccounting\Beep.OilandGas.ProductionAccounting.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.GasProperties\Beep.OilandGas.GasProperties.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.OilProperties\Beep.OilandGas.OilProperties.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.PumpPerformance\Beep.OilandGas.PumpPerformance.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.GasLift\Beep.OilandGas.GasLift.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.SuckerRodPumping\Beep.OilandGas.SuckerRodPumping.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.PlungerLift\Beep.OilandGas.PlungerLift.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.HydraulicPumps\Beep.OilandGas.HydraulicPumps.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.CompressorAnalysis\Beep.OilandGas.CompressorAnalysis.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.PipelineAnalysis\Beep.OilandGas.PipelineAnalysis.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.FlashCalculations\Beep.OilandGas.FlashCalculations.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.ChokeAnalysis\Beep.OilandGas.ChokeAnalysis.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.EconomicAnalysis\Beep.OilandGas.EconomicAnalysis.csproj" />
+  </ItemGroup>
+
+</Project>

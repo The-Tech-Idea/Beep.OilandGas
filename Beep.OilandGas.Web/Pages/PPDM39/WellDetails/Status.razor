@@ -1,0 +1,82 @@
+@page "/ppdm39/well-details/status"
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Well Status - PPDM39</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudText Typo="Typo.h4" Class="mb-4">Well Status</MudText>
+    
+    <MudPaper Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_searchUwi" 
+                             Label="UWI" 
+                             Variant="Variant.Outlined"
+                             Adornment="Adornment.End"
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             OnAdornmentClick="SearchStatus" />
+            </MudItem>
+        </MudGrid>
+        
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        
+        @if (_status != null && _status.Any())
+        {
+            <MudTable Items="@_status" Hover="true" Dense="true" Class="mt-4">
+                <HeaderContent>
+                    <MudTh>UWI</MudTh>
+                    <MudTh>Status Type</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Effective Date</MudTh>
+                    <MudTh>Expiry Date</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="UWI">@context.UWI</MudTd>
+                    <MudTd DataLabel="Status Type">@context.STATUS_TYPE</MudTd>
+                    <MudTd DataLabel="Status">@(!string.IsNullOrWhiteSpace(context.STATUS) ? context.STATUS : context.STATUS_ID ?? "N/A")</MudTd>
+                    <MudTd DataLabel="Effective Date">@context.EFFECTIVE_DATE</MudTd>
+                    <MudTd DataLabel="Expiry Date">@context.EXPIRY_DATE</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _searchUwi = string.Empty;
+    private List<WELL_STATUS>? _status;
+    private bool _isLoading = false;
+
+    private async Task SearchStatus()
+    {
+        if (string.IsNullOrWhiteSpace(_searchUwi))
+        {
+            Snackbar.Add("Please enter a UWI", Severity.Warning);
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            var statusDict = await ApiClient.GetAsync<Dictionary<string, WELL_STATUS>>($"/api/well/uwi/{_searchUwi}/status");
+            if (statusDict != null)
+            {
+                _status = statusDict.Values.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error getting well status: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
+

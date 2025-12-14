@@ -1,0 +1,26 @@
+<Router AppAssembly="@typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+                <MudPaper Elevation="2" Class="pa-6">
+                    <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Large" Color="Color.Error" Style="font-size: 4rem;" />
+                        <MudText Typo="Typo.h5">Page Not Found</MudText>
+                        <MudText Typo="Typo.body1" Class="text-center">
+                            Sorry, there's nothing at this address.
+                        </MudText>
+                        <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary" Class="mt-2">
+                            Go Home
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            </MudContainer>
+        </LayoutView>
+    </NotFound>
+</Router>
+

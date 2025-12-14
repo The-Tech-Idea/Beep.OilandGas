@@ -1,0 +1,65 @@
+@page "/ppdm39/seismic/processing"
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Seismic Processing - PPDM39</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudText Typo="Typo.h4" Class="mb-4">Seismic Processing</MudText>
+    
+    <MudPaper Class="pa-4">
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        
+        @if (_processing != null && _processing.Any())
+        {
+            <MudTable Items="@_processing" Hover="true" Dense="true">
+                <HeaderContent>
+                    <MudTh>Processing ID</MudTh>
+                    <MudTh>Processing Date</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Processing ID">@GetPropertyValue(context, "PROCESSING_ID")</MudTd>
+                    <MudTd DataLabel="Processing Date">@GetPropertyValue(context, "PROCESSING_DATE")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<object>? _processing;
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProcessing();
+    }
+
+    private async Task LoadProcessing()
+    {
+        _isLoading = true;
+        try
+        {
+            _processing = await ApiClient.GetAsync<List<object>>("/api/seismic/processing");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading seismic processing: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        var prop = obj.GetType().GetProperty(propertyName);
+        return prop?.GetValue(obj)?.ToString() ?? "N/A";
+    }
+}
+
+

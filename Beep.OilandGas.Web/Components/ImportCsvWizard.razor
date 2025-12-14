@@ -1,0 +1,883 @@
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<MudDialog MaxWidth="MaxWidth.Large" FullWidth="true">
+    <DialogContent>
+        <MudText Typo="Typo.h6" Class="mb-4">Import CSV Wizard</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+            Follow the steps below to import your CSV file into @TableName
+        </MudText>
+
+        <MudStepper @bind-ActiveStep="@_activeStep" Variant="Variant.Outlined" Color="Color.Primary">
+            <!-- Step 1: File Selection -->
+            <MudStep Title="Select File" Icon="@Icons.Material.Filled.Upload">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3">Step 1: Select CSV File</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+                        Upload a CSV file to import. The first row should contain column headers.
+                    </MudText>
+
+                    <MudFileUpload T="IBrowserFile" 
+                                  Accept=".csv"
+                                  Files="@_selectedFile"
+                                  FilesChanged="@EventCallback.Factory.Create(this, HandleFileChanged)"
+                                  MaximumFileCount="1">
+                        <ActivatorContent>
+                            <MudButton HtmlTag="label" 
+                                      Variant="Variant.Filled" 
+                                      Color="Color.Primary" 
+                                      StartIcon="@Icons.Material.Filled.Upload">
+                                Select CSV File
+                            </MudButton>
+                        </ActivatorContent>
+                        <SelectedTemplate>
+                            <MudChip T="string" Icon="@Icons.Material.Filled.InsertDriveFile" 
+                                    Color="Color.Primary" 
+                                    Size="Size.Medium" 
+                                    OnClose="OnRemoveFile"
+                                    Class="mt-2">
+                                @context.Name (@(FormatFileSize(context.Size)))
+                            </MudChip>
+                        </SelectedTemplate>
+                    </MudFileUpload>
+
+                    @if (_selectedFile != null && _isProcessing)
+                    {
+                        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-4" />
+                        <MudText Typo="Typo.body2" Class="mt-2">Parsing CSV file...</MudText>
+                    }
+
+                    @if (_selectedFile != null && !_isProcessing && _headers.Any())
+                    {
+                        <MudAlert Severity="Severity.Success" Class="mt-4">
+                            File loaded successfully. Found @_headers.Count columns and @(_previewData?.Count ?? 0) rows.
+                        </MudAlert>
+                    }
+                </MudPaper>
+            </MudStep>
+
+            <!-- Step 2: Column Mapping -->
+            <MudStep Title="Map Columns" Icon="@Icons.Material.Filled.Map" Disabled="@(_selectedFile == null || !_headers.Any())">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3">Step 2: Map CSV Columns to Table Fields</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+                        Map each CSV column to the corresponding table field. Unmapped columns will be ignored.
+                    </MudText>
+
+                    @if (_columnMappings.Any())
+                    {
+                        <MudTable Items="@_columnMappings" Hover="true" Dense="true" Class="mb-4">
+                            <HeaderContent>
+                                <MudTh>CSV Column</MudTh>
+                                <MudTh>Table Field</MudTh>
+                                <MudTh>Actions</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.CsvColumn</MudTd>
+                                <MudTd>
+                                    <MudSelect T="string" 
+                                             Value="@context.EntityProperty" 
+                                             ValueChanged="@((string value) => UpdateMapping(context.CsvColumn, value))"
+                                             Variant="Variant.Outlined"
+                                             Dense="true">
+                                        <MudSelectItem T="string" Value="@((string?)null)">-- Not Mapped --</MudSelectItem>
+                                        @foreach (var prop in _entityProperties)
+                                        {
+                                            <MudSelectItem T="string" Value="@prop">@prop</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudTd>
+                                <MudTd>
+                                    @if (!string.IsNullOrEmpty(context.EntityProperty))
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Success">Mapped</MudChip>
+                                    }
+                                    else
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Warning">Unmapped</MudChip>
+                                    }
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+
+                        <MudAlert Severity="Severity.Info" Class="mb-4">
+                            @_columnMappings.Count(m => !string.IsNullOrEmpty(m.EntityProperty)) of @_columnMappings.Count columns mapped.
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Warning">
+                            No columns found. Please go back and select a valid CSV file.
+                        </MudAlert>
+                    }
+                </MudPaper>
+            </MudStep>
+
+            <!-- Step 3: Preview & Validation -->
+            <MudStep Title="Preview & Validate" Icon="@Icons.Material.Filled.Preview" Disabled="@(!_columnMappings.Any(m => !string.IsNullOrEmpty(m.EntityProperty)))">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3">Step 3: Preview Data & Validate</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+                        Review the data preview and validation results before importing.
+                    </MudText>
+
+                    @if (_isValidatingForeignKeys)
+                    {
+                        <MudAlert Severity="Severity.Info" Class="mb-4">
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            Validating foreign key references...
+                        </MudAlert>
+                    }
+
+                    @if (_previewData != null && _previewData.Any())
+                    {
+                        <MudText Typo="Typo.subtitle1" Class="mb-2">Data Preview (First 5 rows)</MudText>
+                        <MudTable Items="@_previewData.Take(5)" Hover="true" Dense="true" Class="mb-4" Style="max-height: 300px; overflow-y: auto;">
+                            <HeaderContent>
+                                @foreach (var mapping in _columnMappings.Where(m => !string.IsNullOrEmpty(m.EntityProperty)))
+                                {
+                                    <MudTh>@mapping.EntityProperty</MudTh>
+                                }
+                            </HeaderContent>
+                            <RowTemplate>
+                                @foreach (var mapping in _columnMappings.Where(m => !string.IsNullOrEmpty(m.EntityProperty)))
+                                {
+                                    <MudTd>@(context.ContainsKey(mapping.CsvColumn) ? context[mapping.CsvColumn] : string.Empty)</MudTd>
+                                }
+                            </RowTemplate>
+                        </MudTable>
+
+                        <MudAlert Severity="@(_hasErrors ? Severity.Warning : Severity.Success)" Class="mb-4">
+                            <MudText Typo="Typo.body1">
+                                <strong>Summary:</strong> @_previewData.Count rows ready to import.
+                                @if (_hasErrors)
+                                {
+                                    <text><br />⚠️ @_importErrors.Count validation error(s) found.</text>
+                                }
+                                else
+                                {
+                                    <text><br />✅ All rows validated successfully.</text>
+                                }
+                            </MudText>
+                        </MudAlert>
+
+                        @if (_importErrors.Any())
+                        {
+                            <MudExpansionPanels Class="mt-4">
+                                <MudExpansionPanel Text="@($"Validation Errors ({_importErrors.Count})")" 
+                                                 Icon="@Icons.Material.Filled.Error"
+                                                 IsExpanded="true">
+                                    <MudList T="ImportError" Dense="true">
+                                        @foreach (var error in _importErrors.OrderBy(e => e.RowNumber))
+                                        {
+                                            <MudListItem T="ImportError">
+                                                <MudText Typo="Typo.body2" Class="text-error">
+                                                    <strong>Row @error.RowNumber:</strong> @error.Message
+                                                </MudText>
+                                            </MudListItem>
+                                        }
+                                    </MudList>
+                                </MudExpansionPanel>
+                            </MudExpansionPanels>
+                        }
+                    }
+                </MudPaper>
+            </MudStep>
+
+            <!-- Step 4: Import Options -->
+            <MudStep Title="Import Options" Icon="@Icons.Material.Filled.Settings" Disabled="@(_hasErrors || _previewData == null || !_previewData.Any())">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3">Step 4: Import Options</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+                        Configure import settings and review what will be imported.
+                    </MudText>
+
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudCard>
+                                <MudCardContent>
+                                    <MudText Typo="Typo.subtitle1" Class="mb-3">Import Summary</MudText>
+                                    <MudList T="string" Dense="true">
+                                        <MudListItem T="string">
+                                            <MudText Typo="Typo.body2">
+                                                <strong>Table:</strong> @TableName
+                                            </MudText>
+                                        </MudListItem>
+                                        <MudListItem T="string">
+                                            <MudText Typo="Typo.body2">
+                                                <strong>Total Rows:</strong> @(_previewData?.Count ?? 0)
+                                            </MudText>
+                                        </MudListItem>
+                                        <MudListItem T="string">
+                                            <MudText Typo="Typo.body2">
+                                                <strong>Mapped Columns:</strong> @_columnMappings.Count(m => !string.IsNullOrEmpty(m.EntityProperty))
+                                            </MudText>
+                                        </MudListItem>
+                                        <MudListItem T="string">
+                                            <MudText Typo="Typo.body2">
+                                                <strong>Validation Errors:</strong> @_importErrors.Count
+                                            </MudText>
+                                        </MudListItem>
+                                    </MudList>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudCard>
+                                <MudCardContent>
+                                    <MudText Typo="Typo.subtitle1" Class="mb-3">Options</MudText>
+                                    <MudSwitch T="bool" @bind-Checked="@_validateForeignKeys" 
+                                             Label="Validate Foreign Keys" 
+                                             Color="Color.Primary" />
+                                    <MudSwitch T="bool" @bind-Checked="@_applyDefaults" 
+                                             Label="Apply Default Values" 
+                                             Color="Color.Primary" 
+                                             Class="mt-2" />
+                                    <MudSwitch T="bool" @bind-Checked="@_skipHeaderRow" 
+                                             Label="Skip Header Row" 
+                                             Color="Color.Primary" 
+                                             Class="mt-2" />
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    </MudGrid>
+
+                    @if (_hasErrors)
+                    {
+                        <MudAlert Severity="Severity.Error" Class="mt-4">
+                            <strong>Cannot proceed:</strong> Please fix validation errors before importing.
+                        </MudAlert>
+                    }
+                </MudPaper>
+            </MudStep>
+
+            <!-- Step 5: Import Results -->
+            <MudStep Title="Results" Icon="@Icons.Material.Filled.CheckCircle" Disabled="@(_hasErrors || _previewData == null || !_previewData.Any())">
+                <MudPaper Class="pa-4" Elevation="1">
+                    @if (_isImporting)
+                    {
+                        <MudText Typo="Typo.h6" Class="mb-3">Importing Data...</MudText>
+                        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+                        <MudText Typo="Typo.body2">Please wait while data is being imported...</MudText>
+                    }
+                    else if (_importResult != null)
+                    {
+                        <MudText Typo="Typo.h6" Class="mb-3">Import Complete</MudText>
+                        <MudAlert Severity="@(_importResult.IsSuccess ? Severity.Success : Severity.Warning)" Class="mb-4">
+                            <MudText Typo="Typo.body1">
+                                <strong>Import Summary:</strong><br />
+                                Total Rows: @_importResult.TotalRows<br />
+                                Successfully Imported: @_importResult.SuccessCount<br />
+                                Errors: @_importResult.ErrorCount
+                            </MudText>
+                        </MudAlert>
+
+                        @if (_importResult.Errors.Any())
+                        {
+                            <MudExpansionPanels Class="mt-4">
+                                <MudExpansionPanel Text="@($"Import Errors ({_importResult.Errors.Count})")" 
+                                                 Icon="@Icons.Material.Filled.Error"
+                                                 IsExpanded="true">
+                                    <MudList T="FileImportError" Dense="true" Style="max-height: 200px; overflow-y: auto;">
+                                        @foreach (var error in _importResult.Errors.OrderBy(e => e.RowNumber))
+                                        {
+                                            <MudListItem T="FileImportError">
+                                                <MudText Typo="Typo.body2" Class="text-error">
+                                                    <strong>Row @error.RowNumber:</strong> @error.Message
+                                                </MudText>
+                                            </MudListItem>
+                                        }
+                                    </MudList>
+                                </MudExpansionPanel>
+                            </MudExpansionPanels>
+                        }
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            Click "Import" to start the import process.
+                        </MudText>
+                    }
+                </MudPaper>
+            </MudStep>
+        </MudStepper>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        @if (_activeStep > 0)
+        {
+            <MudButton Variant="Variant.Text" OnClick="PreviousStep">Previous</MudButton>
+        }
+        @if (_activeStep < 4)
+        {
+            <MudButton Color="Color.Primary" 
+                      Variant="Variant.Filled"
+                      OnClick="NextStep"
+                      Disabled="@(!CanProceedToNextStep())">
+                Next
+            </MudButton>
+        }
+        else if (_activeStep == 4 && !_isImporting && _importResult == null)
+        {
+            <MudButton Color="Color.Success" 
+                      Variant="Variant.Filled"
+                      StartIcon="@Icons.Material.Filled.CloudUpload"
+                      OnClick="StartImport"
+                      Disabled="@(_hasErrors || _previewData == null || !_previewData.Any())">
+                Import @(_previewData?.Count ?? 0) Records
+            </MudButton>
+        }
+        else if (_activeStep == 4 && _importResult != null)
+        {
+            <MudButton Color="Color.Primary" 
+                      Variant="Variant.Filled"
+                      OnClick="Close">
+                Done
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public string? TableName { get; set; }
+    [Parameter] public PPDMTableMetadata? TableMetadata { get; set; }
+
+    private int _activeStep = 0;
+    private IBrowserFile? _selectedFile;
+    private List<Dictionary<string, string>>? _previewData;
+    private List<string> _headers = new();
+    private List<ColumnMapping> _columnMappings = new();
+    private List<string> _entityProperties = new();
+    private List<ImportError> _importErrors = new();
+    private bool _isProcessing = false;
+    private bool _isValidatingForeignKeys = false;
+    private bool _isImporting = false;
+    private bool _hasErrors = false;
+    private bool _validateForeignKeys = true;
+    private bool _applyDefaults = true;
+    private bool _skipHeaderRow = true;
+    private FileImportResult? _importResult;
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEntityProperties();
+    }
+
+    private async Task LoadEntityProperties()
+    {
+        if (TableMetadata == null || string.IsNullOrEmpty(TableName))
+            return;
+
+        try
+        {
+            var entityType = GetEntityType(TableName);
+            if (entityType != null)
+            {
+                _entityProperties = entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(p => p.CanWrite)
+                    .Select(p => p.Name)
+                    .OrderBy(p => p)
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading entity properties: {ex.Message}", Severity.Warning);
+        }
+    }
+
+    private async Task HandleFileChanged()
+    {
+        if (_selectedFile != null)
+        {
+            _previewData = null;
+            _headers = new();
+            _columnMappings = new();
+            _importErrors = new();
+            _hasErrors = false;
+
+            await ParseCsvFile(_selectedFile);
+        }
+    }
+
+    private void OnRemoveFile()
+    {
+        _selectedFile = null;
+        _previewData = null;
+        _headers = new();
+        _columnMappings = new();
+        _importErrors = new();
+        _hasErrors = false;
+    }
+
+    private async Task ParseCsvFile(IBrowserFile file)
+    {
+        _isProcessing = true;
+        try
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024); // 10MB max
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            
+            var lines = new List<string>();
+            string? line;
+            while ((line = await reader.ReadLineAsync()) != null)
+            {
+                lines.Add(line);
+            }
+
+            if (lines.Count == 0)
+            {
+                Snackbar.Add("CSV file is empty", Severity.Warning);
+                return;
+            }
+
+            // Parse header
+            _headers = ParseCsvLine(lines[0]).ToList();
+
+            // Parse data rows
+            _previewData = new List<Dictionary<string, string>>();
+            _importErrors = new List<ImportError>();
+
+            for (int i = 1; i < lines.Count; i++)
+            {
+                var values = ParseCsvLine(lines[i]).ToList();
+                var row = new Dictionary<string, string>();
+
+                for (int j = 0; j < _headers.Count; j++)
+                {
+                    var header = _headers[j];
+                    var value = j < values.Count ? values[j] : string.Empty;
+                    row[header] = value;
+                }
+
+                _previewData.Add(row);
+            }
+
+            // Build initial column mappings (auto-map)
+            BuildInitialMappings();
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error parsing CSV file: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private void BuildInitialMappings()
+    {
+        _columnMappings = new List<ColumnMapping>();
+
+        foreach (var header in _headers)
+        {
+            var mapping = new ColumnMapping { CsvColumn = header };
+
+            // Try to find matching entity property
+            var directMatch = _entityProperties.FirstOrDefault(p =>
+                p.Equals(header, StringComparison.OrdinalIgnoreCase));
+            if (directMatch != null)
+            {
+                mapping.EntityProperty = directMatch;
+            }
+            else
+            {
+                // Try fuzzy match
+                var fuzzyMatch = _entityProperties.FirstOrDefault(p =>
+                {
+                    var propNormalized = p.Replace("_", "").Replace(" ", "");
+                    var headerNormalized = header.Replace("_", "").Replace(" ", "");
+                    return propNormalized.Equals(headerNormalized, StringComparison.OrdinalIgnoreCase);
+                });
+                if (fuzzyMatch != null)
+                {
+                    mapping.EntityProperty = fuzzyMatch;
+                }
+            }
+
+            _columnMappings.Add(mapping);
+        }
+    }
+
+    private void UpdateMapping(string csvColumn, string entityProperty)
+    {
+        var mapping = _columnMappings.FirstOrDefault(m => m.CsvColumn == csvColumn);
+        if (mapping != null)
+        {
+            mapping.EntityProperty = entityProperty;
+        }
+    }
+
+    private void NextStep()
+    {
+        if (_activeStep == 2) // Before validation step
+        {
+            _ = Task.Run(async () => await ValidateData());
+        }
+        
+        if (_activeStep < 4)
+        {
+            _activeStep++;
+            StateHasChanged();
+        }
+    }
+
+    private void PreviousStep()
+    {
+        if (_activeStep > 0)
+        {
+            _activeStep--;
+            StateHasChanged();
+        }
+    }
+
+    private bool CanProceedToNextStep()
+    {
+        return _activeStep switch
+        {
+            0 => _selectedFile != null && _headers.Any(),
+            1 => _columnMappings.Any(m => !string.IsNullOrEmpty(m.EntityProperty)),
+            2 => true, // Validation step - can always proceed
+            3 => !_hasErrors && _previewData != null && _previewData.Any(),
+            _ => false
+        };
+    }
+
+    private async Task ValidateData()
+    {
+        if (_previewData == null || !_previewData.Any() || TableMetadata == null || string.IsNullOrEmpty(TableName))
+            return;
+
+        _isValidatingForeignKeys = true;
+        _importErrors = new List<ImportError>();
+        _hasErrors = false;
+        StateHasChanged();
+
+        try
+        {
+            // Validate foreign keys if enabled
+            if (_validateForeignKeys)
+            {
+                var fkErrors = await ApiClient.PostAsync<List<Dictionary<string, string>>, List<ForeignKeyValidationError>>(
+                    $"/api/datamanagement/validate-foreign-keys/{TableName}",
+                    _previewData);
+
+                if (fkErrors != null && fkErrors.Any())
+                {
+                    foreach (var fkError in fkErrors)
+                    {
+                        _importErrors.Add(new ImportError
+                        {
+                            RowNumber = fkError.RowNumber,
+                            Message = $"Foreign Key '{fkError.ForeignKeyColumn}' = '{fkError.ForeignKeyValue}': {fkError.ErrorMessage}"
+                        });
+                    }
+                    _hasErrors = true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error validating data: {ex.Message}", Severity.Warning);
+        }
+        finally
+        {
+            _isValidatingForeignKeys = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task StartImport()
+    {
+        if (_previewData == null || !_previewData.Any() || TableMetadata == null)
+        {
+            Snackbar.Add("No data to import", Severity.Warning);
+            return;
+        }
+
+        _isImporting = true;
+        StateHasChanged();
+
+        try
+        {
+            var tableName = TableMetadata.TableName;
+            var apiEndpoint = GetApiEndpoint(tableName);
+
+            if (string.IsNullOrEmpty(apiEndpoint))
+            {
+                Snackbar.Add($"API endpoint not configured for table: {tableName}", Severity.Warning);
+                return;
+            }
+
+            // Build column mapping dictionary
+            var columnMapping = _columnMappings
+                .Where(m => !string.IsNullOrEmpty(m.EntityProperty))
+                .ToDictionary(m => m.CsvColumn, m => m.EntityProperty);
+
+            // Convert CSV rows to entity objects
+            var entities = new List<object>();
+            var entityType = GetEntityType(tableName);
+
+            foreach (var row in _previewData)
+            {
+                try
+                {
+                    var entity = CreateEntityFromRow(row, entityType, columnMapping);
+                    if (entity != null)
+                    {
+                        entities.Add(entity);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"Error converting row: {ex.Message}", Severity.Warning);
+                }
+            }
+
+            if (entities.Any())
+            {
+                // Import in batches
+                var batchSize = 100;
+                var totalImported = 0;
+                var errors = new List<FileImportError>();
+
+                for (int i = 0; i < entities.Count; i += batchSize)
+                {
+                    var batch = entities.Skip(i).Take(batchSize).ToList();
+                    
+                    try
+                    {
+                        await ApiClient.PostAsync<object, object>($"/api/{apiEndpoint}/batch", batch);
+                        totalImported += batch.Count;
+                    }
+                    catch
+                    {
+                        // Fallback to individual inserts
+                        foreach (var entity in batch)
+                        {
+                            try
+                            {
+                                await ApiClient.PostAsync<object, object>($"/api/{apiEndpoint}", entity);
+                                totalImported++;
+                            }
+                            catch (Exception innerEx)
+                            {
+                                errors.Add(new FileImportError
+                                {
+                                    RowNumber = i + batch.IndexOf(entity) + 1,
+                                    Message = innerEx.Message
+                                });
+                            }
+                        }
+                    }
+                }
+
+                _importResult = new FileImportResult
+                {
+                    FilePath = _selectedFile?.Name ?? "Unknown",
+                    TotalRows = _previewData.Count,
+                    SuccessCount = totalImported,
+                    ErrorCount = errors.Count,
+                    Errors = errors
+                };
+
+                Snackbar.Add($"Successfully imported {totalImported} records", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error importing data: {ex.Message}", Severity.Error);
+            _importResult = new FileImportResult
+            {
+                FilePath = _selectedFile?.Name ?? "Unknown",
+                TotalRows = _previewData?.Count ?? 0,
+                SuccessCount = 0,
+                ErrorCount = 1,
+                Errors = new List<FileImportError> { new FileImportError { RowNumber = 0, Message = ex.Message } }
+            };
+        }
+        finally
+        {
+            _isImporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private object? CreateEntityFromRow(Dictionary<string, string> row, Type? entityType, Dictionary<string, string> columnMapping)
+    {
+        if (entityType == null) return null;
+
+        var entity = Activator.CreateInstance(entityType);
+        if (entity == null) return null;
+
+        var properties = entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        foreach (var kvp in columnMapping)
+        {
+            var csvColumn = kvp.Key;
+            var entityProperty = kvp.Value;
+
+            if (!row.ContainsKey(csvColumn))
+                continue;
+
+            var prop = properties.FirstOrDefault(p => 
+                p.Name.Equals(entityProperty, StringComparison.OrdinalIgnoreCase));
+
+            if (prop != null && prop.CanWrite)
+            {
+                try
+                {
+                    var value = ConvertValue(row[csvColumn], prop.PropertyType);
+                    prop.SetValue(entity, value);
+                }
+                catch
+                {
+                    // Skip invalid values
+                }
+            }
+        }
+
+        return entity;
+    }
+
+    private IEnumerable<string> ParseCsvLine(string line)
+    {
+        var fields = new List<string>();
+        var currentField = new StringBuilder();
+        bool inQuotes = false;
+
+        for (int i = 0; i < line.Length; i++)
+        {
+            char c = line[i];
+
+            if (c == '"')
+            {
+                if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
+                {
+                    currentField.Append('"');
+                    i++;
+                }
+                else
+                {
+                    inQuotes = !inQuotes;
+                }
+            }
+            else if (c == ',' && !inQuotes)
+            {
+                fields.Add(currentField.ToString());
+                currentField.Clear();
+            }
+            else
+            {
+                currentField.Append(c);
+            }
+        }
+
+        fields.Add(currentField.ToString());
+        return fields;
+    }
+
+    private object? ConvertValue(string value, Type targetType)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            if (targetType.IsValueType && Nullable.GetUnderlyingType(targetType) == null)
+                return Activator.CreateInstance(targetType);
+            return null;
+        }
+
+        var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+        if (underlyingType == typeof(string))
+            return value;
+        if (underlyingType == typeof(int))
+            return int.TryParse(value, out var i) ? i : null;
+        if (underlyingType == typeof(decimal))
+            return decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var d) ? d : null;
+        if (underlyingType == typeof(double))
+            return double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var dbl) ? dbl : null;
+        if (underlyingType == typeof(DateTime))
+            return DateTime.TryParse(value, out var dt) ? dt : null;
+        if (underlyingType == typeof(bool))
+            return bool.TryParse(value, out var b) ? b : null;
+
+        return Convert.ChangeType(value, underlyingType);
+    }
+
+    private Type? GetEntityType(string tableName)
+    {
+        var assembly = typeof(Beep.OilandGas.PPDM39.Models.STRAT_UNIT).Assembly;
+        var entityTypeName = tableName.Replace("_", "");
+        return assembly.GetType($"Beep.OilandGas.PPDM39.Models.{entityTypeName}") ??
+               assembly.GetTypes().FirstOrDefault(t => t.Name.Equals(tableName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string GetApiEndpoint(string tableName)
+    {
+        var endpointMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "STRAT_COLUMN", "stratigraphy/columns" },
+            { "STRAT_UNIT", "stratigraphy/units" },
+            { "STRAT_HIERARCHY", "stratigraphy/hierarchy" },
+            { "STRAT_WELL_SECTION", "stratigraphy/well-sections" },
+            { "WELL", "well" },
+            { "WELL_STATUS", "well/status" },
+            { "FIELD", "production/fields" },
+            { "POOL", "production/pools" },
+            { "SURVEY", "seismic/surveys" }
+        };
+
+        return endpointMap.TryGetValue(tableName, out var endpoint) ? endpoint : string.Empty;
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Close()
+    {
+        MudDialog.Close(DialogResult.Ok(_importResult));
+    }
+
+    private class ImportError
+    {
+        public int RowNumber { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+
+    private class ColumnMapping
+    {
+        public string CsvColumn { get; set; } = string.Empty;
+        public string EntityProperty { get; set; } = string.Empty;
+    }
+}
+
+/// <summary>
+/// Represents a foreign key validation error
+/// </summary>
+public class ForeignKeyValidationError
+{
+    public int RowNumber { get; set; }
+    public string ForeignKeyColumn { get; set; } = string.Empty;
+    public string ReferencedTable { get; set; } = string.Empty;
+    public string ReferencedPrimaryKeyColumn { get; set; } = string.Empty;
+    public string ForeignKeyValue { get; set; } = string.Empty;
+    public string ErrorMessage { get; set; } = string.Empty;
+}

@@ -1,0 +1,6 @@
+@Beep.OilandGas.ApiService_HostAddress = http://localhost:5047
+
+GET {{Beep.OilandGas.ApiService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

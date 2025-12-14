@@ -1,0 +1,48 @@
+﻿@page "/"
+
+<PageTitle>Home - Beep Oil & Gas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudText Typo="Typo.h3" Class="mb-4">Welcome to Beep Oil & Gas</MudText>
+    
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudCard>
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Size="Size.Large" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6" Class="mt-2">Wells Management</MudText>
+                    <MudText>Manage and compare wells using PPDM39 standards</MudText>
+                    <MudButton Href="/ppdm39/wells" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">
+                        Go to Wells
+                    </MudButton>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" md="4">
+            <MudCard>
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Large" Color="Color.Secondary" />
+                    <MudText Typo="Typo.h6" Class="mt-2">Data Quality</MudText>
+                    <MudText>Monitor and improve data quality metrics</MudText>
+                    <MudButton Href="/ppdm39/data-quality" Variant="Variant.Text" Color="Color.Secondary" Class="mt-2">
+                        View Dashboard
+                    </MudButton>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" md="4">
+            <MudCard>
+                <MudCardContent>
+                    <MudIcon Icon="@Icons.Material.Filled.CompareArrows" Size="Size.Large" Color="Color.Tertiary" />
+                    <MudText Typo="Typo.h6" Class="mt-2">Well Comparison</MudText>
+                    <MudText>Compare multiple wells side-by-side</MudText>
+                    <MudButton Href="/ppdm39/wells/compare" Variant="Variant.Text" Color="Color.Tertiary" Class="mt-2">
+                        Compare Wells
+                    </MudButton>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>

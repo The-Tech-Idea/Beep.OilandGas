@@ -1,0 +1,86 @@
+@page "/ppdm39/wells"
+@using Beep.OilandGas.PPDM39.Models
+@using Beep.OilandGas.PPDM39.Core.DTOs
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Wells - PPDM39</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudText Typo="Typo.h4" Class="mb-4">Wells Management</MudText>
+    
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-4">Search Wells</MudText>
+        
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_searchUwi" 
+                             Label="UWI" 
+                             Variant="Variant.Outlined"
+                             Adornment="Adornment.End"
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             OnAdornmentClick="SearchWells" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          StartIcon="@Icons.Material.Filled.Search"
+                          OnClick="SearchWells"
+                          Class="mt-4">
+                    Search
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+        
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        
+        @if (_well != null)
+        {
+            <MudCard Class="mt-4">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">@_well.WELL_NAME</MudText>
+                    <MudText>UWI: @_well.UWI</MudText>
+                    @* <MudText>Well Type: @_well.WELL_TYPE</MudText> *@
+                    <MudText>Status: @_well.CURRENT_STATUS</MudText>
+                </MudCardContent>
+            </MudCard>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _searchUwi = string.Empty;
+    private WELL? _well;
+    private bool _isLoading = false;
+
+    private async Task SearchWells()
+    {
+        if (string.IsNullOrWhiteSpace(_searchUwi))
+        {
+            Snackbar.Add("Please enter a UWI to search", Severity.Warning);
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            _well = await ApiClient.GetAsync<WELL>($"/api/well/uwi/{_searchUwi}");
+            if (_well == null)
+            {
+                Snackbar.Add($"Well with UWI '{_searchUwi}' not found", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error searching well: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
+

@@ -1,0 +1,153 @@
+﻿<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Style="margin-right: 16px;">
+    <!-- Home -->
+    <MudNavLink Href="/" Match="NavLinkMatch.All" Style="color: white;">
+        <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Small" Class="mr-1" />
+        Home
+    </MudNavLink>
+    
+    <!-- Data Management Menu -->
+    <MudMenu Icon="@Icons.Material.Filled.Storage" Color="Color.Inherit" Style="color: white;">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Style="color: white;">
+                <MudIcon Icon="@Icons.Material.Filled.Storage" Size="Size.Small" Class="mr-1" />
+                Data Management
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Href="/data/quality-dashboard">
+                <MudIcon Icon="@Icons.Material.Filled.Dashboard" Size="Size.Small" Class="mr-2" />
+                Quality Dashboard
+            </MudMenuItem>
+            <MudMenuItem Href="/data/versioning">
+                <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Small" Class="mr-2" />
+                Versioning
+            </MudMenuItem>
+            <MudMenuItem Href="/data/audit">
+                <MudIcon Icon="@Icons.Material.Filled.Security" Size="Size.Small" Class="mr-2" />
+                Access Audit
+            </MudMenuItem>
+            <MudMenuItem Href="/data/validation">
+                <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Class="mr-2" />
+                Validation
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+    
+    <!-- Wells Menu -->
+    <MudMenu Icon="@Icons.Material.Filled.OilBarrel" Color="Color.Inherit" Style="color: white;">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Style="color: white;">
+                <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Size="Size.Small" Class="mr-1" />
+                Wells
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Href="/ppdm39/wells/search">
+                <MudIcon Icon="@Icons.Material.Filled.Search" Size="Size.Small" Class="mr-2" />
+                Search Wells
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/wells/compare">
+                <MudIcon Icon="@Icons.Material.Filled.CompareArrows" Size="Size.Small" Class="mr-2" />
+                Compare Wells
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/wells/status">
+                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-2" />
+                Well Status
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/wells/logs">
+                <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" Class="mr-2" />
+                Well Logs
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/wells/wellbores">
+                <MudIcon Icon="@Icons.Material.Filled.Polyline" Size="Size.Small" Class="mr-2" />
+                Wellbores
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+    
+    <!-- Stratigraphy Menu -->
+    <MudMenu Icon="@Icons.Material.Filled.Layers" Color="Color.Inherit" Style="color: white;">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Style="color: white;">
+                <MudIcon Icon="@Icons.Material.Filled.Layers" Size="Size.Small" Class="mr-1" />
+                Stratigraphy
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Href="/ppdm39/stratigraphy/columns">
+                <MudIcon Icon="@Icons.Material.Filled.ViewColumn" Size="Size.Small" Class="mr-2" />
+                Stratigraphic Columns
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/stratigraphy/hierarchy">
+                <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Small" Class="mr-2" />
+                Hierarchy
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/stratigraphy/units">
+                <MudIcon Icon="@Icons.Material.Filled.Category" Size="Size.Small" Class="mr-2" />
+                Stratigraphic Units
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/stratigraphy/sections">
+                <MudIcon Icon="@Icons.Material.Filled.Segment" Size="Size.Small" Class="mr-2" />
+                Well Sections
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+    
+    <!-- Production & Reserves Menu -->
+    <MudMenu Icon="@Icons.Material.Filled.TrendingUp" Color="Color.Inherit" Style="color: white;">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Style="color: white;">
+                <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" Class="mr-1" />
+                Production
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Href="/ppdm39/production/fields">
+                <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" Class="mr-2" />
+                Fields
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/production/pools">
+                <MudIcon Icon="@Icons.Material.Filled.WaterDrop" Size="Size.Small" Class="mr-2" />
+                Pools
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/production/reporting">
+                <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" Class="mr-2" />
+                Production Reporting
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/production/reserves">
+                <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Small" Class="mr-2" />
+                Reserves
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+    
+    <!-- Seismic Menu -->
+    <MudMenu Icon="@Icons.Material.Filled.Waves" Color="Color.Inherit" Style="color: white;">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Style="color: white;">
+                <MudIcon Icon="@Icons.Material.Filled.Waves" Size="Size.Small" Class="mr-1" />
+                Seismic
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Href="/ppdm39/seismic/surveys">
+                <MudIcon Icon="@Icons.Material.Filled.Radar" Size="Size.Small" Class="mr-2" />
+                Seismic Surveys
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/seismic/acquisition">
+                <MudIcon Icon="@Icons.Material.Filled.RecordVoiceOver" Size="Size.Small" Class="mr-2" />
+                Acquisition
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/seismic/processing">
+                <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Small" Class="mr-2" />
+                Processing
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+    
+    <!-- Data Quality -->
+    <MudNavLink Href="/ppdm39/data-quality" Style="color: white;">
+        <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" Class="mr-1" />
+        Data Quality
+    </MudNavLink>
+</MudStack>

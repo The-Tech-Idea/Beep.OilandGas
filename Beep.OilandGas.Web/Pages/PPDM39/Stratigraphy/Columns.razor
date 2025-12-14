@@ -1,0 +1,114 @@
+@page "/ppdm39/stratigraphy/columns"
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Stratigraphic Columns - PPDM39</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudText Typo="Typo.h4" Class="mb-4">Stratigraphic Columns</MudText>
+    
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-4">Search Columns</MudText>
+        
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_searchColumnId" 
+                             Label="Column ID" 
+                             Variant="Variant.Outlined"
+                             Adornment="Adornment.End"
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             OnAdornmentClick="SearchColumns" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          StartIcon="@Icons.Material.Filled.Search"
+                          OnClick="SearchColumns"
+                          Class="mt-4">
+                    Search
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+        
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        
+        @if (_columns != null && _columns.Any())
+        {
+            <MudTable Items="@_columns" Hover="true" Dense="true" Class="mt-4">
+                <HeaderContent>
+                    <MudTh>Column ID</MudTh>
+                    <MudTh>Column Name</MudTh>
+                    <MudTh>Active</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Column ID">@context.STRAT_COLUMN_ID</MudTd>
+                    <MudTd DataLabel="Column Name">@context.STRAT_COLUMN_NAME</MudTd>
+                    <MudTd DataLabel="Active">
+                        <MudChip T="string" Color="@(context.ACTIVE_IND == "Y" ? Color.Success : Color.Default)" Size="Size.Small">
+                            @context.ACTIVE_IND
+                        </MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _searchColumnId = string.Empty;
+    private List<STRAT_COLUMN>? _columns;
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadColumns();
+    }
+
+    private async Task LoadColumns()
+    {
+        _isLoading = true;
+        try
+        {
+            _columns = await ApiClient.GetAsync<List<STRAT_COLUMN>>("/api/stratigraphy/columns");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading columns: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SearchColumns()
+    {
+        _isLoading = true;
+        try
+        {
+            var url = "/api/stratigraphy/columns";
+            if (!string.IsNullOrWhiteSpace(_searchColumnId))
+            {
+                url += $"?filters[0].FieldName=STRAT_COLUMN_ID&filters[0].Operator==&filters[0].FilterValue={_searchColumnId}";
+            }
+            _columns = await ApiClient.GetAsync<List<STRAT_COLUMN>>(url);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error searching columns: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
+

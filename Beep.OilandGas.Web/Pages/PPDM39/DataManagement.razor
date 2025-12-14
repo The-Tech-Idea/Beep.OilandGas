@@ -1,0 +1,42 @@
+@page "/ppdm39/data-management"
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>PPDM39 Data Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="pa-0">
+    <MudGrid>
+        <MudItem xs="12" md="3">
+            <MudPaper Class="ma-2" Elevation="2" Style="height: calc(100vh - 100px); overflow-y: auto;">
+                <MudText Typo="Typo.h6" Class="pa-3">Tables</MudText>
+                <PPDMTreeView OnTableSelected="OnTableSelected" />
+            </MudPaper>
+        </MudItem>
+        
+        <MudItem xs="12" md="9">
+            <MudPaper Class="ma-2" Elevation="2" Style="height: calc(100vh - 100px); overflow-y: auto;">
+                @if (_selectedTable == null)
+                {
+                    <MudText Typo="Typo.h6" Class="pa-4">Select a table from the tree to view and manage data</MudText>
+                }
+                else
+                {
+                    <GenericCrudPage TableNode="@_selectedTable" />
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private PPDMTreeNode? _selectedTable;
+
+    private void OnTableSelected(PPDMTreeNode tableNode)
+    {
+        if (tableNode.NodeType == PPDMTreeNodeType.Table)
+        {
+            _selectedTable = tableNode;
+            StateHasChanged();
+        }
+    }
+}

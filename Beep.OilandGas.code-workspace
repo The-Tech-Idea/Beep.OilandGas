@@ -1,0 +1,32 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../Beep.Authentication"
+		},
+		{
+			"path": "../BeepDM/DataManagementEngineStandard"
+		},
+		{
+			"path": "../BeepDM/DataManagementModelsStandard"
+		},
+		{
+			"path": "../Beep.Shell/BeepShell"
+		},
+		{
+			"path": "../BeepDataSources/DataSourcesPlugins/RDBMSDataSource"
+		},
+		{
+			"path": "../../../../OneDrive/SimpleInfoapps/PPDM/ppdm39_SqlServerScript/ms"
+		},
+		{
+			"path": "../../fahadTheTechIdea/MyWebSite/TheTechIdeaWeb"
+		},
+		{
+			"path": "../../../../OneDrive/SimpleInfoapps/PPDM/html"
+		}
+	],
+	"settings": {}
+}

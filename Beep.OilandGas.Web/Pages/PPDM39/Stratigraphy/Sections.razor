@@ -1,0 +1,137 @@
+@page "/ppdm39/stratigraphy/sections"
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Well Sections - PPDM39</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudText Typo="Typo.h4" Class="mb-4">Well Sections</MudText>
+    
+    <MudPaper Class="pa-4">
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_searchUwi" 
+                             Label="UWI" 
+                             Variant="Variant.Outlined"
+                             Adornment="Adornment.End"
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             OnAdornmentClick="SearchSections" />
+            </MudItem>
+        </MudGrid>
+        
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        
+        @if (_sections != null && _sections.Any())
+        {
+            <MudTable Items="@_sections" Hover="true" Dense="true" Class="mt-4">
+                <HeaderContent>
+                    <MudTh>UWI</MudTh>
+                    <MudTh>Section ID</MudTh>
+                    <MudTh>Strat Unit</MudTh>
+                    <MudTh>Top Depth</MudTh>
+                    <MudTh>Base Depth</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="UWI">@context.UWI</MudTd>
+                    <MudTd DataLabel="Section ID">@GetPropertyValue(context, "STRAT_WELL_SECTION_ID")</MudTd>
+                    <MudTd DataLabel="Strat Unit">@GetStratUnitName(context.STRAT_UNIT_ID)</MudTd>
+                    <MudTd DataLabel="Top Depth">@GetPropertyValue(context, "TOP_DEPTH")</MudTd>
+                    <MudTd DataLabel="Base Depth">@GetPropertyValue(context, "BASE_DEPTH")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _searchUwi = string.Empty;
+    private List<STRAT_WELL_SECTION>? _sections;
+    private Dictionary<string, string> _stratUnitNames = new();
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStratUnits();
+        await LoadSections();
+    }
+
+    private async Task LoadStratUnits()
+    {
+        try
+        {
+            var units = await ApiClient.GetAsync<List<STRAT_UNIT>>("/api/stratigraphy/units");
+            if (units != null)
+            {
+                _stratUnitNames = units.ToDictionary(
+                    u => u.STRAT_UNIT_ID ?? string.Empty,
+                    u => !string.IsNullOrWhiteSpace(u.SHORT_NAME) ? u.SHORT_NAME : 
+                         !string.IsNullOrWhiteSpace(u.LONG_NAME) ? u.LONG_NAME : 
+                         u.STRAT_UNIT_ID ?? "N/A"
+                );
+            }
+        }
+        catch
+        {
+            // Silently fail - we'll just show IDs if lookup fails
+        }
+    }
+
+    private async Task LoadSections()
+    {
+        _isLoading = true;
+        try
+        {
+            _sections = await ApiClient.GetAsync<List<STRAT_WELL_SECTION>>("/api/stratigraphy/well-sections");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading sections: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SearchSections()
+    {
+        if (string.IsNullOrWhiteSpace(_searchUwi))
+        {
+            await LoadSections();
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            _sections = await ApiClient.GetAsync<List<STRAT_WELL_SECTION>>($"/api/stratigraphy/well-sections/well/{_searchUwi}");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error searching sections: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetStratUnitName(string? unitId)
+    {
+        if (string.IsNullOrWhiteSpace(unitId))
+            return "N/A";
+        
+        return _stratUnitNames.TryGetValue(unitId, out var name) ? name : unitId;
+    }
+
+    private string GetPropertyValue(STRAT_WELL_SECTION section, string propertyName)
+    {
+        var prop = section.GetType().GetProperty(propertyName);
+        return prop?.GetValue(section)?.ToString() ?? "N/A";
+    }
+}
+

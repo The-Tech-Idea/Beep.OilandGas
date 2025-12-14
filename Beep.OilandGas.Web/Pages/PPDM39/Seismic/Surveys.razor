@@ -1,0 +1,65 @@
+@page "/ppdm39/seismic/surveys"
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Seismic Surveys - PPDM39</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge">
+    <MudText Typo="Typo.h4" Class="mb-4">Seismic Surveys</MudText>
+    
+    <MudPaper Class="pa-4">
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        }
+        
+        @if (_surveys != null && _surveys.Any())
+        {
+            <MudTable Items="@_surveys" Hover="true" Dense="true">
+                <HeaderContent>
+                    <MudTh>Survey ID</MudTh>
+                    <MudTh>Survey Name</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Survey ID">@GetPropertyValue(context, "SURVEY_ID")</MudTd>
+                    <MudTd DataLabel="Survey Name">@GetPropertyValue(context, "SURVEY_NAME")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<object>? _surveys;
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSurveys();
+    }
+
+    private async Task LoadSurveys()
+    {
+        _isLoading = true;
+        try
+        {
+            _surveys = await ApiClient.GetAsync<List<object>>("/api/seismic/surveys");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading seismic surveys: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        var prop = obj.GetType().GetProperty(propertyName);
+        return prop?.GetValue(obj)?.ToString() ?? "N/A";
+    }
+}
+
+

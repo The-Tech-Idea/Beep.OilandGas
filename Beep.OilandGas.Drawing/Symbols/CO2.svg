@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="63" height="63" viewBox="0 0 63 63">
+  <g id="Layer_2" data-name="CO2">
+    <g id="Layer_2-2" data-name="Layer 2">
+      <g>
+        <line x1="63" y1="31.5" y2="31.5" fill="none" stroke="param(outline)" stroke-width="param(outline-width)"/>
+        <line x1="31.5" y1="63" x2="31.5" fill="none" stroke="param(outline)" stroke-width="param(outline-width)"/>
+        <line x1="53.7735" y1="53.7734" x2="9.2266" y2="9.2266" fill="none"stroke="param(outline)" stroke-width="param(outline-width)"/>
+        <line x1="9.2266" y1="53.7734" x2="53.7735" y2="9.2266" fill="none" stroke="param(outline)" stroke-width="param(outline-width)"/>
+        <g>
+          <path d="M31.5,37.1367A5.6358,5.6358,0,1,1,37.1353,31.5,5.6426,5.6426,0,0,1,31.5,37.1367Z" fill="param(fill)" fill-opacity="param(fill-opacity)" stroke="param(outline)" stroke-width="param(outline-width)"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

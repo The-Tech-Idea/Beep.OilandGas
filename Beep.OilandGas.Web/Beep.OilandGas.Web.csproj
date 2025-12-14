@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Suppress MUD0002 warnings - these are false positives from MudBlazor analyzer -->
+    <NoWarn>$(NoWarn);MUD0002</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.2" />
+    <PackageReference Include="MudBlazor" Version="8.*" />
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.1" />
+    <PackageReference Include="TheTechIdea.Beep.AssemblyLoader" Version="2.0.15" />
+    <PackageReference Include="TheTechIdea.Beep.Container" Version="1.0.0.93" />
+    <PackageReference Include="TheTechIdea.Beep.Container.Model" Version="1.0.0.49" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.55" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.108" />
+    <PackageReference Include="TheTechIdea.Beep.DMLogger" Version="2.0.3" />
+    <PackageReference Include="TheTechIdea.Beep.DuckDBDataSourceCore" Version="1.0.45" />
+    <PackageReference Include="TheTechIdea.Beep.JsonLoader" Version="2.0.4" />
+    <PackageReference Include="TheTechIdea.Beep.MySqlDataSourceCore" Version="1.0.2" />
+    <PackageReference Include="TheTechIdea.Beep.OracleDataSourceCore" Version="1.0.19" />
+    <PackageReference Include="TheTechIdea.Beep.PostgreDataSourceCore" Version="1.0.2" />
+    <PackageReference Include="TheTechIdea.Beep.RDBDataSource" Version="2.0.9" />
+    <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.54" />
+    <PackageReference Include="TheTechIdea.Beep.SqlServerDataSourceCore" Version="1.0.1" />
+    <PackageReference Include="TheTechIdea.Beep.TxtXlsCSVFileSourceCore" Version="1.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
+  </ItemGroup>
+
+</Project>
+ 

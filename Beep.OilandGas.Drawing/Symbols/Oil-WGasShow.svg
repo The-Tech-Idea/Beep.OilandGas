@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="63"
+   height="56"
+   viewBox="0 0 63 56"
+   version="1.1"
+   id="svg18"
+   sodipodi:docname="Oil-WGasShow.svg"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)">
+  <metadata
+     id="metadata24">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs22" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="1137"
+     id="namedview20"
+     showgrid="false"
+     inkscape:zoom="4.5079365"
+     inkscape:cx="-1.7746479"
+     inkscape:cy="25.75"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg18" />
+  <g
+     id="Layer_2"
+     data-name="Layer 2"
+     transform="translate(0,2.75)">
+    <g
+       id="Layer_2-2"
+       data-name="Layer 2">
+      <g
+         id="g14">
+        <line
+           x1="31.5"
+           x2="31.5"
+           y2="49.5"
+           stroke="param(outline)"
+           stroke-width="param(outline-width)"
+           id="line2"
+           y1="0"
+           style="fill:none" />
+        <line
+           x1="63"
+           y1="31.5"
+           y2="31.5"
+           stroke="param(outline)"
+           stroke-width="param(outline-width)"
+           id="line4"
+           x2="0"
+           style="fill:none" />
+        <line
+           x1="53.774502"
+           y1="9.2264996"
+           x2="18.820299"
+           y2="44.179699"
+           stroke="param(outline)"
+           stroke-width="param(outline-width)"
+           id="line6"
+           style="fill:none" />
+        <line
+           x1="44.180698"
+           y1="44.179699"
+           x2="9.2265997"
+           y2="9.2264996"
+           stroke="param(outline)"
+           stroke-width="param(outline-width)"
+           id="line8"
+           style="fill:none" />
+        <g
+           id="g12">
+          <circle
+             cx="31.5"
+             cy="31.5"
+             r="19"
+             fill="param(fill)"
+             fill-opacity="param(fill-opacity)"
+             stroke="param(outline)"
+             stroke-width="param(outline-width)"
+             id="circle10" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
