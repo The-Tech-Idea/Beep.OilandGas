@@ -7,6 +7,8 @@ using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
 using TheTechIdea.Beep.DataBase;
+using TheTechIdea.Beep.Report;
+using TheTechIdea.Beep.ConfigUtil;
 
 namespace Beep.OilandGas.EnhancedRecovery.Services
 {

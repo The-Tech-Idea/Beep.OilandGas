@@ -7,6 +7,8 @@ using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
 using TheTechIdea.Beep.DataBase;
+using TheTechIdea.Beep.Report;
+using TheTechIdea.Beep.ConfigUtil;
 
 namespace Beep.OilandGas.DevelopmentPlanning.Services
 {
@@ -118,7 +120,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
                 APPLICATION_TYPE = "DEVELOPMENT_PLAN",
                 ACTIVE_IND = "Y",
                 EFFECTIVE_DATE = createDto.TargetStartDate ?? DateTime.UtcNow,
-                EXPIRY_DATE = createDto.TargetCompletionDate,
+                EXPIRY_DATE = (DateTime)createDto.TargetCompletionDate,
                 CURRENT_STATUS = "Draft",
                 ROW_CREATED_DATE = DateTime.UtcNow,
                 ROW_CHANGED_DATE = DateTime.UtcNow
