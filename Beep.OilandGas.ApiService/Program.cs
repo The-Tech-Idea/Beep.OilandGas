@@ -39,12 +39,101 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
     {
         Title = "Beep Oil and Gas PPDM39 API",
         Version = "v1",
         Description = "API for PPDM39 data management and oil & gas operations"
     });
+});
+
+// ============================================
+// ADD AUTHENTICATION WITH JWT BEARER
+// ============================================
+// Add Authentication with JWT Bearer
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    // Use Aspire service discovery in development, or config-based URL in production
+    // Aspire provides: services:identityserver:https:0 or services:identityserver:http:0
+    var identityServerUrl = builder.Configuration["services:identityserver:https:0"] 
+        ?? builder.Configuration["IdentityServer:Authority"] 
+        ?? "https://localhost:7062/";
+    
+    options.Authority = identityServerUrl;
+    options.Audience = builder.Configuration["IdentityServer:Audience"] ?? "beep-api";
+    options.TokenValidationParameters.ValidateAudience = true;
+    options.TokenValidationParameters.ValidAudience = builder.Configuration["IdentityServer:Audience"] ?? "beep-api";
+    
+    // In development, we might need to disable HTTPS requirement if running on HTTP
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+    
+    // For development with self-signed certs
+    if (builder.Environment.IsDevelopment())
+    {
+        options.BackchannelHttpHandler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+    }
+    
+    // Add JWT Bearer events for debugging
+    options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("JwtBearer");
+            
+            var hasAuthHeader = context.Request.Headers.ContainsKey("Authorization");
+            var authHeader = context.Request.Headers["Authorization"].ToString();
+            
+            Log.Information("JWT: OnMessageReceived - Path: {Path}, HasAuthHeader: {HasAuth}, HeaderValue: {Header}", 
+                context.Request.Path, 
+                hasAuthHeader,
+                hasAuthHeader ? (authHeader.Length > 50 ? authHeader.Substring(0, 50) + "..." : authHeader) : "(none)");
+            
+            return Task.CompletedTask;
+        },
+        OnAuthenticationFailed = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("JwtBearer");
+            
+            Log.Error(context.Exception, "JWT: Authentication failed - {Message}", context.Exception.Message);
+            
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("JwtBearer");
+            
+            var userId = context.Principal?.FindFirst("sub")?.Value;
+            var claims = context.Principal?.Claims.Select(c => $"{c.Type}={c.Value}").ToList();
+            
+            Log.Information("JWT: Token validated successfully - UserId: {UserId}, Claims: {Claims}", 
+                userId, string.Join(", ", claims ?? new List<string>()));
+            
+            return Task.CompletedTask;
+        },
+        OnChallenge = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("JwtBearer");
+            
+            Log.Warning("JWT: Challenge triggered - Path: {Path}, Error: {Error}, ErrorDescription: {Desc}", 
+                context.Request.Path,
+                context.Error ?? "(none)",
+                context.ErrorDescription ?? "(none)");
+            
+            return Task.CompletedTask;
+        }
+    };
 });
 
 // ============================================
@@ -282,8 +371,49 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
+
+// Authentication must come before Authorization
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
+
+// Add authentication diagnostic endpoint
+app.MapGet("/api/auth-test", (HttpContext context) =>
+{
+    var user = context.User;
+    var authHeader = context.Request.Headers.Authorization.ToString();
+    
+    return Results.Ok(new { 
+        IsAuthenticated = user.Identity?.IsAuthenticated ?? false,
+        AuthenticationType = user.Identity?.AuthenticationType,
+        UserName = user.Identity?.Name,
+        UserId = user.FindFirst("sub")?.Value ?? user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+        Claims = user.Claims.Select(c => new { c.Type, c.Value }).ToList(),
+        HasAuthHeader = !string.IsNullOrEmpty(authHeader),
+        AuthHeaderPrefix = authHeader.Length > 20 ? authHeader.Substring(0, 20) + "..." : authHeader,
+        Timestamp = DateTime.UtcNow
+    });
+})
+.RequireAuthorization() // This requires auth - will return 401 if no valid token
+.WithName("AuthTest");
+
+// Add anonymous auth check (doesn't require auth, just reports status)
+app.MapGet("/api/auth-check", (HttpContext context) =>
+{
+    var user = context.User;
+    var authHeader = context.Request.Headers.Authorization.ToString();
+    
+    return Results.Ok(new { 
+        IsAuthenticated = user.Identity?.IsAuthenticated ?? false,
+        HasAuthHeader = !string.IsNullOrEmpty(authHeader),
+        AuthHeaderLength = authHeader.Length,
+        Message = user.Identity?.IsAuthenticated == true 
+            ? $"Authenticated as {user.FindFirst("sub")?.Value}" 
+            : "Not authenticated"
+    });
+})
+.WithName("AuthCheck");
 
 Log.Information("Beep Oil and Gas PPDM39 API started successfully");
 

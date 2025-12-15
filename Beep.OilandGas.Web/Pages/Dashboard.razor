@@ -1,0 +1,187 @@
+@page "/dashboard"
+@inject NavigationManager NavigationManager
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject ISnackbar Snackbar
+
+<PageTitle>Dashboard - Beep Oil & Gas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+    <MudText Typo="Typo.h4" Class="mb-6">Dashboard</MudText>
+    
+    <!-- Quick Stats -->
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="2">
+                <MudCardContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Total Wells</MudText>
+                            <MudText Typo="Typo.h4">@_totalWells</MudText>
+                        </MudStack>
+                        <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Size="Size.Large" Color="Color.Primary" Style="opacity: 0.7;" />
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="2">
+                <MudCardContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Active Fields</MudText>
+                            <MudText Typo="Typo.h4">@_activeFields</MudText>
+                        </MudStack>
+                        <MudIcon Icon="@Icons.Material.Filled.Explore" Size="Size.Large" Color="Color.Secondary" Style="opacity: 0.7;" />
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="2">
+                <MudCardContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Production (bbl/day)</MudText>
+                            <MudText Typo="Typo.h4">@_dailyProduction.ToString("N0")</MudText>
+                        </MudStack>
+                        <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Large" Color="Color.Success" Style="opacity: 0.7;" />
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="2">
+                <MudCardContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudStack Spacing="1">
+                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Facilities</MudText>
+                            <MudText Typo="Typo.h4">@_facilities</MudText>
+                        </MudStack>
+                        <MudIcon Icon="@Icons.Material.Filled.Factory" Size="Size.Large" Color="Color.Info" Style="opacity: 0.7;" />
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+    
+    <!-- Quick Actions -->
+    <MudText Typo="Typo.h5" Class="mb-4">Quick Actions</MudText>
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="2" Style="cursor: pointer;" OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/data-management"))">
+                <MudCardContent>
+                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                        <img src="/imgs/icons/data.png" alt="Data Management" style="width: 60px; height: 60px; object-fit: contain;" />
+                        <MudText Typo="Typo.h6">PPDM39 Data Management</MudText>
+                        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
+                            Manage and explore PPDM39 tables
+                        </MudText>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="2" Style="cursor: pointer;" OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/wells"))">
+                <MudCardContent>
+                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                        <img src="/imgs/icons/drilling-rig.png" alt="Wells" style="width: 60px; height: 60px; object-fit: contain;" />
+                        <MudText Typo="Typo.h6">Wells Management</MudText>
+                        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
+                            Search and manage well data
+                        </MudText>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="4">
+            <MudCard Elevation="2" Style="cursor: pointer;" OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/production/fields"))">
+                <MudCardContent>
+                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                        <img src="/imgs/icons/refinery.png" alt="Production" style="width: 60px; height: 60px; object-fit: contain;" />
+                        <MudText Typo="Typo.h6">Production & Reserves</MudText>
+                        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
+                            Monitor production and reserves
+                        </MudText>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+    
+    <!-- Recent Activity -->
+    <MudText Typo="Typo.h5" Class="mb-4">Recent Activity</MudText>
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudDataGrid Items="@_recentActivities" Hover="true" Dense="true" ReadOnly="true">
+            <Columns>
+                <PropertyColumn Property="@(x => x.Type)" Title="Type" />
+                <PropertyColumn Property="@(x => x.Description)" Title="Description" />
+                <TemplateColumn Title="Date">
+                    <CellTemplate>
+                        <MudText>@context.Item.Timestamp.ToString("MMM dd, yyyy HH:mm")</MudText>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private int _totalWells = 0;
+    private int _activeFields = 0;
+    private decimal _dailyProduction = 0;
+    private int _facilities = 0;
+    
+    private List<ActivityItem> _recentActivities = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        // Check authentication
+        try
+        {
+            var authToken = await LocalStorage.GetItemAsync<string>("auth-token");
+            if (string.IsNullOrEmpty(authToken))
+            {
+                NavigationManager.NavigateTo("/");
+                return;
+            }
+        }
+        catch
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+        
+        // Load dashboard data (placeholder - replace with actual API calls)
+        await LoadDashboardData();
+    }
+    
+    private async Task LoadDashboardData()
+    {
+        // TODO: Replace with actual API calls
+        _totalWells = 1247;
+        _activeFields = 45;
+        _dailyProduction = 125000;
+        _facilities = 23;
+        
+        _recentActivities = new List<ActivityItem>
+        {
+            new() { Type = "Well", Description = "New well added: WELL-2024-001", Timestamp = DateTime.Now.AddHours(-2) },
+            new() { Type = "Production", Description = "Production report generated", Timestamp = DateTime.Now.AddHours(-5) },
+            new() { Type = "Data", Description = "PPDM39 table updated: FIELD", Timestamp = DateTime.Now.AddDays(-1) },
+            new() { Type = "Field", Description = "Field status changed: ACTIVE", Timestamp = DateTime.Now.AddDays(-2) }
+        };
+    }
+    
+    private class ActivityItem
+    {
+        public string Type { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+    }
+}
+

@@ -1,48 +1,177 @@
 ﻿@page "/"
+@inject NavigationManager NavigationManager
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
-<PageTitle>Home - Beep Oil & Gas</PageTitle>
+<PageTitle>Beep Oil & Gas - Professional Oil & Gas Management Platform</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudText Typo="Typo.h3" Class="mb-4">Welcome to Beep Oil & Gas</MudText>
-    
-    <MudGrid>
-        <MudItem xs="12" md="4">
-            <MudCard>
-                <MudCardContent>
-                    <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Size="Size.Large" Color="Color.Primary" />
-                    <MudText Typo="Typo.h6" Class="mt-2">Wells Management</MudText>
-                    <MudText>Manage and compare wells using PPDM39 standards</MudText>
-                    <MudButton Href="/ppdm39/wells" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">
-                        Go to Wells
+<!-- Hero Section -->
+<MudContainer MaxWidth="MaxWidth.False" Class="pa-0">
+    <MudPaper Elevation="0" Style="background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%); min-height: 60vh; display: flex; align-items: center; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.1; background-image: url('/imgs/icons/offshore-platform.png'); background-size: cover; background-position: center;"></div>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Style="position: relative; z-index: 1;">
+            <MudStack Spacing="4" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="text-align: center; padding: 80px 20px;">
+                <MudText Typo="Typo.h2" Style="color: white; font-weight: 700; margin-bottom: 16px;">
+                    Welcome to Beep Oil & Gas
+                </MudText>
+                <MudText Typo="Typo.h5" Style="color: rgba(255,255,255,0.9); max-width: 700px; margin: 0 auto;">
+                    Comprehensive PPDM39-compliant data management platform for the oil and gas industry
+                </MudText>
+                <MudStack Row="true" Spacing="3" Justify="Justify.Center" Class="mt-6">
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Secondary" 
+                               Size="Size.Large"
+                               Href="/login"
+                               StartIcon="@Icons.Material.Filled.Login"
+                               Style="min-width: 150px;">
+                        Login
                     </MudButton>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
+                    <MudButton Variant="Variant.Outlined" 
+                               Color="Color.Secondary" 
+                               Size="Size.Large"
+                               Href="/register"
+                               StartIcon="@Icons.Material.Filled.PersonAdd"
+                               Style="min-width: 150px; border-color: white; color: white;">
+                        Register
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        </MudContainer>
+    </MudPaper>
+
+    <!-- Features Section -->
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-12">
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-8">Key Features</MudText>
         
-        <MudItem xs="12" md="4">
-            <MudCard>
-                <MudCardContent>
-                    <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Large" Color="Color.Secondary" />
-                    <MudText Typo="Typo.h6" Class="mt-2">Data Quality</MudText>
-                    <MudText>Monitor and improve data quality metrics</MudText>
-                    <MudButton Href="/ppdm39/data-quality" Variant="Variant.Text" Color="Color.Secondary" Class="mt-2">
-                        View Dashboard
-                    </MudButton>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-        
-        <MudItem xs="12" md="4">
-            <MudCard>
-                <MudCardContent>
-                    <MudIcon Icon="@Icons.Material.Filled.CompareArrows" Size="Size.Large" Color="Color.Tertiary" />
-                    <MudText Typo="Typo.h6" Class="mt-2">Well Comparison</MudText>
-                    <MudText>Compare multiple wells side-by-side</MudText>
-                    <MudButton Href="/ppdm39/wells/compare" Variant="Variant.Text" Color="Color.Tertiary" Class="mt-2">
-                        Compare Wells
-                    </MudButton>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-    </MudGrid>
+        <MudGrid Spacing="4">
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="2" Style="height: 100%;">
+                    <MudCardContent>
+                        <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                            <img src="/imgs/icons/drilling-rig.png" alt="Drilling" style="width: 80px; height: 80px; object-fit: contain;" />
+                            <MudText Typo="Typo.h6">Field Management</MudText>
+                            <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
+                                Manage prospects, exploration activities, and field operations with comprehensive tracking and reporting.
+                            </MudText>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="2" Style="height: 100%;">
+                    <MudCardContent>
+                        <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                            <img src="/imgs/icons/refinery.png" alt="Refinery" style="width: 80px; height: 80px; object-fit: contain;" />
+                            <MudText Typo="Typo.h6">Facility Management</MudText>
+                            <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
+                                Track and manage production facilities, equipment, and infrastructure across your operations.
+                            </MudText>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="2" Style="height: 100%;">
+                    <MudCardContent>
+                        <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                            <img src="/imgs/icons/data.png" alt="Data Management" style="width: 80px; height: 80px; object-fit: contain;" />
+                            <MudText Typo="Typo.h6">PPDM39 Data Management</MudText>
+                            <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
+                                Full compliance with PPDM 3.9 standards for comprehensive petroleum data management.
+                            </MudText>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+
+    <!-- Capabilities Section -->
+    <MudPaper Elevation="0" Style="background: var(--mud-palette-surface);">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-12">
+            <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-8">Platform Capabilities</MudText>
+            
+            <MudGrid Spacing="3">
+                <MudItem xs="12" sm="6" md="3">
+                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.Explore" Size="Size.Large" Color="Color.Primary" />
+                        <MudText Typo="Typo.h6" Align="Align.Center">Prospect Identification</MudText>
+                        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
+                            Seismic analysis and exploration planning
+                        </MudText>
+                    </MudStack>
+                </MudItem>
+                
+                <MudItem xs="12" sm="6" md="3">
+                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.Gavel" Size="Size.Large" Color="Color.Primary" />
+                        <MudText Typo="Typo.h6" Align="Align.Center">Lease Acquisition</MudText>
+                        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
+                            Land rights and legal management
+                        </MudText>
+                    </MudStack>
+                </MudItem>
+                
+                <MudItem xs="12" sm="6" md="3">
+                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Large" Color="Color.Primary" />
+                        <MudText Typo="Typo.h6" Align="Align.Center">Drilling & Construction</MudText>
+                        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
+                            Well drilling and facility construction
+                        </MudText>
+                    </MudStack>
+                </MudItem>
+                
+                <MudItem xs="12" sm="6" md="3">
+                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Large" Color="Color.Primary" />
+                        <MudText Typo="Typo.h6" Align="Align.Center">Production Operations</MudText>
+                        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
+                            Production monitoring and optimization
+                        </MudText>
+                    </MudStack>
+                </MudItem>
+            </MudGrid>
+        </MudContainer>
+    </MudPaper>
+
+    <!-- CTA Section -->
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-12">
+        <MudPaper Elevation="2" Class="pa-8" Style="background: linear-gradient(135deg, var(--mud-palette-primary) 0%, var(--mud-palette-primary-darken) 100%);">
+            <MudStack Spacing="4" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="text-align: center;">
+                <MudText Typo="Typo.h5" Style="color: white;">Ready to Get Started?</MudText>
+                <MudText Typo="Typo.body1" Style="color: rgba(255,255,255,0.9); max-width: 600px;">
+                    Join industry leaders who trust Beep Oil & Gas for their data management needs.
+                </MudText>
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Secondary" 
+                           Size="Size.Large"
+                           Href="/register"
+                           StartIcon="@Icons.Material.Filled.PersonAdd"
+                           Style="min-width: 200px; margin-top: 16px;">
+                    Create Account
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudContainer>
 </MudContainer>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if user is already authenticated, redirect to dashboard
+        try
+        {
+            var authToken = await LocalStorage.GetItemAsync<string>("auth-token");
+            if (!string.IsNullOrEmpty(authToken))
+            {
+                NavigationManager.NavigateTo("/dashboard");
+            }
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+}

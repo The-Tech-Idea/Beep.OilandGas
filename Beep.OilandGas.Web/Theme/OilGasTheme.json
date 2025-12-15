@@ -1,0 +1,83 @@
+{
+  "AppName": "Beep Oil & Gas",
+  "AppShortName": "BeepOG",
+  "Tagline": "Professional Oil & Gas Management Platform",
+  "Copyright": "© 2025 Beep Oil & Gas. All rights reserved.",
+  "Version": "1.0.0",
+
+  "PrimaryColor": "#7B2CBF",
+  "PrimaryHoverColor": "#6A1FA8",
+  "PrimaryTransparentColor": "rgba(123, 44, 191, 0.1)",
+  "PrimaryColorDark": "#9D4EDD",
+  "SecondaryColor": "#FF6B35",
+  "SecondaryColorDark": "#FF8C5A",
+  "TertiaryColor": "#4A90E2",
+
+  "BackgroundColor": "#0d1117",
+  "BackgroundDarkColor": "#010409",
+  "BackgroundColorDark": "#010409",
+  "SurfaceColor": "#161b22",
+  "SurfaceColorDark": "#161b22",
+  "SurfaceElevatedColor": "#21262d",
+  "BorderColor": "#30363d",
+  "BorderColorDark": "#30363d",
+
+  "TextPrimaryColor": "#e6edf3",
+  "TextPrimaryDark": "#e6edf3",
+  "TextPrimary": "#e6edf3",
+  "TextSecondaryColor": "#8b949e",
+  "TextSecondaryDark": "#8b949e",
+  "TextSecondary": "#8b949e",
+  "TextOnPrimaryColor": "#ffffff",
+  "TextOnPrimary": "#ffffff",
+
+  "SuccessColor": "#00ff88",
+  "WarningColor": "#ffd866",
+  "ErrorColor": "#ff6b9d",
+  "InfoColor": "#00d4ff",
+
+  "FontFamily": "'Roboto', 'Inter', '-apple-system', 'BlinkMacSystemFont', sans-serif",
+  "HeadingFontFamily": "'Roboto', 'Inter', sans-serif",
+  "FontMonoFamily": "'JetBrains Mono', 'Fira Code', 'Consolas', monospace",
+  "BaseFontSize": "14px",
+  
+  "RtlFontFamily": "'Cairo', 'Tajawal', sans-serif",
+  "RtlHeadingFontFamily": "'Cairo', 'Tajawal', sans-serif",
+  "SupportRtl": true,
+
+  "LogoUrl": "/imgs/BeepOGDM.png",
+  "LogoDarkUrl": "/imgs/BeepOGDM.png",
+  "IconUrl": "/imgs/BeepOGDM.ico",
+  "FaviconUrl": "/favicon.ico",
+  
+  "LoginBackgroundUrl": "",
+  "LoginTitle": "Welcome to Beep Oil & Gas",
+  "LoginWelcomeMessage": "Sign in to your account",
+  "LoginSubtitle": "Access your dashboard and manage your operations",
+  "RegisterTitle": "Create Your Account",
+  "RegisterSubtitle": "Join Beep Oil & Gas platform",
+
+  "IsDarkModeDefault": false,
+  "DefaultDarkMode": false,
+  "EnableDarkMode": true,
+  "AllowThemeSwitching": true,
+  "ShowVersionInFooter": true,
+  "UseTerminalStyle": false,
+  "ShowSocialLogins": true,
+  "ShowRememberMe": true,
+
+  "BorderRadius": "8px",
+  "BorderRadiusSm": "6px",
+  "BorderRadiusMd": "8px",
+  "BorderRadiusLg": "12px",
+  "BorderRadiusXl": "16px",
+
+  "ShadowSm": "0 1px 2px 0 rgba(123, 44, 191, 0.05)",
+  "ShadowMd": "0 4px 6px -1px rgba(123, 44, 191, 0.1)",
+  "ShadowLg": "0 10px 15px -3px rgba(123, 44, 191, 0.1)",
+  "ShadowXl": "0 20px 25px -5px rgba(123, 44, 191, 0.1)",
+
+  "TransitionDuration": "200ms",
+  "TransitionEasing": "ease-out"
+}
+

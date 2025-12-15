@@ -16,6 +16,8 @@ using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories;
+using Beep.OilandGas.Web.Theme;
+using Microsoft.AspNetCore.Routing;
 
 // ============================================
 // OIDC AUTHENTICATION SCHEME
@@ -76,11 +78,130 @@ builder.Services.AddHttpClient<ApiClient>(client =>
 });
 
 // ============================================
-// AUTHENTICATION CONFIGURATION (Optional - can be added later)
+// AUTHENTICATION CONFIGURATION
 // ============================================
+const string OIDC_SCHEME = "oidc";
+
+// Add cascading authentication state for Blazor
 builder.Services.AddCascadingAuthenticationState();
-// TODO: Add authentication if needed
-// builder.Services.AddScoped<AuthenticationStateProvider, OidcAuthenticationStateProvider>();
+
+// Register the OIDC-compatible AuthenticationStateProvider
+builder.Services.AddScoped<AuthenticationStateProvider, Beep.OilandGas.Web.Components.Account.OidcAuthenticationStateProvider>();
+
+// Get IdentityServer URL for OIDC configuration
+var identityServerUrl = builder.Configuration["IdentityServer:BaseUrl"] ?? "https://localhost:7062/";
+
+// Configure Authentication: Cookie as DEFAULT scheme, OIDC for CHALLENGE
+builder.Services.AddAuthentication(options =>
+{
+    // Cookie is the default - this is what Blazor uses to check if user is authenticated
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    // OIDC is used when we need to challenge (redirect to login)
+    options.DefaultChallengeScheme = OIDC_SCHEME;
+    options.DefaultSignOutScheme = OIDC_SCHEME;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.Cookie.Name = ".Beep.OilGas.Auth";
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.HttpOnly = true;
+    options.ExpireTimeSpan = TimeSpan.FromDays(14);
+    options.SlidingExpiration = true;
+    
+    // These paths trigger OIDC challenge when user is not authenticated
+    options.LoginPath = "/authentication/login";
+    options.LogoutPath = "/authentication/logout";
+    options.AccessDeniedPath = "/access-denied";
+})
+.AddOpenIdConnect(OIDC_SCHEME, options =>
+{
+    // After OIDC login, create a cookie
+    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.SignOutScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    
+    options.Authority = identityServerUrl;
+    options.ClientId = "beep_oilgas_web";
+    options.ClientSecret = "web_secret";
+    options.ResponseType = OpenIdConnectResponseType.Code;
+    options.UsePkce = true;
+    
+    // Scopes - offline_access is required for refresh tokens
+    options.Scope.Clear();
+    options.Scope.Add("openid");
+    options.Scope.Add("profile");
+    options.Scope.Add("email");
+    options.Scope.Add("roles");
+    options.Scope.Add("beep-api");
+    options.Scope.Add("offline_access"); // Required for token refresh
+    
+    // IMPORTANT: Configure claim mapping for Blazor
+    options.MapInboundClaims = false;
+    options.TokenValidationParameters.NameClaimType = "name";
+    options.TokenValidationParameters.RoleClaimType = "role";
+    options.GetClaimsFromUserInfoEndpoint = true;
+    options.SaveTokens = true;
+    
+    // Callback paths
+    options.CallbackPath = "/signin-oidc";
+    options.SignedOutCallbackPath = "/signout-callback-oidc";
+    options.RemoteSignOutPath = "/signout-oidc";
+    
+    // Development settings
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+    
+    // Cookie settings to fix correlation issues
+    options.CorrelationCookie.SameSite = SameSiteMode.None;
+    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.NonceCookie.SameSite = SameSiteMode.None;
+    options.NonceCookie.SecurePolicy = CookieSecurePolicy.Always;
+    
+    // Add client_id to the authorization request so IdentityServer can apply the correct branding
+    options.Events = new OpenIdConnectEvents
+    {
+        OnRedirectToIdentityProvider = context =>
+        {
+            // Add client_id as a query parameter to the authorization request
+            // This allows IdentityServer to detect which client is requesting authentication
+            // and apply the appropriate branding (BeepOilGasTheme)
+            context.ProtocolMessage.SetParameter("client_id", "beep_oilgas_web");
+            return Task.CompletedTask;
+        }
+    };
+});
+
+builder.Services.AddAuthorization();
+
+// ============================================
+// IDENTITY SERVER HTTP CLIENT
+// ============================================
+// HttpClient for communicating with Identity Server (for branding registration)
+builder.Services.AddHttpClient("IdentityServer", client =>
+{
+    client.BaseAddress = new Uri(identityServerUrl);
+    client.Timeout = TimeSpan.FromSeconds(30); // Increase timeout to 30 seconds
+})
+.ConfigurePrimaryHttpMessageHandler(() => 
+{
+    var handler = new HttpClientHandler();
+    // In development, skip certificate validation for self-signed certs
+    if (builder.Environment.IsDevelopment())
+    {
+        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+    }
+    return handler;
+});
+
+// ============================================
+// THEME PROVIDER
+// ============================================
+builder.Services.AddSingleton<IThemeProvider, ThemeProvider>();
+
+// ============================================
+// BRANDING REGISTRATION SERVICE
+// ============================================
+// Registers branding with Identity Server on startup so login/register pages show the correct theme
+builder.Services.AddHostedService<Beep.OilandGas.Web.Services.BrandingRegistrationService>();
 
 // ============================================
 // APPLICATION SERVICES
@@ -113,11 +234,25 @@ builder.Services.AddScoped<IPPDMTreeBuilder>(sp =>
 //     return new PPDM39DefaultsRepository(editor, "PPDM39", metadata);
 // });
 
+// Theme provider - loads theme from Theme/OilGasTheme.json
+builder.Services.AddSingleton<IThemeProvider, Beep.OilandGas.Web.Theme.ThemeProvider>();
+
 // Controllers support
 builder.Services.AddControllersWithViews();
 
 // Razor Pages support
 builder.Services.AddRazorPages();
+
+// Add CORS for static files (so IdentityServer can fetch logos)
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 var app = builder.Build();
 
@@ -137,10 +272,11 @@ else
 app.UseRequestLocalization();
 app.UseHttpsRedirection();
 
-// Authentication (if configured)
-// app.UseAuthentication();
-// app.UseAuthorization();
+// IMPORTANT: Authentication must come before Authorization
+app.UseAuthentication();
+app.UseAuthorization();
 
+app.UseCors();
 app.UseStaticFiles();
 app.UseRouting();
 
@@ -149,6 +285,9 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<Beep.OilandGas.Web.App>()
     .AddInteractiveServerRenderMode();
+
+// Map authentication endpoints (login/logout)
+app.MapGroup("/authentication").MapLoginAndLogout();
 
 app.Run();
 

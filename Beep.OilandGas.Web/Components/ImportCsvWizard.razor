@@ -817,20 +817,8 @@
 
     private string GetApiEndpoint(string tableName)
     {
-        var endpointMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "STRAT_COLUMN", "stratigraphy/columns" },
-            { "STRAT_UNIT", "stratigraphy/units" },
-            { "STRAT_HIERARCHY", "stratigraphy/hierarchy" },
-            { "STRAT_WELL_SECTION", "stratigraphy/well-sections" },
-            { "WELL", "well" },
-            { "WELL_STATUS", "well/status" },
-            { "FIELD", "production/fields" },
-            { "POOL", "production/pools" },
-            { "SURVEY", "seismic/surveys" }
-        };
-
-        return endpointMap.TryGetValue(tableName, out var endpoint) ? endpoint : string.Empty;
+        // Use generic PPDM39 data management endpoint for all tables
+        return $"ppdm39/tables/{tableName.ToLowerInvariant()}";
     }
 
     private string FormatFileSize(long bytes)
@@ -867,17 +855,4 @@
         public string CsvColumn { get; set; } = string.Empty;
         public string EntityProperty { get; set; } = string.Empty;
     }
-}
-
-/// <summary>
-/// Represents a foreign key validation error
-/// </summary>
-public class ForeignKeyValidationError
-{
-    public int RowNumber { get; set; }
-    public string ForeignKeyColumn { get; set; } = string.Empty;
-    public string ReferencedTable { get; set; } = string.Empty;
-    public string ReferencedPrimaryKeyColumn { get; set; } = string.Empty;
-    public string ForeignKeyValue { get; set; } = string.Empty;
-    public string ErrorMessage { get; set; } = string.Empty;
 }

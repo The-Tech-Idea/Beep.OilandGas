@@ -1,7 +1,7 @@
 @using Beep.OilandGas.PPDM39.Core.Tree
 @using MudBlazor
 
-<MudPaper Class="pa-2" Elevation="1">
+<div Class="pa-2">
     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
         <MudTextField Value="@_searchText" 
                       ValueChanged="EventCallback.Factory.Create<string>(this, OnSearchTextChanged)"
@@ -30,13 +30,13 @@
             @_errorMessage
         </MudAlert>
     }
-    else if (_treeItems.Count == 0 && !string.IsNullOrWhiteSpace(_searchText))
+    else if (_treeItemData.Count == 0 && !string.IsNullOrWhiteSpace(_searchText))
     {
         <MudAlert Severity="Severity.Info" Class="my-2">
             No tables found matching "@_searchText"
         </MudAlert>
     }
-    else if (_treeItems.Count == 0)
+    else if (_treeItemData.Count == 0)
     {
         <MudAlert Severity="Severity.Warning" Class="my-2">
             No data available. Check that PPDM39Metadata.json and PPDM39SubjectAreasAndModules.json are accessible.
@@ -44,17 +44,35 @@
     }
     else
     {
-        <MudNavMenu>
-            @RenderTreeNodes(_treeItems)
-        </MudNavMenu>
+        <MudTreeView Items="@_treeItemData" 
+                     SelectedValue="_selectedTableId"
+                     SelectedValueChanged="EventCallback.Factory.Create<string?>(this, OnSelectionChanged)"
+                     SelectionMode="SelectionMode.SingleSelection"
+                     Hover="true"
+                     Dense="true"
+                     @ref="_treeView"
+                     FilterFunc="@MatchesSearch">
+            <ItemTemplate>
+                <MudTreeViewItem @bind-Expanded="@context.Expanded" 
+                                 Items="@context.Children" 
+                                 Value="@context.Value"
+                                 Icon="@context.Icon" 
+                                 IconExpanded="@GetExpandedIcon(context)"
+                                 Text="@GetDisplayText(context)"
+                                 Visible="@context.Visible" />
+            </ItemTemplate>
+        </MudTreeView>
     }
-</MudPaper>
+</div>
 
 @code {
     private PPDMTreeNode? _rootNode;
-    private List<PPDMTreeNode> _treeItems = new();
+    private List<TreeItemData<string?>> _treeItemData = new();
     private string _searchText = string.Empty;
     private bool _isLoading = false;
+    private string? _selectedTableId;
+    private MudTreeView<string?>? _treeView;
+    private Dictionary<string, PPDMTreeNode> _nodeMap = new();
 
     [Parameter] public EventCallback<PPDMTreeNode> OnTableSelected { get; set; }
     [Inject] IPPDMTreeBuilder TreeBuilder { get; set; } = null!;
@@ -63,6 +81,7 @@
     {
         await LoadTree();
     }
+
 
     private string? _errorMessage;
 
@@ -73,13 +92,12 @@
         try
         {
             _rootNode = await TreeBuilder.BuildTreeAsync(includeRelationships: false, includeColumns: false);
-            // Ensure all nodes are visible
             if (_rootNode != null)
             {
                 SetAllNodesVisible(_rootNode);
-                _treeItems = _rootNode.Children.ToList();
+                _treeItemData = ConvertToTreeItemData(_rootNode.Children);
                 
-                if (_treeItems.Count == 0)
+                if (_treeItemData.Count == 0)
                 {
                     _errorMessage = "Tree built successfully but no subject areas found. Check metadata configuration.";
                 }
@@ -114,96 +132,132 @@
         }
     }
 
+    private List<TreeItemData<string?>> ConvertToTreeItemData(List<PPDMTreeNode> nodes)
+    {
+        var result = new List<TreeItemData<string?>>();
+        foreach (var node in nodes.Where(n => n.IsVisible))
+        {
+            var treeItem = ConvertNodeToTreeItem(node);
+            if (treeItem != null)
+            {
+                result.Add(treeItem);
+            }
+        }
+        return result;
+    }
+
+    private TreeItemData<string?>? ConvertNodeToTreeItem(PPDMTreeNode node)
+    {
+        // Only include Subject Areas, Modules, Subcategories, and Tables
+        if (node.NodeType == PPDMTreeNodeType.Root || 
+            node.NodeType == PPDMTreeNodeType.Relationship ||
+            node.NodeType == PPDMTreeNodeType.PrimaryKey ||
+            node.NodeType == PPDMTreeNodeType.Column)
+        {
+            return null;
+        }
+
+        var nodeId = node.Id ?? Guid.NewGuid().ToString();
+        _nodeMap[nodeId] = node;
+
+        var treeItem = new TreeItemData<string?>
+        {
+            Value = nodeId,
+            Text = node.Text,
+            Icon = GetIcon(node.NodeType),
+            Expanded = node.IsExpanded,
+            Visible = node.IsVisible,
+            Children = ConvertToTreeItemData(node.Children)
+        };
+
+        return treeItem;
+    }
+
     private async Task OnSearchTextChanged(string searchText)
     {
         _searchText = searchText;
-        await OnSearchChanged(searchText);
-    }
-
-    private async Task OnSearchChanged(string searchText)
-    {
-        if (_rootNode == null) return;
-        
-        _rootNode = await TreeBuilder.FilterTreeAsync(_rootNode, searchText);
-        // After filtering, get all visible children (subject areas)
-        _treeItems = _rootNode.Children.Where(c => c.IsVisible).ToList();
-        StateHasChanged();
+        if (_treeView != null)
+        {
+            await _treeView.FilterAsync();
+        }
     }
 
     private async Task ClearSearch()
     {
         _searchText = string.Empty;
-        await OnSearchChanged(string.Empty);
-    }
-
-    private void OnNodeClicked(PPDMTreeNode node)
-    {
-        if (node.NodeType == PPDMTreeNodeType.Table)
+        if (_treeView != null)
         {
-            OnTableSelected.InvokeAsync(node);
+            await _treeView.FilterAsync();
         }
     }
 
-    private RenderFragment RenderTreeNodes(List<PPDMTreeNode> nodes)
+    private Task<bool> MatchesSearch(TreeItemData<string?> item)
     {
-        return builder =>
+        if (string.IsNullOrWhiteSpace(_searchText))
         {
-            // Filter to only visible nodes
-            var visibleNodes = nodes.Where(n => n.IsVisible).ToList();
-            
-            foreach (var node in visibleNodes)
+            return Task.FromResult(true);
+        }
+
+        if (string.IsNullOrEmpty(item.Text))
+        {
+            return Task.FromResult(false);
+        }
+
+        // Check if the item itself matches
+        if (item.Text.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
+        {
+            return Task.FromResult(true);
+        }
+
+        // Check if any child matches (if so, show parent)
+        if (item.Children != null && item.Children.Any())
+        {
+            foreach (var child in item.Children)
             {
-                if (node.NodeType == PPDMTreeNodeType.Table)
+                if (MatchesSearch(child).Result)
                 {
-                    // Render table as clickable link
-                    builder.OpenComponent<MudNavLink>(0);
-                    builder.AddAttribute(1, "Href", "#");
-                    builder.AddAttribute(2, "Icon", GetIcon(node.NodeType));
-                    builder.AddAttribute(3, "ChildContent", (RenderFragment)((b) =>
-                    {
-                        b.AddContent(4, node.Text);
-                    }));
-                    builder.AddEventPreventDefaultAttribute(5, "onclick", true);
-                    builder.AddAttribute(6, "onclick", EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, () => OnNodeClicked(node)));
-                    builder.CloseComponent();
-                }
-                else
-                {
-                    // For non-table nodes (Subject Areas, Modules, Subcategories)
-                    // Get visible children only
-                    var visibleChildren = (node.Children ?? new List<PPDMTreeNode>())
-                        .Where(c => c.IsVisible)
-                        .ToList();
-                    
-                    // Build title with count if available
-                    var title = node.Text;
-                    if (node.Data != null && node.Data.ContainsKey("TableCount"))
-                    {
-                        var tableCount = node.Data["TableCount"];
-                        if (tableCount != null)
-                        {
-                            title = $"{node.Text} ({tableCount})";
-                        }
-                    }
-                    else if (visibleChildren.Count > 0 && node.NodeType == PPDMTreeNodeType.Module)
-                    {
-                        // Show count of visible tables in module
-                        var tableCount = visibleChildren.Count(c => c.NodeType == PPDMTreeNodeType.Table);
-                        if (tableCount > 0)
-                        {
-                            title = $"{node.Text} ({tableCount})";
-                        }
-                    }
-                    
-                    builder.OpenComponent<MudNavGroup>(7);
-                    builder.AddAttribute(8, "Title", title);
-                    builder.AddAttribute(9, "Icon", GetIcon(node.NodeType));
-                    builder.AddAttribute(10, "Expanded", node.IsExpanded);
-                    builder.AddAttribute(11, "ChildContent", RenderTreeNodes(visibleChildren));
-                    builder.CloseComponent();
+                    return Task.FromResult(true);
                 }
             }
-        };
+        }
+
+        return Task.FromResult(false);
+    }
+
+    private string GetDisplayText(TreeItemData<string?> item)
+    {
+        if (item.Value == null || !_nodeMap.TryGetValue(item.Value, out var node))
+        {
+            return item.Text ?? string.Empty;
+        }
+
+        // Add count for modules and subject areas
+        if (node.NodeType == PPDMTreeNodeType.Module || node.NodeType == PPDMTreeNodeType.SubjectArea)
+        {
+            if (node.Data != null && node.Data.TryGetValue("TableCount", out var tableCount))
+            {
+                var count = tableCount?.ToString() ?? "0";
+                return $"{node.Text} ({count})";
+            }
+        }
+
+        return node.Text;
+    }
+
+    private string GetExpandedIcon(TreeItemData<string?> item)
+    {
+        if (item.Value == null || !_nodeMap.TryGetValue(item.Value, out var node))
+        {
+            return GetIcon(PPDMTreeNodeType.Module);
+        }
+
+        // Use folder open icon when expanded for folders
+        if (node.NodeType == PPDMTreeNodeType.SubjectArea || node.NodeType == PPDMTreeNodeType.Module)
+        {
+            return Icons.Material.Filled.FolderOpen;
+        }
+
+        return GetIcon(node.NodeType);
     }
 
     private string GetIcon(PPDMTreeNodeType nodeType)
@@ -221,4 +275,48 @@
             _ => Icons.Material.Filled.Circle
         };
     }
+
+    private async Task OnSelectionChanged(string? selectedId)
+    {
+        _selectedTableId = selectedId;
+        await HandleSelection(selectedId);
+    }
+
+    private async Task HandleSelection(string? selectedId)
+    {
+        if (string.IsNullOrWhiteSpace(selectedId))
+        {
+            Console.WriteLine("PPDMTreeView: HandleSelection - selectedId is null or empty");
+            return;
+        }
+
+        if (!_nodeMap.TryGetValue(selectedId, out var node))
+        {
+            Console.WriteLine($"PPDMTreeView: HandleSelection - Node not found in map for ID: {selectedId}");
+            return;
+        }
+
+        Console.WriteLine($"PPDMTreeView: HandleSelection - Node found: {node.Text}, Type: {node.NodeType}");
+        
+        if (node.NodeType == PPDMTreeNodeType.Table)
+        {
+            Console.WriteLine($"PPDMTreeView: Invoking OnTableSelected for table: {node.Text}");
+            Console.WriteLine($"PPDMTreeView: OnTableSelected.HasDelegate = {OnTableSelected.HasDelegate}");
+            
+            if (OnTableSelected.HasDelegate)
+            {
+                await OnTableSelected.InvokeAsync(node);
+                Console.WriteLine($"PPDMTreeView: OnTableSelected.InvokeAsync completed");
+            }
+            else
+            {
+                Console.WriteLine($"PPDMTreeView: ERROR - OnTableSelected has no delegate!");
+            }
+        }
+        else
+        {
+            Console.WriteLine($"PPDMTreeView: Node is not a table, it's: {node.NodeType}");
+        }
+    }
+
 }

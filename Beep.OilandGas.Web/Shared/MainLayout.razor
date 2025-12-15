@@ -1,5 +1,8 @@
 ﻿@inherits LayoutComponentBase
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Components.Authorization
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="@_isDarkMode" />
 <MudPopoverProvider />
@@ -8,48 +11,115 @@
 
 <MudLayout>
     <MudAppBar Elevation="1" Style="background: var(--mud-palette-primary);">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Style="color: white; margin-left: 16px;">Beep Oil & Gas</MudText>
+        <MudNavLink Href="/" Match="NavLinkMatch.All" Style="color: white; text-decoration: none; display: flex; align-items: center; height: 100%; margin-left: 16px; padding: 8px;">
+            <img src="/imgs/BeepOGDM.png" alt="Beep Oil & Gas" style="height: 40px; width: auto; object-fit: contain;" onerror="this.style.display='none';" />
+        </MudNavLink>
         <MudSpacer />
         
-        <!-- Horizontal Navigation Menu -->
-        <NavMenu />
+        <!-- Horizontal Navigation Menu - Hidden on landing page -->
+        @if (!_isLandingPage)
+        {
+            <div style="display: flex; align-items: center; height: 100%;">
+                <NavMenu />
+            </div>
+            <MudSpacer />
+        }
         
-        <MudSpacer />
+        <!-- User Actions - Single Icon with Menu -->
+        <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Style="margin-right: 8px;">
+            <ActivatorContent>
+                <MudIconButton Icon="@(_isAuthenticated ? Icons.Material.Filled.AccountCircle : Icons.Material.Filled.Login)"
+                               Color="Color.Inherit"
+                               Style="color: white;"
+                               Title="@(_isAuthenticated ? "User Account" : "Login")" />
+            </ActivatorContent>
+            <ChildContent>
+                @if (_isAuthenticated)
+                {
+                    <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/profile"); })">
+                        <MudIcon Icon="@Icons.Material.Filled.Person" Style="margin-right: 8px;" />
+                        Profile
+                    </MudMenuItem>
+                    <MudMenuItem OnClick="@Logout">
+                        <MudIcon Icon="@Icons.Material.Filled.Logout" Style="margin-right: 8px;" />
+                        Logout
+                    </MudMenuItem>
+                }
+                else
+                {
+                    <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/login"); })">
+                        <MudIcon Icon="@Icons.Material.Filled.Login" Style="margin-right: 8px;" />
+                        Login
+                    </MudMenuItem>
+                    <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/register"); })">
+                        <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Style="margin-right: 8px;" />
+                        Register
+                    </MudMenuItem>
+                }
+            </ChildContent>
+        </MudMenu>
         
         <!-- Theme Toggle -->
         <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
                        Color="Color.Inherit"
-                       Style="color: white;"
-                       OnClick="@ToggleDarkMode" />
+                       Style="color: white; margin-right: 16px;"
+                       OnClick="@ToggleDarkMode"
+                       Title="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")" />
     </MudAppBar>
     
-    <!-- Sidebar Drawer with PPDM Tree View -->
-    <MudDrawer @bind-Open="@_drawerOpen" Elevation="0" Variant="@DrawerVariant.Responsive" 
-               ClipMode="DrawerClipMode.Docked"
-               Style="width: 300px;">
-        <MudPaper Class="pa-2" Elevation="0" Style="height: 100%; overflow-y: auto;">
-            <MudText Typo="Typo.h6" Class="mb-2">PPDM39 Tables</MudText>
-            <PPDMTreeView OnTableSelected="OnTableSelected" />
-        </MudPaper>
-    </MudDrawer>
-    
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
-            @Body
-        </MudContainer>
+        <div style="min-height: calc(100vh - 140px);">
+            <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+                @Body
+            </MudContainer>
+        </div>
+        
+        <!-- Footer -->
+        <MudPaper Elevation="0" Style="background: var(--mud-palette-surface); border-top: 1px solid var(--mud-palette-divider); margin-top: auto;">
+            <MudContainer MaxWidth="MaxWidth.False" Class="py-3">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                        © @DateTime.Now.Year Beep Oil & Gas. All rights reserved.
+                    </MudText>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <img src="/imgs/companylogo.svg" alt="The Tech Idea" style="height: 20px; width: auto;" onerror="this.style.display='none';" />
+                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); display: flex; align-items: center; gap: 4px;">
+                            Powered by <strong>The Tech Idea</strong>™
+                        </MudText>
+                    </MudStack>
+                </MudStack>
+            </MudContainer>
+        </MudPaper>
     </MudMainContent>
 </MudLayout>
 
 @code {
     private bool _isDarkMode = false;
-    private bool _drawerOpen = true;
     private MudTheme _theme = new();
+    private bool _isAuthenticated = false;
+    private bool _isLandingPage = false;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadThemePreference();
+        await CheckAuthenticationStatus();
+        CheckIfLandingPage();
         RefreshTheme();
+    }
+    
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            CheckIfLandingPage();
+        }
+    }
+    
+    private void CheckIfLandingPage()
+    {
+        var uri = NavigationManager.Uri;
+        _isLandingPage = uri.EndsWith("/") || uri.EndsWith("/index") || uri.Contains("/?");
+        StateHasChanged();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -57,6 +127,7 @@
         if (firstRender)
         {
             await LoadThemePreference();
+            await CheckAuthenticationStatus();
             RefreshTheme();
             StateHasChanged();
         }
@@ -83,21 +154,6 @@
         _theme = new MudTheme();
     }
 
-    private void ToggleDrawer()
-    {
-        _drawerOpen = !_drawerOpen;
-    }
-
-    private void OnTableSelected(PPDMTreeNode tableNode)
-    {
-        // Handle table selection - could navigate to data management page
-        // or show the table in the main content area
-        if (tableNode.NodeType == PPDMTreeNodeType.Table)
-        {
-            // Optionally navigate to data management page with selected table
-            // NavigationManager.NavigateTo($"/ppdm39/data-management?table={tableNode.Text}");
-        }
-    }
 
     private async Task ToggleDarkMode()
     {
@@ -112,4 +168,45 @@
             // Ignore storage errors
         }
     }
+
+    private async Task CheckAuthenticationStatus()
+    {
+        try
+        {
+            // Check authentication state from AuthenticationStateProvider
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var wasAuthenticated = _isAuthenticated;
+            _isAuthenticated = authState.User?.Identity?.IsAuthenticated ?? false;
+            
+            // If authentication status changed, update UI
+            if (wasAuthenticated != _isAuthenticated)
+            {
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            _isAuthenticated = false;
+        }
+    }
+    
+    // Method to refresh auth status from other components
+    public async Task RefreshAuthStatus()
+    {
+        await CheckAuthenticationStatus();
+    }
+
+    private async Task Logout()
+    {
+        try
+        {
+            // Redirect to IdentityServer logout endpoint
+            NavigationManager.NavigateTo("/authentication/logout?returnUrl=/", forceLoad: true);
+        }
+        catch
+        {
+            // Ignore errors
+        }
+    }
+
 }

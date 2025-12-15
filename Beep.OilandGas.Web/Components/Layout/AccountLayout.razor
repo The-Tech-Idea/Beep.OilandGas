@@ -1,0 +1,27 @@
+@inherits LayoutComponentBase
+@inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
+
+<MudThemeProvider Theme="@_theme" IsDarkMode="@_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudMainContent Style="background: var(--mud-palette-background); min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private MudTheme _theme = new();
+    private bool _isDarkMode;
+
+    protected override void OnInitialized()
+    {
+        _theme = ThemeProvider.GetMudTheme();
+        _isDarkMode = ThemeProvider.IsDarkModeDefault;
+    }
+}
+
