@@ -27,7 +27,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             _connectionName = connectionName;
         }
 
-        private List<T> ConvertToList<T>(dynamic units) where T : class
+        private List<T> ConvertToList<T>(object units) where T : class
         {
             var result = new List<T>();
             if (units == null) return result;
@@ -75,7 +75,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             }
 
             var units = await pdenUow.Get(filters);
-            var pdenList = ConvertToList<PDEN>(units);
+            List<PDEN> pdenList = ConvertToList<PDEN>(units);
 
             return pdenList.Select(p => new EnhancedRecoveryOperationDto
             {
@@ -157,12 +157,12 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             }
 
             var units = await pdenUow.Get(filters);
-            var pdenList = ConvertToList<PDEN>(units);
+            List<PDEN> pdenList = ConvertToList<PDEN>(units);
 
             return pdenList.Select(p => new InjectionOperationDto
             {
                 OperationId = p.PDEN_ID ?? string.Empty,
-                WellUWI = p.UWI ?? string.Empty,
+                WellUWI = string.Empty, // PDEN doesn't have UWI - injection operations may be field-level
                 InjectionType = p.PDEN_SUBTYPE ?? "INJECTION",
                 OperationDate = p.CURRENT_STATUS_DATE,
                 Status = p.ACTIVE_IND == "Y" ? "Active" : "Inactive"
@@ -184,7 +184,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             }
 
             var units = await pdenUow.Get(filters);
-            var pdenList = ConvertToList<PDEN>(units);
+            List<PDEN> pdenList = ConvertToList<PDEN>(units);
 
             return pdenList.Select(p => new WaterFloodingDto
             {
@@ -210,7 +210,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             }
 
             var units = await pdenUow.Get(filters);
-            var pdenList = ConvertToList<PDEN>(units);
+            List<PDEN> pdenList = ConvertToList<PDEN>(units);
 
             return pdenList.Select(p => new GasInjectionDto
             {

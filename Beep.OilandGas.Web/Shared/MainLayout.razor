@@ -2,7 +2,9 @@
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
+@inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
 @using Microsoft.AspNetCore.Components.Authorization
+@using Beep.OilandGas.Web.Theme
 
 <MudThemeProvider Theme="@_theme" IsDarkMode="@_isDarkMode" />
 <MudPopoverProvider />
@@ -10,62 +12,65 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1" Style="background: var(--mud-palette-primary);">
-        <MudNavLink Href="/" Match="NavLinkMatch.All" Style="color: white; text-decoration: none; display: flex; align-items: center; height: 100%; margin-left: 16px; padding: 8px;">
-            <img src="/imgs/BeepOGDM.png" alt="Beep Oil & Gas" style="height: 40px; width: auto; object-fit: contain;" onerror="this.style.display='none';" />
-        </MudNavLink>
-        <MudSpacer />
-        
-        <!-- Horizontal Navigation Menu - Hidden on landing page -->
-        @if (!_isLandingPage)
-        {
+    @if (!_isLandingPage)
+    {
+        <MudAppBar Elevation="1" Style="background: var(--mud-palette-primary);">
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Class="app-logo-link">
+                <img src="@(_branding.LogoUrl ?? "/imgs/BeepOGDM.png")" 
+                     alt="@(_branding.AppName ?? "Beep Oil & Gas")" 
+                     class="app-logo" 
+                     onerror="this.style.display='none';" />
+            </MudNavLink>
+            <MudSpacer />
+            
+            <!-- Horizontal Navigation Menu -->
             <div style="display: flex; align-items: center; height: 100%;">
                 <NavMenu />
             </div>
             <MudSpacer />
-        }
-        
-        <!-- User Actions - Single Icon with Menu -->
-        <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Style="margin-right: 8px;">
-            <ActivatorContent>
-                <MudIconButton Icon="@(_isAuthenticated ? Icons.Material.Filled.AccountCircle : Icons.Material.Filled.Login)"
-                               Color="Color.Inherit"
-                               Style="color: white;"
-                               Title="@(_isAuthenticated ? "User Account" : "Login")" />
-            </ActivatorContent>
-            <ChildContent>
-                @if (_isAuthenticated)
-                {
-                    <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/profile"); })">
-                        <MudIcon Icon="@Icons.Material.Filled.Person" Style="margin-right: 8px;" />
-                        Profile
-                    </MudMenuItem>
-                    <MudMenuItem OnClick="@Logout">
-                        <MudIcon Icon="@Icons.Material.Filled.Logout" Style="margin-right: 8px;" />
-                        Logout
-                    </MudMenuItem>
-                }
-                else
-                {
-                    <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/login"); })">
-                        <MudIcon Icon="@Icons.Material.Filled.Login" Style="margin-right: 8px;" />
-                        Login
-                    </MudMenuItem>
-                    <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/register"); })">
-                        <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Style="margin-right: 8px;" />
-                        Register
-                    </MudMenuItem>
-                }
-            </ChildContent>
-        </MudMenu>
-        
-        <!-- Theme Toggle -->
-        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                       Color="Color.Inherit"
-                       Style="color: white; margin-right: 16px;"
-                       OnClick="@ToggleDarkMode"
-                       Title="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")" />
-    </MudAppBar>
+            
+            <!-- User Actions - Single Icon with Menu -->
+            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Style="margin-right: 8px;">
+                <ActivatorContent>
+                    <MudIconButton Icon="@(_isAuthenticated ? Icons.Material.Filled.AccountCircle : Icons.Material.Filled.Login)"
+                                   Color="Color.Inherit"
+                                   Style="color: white;"
+                                   Title="@(_isAuthenticated ? "User Account" : "Login")" />
+                </ActivatorContent>
+                <ChildContent>
+                    @if (_isAuthenticated)
+                    {
+                        <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/profile"); })">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Style="margin-right: 8px;" />
+                            Profile
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@Logout">
+                            <MudIcon Icon="@Icons.Material.Filled.Logout" Style="margin-right: 8px;" />
+                            Logout
+                        </MudMenuItem>
+                    }
+                    else
+                    {
+                        <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/login"); })">
+                            <MudIcon Icon="@Icons.Material.Filled.Login" Style="margin-right: 8px;" />
+                            Login
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/register"); })">
+                            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Style="margin-right: 8px;" />
+                            Register
+                        </MudMenuItem>
+                    }
+                </ChildContent>
+            </MudMenu>
+            
+            <!-- Theme Toggle -->
+            <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                           Color="Color.Inherit"
+                           Style="color: white; margin-right: 16px;"
+                           OnClick="@ToggleDarkMode"
+                           Title="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")" />
+        </MudAppBar>
+    }
     
     <MudMainContent>
         <div style="min-height: calc(100vh - 140px);">
@@ -79,7 +84,7 @@
             <MudContainer MaxWidth="MaxWidth.False" Class="py-3">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                     <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
-                        © @DateTime.Now.Year Beep Oil & Gas. All rights reserved.
+                        @(_branding.Copyright ?? $"© {DateTime.Now.Year} {(_branding.AppName ?? "Beep Oil & Gas")}. All rights reserved.")
                     </MudText>
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
                         <img src="/imgs/companylogo.svg" alt="The Tech Idea" style="height: 20px; width: auto;" onerror="this.style.display='none';" />
@@ -98,13 +103,20 @@
     private MudTheme _theme = new();
     private bool _isAuthenticated = false;
     private bool _isLandingPage = false;
+    private BrandingConfig _branding = new();
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadThemePreference();
+        // Load theme from ThemeProvider
+        _theme = ThemeProvider.GetMudTheme();
+        _branding = ThemeProvider.GetBranding();
+        
+        // Check if dark mode is default, but allow user preference to override
+        var defaultDarkMode = ThemeProvider.IsDarkModeDefault;
+        
+        await LoadThemePreference(defaultDarkMode);
         await CheckAuthenticationStatus();
         CheckIfLandingPage();
-        RefreshTheme();
     }
     
     protected override void OnAfterRender(bool firstRender)
@@ -126,14 +138,14 @@
     {
         if (firstRender)
         {
-            await LoadThemePreference();
+            var defaultDarkMode = ThemeProvider.IsDarkModeDefault;
+            await LoadThemePreference(defaultDarkMode);
             await CheckAuthenticationStatus();
-            RefreshTheme();
             StateHasChanged();
         }
     }
 
-    private async Task LoadThemePreference()
+    private async Task LoadThemePreference(bool defaultDarkMode)
     {
         try
         {
@@ -142,16 +154,17 @@
             {
                 _isDarkMode = savedDarkMode.Value;
             }
+            else
+            {
+                // Use default from theme if no user preference
+                _isDarkMode = defaultDarkMode;
+            }
         }
         catch
         {
-            // LocalStorage may not be available during prerender
+            // LocalStorage may not be available during prerender, use default
+            _isDarkMode = defaultDarkMode;
         }
-    }
-
-    private void RefreshTheme()
-    {
-        _theme = new MudTheme();
     }
 
 

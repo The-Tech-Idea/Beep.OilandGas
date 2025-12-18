@@ -131,7 +131,7 @@ namespace Beep.OilandGas.FieldManagement.DataMapping
         /// </summary>
         public IEnumerable<ReservoirForecastProperties> MapToDomain(IEnumerable<WELL> ppdm39Entities)
         {
-            return ppdm39Entities?.Select(MapToDomain) ?? Enumerable.Empty<ReservoirForecastProperties>();
+            return ppdm39Entities?.Select<WELL, ReservoirForecastProperties>(w => ((IPPDM39Mapper<WELL, ReservoirForecastProperties>)this).MapToDomain(w)) ?? Enumerable.Empty<ReservoirForecastProperties>();
         }
 
         /// <summary>
@@ -139,7 +139,7 @@ namespace Beep.OilandGas.FieldManagement.DataMapping
         /// </summary>
         public IEnumerable<WELL> MapToPPDM39(IEnumerable<ReservoirForecastProperties> domainModels)
         {
-            return domainModels?.Select(MapToPPDM39) ?? Enumerable.Empty<WELL>();
+            return domainModels?.Select<ReservoirForecastProperties, WELL>(d => ((IPPDM39Mapper<WELL, ReservoirForecastProperties>)this).MapToPPDM39(d)) ?? Enumerable.Empty<WELL>();
         }
     }
 }

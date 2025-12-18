@@ -1,8 +1,10 @@
 ﻿@page "/"
 @inject NavigationManager NavigationManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
+@using Beep.OilandGas.Web.Theme
 
-<PageTitle>Beep Oil & Gas - Professional Oil & Gas Management Platform</PageTitle>
+<PageTitle>@(_branding.AppName ?? "Beep Oil & Gas") - @(_branding.Tagline ?? "Professional Oil & Gas Management Platform")</PageTitle>
 
 <!-- Hero Section -->
 <MudContainer MaxWidth="MaxWidth.False" Class="pa-0">
@@ -10,11 +12,18 @@
         <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; opacity: 0.1; background-image: url('/imgs/icons/offshore-platform.png'); background-size: cover; background-position: center;"></div>
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Style="position: relative; z-index: 1;">
             <MudStack Spacing="4" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="text-align: center; padding: 80px 20px;">
+                <!-- Logo -->
+                <img src="@(_branding.LogoUrl ?? "/imgs/BeepOGDM.png")" 
+                     alt="@(_branding.AppName ?? "Beep Oil & Gas")" 
+                     style="height: 120px; width: auto; object-fit: contain; margin-bottom: 24px;" 
+                     onerror="this.style.display='none';" />
+                
+                <!-- App Name -->
                 <MudText Typo="Typo.h2" Style="color: white; font-weight: 700; margin-bottom: 16px;">
-                    Welcome to Beep Oil & Gas
+                    @(_branding.AppName ?? "Beep Oil & Gas")
                 </MudText>
                 <MudText Typo="Typo.h5" Style="color: rgba(255,255,255,0.9); max-width: 700px; margin: 0 auto;">
-                    Comprehensive PPDM39-compliant data management platform for the oil and gas industry
+                    @(_branding.Tagline ?? "Comprehensive PPDM39-compliant data management platform for the oil and gas industry")
                 </MudText>
                 <MudStack Row="true" Spacing="3" Justify="Justify.Center" Class="mt-6">
                     <MudButton Variant="Variant.Filled" 
@@ -142,7 +151,7 @@
             <MudStack Spacing="4" AlignItems="AlignItems.Center" Justify="Justify.Center" Style="text-align: center;">
                 <MudText Typo="Typo.h5" Style="color: white;">Ready to Get Started?</MudText>
                 <MudText Typo="Typo.body1" Style="color: rgba(255,255,255,0.9); max-width: 600px;">
-                    Join industry leaders who trust Beep Oil & Gas for their data management needs.
+                    Join industry leaders who trust @(_branding.AppName ?? "Beep Oil & Gas") for their data management needs.
                 </MudText>
                 <MudButton Variant="Variant.Filled" 
                            Color="Color.Secondary" 
@@ -158,6 +167,13 @@
 </MudContainer>
 
 @code {
+    private BrandingConfig _branding = new();
+
+    protected override void OnInitialized()
+    {
+        _branding = ThemeProvider.GetBranding();
+    }
+
     protected override async Task OnInitializedAsync()
     {
         // Check if user is already authenticated, redirect to dashboard

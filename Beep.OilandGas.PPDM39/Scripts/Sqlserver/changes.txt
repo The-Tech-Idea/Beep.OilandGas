@@ -1,0 +1,64 @@
+Basic differences from Oracle version
+
+TAB:
+	sample_lith_desc: 
+		quoted percent column as its a reserved word in sqlserver
+
+PK:
+	No changes
+
+CK:
+	No changes
+
+FK:
+	Unaligned FK column definitions:
+		These were reordered to make sure the key ordering matches the column definition ordering
+		as defined in the table DDL.
+		
+		Affected FK definitions:
+
+		AX_A_FK
+		AX_A_FK2
+		INTCOM_PDENVS_FK
+		PDENVSO_PDENVS_FK
+		PLUVAR_A_FK
+		RSV_INTP_FK
+		RSVR_INTP_FK
+		SSICOM_SSPC_FK
+		SSICOM_SSPSC_FK
+		SSVL_SSW_FK
+		SSVV_SSW_FK
+		WACOMP_PDENVS_FK
+
+	Type mismatch:
+		WDSC_WDSS_FK1:
+			Changed to NUMERIC(8,0) FROM NUMERIC
+			well_dir_srvy_composite.COMPOSITE_OBS_NO
+			well_dir_srvy_station.DEPTH_OBS_NO_FROM NUMERIC(8,0),
+			well_dir_srvy_station.DEPTH_OBS_NO_TO NUMERIC(8,0),
+
+OUOM:
+	No changes
+
+UOM:
+	No changes
+
+RQUAL:
+	No changes
+
+RSRC:
+	No changes
+
+TCM:
+	Reformatted to make use of sp_addextendedproperty
+
+CCM:
+	Reformatted to make use of sp_addextendedproperty
+
+SYN:
+	No changes
+
+GUID:
+	Statement ordering was reversed, each 2nd row shifted up in place to fix.
+	Minor syntax difference from oracle.
+

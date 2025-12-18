@@ -173,6 +173,37 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
 
             return ipr;
         }
+
+        /// <summary>
+        /// Generates IPR curve with specified parameters (wrapper for DataFlowService).
+        /// </summary>
+        public static List<IPRPoint> GenerateIPRCurve(
+            decimal reservoirPressure,
+            decimal bubblePointPressure,
+            decimal productivityIndex,
+            decimal waterCut,
+            decimal gasOilRatio,
+            decimal oilGravity,
+            decimal formationVolumeFactor,
+            decimal oilViscosity,
+            int points = 20)
+        {
+            // Create reservoir properties from parameters
+            var reservoir = new ReservoirProperties
+            {
+                ReservoirPressure = (double)reservoirPressure,
+                BubblePointPressure = (double)bubblePointPressure,
+                ProductivityIndex = (double)productivityIndex,
+                WaterCut = (double)waterCut,
+                GasOilRatio = (double)gasOilRatio,
+                OilGravity = (double)oilGravity,
+                FormationVolumeFactor = (double)formationVolumeFactor,
+                OilViscosity = (double)oilViscosity
+            };
+
+            // Use Vogel method as default
+            return GenerateVogelIPR(reservoir, maxFlowRate: 5000, points: points);
+        }
     }
 }
 

@@ -1,0 +1,994 @@
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject IProgressTrackingClient ProgressClient
+@using Beep.OilandGas.Web.Components
+@using Beep.OilandGas.ApiService.Models
+
+<MudDialog MaxWidth="MaxWidth.Large" FullWidth="true">
+    <DialogContent>
+        <MudText Typo="Typo.h6" Class="mb-4">PPDM39 Database Setup Wizard</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+            Follow the steps below to set up your PPDM39 database
+        </MudText>
+
+        <MudStepper @bind-ActiveStep="@_activeStep" Variant="Variant.Outlined" Color="Color.Primary">
+            <!-- Step 1: Database Selection -->
+            <MudStep Title="Select Database" Icon="@Icons.Material.Filled.Storage">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3">Step 1: Select Database Type</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+                        Choose the database type you want to use for your PPDM39 database
+                    </MudText>
+
+                    <MudSelect T="string" 
+                              Label="Database Type" 
+                              Variant="Variant.Outlined"
+                              @bind-Value="@_selectedDatabaseType"
+                              Required="true"
+                              RequiredError="Database type is required">
+                        @foreach (var dbType in _availableDatabaseTypes)
+                        {
+                            <MudSelectItem Value="@dbType">@dbType</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    @if (!string.IsNullOrEmpty(_selectedDatabaseType))
+                    {
+                        <MudAlert Severity="Severity.Info" Class="mt-4">
+                            Selected: <strong>@_selectedDatabaseType</strong>
+                        </MudAlert>
+                    }
+                </MudPaper>
+            </MudStep>
+
+            <!-- Step 2: Connection Configuration -->
+            <MudStep Title="Connection Settings" Icon="@Icons.Material.Filled.Settings" Disabled="@(string.IsNullOrEmpty(_selectedDatabaseType))">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3">Step 2: Configure Connection</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+                        Enter your database connection details
+                    </MudText>
+
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@_connectionName" 
+                                         Label="Connection Name" 
+                                         Variant="Variant.Outlined" 
+                                         Required="true"
+                                         RequiredError="Connection name is required" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@_host" 
+                                         Label="Host/Server" 
+                                         Variant="Variant.Outlined" 
+                                         Required="true"
+                                         Placeholder="localhost"
+                                         RequiredError="Host is required" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField T="int" 
+                                         @bind-Value="@_port" 
+                                         Label="Port" 
+                                         Variant="Variant.Outlined"
+                                         HelperText="@($"Default: {_defaultPort}")" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@_database" 
+                                         Label="Database Name" 
+                                         Variant="Variant.Outlined" 
+                                         Required="true"
+                                         RequiredError="Database name is required" />
+                        </MudItem>
+                        @if (_selectedDatabaseType != "SQLite")
+                        {
+                            <MudItem xs="12">
+                                <MudDivider Class="my-3" />
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Schema/Database Management</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect T="string" 
+                                         Label="Schema/Database" 
+                                         Variant="Variant.Outlined"
+                                         @bind-Value="@_selectedSchema"
+                                         HelperText="@GetSchemaHelperText()">
+                                    @if (_availableSchemas != null && _availableSchemas.Any())
+                                    {
+                                        @foreach (var schema in _availableSchemas)
+                                        {
+                                            <MudSelectItem Value="@schema">@schema</MudSelectItem>
+                                        }
+                                    }
+                                    <MudSelectItem Value="@("__CREATE_NEW__")">[Create New Schema/Database]</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                @if (_selectedSchema == "__CREATE_NEW__")
+                                {
+                                    <MudTextField @bind-Value="@_newSchemaName" 
+                                                 Label="New Schema/Database Name" 
+                                                 Variant="Variant.Outlined"
+                                                 Required="true"
+                                                 HelperText="Enter a name for the new schema/database" />
+                                }
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudButton Variant="Variant.Text" 
+                                          Color="Color.Primary" 
+                                          Size="Size.Small"
+                                          StartIcon="@Icons.Material.Filled.Refresh"
+                                          OnClick="CheckSchemaPrivileges"
+                                          Disabled="@(_isCheckingPrivileges || !CanTestConnection())">
+                                    @if (_isCheckingPrivileges)
+                                    {
+                                        <text>Checking...</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Check Schema Privileges</text>
+                                    }
+                                </MudButton>
+                                @if (_privilegeCheckResult != null)
+                                {
+                                    <MudAlert Severity="@(_privilegeCheckResult.HasCreatePrivilege ? Severity.Success : Severity.Warning)" Class="mt-2">
+                                        @_privilegeCheckResult.Message
+                                        @if (_privilegeCheckResult.ExistingSchemas.Any())
+                                        {
+                                            <MudText Typo="Typo.caption" Class="mt-1">
+                                                Available schemas: @string.Join(", ", _privilegeCheckResult.ExistingSchemas)
+                                            </MudText>
+                                        }
+                                    </MudAlert>
+                                }
+                            </MudItem>
+                        }
+                        else
+                        {
+                            <MudItem xs="12">
+                                <MudAlert Severity="Severity.Info" Class="mt-2">
+                                    SQLite uses file-based databases - no schema management needed
+                                </MudAlert>
+                            </MudItem>
+                        }
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@_username" 
+                                         Label="Username" 
+                                         Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@_password" 
+                                         Label="Password" 
+                                         Variant="Variant.Outlined"
+                                         InputType="InputType.Password" />
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Primary" 
+                              Class="mt-4"
+                              StartIcon="@Icons.Material.Filled.CheckCircle"
+                              OnClick="TestConnection"
+                              Disabled="@(_isTestingConnection || !CanTestConnection())">
+                        @if (_isTestingConnection)
+                        {
+                            <text>Testing Connection...</text>
+                        }
+                        else
+                        {
+                            <text>Test Connection</text>
+                        }
+                    </MudButton>
+
+                    @if (_connectionTestResult != null)
+                    {
+                        <MudAlert Severity="@(_connectionTestResult.Success ? Severity.Success : Severity.Error)" Class="mt-4">
+                            @_connectionTestResult.Message
+                            @if (!string.IsNullOrEmpty(_connectionTestResult.ErrorDetails))
+                            {
+                                <MudText Typo="Typo.caption">@_connectionTestResult.ErrorDetails</MudText>
+                            }
+                        </MudAlert>
+                    }
+                </MudPaper>
+            </MudStep>
+
+            <!-- Step 3: Driver Installation -->
+            <MudStep Title="Driver Installation" Icon="@Icons.Material.Filled.Download" Disabled="@(_connectionTestResult == null || !_connectionTestResult.Success)">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3">Step 3: Check Driver</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+                        Verify that the required database driver is available
+                    </MudText>
+
+                    @if (_driverInfo == null)
+                    {
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  OnClick="CheckDriver"
+                                  StartIcon="@Icons.Material.Filled.Refresh">
+                            Check Driver Status
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="@(_driverInfo.IsInstalled ? Severity.Success : Severity.Warning)" Class="mb-4">
+                            <MudText Typo="Typo.body1">
+                                <strong>Driver Status:</strong> @(_driverInfo.IsInstalled ? "Installed" : "Not Installed")
+                            </MudText>
+                            <MudText Typo="Typo.body2" Class="mt-2">
+                                <strong>Package:</strong> @_driverInfo.NuGetPackage
+                            </MudText>
+                            @if (!string.IsNullOrEmpty(_driverInfo.StatusMessage))
+                            {
+                                <MudText Typo="Typo.caption" Class="mt-1">@_driverInfo.StatusMessage</MudText>
+                            }
+                        </MudAlert>
+
+                        @if (!_driverInfo.IsInstalled)
+                        {
+                            <MudAlert Severity="Severity.Info" Class="mb-4">
+                                <MudText Typo="Typo.body2">
+                                    The driver package needs to be installed. Please install it using BeepShell or manually add the NuGet package.
+                                </MudText>
+                                <MudText Typo="Typo.body2" Class="mt-2">
+                                    <strong>Package Name:</strong> @_driverInfo.NuGetPackage
+                                </MudText>
+                                <MudText Typo="Typo.caption" Class="mt-1">
+                                    Note: Automatic driver installation via the web interface is not yet available. Use BeepShell command: <code>nuget install @_driverInfo.NuGetPackage</code>
+                                </MudText>
+                            </MudAlert>
+                        }
+                    }
+                </MudPaper>
+            </MudStep>
+
+            <!-- Step 4: Script Execution (Skip in edit mode) -->
+            @if (!IsEditMode)
+            {
+                <MudStep Title="Execute Scripts" Icon="@Icons.Material.Filled.PlayArrow" Disabled="@(_driverInfo == null || !_driverInfo.IsInstalled)">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3">Step 4: Execute Database Scripts</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+                        Select which scripts to execute to create the PPDM39 database schema
+                    </MudText>
+
+                    @if (_availableScripts == null || !_availableScripts.Any())
+                    {
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  OnClick="LoadAvailableScripts"
+                                  StartIcon="@Icons.Material.Filled.Refresh">
+                            Load Available Scripts
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudSwitch T="bool" @bind-Checked="@_executeAllScripts" 
+                                  Label="Execute All Scripts (Recommended)" 
+                                  Color="Color.Primary" 
+                                  Class="mb-4" />
+
+                        @if (!_executeAllScripts)
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="mb-2">Select Scripts to Execute:</MudText>
+                            <MudTable Items="@_availableScripts" Hover="true" Dense="true" Class="mb-4">
+                                <HeaderContent>
+                                    <MudTh>Execute</MudTh>
+                                    <MudTh>Script Name</MudTh>
+                                    <MudTh>Description</MudTh>
+                                    <MudTh>Required</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd>
+                                        <MudCheckBox T="bool" @bind-Checked="@context.IsSelected" 
+                                                    Disabled="@context.IsMandatory" />
+                                    </MudTd>
+                                    <MudTd>@context.Name</MudTd>
+                                    <MudTd>@context.Description</MudTd>
+                                    <MudTd>
+                                        @if (context.IsMandatory)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Error">Required</MudChip>
+                                        }
+                                        else
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Default">Optional</MudChip>
+                                        }
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        }
+
+                        @if (!string.IsNullOrEmpty(_scriptExecutionOperationId) && _scriptExecutionProgress != null)
+                        {
+                            <ProgressDisplay OperationId="@_scriptExecutionOperationId" 
+                                           Title="Executing Scripts" 
+                                           ShowCancel="false" 
+                                           Class="mt-4" />
+                        }
+                        else
+                        {
+                            <MudButton Variant="Variant.Filled" 
+                                      Color="Color.Primary" 
+                                      OnClick="ExecuteScripts"
+                                      StartIcon="@Icons.Material.Filled.PlayArrow"
+                                      Disabled="@(_isExecutingScripts || !HasSelectedScripts())">
+                                @if (_isExecutingScripts)
+                                {
+                                    <text>Executing Scripts...</text>
+                                }
+                                else
+                                {
+                                    <text>Execute @(GetSelectedScriptCount()) Script(s)</text>
+                                }
+                            </MudButton>
+                        }
+
+                        @if (_scriptExecutionResults != null && _scriptExecutionResults.Any())
+                        {
+                            <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Execution Results:</MudText>
+                            <MudTable Items="@_scriptExecutionResults" Hover="true" Dense="true" Class="mb-4">
+                                <HeaderContent>
+                                    <MudTh>Script</MudTh>
+                                    <MudTh>Status</MudTh>
+                                    <MudTh>Message</MudTh>
+                                    <MudTh>Time</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd>@context.ScriptName</MudTd>
+                                    <MudTd>
+                                        @if (context.Success)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Success">Success</MudChip>
+                                        }
+                                        else
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Error">Failed</MudChip>
+                                        }
+                                    </MudTd>
+                                    <MudTd>
+                                        <MudText Typo="Typo.caption">@context.Message</MudText>
+                                        @if (!string.IsNullOrEmpty(context.ErrorDetails))
+                                        {
+                                            <MudText Typo="Typo.caption" Class="text-error">@context.ErrorDetails</MudText>
+                                        }
+                                    </MudTd>
+                                    <MudTd>
+                                        <MudText Typo="Typo.caption">@($"{context.ExecutionTime.TotalSeconds:F2}s")</MudText>
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+
+                            @if (_allScriptsResult != null)
+                            {
+                                <MudAlert Severity="@(_allScriptsResult.AllSucceeded ? Severity.Success : Severity.Warning)" Class="mt-4">
+                                    <MudText Typo="Typo.body1">
+                                        <strong>Summary:</strong> @_allScriptsResult.SuccessfulScripts of @_allScriptsResult.TotalScripts scripts executed successfully
+                                        @if (_allScriptsResult.FailedScripts > 0)
+                                        {
+                                            <text>(@_allScriptsResult.FailedScripts failed)</text>
+                                        }
+                                    </MudText>
+                                </MudAlert>
+                            }
+                        }
+                    }
+                </MudPaper>
+            </MudStep>
+            }
+
+            <!-- Step 5: Save Connection -->
+            <MudStep Title="@(IsEditMode ? "Update Connection" : "Save Connection")" Icon="@Icons.Material.Filled.Save" Disabled="@(!IsEditMode && (_allScriptsResult == null || !_allScriptsResult.AllSucceeded))">
+                <MudPaper Class="pa-4" Elevation="1">
+                    <MudText Typo="Typo.h6" Class="mb-3">Step 5: Save Connection</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+                        Review and save your connection configuration
+                    </MudText>
+
+                    <MudCard Class="mb-4">
+                        <MudCardContent>
+                            <MudText Typo="Typo.subtitle1" Class="mb-3">Connection Summary</MudText>
+                            <MudSimpleTable>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Connection Name:</strong></td>
+                                        <td>@_connectionName</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Database Type:</strong></td>
+                                        <td>@_selectedDatabaseType</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Host:</strong></td>
+                                        <td>@_host</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Port:</strong></td>
+                                        <td>@(_port > 0 ? _port.ToString() : _defaultPort.ToString())</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Database:</strong></td>
+                                        <td>@_database</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Username:</strong></td>
+                                        <td>@(!string.IsNullOrEmpty(_username) ? _username : "(not set)")</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Scripts Executed:</strong></td>
+                                        <td>@(_allScriptsResult?.SuccessfulScripts ?? 0) of @(_allScriptsResult?.TotalScripts ?? 0)</td>
+                                    </tr>
+                                </tbody>
+                            </MudSimpleTable>
+                        </MudCardContent>
+                    </MudCard>
+
+                    <MudSwitch T="bool" @bind-Checked="@_testAfterSave" 
+                              Label="Test connection after saving" 
+                              Color="Color.Primary" 
+                              Class="mb-2" />
+
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Success" 
+                              Size="Size.Large"
+                              StartIcon="@Icons.Material.Filled.Save"
+                              OnClick="SaveConnection"
+                              Disabled="@(_isSavingConnection)">
+                        @if (_isSavingConnection)
+                        {
+                            <text>Saving...</text>
+                        }
+                        else
+                        {
+                            <text>Save Connection</text>
+                        }
+                    </MudButton>
+
+                    @if (_saveResult != null)
+                    {
+                        <MudAlert Severity="@(_saveResult.Success ? Severity.Success : Severity.Error)" Class="mt-4">
+                            @_saveResult.Message
+                            @if (_saveResult.TestResult != null)
+                            {
+                                <MudText Typo="Typo.body2" Class="mt-2">
+                                    Connection Test: @(_saveResult.TestResult.Success ? "Success" : "Failed")
+                                    @if (!string.IsNullOrEmpty(_saveResult.TestResult.ErrorDetails))
+                                    {
+                                        <MudText Typo="Typo.caption">@_saveResult.TestResult.ErrorDetails</MudText>
+                                    }
+                                </MudText>
+                            }
+                        </MudAlert>
+                    }
+                </MudPaper>
+            </MudStep>
+        </MudStepper>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        @if (_activeStep > 0)
+        {
+            <MudButton Variant="Variant.Text" OnClick="PreviousStep">Previous</MudButton>
+        }
+        @if (_activeStep < (IsEditMode ? 2 : 4))
+        {
+            <MudButton Color="Color.Primary" 
+                      Variant="Variant.Filled"
+                      OnClick="NextStep"
+                      Disabled="@(!CanProceedToNextStep())">
+                Next
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public ConnectionConfig? Connection { get; set; }
+    [Parameter] public bool IsEditMode { get; set; } = false;
+
+    private int _activeStep = 0;
+    private List<string> _availableDatabaseTypes = new();
+    private string _selectedDatabaseType = string.Empty;
+    private string _connectionName = string.Empty;
+    private string _host = "localhost";
+    private int _port = 0;
+    private int _defaultPort = 0;
+    private string _database = string.Empty;
+    private string? _username;
+    private string? _password;
+    private string? _selectedSchema;
+    private string? _newSchemaName;
+    private List<string>? _availableSchemas;
+    private bool _isCheckingPrivileges = false;
+    private SchemaPrivilegeCheckResult? _privilegeCheckResult;
+    private bool _isTestingConnection = false;
+    private ConnectionTestResult? _connectionTestResult;
+    private DriverInfo? _driverInfo;
+    private List<ScriptInfo>? _availableScripts;
+    private bool _executeAllScripts = true;
+    private bool _isExecutingScripts = false;
+    private List<ScriptExecutionResult>? _scriptExecutionResults;
+    private AllScriptsExecutionResult? _allScriptsResult;
+    private string? _scriptExecutionOperationId;
+    private ProgressUpdate? _scriptExecutionProgress;
+    private bool _testAfterSave = true;
+    private bool _isSavingConnection = false;
+    private SaveConnectionResult? _saveResult;
+    private string? _originalConnectionName; // For edit mode
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDatabaseTypes();
+        
+        // If in edit mode, populate fields from connection
+        if (IsEditMode && Connection != null)
+        {
+            _selectedDatabaseType = Connection.DatabaseType;
+            _connectionName = Connection.ConnectionName;
+            _host = Connection.Host;
+            _port = Connection.Port > 0 ? Connection.Port : GetDefaultPort(Connection.DatabaseType);
+            _defaultPort = GetDefaultPort(Connection.DatabaseType);
+            _database = Connection.Database;
+            _selectedSchema = Connection.Schema;
+            _username = Connection.Username;
+            _password = Connection.Password;
+            _originalConnectionName = Connection.ConnectionName; // Store original for update
+        }
+    }
+
+    private async Task LoadDatabaseTypes()
+    {
+        try
+        {
+            _availableDatabaseTypes = await ApiClient.GetAsync<List<string>>("/api/ppdm39/setup/database-types") ?? new List<string>();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading database types: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task CheckDriver()
+    {
+        if (string.IsNullOrEmpty(_selectedDatabaseType))
+            return;
+
+        try
+        {
+            var request = new { DatabaseType = _selectedDatabaseType };
+            _driverInfo = await ApiClient.PostAsync<object, DriverInfo>("/api/ppdm39/setup/check-driver", request);
+            
+            if (_driverInfo != null)
+            {
+                Snackbar.Add($"Driver status: {(_driverInfo.IsInstalled ? "Installed" : "Not Installed")}", 
+                    _driverInfo.IsInstalled ? Severity.Success : Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error checking driver: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task TestConnection()
+    {
+        if (!CanTestConnection())
+            return;
+
+        _isTestingConnection = true;
+        _connectionTestResult = null;
+
+        try
+        {
+            var config = BuildConnectionConfig();
+            
+            // If creating a new schema, create it first
+            if (config.CreateSchemaIfNotExists && !string.IsNullOrEmpty(config.Schema))
+            {
+                var createRequest = new CreateSchemaRequest
+                {
+                    Connection = config,
+                    SchemaName = config.Schema
+                };
+
+                var createResult = await ApiClient.PostAsync<CreateSchemaRequest, CreateSchemaResult>(
+                    "/api/ppdm39/setup/create-schema", createRequest);
+
+                if (createResult?.Success == true)
+                {
+                    Snackbar.Add($"Schema '{config.Schema}' created successfully", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add($"Failed to create schema: {createResult?.Message}", Severity.Warning);
+                    // Continue with connection test anyway
+                }
+            }
+            
+            _connectionTestResult = await ApiClient.PostAsync<ConnectionConfig, ConnectionTestResult>(
+                "/api/ppdm39/setup/test-connection", config);
+
+            if (_connectionTestResult?.Success == true)
+            {
+                Snackbar.Add("Connection test successful", Severity.Success);
+                // Auto-check driver after successful connection test
+                await CheckDriver();
+            }
+            else
+            {
+                Snackbar.Add($"Connection test failed: {_connectionTestResult?.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error testing connection: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isTestingConnection = false;
+        }
+    }
+
+    private async Task LoadAvailableScripts()
+    {
+        if (string.IsNullOrEmpty(_selectedDatabaseType))
+            return;
+
+        try
+        {
+            _availableScripts = await ApiClient.GetAsync<List<ScriptInfo>>(
+                $"/api/ppdm39/setup/scripts/{_selectedDatabaseType}") ?? new List<ScriptInfo>();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading scripts: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ExecuteScripts()
+    {
+        if (_availableScripts == null || !_availableScripts.Any())
+        {
+            await LoadAvailableScripts();
+        }
+
+        if (_availableScripts == null || !_availableScripts.Any())
+        {
+            Snackbar.Add("No scripts available to execute", Severity.Warning);
+            return;
+        }
+
+        _isExecutingScripts = true;
+        _scriptExecutionResults = new List<ScriptExecutionResult>();
+        _allScriptsResult = null;
+        _scriptExecutionOperationId = null;
+        _scriptExecutionProgress = null;
+
+        try
+        {
+            var config = BuildConnectionConfig();
+            var selectedScripts = _executeAllScripts 
+                ? _availableScripts.Select(s => s.Name).ToList()
+                : _availableScripts.Where(s => s.IsSelected).Select(s => s.Name).ToList();
+
+            var request = new ScriptExecutionRequest
+            {
+                Connection = config,
+                ScriptNames = selectedScripts,
+                ExecuteAll = false
+            };
+
+            // Start operation and get operation ID for progress tracking
+            var response = await ApiClient.PostAsync<ScriptExecutionRequest, AllScriptsExecutionResult>(
+                "/api/ppdm39/setup/execute-all-scripts", request);
+
+            // Note: execute-all-scripts returns AllScriptsExecutionResult directly, not OperationStartResponse
+            // If progress tracking is needed, the endpoint would need to be updated to return OperationStartResponse
+            // For now, we'll execute without progress tracking for this endpoint
+            if (response != null)
+            {
+                // Store result
+                _allScriptsResult = response;
+                Snackbar.Add($"Script execution completed. {response.SuccessfulScripts}/{response.TotalScripts} scripts succeeded.", 
+                    response.AllSucceeded ? Severity.Success : Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error starting script execution: {ex.Message}", Severity.Error);
+            _isExecutingScripts = false;
+            _scriptExecutionOperationId = null;
+        }
+    }
+
+    private async void HandleScriptProgressUpdate(ProgressUpdate progress)
+    {
+        if (progress.OperationId != _scriptExecutionOperationId)
+            return;
+
+        _scriptExecutionProgress = progress;
+        await InvokeAsync(StateHasChanged);
+
+        if (progress.IsComplete)
+        {
+            _isExecutingScripts = false;
+            
+            if (progress.HasError)
+            {
+                Snackbar.Add($"Script execution failed: {progress.ErrorMessage}", Severity.Error);
+            }
+            else
+            {
+                Snackbar.Add(progress.StatusMessage ?? "All scripts executed successfully", Severity.Success);
+            }
+
+            // Clean up
+            if (!string.IsNullOrEmpty(_scriptExecutionOperationId))
+            {
+                ProgressClient.OnProgressUpdate -= HandleScriptProgressUpdate;
+                await ProgressClient.LeaveOperationAsync(_scriptExecutionOperationId);
+                _scriptExecutionOperationId = null;
+                _scriptExecutionProgress = null;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private async Task SaveConnection()
+    {
+        if (string.IsNullOrEmpty(_connectionName))
+        {
+            Snackbar.Add("Connection name is required", Severity.Warning);
+            return;
+        }
+
+        _isSavingConnection = true;
+        _saveResult = null;
+
+        try
+        {
+            var config = BuildConnectionConfig();
+
+            if (IsEditMode && !string.IsNullOrEmpty(_originalConnectionName))
+            {
+                // Update existing connection
+                var updateRequest = new UpdateConnectionRequest
+                {
+                    OriginalConnectionName = _originalConnectionName,
+                    Connection = config
+                };
+
+                _saveResult = await ApiClient.PutAsync<UpdateConnectionRequest, SaveConnectionResult>(
+                    "/api/ppdm39/setup/connection", updateRequest);
+            }
+            else
+            {
+                // Create new connection
+                var request = new SaveConnectionRequest
+                {
+                    Connection = config,
+                    TestAfterSave = _testAfterSave,
+                    OpenAfterSave = false
+                };
+
+                _saveResult = await ApiClient.PostAsync<SaveConnectionRequest, SaveConnectionResult>(
+                    "/api/ppdm39/setup/save-connection", request);
+            }
+
+            if (_saveResult?.Success == true)
+            {
+                Snackbar.Add($"Connection '{_connectionName}' {(IsEditMode ? "updated" : "saved")} successfully", Severity.Success);
+                await Task.Delay(1000); // Give user time to see success message
+                Close();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to {(IsEditMode ? "update" : "save")} connection: {_saveResult?.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error {(IsEditMode ? "updating" : "saving")} connection: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSavingConnection = false;
+        }
+    }
+
+    private async Task CheckSchemaPrivileges()
+    {
+        if (!CanTestConnection())
+            return;
+
+        _isCheckingPrivileges = true;
+        _privilegeCheckResult = null;
+
+        try
+        {
+            var config = BuildConnectionConfig();
+            var request = new SchemaPrivilegeCheckRequest
+            {
+                Connection = config,
+                SchemaName = _selectedSchema == "__CREATE_NEW__" ? _newSchemaName : _selectedSchema
+            };
+
+            _privilegeCheckResult = await ApiClient.PostAsync<SchemaPrivilegeCheckRequest, SchemaPrivilegeCheckResult>(
+                "/api/ppdm39/setup/check-schema-privileges", request);
+
+            if (_privilegeCheckResult != null)
+            {
+                _availableSchemas = _privilegeCheckResult.ExistingSchemas;
+                
+                if (_privilegeCheckResult.HasCreatePrivilege)
+                {
+                    Snackbar.Add("User has privileges to create schemas", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("User may not have privileges to create schemas. Please use an existing schema.", Severity.Warning);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error checking schema privileges: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isCheckingPrivileges = false;
+        }
+    }
+
+    private string GetSchemaHelperText()
+    {
+        return _selectedDatabaseType switch
+        {
+            "PostgreSQL" => "Select an existing schema or create a new one",
+            "SqlServer" => "Select an existing schema (e.g., dbo) or create a new one",
+            "MySQL" or "MariaDB" => "Select an existing database or create a new one",
+            "Oracle" => "Select an existing schema/user (creating requires DBA privileges)",
+            _ => "Schema/database selection"
+        };
+    }
+
+    private ConnectionConfig BuildConnectionConfig()
+    {
+        // Get default port based on database type
+        var port = _port > 0 ? _port : GetDefaultPort(_selectedDatabaseType);
+        
+        // Determine schema name
+        string? schema = null;
+        bool createSchema = false;
+        
+        if (_selectedDatabaseType != "SQLite")
+        {
+            if (_selectedSchema == "__CREATE_NEW__" && !string.IsNullOrEmpty(_newSchemaName))
+            {
+                schema = _newSchemaName;
+                createSchema = true;
+            }
+            else if (!string.IsNullOrEmpty(_selectedSchema))
+            {
+                schema = _selectedSchema;
+                createSchema = false;
+            }
+        }
+
+        return new ConnectionConfig
+        {
+            DatabaseType = _selectedDatabaseType,
+            ConnectionName = _connectionName,
+            Host = _host,
+            Port = port,
+            Database = _database,
+            Schema = schema,
+            CreateSchemaIfNotExists = createSchema,
+            Username = _username,
+            Password = _password
+        };
+    }
+
+    private int GetDefaultPort(string databaseType)
+    {
+        return databaseType switch
+        {
+            "SqlServer" => 1433,
+            "PostgreSQL" => 5432,
+            "MySQL" or "MariaDB" => 3306,
+            "Oracle" => 1521,
+            _ => 0
+        };
+    }
+
+    private void NextStep()
+    {
+        if (_activeStep == 0 && !string.IsNullOrEmpty(_selectedDatabaseType))
+        {
+            _defaultPort = GetDefaultPort(_selectedDatabaseType);
+            _port = _defaultPort;
+            
+            // Reset schema selection when database type changes
+            _selectedSchema = null;
+            _availableSchemas = null;
+            _privilegeCheckResult = null;
+        }
+
+        if (_activeStep == 2 && _driverInfo == null)
+        {
+            CheckDriver().GetAwaiter().GetResult();
+        }
+
+        if (_activeStep == 3 && (_availableScripts == null || !_availableScripts.Any()))
+        {
+            LoadAvailableScripts().GetAwaiter().GetResult();
+        }
+
+        // Auto-check schema privileges when moving to step 2 (connection settings)
+        if (_activeStep == 1 && _selectedDatabaseType != "SQLite" && _privilegeCheckResult == null)
+        {
+            CheckSchemaPrivileges().GetAwaiter().GetResult();
+        }
+
+        if (_activeStep < (IsEditMode ? 2 : 4))
+        {
+            _activeStep++;
+            StateHasChanged();
+        }
+    }
+
+    private void PreviousStep()
+    {
+        if (_activeStep > 0)
+        {
+            _activeStep--;
+            StateHasChanged();
+        }
+    }
+
+    private bool CanProceedToNextStep()
+    {
+        return _activeStep switch
+        {
+            0 => !string.IsNullOrEmpty(_selectedDatabaseType),
+            1 => !string.IsNullOrEmpty(_connectionName) && !string.IsNullOrEmpty(_host) && 
+                 !string.IsNullOrEmpty(_database) && 
+                 (_connectionTestResult?.Success == true),
+            2 => _driverInfo != null && _driverInfo.IsInstalled,
+            3 => IsEditMode || (_allScriptsResult != null && _allScriptsResult.AllSucceeded), // Skip script execution check in edit mode
+            4 => true, // Always allow going to save step
+            _ => false
+        };
+    }
+
+    private bool CanTestConnection()
+    {
+        return !string.IsNullOrEmpty(_host) && !string.IsNullOrEmpty(_database);
+    }
+
+    private bool HasSelectedScripts()
+    {
+        if (_executeAllScripts)
+            return _availableScripts != null && _availableScripts.Any();
+        
+        return _availableScripts != null && _availableScripts.Any(s => s.IsSelected);
+    }
+
+    private int GetSelectedScriptCount()
+    {
+        if (_executeAllScripts)
+            return _availableScripts?.Count ?? 0;
+        
+        return _availableScripts?.Count(s => s.IsSelected) ?? 0;
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Close()
+    {
+        MudDialog.Close(DialogResult.Ok(_saveResult));
+    }
+}

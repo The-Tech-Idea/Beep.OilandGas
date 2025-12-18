@@ -27,7 +27,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             _connectionName = connectionName;
         }
 
-        private List<T> ConvertToList<T>(dynamic units) where T : class
+        private List<T> ConvertToList<T>(object units) where T : class
         {
             var result = new List<T>();
             if (units == null) return result;
@@ -78,7 +78,8 @@ namespace Beep.OilandGas.Decommissioning.Services
             else
             {
                 var units = await plugbackUow.Get();
-                plugbacks = ConvertToList<WELL_PLUGBACK>(units).Where(p => p.ACTIVE_IND == "Y").ToList();
+                List<WELL_PLUGBACK> allPlugbacks = ConvertToList<WELL_PLUGBACK>(units);
+                plugbacks = allPlugbacks.Where(p => p.ACTIVE_IND == "Y").ToList();
             }
 
             var wellUow = GetWellUnitOfWork();
@@ -176,8 +177,8 @@ namespace Beep.OilandGas.Decommissioning.Services
             else
             {
                 var units = await facilityUow.Get();
-                facilities = ConvertToList<FACILITY>(units)
-                    .Where(f => !string.IsNullOrEmpty(f.ABANDONED_DATE.ToString())).ToList();
+                List<FACILITY> allFacilities = ConvertToList<FACILITY>(units);
+                facilities = allFacilities.Where(f => !string.IsNullOrEmpty(f.ABANDONED_DATE.ToString())).ToList();
             }
 
             return facilities.Select(f => new FacilityDecommissioningDto
@@ -213,8 +214,8 @@ namespace Beep.OilandGas.Decommissioning.Services
             else
             {
                 var units = await wellUow.Get();
-                wells = ConvertToList<WELL>(units)
-                    .Where(w => !string.IsNullOrEmpty(w.ABANDONMENT_DATE.ToString())).ToList();
+                List<WELL> allWells = ConvertToList<WELL>(units);
+                wells = allWells.Where(w => !string.IsNullOrEmpty(w.ABANDONMENT_DATE.ToString())).ToList();
             }
 
             return wells.Select(w => new AbandonmentDto

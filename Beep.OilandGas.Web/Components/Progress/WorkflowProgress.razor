@@ -1,0 +1,204 @@
+@using Beep.OilandGas.ApiService.Models
+@using Beep.OilandGas.Web.Services
+@using MudBlazor
+@implements IAsyncDisposable
+@inject IProgressTrackingClient ProgressClient
+
+<MudPaper Elevation="2" Class="pa-4 mb-4">
+    <MudStack>
+        <MudText Typo="Typo.h6">@Title</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            @(_workflowProgress?.TotalSteps ?? 0) step(s) - @(_workflowProgress?.CompletedSteps ?? 0) completed, @(_workflowProgress?.FailedSteps ?? 0) failed
+        </MudText>
+
+        @if (_workflowProgress != null)
+        {
+            <MudProgressLinear Value="@_workflowProgress.OverallProgress" 
+                              Color="@GetWorkflowColor(_workflowProgress.Status)" 
+                              Class="mb-4" />
+
+            @if (!string.IsNullOrEmpty(_workflowProgress.CurrentStepName))
+            {
+                <MudText Typo="Typo.body1" Color="Color.Primary">
+                    Current: @_workflowProgress.CurrentStepName
+                </MudText>
+            }
+
+            @foreach (var step in _workflowProgress.Steps)
+            {
+                <MudPaper Elevation="1" Class="pa-3 mb-2">
+                    <MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                @if (step.Status == OperationStatus.Completed)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                                }
+                                else if (step.Status == OperationStatus.Failed)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" />
+                                }
+                                else if (step.Status == OperationStatus.Running)
+                                {
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.RadioButtonUnchecked" Color="Color.Default" />
+                                }
+
+                                <MudText Typo="Typo.body2">
+                                    @step.StepName
+                                </MudText>
+                            </MudStack>
+
+                            <MudChip T="string" Size="Size.Small" 
+                                   Color="@GetStepStatusColor(step.Status)" 
+                                   Variant="Variant.Text">
+                                @step.Status.ToString()
+                            </MudChip>
+                        </MudStack>
+
+                        @if (step.Status == OperationStatus.Running || step.Status == OperationStatus.Completed)
+                        {
+                            <MudProgressLinear Value="@step.ProgressPercentage" 
+                                              Color="@GetStepStatusColor(step.Status)" 
+                                              Class="mt-2" 
+                                              Size="Size.Small" />
+                            
+                            @if (!string.IsNullOrEmpty(step.StatusMessage))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @step.StatusMessage
+                                </MudText>
+                            }
+
+                            @if (step.ItemsProcessed.HasValue && step.TotalItems.HasValue)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @step.ItemsProcessed / @step.TotalItems items
+                                </MudText>
+                            }
+                        }
+
+                        @if (step.Status == OperationStatus.Failed && !string.IsNullOrEmpty(step.ErrorMessage))
+                        {
+                            <MudExpansionPanels Class="mt-2">
+                                <MudExpansionPanel Text="Error Details">
+                                    <MudText Typo="Typo.body2" Color="Color.Error">
+                                        @step.ErrorMessage
+                                    </MudText>
+                                </MudExpansionPanel>
+                            </MudExpansionPanels>
+                        }
+
+                        @if (step.StartedAt.HasValue)
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                Started: @step.StartedAt.Value.ToString("HH:mm:ss")
+                                @if (step.CompletedAt.HasValue)
+                                {
+                                    <text> - Completed: @step.CompletedAt.Value.ToString("HH:mm:ss")</text>
+                                }
+                            </MudText>
+                        }
+                    </MudStack>
+                </MudPaper>
+            }
+
+            @if (_workflowProgress.Status == WorkflowStatus.Completed || _workflowProgress.Status == WorkflowStatus.Failed)
+            {
+                <MudAlert Severity="@(_workflowProgress.Status == WorkflowStatus.Completed ? Severity.Success : Severity.Error)" Class="mt-2">
+                    @_workflowProgress.StatusMessage
+                    @if (_workflowProgress.CompletedAt.HasValue && _workflowProgress.StartedAt.HasValue)
+                    {
+                        var duration = _workflowProgress.CompletedAt.Value - _workflowProgress.StartedAt.Value;
+                        <MudText Typo="Typo.caption" Class="mt-1">
+                            Duration: @duration.ToString(@"hh\:mm\:ss")
+                        </MudText>
+                    }
+                </MudAlert>
+            }
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public string WorkflowId { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = "Workflow Progress";
+    [Parameter] public EventCallback<Beep.OilandGas.ApiService.Models.WorkflowProgress> OnComplete { get; set; }
+
+    private Beep.OilandGas.ApiService.Models.WorkflowProgress? _workflowProgress;
+    private bool _isDisposed = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(WorkflowId))
+        {
+            ProgressClient.OnProgressUpdate += HandleWorkflowProgress;
+            await ProgressClient.ConnectAsync();
+            await ProgressClient.JoinWorkflowAsync(WorkflowId);
+            
+            // Also fetch initial workflow progress via API if needed
+            // For now, we'll rely on SignalR updates
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(WorkflowId) && !_isDisposed)
+        {
+            if (!ProgressClient.IsConnected)
+            {
+                await ProgressClient.ConnectAsync();
+            }
+            await ProgressClient.JoinWorkflowAsync(WorkflowId);
+        }
+    }
+
+    private async void HandleWorkflowProgress(ProgressUpdate progress)
+    {
+        // Note: For full workflow progress details, we may need to poll the API
+        // or extend SignalR to send WorkflowProgress objects directly
+        // For now, this component will display progress based on the WorkflowProgress state
+        // which should be set via API calls or extended SignalR handlers
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Color GetWorkflowColor(WorkflowStatus status)
+    {
+        return status switch
+        {
+            WorkflowStatus.Completed => Color.Success,
+            WorkflowStatus.Failed => Color.Error,
+            WorkflowStatus.Cancelled => Color.Warning,
+            _ => Color.Primary
+        };
+    }
+
+    private Color GetStepStatusColor(OperationStatus status)
+    {
+        return status switch
+        {
+            OperationStatus.Completed => Color.Success,
+            OperationStatus.Failed => Color.Error,
+            OperationStatus.Cancelled => Color.Warning,
+            OperationStatus.Running => Color.Primary,
+            _ => Color.Default
+        };
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_isDisposed)
+            return;
+
+        _isDisposed = true;
+        
+        if (!string.IsNullOrEmpty(WorkflowId))
+        {
+            ProgressClient.OnProgressUpdate -= HandleWorkflowProgress;
+            await ProgressClient.LeaveWorkflowAsync(WorkflowId);
+        }
+    }
+}

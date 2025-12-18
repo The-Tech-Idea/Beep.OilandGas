@@ -27,7 +27,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             _connectionName = connectionName;
         }
 
-        private List<T> ConvertToList<T>(dynamic units) where T : class
+        private List<T> ConvertToList<T>(object units) where T : class
         {
             var result = new List<T>();
             if (units == null) return result;
@@ -73,7 +73,8 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             else
             {
                 var units = await landRightUow.Get();
-                landRights = ConvertToList<LAND_RIGHT>(units).Where(lr => lr.ACTIVE_IND == "Y").ToList();
+                List<LAND_RIGHT> allLandRights = ConvertToList<LAND_RIGHT>(units);
+                landRights = allLandRights.Where(lr => lr.ACTIVE_IND == "Y").ToList();
             }
 
             var leases = new List<LeaseDto>();
@@ -258,7 +259,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
             };
             var units = await landRightUow.Get(filters);
-            var landRights = ConvertToList<LAND_RIGHT>(units);
+            List<LAND_RIGHT> landRights = ConvertToList<LAND_RIGHT>(units);
 
             return landRights.Select(lr => new LandRightDto
             {
@@ -292,7 +293,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
             };
             var units = await agreementUow.Get(filters);
-            var agreements = ConvertToList<LAND_AGREEMENT>(units);
+            List<LAND_AGREEMENT> agreements = ConvertToList<LAND_AGREEMENT>(units);
 
             return agreements.Select(ag => new SurfaceAgreementDto
             {

@@ -2,8 +2,10 @@
 @inject NavigationManager NavigationManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject ISnackbar Snackbar
+@inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
+@using Beep.OilandGas.Web.Theme
 
-<PageTitle>Dashboard - Beep Oil & Gas</PageTitle>
+<PageTitle>Dashboard - @(_branding.AppName ?? "Beep Oil & Gas")</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
     <MudText Typo="Typo.h4" Class="mb-6">Dashboard</MudText>
@@ -131,12 +133,18 @@
 </MudContainer>
 
 @code {
+    private BrandingConfig _branding = new();
     private int _totalWells = 0;
     private int _activeFields = 0;
     private decimal _dailyProduction = 0;
     private int _facilities = 0;
     
     private List<ActivityItem> _recentActivities = new();
+    
+    protected override void OnInitialized()
+    {
+        _branding = ThemeProvider.GetBranding();
+    }
     
     protected override async Task OnInitializedAsync()
     {

@@ -20,6 +20,7 @@ using TheTechIdea.Beep.Container;
 using TheTechIdea.Beep.Container.Services;
 using TheTechIdea.Beep.Addin;
 using Microsoft.OpenApi;
+using Beep.OilandGas.ApiService.Services;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -283,6 +284,43 @@ builder.Services.AddScoped<IPPDMSeismicService>(sp =>
         editor, commonColumnHandler, defaults, metadata, connectionName);
 });
 
+// PPDM39 Setup Service
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PPDM39SetupService>();
+
+// PPDM39 Data Service
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PPDM39DataService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.ApiService.Services.PPDM39DataService>();
+    var progressTracking = sp.GetService<IProgressTrackingService>();
+    return new Beep.OilandGas.ApiService.Services.PPDM39DataService(
+        editor, commonColumnHandler, defaults, metadata, logger, loggerFactory, progressTracking);
+});
+
+// PPDM39 Workflow Service
+builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PPDM39WorkflowService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.ApiService.Services.PPDM39WorkflowService>();
+    var progressTracking = sp.GetService<IProgressTrackingService>();
+    return new Beep.OilandGas.ApiService.Services.PPDM39WorkflowService(
+        editor, commonColumnHandler, defaults, metadata, logger, progressTracking);
+});
+
+// SignalR for progress tracking
+builder.Services.AddSignalR();
+
+// Progress tracking service
+builder.Services.AddSingleton<IProgressTrackingService, ProgressTrackingService>();
+
 // Add CORS
 builder.Services.AddCors(options =>
 {
@@ -377,6 +415,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// SignalR hub for progress tracking
+app.MapHub<ProgressHub>("/progressHub");
 
 // Add authentication diagnostic endpoint
 app.MapGet("/api/auth-test", (HttpContext context) =>

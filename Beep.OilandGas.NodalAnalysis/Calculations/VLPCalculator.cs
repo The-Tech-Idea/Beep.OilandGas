@@ -120,6 +120,66 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
 
             return vlp;
         }
+
+        /// <summary>
+        /// Correlation types for VLP calculations.
+        /// </summary>
+        public enum CorrelationType
+        {
+            HagedornBrown,
+            BeggsBrill,
+            Gray,
+            DunsRos
+        }
+
+        /// <summary>
+        /// Generates VLP curve with specified parameters (wrapper for DataFlowService).
+        /// </summary>
+        public static List<VLPPoint> GenerateVLPCurve(
+            decimal tubingDiameter,
+            decimal tubingLength,
+            decimal wellheadPressure,
+            decimal waterCut,
+            decimal gasOilRatio,
+            decimal oilGravity,
+            decimal gasSpecificGravity,
+            decimal wellheadTemperature,
+            decimal bottomholeTemperature,
+            decimal tubingRoughness,
+            int points,
+            CorrelationType correlationType = CorrelationType.HagedornBrown)
+        {
+            // Create wellbore properties from parameters
+            var wellbore = new WellboreProperties
+            {
+                TubingDiameter = (double)tubingDiameter,
+                TubingLength = (double)tubingLength,
+                WellheadPressure = (double)wellheadPressure,
+                WaterCut = (double)waterCut,
+                GasOilRatio = (double)gasOilRatio,
+                OilGravity = (double)oilGravity,
+                GasSpecificGravity = (double)gasSpecificGravity,
+                WellheadTemperature = (double)wellheadTemperature,
+                BottomholeTemperature = (double)bottomholeTemperature,
+                TubingRoughness = (double)tubingRoughness
+            };
+
+            // Generate flow rates
+            var flowRates = new double[points + 1];
+            double maxFlowRate = 5000.0; // bbl/day
+            for (int i = 0; i <= points; i++)
+            {
+                flowRates[i] = maxFlowRate * i / points;
+            }
+
+            // Use specified correlation
+            return correlationType switch
+            {
+                CorrelationType.HagedornBrown => GenerateVLP(wellbore, flowRates),
+                CorrelationType.BeggsBrill => GenerateVLPBeggsBrill(wellbore, flowRates),
+                _ => GenerateVLP(wellbore, flowRates) // Default to Hagedorn-Brown
+            };
+        }
     }
 }
 

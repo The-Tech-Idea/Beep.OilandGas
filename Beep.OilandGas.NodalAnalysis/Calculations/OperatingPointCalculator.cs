@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Beep.OilandGas.NodalAnalysis.Models;
 using Beep.OilandGas.GasProperties.Calculations;
+using System.Linq;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
 {
@@ -234,6 +235,32 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             }
 
             return operatingPoints;
+        }
+
+        /// <summary>
+        /// Finds operating point from IPR and VLP curves (wrapper for DataFlowService).
+        /// </summary>
+        public static OperatingPoint FindOperatingPoint(List<IPRPoint> iprCurve, List<VLPPoint> vlpCurve)
+        {
+            if (iprCurve == null || iprCurve.Count == 0)
+                throw new ArgumentException("IPR curve cannot be null or empty.", nameof(iprCurve));
+
+            if (vlpCurve == null || vlpCurve.Count == 0)
+                throw new ArgumentException("VLP curve cannot be null or empty.", nameof(vlpCurve));
+
+            // Convert to tuples for internal method
+            var iprTuples = iprCurve.Select(p => (p.FlowRate, p.FlowingBottomholePressure)).ToList();
+            var vlpTuples = vlpCurve.Select(p => (p.FlowRate, p.RequiredBottomholePressure)).ToList();
+
+            // Use internal FindIntersection method
+            var internalResult = FindIntersection(iprTuples, vlpTuples);
+
+            return new OperatingPoint
+            {
+                FlowRate = internalResult.FlowRate,
+                BottomholePressure = internalResult.BottomholePressure,
+                WellheadPressure = 0.0 // Not calculated in this simplified version
+            };
         }
     }
 

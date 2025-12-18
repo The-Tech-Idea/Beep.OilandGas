@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+     <TargetFrameworks>net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Suppress MUD0002 warnings - these are false positives from MudBlazor analyzer -->
@@ -12,6 +12,7 @@
     <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.2" />
     <PackageReference Include="MudBlazor" Version="8.*" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.1" />
     <PackageReference Include="TheTechIdea.Beep.AssemblyLoader" Version="2.0.15" />
     <PackageReference Include="TheTechIdea.Beep.Container" Version="1.0.0.93" />
@@ -32,6 +33,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.ApiService\Beep.OilandGas.ApiService.csproj" />
   </ItemGroup>
 
 </Project>

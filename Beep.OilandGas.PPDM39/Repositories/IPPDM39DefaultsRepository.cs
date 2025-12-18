@@ -204,6 +204,28 @@ namespace Beep.OilandGas.PPDM39.Repositories
         /// Gets the default STATUS_TYPEs that should be initialized for wellhead streams
         /// </summary>
         System.Collections.Generic.List<string> GetDefaultWellStatusTypesForWellheadStream();
+
+        // ID Type Configuration for PPDM Tables
+
+        /// <summary>
+        /// Gets whether PPDM tables use string IDs (all PPDM tables use string IDs by default)
+        /// </summary>
+        bool UseStringIds();
+
+        /// <summary>
+        /// Gets the ID type for a specific table (defaults to string for all PPDM tables)
+        /// </summary>
+        /// <param name="tableName">Table name</param>
+        /// <returns>ID type name (e.g., "String", "Int32", "Guid")</returns>
+        string GetIdTypeForTable(string tableName);
+
+        /// <summary>
+        /// Formats an ID value according to the table's ID type configuration
+        /// </summary>
+        /// <param name="tableName">Table name</param>
+        /// <param name="id">ID value</param>
+        /// <returns>Formatted ID value (as string for PPDM tables)</returns>
+        string FormatIdForTable(string tableName, object id);
     }
 }
 

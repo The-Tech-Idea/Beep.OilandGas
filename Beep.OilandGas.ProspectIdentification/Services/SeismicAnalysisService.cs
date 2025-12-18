@@ -60,15 +60,15 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             if (string.IsNullOrWhiteSpace(prospectId))
                 throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
 
-            var seismicUow = await GetSeismicSurveyUnitOfWorkAsync();
+            var surveyUow = await GetSeismicSurveyUnitOfWorkAsync();
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "AREA_ID", FilterValue = prospectId, Operator = "=" },
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
             };
-            var units = await seismicUow.Get(filters);
-            var surveys = ConvertToList<SEIS_SET>(units);
-            
+            var units = await surveyUow.Get(filters);
+            List<SEIS_SET> surveys = ConvertToList<SEIS_SET>(units);
+
             return surveys.Select(s => MapToSeismicSurveyDto(s, prospectId)).ToList();
         }
 

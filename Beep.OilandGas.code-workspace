@@ -28,5 +28,7 @@
 			"path": "../../../../OneDrive/SimpleInfoapps/PPDM/html"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"powershell.cwd": "Beep.OilandGas"
+	}
 }

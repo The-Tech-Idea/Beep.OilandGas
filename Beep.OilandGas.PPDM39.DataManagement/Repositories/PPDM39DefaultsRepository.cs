@@ -430,6 +430,48 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories
         {
             return new List<string>(DEFAULT_WELL_STATUS_TYPES_FOR_WELLHEAD_STREAM);
         }
+
+        // ID Type Configuration for PPDM Tables
+
+        /// <summary>
+        /// Gets whether PPDM tables use string IDs
+        /// All PPDM tables use string IDs by default
+        /// </summary>
+        public bool UseStringIds()
+        {
+            return true; // All PPDM tables use string IDs
+        }
+
+        /// <summary>
+        /// Gets the ID type for a specific table
+        /// Defaults to string for all PPDM tables
+        /// </summary>
+        /// <param name="tableName">Table name</param>
+        /// <returns>ID type name (always "String" for PPDM tables)</returns>
+        public string GetIdTypeForTable(string tableName)
+        {
+            if (string.IsNullOrWhiteSpace(tableName))
+                throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
+
+            // All PPDM tables use string IDs
+            return "String";
+        }
+
+        /// <summary>
+        /// Formats an ID value according to the table's ID type configuration
+        /// For PPDM tables, this always converts to string
+        /// </summary>
+        /// <param name="tableName">Table name</param>
+        /// <param name="id">ID value</param>
+        /// <returns>Formatted ID value as string</returns>
+        public string FormatIdForTable(string tableName, object id)
+        {
+            if (string.IsNullOrWhiteSpace(tableName))
+                throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
+
+            // All PPDM tables use string IDs, so convert to string
+            return id?.ToString() ?? string.Empty;
+        }
     }
 }
 

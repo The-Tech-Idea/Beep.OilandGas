@@ -20,7 +20,7 @@ namespace Beep.OilandGas.FieldManagement.DataMapping
         private readonly Func<WELL, double>? _getGasOilRatio;
         private readonly Func<WELL, double>? _getOilGravity;
         private readonly Func<WELL, double>? _getGasSpecificGravity;
-        private readonly Func<WELL, double>? _getReservoirPressure;
+        private readonly Func<WELL, WELL_PRESSURE?, double>? _getReservoirPressure;
         private readonly Func<WELL, double>? _getBubblePointPressure;
         private readonly Func<WELL, double>? _getProductivityIndex;
         private readonly Func<WELL, double>? _getFormationVolumeFactor;
@@ -46,7 +46,7 @@ namespace Beep.OilandGas.FieldManagement.DataMapping
             Func<WELL, double>? getGasOilRatio = null,
             Func<WELL, double>? getOilGravity = null,
             Func<WELL, double>? getGasSpecificGravity = null,
-            Func<WELL, double>? getReservoirPressure = null,
+            Func<WELL, WELL_PRESSURE?, double>? getReservoirPressure = null,
             Func<WELL, double>? getBubblePointPressure = null,
             Func<WELL, double>? getProductivityIndex = null,
             Func<WELL, double>? getFormationVolumeFactor = null,
@@ -131,7 +131,7 @@ namespace Beep.OilandGas.FieldManagement.DataMapping
             if (ppdm39Well == null)
                 throw new ArgumentNullException(nameof(ppdm39Well));
 
-            var getReservoirPressure = _getReservoirPressure ?? ((well) => ValueRetrievers.GetReservoirPressure(well, wellPressure));
+            var getReservoirPressure = _getReservoirPressure ?? ((well, wp) => ValueRetrievers.GetReservoirPressure(well, wp));
             var getBubblePointPressure = _getBubblePointPressure ?? ValueRetrievers.GetBubblePointPressure;
             var getProductivityIndex = _getProductivityIndex ?? ValueRetrievers.GetProductivityIndex;
             var getWaterCut = _getWaterCut ?? ValueRetrievers.GetWaterCut;
@@ -195,7 +195,7 @@ namespace Beep.OilandGas.FieldManagement.DataMapping
         /// </summary>
         public IEnumerable<WellboreProperties> MapToDomain(IEnumerable<WELL> ppdm39Entities)
         {
-            return ppdm39Entities?.Select<WELL, WellboreProperties>(MapToDomain) ?? Enumerable.Empty<WellboreProperties>();
+            return ppdm39Entities?.Select<WELL, WellboreProperties>(w => ((IPPDM39Mapper<WELL, WellboreProperties>)this).MapToDomain(w)) ?? Enumerable.Empty<WellboreProperties>();
         }
 
         /// <summary>
@@ -203,7 +203,7 @@ namespace Beep.OilandGas.FieldManagement.DataMapping
         /// </summary>
         IEnumerable<ReservoirProperties> IPPDM39Mapper<WELL, ReservoirProperties>.MapToDomain(IEnumerable<WELL> ppdm39Entities)
         {
-            return ppdm39Entities?.Select<WELL, ReservoirProperties>(w => ((IPPDM39Mapper<WELL, ReservoirProperties>)this).MapToDomain(w)) 
+            return ppdm39Entities?.Select(w => ((IPPDM39Mapper<WELL, ReservoirProperties>)this).MapToDomain(w)) 
                 ?? Enumerable.Empty<ReservoirProperties>();
         }
 
@@ -212,7 +212,7 @@ namespace Beep.OilandGas.FieldManagement.DataMapping
         /// </summary>
         public IEnumerable<WELL> MapToPPDM39(IEnumerable<WellboreProperties> domainModels)
         {
-            return domainModels?.Select<WellboreProperties, WELL>(MapToPPDM39) ?? Enumerable.Empty<WELL>();
+            return domainModels?.Select<WellboreProperties, WELL>(w => MapToPPDM39(w)) ?? Enumerable.Empty<WELL>();
         }
 
         /// <summary>
@@ -220,7 +220,7 @@ namespace Beep.OilandGas.FieldManagement.DataMapping
         /// </summary>
         IEnumerable<WELL> IPPDM39Mapper<WELL, ReservoirProperties>.MapToPPDM39(IEnumerable<ReservoirProperties> domainModels)
         {
-            return domainModels?.Select<ReservoirProperties, WELL>(d => ((IPPDM39Mapper<WELL, ReservoirProperties>)this).MapToPPDM39(d)) 
+            return domainModels?.Select(d => ((IPPDM39Mapper<WELL, ReservoirProperties>)this).MapToPPDM39(d)) 
                 ?? Enumerable.Empty<WELL>();
         }
     }

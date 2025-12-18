@@ -27,7 +27,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             _connectionName = connectionName;
         }
 
-        private List<T> ConvertToList<T>(dynamic units) where T : class
+        private List<T> ConvertToList<T>(object units) where T : class
         {
             var result = new List<T>();
             if (units == null) return result;
@@ -68,7 +68,8 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             else
             {
                 var units = await wellUow.Get();
-                wells = ConvertToList<WELL>(units).Where(w => w.ACTIVE_IND == "Y").ToList();
+                List<WELL> allWells = ConvertToList<WELL>(units);
+                wells = allWells.Where(w => w.ACTIVE_IND == "Y").ToList();
             }
 
             var operations = new List<DrillingOperationDto>();
@@ -202,7 +203,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
             };
             var units = await drillReportUow.Get(filters);
-            var reports = ConvertToList<WELL_DRILL_REPORT>(units);
+            List<WELL_DRILL_REPORT> reports = ConvertToList<WELL_DRILL_REPORT>(units);
 
             return reports.Select(r => new DrillingReportDto
             {

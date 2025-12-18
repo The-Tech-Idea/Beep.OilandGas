@@ -1,0 +1,214 @@
+@using Beep.OilandGas.ApiService.Models
+@using Beep.OilandGas.Web.Services
+@using MudBlazor
+@implements IAsyncDisposable
+@inject IProgressTrackingClient ProgressClient
+@inject ISnackbar Snackbar
+
+@if (ShowProgress && CurrentProgress != null)
+{
+    <MudPaper Elevation="2" Class="pa-4 mb-4">
+        <MudStack>
+            <MudText Typo="Typo.h6">@Title</MudText>
+            
+            @if (CurrentProgress.IsComplete)
+            {
+                <MudAlert Severity="@(CurrentProgress.HasError ? Severity.Error : Severity.Success)" Class="mb-2">
+                    @CurrentProgress.StatusMessage
+                    @if (!string.IsNullOrEmpty(CurrentProgress.ErrorMessage))
+                    {
+                        <MudText Typo="Typo.caption" Class="mt-1">@CurrentProgress.ErrorMessage</MudText>
+                    }
+                </MudAlert>
+            }
+            else
+            {
+                <MudProgressLinear Value="@CurrentProgress.ProgressPercentage" 
+                                  Color="Color.Primary" 
+                                  Class="mb-2" />
+                <MudText Typo="Typo.body2">
+                    @CurrentProgress.StatusMessage
+                    @if (CurrentProgress.TotalItems.HasValue)
+                    {
+                        <text> - @CurrentProgress.ItemsProcessed / @CurrentProgress.TotalItems</text>
+                    }
+                </MudText>
+                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        @CurrentProgress.ProgressPercentage%
+                    </MudText>
+                    @if (ShowHistory && _startTime.HasValue)
+                    {
+                        var elapsed = DateTime.UtcNow - _startTime.Value;
+                        var estimated = GetEstimatedTimeRemaining();
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            Elapsed: @elapsed.ToString(@"mm\:ss")
+                            @if (estimated.HasValue && estimated.Value.TotalSeconds > 0)
+                            {
+                                <text> - Est. remaining: @estimated.Value.ToString(@"mm\:ss")</text>
+                            }
+                        </MudText>
+                    }
+                </MudStack>
+            }
+
+            @if (ShowCancel && !CurrentProgress.IsComplete)
+            {
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Error" 
+                          Size="Size.Small"
+                          OnClick="HandleCancel">
+                    Cancel
+                </MudButton>
+            }
+
+            @if (CurrentProgress.HasError && !string.IsNullOrEmpty(CurrentProgress.ErrorMessage) && ShowErrorDetails)
+            {
+                <MudExpansionPanels Class="mt-2">
+                    <MudExpansionPanel Text="Error Details">
+                        <MudText Typo="Typo.body2" Color="Color.Error">
+                            @CurrentProgress.ErrorMessage
+                        </MudText>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            }
+
+            @if (ShowHistory && _progressHistory.Any())
+            {
+                <MudExpansionPanels Class="mt-2">
+                    <MudExpansionPanel Text="Progress History">
+                        <MudStack Spacing="1">
+                            @foreach (var historyItem in _progressHistory.TakeLast(10))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @historyItem.Timestamp.ToString("HH:mm:ss") - @historyItem.ProgressPercentage%: @historyItem.StatusMessage
+                                </MudText>
+                            }
+                        </MudStack>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            }
+        </MudStack>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public string OperationId { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = "Operation Progress";
+    [Parameter] public bool ShowCancel { get; set; } = false;
+    [Parameter] public bool ShowProgress { get; set; } = true;
+    [Parameter] public EventCallback OnComplete { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback<ProgressUpdate> OnProgressChanged { get; set; }
+    [Parameter] public bool ShowErrorDetails { get; set; } = true;
+    [Parameter] public bool ShowHistory { get; set; } = false;
+
+    private ProgressUpdate? CurrentProgress { get; set; }
+    private List<ProgressUpdate> _progressHistory = new();
+    private bool _isDisposed = false;
+    private DateTime? _startTime;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(OperationId))
+        {
+            ProgressClient.OnProgressUpdate += HandleProgressUpdate;
+            await ProgressClient.ConnectAsync();
+            await ProgressClient.JoinOperationAsync(OperationId);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(OperationId) && !_isDisposed)
+        {
+            if (!ProgressClient.IsConnected)
+            {
+                await ProgressClient.ConnectAsync();
+            }
+            await ProgressClient.JoinOperationAsync(OperationId);
+        }
+    }
+
+    private async void HandleProgressUpdate(ProgressUpdate progress)
+    {
+        if (progress.OperationId != OperationId)
+            return;
+
+        if (_startTime == null)
+        {
+            _startTime = DateTime.UtcNow;
+        }
+
+        CurrentProgress = progress;
+        _progressHistory.Add(new ProgressUpdate
+        {
+            OperationId = progress.OperationId,
+            OperationType = progress.OperationType,
+            ProgressPercentage = progress.ProgressPercentage,
+            StatusMessage = progress.StatusMessage,
+            Timestamp = progress.Timestamp,
+            ItemsProcessed = progress.ItemsProcessed,
+            TotalItems = progress.TotalItems
+        });
+
+        await InvokeAsync(StateHasChanged);
+        
+        await OnProgressChanged.InvokeAsync(progress);
+
+        if (progress.IsComplete)
+        {
+            if (progress.HasError)
+            {
+                Snackbar.Add($"Operation failed: {progress.ErrorMessage}", Severity.Error);
+            }
+            else
+            {
+                Snackbar.Add("Operation completed successfully", Severity.Success);
+            }
+            
+            await OnComplete.InvokeAsync();
+            
+            // Auto-dispose after completion
+            await DisposeAsync();
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        // TODO: Implement actual cancellation via API if needed
+        await OnCancel.InvokeAsync();
+        await DisposeAsync();
+    }
+
+    private TimeSpan? GetEstimatedTimeRemaining()
+    {
+        if (_startTime == null || CurrentProgress == null || CurrentProgress.ProgressPercentage == 0)
+            return null;
+
+        var elapsed = DateTime.UtcNow - _startTime.Value;
+        var progress = CurrentProgress.ProgressPercentage;
+        
+        if (progress > 0)
+        {
+            var totalEstimated = TimeSpan.FromSeconds(elapsed.TotalSeconds / (progress / 100.0));
+            return totalEstimated - elapsed;
+        }
+
+        return null;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_isDisposed)
+            return;
+
+        _isDisposed = true;
+        
+        if (!string.IsNullOrEmpty(OperationId))
+        {
+            ProgressClient.OnProgressUpdate -= HandleProgressUpdate;
+            await ProgressClient.LeaveOperationAsync(OperationId);
+        }
+    }
+}

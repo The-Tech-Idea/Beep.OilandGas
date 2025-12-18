@@ -1,0 +1,47 @@
+@page "/data/database-setup"
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>PPDM39 Database Setup</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h5" Class="mb-4">PPDM39 Database Setup</MudText>
+        <MudText Typo="Typo.body1" Class="mb-4" Color="Color.Secondary">
+            Click the button below to start the database setup wizard.
+        </MudText>
+        <MudButton Variant="Variant.Filled" 
+                  Color="Color.Primary" 
+                  Size="Size.Large"
+                  StartIcon="@Icons.Material.Filled.Settings"
+                  OnClick="OpenWizard">
+            Open Setup Wizard
+        </MudButton>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Auto-open the wizard when the page loads
+            await Task.Delay(100); // Small delay to ensure page is fully rendered
+            await OpenWizard();
+        }
+    }
+
+    private async Task OpenWizard()
+    {
+        var parameters = new DialogParameters();
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
+        
+        var dialog = await DialogService.ShowAsync<PPDM39DatabaseWizard>("PPDM39 Database Setup Wizard", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Snackbar.Add("Database setup completed successfully", Severity.Success);
+        }
+    }
+}

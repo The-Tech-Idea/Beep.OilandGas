@@ -1,0 +1,669 @@
+@page "/ppdm39/database-management"
+@page "/data/database-setup"
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@inject IDataManagementService DataManagementService
+@inject IProgressTrackingClient ProgressClient
+@using System.Net.Http.Json
+@using System.Text.Json
+@using Beep.OilandGas.Web.Components
+
+<PageTitle>Database Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Database Management</MudText>
+    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+        Manage your PPDM39 database connections. You can add, edit, delete, and set the current active database.
+    </MudText>
+
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">Database Connections</MudText>
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary" 
+                      StartIcon="@Icons.Material.Filled.Add"
+                      OnClick="OpenAddWizard">
+                Add New Database
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+            <MudText>Loading connections...</MudText>
+        }
+        else if (_connections == null || !_connections.Any())
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-4">
+                No database connections found. Click "Add New Database" to create your first connection.
+            </MudAlert>
+        }
+        else
+        {
+            <MudTable Items="@_connections" Hover="true" Striped="true" Dense="false" Class="mb-4">
+                <HeaderContent>
+                    <MudTh>Connection Name</MudTh>
+                    <MudTh>Database Type</MudTh>
+                    <MudTh>Host</MudTh>
+                    <MudTh>Port</MudTh>
+                    <MudTh>Database</MudTh>
+                    <MudTh>Username</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.ConnectionName</MudTd>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Default">@context.DatabaseType</MudChip>
+                    </MudTd>
+                    <MudTd>@context.Host</MudTd>
+                    <MudTd>@(context.Port > 0 ? context.Port.ToString() : "-")</MudTd>
+                    <MudTd>@context.Database</MudTd>
+                    <MudTd>@(context.Username ?? "-")</MudTd>
+                    <MudTd>
+                        @if (context.IsCurrent)
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircle">
+                                Current
+                            </MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Default">Inactive</MudChip>
+                        }
+                    </MudTd>
+                    <MudTd>
+                        <MudStack Row="true" Spacing="2">
+                            @if (!context.IsCurrent)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.CheckCircle" 
+                                             Color="Color.Success" 
+                                             Size="Size.Small"
+                                             Title="Set as Current"
+                                             OnClick="@(() => SetCurrentConnection(context.ConnectionName))" />
+                            }
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" 
+                                         Color="Color.Primary" 
+                                         Size="Size.Small"
+                                         Title="Edit"
+                                         OnClick="@(() => OpenEditWizard(context.ConnectionName))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                         Color="Color.Error" 
+                                         Size="Size.Small"
+                                         Title="Delete"
+                                         OnClick="@(() => DeleteConnection(context.ConnectionName))" />
+                        </MudStack>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            @if (!string.IsNullOrEmpty(_currentConnectionName))
+            {
+                <MudAlert Severity="Severity.Info" Class="mt-4">
+                    <strong>Current Active Database:</strong> @_currentConnectionName
+                </MudAlert>
+            }
+        }
+    </MudPaper>
+
+    <!-- Database Operations Section -->
+    <MudPaper Elevation="2" Class="pa-4 mt-4">
+        <MudText Typo="Typo.h6" Class="mb-4">Database Operations</MudText>
+        
+        <MudExpansionPanels Elevation="0" Variant="Variant.Outlined" MultiExpansion="false">
+            <!-- Drop Database -->
+            <MudExpansionPanel Text="Drop Database" Icon="@Icons.Material.Filled.Delete">
+                <MudText Typo="Typo.body2" Color="Color.Warning" Class="mb-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-2" />
+                    Warning: This will permanently delete the database or schema. This action cannot be undone.
+                </MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string" Label="Select Connection" Variant="Variant.Outlined" @bind-Value="@_dropConnectionName">
+                            @if (_connections != null)
+                            {
+                                @foreach (var conn in _connections)
+                                {
+                                    <MudSelectItem Value="@conn.ConnectionName">@conn.ConnectionName</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="@_dropSchemaName" 
+                                     Label="Schema Name (Optional)" 
+                                     Variant="Variant.Outlined"
+                                     HelperText="Leave empty to drop the entire database (where supported)" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Error" 
+                                  StartIcon="@Icons.Material.Filled.Delete"
+                                  OnClick="DropDatabase"
+                                  Disabled="@(string.IsNullOrEmpty(_dropConnectionName) || _isDropping)">
+                            @if (_isDropping)
+                            {
+                                <text>Dropping...</text>
+                            }
+                            else
+                            {
+                                <text>Drop Database</text>
+                            }
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudExpansionPanel>
+
+            <!-- Recreate Database -->
+            <MudExpansionPanel Text="Recreate Database" Icon="@Icons.Material.Filled.Refresh">
+                <MudText Typo="Typo.body2" Color="Color.Warning" Class="mb-3">
+                    This will drop and recreate the database or schema. All data will be lost.
+                </MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string" Label="Select Connection" Variant="Variant.Outlined" @bind-Value="@_recreateConnectionName">
+                            @if (_connections != null)
+                            {
+                                @foreach (var conn in _connections)
+                                {
+                                    <MudSelectItem Value="@conn.ConnectionName">@conn.ConnectionName</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="@_recreateSchemaName" 
+                                     Label="Schema Name (Optional)" 
+                                     Variant="Variant.Outlined"
+                                     HelperText="Leave empty to recreate the entire database" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Warning" 
+                                  StartIcon="@Icons.Material.Filled.Refresh"
+                                  OnClick="RecreateDatabase"
+                                  Disabled="@(string.IsNullOrEmpty(_recreateConnectionName) || _isRecreating)">
+                            @if (_isRecreating)
+                            {
+                                <text>Recreating...</text>
+                            }
+                            else
+                            {
+                                <text>Recreate Database</text>
+                            }
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudExpansionPanel>
+
+            <!-- Copy Database (ETL) -->
+            <MudExpansionPanel Text="Copy Database (ETL)" Icon="@Icons.Material.Filled.ContentCopy">
+                <MudText Typo="Typo.body2" Color="Color.Info" Class="mb-3">
+                    Copy database structure and/or data from one connection to another.
+                </MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string" Label="Source Connection" Variant="Variant.Outlined" @bind-Value="@_copySourceConnection">
+                            @if (_connections != null)
+                            {
+                                @foreach (var conn in _connections)
+                                {
+                                    <MudSelectItem Value="@conn.ConnectionName">@conn.ConnectionName</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="string" Label="Target Connection" Variant="Variant.Outlined" @bind-Value="@_copyTargetConnection">
+                            @if (_connections != null)
+                            {
+                                @foreach (var conn in _connections)
+                                {
+                                    <MudSelectItem Value="@conn.ConnectionName">@conn.ConnectionName</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="@_copySourceSchema" 
+                                     Label="Source Schema (Optional)" 
+                                     Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="@_copyTargetSchema" 
+                                     Label="Target Schema (Optional)" 
+                                     Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudCheckBox T="bool" @bind-Value="@_copyStructureOnly" Label="Copy Structure Only (No Data)" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudCheckBox T="bool" @bind-Value="@_copyData" Label="Copy Data" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudCheckBox T="bool" @bind-Value="@_truncateTargetTables" Label="Truncate Target Tables Before Copy" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  StartIcon="@Icons.Material.Filled.ContentCopy"
+                                  OnClick="CopyDatabase"
+                                  Disabled="@(string.IsNullOrEmpty(_copySourceConnection) || string.IsNullOrEmpty(_copyTargetConnection) || _isCopying)">
+                            @if (_isCopying)
+                            {
+                                <text>Copying...</text>
+                            }
+                            else
+                            {
+                                <text>Copy Database</text>
+                            }
+                        </MudButton>
+                        @if (!string.IsNullOrEmpty(_currentOperationId) && _currentProgress != null)
+                        {
+                            <ProgressDisplay OperationId="@_currentOperationId" 
+                                           Title="Copying Database" 
+                                           ShowCancel="false"
+                                           OnComplete="HandleCopyComplete" />
+                        }
+                    </MudItem>
+                </MudGrid>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<DatabaseConnectionListItem>? _connections;
+    private bool _isLoading = true;
+    private string? _currentConnectionName;
+    
+    // Drop Database
+    private string? _dropConnectionName;
+    private string? _dropSchemaName;
+    private bool _isDropping = false;
+    
+    // Recreate Database
+    private string? _recreateConnectionName;
+    private string? _recreateSchemaName;
+    private bool _isRecreating = false;
+    
+    // Copy Database (ETL)
+    private string? _copySourceConnection;
+    private string? _copyTargetConnection;
+    private string? _copySourceSchema;
+    private string? _copyTargetSchema;
+    private bool _copyStructureOnly = false;
+    private bool _copyData = true;
+    private bool _truncateTargetTables = false;
+    private bool _isCopying = false;
+    private CopyDatabaseProgress? _copyProgress;
+    private string? _currentOperationId;
+    private ProgressUpdate? _currentProgress;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadConnections();
+    }
+
+    private async Task LoadConnections()
+    {
+        _isLoading = true;
+        try
+        {
+            _connections = await DataManagementService.GetAllConnectionsAsync();
+            
+            // Get current connection using DataManagementService
+            _currentConnectionName = await DataManagementService.GetCurrentConnectionNameAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading connections: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OpenAddWizard()
+    {
+        var parameters = new DialogParameters();
+        var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
+        
+        var dialog = await DialogService.ShowAsync<PPDM39DatabaseWizard>("Add New Database Connection", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Snackbar.Add("Database connection added successfully", Severity.Success);
+            await LoadConnections();
+        }
+    }
+
+    private async Task OpenEditWizard(string connectionName)
+    {
+            try
+            {
+                var connection = await DataManagementService.GetConnectionByNameAsync(connectionName);
+                if (connection == null)
+                {
+                    Snackbar.Add($"Connection '{connectionName}' not found", Severity.Warning);
+                    return;
+                }
+
+            var parameters = new DialogParameters
+            {
+                { "Connection", connection },
+                { "IsEditMode", true }
+            };
+            var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true };
+            
+            var dialog = await DialogService.ShowAsync<PPDM39DatabaseWizard>($"Edit Database Connection: {connectionName}", parameters, options);
+            var result = await dialog.Result;
+
+            if (!result.Canceled)
+            {
+                Snackbar.Add("Database connection updated successfully", Severity.Success);
+                await LoadConnections();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading connection: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task SetCurrentConnection(string connectionName)
+    {
+        try
+        {
+            var result = await DataManagementService.SetCurrentConnectionAsync(connectionName);
+
+            if (result?.Success == true)
+            {
+                Snackbar.Add(result.Message, Severity.Success);
+                
+                if (result.RequiresLogout)
+                {
+                    Snackbar.Add("Switching databases requires you to log out. Redirecting...", Severity.Warning);
+                    await Task.Delay(2000);
+                    NavigationManager.NavigateTo("/authentication/logout?returnUrl=/", forceLoad: true);
+                }
+                else
+                {
+                    await LoadConnections();
+                }
+            }
+            else
+            {
+                Snackbar.Add($"Failed to set current connection: {result?.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error setting current connection: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DeleteConnection(string connectionName)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"Are you sure you want to delete the connection '{connectionName}'? This action cannot be undone." },
+            { "ButtonText", "Delete" },
+            { "Color", Color.Error }
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+        var dialog = await DialogService.ShowAsync<MudDialog>("Confirm Delete", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                // Make DELETE request using ApiClient
+                var deleteResult = await ApiClient.DeleteAsync<DeleteConnectionResult>($"/api/ppdm39/setup/connection/{connectionName}");
+
+                if (deleteResult?.Success == true)
+                {
+                    Snackbar.Add(deleteResult.Message, Severity.Success);
+                    await LoadConnections();
+                }
+                else
+                {
+                    Snackbar.Add($"Failed to delete connection: {deleteResult?.Message}", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error deleting connection: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task DropDatabase()
+    {
+        if (string.IsNullOrEmpty(_dropConnectionName))
+        {
+            Snackbar.Add("Please select a connection", Severity.Warning);
+            return;
+        }
+
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"Are you sure you want to drop the database/schema '{(_dropSchemaName ?? "database")}' for connection '{_dropConnectionName}'? This action cannot be undone and will permanently delete all data." },
+            { "ButtonText", "Drop" },
+            { "Color", Color.Error }
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+        var dialog = await DialogService.ShowAsync<MudDialog>("Confirm Drop Database", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            _isDropping = true;
+            try
+            {
+                var request = new DropDatabaseRequest
+                {
+                    ConnectionName = _dropConnectionName,
+                    SchemaName = _dropSchemaName,
+                    DropIfExists = true
+                };
+
+                var dropResult = await ApiClient.PostAsync<DropDatabaseRequest, DropDatabaseResult>(
+                    "/api/ppdm39/setup/drop-database", request);
+
+                if (dropResult?.Success == true)
+                {
+                    Snackbar.Add(dropResult.Message, Severity.Success);
+                    _dropConnectionName = null;
+                    _dropSchemaName = null;
+                }
+                else
+                {
+                    Snackbar.Add($"Failed to drop database: {dropResult?.Message}", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error dropping database: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                _isDropping = false;
+            }
+        }
+    }
+
+    private async Task RecreateDatabase()
+    {
+        if (string.IsNullOrEmpty(_recreateConnectionName))
+        {
+            Snackbar.Add("Please select a connection", Severity.Warning);
+            return;
+        }
+
+        var parameters = new DialogParameters
+        {
+            { "ContentText", $"Are you sure you want to recreate the database/schema '{(_recreateSchemaName ?? "database")}' for connection '{_recreateConnectionName}'? This will drop and recreate it, and all existing data will be lost." },
+            { "ButtonText", "Recreate" },
+            { "Color", Color.Warning }
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall };
+        var dialog = await DialogService.ShowAsync<MudDialog>("Confirm Recreate Database", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            _isRecreating = true;
+            try
+            {
+                var request = new RecreateDatabaseRequest
+                {
+                    ConnectionName = _recreateConnectionName,
+                    SchemaName = _recreateSchemaName,
+                    BackupFirst = false
+                };
+
+                var recreateResult = await ApiClient.PostAsync<RecreateDatabaseRequest, RecreateDatabaseResult>(
+                    "/api/ppdm39/setup/recreate-database", request);
+
+                if (recreateResult?.Success == true)
+                {
+                    Snackbar.Add(recreateResult.Message, Severity.Success);
+                    _recreateConnectionName = null;
+                    _recreateSchemaName = null;
+                }
+                else
+                {
+                    Snackbar.Add($"Failed to recreate database: {recreateResult?.Message}", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error recreating database: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                _isRecreating = false;
+            }
+        }
+    }
+
+    private async Task CopyDatabase()
+    {
+        if (string.IsNullOrEmpty(_copySourceConnection) || string.IsNullOrEmpty(_copyTargetConnection))
+        {
+            Snackbar.Add("Please select both source and target connections", Severity.Warning);
+            return;
+        }
+
+        if (_copySourceConnection == _copyTargetConnection)
+        {
+            Snackbar.Add("Source and target connections must be different", Severity.Warning);
+            return;
+        }
+
+        _isCopying = true;
+        _copyProgress = null;
+        _currentOperationId = null;
+        _currentProgress = null;
+        
+        try
+        {
+            var request = new CopyDatabaseRequest
+            {
+                SourceConnectionName = _copySourceConnection,
+                TargetConnectionName = _copyTargetConnection,
+                SourceSchema = _copySourceSchema,
+                TargetSchema = _copyTargetSchema,
+                CopyStructureOnly = _copyStructureOnly,
+                CopyData = _copyData && !_copyStructureOnly,
+                CopyIndexes = true,
+                CopyConstraints = true,
+                TruncateTargetTables = _truncateTargetTables
+            };
+
+            // Start operation and get operation ID for progress tracking
+            var response = await ApiClient.PostAsync<CopyDatabaseRequest, OperationStartResponse>(
+                "/api/ppdm39/setup/copy-database", request);
+
+            if (response != null && !string.IsNullOrEmpty(response.OperationId))
+            {
+                _currentOperationId = response.OperationId;
+                if (!string.IsNullOrEmpty(_currentOperationId))
+                {
+                    // Connect to progress hub and listen for updates
+                    await ProgressClient.ConnectAsync();
+                    await ProgressClient.JoinOperationAsync(_currentOperationId);
+                    ProgressClient.OnProgressUpdate += HandleProgressUpdate;
+                }
+            }
+            else
+            {
+                // Fallback: if no operation ID, wait for completion (sync response)
+                // This handles the case where the endpoint returns the result directly
+                Snackbar.Add("Operation started", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error starting database copy: {ex.Message}", Severity.Error);
+            _isCopying = false;
+            _currentOperationId = null;
+        }
+    }
+
+    private async void HandleProgressUpdate(ProgressUpdate progress)
+    {
+        if (progress.OperationId != _currentOperationId)
+            return;
+
+        _currentProgress = progress;
+        await InvokeAsync(StateHasChanged);
+
+        if (progress.IsComplete)
+        {
+            _isCopying = false;
+            
+            if (progress.HasError)
+            {
+                Snackbar.Add($"Operation failed: {progress.ErrorMessage}", Severity.Error);
+            }
+            else
+            {
+                Snackbar.Add(progress.StatusMessage ?? "Operation completed successfully", Severity.Success);
+                
+                // Reset form on success
+                _copySourceConnection = null;
+                _copyTargetConnection = null;
+                _copySourceSchema = null;
+                _copyTargetSchema = null;
+            }
+
+            // Clean up
+            if (!string.IsNullOrEmpty(_currentOperationId))
+            {
+                ProgressClient.OnProgressUpdate -= HandleProgressUpdate;
+                await ProgressClient.LeaveOperationAsync(_currentOperationId);
+                _currentOperationId = null;
+                _currentProgress = null;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private async Task HandleCopyComplete()
+    {
+        _isCopying = false;
+        _currentOperationId = null;
+        _currentProgress = null;
+        await LoadConnections(); // Refresh connection list if needed
+    }
+}

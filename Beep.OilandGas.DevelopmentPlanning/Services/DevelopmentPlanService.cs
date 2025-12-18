@@ -27,7 +27,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             _connectionName = connectionName;
         }
 
-        private List<T> ConvertToList<T>(dynamic units) where T : class
+        private List<T> ConvertToList<T>(object units) where T : class
         {
             var result = new List<T>();
             if (units == null) return result;
@@ -196,15 +196,16 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             // Note: WELL might be linked to plan through AREA_ID or APPLICATION_ID
             // For now, querying all active wells - in production, would need proper relationship
             var units = await wellUow.Get();
-            var wells = ConvertToList<WELL>(units).Where(w => w.ACTIVE_IND == "Y").ToList();
+            List<WELL> allWells = ConvertToList<WELL>(units);
+            var wells = allWells.Where(w => w.ACTIVE_IND == "Y").ToList();
 
             return wells.Select(w => new WellPlanDto
             {
                 WellPlanId = w.UWI ?? string.Empty,
                 PlanId = planId,
                 WellUWI = w.UWI,
-                WellName = w.PREFERRED_NAME ?? string.Empty,
-                WellType = w.WELL_TYPE,
+                WellName = w.WELL_NAME ?? string.Empty,
+                WellType = w.PROFILE_TYPE,
                 TargetDepth = w.BASE_DEPTH,
                 Status = w.ACTIVE_IND == "Y" ? "Active" : "Inactive"
             }).ToList();
@@ -218,13 +219,14 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             var facilityUow = GetFacilityUnitOfWork();
             // Note: FACILITY might be linked to plan through AREA_ID or APPLICATION_ID
             var units = await facilityUow.Get();
-            var facilities = ConvertToList<FACILITY>(units).Where(f => f.ACTIVE_IND == "Y").ToList();
+            List<FACILITY> allFacilities = ConvertToList<FACILITY>(units);
+            var facilities = allFacilities.Where(f => f.ACTIVE_IND == "Y").ToList();
 
             return facilities.Select(f => new FacilityPlanDto
-            {
+            {   
                 FacilityPlanId = f.FACILITY_ID ?? string.Empty,
                 PlanId = planId,
-                FacilityName = f.PREFERRED_NAME ?? string.Empty,
+                FacilityName = f.FACILITY_SHORT_NAME ?? string.Empty,
                 FacilityType = f.FACILITY_TYPE ?? string.Empty,
                 Status = f.ACTIVE_IND == "Y" ? "Active" : "Inactive"
             }).ToList();
@@ -242,9 +244,9 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
             };
             var units = await applicationUow.Get(filters);
-            var applications = ConvertToList<APPLICATION>(units);
+            List<APPLICATION> allApplications = ConvertToList<APPLICATION>(units);
 
-            return applications.Select(app => new PermitApplicationDto
+            return allApplications.Select(app => new PermitApplicationDto
             {
                 ApplicationId = app.APPLICATION_ID ?? string.Empty,
                 ApplicationType = app.APPLICATION_TYPE ?? string.Empty,

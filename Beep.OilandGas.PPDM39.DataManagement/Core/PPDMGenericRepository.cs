@@ -13,6 +13,7 @@ using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
 using TheTechIdea.Beep.Report;
+using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Core
 {
@@ -33,6 +34,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
         protected readonly string _connectionName;
         protected readonly string _tableName;
         protected readonly Type _entityType;
+        protected readonly ILogger<PPDMGenericRepository>? _logger;
         private readonly Dictionary<Type, IUnitOfWorkWrapper> _unitOfWorkCache = new Dictionary<Type, IUnitOfWorkWrapper>();
         private readonly object _unitOfWorkLock = new object();
 
@@ -77,6 +79,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
         /// <param name="entityType">Entity type to work with</param>
         /// <param name="connectionName">Connection name (defaults to "PPDM39")</param>
         /// <param name="tableName">Table name (defaults to entity type name)</param>
+        /// <param name="logger">Optional logger instance</param>
         public PPDMGenericRepository(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
@@ -84,7 +87,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
             IPPDMMetadataRepository metadata,
             Type entityType,
             string connectionName = "PPDM39",
-            string tableName = null)
+            string tableName = null,
+            ILogger<PPDMGenericRepository>? logger = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -93,6 +97,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
             _entityType = entityType ?? throw new ArgumentNullException(nameof(entityType));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _tableName = tableName ?? entityType.Name;
+            _logger = logger;
 
             // Validate entity type implements IPPDMEntity
             if (!typeof(IPPDMEntity).IsAssignableFrom(_entityType))
@@ -569,10 +574,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                 // First, try direct match by column name
                 if (parentKeys.ContainsKey(fk.ForeignKeyColumn))
                 {
+                    // Format ID according to table's ID type configuration (PPDM uses string IDs)
+                    var formattedId = _defaults.FormatIdForTable(_tableName, parentKeys[fk.ForeignKeyColumn]);
                     filters.Add(new AppFilter
                     {
                         FieldName = fk.ForeignKeyColumn,
-                        FilterValue = parentKeys[fk.ForeignKeyColumn]?.ToString() ?? string.Empty,
+                        FilterValue = formattedId,
                         Operator = "="
                     });
                 }
@@ -580,10 +587,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                 else if (parentPkColumns.Count == 1 && parentKeys.ContainsKey(parentPkColumns[0]))
                 {
                     // Single column primary key - use the value
+                    // Format ID according to table's ID type configuration (PPDM uses string IDs)
+                    var formattedId = _defaults.FormatIdForTable(_tableName, parentKeys[parentPkColumns[0]]);
                     filters.Add(new AppFilter
                     {
                         FieldName = fk.ForeignKeyColumn,
-                        FilterValue = parentKeys[parentPkColumns[0]]?.ToString() ?? string.Empty,
+                        FilterValue = formattedId,
                         Operator = "="
                     });
                 }
@@ -596,10 +605,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                     
                     if (fkIndex >= 0 && fkIndex < parentPkColumns.Count && parentKeys.ContainsKey(parentPkColumns[fkIndex]))
                     {
+                        // Format ID according to table's ID type configuration (PPDM uses string IDs)
+                        var formattedId = _defaults.FormatIdForTable(_tableName, parentKeys[parentPkColumns[fkIndex]]);
                         filters.Add(new AppFilter
                         {
                             FieldName = fk.ForeignKeyColumn,
-                            FilterValue = parentKeys[parentPkColumns[fkIndex]]?.ToString() ?? string.Empty,
+                            FilterValue = formattedId,
                             Operator = "="
                         });
                     }
@@ -794,14 +805,19 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
         /// <summary>
         /// Gets an entity by its primary key using AppFilter
         /// Uses metadata to determine primary key column
+        /// Uses defaults configuration to format ID correctly (all PPDM tables use string IDs)
         /// </summary>
         public virtual async Task<object> GetByIdAsync(object id)
         {
             var metadata = await GetTableMetadataAsync(_tableName);
             var primaryKeyName = metadata.PrimaryKeyColumn;
+            
+            // Format ID according to table's ID type configuration (PPDM uses string IDs)
+            var formattedId = _defaults.FormatIdForTable(_tableName, id);
+            
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = primaryKeyName, FilterValue = id?.ToString() ?? string.Empty, Operator = "=" }
+                new AppFilter { FieldName = primaryKeyName, FilterValue = formattedId, Operator = "=" }
             };
 
             var result = await GetEntitiesWithFiltersAsync(_entityType, _tableName, filters);
@@ -826,7 +842,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
         /// </summary>
         public virtual async Task<IEnumerable<object>> GetAsync(List<AppFilter> filters)
         {
-            return await GetEntitiesWithFiltersAsync(_entityType, _tableName, filters ?? new List<AppFilter>());
+            _logger?.LogDebug("Getting entities from table {TableName} with {FilterCount} filters", 
+                _tableName, filters?.Count ?? 0);
+            var result = await GetEntitiesWithFiltersAsync(_entityType, _tableName, filters ?? new List<AppFilter>());
+            var resultList = result.ToList();
+            _logger?.LogDebug("Retrieved {Count} entities from table {TableName}", resultList.Count, _tableName);
+            return resultList;
         }
 
         /// <summary>
@@ -839,6 +860,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
 
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
+
+            _logger?.LogDebug("Inserting entity of type {EntityType} into table {TableName}", _entityType.Name, _tableName);
 
             // Validate entity type
             if (!_entityType.IsAssignableFrom(entity.GetType()))
@@ -855,9 +878,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
             var result = await uow.InsertAsync(entity as Entity);
             if (result != null && !string.IsNullOrEmpty(result.Message))
             {
+                _logger?.LogError("Insert failed for table {TableName}: {Message}", _tableName, result.Message);
                 throw new Exception($"Insert failed: {result.Message}");
             }
 
+            _logger?.LogDebug("Successfully inserted entity into table {TableName}", _tableName);
             return entity;
         }
 
@@ -902,6 +927,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
+            _logger?.LogDebug("Updating entity of type {EntityType} in table {TableName}", _entityType.Name, _tableName);
+
             // Validate entity type
             if (!_entityType.IsAssignableFrom(entity.GetType()))
             {
@@ -917,9 +944,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
             var result = await uow.UpdateAsync(entity as Entity);
             if (result != null && !string.IsNullOrEmpty(result.Message))
             {
+                _logger?.LogError("Update failed for table {TableName}: {Message}", _tableName, result.Message);
                 throw new Exception($"Update failed: {result.Message}");
             }
 
+            _logger?.LogDebug("Successfully updated entity in table {TableName}", _tableName);
             return entity;
         }
 
@@ -955,10 +984,13 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
 
         /// <summary>
         /// Soft deletes an entity (sets ACTIVE_IND = 'N') using defaults
+        /// Uses defaults configuration to format ID correctly (all PPDM tables use string IDs)
         /// </summary>
         public virtual async Task<bool> SoftDeleteAsync(object id, string userId)
         {
-            var entity = await GetByIdAsync(id);
+            // Format ID according to table's ID type configuration (PPDM uses string IDs)
+            var formattedId = _defaults.FormatIdForTable(_tableName, id);
+            var entity = await GetByIdAsync(formattedId);
             if (entity == null)
                 return false;
 
@@ -971,16 +1003,46 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
         /// <summary>
         /// Hard deletes an entity from the database
         /// </summary>
-        public virtual async Task<bool> DeleteAsync(object id)
+        public virtual async Task<bool> DeleteAsync(object entity)
         {
-            var entity = await GetByIdAsync(id);
             if (entity == null)
-                return false;
+                throw new ArgumentNullException(nameof(entity));
+
+            _logger?.LogDebug("Deleting entity of type {EntityType} from table {TableName}", _entityType.Name, _tableName);
 
             var uow = GetOrCreateUnitOfWork(_entityType, _tableName);
             uow.EntityName = _tableName;
             var result = await uow.DeleteAsync(entity as Entity);
-            return result == null || string.IsNullOrEmpty(result.Message);
+            bool success = result == null || string.IsNullOrEmpty(result.Message);
+            
+            if (success)
+            {
+                _logger?.LogDebug("Successfully deleted entity from table {TableName}", _tableName);
+            }
+            else
+            {
+                _logger?.LogWarning("Delete operation returned message: {Message}", result?.Message);
+            }
+            
+            return success;
+        }
+
+        /// <summary>
+        /// Hard deletes an entity by ID
+        /// Uses defaults configuration to format ID correctly (all PPDM tables use string IDs)
+        /// </summary>
+        public virtual async Task<bool> DeleteByIdAsync(object id, string userId)
+        {
+            // Format ID according to table's ID type configuration (PPDM uses string IDs)
+            var formattedId = _defaults.FormatIdForTable(_tableName, id);
+            var entity = await GetByIdAsync(formattedId);
+            if (entity == null)
+            {
+                _logger?.LogWarning("Entity not found for deletion, ID: {Id}", formattedId);
+                return false;
+            }
+
+            return await DeleteAsync(entity);
         }
 
         /// <summary>
@@ -1162,6 +1224,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
         #region File Import/Export with Mapping and Defaults
 
         /// <summary>
+        /// Delegate for progress reporting
+        /// </summary>
+        public delegate void ProgressReportDelegate(string operationId, int percentage, string message, long? itemsProcessed = null, long? totalItems = null);
+
+        /// <summary>
         /// Imports data from a CSV file with automatic mapping and default value application
         /// </summary>
         /// <param name="csvFilePath">Path to the CSV file</param>
@@ -1169,13 +1236,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
         /// <param name="columnMapping">Optional column mapping (CSV column name -> Entity property name). If null, auto-mapping is used.</param>
         /// <param name="skipHeaderRow">Whether to skip the first row (header row)</param>
         /// <param name="validateForeignKeys">Whether to validate foreign keys before import</param>
+        /// <param name="onProgress">Optional progress callback: (operationId, percentage, message, itemsProcessed, totalItems)</param>
+        /// <param name="operationId">Optional operation ID for progress tracking</param>
         /// <returns>Import result with success count and errors</returns>
         public virtual async Task<FileImportResult> ImportFromCsvAsync(
             string csvFilePath,
             string userId,
             Dictionary<string, string> columnMapping = null,
             bool skipHeaderRow = true,
-            bool validateForeignKeys = true)
+            bool validateForeignKeys = true,
+            ProgressReportDelegate? onProgress = null,
+            string? operationId = null)
         {
             if (string.IsNullOrWhiteSpace(csvFilePath))
                 throw new ArgumentException("CSV file path cannot be null or empty", nameof(csvFilePath));
@@ -1192,8 +1263,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                 Errors = new List<FileImportError>()
             };
 
+            _logger?.LogInformation("Starting CSV import for table {TableName} from file {FilePath} (OperationId: {OperationId})", 
+                _tableName, csvFilePath, operationId ?? "none");
+
             try
             {
+                if (onProgress != null && !string.IsNullOrEmpty(operationId))
+                {
+                    onProgress(operationId, 0, "Reading CSV file...");
+                }
+
                 // Read CSV file
                 var csvLines = File.ReadAllLines(csvFilePath, Encoding.UTF8);
                 if (csvLines.Length == 0)
@@ -1204,6 +1283,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                         Message = "CSV file is empty"
                     });
                     return result;
+                }
+
+                if (onProgress != null && !string.IsNullOrEmpty(operationId))
+                {
+                    onProgress(operationId, 5, "Parsing CSV headers...");
                 }
 
                 // Parse header row
@@ -1218,6 +1302,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                     }
                 }
 
+                _logger?.LogDebug("Parsed {ColumnCount} columns from CSV header", csvColumnIndices.Count);
+
                 // Build column mapping (use provided mapping or auto-map)
                 var mapping = columnMapping ?? BuildAutoColumnMapping(csvColumnIndices.Keys);
 
@@ -1229,7 +1315,13 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                 var startRow = skipHeaderRow ? 1 : 0;
                 result.TotalRows = csvLines.Length - startRow;
 
+                if (onProgress != null && !string.IsNullOrEmpty(operationId))
+                {
+                    onProgress(operationId, 10, $"Parsing {result.TotalRows} rows for validation...", 0, result.TotalRows);
+                }
+
                 // First pass: Parse and validate
+                int parsedRows = 0;
                 for (int rowIndex = startRow; rowIndex < csvLines.Length; rowIndex++)
                 {
                     var row = csvLines[rowIndex];
@@ -1258,6 +1350,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                         }
 
                         rowsForValidation.Add(rowData);
+                        parsedRows++;
+                        
+                        // Update progress every 100 rows or at end
+                        if (onProgress != null && !string.IsNullOrEmpty(operationId) && 
+                            (parsedRows % 100 == 0 || rowIndex == csvLines.Length - 1))
+                        {
+                            var progress = 10 + (int)((parsedRows / (double)result.TotalRows) * 30); // 10-40% for parsing
+                            onProgress(operationId, progress, 
+                                $"Parsed {parsedRows}/{result.TotalRows} rows", parsedRows, result.TotalRows);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -1267,12 +1369,20 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                             Message = $"Error parsing row: {ex.Message}"
                         });
                         result.ErrorCount++;
+                        _logger?.LogWarning("Error parsing CSV row {RowNumber}: {Error}", rowIndex + 1, ex.Message);
                     }
                 }
+
+                _logger?.LogInformation("Parsed {ParsedRows} rows, {ErrorCount} errors during parsing", parsedRows, result.ErrorCount);
 
                 // Validate foreign keys if requested
                 if (validateForeignKeys && rowsForValidation.Any())
                 {
+                    if (onProgress != null && !string.IsNullOrEmpty(operationId))
+                    {
+                        onProgress(operationId, 40, "Validating foreign keys...");
+                    }
+                    
                     var fkErrors = await ValidateForeignKeyValuesBatchAsync(rowsForValidation);
                     foreach (var fkError in fkErrors)
                     {
@@ -1283,9 +1393,19 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                         });
                         result.ErrorCount++;
                     }
+                    
+                    _logger?.LogInformation("Validated foreign keys: {ErrorCount} errors found", fkErrors.Count);
                 }
 
                 // Second pass: Import valid rows
+                if (onProgress != null && !string.IsNullOrEmpty(operationId))
+                {
+                    onProgress(operationId, 45, "Starting data import...", 0, result.TotalRows);
+                }
+
+                int importedRows = 0;
+                int validRowsToImport = result.TotalRows - result.ErrorCount;
+                
                 for (int rowIndex = startRow; rowIndex < csvLines.Length; rowIndex++)
                 {
                     var row = csvLines[rowIndex];
@@ -1309,6 +1429,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                         // Insert using repository
                         await InsertAsync(entity, userId);
                         result.SuccessCount++;
+                        importedRows++;
+                        
+                        // Update progress every 50 rows or at end
+                        if (onProgress != null && !string.IsNullOrEmpty(operationId) && 
+                            (importedRows % 50 == 0 || rowIndex == csvLines.Length - 1))
+                        {
+                            var progress = 45 + (int)((importedRows / (double)validRowsToImport) * 50); // 45-95% for import
+                            onProgress(operationId, progress, 
+                                $"Imported {importedRows}/{validRowsToImport} rows", importedRows, validRowsToImport);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -1318,17 +1448,34 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                             Message = $"Error importing row: {ex.Message}"
                         });
                         result.ErrorCount++;
+                        _logger?.LogWarning("Error importing row {RowNumber}: {Error}", rowNumber, ex.Message);
                     }
+                }
+
+                _logger?.LogInformation("Import completed: {SuccessCount} succeeded, {ErrorCount} errors", 
+                    result.SuccessCount, result.ErrorCount);
+
+                if (onProgress != null && !string.IsNullOrEmpty(operationId))
+                {
+                    onProgress(operationId, 100, 
+                        $"Import completed: {result.SuccessCount} rows imported, {result.ErrorCount} errors", 
+                        result.SuccessCount, result.TotalRows);
                 }
             }
             catch (Exception ex)
             {
+                _logger?.LogError(ex, "Fatal error during CSV import for table {TableName}", _tableName);
                 result.Errors.Add(new FileImportError
                 {
                     RowNumber = 0,
                     Message = $"Fatal error during import: {ex.Message}"
                 });
                 result.ErrorCount++;
+                
+                if (onProgress != null && !string.IsNullOrEmpty(operationId))
+                {
+                    onProgress(operationId, 100, $"Fatal error: {ex.Message}");
+                }
             }
 
             return result;
@@ -1340,21 +1487,42 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
         /// <param name="csvFilePath">Path where CSV file will be created</param>
         /// <param name="filters">Optional filters to apply to exported data</param>
         /// <param name="includeHeaders">Whether to include header row</param>
+        /// <param name="onProgress">Optional progress callback: (operationId, percentage, message, itemsProcessed, totalItems)</param>
+        /// <param name="operationId">Optional operation ID for progress tracking</param>
         /// <returns>Number of records exported</returns>
         public virtual async Task<int> ExportToCsvAsync(
             string csvFilePath,
             List<AppFilter> filters = null,
-            bool includeHeaders = true)
+            bool includeHeaders = true,
+            ProgressReportDelegate? onProgress = null,
+            string? operationId = null)
         {
             if (string.IsNullOrWhiteSpace(csvFilePath))
                 throw new ArgumentException("CSV file path cannot be null or empty", nameof(csvFilePath));
+
+            _logger?.LogInformation("Starting CSV export for table {TableName} to file {FilePath} (OperationId: {OperationId})", 
+                _tableName, csvFilePath, operationId ?? "none");
+
+            if (onProgress != null && !string.IsNullOrEmpty(operationId))
+            {
+                onProgress(operationId, 0, "Querying data to export...");
+            }
 
             // Get entities to export
             var entities = await GetAsync(filters ?? new List<AppFilter>());
             var entityList = entities.ToList();
 
             if (!entityList.Any())
+            {
+                _logger?.LogInformation("No entities found to export for table {TableName}", _tableName);
+                if (onProgress != null && !string.IsNullOrEmpty(operationId))
+                {
+                    onProgress(operationId, 100, "Export completed: No data to export");
+                }
                 return 0;
+            }
+
+            _logger?.LogInformation("Found {EntityCount} entities to export", entityList.Count);
 
             // Get entity properties
             var properties = _entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -1373,6 +1541,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
             }
 
             // Add data rows
+            int exportedCount = 0;
             foreach (var entity in entityList)
             {
                 var values = properties.Select(p =>
@@ -1382,10 +1551,33 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                 }).ToList();
 
                 csvLines.Add(string.Join(",", values));
+                exportedCount++;
+                
+                        // Update progress every 100 entities or at end
+                        if (onProgress != null && !string.IsNullOrEmpty(operationId) && 
+                            (exportedCount % 100 == 0 || exportedCount == entityList.Count))
+                        {
+                            var progress = 20 + (int)((exportedCount / (double)entityList.Count) * 70); // 20-90% for export
+                            onProgress(operationId, progress, 
+                                $"Exported {exportedCount}/{entityList.Count} entities", exportedCount, entityList.Count);
+                        }
+            }
+
+            if (onProgress != null && !string.IsNullOrEmpty(operationId))
+            {
+                onProgress(operationId, 95, "Writing CSV file...");
             }
 
             // Write to file
             await File.WriteAllLinesAsync(csvFilePath, csvLines, Encoding.UTF8);
+
+            _logger?.LogInformation("CSV export completed: {ExportedCount} entities exported to {FilePath}", 
+                exportedCount, csvFilePath);
+
+            if (onProgress != null && !string.IsNullOrEmpty(operationId))
+            {
+                onProgress(operationId, 100, $"Export completed: {exportedCount} entities exported", exportedCount, entityList.Count);
+            }
 
             return entityList.Count;
         }
