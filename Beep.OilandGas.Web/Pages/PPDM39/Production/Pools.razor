@@ -1,4 +1,5 @@
 @page "/ppdm39/production/pools"
+@using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
@@ -30,7 +31,7 @@
 </MudContainer>
 
 @code {
-    private List<object>? _pools;
+    private List<POOL>? _pools;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
@@ -43,7 +44,7 @@
         _isLoading = true;
         try
         {
-            _pools = await ApiClient.GetAsync<List<object>>("/api/production/pools");
+            _pools = await ApiClient.GetAsync<List<POOL>>("/api/production/pools");
         }
         catch (Exception ex)
         {

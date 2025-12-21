@@ -1,4 +1,5 @@
 @page "/ppdm39/production/reserves"
+@using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
@@ -30,7 +31,7 @@
 </MudContainer>
 
 @code {
-    private List<object>? _reserves;
+    private List<RESERVE_ENTITY>? _reserves;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
@@ -43,7 +44,7 @@
         _isLoading = true;
         try
         {
-            _reserves = await ApiClient.GetAsync<List<object>>("/api/production/reserves");
+            _reserves = await ApiClient.GetAsync<List<RESERVE_ENTITY>>("/api/production/reserves");
         }
         catch (Exception ex)
         {

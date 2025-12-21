@@ -1,0 +1,206 @@
+@page "/admin/access-control/asset-access"
+@using Beep.OilandGas.PPDM39.Core.DTOs
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Asset Access Assignment</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Asset Access Assignment</MudText>
+    
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-4">Grant Asset Access to Users</MudText>
+        
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudTextField @bind-Value="@_userId" 
+                             Label="User ID" 
+                             Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect T="string" 
+                          @bind-Value="@_assetType"
+                          Label="Asset Type"
+                          Variant="Variant.Outlined">
+                    <MudSelectItem Value="FIELD">Field</MudSelectItem>
+                    <MudSelectItem Value="POOL">Pool</MudSelectItem>
+                    <MudSelectItem Value="FACILITY">Facility</MudSelectItem>
+                    <MudSelectItem Value="WELL">Well</MudSelectItem>
+                    <MudSelectItem Value="AREA">Area</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudTextField @bind-Value="@_assetId" 
+                             Label="Asset ID" 
+                             Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect T="string" 
+                          @bind-Value="@_accessLevel"
+                          Label="Access Level"
+                          Variant="Variant.Outlined">
+                    <MudSelectItem Value="READ">Read</MudSelectItem>
+                    <MudSelectItem Value="WRITE">Write</MudSelectItem>
+                    <MudSelectItem Value="DELETE">Delete</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSwitch @bind-Checked="@_inherit" 
+                          Label="Inherit to children"
+                          Color="Color.Primary" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary"
+                          OnClick="GrantAccess"
+                          StartIcon="@Icons.Material.Filled.CheckCircle">
+                    Grant Access
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (_assetAccessList != null && _assetAccessList.Any())
+        {
+            <MudDivider Class="my-4" />
+            <MudText Typo="Typo.h6" Class="mb-3">User Asset Access</MudText>
+            <MudTable Items="@_assetAccessList" Hover="true" Dense="true">
+                <HeaderContent>
+                    <MudTh>User ID</MudTh>
+                    <MudTh>Asset Type</MudTh>
+                    <MudTh>Asset ID</MudTh>
+                    <MudTh>Access Level</MudTh>
+                    <MudTh>Inherit</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.UserId</MudTd>
+                    <MudTd>@context.AssetType</MudTd>
+                    <MudTd>@context.AssetId</MudTd>
+                    <MudTd>
+                        <MudChip Size="Size.Small" Color="@GetAccessLevelColor(context.AccessLevel)">
+                            @context.AccessLevel
+                        </MudChip>
+                    </MudTd>
+                    <MudTd>
+                        @if (context.Inherit)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Close" Color="Color.Default" Size="Size.Small" />
+                        }
+                    </MudTd>
+                    <MudTd>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                      Color="Color.Error" 
+                                      Size="Size.Small"
+                                      OnClick="@(() => RevokeAccess(context))" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _userId = string.Empty;
+    private string _assetType = string.Empty;
+    private string _assetId = string.Empty;
+    private string _accessLevel = "READ";
+    private bool _inherit = true;
+    private List<AssetAccessDTO>? _assetAccessList;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAssetAccess();
+    }
+
+    private async Task LoadAssetAccess()
+    {
+        if (string.IsNullOrEmpty(_userId)) return;
+
+        try
+        {
+            _assetAccessList = await ApiClient.GetAsync<List<AssetAccessDTO>>($"/api/accesscontrol/user/{_userId}/assets");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading asset access: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task GrantAccess()
+    {
+        if (string.IsNullOrEmpty(_userId) || string.IsNullOrEmpty(_assetType) || string.IsNullOrEmpty(_assetId))
+        {
+            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var request = new GrantAccessRequest
+            {
+                UserId = _userId,
+                AssetId = _assetId,
+                AssetType = _assetType,
+                AccessLevel = _accessLevel,
+                Inherit = _inherit
+            };
+
+            var result = await ApiClient.PostAsync<GrantAccessRequest, bool>("/api/accesscontrol/grant-access", request);
+            
+            if (result)
+            {
+                Snackbar.Add("Access granted successfully", Severity.Success);
+                await LoadAssetAccess();
+            }
+            else
+            {
+                Snackbar.Add("Failed to grant access", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error granting access: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task RevokeAccess(AssetAccessDTO access)
+    {
+        try
+        {
+            var request = new RevokeAccessRequest
+            {
+                UserId = access.UserId,
+                AssetId = access.AssetId,
+                AssetType = access.AssetType
+            };
+
+            var result = await ApiClient.PostAsync<RevokeAccessRequest, bool>("/api/accesscontrol/revoke-access", request);
+            
+            if (result)
+            {
+                Snackbar.Add("Access revoked successfully", Severity.Success);
+                await LoadAssetAccess();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error revoking access: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private Color GetAccessLevelColor(string accessLevel)
+    {
+        return accessLevel.ToUpper() switch
+        {
+            "READ" => Color.Info,
+            "WRITE" => Color.Warning,
+            "DELETE" => Color.Error,
+            _ => Color.Default
+        };
+    }
+}

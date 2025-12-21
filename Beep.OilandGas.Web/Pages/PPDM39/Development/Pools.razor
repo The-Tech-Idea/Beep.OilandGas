@@ -1,0 +1,147 @@
+@page "/ppdm39/development/pools"
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Pools - Development</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Development Pools</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">Pools for Current Field</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+                Add Pool
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_pools != null && _pools.Any())
+        {
+            <MudTable Items="@_pools" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Pool ID</MudTh>
+                    <MudTh>Pool Name</MudTh>
+                    <MudTh>Pool Type</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Pool ID">@GetPropertyValue(context, "POOL_ID")</MudTd>
+                    <MudTd DataLabel="Pool Name">@GetPropertyValue(context, "POOL_NAME")</MudTd>
+                    <MudTd DataLabel="Pool Type">@GetPropertyValue(context, "POOL_TYPE")</MudTd>
+                    <MudTd DataLabel="Status">@GetPropertyValue(context, "POOL_STATUS")</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
+                            <MudButton StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditDialog(context))">
+                                Edit
+                            </MudButton>
+                        </MudButtonGroup>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No pools found for the current field.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<POOL>? _pools;
+    private bool _isLoading = false;
+    private string? _currentUserId = "system"; // TODO: Get from authentication context
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPools();
+    }
+
+    private async Task LoadPools()
+    {
+        _isLoading = true;
+        try
+        {
+            _pools = await ApiClient.GetAsync<List<POOL>>("/api/field/current/development/pools");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading pools: {ex.Message}", Severity.Error);
+            _pools = new List<POOL>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<PoolEditDialog>("Create Pool", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is Dictionary<string, object> poolData)
+        {
+            try
+            {
+                var created = await ApiClient.PostAsync<object, Dictionary<string, object>>(
+                    "/api/field/current/development/pools",
+                    poolData,
+                    new { userId = _currentUserId });
+                
+                Snackbar.Add("Pool created successfully", Severity.Success);
+                await LoadPools();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error creating pool: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task OpenEditDialog(object pool)
+    {
+        var poolId = GetPropertyValue(pool, "POOL_ID");
+        if (string.IsNullOrEmpty(poolId))
+            return;
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var parameters = new DialogParameters { ["Pool"] = pool };
+        var dialog = await DialogService.ShowAsync<PoolEditDialog>("Edit Pool", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is Dictionary<string, object> poolData)
+        {
+            try
+            {
+                var updated = await ApiClient.PutAsync<object, Dictionary<string, object>>(
+                    $"/api/field/current/development/pools/{poolId}",
+                    poolData,
+                    new { userId = _currentUserId });
+                
+                Snackbar.Add("Pool updated successfully", Severity.Success);
+                await LoadPools();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error updating pool: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        {
+            return dict[propertyName]?.ToString() ?? "N/A";
+        }
+        return "N/A";
+    }
+}

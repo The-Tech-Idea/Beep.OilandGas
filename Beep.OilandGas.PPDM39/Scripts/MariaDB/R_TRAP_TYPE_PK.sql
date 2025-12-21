@@ -1,0 +1,9 @@
+-- PPDM39 MARIADB DDL Script
+-- Converted from SQL Server script: R_TRAP_TYPE_PK.sql
+-- This script is for the PPDM39 model
+
+-- CREATING PRIMARY KEY R_TRAP_TYPE_PK
+ALTER TABLE R_TRAP_TYPE ADD CONSTRAINT R_TRAP_TYPE_PK PRIMARY KEY
+(
+	TRAP_TYPE
+);

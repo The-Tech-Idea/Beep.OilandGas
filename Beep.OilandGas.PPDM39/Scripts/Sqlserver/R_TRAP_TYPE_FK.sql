@@ -1,0 +1,1 @@
+-- R_TRAP_TYPE has no foreign keys

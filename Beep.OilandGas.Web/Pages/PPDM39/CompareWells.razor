@@ -104,7 +104,7 @@
         try
         {
             var request = new { WellIdentifiers = wellIdentifiers, FieldNames = (List<string>?)null };
-            _comparison = await ApiClient.PostAsync<object, WellComparisonDTO>("/api/ppdm39/wells/compare", request);
+            _comparison = await ApiClient.PostAsync<object, WellComparisonDTO>("/api/well/compare", request);
             
             if (_comparison != null)
             {

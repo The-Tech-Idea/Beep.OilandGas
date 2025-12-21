@@ -1,0 +1,126 @@
+@using Beep.OilandGas.PPDM39.Core.DTOs
+@inject DataManagementService DataManagementService
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<MudSelect T="string" 
+           Label="Active Field" 
+           Variant="Variant.Outlined"
+           @bind-Value="_selectedFieldId"
+           ValueChanged="OnFieldChanged"
+           Required="false"
+           Margin="Margin.Dense">
+    @if (_fields.Any())
+    {
+        @foreach (var field in _fields)
+        {
+            <MudSelectItem Value="@field.FieldId">@field.FieldName</MudSelectItem>
+        }
+    }
+    else if (!_loading)
+    {
+        <MudSelectItem Value="" Disabled="true">No fields available</MudSelectItem>
+    }
+</MudSelect>
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-2" />
+}
+
+@code {
+    private List<FieldListItem> _fields = new List<FieldListItem>();
+    private string? _selectedFieldId;
+    private bool _loading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFields();
+        await LoadCurrentField();
+        
+        // Subscribe to field change events
+        DataManagementService.CurrentFieldChanged += OnCurrentFieldChanged;
+    }
+
+    protected override void Dispose()
+    {
+        DataManagementService.CurrentFieldChanged -= OnCurrentFieldChanged;
+        base.Dispose();
+    }
+
+    private async Task LoadFields()
+    {
+        try
+        {
+            _loading = true;
+            var fields = await ApiClient.GetAsync<List<FieldListItem>>("/api/field/fields");
+            _fields = fields ?? new List<FieldListItem>();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading fields: {ex.Message}", Severity.Error);
+            _fields = new List<FieldListItem>();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task LoadCurrentField()
+    {
+        try
+        {
+            var currentFieldId = await DataManagementService.GetCurrentFieldIdAsync();
+            _selectedFieldId = currentFieldId;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading current field: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnFieldChanged(string? fieldId)
+    {
+        if (string.IsNullOrWhiteSpace(fieldId))
+            return;
+
+        try
+        {
+            var success = await DataManagementService.SetCurrentFieldAsync(fieldId);
+            if (success)
+            {
+                _selectedFieldId = fieldId;
+                Snackbar.Add($"Active field set to: {GetFieldName(fieldId)}", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to set active field", Severity.Warning);
+                // Reload current field to revert
+                await LoadCurrentField();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error setting active field: {ex.Message}", Severity.Error);
+            // Reload current field to revert
+            await LoadCurrentField();
+        }
+    }
+
+    private void OnCurrentFieldChanged(object? sender, string? fieldId)
+    {
+        _selectedFieldId = fieldId;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private string GetFieldName(string? fieldId)
+    {
+        if (string.IsNullOrWhiteSpace(fieldId))
+            return string.Empty;
+        
+        var field = _fields.FirstOrDefault(f => f.FieldId == fieldId);
+        return field?.FieldName ?? fieldId;
+    }
+}

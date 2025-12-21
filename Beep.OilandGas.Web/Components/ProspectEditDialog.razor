@@ -1,0 +1,102 @@
+@using System.Collections.Generic
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="@_prospectName" 
+                             Label="Prospect Name" 
+                             Variant="Variant.Outlined" 
+                             Required="true" />
+
+                <MudTextField @bind-Value="@_prospectStatus" 
+                             Label="Prospect Status" 
+                             Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="@_description" 
+                             Label="Description" 
+                             Variant="Variant.Outlined" 
+                             Lines="3" />
+
+                <MudTextField T="decimal?" 
+                             @bind-Value="@_estimatedReserves" 
+                             Label="Estimated Reserves" 
+                             Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="@_riskLevel" 
+                             Label="Risk Level" 
+                             Variant="Variant.Outlined" />
+
+                <MudDatePicker @bind-Date="@_discoveryDate" 
+                              Label="Discovery Date" 
+                              Variant="Variant.Outlined" />
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Dictionary<string, object>? Prospect { get; set; }
+
+    private string _prospectName = string.Empty;
+    private string _prospectStatus = string.Empty;
+    private string _description = string.Empty;
+    private decimal? _estimatedReserves;
+    private string _riskLevel = string.Empty;
+    private DateTime? _discoveryDate;
+
+    protected override void OnInitialized()
+    {
+        if (Prospect != null)
+        {
+            // Load existing prospect data
+            _prospectName = GetPropertyValue(Prospect, "PROSPECT_NAME") ?? string.Empty;
+            _prospectStatus = GetPropertyValue(Prospect, "PROSPECT_STATUS") ?? string.Empty;
+            _description = GetPropertyValue(Prospect, "DESCRIPTION") ?? string.Empty;
+            
+            if (decimal.TryParse(GetPropertyValue(Prospect, "ESTIMATED_RESERVES"), out var reserves))
+                _estimatedReserves = reserves;
+            
+            _riskLevel = GetPropertyValue(Prospect, "RISK_LEVEL") ?? string.Empty;
+            
+            if (DateTime.TryParse(GetPropertyValue(Prospect, "DISCOVERY_DATE"), out var date))
+                _discoveryDate = date;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Save()
+    {
+        var prospectData = new Dictionary<string, object>
+        {
+            { "PROSPECT_NAME", _prospectName },
+            { "PROSPECT_STATUS", _prospectStatus },
+            { "DESCRIPTION", _description },
+            { "RISK_LEVEL", _riskLevel }
+        };
+
+        if (_estimatedReserves.HasValue)
+            prospectData["ESTIMATED_RESERVES"] = _estimatedReserves.Value;
+
+        if (_discoveryDate.HasValue)
+            prospectData["DISCOVERY_DATE"] = _discoveryDate.Value;
+
+        MudDialog.Close(DialogResult.Ok(prospectData));
+    }
+
+    private string? GetPropertyValue(Dictionary<string, object> dict, string key)
+    {
+        if (dict.ContainsKey(key))
+            return dict[key]?.ToString();
+        return null;
+    }
+}

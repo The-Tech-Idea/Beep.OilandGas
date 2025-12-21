@@ -1,0 +1,126 @@
+@page "/ppdm39/accounting/dashboard"
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Accounting Dashboard - Accounting</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Accounting Dashboard</MudText>
+
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2" Class="ma-2">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="mb-2">Volume Reconciliation</MudText>
+                    <MudText Typo="Typo.body1">Reconcile production volumes between sources</MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/ppdm39/accounting/volume-reconciliation" Class="mt-2">
+                        Go to Reconciliation
+                    </MudButton>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2" Class="ma-2">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="mb-2">Royalty Calculations</MudText>
+                    <MudText Typo="Typo.body1">View and calculate production royalties</MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/ppdm39/accounting/royalties" Class="mt-2">
+                        Go to Royalties
+                    </MudButton>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2" Class="ma-2">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="mb-2">Cost Allocation</MudText>
+                    <MudText Typo="Typo.body1">Allocate costs to production entities</MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/ppdm39/accounting/cost-allocation" Class="mt-2">
+                        Go to Cost Allocation
+                    </MudButton>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-4">Recent Accounting Activities</MudText>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_recentActivities != null && _recentActivities.Any())
+        {
+            <MudTable Items="@_recentActivities" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Activity Type</MudTh>
+                    <MudTh>Date</MudTh>
+                    <MudTh>Description</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Activity Type">@GetPropertyValue(context, "ActivityType")</MudTd>
+                    <MudTd DataLabel="Date">@FormatDate(GetPropertyValue(context, "Date"))</MudTd>
+                    <MudTd DataLabel="Description">@GetPropertyValue(context, "Description")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else if (!_isLoading)
+        {
+            <MudAlert Severity="Severity.Info">No recent accounting activities found.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<ACCOUNTING_ALLOCATION>? _recentActivities;
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRecentActivities();
+    }
+
+    private async Task LoadRecentActivities()
+    {
+        _isLoading = true;
+        try
+        {
+            // TODO: Implement endpoint to get recent accounting activities
+            // For now, return empty list
+            _recentActivities = new List<ACCOUNTING_ALLOCATION>();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading recent activities: {ex.Message}", Severity.Error);
+            _recentActivities = new List<ACCOUNTING_ALLOCATION>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        {
+            return dict[propertyName]?.ToString() ?? "N/A";
+        }
+        return "N/A";
+    }
+
+    private string FormatDate(string? dateStr)
+    {
+        if (string.IsNullOrEmpty(dateStr) || dateStr == "N/A")
+            return "N/A";
+
+        if (DateTime.TryParse(dateStr, out var date))
+            return date.ToString("yyyy-MM-dd");
+
+        return dateStr;
+    }
+}

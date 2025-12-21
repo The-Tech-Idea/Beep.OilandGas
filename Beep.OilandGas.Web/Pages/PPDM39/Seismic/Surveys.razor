@@ -1,4 +1,5 @@
 @page "/ppdm39/seismic/surveys"
+@using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
@@ -30,7 +31,7 @@
 </MudContainer>
 
 @code {
-    private List<object>? _surveys;
+    private List<SEIS_ACQTN_SURVEY>? _surveys;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
@@ -43,7 +44,7 @@
         _isLoading = true;
         try
         {
-            _surveys = await ApiClient.GetAsync<List<object>>("/api/seismic/surveys");
+            _surveys = await ApiClient.GetAsync<List<SEIS_ACQTN_SURVEY>>("/api/datamanagement/SEIS_ACQTN_SURVEY");
         }
         catch (Exception ex)
         {

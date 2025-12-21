@@ -798,8 +798,21 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                 }
             }
 
-            // Use base batch insert method
-            return await InsertBatchAsync(entityList, userId);
+            // Use base batch insert method (existing InsertBatchAsync from parent class)
+            var uow = GetOrCreateUnitOfWork(_entityType, _tableName);
+            uow.EntityName = _tableName;
+            
+            foreach (var entity in entityList)
+            {
+                _commonColumnHandler.PrepareForInsert(entity as IPPDMEntity, userId);
+                var result = await uow.InsertAsync(entity as Entity);
+                if (result != null && !string.IsNullOrEmpty(result.Message))
+                {
+                    throw new Exception($"Batch insert failed: {result.Message}");
+                }
+            }
+
+            return entityList;
         }
 
         /// <summary>
@@ -1220,6 +1233,705 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
 
             return entityType;
         }
+
+        #region Batch Operations
+
+        /// <summary>
+        /// Inserts multiple entities in a single batch operation with configurable batch size
+        /// </summary>
+        /// <param name="entities">Entities to insert</param>
+        /// <param name="userId">User ID for audit columns</param>
+        /// <param name="batchSize">Number of entities to insert per batch (default: 100)</param>
+        /// <returns>List of inserted entities</returns>
+        public virtual async Task<List<object>> InsertBatchWithSizeAsync(IEnumerable<object> entities, string userId, int batchSize = 100)
+        {
+            if (entities == null)
+                throw new ArgumentNullException(nameof(entities));
+
+            var entityList = entities.ToList();
+            if (entityList.Count == 0)
+                return new List<object>();
+
+            var results = new List<object>();
+            var uow = GetOrCreateUnitOfWork(_entityType, _tableName);
+            uow.EntityName = _tableName;
+
+            // Process in batches
+            for (int i = 0; i < entityList.Count; i += batchSize)
+            {
+                var batch = entityList.Skip(i).Take(batchSize);
+                var batchList = batch.ToList();
+
+                foreach (var entity in batchList)
+                {
+                    try
+                    {
+                        // Validate entity type
+                        if (!_entityType.IsAssignableFrom(entity.GetType()))
+                        {
+                            throw new ArgumentException($"Entity type {entity.GetType().Name} does not match repository entity type {_entityType.Name}");
+                        }
+
+                        // Apply defaults and common columns
+                        _commonColumnHandler.PrepareForInsert(entity as IPPDMEntity, userId);
+                        
+                        // Insert entity
+                        var result = await uow.InsertAsync(entity as Entity);
+                        if (result != null && !string.IsNullOrEmpty(result.Message))
+                        {
+                            throw new Exception($"Batch insert failed: {result.Message}");
+                        }
+                        results.Add(entity);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError(ex, "Error inserting entity in batch at index {Index}", i);
+                        throw;
+                    }
+                }
+            }
+
+            _logger?.LogInformation("Batch insert completed: {Count} entities inserted into {TableName}", results.Count, _tableName);
+            return results;
+        }
+
+        /// <summary>
+        /// Updates multiple entities in a single batch operation
+        /// </summary>
+        /// <param name="entities">Entities to update</param>
+        /// <param name="userId">User ID for audit columns</param>
+        /// <param name="batchSize">Number of entities to update per batch (default: 100)</param>
+        /// <returns>List of updated entities</returns>
+        public virtual async Task<List<object>> UpdateBatchAsync(IEnumerable<object> entities, string userId, int batchSize = 100)
+        {
+            if (entities == null)
+                throw new ArgumentNullException(nameof(entities));
+
+            var entityList = entities.ToList();
+            if (entityList.Count == 0)
+                return new List<object>();
+
+            var results = new List<object>();
+            var uow = GetOrCreateUnitOfWork(_entityType, _tableName);
+            uow.EntityName = _tableName;
+
+            // Process in batches
+            for (int i = 0; i < entityList.Count; i += batchSize)
+            {
+                var batch = entityList.Skip(i).Take(batchSize);
+                var batchList = batch.ToList();
+
+                foreach (var entity in batchList)
+                {
+                    try
+                    {
+                        // Validate entity type
+                        if (!_entityType.IsAssignableFrom(entity.GetType()))
+                        {
+                            throw new ArgumentException($"Entity type {entity.GetType().Name} does not match repository entity type {_entityType.Name}");
+                        }
+
+                        // Apply common columns for update
+                        _commonColumnHandler.PrepareForUpdate(entity as IPPDMEntity, userId);
+                        
+                        // Update entity
+                        var result = await uow.UpdateAsync(entity as Entity);
+                        if (result != null && !string.IsNullOrEmpty(result.Message))
+                        {
+                            throw new Exception($"Batch update failed: {result.Message}");
+                        }
+                        results.Add(entity);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError(ex, "Error updating entity in batch at index {Index}", i);
+                        throw;
+                    }
+                }
+            }
+
+            _logger?.LogInformation("Batch update completed: {Count} entities updated in {TableName}", results.Count, _tableName);
+            return results;
+        }
+
+        /// <summary>
+        /// Deletes multiple entities by their IDs in a single batch operation
+        /// </summary>
+        /// <param name="ids">IDs of entities to delete</param>
+        /// <param name="userId">User ID for audit columns (if soft delete)</param>
+        /// <param name="softDelete">Whether to perform soft delete (set ACTIVE_IND = 'N') instead of hard delete</param>
+        /// <param name="batchSize">Number of entities to delete per batch (default: 100)</param>
+        /// <returns>Number of entities deleted</returns>
+        public virtual async Task<int> DeleteBatchAsync(IEnumerable<string> ids, string userId, bool softDelete = true, int batchSize = 100)
+        {
+            if (ids == null)
+                throw new ArgumentNullException(nameof(ids));
+
+            var idList = ids.ToList();
+            if (idList.Count == 0)
+                return 0;
+
+            var tableMetadata = await GetTableMetadataAsync(_tableName);
+            var pkColumn = tableMetadata.PrimaryKeyColumn.Split(',').First().Trim();
+            var deletedCount = 0;
+            var uow = GetOrCreateUnitOfWork(_entityType, _tableName);
+            uow.EntityName = _tableName;
+
+            // Process in batches
+            for (int i = 0; i < idList.Count; i += batchSize)
+            {
+                var batch = idList.Skip(i).Take(batchSize).ToList();
+
+                foreach (var id in batch)
+                {
+                    try
+                    {
+                        var formattedId = _defaults.FormatIdForTable(_tableName, id);
+                        var filters = new List<AppFilter>
+                        {
+                            new AppFilter { FieldName = pkColumn, FilterValue = formattedId, Operator = "=" }
+                        };
+
+                        var entities = await GetAsync(filters);
+                        var entity = entities.FirstOrDefault();
+
+                        if (entity != null)
+                        {
+                            if (softDelete)
+                            {
+                                // Perform soft delete
+                                if (entity is IPPDMEntity ppdmEntity)
+                                {
+                                    _commonColumnHandler.SoftDelete(ppdmEntity, userId);
+                                }
+                                await uow.UpdateAsync(entity);
+                            }
+                            else
+                            {
+                                // Perform hard delete
+                                await uow.DeleteAsync(entity);
+                            }
+                            deletedCount++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError(ex, "Error deleting entity with ID {Id} in batch", id);
+                        throw;
+                    }
+                }
+
+                // Commit batch
+                await uow.Commit();
+            }
+
+            _logger?.LogInformation("Batch delete completed: {Count} entities deleted from {TableName} (SoftDelete: {SoftDelete})", 
+                deletedCount, _tableName, softDelete);
+            return deletedCount;
+        }
+
+        /// <summary>
+        /// Performs bulk upsert (insert or update) operation
+        /// Updates existing entities if they exist, otherwise inserts new ones
+        /// </summary>
+        /// <param name="entities">Entities to upsert</param>
+        /// <param name="userId">User ID for audit columns</param>
+        /// <param name="batchSize">Number of entities to process per batch (default: 100)</param>
+        /// <returns>List of upserted entities</returns>
+        public virtual async Task<List<object>> UpsertBatchAsync(IEnumerable<object> entities, string userId, int batchSize = 100)
+        {
+            if (entities == null)
+                throw new ArgumentNullException(nameof(entities));
+
+            var entityList = entities.ToList();
+            if (entityList.Count == 0)
+                return new List<object>();
+
+            var results = new List<object>();
+            var tableMetadata = await GetTableMetadataAsync(_tableName);
+            var pkColumn = tableMetadata.PrimaryKeyColumn.Split(',').First().Trim();
+            var uow = GetOrCreateUnitOfWork(_entityType, _tableName);
+            uow.EntityName = _tableName;
+
+            // Process in batches
+            for (int i = 0; i < entityList.Count; i += batchSize)
+            {
+                var batch = entityList.Skip(i).Take(batchSize).ToList();
+
+                foreach (var entity in batch)
+                {
+                    try
+                    {
+                        var pkProperty = entity.GetType().GetProperty(pkColumn, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                        var pkValue = pkProperty?.GetValue(entity)?.ToString();
+
+                        if (!string.IsNullOrEmpty(pkValue))
+                        {
+                            // Check if entity exists
+                            var formattedId = _defaults.FormatIdForTable(_tableName, pkValue);
+                            var filters = new List<AppFilter>
+                            {
+                                new AppFilter { FieldName = pkColumn, FilterValue = formattedId, Operator = "=" }
+                            };
+
+                            var existing = (await GetAsync(filters)).FirstOrDefault();
+
+                            if (existing != null)
+                            {
+                                // Update existing entity
+                                if (entity is IPPDMEntity ppdmEntity)
+                                {
+                                    _commonColumnHandler.PrepareForUpdate(ppdmEntity, userId);
+                                }
+                                var updated = await uow.UpdateAsync(entity);
+                                if (updated != null)
+                                    results.Add(updated);
+                            }
+                            else
+                            {
+                                // Insert new entity
+                                if (entity is IPPDMEntity ppdmEntity)
+                                {
+                                    _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
+                                }
+                                var inserted = await uow.InsertAsync(entity);
+                                if (inserted != null)
+                                    results.Add(inserted);
+                            }
+                        }
+                        else
+                        {
+                            // No primary key value - insert as new
+                            if (entity is IPPDMEntity ppdmEntity)
+                            {
+                                _commonColumnHandler.PrepareForInsert(ppdmEntity, userId);
+                            }
+                            var inserted = await uow.InsertAsync(entity);
+                            if (inserted != null)
+                                results.Add(inserted);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError(ex, "Error upserting entity in batch at index {Index}", i);
+                        throw;
+                    }
+                }
+
+                // Commit batch
+                await uow.Commit();
+            }
+
+            _logger?.LogInformation("Batch upsert completed: {Count} entities processed in {TableName}", results.Count, _tableName);
+            return results;
+        }
+
+        #endregion
+
+        #region Complex Queries and Aggregations
+
+        /// <summary>
+        /// Gets count of entities matching the filters
+        /// </summary>
+        /// <param name="filters">Optional filters to apply</param>
+        /// <returns>Count of matching entities</returns>
+        public virtual async Task<long> GetCountAsync(List<AppFilter>? filters = null)
+        {
+            var entities = await GetAsync(filters);
+            return entities.LongCount();
+        }
+
+        /// <summary>
+        /// Gets entities with pagination
+        /// </summary>
+        /// <param name="filters">Optional filters to apply</param>
+        /// <param name="pageNumber">Page number (1-based)</param>
+        /// <param name="pageSize">Number of items per page</param>
+        /// <param name="sortField">Field to sort by</param>
+        /// <param name="sortDirection">Sort direction (ASC or DESC)</param>
+        /// <returns>Paginated result with entities and total count</returns>
+        public virtual async Task<PaginatedResult> GetPaginatedAsync(
+            List<AppFilter>? filters = null,
+            int pageNumber = 1,
+            int pageSize = 50,
+            string? sortField = null,
+            string? sortDirection = "ASC")
+        {
+            var allEntities = await GetAsync(filters);
+            var totalCount = allEntities.LongCount();
+
+            // Apply sorting
+            if (!string.IsNullOrWhiteSpace(sortField))
+            {
+                var property = _entityType.GetProperty(sortField, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                if (property != null)
+                {
+                    if (string.Equals(sortDirection, "DESC", StringComparison.OrdinalIgnoreCase))
+                    {
+                        allEntities = allEntities.OrderByDescending(e => property.GetValue(e)).ToList();
+                    }
+                    else
+                    {
+                        allEntities = allEntities.OrderBy(e => property.GetValue(e)).ToList();
+                    }
+                }
+            }
+
+            // Apply pagination
+            var skip = (pageNumber - 1) * pageSize;
+            var pagedEntities = allEntities.Skip(skip).Take(pageSize).ToList();
+
+            return new PaginatedResult
+            {
+                Items = pagedEntities,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+            };
+        }
+
+        /// <summary>
+        /// Gets distinct values for a specific field
+        /// </summary>
+        /// <param name="fieldName">Field name to get distinct values for</param>
+        /// <param name="filters">Optional filters to apply before getting distinct values</param>
+        /// <returns>List of distinct values</returns>
+        public virtual async Task<List<object?>> GetDistinctAsync(string fieldName, List<AppFilter>? filters = null)
+        {
+            var entities = await GetAsync(filters);
+            var property = _entityType.GetProperty(fieldName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            
+            if (property == null)
+                throw new ArgumentException($"Field '{fieldName}' not found on entity type {_entityType.Name}", nameof(fieldName));
+
+            return entities
+                .Select(e => property.GetValue(e))
+                .Distinct()
+                .ToList();
+        }
+
+        /// <summary>
+        /// Gets aggregated value for a numeric field
+        /// </summary>
+        /// <param name="fieldName">Numeric field name</param>
+        /// <param name="aggregationType">Type of aggregation (SUM, AVG, MIN, MAX, COUNT)</param>
+        /// <param name="filters">Optional filters to apply</param>
+        /// <returns>Aggregated value</returns>
+        public virtual async Task<decimal?> GetAggregateAsync(
+            string fieldName,
+            string aggregationType,
+            List<AppFilter>? filters = null)
+        {
+            var entities = await GetAsync(filters);
+            var property = _entityType.GetProperty(fieldName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+
+            if (property == null)
+                throw new ArgumentException($"Field '{fieldName}' not found on entity type {_entityType.Name}", nameof(fieldName));
+
+            var values = entities
+                .Select(e => property.GetValue(e))
+                .Where(v => v != null)
+                .Select(v =>
+                {
+                    if (v is decimal dec) return dec;
+                    if (v is double dbl) return (decimal)dbl;
+                    if (v is float flt) return (decimal)flt;
+                    if (v is int i) return (decimal)i;
+                    if (v is long lng) return (decimal)lng;
+                    if (decimal.TryParse(v.ToString(), out var parsed)) return parsed;
+                    return (decimal?)null;
+                })
+                .Where(v => v.HasValue)
+                .Select(v => v!.Value)
+                .ToList();
+
+            if (values.Count == 0)
+                return null;
+
+            return aggregationType.ToUpperInvariant() switch
+            {
+                "SUM" => values.Sum(),
+                "AVG" => values.Average(),
+                "MIN" => values.Min(),
+                "MAX" => values.Max(),
+                "COUNT" => values.Count,
+                _ => throw new ArgumentException($"Invalid aggregation type: {aggregationType}. Valid types are: SUM, AVG, MIN, MAX, COUNT", nameof(aggregationType))
+            };
+        }
+
+        /// <summary>
+        /// Gets grouped aggregated results
+        /// </summary>
+        /// <param name="groupByField">Field to group by</param>
+        /// <param name="aggregateField">Numeric field to aggregate</param>
+        /// <param name="aggregationType">Type of aggregation (SUM, AVG, MIN, MAX, COUNT)</param>
+        /// <param name="filters">Optional filters to apply</param>
+        /// <returns>Dictionary of group values to aggregated results</returns>
+        public virtual async Task<Dictionary<string, decimal?>> GetGroupedAggregateAsync(
+            string groupByField,
+            string aggregateField,
+            string aggregationType,
+            List<AppFilter>? filters = null)
+        {
+            var entities = await GetAsync(filters);
+            var groupByProperty = _entityType.GetProperty(groupByField, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            var aggregateProperty = _entityType.GetProperty(aggregateField, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+
+            if (groupByProperty == null)
+                throw new ArgumentException($"Group by field '{groupByField}' not found on entity type {_entityType.Name}", nameof(groupByField));
+            
+            if (aggregateProperty == null)
+                throw new ArgumentException($"Aggregate field '{aggregateField}' not found on entity type {_entityType.Name}", nameof(aggregateField));
+
+            var grouped = entities
+                .GroupBy(e => groupByProperty.GetValue(e)?.ToString() ?? "NULL")
+                .ToDictionary(
+                    g => g.Key,
+                    g =>
+                    {
+                        var values = g
+                            .Select(e => aggregateProperty.GetValue(e))
+                            .Where(v => v != null)
+                            .Select(v =>
+                            {
+                                if (v is decimal dec) return dec;
+                                if (v is double dbl) return (decimal)dbl;
+                                if (v is float flt) return (decimal)flt;
+                                if (v is int i) return (decimal)i;
+                                if (v is long lng) return (decimal)lng;
+                                if (decimal.TryParse(v.ToString(), out var parsed)) return parsed;
+                                return (decimal?)null;
+                            })
+                            .Where(v => v.HasValue)
+                            .Select(v => v!.Value)
+                            .ToList();
+
+                        if (values.Count == 0)
+                            return (decimal?)null;
+
+                        return aggregationType.ToUpperInvariant() switch
+                        {
+                            "SUM" => values.Sum(),
+                            "AVG" => values.Average(),
+                            "MIN" => values.Min(),
+                            "MAX" => values.Max(),
+                            "COUNT" => values.Count,
+                            _ => (decimal?)null
+                        };
+                    });
+
+            return grouped;
+        }
+
+        /// <summary>
+        /// Result of paginated query
+        /// </summary>
+        public class PaginatedResult
+        {
+            public List<object> Items { get; set; } = new List<object>();
+            public long TotalCount { get; set; }
+            public int PageNumber { get; set; }
+            public int PageSize { get; set; }
+            public int TotalPages { get; set; }
+        }
+
+        #endregion
+
+        #region Enhanced Relationship Navigation
+
+        /// <summary>
+        /// Gets related entities through a foreign key relationship
+        /// </summary>
+        /// <param name="entityId">ID of the source entity</param>
+        /// <param name="relatedTableName">Name of the related table</param>
+        /// <param name="foreignKeyColumn">Foreign key column name in the related table (if null, will be determined from metadata)</param>
+        /// <returns>List of related entities</returns>
+        public virtual async Task<List<object>> GetRelatedEntitiesAsync(
+            string entityId,
+            string relatedTableName,
+            string? foreignKeyColumn = null)
+        {
+            if (string.IsNullOrWhiteSpace(entityId))
+                throw new ArgumentException("Entity ID cannot be null or empty", nameof(entityId));
+
+            if (string.IsNullOrWhiteSpace(relatedTableName))
+                throw new ArgumentException("Related table name cannot be null or empty", nameof(relatedTableName));
+
+            // Get metadata for related table
+            var relatedMetadata = await _metadata.GetTableMetadataAsync(relatedTableName);
+            if (relatedMetadata == null)
+                throw new InvalidOperationException($"Metadata not found for related table: {relatedTableName}");
+
+            // Find foreign key relationship
+            if (string.IsNullOrWhiteSpace(foreignKeyColumn))
+            {
+                var fk = relatedMetadata.ForeignKeys
+                    .FirstOrDefault(f => string.Equals(f.ReferencedTable, _tableName, StringComparison.OrdinalIgnoreCase));
+                
+                if (fk == null)
+                    throw new InvalidOperationException($"No foreign key relationship found from {relatedTableName} to {_tableName}");
+
+                foreignKeyColumn = fk.ForeignKeyColumn;
+            }
+
+            // Get related entity type
+            var relatedEntityType = GetEntityTypeForTable(relatedTableName);
+            if (relatedEntityType == null)
+                throw new InvalidOperationException($"Entity type not found for table: {relatedTableName}");
+
+            // Create repository for related table
+            var relatedRepo = new PPDMGenericRepository(
+                _editor,
+                _commonColumnHandler,
+                _defaults,
+                _metadata,
+                relatedEntityType,
+                _connectionName,
+                relatedTableName,
+                _logger);
+
+            // Build filter
+            var formattedId = _defaults.FormatIdForTable(_tableName, entityId);
+            var filters = new List<AppFilter>
+            {
+                new AppFilter
+                {
+                    FieldName = foreignKeyColumn,
+                    FilterValue = formattedId,
+                    Operator = "="
+                }
+            };
+
+            return (await relatedRepo.GetAsync(filters)).ToList();
+        }
+
+        /// <summary>
+        /// Gets parent entity through a foreign key relationship
+        /// </summary>
+        /// <param name="entityId">ID of the child entity</param>
+        /// <param name="parentTableName">Name of the parent table</param>
+        /// <param name="foreignKeyColumn">Foreign key column name in the current table (if null, will be determined from metadata)</param>
+        /// <returns>Parent entity, or null if not found</returns>
+        public virtual async Task<object?> GetParentEntityAsync(
+            string entityId,
+            string parentTableName,
+            string? foreignKeyColumn = null)
+        {
+            if (string.IsNullOrWhiteSpace(entityId))
+                throw new ArgumentException("Entity ID cannot be null or empty", nameof(entityId));
+
+            if (string.IsNullOrWhiteSpace(parentTableName))
+                throw new ArgumentException("Parent table name cannot be null or empty", nameof(parentTableName));
+
+            // Get current entity to find foreign key value
+            var tableMetadata = await GetTableMetadataAsync(_tableName);
+            var pkColumn = tableMetadata.PrimaryKeyColumn.Split(',').First().Trim();
+            var formattedId = _defaults.FormatIdForTable(_tableName, entityId);
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = pkColumn, FilterValue = formattedId, Operator = "=" }
+            };
+
+            var entity = (await GetAsync(filters)).FirstOrDefault();
+            if (entity == null)
+                return null;
+
+            // Find foreign key relationship
+            if (string.IsNullOrWhiteSpace(foreignKeyColumn))
+            {
+                var fk = tableMetadata.ForeignKeys
+                    .FirstOrDefault(f => string.Equals(f.ReferencedTable, parentTableName, StringComparison.OrdinalIgnoreCase));
+                
+                if (fk == null)
+                    throw new InvalidOperationException($"No foreign key relationship found from {_tableName} to {parentTableName}");
+
+                foreignKeyColumn = fk.ForeignKeyColumn;
+            }
+
+            // Get foreign key value from entity
+            var fkProperty = _entityType.GetProperty(foreignKeyColumn, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if (fkProperty == null)
+                throw new InvalidOperationException($"Foreign key property '{foreignKeyColumn}' not found on entity type {_entityType.Name}");
+
+            var fkValue = fkProperty.GetValue(entity)?.ToString();
+            if (string.IsNullOrWhiteSpace(fkValue))
+                return null;
+
+            // Get parent entity type
+            var parentEntityType = GetEntityTypeForTable(parentTableName);
+            if (parentEntityType == null)
+                throw new InvalidOperationException($"Entity type not found for table: {parentTableName}");
+
+            // Create repository for parent table
+            var parentRepo = new PPDMGenericRepository(
+                _editor,
+                _commonColumnHandler,
+                _defaults,
+                _metadata,
+                parentEntityType,
+                _connectionName,
+                parentTableName,
+                _logger);
+
+            // Get parent metadata
+            var parentMetadata = await _metadata.GetTableMetadataAsync(parentTableName);
+            if (parentMetadata == null)
+                throw new InvalidOperationException($"Metadata not found for parent table: {parentTableName}");
+
+            var parentPkColumn = parentMetadata.PrimaryKeyColumn.Split(',').First().Trim();
+            var formattedParentId = _defaults.FormatIdForTable(parentTableName, fkValue);
+
+            var parentFilters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = parentPkColumn, FilterValue = formattedParentId, Operator = "=" }
+            };
+
+            return (await parentRepo.GetAsync(parentFilters)).FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Gets all relationships for an entity (both parent and child relationships)
+        /// </summary>
+        /// <param name="entityId">ID of the entity</param>
+        /// <returns>Dictionary mapping relationship names to lists of related entities</returns>
+        public virtual async Task<Dictionary<string, List<object>>> GetEntityRelationshipsAsync(string entityId)
+        {
+            if (string.IsNullOrWhiteSpace(entityId))
+                throw new ArgumentException("Entity ID cannot be null or empty", nameof(entityId));
+
+            var relationships = new Dictionary<string, List<object>>();
+            var tableMetadata = await GetTableMetadataAsync(_tableName);
+
+            // Get parent relationships (entities this entity references via foreign keys)
+            foreach (var fk in tableMetadata.ForeignKeys)
+            {
+                try
+                {
+                    var parentEntity = await GetParentEntityAsync(entityId, fk.ReferencedTable, fk.ForeignKeyColumn);
+                    if (parentEntity != null)
+                    {
+                        var relationshipName = $"Parent_{fk.ReferencedTable}";
+                        relationships[relationshipName] = new List<object> { parentEntity };
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "Error getting parent relationship {ReferencedTable} for entity {EntityId}", 
+                        fk.ReferencedTable, entityId);
+                }
+            }
+
+            // Get child relationships (entities that reference this entity via foreign keys)
+            // This requires checking metadata for all tables to find those that reference this table
+            // For now, we'll use a simplified approach - this could be enhanced with metadata queries
+            // Note: Full implementation would require querying metadata for all tables
+
+            return relationships;
+        }
+
+        #endregion
 
         #region File Import/Export with Mapping and Defaults
 

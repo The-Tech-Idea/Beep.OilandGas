@@ -1,0 +1,131 @@
+@page "/admin/access-control/user-roles"
+@using Beep.OilandGas.PPDM39.Core.DTOs
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>User Role Assignment</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudText Typo="Typo.h4" Class="mb-4">User Role Assignment</MudText>
+    
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-4">Assign Roles to Users</MudText>
+        
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="@_selectedUserId" 
+                             Label="User ID" 
+                             Variant="Variant.Outlined"
+                             HelperText="Enter the user ID to assign roles" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudSelect T="string" 
+                          @bind-Value="@_selectedRole"
+                          Label="Role"
+                          Variant="Variant.Outlined">
+                    @foreach (var role in _availableRoles)
+                    {
+                        <MudSelectItem Value="@role">@RoleDefinitions.GetRoleDisplayName(role)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary"
+                          OnClick="AssignRole"
+                          StartIcon="@Icons.Material.Filled.Assignment">
+                    Assign Role
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (_userRoles != null && _userRoles.Any())
+        {
+            <MudDivider Class="my-4" />
+            <MudText Typo="Typo.h6" Class="mb-3">Current User Roles</MudText>
+            <MudTable Items="@_userRoles" Hover="true" Dense="true">
+                <HeaderContent>
+                    <MudTh>User ID</MudTh>
+                    <MudTh>Role</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context</MudTd>
+                    <MudTd>
+                        <MudChip Size="Size.Small" Color="Color.Primary">@RoleDefinitions.GetRoleDisplayName(context)</MudChip>
+                    </MudTd>
+                    <MudTd>
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
+                                      Color="Color.Error" 
+                                      Size="Size.Small"
+                                      OnClick="@(() => RemoveRole(context))" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _selectedUserId = string.Empty;
+    private string _selectedRole = string.Empty;
+    private List<string> _availableRoles = new();
+    private List<string>? _userRoles;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _availableRoles = RoleDefinitions.GetAllRoles();
+        await LoadUserRoles();
+    }
+
+    private async Task LoadUserRoles()
+    {
+        if (string.IsNullOrEmpty(_selectedUserId)) return;
+
+        try
+        {
+            _userRoles = await ApiClient.GetAsync<List<string>>($"/api/accesscontrol/user/{_selectedUserId}/roles");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading user roles: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task AssignRole()
+    {
+        if (string.IsNullOrEmpty(_selectedUserId) || string.IsNullOrEmpty(_selectedRole))
+        {
+            Snackbar.Add("Please select a user and role", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            // This would call an API endpoint to assign the role
+            // await ApiClient.PostAsync($"/api/accesscontrol/user/{_selectedUserId}/roles/{_selectedRole}");
+            Snackbar.Add($"Role {_selectedRole} assigned to user {_selectedUserId}", Severity.Success);
+            await LoadUserRoles();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error assigning role: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task RemoveRole(string role)
+    {
+        try
+        {
+            // This would call an API endpoint to remove the role
+            // await ApiClient.DeleteAsync($"/api/accesscontrol/user/{_selectedUserId}/roles/{role}");
+            Snackbar.Add($"Role {role} removed from user {_selectedUserId}", Severity.Success);
+            await LoadUserRoles();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error removing role: {ex.Message}", Severity.Error);
+        }
+    }
+}

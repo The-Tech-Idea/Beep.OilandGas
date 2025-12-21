@@ -1,0 +1,101 @@
+@page "/ppdm39/exploration/seismic-surveys/{SurveyId}/lines"
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<PageTitle>Seismic Lines - Exploration</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudText Typo="Typo.h4">Seismic Lines - Survey @SurveyId</MudText>
+        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack">
+            Back to Surveys
+        </MudButton>
+    </MudStack>
+
+    <MudPaper Class="pa-4">
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_lines != null && _lines.Any())
+        {
+            <MudTable Items="@_lines" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Line ID</MudTh>
+                    <MudTh>Line Name</MudTh>
+                    <MudTh>Line Type</MudTh>
+                    <MudTh>Length (km)</MudTh>
+                    <MudTh>Status</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Line ID">@GetPropertyValue(context, "SEISMIC_LINE_ID")</MudTd>
+                    <MudTd DataLabel="Line Name">@GetPropertyValue(context, "LINE_NAME")</MudTd>
+                    <MudTd DataLabel="Line Type">@GetPropertyValue(context, "LINE_TYPE")</MudTd>
+                    <MudTd DataLabel="Length (km)">@FormatDecimal(GetPropertyValue(context, "LINE_LENGTH"))</MudTd>
+                    <MudTd DataLabel="Status">@GetPropertyValue(context, "LINE_STATUS")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No seismic lines found for this survey.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [Parameter] public string SurveyId { get; set; } = string.Empty;
+
+    private List<SEIS_ACQTN_SURVEY>? _lines;
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLines();
+    }
+
+    private async Task LoadLines()
+    {
+        _isLoading = true;
+        try
+        {
+            _lines = await ApiClient.GetAsync<List<SEIS_ACQTN_SURVEY>>($"/api/field/current/exploration/seismic-surveys/{SurveyId}/lines");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading seismic lines: {ex.Message}", Severity.Error);
+            _lines = new List<SEIS_ACQTN_SURVEY>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/ppdm39/exploration/seismic-surveys");
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        {
+            return dict[propertyName]?.ToString() ?? "N/A";
+        }
+        return "N/A";
+    }
+
+    private string FormatDecimal(string? valueStr)
+    {
+        if (string.IsNullOrEmpty(valueStr) || valueStr == "N/A")
+            return "N/A";
+
+        if (decimal.TryParse(valueStr, out var value))
+            return value.ToString("F2");
+
+        return valueStr;
+    }
+}

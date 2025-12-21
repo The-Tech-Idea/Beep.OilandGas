@@ -1,0 +1,309 @@
+@using System.Collections.Generic
+@using System.Linq
+@using MudBlazor
+@using Microsoft.JSInterop
+
+<MudCard Class="pa-4" Elevation="2">
+    <MudCardContent>
+        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">@Title</MudText>
+            <MudButtonGroup>
+                @if (ShowZoomControls)
+                {
+                    <MudButton Size="Size.Small" 
+                               Variant="Variant.Text" 
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="ZoomIn">
+                        Zoom In
+                    </MudButton>
+                    <MudButton Size="Size.Small" 
+                               Variant="Variant.Text" 
+                               StartIcon="@Icons.Material.Filled.Remove"
+                               OnClick="ZoomOut">
+                        Zoom Out
+                    </MudButton>
+                    <MudButton Size="Size.Small" 
+                               Variant="Variant.Text" 
+                               StartIcon="@Icons.Material.Filled.Fullscreen"
+                               OnClick="FitBounds">
+                        Fit Bounds
+                    </MudButton>
+                }
+                @if (ShowMapTypeSelector)
+                {
+                    <MudSelect T="string" 
+                               Value="@_mapType" 
+                               ValueChanged="@((string value) => _mapType = value)"
+                               Variant="Variant.Outlined"
+                               Dense="true"
+                               Style="width: 120px;">
+                        <MudSelectItem T="string" Value="roadmap">Roadmap</MudSelectItem>
+                        <MudSelectItem T="string" Value="satellite">Satellite</MudSelectItem>
+                        <MudSelectItem T="string" Value="terrain">Terrain</MudSelectItem>
+                    </MudSelect>
+                }
+            </MudButtonGroup>
+        </MudStack>
+        
+        <div id="@_mapContainerId" style="width: 100%; height: @Height; border: 1px solid #ccc; border-radius: 4px;">
+            @if (!string.IsNullOrWhiteSpace(NoDataMessage) && (Items == null || !Items.Any()))
+            {
+                <MudAlert Severity="Severity.Info" Class="ma-4">@NoDataMessage</MudAlert>
+            }
+        </div>
+        
+        @if (ShowLegend && LegendItems != null && LegendItems.Any())
+        {
+            <MudCard Class="mt-4" Elevation="0" Style="background-color: rgba(255,255,255,0.9);">
+                <MudCardContent>
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">Legend</MudText>
+                    <MudStack Spacing="1">
+                        @foreach (var item in LegendItems)
+                        {
+                            <MudStack Row="true" Spacing="2" AlignItems="Center">
+                                <div style="width: 20px; height: 20px; background-color: @item.Color; border: 1px solid #ccc;"></div>
+                                <MudText Typo="Typo.body2">@item.Label</MudText>
+                            </MudStack>
+                        }
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public string? Title { get; set; } = "Map View";
+    [Parameter] public IEnumerable<object>? Items { get; set; }
+    [Parameter] public string LatitudeField { get; set; } = "LATITUDE";
+    [Parameter] public string LongitudeField { get; set; } = "LONGITUDE";
+    [Parameter] public string? LabelField { get; set; }
+    [Parameter] public string Height { get; set; } = "600px";
+    [Parameter] public bool ShowZoomControls { get; set; } = true;
+    [Parameter] public bool ShowMapTypeSelector { get; set; } = true;
+    [Parameter] public bool ShowLegend { get; set; } = false;
+    [Parameter] public string? NoDataMessage { get; set; } = "No location data available";
+    
+    // Map configuration
+    [Parameter] public double? CenterLatitude { get; set; }
+    [Parameter] public double? CenterLongitude { get; set; }
+    [Parameter] public int ZoomLevel { get; set; } = 10;
+    
+    // Legend items
+    [Parameter] public List<MapLegendItem>? LegendItems { get; set; }
+    
+    // Event callbacks
+    [Parameter] public EventCallback<object> OnMarkerClick { get; set; }
+    
+    [Inject] protected IJSRuntime JSRuntime { get; set; } = null!;
+    
+    private string _mapContainerId = $"map_{Guid.NewGuid():N}";
+    private string _mapType = "roadmap";
+    private bool _isInitialized = false;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Items != null && Items.Any())
+        {
+            await InitializeMap();
+        }
+        else if (!firstRender && Items != null && Items.Any() && _isInitialized)
+        {
+            await UpdateMap();
+        }
+    }
+    
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        if (_isInitialized && Items != null && Items.Any())
+        {
+            _ = UpdateMap();
+        }
+    }
+    
+    private async Task InitializeMap()
+    {
+        try
+        {
+            var locations = ExtractLocations();
+            if (locations == null || !locations.Any())
+            {
+                return;
+            }
+            
+            // Determine center if not provided
+            var centerLat = CenterLatitude ?? locations.Average(l => l.Latitude);
+            var centerLng = CenterLongitude ?? locations.Average(l => l.Longitude);
+            
+            // Initialize map using JavaScript interop
+            // Note: This is a placeholder implementation
+            // In a real scenario, you would use a mapping library like Leaflet, Google Maps, or Azure Maps
+            await JSRuntime.InvokeVoidAsync("initializePPDMMap", 
+                _mapContainerId, 
+                centerLat, 
+                centerLng, 
+                ZoomLevel,
+                _mapType,
+                locations.Select(l => new { 
+                    lat = l.Latitude, 
+                    lng = l.Longitude, 
+                    label = l.Label 
+                }).ToArray());
+            
+            _isInitialized = true;
+        }
+        catch (JSException ex)
+        {
+            // Map library not loaded - show fallback message
+            Console.WriteLine($"Map initialization failed: {ex.Message}");
+        }
+    }
+    
+    private async Task UpdateMap()
+    {
+        if (!_isInitialized) return;
+        
+        try
+        {
+            var locations = ExtractLocations();
+            if (locations == null || !locations.Any())
+            {
+                return;
+            }
+            
+            await JSRuntime.InvokeVoidAsync("updatePPDMMap", 
+                _mapContainerId,
+                locations.Select(l => new { 
+                    lat = l.Latitude, 
+                    lng = l.Longitude, 
+                    label = l.Label 
+                }).ToArray());
+        }
+        catch (JSException ex)
+        {
+            Console.WriteLine($"Map update failed: {ex.Message}");
+        }
+    }
+    
+    private List<MapLocation> ExtractLocations()
+    {
+        if (Items == null || !Items.Any())
+            return new List<MapLocation>();
+        
+        var locations = new List<MapLocation>();
+        
+        foreach (var item in Items)
+        {
+            var lat = GetNumericValue(item, LatitudeField);
+            var lng = GetNumericValue(item, LongitudeField);
+            
+            if (lat.HasValue && lng.HasValue)
+            {
+                var label = !string.IsNullOrWhiteSpace(LabelField) 
+                    ? GetPropertyValue(item, LabelField)?.ToString() 
+                    : null;
+                
+                locations.Add(new MapLocation
+                {
+                    Latitude = lat.Value,
+                    Longitude = lng.Value,
+                    Label = label,
+                    Data = item
+                });
+            }
+        }
+        
+        return locations;
+    }
+    
+    private double? GetNumericValue(object obj, string propertyName)
+    {
+        var value = GetPropertyValue(obj, propertyName);
+        if (value == null)
+            return null;
+        
+        if (value is double d)
+            return d;
+        if (value is decimal dec)
+            return (double)dec;
+        if (value is float f)
+            return f;
+        if (value is int i)
+            return i;
+        if (value is string str && double.TryParse(str, out var parsed))
+            return parsed;
+        
+        return null;
+    }
+    
+    private object? GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj == null) return null;
+        
+        if (obj is Dictionary<string, object> dict)
+        {
+            // Try exact match first
+            if (dict.TryGetValue(propertyName, out var value))
+                return value;
+            
+            // Try case-insensitive match
+            var key = dict.Keys.FirstOrDefault(k => 
+                k.Equals(propertyName, StringComparison.OrdinalIgnoreCase));
+            if (key != null)
+                return dict[key];
+        }
+        
+        var prop = obj.GetType().GetProperty(propertyName, 
+            System.Reflection.BindingFlags.Public | 
+            System.Reflection.BindingFlags.Instance | 
+            System.Reflection.BindingFlags.IgnoreCase);
+        return prop?.GetValue(obj);
+    }
+    
+    private async Task ZoomIn()
+    {
+        if (_isInitialized)
+        {
+            ZoomLevel = Math.Min(ZoomLevel + 1, 20);
+            await JSRuntime.InvokeVoidAsync("setMapZoom", _mapContainerId, ZoomLevel);
+        }
+    }
+    
+    private async Task ZoomOut()
+    {
+        if (_isInitialized)
+        {
+            ZoomLevel = Math.Max(ZoomLevel - 1, 1);
+            await JSRuntime.InvokeVoidAsync("setMapZoom", _mapContainerId, ZoomLevel);
+        }
+    }
+    
+    private async Task FitBounds()
+    {
+        if (_isInitialized)
+        {
+            var locations = ExtractLocations();
+            if (locations != null && locations.Any())
+            {
+                await JSRuntime.InvokeVoidAsync("fitMapBounds", _mapContainerId, 
+                    locations.Select(l => new { lat = l.Latitude, lng = l.Longitude }).ToArray());
+            }
+        }
+    }
+}
+
+// Supporting classes
+public class MapLocation
+{
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public string? Label { get; set; }
+    public object? Data { get; set; }
+}
+
+public class MapLegendItem
+{
+    public string Color { get; set; } = "#000000";
+    public string Label { get; set; } = string.Empty;
+}

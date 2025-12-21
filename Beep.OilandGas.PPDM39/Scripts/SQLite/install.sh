@@ -65,6 +65,10 @@ run_sql_file "$SCRIPT_DIR/UOM.sql" "Creating Units of Measure Foreign Keys" 0
 run_sql_file "$SCRIPT_DIR/RQUAL.sql" "Creating ROW_QUALITY Foreign Keys" 0
 run_sql_file "$SCRIPT_DIR/RSRC.sql" "Creating SOURCE Foreign Keys" 0
 run_sql_file "$SCRIPT_DIR/GUID.sql" "Creating GUID Constraints" 1
+run_sql_file "$SCRIPT_DIR/ACCESS_CONTROL_TAB.sql" "Creating Access Control Tables" 0
+run_sql_file "$SCRIPT_DIR/ACCESS_CONTROL_PK.sql" "Creating Access Control Primary Keys" 0
+run_sql_file "$SCRIPT_DIR/ACCESS_CONTROL_FK.sql" "Creating Access Control Indexes" 0
+run_sql_file "$SCRIPT_DIR/ACCESS_CONTROL_IX.sql" "Creating Access Control Additional Indexes" 0
 
 # Note: TCM, CCM, and SYN are not applicable for SQLite
 echo "Skipping TCM.sql (SQLite doesn't support table comments)"

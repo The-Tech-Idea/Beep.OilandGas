@@ -1,0 +1,106 @@
+@page "/ppdm39/decommissioning/cost-estimation"
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Decommissioning Cost Estimation</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Decommissioning Cost Estimation</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">Cost Estimation for Current Field</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Calculate" OnClick="EstimateCosts">
+                Estimate Costs
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_costEstimate != null)
+        {
+            <MudGrid Class="mt-4">
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Cost Summary</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudSimpleTable Dense="true" Hover="true">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Total Estimated Cost:</strong></td>
+                                        <td>@GetPropertyValue(_costEstimate, "EstimatedTotalCost")</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Well Abandonment Cost:</strong></td>
+                                        <td>@GetPropertyValue(_costEstimate, "WellAbandonmentCost")</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Facility Decommissioning Cost:</strong></td>
+                                        <td>@GetPropertyValue(_costEstimate, "FacilityDecommissioningCost")</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Environmental Restoration Cost:</strong></td>
+                                        <td>@GetPropertyValue(_costEstimate, "EnvironmentalRestorationCost")</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Abandoned Well Count:</strong></td>
+                                        <td>@GetPropertyValue(_costEstimate, "AbandonedWellCount")</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Decommissioned Facility Count:</strong></td>
+                                        <td>@GetPropertyValue(_costEstimate, "DecommissionedFacilityCount")</td>
+                                    </tr>
+                                </tbody>
+                            </MudSimpleTable>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">Click "Estimate Costs" to generate a cost estimation for the current field.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private object? _costEstimate;
+    private bool _isLoading = false;
+
+    private async Task EstimateCosts()
+    {
+        _isLoading = true;
+        try
+        {
+            _costEstimate = await ApiClient.PostAsync<object>("/api/field/current/decommissioning/cost-estimation");
+            Snackbar.Add("Cost estimation completed successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error estimating costs: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        {
+            var value = dict[propertyName];
+            if (value is decimal dec)
+                return dec.ToString("C");
+            return value?.ToString() ?? "N/A";
+        }
+        return "N/A";
+    }
+}

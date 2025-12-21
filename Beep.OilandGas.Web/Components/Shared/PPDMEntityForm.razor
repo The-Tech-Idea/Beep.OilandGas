@@ -1,0 +1,381 @@
+@using System.Reflection
+@using System.Collections.Generic
+@using System.Linq
+@using MudBlazor
+@using Beep.OilandGas.PPDM39.Core.Metadata
+
+<EditForm Model="@Entity" OnValidSubmit="@OnValidSubmit" OnInvalidSubmit="@OnInvalidSubmit">
+    <DataAnnotationsValidator />
+    <MudGrid Spacing="2">
+        @foreach (var field in GetEditableFields())
+        {
+            <MudItem xs="12" md="@GetFieldColumnSpan(field)">
+                @RenderField(field)
+            </MudItem>
+        }
+    </MudGrid>
+    
+    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
+        @if (ShowCancel)
+        {
+            <MudButton Variant="Variant.Text" 
+                       Color="Color.Default"
+                       OnClick="@OnCancel">
+                @CancelText
+            </MudButton>
+        }
+        <MudButton ButtonType="ButtonType.Submit" 
+                   Variant="Variant.Filled" 
+                   Color="@SubmitColor"
+                   Disabled="@IsSubmitting">
+            @if (IsSubmitting)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">@SubmitText</MudText>
+            }
+            else
+            {
+                @SubmitText
+            }
+        </MudButton>
+    </MudStack>
+</EditForm>
+
+@code {
+    [Parameter] public object? Entity { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public EventCallback OnInvalidSubmit { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    
+    [Parameter] public bool ShowCancel { get; set; } = true;
+    [Parameter] public string SubmitText { get; set; } = "Save";
+    [Parameter] public string CancelText { get; set; } = "Cancel";
+    [Parameter] public Color SubmitColor { get; set; } = Color.Success;
+    [Parameter] public bool IsSubmitting { get; set; } = false;
+    
+    // Field configuration
+    [Parameter] public List<string>? IncludeFields { get; set; }
+    [Parameter] public List<string>? ExcludeFields { get; set; }
+    [Parameter] public Dictionary<string, string>? FieldLabels { get; set; }
+    [Parameter] public Dictionary<string, string>? FieldPlaceholders { get; set; }
+    [Parameter] public Dictionary<string, bool>? FieldReadOnly { get; set; }
+    [Parameter] public Dictionary<string, string>? FieldHelpText { get; set; }
+    [Parameter] public Dictionary<string, Dictionary<string, string>>? FieldOptions { get; set; } // For dropdowns
+    [Parameter] public PPDMTableMetadata? TableMetadata { get; set; }
+    
+    // Default values
+    [Parameter] public Dictionary<string, object>? DefaultValues { get; set; }
+    [Parameter] public Func<string, object?>? GetDefaultValue { get; set; }
+    
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+        
+        if (Entity != null && DefaultValues != null)
+        {
+            ApplyDefaultValues();
+        }
+    }
+    
+    private void ApplyDefaultValues()
+    {
+        if (Entity == null) return;
+        
+        foreach (var defaultValue in DefaultValues)
+        {
+            var currentValue = GetPropertyValue(Entity, defaultValue.Key);
+            if (currentValue == null || (currentValue is string str && string.IsNullOrWhiteSpace(str)))
+            {
+                SetPropertyValue(Entity, defaultValue.Key, defaultValue.Value);
+            }
+        }
+    }
+    
+    private List<string> GetEditableFields()
+    {
+        if (Entity == null)
+            return new List<string>();
+        
+        var properties = Entity.GetType()
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.CanRead && p.CanWrite && !IsSystemProperty(p.Name))
+            .Select(p => p.Name)
+            .ToList();
+        
+        // Apply field filters
+        if (IncludeFields != null && IncludeFields.Any())
+        {
+            properties = properties.Where(p => IncludeFields.Contains(p, StringComparer.OrdinalIgnoreCase)).ToList();
+        }
+        
+        if (ExcludeFields != null && ExcludeFields.Any())
+        {
+            properties = properties.Where(p => !ExcludeFields.Contains(p, StringComparer.OrdinalIgnoreCase)).ToList();
+        }
+        
+        return properties;
+    }
+    
+    private bool IsSystemProperty(string propertyName)
+    {
+        var systemProps = new[] { "PPDM_GUID", "ROW_CREATED_BY", "ROW_CREATED_DATE", "ROW_CHANGED_BY", "ROW_CHANGED_DATE" };
+        return systemProps.Contains(propertyName, StringComparer.OrdinalIgnoreCase);
+    }
+    
+    private bool IsFieldReadOnly(string fieldName)
+    {
+        if (FieldReadOnly != null && FieldReadOnly.ContainsKey(fieldName))
+            return FieldReadOnly[fieldName];
+        
+        // Primary key is read-only for existing records
+        if (TableMetadata != null && 
+            !string.IsNullOrWhiteSpace(TableMetadata.PrimaryKeyColumn) &&
+            TableMetadata.PrimaryKeyColumn.Equals(fieldName, StringComparison.OrdinalIgnoreCase))
+        {
+            var idValue = GetPropertyValue(Entity, fieldName);
+            return idValue != null && !string.IsNullOrWhiteSpace(idValue.ToString());
+        }
+        
+        return false;
+    }
+    
+    private int GetFieldColumnSpan(string fieldName)
+    {
+        // Some fields might need full width
+        var fullWidthFields = new[] { "REMARK", "DESCRIPTION", "NOTES", "COMMENTS" };
+        return fullWidthFields.Contains(fieldName, StringComparer.OrdinalIgnoreCase) ? 12 : 6;
+    }
+    
+    private RenderFragment RenderField(string fieldName)
+    {
+        return builder =>
+        {
+            var fieldType = GetPropertyType(fieldName);
+            var isReadOnly = IsFieldReadOnly(fieldName);
+            var label = GetFieldLabel(fieldName);
+            var placeholder = GetFieldPlaceholder(fieldName);
+            var helpText = GetFieldHelpText(fieldName);
+            var currentValue = GetPropertyValue(Entity, fieldName);
+            
+            // Check if this field has predefined options (dropdown)
+            if (FieldOptions != null && FieldOptions.ContainsKey(fieldName))
+            {
+                RenderSelectField(builder, fieldName, label, placeholder, helpText, isReadOnly, currentValue);
+            }
+            else if (fieldType == typeof(DateTime) || fieldType == typeof(DateTime?))
+            {
+                RenderDateField(builder, fieldName, label, helpText, isReadOnly, currentValue);
+            }
+            else if (fieldType == typeof(bool) || fieldType == typeof(bool?))
+            {
+                RenderBooleanField(builder, fieldName, label, helpText, isReadOnly, currentValue);
+            }
+            else if (fieldName.Equals("ACTIVE_IND", StringComparison.OrdinalIgnoreCase))
+            {
+                RenderActiveIndicatorField(builder, fieldName, label, helpText, isReadOnly, currentValue);
+            }
+            else
+            {
+                RenderTextField(builder, fieldName, label, placeholder, helpText, isReadOnly, currentValue, fieldType);
+            }
+        };
+    }
+    
+    private void RenderSelectField(RenderTreeBuilder builder, string fieldName, string label, string? placeholder, string? helpText, bool isReadOnly, object? currentValue)
+    {
+        builder.OpenComponent<MudSelect<string>>(0);
+        builder.AddAttribute(1, "Label", label);
+        builder.AddAttribute(2, "Placeholder", placeholder ?? "-- Select --");
+        builder.AddAttribute(3, "Variant", Variant.Outlined);
+        builder.AddAttribute(4, "Disabled", isReadOnly);
+        builder.AddAttribute(5, "HelperText", helpText);
+        builder.AddAttribute(6, "Value", currentValue?.ToString());
+        builder.AddAttribute(7, "ValueChanged", EventCallback.Factory.Create<string>(this, value => SetPropertyValue(Entity!, fieldName, value)));
+        
+        builder.AddAttribute(8, "ChildContent", (RenderFragment)(selectBuilder =>
+        {
+            if (FieldOptions != null && FieldOptions.ContainsKey(fieldName))
+            {
+                var options = FieldOptions[fieldName];
+                foreach (var option in options)
+                {
+                    selectBuilder.OpenComponent<MudSelectItem<string>>(0);
+                    selectBuilder.AddAttribute(1, "Value", option.Key);
+                    selectBuilder.AddAttribute(2, "ChildContent", (RenderFragment)(itemBuilder => itemBuilder.AddContent(0, option.Value)));
+                    selectBuilder.CloseComponent();
+                }
+            }
+        }));
+        
+        builder.CloseComponent();
+    }
+    
+    private void RenderDateField(RenderTreeBuilder builder, string fieldName, string label, string? helpText, bool isReadOnly, object? currentValue)
+    {
+        builder.OpenComponent<MudDatePicker>(0);
+        builder.AddAttribute(1, "Label", label);
+        builder.AddAttribute(2, "Variant", Variant.Outlined);
+        builder.AddAttribute(3, "Disabled", isReadOnly);
+        builder.AddAttribute(4, "HelperText", helpText);
+        builder.AddAttribute(5, "Date", currentValue as DateTime?);
+        builder.AddAttribute(6, "DateChanged", EventCallback.Factory.Create<DateTime?>(this, date => SetPropertyValue(Entity!, fieldName, date)));
+        builder.CloseComponent();
+    }
+    
+    private void RenderBooleanField(RenderTreeBuilder builder, string fieldName, string label, string? helpText, bool isReadOnly, object? currentValue)
+    {
+        builder.OpenComponent<MudSwitch<bool?>>(0);
+        builder.AddAttribute(1, "Label", label);
+        builder.AddAttribute(2, "Checked", currentValue as bool?);
+        builder.AddAttribute(3, "CheckedChanged", EventCallback.Factory.Create<bool?>(this, value => SetPropertyValue(Entity!, fieldName, value)));
+        builder.AddAttribute(4, "Disabled", isReadOnly);
+        builder.AddAttribute(5, "HelperText", helpText);
+        builder.CloseComponent();
+    }
+    
+    private void RenderActiveIndicatorField(RenderTreeBuilder builder, string fieldName, string label, string? helpText, bool isReadOnly, object? currentValue)
+    {
+        var isActive = currentValue?.ToString()?.Equals("Y", StringComparison.OrdinalIgnoreCase) ?? true;
+        builder.OpenComponent<MudSwitch<bool>>(0);
+        builder.AddAttribute(1, "Label", label);
+        builder.AddAttribute(2, "Checked", isActive);
+        builder.AddAttribute(3, "CheckedChanged", EventCallback.Factory.Create<bool>(this, value => SetPropertyValue(Entity!, fieldName, value ? "Y" : "N")));
+        builder.AddAttribute(4, "Disabled", isReadOnly);
+        builder.AddAttribute(5, "HelperText", helpText);
+        builder.CloseComponent();
+    }
+    
+    private void RenderTextField(RenderTreeBuilder builder, string fieldName, string label, string? placeholder, string? helpText, bool isReadOnly, object? currentValue, Type fieldType)
+    {
+        var isMultiline = IsMultilineField(fieldName);
+        var lines = isMultiline ? 3 : 0;
+        var inputType = GetInputType(fieldType);
+        
+        builder.OpenComponent<MudTextField<string>>(0);
+        builder.AddAttribute(1, "Label", label);
+        builder.AddAttribute(2, "Placeholder", placeholder);
+        builder.AddAttribute(3, "Variant", Variant.Outlined);
+        builder.AddAttribute(4, "Disabled", isReadOnly);
+        builder.AddAttribute(5, "HelperText", helpText);
+        builder.AddAttribute(6, "Value", currentValue?.ToString() ?? string.Empty);
+        builder.AddAttribute(7, "ValueChanged", EventCallback.Factory.Create<string>(this, value => SetPropertyValue(Entity!, fieldName, value)));
+        if (isMultiline)
+        {
+            builder.AddAttribute(8, "Lines", lines);
+        }
+        if (inputType != InputType.Text)
+        {
+            builder.AddAttribute(9, "InputType", inputType);
+        }
+        builder.CloseComponent();
+    }
+    
+    private bool IsMultilineField(string fieldName)
+    {
+        var multilineFields = new[] { "REMARK", "DESCRIPTION", "NOTES", "COMMENTS", "DETAILS" };
+        return multilineFields.Contains(fieldName, StringComparer.OrdinalIgnoreCase);
+    }
+    
+    private InputType GetInputType(Type fieldType)
+    {
+        if (fieldType == typeof(int) || fieldType == typeof(long) || fieldType == typeof(short))
+            return InputType.Number;
+        if (fieldType == typeof(decimal) || fieldType == typeof(double) || fieldType == typeof(float))
+            return InputType.Number;
+        return InputType.Text;
+    }
+    
+    private string GetFieldLabel(string fieldName)
+    {
+        if (FieldLabels != null && FieldLabels.ContainsKey(fieldName))
+            return FieldLabels[fieldName];
+        return fieldName.Replace("_", " ");
+    }
+    
+    private string? GetFieldPlaceholder(string fieldName)
+    {
+        if (FieldPlaceholders != null && FieldPlaceholders.ContainsKey(fieldName))
+            return FieldPlaceholders[fieldName];
+        return null;
+    }
+    
+    private string? GetFieldHelpText(string fieldName)
+    {
+        if (FieldHelpText != null && FieldHelpText.ContainsKey(fieldName))
+            return FieldHelpText[fieldName];
+        return null;
+    }
+    
+    private Type GetPropertyType(string propertyName)
+    {
+        if (Entity == null) return typeof(string);
+        
+        if (Entity is Dictionary<string, object> dict)
+        {
+            if (dict.TryGetValue(propertyName, out var value))
+                return value?.GetType() ?? typeof(string);
+        }
+        
+        var prop = Entity.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        return prop?.PropertyType ?? typeof(string);
+    }
+    
+    private object? GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj == null) return null;
+        
+        if (obj is Dictionary<string, object> dict)
+        {
+            return dict.TryGetValue(propertyName, out var value) ? value : null;
+        }
+        
+        var prop = obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        return prop?.GetValue(obj);
+    }
+    
+    private void SetPropertyValue(object obj, string propertyName, object? value)
+    {
+        if (obj == null) return;
+        
+        if (obj is Dictionary<string, object> dict)
+        {
+            dict[propertyName] = value ?? string.Empty;
+            return;
+        }
+        
+        var prop = obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        if (prop != null && prop.CanWrite)
+        {
+            // Type conversion
+            if (value != null && value.GetType() != prop.PropertyType)
+            {
+                var convertedValue = ConvertValue(value, prop.PropertyType);
+                prop.SetValue(obj, convertedValue);
+            }
+            else
+            {
+                prop.SetValue(obj, value);
+            }
+        }
+    }
+    
+    private object? ConvertValue(object value, Type targetType)
+    {
+        var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+        
+        if (value.GetType() == underlyingType)
+            return value;
+        
+        if (underlyingType == typeof(string))
+            return value.ToString();
+        
+        try
+        {
+            return Convert.ChangeType(value, underlyingType);
+        }
+        catch
+        {
+            return value;
+        }
+    }
+}

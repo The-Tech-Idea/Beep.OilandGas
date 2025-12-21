@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Beep.OilandGas.ApiService.Models;
+using Beep.OilandGas.PPDM39.Core.DTOs;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.ConfigUtil;

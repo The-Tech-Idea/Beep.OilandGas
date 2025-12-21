@@ -1,0 +1,1 @@
+-- R_PIPELINE_STATUS has no foreign keys

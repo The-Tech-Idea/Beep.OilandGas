@@ -1,0 +1,56 @@
+@inherits LayoutComponentBase
+@inject Beep.OilandGas.LifeCycle.Services.AccessControl.IUserProfileService UserProfileService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+
+<CascadingValue Value="@_userId" Name="CurrentUserId">
+    @if (_layoutComponentType != null)
+    {
+        @((RenderFragment)((builder) =>
+        {
+            builder.OpenComponent(0, _layoutComponentType);
+            builder.AddAttribute(1, "Body", Body);
+            builder.CloseComponent();
+        }))
+    }
+    else
+    {
+        <DefaultLayout>
+            @Body
+        </DefaultLayout>
+    }
+</CascadingValue>
+
+@code {
+    private string? _userId;
+    private Type? _layoutComponentType;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User?.Identity?.Name;
+
+        if (!string.IsNullOrEmpty(_userId))
+        {
+            var defaultLayout = await UserProfileService.GetUserDefaultLayoutAsync(_userId);
+            _layoutComponentType = GetLayoutType(defaultLayout ?? "DefaultLayout");
+        }
+        else
+        {
+            _layoutComponentType = typeof(DefaultLayout);
+        }
+    }
+
+    private Type GetLayoutType(string layoutName)
+    {
+        return layoutName switch
+        {
+            "PetroleumEngineerLayout" => typeof(PetroleumEngineerLayout),
+            "ReservoirEngineerLayout" => typeof(ReservoirEngineerLayout),
+            "ProcessEngineerLayout" => typeof(ProcessEngineerLayout),
+            "AccountantLayout" => typeof(AccountantLayout),
+            "ManagerLayout" => typeof(ManagerLayout),
+            _ => typeof(DefaultLayout)
+        };
+    }
+}

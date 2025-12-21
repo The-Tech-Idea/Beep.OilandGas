@@ -1,0 +1,175 @@
+@page "/ppdm39/exploration/prospects"
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Prospects - Exploration</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Exploration Prospects</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">Prospects for Current Field</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+                Add Prospect
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_prospects != null && _prospects.Any())
+        {
+            <MudTable Items="@_prospects" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Prospect ID</MudTh>
+                    <MudTh>Prospect Name</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Prospect ID">@GetPropertyValue(context, "PROSPECT_ID")</MudTd>
+                    <MudTd DataLabel="Prospect Name">@GetPropertyValue(context, "PROSPECT_NAME")</MudTd>
+                    <MudTd DataLabel="Status">@GetPropertyValue(context, "PROSPECT_STATUS")</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
+                            <MudButton StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditDialog(context))">
+                                Edit
+                            </MudButton>
+                            <MudButton StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteProspect(context))">
+                                Delete
+                            </MudButton>
+                        </MudButtonGroup>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No prospects found for the current field.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<WELL>? _prospects;
+    private bool _isLoading = false;
+    private string? _currentUserId = "system"; // TODO: Get from authentication context
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProspects();
+    }
+
+    private async Task LoadProspects()
+    {
+        _isLoading = true;
+        try
+        {
+            _prospects = await ApiClient.GetAsync<List<WELL>>("/api/field/current/exploration/prospects");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading prospects: {ex.Message}", Severity.Error);
+            _prospects = new List<WELL>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ProspectEditDialog>("Create Prospect", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is Dictionary<string, object> prospectData)
+        {
+            try
+            {
+                var created = await ApiClient.PostAsync<object, Dictionary<string, object>>(
+                    "/api/field/current/exploration/prospects",
+                    prospectData,
+                    new { userId = _currentUserId });
+                
+                Snackbar.Add("Prospect created successfully", Severity.Success);
+                await LoadProspects();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error creating prospect: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task OpenEditDialog(object prospect)
+    {
+        var prospectId = GetPropertyValue(prospect, "PROSPECT_ID");
+        if (string.IsNullOrEmpty(prospectId))
+            return;
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var parameters = new DialogParameters { ["Prospect"] = prospect };
+        var dialog = await DialogService.ShowAsync<ProspectEditDialog>("Edit Prospect", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is Dictionary<string, object> prospectData)
+        {
+            try
+            {
+                var updated = await ApiClient.PutAsync<object, Dictionary<string, object>>(
+                    $"/api/field/current/exploration/prospects/{prospectId}",
+                    prospectData,
+                    new { userId = _currentUserId });
+                
+                Snackbar.Add("Prospect updated successfully", Severity.Success);
+                await LoadProspects();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error updating prospect: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task DeleteProspect(object prospect)
+    {
+        var prospectId = GetPropertyValue(prospect, "PROSPECT_ID");
+        if (string.IsNullOrEmpty(prospectId))
+            return;
+
+        var result = await DialogService.ShowMessageBox(
+            "Delete Prospect",
+            $"Are you sure you want to delete prospect {GetPropertyValue(prospect, "PROSPECT_NAME")}?",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            try
+            {
+                await ApiClient.DeleteAsync($"/api/field/current/exploration/prospects/{prospectId}?userId={_currentUserId}");
+                Snackbar.Add("Prospect deleted successfully", Severity.Success);
+                await LoadProspects();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error deleting prospect: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        {
+            return dict[propertyName]?.ToString() ?? "N/A";
+        }
+        return "N/A";
+    }
+}

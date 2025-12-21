@@ -1,0 +1,9 @@
+-- PPDM39 Oracle DDL Script
+-- Converted from SQL Server script: R_RISK_LEVEL_PK.sql
+-- This script is for the PPDM39 model
+
+PROMPT CREATING PRIMARY KEY R_RISK_LEVEL_PK with nowait
+ALTER TABLE R_RISK_LEVEL ADD CONSTRAINT R_RISK_LEVEL_PK PRIMARY KEY
+(
+	RISK_LEVEL
+);

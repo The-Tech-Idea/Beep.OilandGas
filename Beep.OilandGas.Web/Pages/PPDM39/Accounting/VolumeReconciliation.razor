@@ -1,0 +1,199 @@
+@page "/ppdm39/accounting/volume-reconciliation"
+@using Beep.OilandGas.PPDM39.Core.DTOs
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Volume Reconciliation - Accounting</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Volume Reconciliation</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Spacing="3" Class="mb-4">
+            <MudDatePicker @bind-Date="@_startDate" Label="Start Date" Variant="Variant.Outlined" Required="true" />
+            <MudDatePicker @bind-Date="@_endDate" Label="End Date" Variant="Variant.Outlined" Required="true" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Calculate" OnClick="ReconcileVolumes">
+                Reconcile Volumes
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_reconciliationResult != null)
+        {
+            <MudGrid Class="mt-4">
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Reconciliation Summary</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudSimpleTable Dense="true" Hover="true">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Status:</strong></td>
+                                        <td>
+                                            <MudChip Size="Size.Small" Color="@GetStatusColor(_reconciliationResult.Status)">
+                                                @_reconciliationResult.Status
+                                            </MudChip>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Field Production Volume:</strong></td>
+                                        <td>@FormatDecimal(_reconciliationResult.FieldProductionVolume?.ToString())</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Allocated Volume:</strong></td>
+                                        <td>@FormatDecimal(_reconciliationResult.AllocatedVolume?.ToString())</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Discrepancy:</strong></td>
+                                        <td>@FormatDecimal(_reconciliationResult.Discrepancy?.ToString())</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Discrepancy %:</strong></td>
+                                        <td>@FormatDecimal(_reconciliationResult.DiscrepancyPercentage?.ToString())%</td>
+                                    </tr>
+                                </tbody>
+                            </MudSimpleTable>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                @if (_reconciliationResult.OilVolume != null)
+                {
+                    <MudItem xs="12" md="6">
+                        <MudCard Elevation="2">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">Oil Volume Breakdown</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudSimpleTable Dense="true" Hover="true">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Field Volume:</strong></td>
+                                            <td>@FormatDecimal(_reconciliationResult.OilVolume.FieldVolume?.ToString())</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Allocated Volume:</strong></td>
+                                            <td>@FormatDecimal(_reconciliationResult.OilVolume.AllocatedVolume?.ToString())</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Discrepancy:</strong></td>
+                                            <td>@FormatDecimal(_reconciliationResult.OilVolume.Discrepancy?.ToString())</td>
+                                        </tr>
+                                    </tbody>
+                                </MudSimpleTable>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+
+            @if (_reconciliationResult.Issues != null && _reconciliationResult.Issues.Any())
+            {
+                <MudCard Elevation="2" Class="mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Reconciliation Issues</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudList>
+                            @foreach (var issue in _reconciliationResult.Issues)
+                            {
+                                <MudListItem>
+                                    <MudAlert Severity="@GetSeverity(issue.Severity)" Dense="true">
+                                        <strong>@issue.IssueType:</strong> @issue.Description
+                                    </MudAlert>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    </MudCardContent>
+                </MudCard>
+            }
+        }
+        else if (!_isLoading)
+        {
+            <MudAlert Severity="Severity.Info">Select a date range and click 'Reconcile Volumes' to start reconciliation.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private DateTime? _startDate = DateTime.Today.AddMonths(-1);
+    private DateTime? _endDate = DateTime.Today;
+    private bool _isLoading = false;
+    private VolumeReconciliationResult? _reconciliationResult;
+
+    private async Task ReconcileVolumes()
+    {
+        if (!_startDate.HasValue || !_endDate.HasValue)
+        {
+            Snackbar.Add("Please select both start and end dates", Severity.Warning);
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            var request = new
+            {
+                StartDate = _startDate.Value,
+                EndDate = _endDate.Value
+            };
+
+            _reconciliationResult = await ApiClient.PostAsync<VolumeReconciliationResult, object>(
+                "/api/accounting/reconcile-volumes",
+                request);
+
+            Snackbar.Add("Volume reconciliation completed", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error reconciling volumes: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private Color GetStatusColor(ReconciliationStatus status)
+    {
+        return status switch
+        {
+            ReconciliationStatus.Reconciled => Color.Success,
+            ReconciliationStatus.Discrepancies => Color.Warning,
+            ReconciliationStatus.Failed => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private Severity GetSeverity(string? severity)
+    {
+        return severity?.ToUpperInvariant() switch
+        {
+            "ERROR" => Severity.Error,
+            "WARNING" => Severity.Warning,
+            _ => Severity.Info
+        };
+    }
+
+    private string FormatDecimal(string? valueStr)
+    {
+        if (string.IsNullOrEmpty(valueStr))
+            return "N/A";
+
+        if (decimal.TryParse(valueStr, out var value))
+            return value.ToString("F2");
+
+        return valueStr;
+    }
+}

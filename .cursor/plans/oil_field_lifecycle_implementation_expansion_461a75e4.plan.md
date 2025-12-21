@@ -4,94 +4,94 @@ overview: Expand all lifecycle phase plans (Exploration, Development, Production
 todos:
   - id: field_orchestrator_dtos
     content: Create FieldOrchestratorDTOs.cs in Beep.OilandGas.PPDM39/Core/DTOs/ with FieldLifecycleSummary, FieldStatistics, FieldTimeline, FieldListItem, SetActiveFieldRequest, SetActiveFieldResponse, FieldResponse
-    status: pending
+    status: completed
   - id: field_orchestrator_interface
     content: Create IFieldOrchestrator interface in Beep.OilandGas.PPDM39/Core/Interfaces/ and field-scoped phase service interfaces in Beep.OilandGas.PPDM39/Core/DTOs/ (IFieldExplorationService, IFieldDevelopmentService, IFieldProductionService, IFieldDecommissioningService)
-    status: pending
+    status: completed
   - id: field_orchestrator_service
     content: Create FieldOrchestrator service in Beep.OilandGas.PPDM39.DataManagement/Services/ that manages current active field and coordinates all phase services (all data from PPDM database)
-    status: pending
+    status: completed
   - id: field_orchestrator_controller
     content: Create FieldOrchestratorController with endpoints for field selection, current field management, and field-scoped phase data access
-    status: pending
+    status: completed
   - id: field_selector_ui
     content: Create FieldSelector.razor component and field selection page in Web UI, integrate with DataManagementService
-    status: pending
+    status: completed
   - id: foundation_repository
     content: Enhance PPDMGenericRepository with additional helper methods for complex queries, batch operations, and relationship navigation
-    status: pending
+    status: completed
   - id: exploration_dtos
     content: Create exploration-related DTOs in Beep.OilandGas.PPDM39/Core/DTOs/ if needed (all data in PPDM database)
     status: pending
   - id: exploration_service
     content: Create PPDMExplorationService implementing IFieldExplorationService (in Beep.OilandGas.PPDM39), field-aware methods using PPDMGenericRepository for PROSPECT, SEISMIC_SURVEY, SEISMIC_LINE tables (all data in PPDM database, automatically filters by FIELD_ID)
-    status: pending
+    status: completed
   - id: exploration_controller
     content: Create ExplorationController in ApiService with field-scoped CRUD endpoints (routes under /api/field/current/exploration)
-    status: pending
+    status: completed
   - id: exploration_ui
     content: Create Razor pages for prospect management, seismic survey visualization, and risk assessment UI
-    status: pending
+    status: completed
   - id: development_dtos
     content: Create DevelopmentDTOs.cs in Beep.OilandGas.PPDM39/Core/DTOs/ for development operation request/response models (all data in PPDM database)
     status: pending
   - id: development_service
     content: Create PPDMDevelopmentService implementing IFieldDevelopmentService (in Beep.OilandGas.PPDM39), field-aware methods using PPDMGenericRepository for POOL, FACILITY, PIPELINE tables (all data in PPDM database, scoped to current field via FIELD_ID)
-    status: pending
+    status: completed
   - id: development_controller
     content: Create DevelopmentController with field-scoped endpoints for field planning, facility management, and feasibility studies (routes under /api/field/current/development)
-    status: pending
+    status: completed
   - id: development_ui
     content: Create Razor pages for field management, development planning, and facility visualization
-    status: pending
+    status: completed
   - id: production_enhancement
     content: Enhance existing PPDMProductionService with forecasting, optimization, and well test aggregation methods
-    status: pending
+    status: completed
   - id: production_controller_enhancement
     content: Add forecasting and optimization endpoints to existing ProductionController
-    status: pending
+    status: completed
   - id: production_ui_enhancement
     content: Create forecasting and optimization Razor pages, enhance existing production dashboards
-    status: pending
+    status: completed
   - id: decommissioning_service
     content: Create PPDMDecommissioningService using PPDMGenericRepository for WELL_ABANDONMENT, FACILITY_DECOMMISSIONING, ENVIRONMENTAL_RESTORATION tables
-    status: pending
+    status: completed
   - id: decommissioning_controller
     content: Create DecommissioningController with endpoints for abandonment tracking, cost estimation, and environmental restoration
-    status: pending
+    status: completed
   - id: decommissioning_ui
     content: Create Razor pages for well abandonment, facility decommissioning, and cost estimation
-    status: pending
+    status: completed
   - id: calculations_dtos
     content: Create CalculationsDTOs.cs in Beep.OilandGas.PPDM39/Core/DTOs/ with DCARequest, DCAResult, EconomicAnalysisRequest/Result, NodalAnalysisRequest/Result (calculation results stored back to PPDM database)
-    status: pending
+    status: completed
   - id: calculations_integration
     content: Create CalculationsController that integrates DCA, EconomicAnalysis, NodalAnalysis services with PPDM39 data via PPDMGenericRepository (reads from and writes to PPDM database)
-    status: pending
+    status: completed
   - id: workflow_integration
     content: Enhance PPDM39WorkflowController to support phase-specific workflows using PPDMGenericRepository for workflow data storage
-    status: pending
+    status: completed
   - id: accounting_dtos
     content: Create AccountingDTOs.cs in Beep.OilandGas.PPDM39/Core/DTOs/ and IAccountingService.cs interface for accounting operation DTOs (all data in PPDM database)
-    status: pending
+    status: completed
   - id: accounting_service
     content: Create PPDMAccountingService implementing IAccountingService (in Beep.OilandGas.PPDM39), using PPDMGenericRepository for accounting tables (PRODUCTION, ACCOUNTING_ALLOCATION, ROYALTY_CALCULATION, COST_ALLOCATION - all in PPDM database)
-    status: pending
+    status: completed
   - id: accounting_controller
     content: Create AccountingController with endpoints for volume reconciliation, royalty calculations, and cost allocation
-    status: pending
+    status: completed
   - id: accounting_ui
     content: Create Razor pages for accounting dashboards, audit trails, and financial reporting
-    status: pending
+    status: completed
   - id: international_support
     content: Extend IPPDM39DefaultsRepository with jurisdiction-specific methods (currency, units, validation rules)
-    status: pending
+    status: completed
   - id: ui_components
     content: Create shared UI components (DataGrid, EntityForm, MapView) that work with PPDMGenericRepository data
-    status: pending
+    status: completed
   - id: progress_tracking_enhancement
     content: Ensure all long-running operations (calculations, workflows, data imports) use ProgressTrackingService with SignalR
-    status: pending
+    status: completed
 ---
 
 # Comprehensive Oil Field Lifecycle Implementation Plan
@@ -100,9 +100,7 @@ todos:
 
 ### Data Persistence Principle
 
-**All data is stored in the PPDM39 database**. There are no separate databases for different phases or features. All lifecycle data (Exploration, Development, Production, Decommissioning) exists in the same PPDM39 database schema.
-
-**All DTOs and Model Classes** must be placed in the `Beep.OilandGas.PPDM39` project:
+**All data is stored in the PPDM39 database**. There are no separate databases for different phases or features. All lifecycle data (Exploration, Development, Production, Decommissioning) exists in the same PPDM39 database schema.**All DTOs and Model Classes** must be placed in the `Beep.OilandGas.PPDM39` project:
 
 - DTOs: `Beep.OilandGas.PPDM39/Core/DTOs/` or `Beep.OilandGas.PPDM39/DTOs/`
 - Interfaces: `Beep.OilandGas.PPDM39/Core/Interfaces/`
@@ -160,11 +158,11 @@ graph TB
     GenericRepo -->|IDataSource| Database
 ```
 
+
+
 ### FieldOrchestrator: Central Lifecycle Manager
 
-**Purpose**: Manages the complete lifecycle of a single active field, coordinating all phases (Exploration, Development, Production, Decommissioning).
-
-**Key Responsibilities**:
+**Purpose**: Manages the complete lifecycle of a single active field, coordinating all phases (Exploration, Development, Production, Decommissioning).**Key Responsibilities**:
 
 1. **Field Context Management**: Maintains current active field (user can switch fields)
 2. **Phase Coordination**: Coordinates all lifecycle phases for the active field
@@ -172,9 +170,7 @@ graph TB
 4. **Cross-Phase Queries**: Provides methods to query data across phases for the active field
 5. **Field State Management**: Tracks field lifecycle phase transitions
 
-**Interface Location**: `Beep.OilandGas.PPDM39/Core/Interfaces/IFieldOrchestrator.cs`
-
-**Implementation**: `Beep.OilandGas.PPDM39.DataManagement/Services/FieldOrchestrator.cs`
+**Interface Location**: `Beep.OilandGas.PPDM39/Core/Interfaces/IFieldOrchestrator.cs`**Implementation**: `Beep.OilandGas.PPDM39.DataManagement/Services/FieldOrchestrator.cs`
 
 ```csharp
 // In Beep.OilandGas.PPDM39/Core/Interfaces/IFieldOrchestrator.cs
@@ -280,9 +276,7 @@ public class FieldOrchestrator : IFieldOrchestrator
 }
 ```
 
-**API Controller**: `Beep.OilandGas.ApiService/Controllers/Field/FieldOrchestratorController.cs`
-
-**Key Endpoints**:
+**API Controller**: `Beep.OilandGas.ApiService/Controllers/Field/FieldOrchestratorController.cs`**Key Endpoints**:
 
 - `GET /api/field/fields` - List all fields
 - `POST /api/field/set-active` - Set active field (requires fieldId)
@@ -296,13 +290,13 @@ public class FieldOrchestrator : IFieldOrchestrator
 **DTOs and Models** (all in `Beep.OilandGas.PPDM39`):
 
 - `Beep.OilandGas.PPDM39/Core/DTOs/FieldOrchestratorDTOs.cs`:
-  - `FieldLifecycleSummary` - Summary DTO across all phases
-  - `FieldStatistics` - Statistical aggregates for field
-  - `FieldTimeline` - Timeline of field events
-  - `FieldListItem` - For field selection lists
-  - `SetActiveFieldRequest` - Request DTO for setting active field
-  - `SetActiveFieldResponse` - Response DTO for field activation
-  - `FieldResponse` - Field data response
+- `FieldLifecycleSummary` - Summary DTO across all phases
+- `FieldStatistics` - Statistical aggregates for field
+- `FieldTimeline` - Timeline of field events
+- `FieldListItem` - For field selection lists
+- `SetActiveFieldRequest` - Request DTO for setting active field
+- `SetActiveFieldResponse` - Response DTO for field activation
+- `FieldResponse` - Field data response
 
 **Web Service**: Extend `Beep.OilandGas.Web/Services/DataManagementService.cs` to manage current field:
 
@@ -339,6 +333,8 @@ public class DataManagementService
     public event Action<string>? CurrentFieldChanged;
 }
 ```
+
+
 
 ### Core Data Access Pattern
 
@@ -410,6 +406,8 @@ graph LR
     Decommissioning --> DecommissionRepo
 ```
 
+
+
 ### Implementation
 
 **Service Interface**: `Beep.OilandGas.PPDM39/Core/Interfaces/IFieldOrchestrator.cs`
@@ -435,9 +433,7 @@ public interface IFieldOrchestrator
 }
 ```
 
-**Service Implementation**: `Beep.OilandGas.PPDM39.DataManagement/Services/FieldOrchestrator.cs`
-
-**Key Features**:
+**Service Implementation**: `Beep.OilandGas.PPDM39.DataManagement/Services/FieldOrchestrator.cs`**Key Features**:
 
 - Maintains current field context (FIELD_ID)
 - All phase services are field-scoped (automatically filter by current field)
@@ -495,6 +491,8 @@ public class FieldOrchestratorController : ControllerBase
 }
 ```
 
+
+
 ### Web UI Integration
 
 **Field Selection Component**: `Beep.OilandGas.Web/Components/FieldSelector.razor`
@@ -538,6 +536,8 @@ protected override async Task OnInitializedAsync()
     await LoadPhaseDataForCurrentField();
 }
 ```
+
+
 
 ### FieldOrchestrator Data Flow
 
@@ -584,6 +584,8 @@ sequenceDiagram
     WebUI->>User: Display prospects
 ```
 
+
+
 ### Field Context Management
 
 **Current Field State**:
@@ -602,9 +604,7 @@ sequenceDiagram
 5. All subsequent requests automatically use current field context
 6. UI may navigate to field dashboard or refresh current view
 
-**Field-Scoped Data Access Pattern**:
-
-All phase services automatically include FIELD_ID filter:
+**Field-Scoped Data Access Pattern**:All phase services automatically include FIELD_ID filter:
 
 ```csharp
 // In any field-scoped phase service method
@@ -647,9 +647,7 @@ Handles prospect identification, seismic surveys, and exploratory well drilling 
 
 ### API Implementation
 
-**Controller**: `Beep.OilandGas.ApiService/Controllers/Field/ExplorationController.cs` (field-scoped endpoints)
-
-**Key Endpoints**:
+**Controller**: `Beep.OilandGas.ApiService/Controllers/Field/ExplorationController.cs` (field-scoped endpoints)**Key Endpoints**:
 
 - `GET /api/field/current/exploration/prospects` - List prospects for current field
 - `POST /api/field/current/exploration/prospects` - Create prospect for current field
@@ -661,9 +659,7 @@ Handles prospect identification, seismic surveys, and exploratory well drilling 
 - `GET /api/field/current/exploration/exploratory-wells` - List exploratory wells for current field
 - `POST /api/field/current/exploration/risk-assessment` - Calculate prospect risk for current field
 
-**Interface**: `Beep.OilandGas.PPDM39/Core/DTOs/IExplorationService.cs` (or `IFieldExplorationService.cs`)
-
-**Service**: `Beep.OilandGas.PPDM39.DataManagement/Services/Exploration/PPDMExplorationService.cs` (field-aware)
+**Interface**: `Beep.OilandGas.PPDM39/Core/DTOs/IExplorationService.cs` (or `IFieldExplorationService.cs`)**Service**: `Beep.OilandGas.PPDM39.DataManagement/Services/Exploration/PPDMExplorationService.cs` (field-aware)
 
 ```csharp
 // In Beep.OilandGas.PPDM39/Core/DTOs/IExplorationService.cs
@@ -724,6 +720,8 @@ public class PPDMExplorationService : IFieldExplorationService
 }
 ```
 
+
+
 ### Web UI Implementation
 
 **Pages**:
@@ -761,6 +759,8 @@ private async Task LoadProspects()
     _prospects = response ?? new List<object>();
 }
 ```
+
+
 
 ### Integration Points
 
@@ -802,9 +802,7 @@ Note: FIELD table is managed by FieldOrchestrator, not phase-specific.
 
 ### API Implementation
 
-**Controller**: `Beep.OilandGas.ApiService/Controllers/Field/DevelopmentController.cs` (field-scoped)
-
-**Key Endpoints**:
+**Controller**: `Beep.OilandGas.ApiService/Controllers/Field/DevelopmentController.cs` (field-scoped)**Key Endpoints**:
 
 - `GET /api/field/current/development/pools` - Get pools for current field
 - `POST /api/field/current/development/pools` - Create pool for current field
@@ -815,13 +813,7 @@ Note: FIELD table is managed by FieldOrchestrator, not phase-specific.
 - `POST /api/field/current/development/facilities` - Create facility for current field
 - `POST /api/field/current/development/feasibility-study` - Run economic feasibility for current field
 
-**Interface**: `Beep.OilandGas.PPDM39/Core/DTOs/IDevelopmentService.cs` (or `IFieldDevelopmentService.cs`)
-
-**Service**: `Beep.OilandGas.PPDM39.DataManagement/Services/Development/PPDMDevelopmentService.cs`
-
-Implements `IFieldDevelopmentService` with field-scoped methods using PPDMGenericRepository. All methods automatically filter by current field ID.
-
-**DTOs** (in `Beep.OilandGas.PPDM39/Core/DTOs/DevelopmentDTOs.cs` if needed):
+**Interface**: `Beep.OilandGas.PPDM39/Core/DTOs/IDevelopmentService.cs` (or `IFieldDevelopmentService.cs`)**Service**: `Beep.OilandGas.PPDM39.DataManagement/Services/Development/PPDMDevelopmentService.cs`Implements `IFieldDevelopmentService` with field-scoped methods using PPDMGenericRepository. All methods automatically filter by current field ID.**DTOs** (in `Beep.OilandGas.PPDM39/Core/DTOs/DevelopmentDTOs.cs` if needed):
 
 - Request/response DTOs for development operations
 - All data stored in PPDM database tables (POOL, FACILITY, PIPELINE, etc.)
@@ -875,9 +867,7 @@ Handles production operations, monitoring, and optimization.
 
 ### API Implementation
 
-**Controller**: `Beep.OilandGas.ApiService/Controllers/Field/ProductionController.cs` (field-scoped, enhance existing)
-
-**Enhanced Endpoints** (all field-scoped):
+**Controller**: `Beep.OilandGas.ApiService/Controllers/Field/ProductionController.cs` (field-scoped, enhance existing)**Enhanced Endpoints** (all field-scoped):
 
 - `GET /api/field/current/production/production` - Get production data for current field
 - `POST /api/field/current/production/forecast` - Create production forecast for current field
@@ -886,11 +876,7 @@ Handles production operations, monitoring, and optimization.
 - `GET /api/field/current/production/pools` - Get production by pool for current field
 - `GET /api/field/current/production/reserves` - Get reserves data for current field
 
-**Interface**: `Beep.OilandGas.PPDM39/Core/DTOs/IProductionService.cs` (already exists, enhance to be field-aware)
-
-**Service**: `Beep.OilandGas.PPDM39.DataManagement/Services/Production/PPDMProductionService.cs` (enhance to implement IFieldProductionService)
-
-Current service uses PPDMGenericRepository. Enhancements:
+**Interface**: `Beep.OilandGas.PPDM39/Core/DTOs/IProductionService.cs` (already exists, enhance to be field-aware)**Service**: `Beep.OilandGas.PPDM39.DataManagement/Services/Production/PPDMProductionService.cs` (enhance to implement IFieldProductionService)Current service uses PPDMGenericRepository. Enhancements:
 
 - Implement IFieldProductionService interface (extend existing IProductionService)
 - Add field-scoped methods (automatically filter by FIELD_ID)
@@ -951,9 +937,7 @@ Handles well abandonment, facility decommissioning, and environmental restoratio
 
 ### API Implementation
 
-**Controller**: `Beep.OilandGas.ApiService/Controllers/Field/DecommissioningController.cs` (field-scoped)
-
-**Key Endpoints** (all field-scoped):
+**Controller**: `Beep.OilandGas.ApiService/Controllers/Field/DecommissioningController.cs` (field-scoped)**Key Endpoints** (all field-scoped):
 
 - `GET /api/field/current/decommissioning/wells-abandoned` - List abandoned wells for current field
 - `POST /api/field/current/decommissioning/abandon-well` - Record well abandonment (well must belong to current field)
@@ -962,9 +946,7 @@ Handles well abandonment, facility decommissioning, and environmental restoratio
 - `POST /api/field/current/decommissioning/cost-estimation` - Calculate decommissioning costs for current field
 - `GET /api/field/current/decommissioning/environmental-activities` - Environmental restoration tracking for current field
 
-**Interface**: `Beep.OilandGas.PPDM39/Core/DTOs/IDecommissioningService.cs` (or `IFieldDecommissioningService.cs`)
-
-**Service**: `Beep.OilandGas.PPDM39.DataManagement/Services/Decommissioning/PPDMDecommissioningService.cs`
+**Interface**: `Beep.OilandGas.PPDM39/Core/DTOs/IDecommissioningService.cs` (or `IFieldDecommissioningService.cs`)**Service**: `Beep.OilandGas.PPDM39.DataManagement/Services/Decommissioning/PPDMDecommissioningService.cs`
 
 ````csharp
 // In Beep.OilandGas.PPDM39/Core/DTOs/IDecommissioningService.cs
@@ -1071,9 +1053,7 @@ public async Task<ActionResult<DCAResult>> AnalyzeDeclineCurve(
 
 ### 2. Processes Integration Plan
 
-**Workflow System**:
-
-Uses existing `PPDM39WorkflowController` and workflow progress tracking.**Implementation Pattern**:**API Layer** (`Beep.OilandGas.ApiService/Controllers/PPDM39/PPDM39WorkflowController.cs`):
+**Workflow System**:Uses existing `PPDM39WorkflowController` and workflow progress tracking.**Implementation Pattern**:**API Layer** (`Beep.OilandGas.ApiService/Controllers/PPDM39/PPDM39WorkflowController.cs`):
 
 ```csharp
 [HttpPost("workflows/start")]
@@ -1110,13 +1090,7 @@ public async Task<ActionResult<WorkflowStartResponse>> StartWorkflow(
 
 ### 3. Production Accounting Plan
 
-**Architecture**:
-
-Separate accounting module that integrates with production data.**Implementation**:**Interface**: `Beep.OilandGas.PPDM39/Core/DTOs/IAccountingService.cs`
-
-**Service**: `Beep.OilandGas.PPDM39.DataManagement/Services/Accounting/PPDMAccountingService.cs`
-
-Uses PPDMGenericRepository for (all in PPDM database):
+**Architecture**:Separate accounting module that integrates with production data.**Implementation**:**Interface**: `Beep.OilandGas.PPDM39/Core/DTOs/IAccountingService.cs`**Service**: `Beep.OilandGas.PPDM39.DataManagement/Services/Accounting/PPDMAccountingService.cs`Uses PPDMGenericRepository for (all in PPDM database):
 
 - `PRODUCTION` table - Source production volumes
 - `ACCOUNTING_ALLOCATION` - Allocation records
@@ -1131,9 +1105,7 @@ Uses PPDMGenericRepository for (all in PPDM database):
 - Supports multiple accounting standards (GAAP, IFRS)
 - All data persisted in PPDM database
 
-**DTOs**: `Beep.OilandGas.PPDM39/Core/DTOs/AccountingDTOs.cs` for accounting request/response models
-
-**API Controller**: `Beep.OilandGas.ApiService/Controllers/Accounting/AccountingController.cs`**Web Pages**: `Beep.OilandGas.Web/Pages/PPDM39/Accounting/` directory
+**DTOs**: `Beep.OilandGas.PPDM39/Core/DTOs/AccountingDTOs.cs` for accounting request/response models**API Controller**: `Beep.OilandGas.ApiService/Controllers/Accounting/AccountingController.cs`**Web Pages**: `Beep.OilandGas.Web/Pages/PPDM39/Accounting/` directory
 
 ### 4. UI/GFX Integration Plan
 
@@ -1173,9 +1145,7 @@ Results flow back up with SignalR progress updates
 
 ### Configuration Approach
 
-**Defaults Repository Extension**:
-
-Add to `IPPDM39DefaultsRepository`:
+**Defaults Repository Extension**:Add to `IPPDM39DefaultsRepository`:
 
 - `GetCurrencyForJurisdiction(string jurisdiction)` - Returns currency code
 - `GetUnitsSystemForJurisdiction(string jurisdiction)` - Returns "SI" or "Imperial"
@@ -1201,28 +1171,28 @@ Add to `IPPDM39DefaultsRepository`:
 
 1. **Create FieldOrchestrator Service**
 
-   - Implement IFieldOrchestrator interface
-   - Field context management (current field ID)
-   - Phase service coordination
-   - Field switching logic
+- Implement IFieldOrchestrator interface
+- Field context management (current field ID)
+- Phase service coordination
+- Field switching logic
 
 2. **Create FieldOrchestratorController**
 
-   - Field selection endpoints
-   - Current field management
-   - Field-scoped data access endpoints
+- Field selection endpoints
+- Current field management
+- Field-scoped data access endpoints
 
 3. **Update DataManagementService (Web)**
 
-   - Add current field management methods
-   - Field selection UI integration
-   - Field change events
+- Add current field management methods
+- Field selection UI integration
+- Field change events
 
 4. **Create Field Selector UI**
 
-   - FieldSelector.razor component
-   - Field selection page
-   - Field switching workflow
+- FieldSelector.razor component
+- Field selection page
+- Field switching workflow
 
 ### Phase 1: Foundation & Exploration (Week 2-3)
 
@@ -1277,6 +1247,8 @@ Beep.OilandGas.ApiService/
 │       └── AccountingController.cs (field-aware)
 ```
 
+
+
 ### Data Management Services
 
 ```javascript
@@ -1292,6 +1264,8 @@ Beep.OilandGas.PPDM39.DataManagement/
 │   └── Decommissioning/
 │       └── PPDMDecommissioningService.cs (implements IFieldDecommissioningService)
 ```
+
+
 
 ### PPDM39 Core (DTOs and Interfaces)
 
@@ -1350,27 +1324,13 @@ Beep.OilandGas.Web/
 ## Key Design Principles
 
 1. **Single PPDM Database**: All data (Exploration, Development, Production, Decommissioning, Accounting) is stored in the same PPDM39 database. No separate databases.
-
 2. **DTO/Model Location**: All DTOs, interfaces, and model classes must be placed in `Beep.OilandGas.PPDM39` project:
 
-   - DTOs: `Beep.OilandGas.PPDM39/Core/DTOs/` or `Beep.OilandGas.PPDM39/DTOs/`
-   - Interfaces: `Beep.OilandGas.PPDM39/Core/Interfaces/`
-   - Models: `Beep.OilandGas.PPDM39/Models/` (if needed)
+- DTOs: `Beep.OilandGas.PPDM39/Core/DTOs/` or `Beep.OilandGas.PPDM39/DTOs/`
+- Interfaces: `Beep.OilandGas.PPDM39/Core/Interfaces/`
+- Models: `Beep.OilandGas.PPDM39/Models/` (if needed)
 
 3. **FieldOrchestrator Pattern**: Single active field context managed by FieldOrchestrator, users can switch fields
-
 4. **Field-Scoped Operations**: All phase services automatically filter by current field ID (FIELD_ID foreign key)
-
 5. **Repository Pattern**: All data access goes through PPDMGenericRepository
-
 6. **String ID Consistency**: All IDs formatted via `IPPDM39DefaultsRepository.FormatIdForTable()`
-
-7. **Metadata-Driven**: Table names, primary keys, relationships resolved via metadata
-
-8. **Progress Tracking**: Long-running operations use SignalR progress updates
-
-9. **Separation of Concerns**: UI → API → FieldOrchestrator → Phase Services → Repository → PPDM Database
-
-10. **Internationalization**: Jurisdiction-aware defaults and validation
-
-11. **Single Field Context**: Users work with one field at a time, switching requires explicit field selection

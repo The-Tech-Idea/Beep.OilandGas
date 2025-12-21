@@ -1,0 +1,74 @@
+@using System.Collections.Generic
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="@_forecastName" 
+                             Label="Forecast Name" 
+                             Variant="Variant.Outlined" 
+                             Required="true" />
+
+                <MudTextField @bind-Value="@_forecastType" 
+                             Label="Forecast Type" 
+                             Variant="Variant.Outlined" />
+
+                <MudDatePicker @bind-Date="@_startDate" 
+                              Label="Start Date" 
+                              Variant="Variant.Outlined" />
+
+                <MudDatePicker @bind-Date="@_endDate" 
+                              Label="End Date" 
+                              Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="@_forecastStatus" 
+                             Label="Forecast Status" 
+                             Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="@_description" 
+                             Label="Description" 
+                             Variant="Variant.Outlined" 
+                             Lines="3" />
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+
+    private string _forecastName = string.Empty;
+    private string _forecastType = string.Empty;
+    private DateTime? _startDate;
+    private DateTime? _endDate;
+    private string _forecastStatus = string.Empty;
+    private string _description = string.Empty;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Save()
+    {
+        var forecastData = new Dictionary<string, object>
+        {
+            { "FORECAST_NAME", _forecastName },
+            { "FORECAST_TYPE", _forecastType },
+            { "FORECAST_STATUS", _forecastStatus },
+            { "DESCRIPTION", _description }
+        };
+
+        if (_startDate.HasValue)
+            forecastData["START_DATE"] = _startDate.Value;
+
+        if (_endDate.HasValue)
+            forecastData["END_DATE"] = _endDate.Value;
+
+        MudDialog.Close(DialogResult.Ok(forecastData));
+    }
+}

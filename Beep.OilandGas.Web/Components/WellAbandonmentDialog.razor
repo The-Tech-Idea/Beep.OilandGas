@@ -1,0 +1,77 @@
+@using System.Collections.Generic
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="@_wellId" 
+                             Label="Well ID" 
+                             Variant="Variant.Outlined" 
+                             Required="true" />
+
+                <MudTextField @bind-Value="@_abandonmentType" 
+                             Label="Abandonment Type" 
+                             Variant="Variant.Outlined" />
+
+                <MudDatePicker @bind-Date="@_abandonmentDate" 
+                              Label="Abandonment Date" 
+                              Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="@_abandonmentStatus" 
+                             Label="Abandonment Status" 
+                             Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="@_description" 
+                             Label="Description" 
+                             Variant="Variant.Outlined" 
+                             Lines="3" />
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+
+    private string _wellId = string.Empty;
+    private string _abandonmentType = string.Empty;
+    private DateTime? _abandonmentDate;
+    private string _abandonmentStatus = string.Empty;
+    private string _description = string.Empty;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_wellId))
+        {
+            // TODO: Show validation error
+            return;
+        }
+
+        var abandonmentData = new Dictionary<string, object>
+        {
+            { "ABANDONMENT_TYPE", _abandonmentType },
+            { "ABANDONMENT_STATUS", _abandonmentStatus },
+            { "DESCRIPTION", _description }
+        };
+
+        if (_abandonmentDate.HasValue)
+            abandonmentData["ABANDONMENT_DATE"] = _abandonmentDate.Value;
+
+        var result = new Dictionary<string, object>
+        {
+            { "wellId", _wellId },
+            { "abandonmentData", abandonmentData }
+        };
+
+        MudDialog.Close(DialogResult.Ok(result));
+    }
+}

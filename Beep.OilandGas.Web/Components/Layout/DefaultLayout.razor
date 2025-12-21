@@ -1,0 +1,129 @@
+@inherits LayoutComponentBase
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
+@using Microsoft.AspNetCore.Components.Authorization
+@using Beep.OilandGas.Web.Theme
+
+<MudThemeProvider Theme="@_theme" IsDarkMode="@_isDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    @if (!_isLandingPage)
+    {
+        <MudAppBar Elevation="1" Style="background: var(--mud-palette-primary);">
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Class="app-logo-link">
+                <img src="@(_branding.LogoUrl ?? "/imgs/BeepOGDM.png")" 
+                     alt="@(_branding.AppName ?? "Beep Oil & Gas")" 
+                     class="app-logo" 
+                     onerror="this.style.display='none';" />
+            </MudNavLink>
+            <MudSpacer />
+            
+            <!-- Default Navigation Menu -->
+            <div style="display: flex; align-items: center; height: 100%;">
+                <NavMenu />
+            </div>
+            <MudSpacer />
+            
+            <!-- User Actions -->
+            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Style="margin-right: 8px;">
+                <ActivatorContent>
+                    <MudIconButton Icon="@(_isAuthenticated ? Icons.Material.Filled.AccountCircle : Icons.Material.Filled.Login)"
+                                   Color="Color.Inherit"
+                                   Style="color: white;"
+                                   Title="@(_isAuthenticated ? "User Account" : "Login")" />
+                </ActivatorContent>
+                <ChildContent>
+                    @if (_isAuthenticated)
+                    {
+                        <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/profile"); })">
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Style="margin-right: 8px;" />
+                            Profile
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@Logout">
+                            <MudIcon Icon="@Icons.Material.Filled.Logout" Style="margin-right: 8px;" />
+                            Logout
+                        </MudMenuItem>
+                    }
+                    else
+                    {
+                        <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/login"); })">
+                            <MudIcon Icon="@Icons.Material.Filled.Login" Style="margin-right: 8px;" />
+                            Login
+                        </MudMenuItem>
+                    }
+                </ChildContent>
+            </MudMenu>
+            
+            <!-- Theme Toggle -->
+            <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                           Color="Color.Inherit"
+                           Style="color: white; margin-right: 16px;"
+                           OnClick="@ToggleDarkMode"
+                           Title="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")" />
+        </MudAppBar>
+    }
+    
+    <MudMainContent>
+        <div style="min-height: calc(100vh - 140px);">
+            <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+                @Body
+            </MudContainer>
+        </div>
+        
+        <!-- Footer -->
+        <MudPaper Elevation="0" Style="background: var(--mud-palette-surface); border-top: 1px solid var(--mud-palette-divider); margin-top: auto;">
+            <MudContainer MaxWidth="MaxWidth.False" Class="py-3">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                        @(_branding.Copyright ?? $"© {DateTime.Now.Year} {(_branding.AppName ?? "Beep Oil & Gas")}. All rights reserved.")
+                    </MudText>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <img src="/imgs/companylogo.svg" alt="The Tech Idea" style="height: 20px; width: auto;" onerror="this.style.display='none';" />
+                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                            Powered by <strong>The Tech Idea</strong>™
+                        </MudText>
+                    </MudStack>
+                </MudStack>
+            </MudContainer>
+        </MudPaper>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    [Parameter] public RenderFragment? Body { get; set; }
+
+    private bool _isDarkMode = false;
+    private MudTheme _theme = new();
+    private BrandingConfig _branding = new();
+    private bool _isAuthenticated = false;
+    private bool _isLandingPage = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLandingPage = NavigationManager.Uri.EndsWith("/") || NavigationManager.Uri.Contains("/register") || NavigationManager.Uri.Contains("/login");
+        
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _isAuthenticated = authState.User?.Identity?.IsAuthenticated ?? false;
+
+        // Load theme
+        _isDarkMode = await LocalStorage.GetItemAsync<bool>("darkMode");
+        _branding = await ThemeProvider.GetBrandingAsync();
+    }
+
+    private async Task ToggleDarkMode()
+    {
+        _isDarkMode = !_isDarkMode;
+        await LocalStorage.SetItemAsync("darkMode", _isDarkMode);
+    }
+
+    private async Task Logout()
+    {
+        await LocalStorage.RemoveItemAsync("authToken");
+        NavigationManager.NavigateTo("/login");
+    }
+}

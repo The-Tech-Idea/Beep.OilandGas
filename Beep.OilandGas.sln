@@ -87,6 +87,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Beep.OilandGas.ProductionAc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Beep.OilandGas.ProspectIdentification", "Beep.OilandGas.ProspectIdentification\Beep.OilandGas.ProspectIdentification.csproj", "{C25A1FEB-2C6A-4481-A928-1EE85A6F0A93}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Beep.OilandGas.LifeCycle", "Beep.OilandGas.LifeCycle\Beep.OilandGas.LifeCycle.csproj", "{B81AEEBC-3149-B11B-C789-49C200CF8018}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -529,6 +531,18 @@ Global
 		{C25A1FEB-2C6A-4481-A928-1EE85A6F0A93}.Release|x64.Build.0 = Release|Any CPU
 		{C25A1FEB-2C6A-4481-A928-1EE85A6F0A93}.Release|x86.ActiveCfg = Release|Any CPU
 		{C25A1FEB-2C6A-4481-A928-1EE85A6F0A93}.Release|x86.Build.0 = Release|Any CPU
+		{B81AEEBC-3149-B11B-C789-49C200CF8018}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B81AEEBC-3149-B11B-C789-49C200CF8018}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B81AEEBC-3149-B11B-C789-49C200CF8018}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B81AEEBC-3149-B11B-C789-49C200CF8018}.Debug|x64.Build.0 = Debug|Any CPU
+		{B81AEEBC-3149-B11B-C789-49C200CF8018}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B81AEEBC-3149-B11B-C789-49C200CF8018}.Debug|x86.Build.0 = Debug|Any CPU
+		{B81AEEBC-3149-B11B-C789-49C200CF8018}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B81AEEBC-3149-B11B-C789-49C200CF8018}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B81AEEBC-3149-B11B-C789-49C200CF8018}.Release|x64.ActiveCfg = Release|Any CPU
+		{B81AEEBC-3149-B11B-C789-49C200CF8018}.Release|x64.Build.0 = Release|Any CPU
+		{B81AEEBC-3149-B11B-C789-49C200CF8018}.Release|x86.ActiveCfg = Release|Any CPU
+		{B81AEEBC-3149-B11B-C789-49C200CF8018}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -569,6 +583,7 @@ Global
 		{F38C36FB-C3BB-C21A-653C-0F6D2D3D8E54} = {0D710E10-2EE0-4A71-9D15-872BB5216FA0}
 		{F09B0667-4ED4-1BA5-D080-674AD0A7352B} = {0D710E10-2EE0-4A71-9D15-872BB5216FA0}
 		{C25A1FEB-2C6A-4481-A928-1EE85A6F0A93} = {0D710E10-2EE0-4A71-9D15-872BB5216FA0}
+		{B81AEEBC-3149-B11B-C789-49C200CF8018} = {0D710E10-2EE0-4A71-9D15-872BB5216FA0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AF871147-C977-4374-AE0F-1293DCB9F930}

@@ -1,4 +1,5 @@
 using Beep.OilandGas.ApiService.Models;
+using Beep.OilandGas.PPDM39.Core.DTOs;
 using Beep.OilandGas.Web.Services;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -70,6 +71,25 @@ namespace Beep.OilandGas.Web.Services
         /// All connections (cached)
         /// </summary>
         ReadOnlyCollection<DatabaseConnectionListItem> Connections { get; }
+
+        // ============================================
+        // Field Management
+        // ============================================
+
+        /// <summary>
+        /// Get the current active field ID
+        /// </summary>
+        Task<string?> GetCurrentFieldIdAsync();
+
+        /// <summary>
+        /// Set the current active field
+        /// </summary>
+        Task<bool> SetCurrentFieldAsync(string fieldId);
+
+        /// <summary>
+        /// Event fired when current field changes
+        /// </summary>
+        event Action<string>? CurrentFieldChanged;
 
         // ============================================
         // Entity Operations
@@ -191,6 +211,7 @@ namespace Beep.OilandGas.Web.Services
         private readonly IProgressTrackingClient? _progressTrackingClient;
         
         private string? _currentConnectionName;
+        private string? _currentFieldId;
         private List<DatabaseConnectionListItem> _connections = new();
         private readonly SemaphoreSlim _refreshLock = new(1, 1);
         private DateTime _lastRefreshTime = DateTime.MinValue;
@@ -564,7 +585,7 @@ namespace Beep.OilandGas.Web.Services
         {
             try
             {
-                var url = $"/api/ppdm39/quality/{tableName}/metrics";
+                var url = $"/api/datamanagement/quality/{tableName}/metrics";
                 if (!string.IsNullOrEmpty(connectionName))
                     url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
                 
@@ -582,7 +603,7 @@ namespace Beep.OilandGas.Web.Services
         {
             try
             {
-                var url = "/api/ppdm39/quality/dashboard";
+                var url = "/api/datamanagement/quality/alerts";
                 if (!string.IsNullOrEmpty(connectionName))
                     url += $"?connectionName={Uri.EscapeDataString(connectionName)}";
                 
@@ -697,6 +718,53 @@ namespace Beep.OilandGas.Web.Services
             {
                 _logger.LogError(ex, "Error getting well status facets for status {StatusId}", statusId);
                 return new List<object>();
+            }
+        }
+
+        // ============================================
+        // Field Management Implementation
+        // ============================================
+
+        public event Action<string>? CurrentFieldChanged;
+
+        public async Task<string?> GetCurrentFieldIdAsync()
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_currentFieldId))
+                {
+                    var response = await _apiClient.GetAsync<FieldResponse>("/api/field/current");
+                    _currentFieldId = response?.FieldId;
+                }
+                return _currentFieldId;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current field ID");
+                return null;
+            }
+        }
+
+        public async Task<bool> SetCurrentFieldAsync(string fieldId)
+        {
+            try
+            {
+                var request = new SetActiveFieldRequest { FieldId = fieldId };
+                var response = await _apiClient.PostAsync<SetActiveFieldRequest, SetActiveFieldResponse>(
+                    "/api/field/set-active", request);
+
+                if (response?.Success == true)
+                {
+                    _currentFieldId = fieldId;
+                    CurrentFieldChanged?.Invoke(fieldId);
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting current field: {FieldId}", fieldId);
+                return false;
             }
         }
     }

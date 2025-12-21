@@ -1,0 +1,198 @@
+@using Beep.OilandGas.PPDM39.Core.DTOs
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Components.Authorization
+
+<MudPaper Elevation="2" Class="pa-4">
+    <MudText Typo="Typo.h6" Class="mb-4">Asset Hierarchy</MudText>
+    
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-4" />
+    }
+    else if (_hierarchy != null)
+    {
+        <MudList>
+            @RenderTreeNode(_hierarchy, 0)
+        </MudList>
+    }
+    else if (_error != null)
+    {
+        <MudAlert Severity="Severity.Error">@_error</MudAlert>
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary">No assets available</MudText>
+    }
+</MudPaper>
+
+@code {
+    [Parameter] public string? OrganizationId { get; set; }
+    [Parameter] public string? RootAssetId { get; set; }
+    [Parameter] public string? RootAssetType { get; set; }
+    [Parameter] public EventCallback<AssetHierarchyNode> OnAssetSelected { get; set; }
+
+    private AssetHierarchyNode? _hierarchy;
+    private bool _loading = true;
+    private string? _error;
+    private string? _userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User?.Identity?.Name;
+
+        if (string.IsNullOrEmpty(_userId))
+        {
+            _error = "User not authenticated";
+            _loading = false;
+            return;
+        }
+
+        await LoadHierarchy();
+    }
+
+    private async Task LoadHierarchy()
+    {
+        try
+        {
+            _loading = true;
+            _error = null;
+
+            var url = $"/api/assethierarchy/user/{_userId}";
+            var queryParams = new List<string>();
+            
+            if (!string.IsNullOrEmpty(OrganizationId))
+                queryParams.Add($"organizationId={Uri.EscapeDataString(OrganizationId)}");
+            if (!string.IsNullOrEmpty(RootAssetId))
+                queryParams.Add($"rootAssetId={Uri.EscapeDataString(RootAssetId)}");
+            if (!string.IsNullOrEmpty(RootAssetType))
+                queryParams.Add($"rootAssetType={Uri.EscapeDataString(RootAssetType)}");
+
+            if (queryParams.Any())
+                url += "?" + string.Join("&", queryParams);
+
+            _hierarchy = await ApiClient.GetAsync<AssetHierarchyNode>(url);
+        }
+        catch (Exception ex)
+        {
+            _error = $"Error loading asset hierarchy: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private RenderFragment RenderTreeNode(AssetHierarchyNode node, int level)
+    {
+        return builder =>
+        {
+            var hasChildren = node.Children != null && node.Children.Any();
+            var indent = level * 24;
+
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "style", $"padding-left: {indent}px; margin-bottom: 4px;");
+            
+            if (node.UserHasAccess)
+            {
+                builder.OpenComponent<MudListItem>(2);
+                builder.AddAttribute(3, "OnClick", EventCallback.Factory.Create(this, () => HandleNodeClick(node)));
+                builder.AddAttribute(4, "Style", "cursor: pointer;");
+                builder.AddAttribute(5, "ChildContent", (RenderFragment)((b) =>
+                {
+                    b.OpenComponent<MudStack>(6);
+                    b.AddAttribute(7, "Row", true);
+                    b.AddAttribute(8, "AlignItems", AlignItems.Center);
+                    b.AddAttribute(9, "Spacing", 2);
+                    b.AddAttribute(10, "ChildContent", (RenderFragment)((c) =>
+                    {
+                        c.OpenComponent<MudIcon>(11);
+                        c.AddAttribute(12, "Icon", GetIconForAssetType(node.AssetType));
+                        c.AddAttribute(13, "Size", Size.Small);
+                        c.CloseComponent();
+                        
+                        c.OpenComponent<MudText>(14);
+                        c.AddAttribute(15, "Typo", Typo.body1);
+                        c.AddContent(16, node.AssetName ?? node.AssetId);
+                        c.CloseComponent();
+                        
+                        c.OpenComponent<MudChip>(17);
+                        c.AddAttribute(18, "Size", Size.Small);
+                        c.AddAttribute(19, "Color", Color.Success);
+                        c.AddContent(20, "Access");
+                        c.CloseComponent();
+                    }));
+                    b.CloseComponent();
+                }));
+                builder.CloseComponent();
+            }
+            else
+            {
+                builder.OpenComponent<MudListItem>(21);
+                builder.AddAttribute(22, "Style", "opacity: 0.5;");
+                builder.AddAttribute(23, "ChildContent", (RenderFragment)((b) =>
+                {
+                    b.OpenComponent<MudStack>(24);
+                    b.AddAttribute(25, "Row", true);
+                    b.AddAttribute(26, "AlignItems", AlignItems.Center);
+                    b.AddAttribute(27, "Spacing", 2);
+                    b.AddAttribute(28, "ChildContent", (RenderFragment)((c) =>
+                    {
+                        c.OpenComponent<MudIcon>(29);
+                        c.AddAttribute(30, "Icon", GetIconForAssetType(node.AssetType));
+                        c.AddAttribute(31, "Size", Size.Small);
+                        c.AddAttribute(32, "Color", Color.Default);
+                        c.CloseComponent();
+                        
+                        c.OpenComponent<MudText>(33);
+                        c.AddAttribute(34, "Typo", Typo.body1);
+                        c.AddContent(35, node.AssetName ?? node.AssetId);
+                        c.CloseComponent();
+                        
+                        c.OpenComponent<MudChip>(36);
+                        c.AddAttribute(37, "Size", Size.Small);
+                        c.AddAttribute(38, "Color", Color.Default);
+                        c.AddContent(39, "No Access");
+                        c.CloseComponent();
+                    }));
+                    b.CloseComponent();
+                }));
+                builder.CloseComponent();
+            }
+
+            builder.CloseElement();
+
+            // Recursively render children
+            if (hasChildren)
+            {
+                foreach (var child in node.Children!)
+                {
+                    builder.AddContent(40, RenderTreeNode(child, level + 1));
+                }
+            }
+        };
+    }
+
+    private async Task HandleNodeClick(AssetHierarchyNode node)
+    {
+        if (node.UserHasAccess)
+        {
+            await OnAssetSelected.InvokeAsync(node);
+        }
+    }
+
+    private string GetIconForAssetType(string assetType)
+    {
+        return assetType.ToUpper() switch
+        {
+            "FIELD" => Icons.Material.Filled.Map,
+            "POOL" => Icons.Material.Filled.WaterDrop,
+            "FACILITY" => Icons.Material.Filled.Business,
+            "WELL" => Icons.Material.Filled.PrecisionManufacturing,
+            "AREA" => Icons.Material.Filled.Public,
+            _ => Icons.Material.Filled.Folder
+        };
+    }
+}

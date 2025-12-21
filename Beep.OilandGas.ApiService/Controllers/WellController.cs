@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL;
 using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PPDM39.Core.DTOs;
 using TheTechIdea.Beep.Report;
 using System.ComponentModel.DataAnnotations;
 
@@ -14,12 +15,17 @@ namespace Beep.OilandGas.ApiService.Controllers
     public class WellController : ControllerBase
     {
         private readonly WellRepository _wellRepository;
+        private readonly IWellComparisonService _wellComparisonService;
         private readonly ILogger<WellController> _logger;
 
-        public WellController(WellRepository wellRepository, ILogger<WellController> logger)
+        public WellController(
+            WellRepository wellRepository, 
+            IWellComparisonService wellComparisonService,
+            ILogger<WellController> logger)
         {
-            _wellRepository = wellRepository;
-            _logger = logger;
+            _wellRepository = wellRepository ?? throw new ArgumentNullException(nameof(wellRepository));
+            _wellComparisonService = wellComparisonService ?? throw new ArgumentNullException(nameof(wellComparisonService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         /// <summary>
@@ -99,6 +105,68 @@ namespace Beep.OilandGas.ApiService.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+
+        // ============================================
+        // WELL COMPARISON ENDPOINTS
+        // ============================================
+
+        /// <summary>
+        /// Compare multiple wells
+        /// </summary>
+        [HttpPost("compare")]
+        public async Task<ActionResult<WellComparisonDTO>> CompareWells([FromBody] CompareWellsRequest request)
+        {
+            try
+            {
+                var comparison = await _wellComparisonService.CompareWellsAsync(
+                    request.WellIdentifiers, 
+                    request.FieldNames);
+                return Ok(comparison);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error comparing wells");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Compare wells from multiple data sources
+        /// </summary>
+        [HttpPost("compare-multi-source")]
+        public async Task<ActionResult<WellComparisonDTO>> CompareWellsMultiSource([FromBody] CompareWellsMultiSourceRequest request)
+        {
+            try
+            {
+                var comparison = await _wellComparisonService.CompareWellsFromMultipleSourcesAsync(
+                    request.WellComparisons, 
+                    request.FieldNames);
+                return Ok(comparison);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error comparing wells from multiple sources");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get available comparison fields
+        /// </summary>
+        [HttpGet("comparison-fields")]
+        public async Task<ActionResult<List<ComparisonField>>> GetComparisonFields()
+        {
+            try
+            {
+                var fields = await _wellComparisonService.GetAvailableComparisonFieldsAsync();
+                return Ok(fields);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting comparison fields");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
     }
 
     // ============================================
@@ -123,6 +191,18 @@ namespace Beep.OilandGas.ApiService.Controllers
         
         [Required]
         public string UserId { get; set; } = null!;
+    }
+
+    public class CompareWellsRequest
+    {
+        public List<string> WellIdentifiers { get; set; } = new List<string>();
+        public List<string>? FieldNames { get; set; }
+    }
+
+    public class CompareWellsMultiSourceRequest
+    {
+        public List<WellSourceMapping> WellComparisons { get; set; } = new List<WellSourceMapping>();
+        public List<string>? FieldNames { get; set; }
     }
 }
 

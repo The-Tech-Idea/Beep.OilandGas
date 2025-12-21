@@ -1,0 +1,1 @@
+-- R_LEAD_STATUS has no foreign keys

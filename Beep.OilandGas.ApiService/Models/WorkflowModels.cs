@@ -29,6 +29,9 @@ namespace Beep.OilandGas.ApiService.Models
         public bool StopOnError { get; set; } = true;
         public string? ConnectionName { get; set; }
         public string UserId { get; set; } = string.Empty;
+        public string? Phase { get; set; } // EXPLORATION, DEVELOPMENT, PRODUCTION, DECOMMISSIONING
+        public string? FieldId { get; set; } // Field this workflow belongs to
+        public Dictionary<string, object>? Parameters { get; set; } // Additional parameters including FIELD_ID, PHASE
     }
 
     /// <summary>

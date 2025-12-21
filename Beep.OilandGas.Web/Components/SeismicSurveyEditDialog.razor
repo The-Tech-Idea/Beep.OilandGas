@@ -1,0 +1,94 @@
+@using System.Collections.Generic
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="@_surveyName" 
+                             Label="Survey Name" 
+                             Variant="Variant.Outlined" 
+                             Required="true" />
+
+                <MudTextField @bind-Value="@_surveyType" 
+                             Label="Survey Type" 
+                             Variant="Variant.Outlined" />
+
+                <MudDatePicker @bind-Date="@_acquisitionDate" 
+                              Label="Acquisition Date" 
+                              Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="@_description" 
+                             Label="Description" 
+                             Variant="Variant.Outlined" 
+                             Lines="3" />
+
+                <MudTextField T="decimal?" 
+                             @bind-Value="@_areaCovered" 
+                             Label="Area Covered (km²)" 
+                             Variant="Variant.Outlined" />
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Dictionary<string, object>? Survey { get; set; }
+
+    private string _surveyName = string.Empty;
+    private string _surveyType = string.Empty;
+    private DateTime? _acquisitionDate;
+    private string _description = string.Empty;
+    private decimal? _areaCovered;
+
+    protected override void OnInitialized()
+    {
+        if (Survey != null)
+        {
+            // Load existing survey data
+            _surveyName = GetPropertyValue(Survey, "SURVEY_NAME") ?? string.Empty;
+            _surveyType = GetPropertyValue(Survey, "SURVEY_TYPE") ?? string.Empty;
+            _description = GetPropertyValue(Survey, "DESCRIPTION") ?? string.Empty;
+            
+            if (DateTime.TryParse(GetPropertyValue(Survey, "ACQUISITION_DATE"), out var date))
+                _acquisitionDate = date;
+            
+            if (decimal.TryParse(GetPropertyValue(Survey, "AREA_COVERED"), out var area))
+                _areaCovered = area;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Save()
+    {
+        var surveyData = new Dictionary<string, object>
+        {
+            { "SURVEY_NAME", _surveyName },
+            { "SURVEY_TYPE", _surveyType },
+            { "DESCRIPTION", _description }
+        };
+
+        if (_acquisitionDate.HasValue)
+            surveyData["ACQUISITION_DATE"] = _acquisitionDate.Value;
+
+        if (_areaCovered.HasValue)
+            surveyData["AREA_COVERED"] = _areaCovered.Value;
+
+        MudDialog.Close(DialogResult.Ok(surveyData));
+    }
+
+    private string? GetPropertyValue(Dictionary<string, object> dict, string key)
+    {
+        if (dict.ContainsKey(key))
+            return dict[key]?.ToString();
+        return null;
+    }
+}

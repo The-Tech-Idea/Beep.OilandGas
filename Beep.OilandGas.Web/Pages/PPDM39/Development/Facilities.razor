@@ -1,0 +1,122 @@
+@page "/ppdm39/development/facilities"
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Facilities - Development</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Development Facilities</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">Facilities for Current Field</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+                Add Facility
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_facilities != null && _facilities.Any())
+        {
+            <MudTable Items="@_facilities" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Facility ID</MudTh>
+                    <MudTh>Facility Name</MudTh>
+                    <MudTh>Facility Type</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Facility ID">@GetPropertyValue(context, "FACILITY_ID")</MudTd>
+                    <MudTd DataLabel="Facility Name">@GetPropertyValue(context, "FACILITY_NAME")</MudTd>
+                    <MudTd DataLabel="Facility Type">@GetPropertyValue(context, "FACILITY_TYPE")</MudTd>
+                    <MudTd DataLabel="Status">@GetPropertyValue(context, "FACILITY_STATUS")</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
+                            <MudButton StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditDialog(context))">
+                                Edit
+                            </MudButton>
+                        </MudButtonGroup>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No facilities found for the current field.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<FACILITY>? _facilities;
+    private bool _isLoading = false;
+    private string? _currentUserId = "system"; // TODO: Get from authentication context
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFacilities();
+    }
+
+    private async Task LoadFacilities()
+    {
+        _isLoading = true;
+        try
+        {
+            _facilities = await ApiClient.GetAsync<List<FACILITY>>("/api/field/current/development/facilities");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading facilities: {ex.Message}", Severity.Error);
+            _facilities = new List<FACILITY>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<FacilityEditDialog>("Create Facility", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is Dictionary<string, object> facilityData)
+        {
+            try
+            {
+                var created = await ApiClient.PostAsync<object, Dictionary<string, object>>(
+                    "/api/field/current/development/facilities",
+                    facilityData,
+                    new { userId = _currentUserId });
+                
+                Snackbar.Add("Facility created successfully", Severity.Success);
+                await LoadFacilities();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error creating facility: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task OpenEditDialog(object facility)
+    {
+        Snackbar.Add("Edit functionality coming soon", Severity.Info);
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        {
+            return dict[propertyName]?.ToString() ?? "N/A";
+        }
+        return "N/A";
+    }
+}

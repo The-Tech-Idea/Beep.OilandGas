@@ -1,0 +1,128 @@
+@page "/admin/access-control/hierarchy-config"
+@using Beep.OilandGas.PPDM39.Core.DTOs
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Hierarchy Configuration</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Organization Hierarchy Configuration</MudText>
+    
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-4">Configure Asset Hierarchy for Organization</MudText>
+        
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="@_organizationId" 
+                             Label="Organization ID" 
+                             Variant="Variant.Outlined"
+                             HelperText="Enter the organization ID" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary"
+                          OnClick="LoadHierarchyConfig"
+                          StartIcon="@Icons.Material.Filled.Refresh">
+                    Load Configuration
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+        @if (_hierarchyConfig != null && _hierarchyConfig.Any())
+        {
+            <MudDivider Class="my-4" />
+            <MudText Typo="Typo.h6" Class="mb-3">Hierarchy Levels</MudText>
+            <MudTable Items="@_hierarchyConfig" Hover="true" Dense="true">
+                <HeaderContent>
+                    <MudTh>Level</MudTh>
+                    <MudTh>Level Name</MudTh>
+                    <MudTh>Asset Type</MudTh>
+                    <MudTh>Parent Level</MudTh>
+                    <MudTh>Active</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.HierarchyLevel</MudTd>
+                    <MudTd>@context.LevelName</MudTd>
+                    <MudTd>@context.AssetType</MudTd>
+                    <MudTd>@(context.ParentLevel?.ToString() ?? "-")</MudTd>
+                    <MudTd>
+                        @if (context.Active)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success" Size="Size.Small" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Close" Color="Color.Default" Size="Size.Small" />
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+            <MudDivider Class="my-4" />
+            <MudButton Variant="Variant.Filled" 
+                      Color="Color.Primary"
+                      OnClick="SaveHierarchyConfig"
+                      StartIcon="@Icons.Material.Filled.Save">
+                Save Configuration
+            </MudButton>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _organizationId = string.Empty;
+    private List<HierarchyConfigDTO>? _hierarchyConfig;
+
+    private async Task LoadHierarchyConfig()
+    {
+        if (string.IsNullOrEmpty(_organizationId))
+        {
+            Snackbar.Add("Please enter an organization ID", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            _hierarchyConfig = await ApiClient.GetAsync<List<HierarchyConfigDTO>>($"/api/assethierarchy/organization/{_organizationId}/config");
+            
+            if (_hierarchyConfig == null || !_hierarchyConfig.Any())
+            {
+                Snackbar.Add("No hierarchy configuration found. You can create one.", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading hierarchy configuration: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task SaveHierarchyConfig()
+    {
+        if (string.IsNullOrEmpty(_organizationId) || _hierarchyConfig == null)
+        {
+            Snackbar.Add("Please load a configuration first", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var result = await ApiClient.PutAsync<List<HierarchyConfigDTO>, bool>(
+                $"/api/assethierarchy/organization/{_organizationId}/config", 
+                _hierarchyConfig);
+            
+            if (result)
+            {
+                Snackbar.Add("Hierarchy configuration saved successfully", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to save hierarchy configuration", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving hierarchy configuration: {ex.Message}", Severity.Error);
+        }
+    }
+}

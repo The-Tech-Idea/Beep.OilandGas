@@ -1,0 +1,342 @@
+@using System.Reflection
+@using System.Collections.Generic
+@using System.Linq
+@using MudBlazor
+@using Beep.OilandGas.PPDM39.Core.Metadata
+
+<MudDataGrid Items="@Items" 
+             Hover="@Hover" 
+             Dense="@Dense"
+             FilterMode="@FilterMode"
+             ReadOnly="@ReadOnly"
+             CanCancelEdit="@CanCancelEdit"
+             EditMode="@EditMode"
+             QuickFilter="@QuickFilter"
+             Loading="@IsLoading"
+             LoadingProgressColor="@LoadingColor">
+    @if (!string.IsNullOrWhiteSpace(Title))
+    {
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">@Title</MudText>
+            <MudSpacer />
+            @if (ShowSearch)
+            {
+                <MudTextField @bind-Value="_searchString" 
+                             Placeholder="Search..." 
+                             Adornment="Adornment.Start" 
+                             AdornmentIcon="@Icons.Material.Filled.Search"
+                             Immediate="true" 
+                             Variant="Variant.Outlined"
+                             Class="mr-2" />
+            }
+            @ToolbarActions
+            @if (ShowExport && Items != null && Items.Any())
+            {
+                <MudButton Variant="Variant.Text" 
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.FileDownload"
+                           OnClick="OnExport"
+                           Title="Export to CSV">
+                    Export
+                </MudButton>
+            }
+        </ToolBarContent>
+    }
+    <Columns>
+        @foreach (var column in GetColumns())
+        {
+            <TemplateColumn Title="@GetColumnDisplayName(column)" 
+                          Sortable="@IsColumnSortable(column)" 
+                          Filterable="@IsColumnFilterable(column)">
+                <CellTemplate>
+                    @RenderCellContent(context, column)
+                </CellTemplate>
+                @if (EditMode == DataGridEditMode.Cell && IsColumnEditable(column))
+                {
+                    <EditTemplate>
+                        @RenderEditCell(context, column)
+                    </EditTemplate>
+                }
+            </TemplateColumn>
+        }
+        @if (ShowActions)
+        {
+            <TemplateColumn Title="Actions" Sortable="false" Filterable="false" FixedRight="true">
+                <CellTemplate>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" 
+                             Size="Size.Small"
+                             Dense="true"
+                             Color="Color.Inherit">
+                        <ActivatorContent>
+                            <MudIconButton Icon="@Icons.Material.Filled.MoreVert" 
+                                         Size="Size.Small" 
+                                         Color="Color.Default"
+                                         Variant="Variant.Text" />
+                        </ActivatorContent>
+                        <ChildContent>
+                            @if (OnEdit != null)
+                            {
+                                <MudMenuItem OnClick="@(() => OnEdit.InvokeAsync(context))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-2" />
+                                    Edit
+                                </MudMenuItem>
+                            }
+                            @if (OnView != null)
+                            {
+                                <MudMenuItem OnClick="@(() => OnView.InvokeAsync(context))">
+                                    <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Class="mr-2" />
+                                    View
+                                </MudMenuItem>
+                            }
+                            @if (OnEdit != null || OnView != null)
+                            {
+                                <MudDivider />
+                            }
+                            @if (OnDelete != null)
+                            {
+                                <MudMenuItem OnClick="@(() => OnDelete.InvokeAsync(context))" Color="Color.Error">
+                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Class="mr-2" />
+                                    Delete
+                                </MudMenuItem>
+                            }
+                            @ActionMenuItems
+                        </ChildContent>
+                    </MudMenu>
+                </CellTemplate>
+            </TemplateColumn>
+        }
+    </Columns>
+    @if (ShowPagination && Items != null && Items.Any())
+    {
+        <PagerContent>
+            <MudDataGridPager T="object" />
+        </PagerContent>
+    }
+    @if (Items == null || !Items.Any())
+    {
+        <NoRecordsContent>
+            <MudText Typo="Typo.body1" Class="pa-4">
+                @(EmptyMessage ?? "No records found.")
+            </MudText>
+        </NoRecordsContent>
+    }
+</MudDataGrid>
+
+@code {
+    [Parameter] public IEnumerable<object>? Items { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public bool Hover { get; set; } = true;
+    [Parameter] public bool Dense { get; set; } = true;
+    [Parameter] public DataGridFilterMode FilterMode { get; set; } = DataGridFilterMode.ColumnFilterRow;
+    [Parameter] public bool ReadOnly { get; set; } = false;
+    [Parameter] public bool CanCancelEdit { get; set; } = true;
+    [Parameter] public DataGridEditMode EditMode { get; set; } = DataGridEditMode.None;
+    [Parameter] public bool ShowSearch { get; set; } = true;
+    [Parameter] public bool ShowExport { get; set; } = true;
+    [Parameter] public bool ShowPagination { get; set; } = true;
+    [Parameter] public bool ShowActions { get; set; } = true;
+    [Parameter] public string? EmptyMessage { get; set; }
+    [Parameter] public bool IsLoading { get; set; } = false;
+    [Parameter] public Color LoadingColor { get; set; } = Color.Primary;
+    [Parameter] public Func<string, bool>? QuickFilter { get; set; }
+    
+    // Column configuration
+    [Parameter] public List<string>? Columns { get; set; }
+    [Parameter] public List<string>? ExcludeColumns { get; set; }
+    [Parameter] public int MaxDisplayColumns { get; set; } = 20;
+    [Parameter] public Dictionary<string, string>? ColumnDisplayNames { get; set; }
+    [Parameter] public List<string>? ReadOnlyColumns { get; set; }
+    [Parameter] public PPDMTableMetadata? TableMetadata { get; set; }
+    
+    // Event callbacks
+    [Parameter] public EventCallback<object> OnEdit { get; set; }
+    [Parameter] public EventCallback<object> OnView { get; set; }
+    [Parameter] public EventCallback<object> OnDelete { get; set; }
+    [Parameter] public EventCallback OnExport { get; set; }
+    
+    // Render fragments for customization
+    [Parameter] public RenderFragment? ToolbarActions { get; set; }
+    [Parameter] public RenderFragment<object>? ActionMenuItems { get; set; }
+    [Parameter] public RenderFragment<CellContext>? CustomCellTemplate { get; set; }
+    
+    private string _searchString = string.Empty;
+    
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+    }
+    
+    private List<string> GetColumns()
+    {
+        if (Items == null || !Items.Any())
+            return new List<string>();
+        
+        var firstItem = Items.First();
+        var properties = firstItem.GetType()
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.CanRead && !IsSystemProperty(p.Name))
+            .Select(p => p.Name)
+            .ToList();
+        
+        // Apply column filters
+        if (Columns != null && Columns.Any())
+        {
+            properties = properties.Where(p => Columns.Contains(p, StringComparer.OrdinalIgnoreCase)).ToList();
+        }
+        
+        if (ExcludeColumns != null && ExcludeColumns.Any())
+        {
+            properties = properties.Where(p => !ExcludeColumns.Contains(p, StringComparer.OrdinalIgnoreCase)).ToList();
+        }
+        
+        // Limit display columns
+        if (MaxDisplayColumns > 0 && properties.Count > MaxDisplayColumns)
+        {
+            properties = properties.Take(MaxDisplayColumns).ToList();
+        }
+        
+        return properties;
+    }
+    
+    private bool IsSystemProperty(string propertyName)
+    {
+        var systemProps = new[] { "PPDM_GUID", "ROW_CREATED_BY", "ROW_CREATED_DATE", "ROW_CHANGED_BY", "ROW_CHANGED_DATE" };
+        return systemProps.Contains(propertyName, StringComparer.OrdinalIgnoreCase);
+    }
+    
+    private string GetColumnDisplayName(string columnName)
+    {
+        if (ColumnDisplayNames != null && ColumnDisplayNames.ContainsKey(columnName))
+        {
+            return ColumnDisplayNames[columnName];
+        }
+        return columnName.Replace("_", " ");
+    }
+    
+    private bool IsColumnSortable(string columnName)
+    {
+        return true;
+    }
+    
+    private bool IsColumnFilterable(string columnName)
+    {
+        return true;
+    }
+    
+    private bool IsColumnEditable(string columnName)
+    {
+        if (ReadOnlyColumns != null && ReadOnlyColumns.Contains(columnName, StringComparer.OrdinalIgnoreCase))
+            return false;
+            
+        // Primary key columns are read-only when editing existing records
+        if (TableMetadata != null && 
+            !string.IsNullOrWhiteSpace(TableMetadata.PrimaryKeyColumn) &&
+            TableMetadata.PrimaryKeyColumn.Equals(columnName, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    private object? GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj == null) return null;
+        
+        // Handle dictionary objects
+        if (obj is Dictionary<string, object> dict)
+        {
+            return dict.TryGetValue(propertyName, out var value) ? value : null;
+        }
+        
+        // Handle typed objects
+        var prop = obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        return prop?.GetValue(obj);
+    }
+    
+    private RenderFragment RenderCellContent(object item, string columnName)
+    {
+        return builder =>
+        {
+            var value = GetPropertyValue(item, columnName);
+            var displayValue = FormatValue(value, columnName);
+            
+            builder.AddContent(0, displayValue);
+        };
+    }
+    
+    private string FormatValue(object? value, string columnName)
+    {
+        if (value == null)
+            return string.Empty;
+        
+        // Format dates
+        if (value is DateTime dateTime)
+        {
+            return dateTime.ToString("yyyy-MM-dd");
+        }
+        
+        if (value is DateTimeOffset dateTimeOffset)
+        {
+            return dateTimeOffset.ToString("yyyy-MM-dd");
+        }
+        
+        // Format decimals/numbers with appropriate precision
+        if (value is decimal dec)
+        {
+            return dec.ToString("N2");
+        }
+        
+        if (value is double dbl)
+        {
+            return dbl.ToString("N2");
+        }
+        
+        return value.ToString() ?? string.Empty;
+    }
+    
+    private RenderFragment RenderEditCell(object item, string columnName)
+    {
+        return builder =>
+        {
+            var value = GetPropertyValue(item, columnName);
+            var propType = GetPropertyType(item, columnName);
+            
+            if (propType == typeof(DateTime) || propType == typeof(DateTime?))
+            {
+                builder.OpenComponent<MudDatePicker>(0);
+                builder.AddAttribute(1, "Date", value as DateTime?);
+                builder.AddAttribute(2, "Variant", Variant.Outlined);
+                builder.CloseComponent();
+            }
+            else if (propType == typeof(bool) || propType == typeof(bool?))
+            {
+                builder.OpenComponent<MudSwitch>(3);
+                builder.AddAttribute(4, "T", typeof(bool?));
+                builder.AddAttribute(5, "Checked", value as bool?);
+                builder.AddAttribute(6, "Variant", Variant.Outlined);
+                builder.CloseComponent();
+            }
+            else
+            {
+                builder.OpenComponent<MudTextField>(7);
+                builder.AddAttribute(8, "T", typeof(string));
+                builder.AddAttribute(9, "Value", value?.ToString() ?? string.Empty);
+                builder.AddAttribute(10, "Variant", Variant.Outlined);
+                builder.CloseComponent();
+            }
+        };
+    }
+    
+    private Type GetPropertyType(object obj, string propertyName)
+    {
+        if (obj is Dictionary<string, object> dict)
+        {
+            if (dict.TryGetValue(propertyName, out var value))
+                return value?.GetType() ?? typeof(string);
+        }
+        
+        var prop = obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+        return prop?.PropertyType ?? typeof(string);
+    }
+}

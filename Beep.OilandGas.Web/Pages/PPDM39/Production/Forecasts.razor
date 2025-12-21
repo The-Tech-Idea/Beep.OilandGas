@@ -1,0 +1,124 @@
+@page "/ppdm39/production/forecasts"
+@using Beep.OilandGas.PPDM39.Core.DTOs
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Production Forecasts - Production</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Production Forecasts</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">Production Forecasts for Current Field</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+                Create Forecast
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_forecasts != null && _forecasts.Any())
+        {
+            <MudTable Items="@_forecasts" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Forecast ID</MudTh>
+                    <MudTh>Forecast Name</MudTh>
+                    <MudTh>Forecast Type</MudTh>
+                    <MudTh>Start Date</MudTh>
+                    <MudTh>End Date</MudTh>
+                    <MudTh>Status</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Forecast ID">@GetPropertyValue(context, "FORECAST_ID")</MudTd>
+                    <MudTd DataLabel="Forecast Name">@GetPropertyValue(context, "FORECAST_NAME")</MudTd>
+                    <MudTd DataLabel="Forecast Type">@GetPropertyValue(context, "FORECAST_TYPE")</MudTd>
+                    <MudTd DataLabel="Start Date">@FormatDate(GetPropertyValue(context, "START_DATE"))</MudTd>
+                    <MudTd DataLabel="End Date">@FormatDate(GetPropertyValue(context, "END_DATE"))</MudTd>
+                    <MudTd DataLabel="Status">@GetPropertyValue(context, "FORECAST_STATUS")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No production forecasts found for the current field.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<ProductionForecastResponse>? _forecasts;
+    private bool _isLoading = false;
+    private string? _currentUserId = "system"; // TODO: Get from authentication context
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadForecasts();
+    }
+
+    private async Task LoadForecasts()
+    {
+        _isLoading = true;
+        try
+        {
+            _forecasts = await ApiClient.GetAsync<List<ProductionForecastResponse>>("/api/production/field/forecasts");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading production forecasts: {ex.Message}", Severity.Error);
+            _forecasts = new List<ProductionForecastResponse>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<ProductionForecastDialog>("Create Production Forecast", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is Dictionary<string, object> forecastData)
+        {
+            try
+            {
+                var created = await ApiClient.PostAsync<object, Dictionary<string, object>>(
+                    "/api/production/field/forecasts",
+                    forecastData,
+                    new { userId = _currentUserId });
+                
+                Snackbar.Add("Production forecast created successfully", Severity.Success);
+                await LoadForecasts();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error creating production forecast: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        {
+            return dict[propertyName]?.ToString() ?? "N/A";
+        }
+        return "N/A";
+    }
+
+    private string FormatDate(string? dateStr)
+    {
+        if (string.IsNullOrEmpty(dateStr) || dateStr == "N/A")
+            return "N/A";
+
+        if (DateTime.TryParse(dateStr, out var date))
+            return date.ToString("yyyy-MM-dd");
+
+        return dateStr;
+    }
+}

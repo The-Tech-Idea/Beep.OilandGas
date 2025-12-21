@@ -1,0 +1,77 @@
+@using System.Collections.Generic
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="@_facilityName" 
+                             Label="Facility Name" 
+                             Variant="Variant.Outlined" 
+                             Required="true" />
+
+                <MudTextField @bind-Value="@_facilityType" 
+                             Label="Facility Type" 
+                             Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="@_facilityStatus" 
+                             Label="Facility Status" 
+                             Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="@_description" 
+                             Label="Description" 
+                             Variant="Variant.Outlined" 
+                             Lines="3" />
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Dictionary<string, object>? Facility { get; set; }
+
+    private string _facilityName = string.Empty;
+    private string _facilityType = string.Empty;
+    private string _facilityStatus = string.Empty;
+    private string _description = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        if (Facility != null)
+        {
+            _facilityName = GetPropertyValue(Facility, "FACILITY_NAME") ?? string.Empty;
+            _facilityType = GetPropertyValue(Facility, "FACILITY_TYPE") ?? string.Empty;
+            _facilityStatus = GetPropertyValue(Facility, "FACILITY_STATUS") ?? string.Empty;
+            _description = GetPropertyValue(Facility, "DESCRIPTION") ?? string.Empty;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Save()
+    {
+        var facilityData = new Dictionary<string, object>
+        {
+            { "FACILITY_NAME", _facilityName },
+            { "FACILITY_TYPE", _facilityType },
+            { "FACILITY_STATUS", _facilityStatus },
+            { "DESCRIPTION", _description }
+        };
+
+        MudDialog.Close(DialogResult.Ok(facilityData));
+    }
+
+    private string? GetPropertyValue(Dictionary<string, object> dict, string key)
+    {
+        if (dict.ContainsKey(key))
+            return dict[key]?.ToString();
+        return null;
+    }
+}

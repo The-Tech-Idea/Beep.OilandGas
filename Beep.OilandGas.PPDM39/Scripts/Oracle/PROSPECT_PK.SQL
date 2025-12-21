@@ -1,0 +1,10 @@
+-- PPDM39 Oracle DDL Script
+-- Converted from SQL Server script: PROSPECT_PK.sql
+-- This script is for the PPDM39 model
+
+PROMPT CREATING PRIMARY KEY PROSPECT_PK with nowait
+ALTER TABLE PROSPECT ADD CONSTRAINT PROSPECT_PK PRIMARY KEY
+(
+	PROSPECT_ID
+);
+

@@ -1,0 +1,3 @@
+raiserror ('CREATING PRIMARY KEY FOR ACCOUNTING_METHOD', 10,1) with nowait
+ALTER TABLE accounting_method
+ADD CONSTRAINT accounting_method_PK PRIMARY KEY (ACCOUNTING_METHOD_ID)

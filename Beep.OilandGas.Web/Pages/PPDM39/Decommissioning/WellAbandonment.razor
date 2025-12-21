@@ -1,0 +1,133 @@
+@page "/ppdm39/decommissioning/well-abandonment"
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Well Abandonment - Decommissioning</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Well Abandonment</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">Abandoned Wells for Current Field</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAbandonDialog">
+                Record Well Abandonment
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_abandonedWells != null && _abandonedWells.Any())
+        {
+            <MudTable Items="@_abandonedWells" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Abandonment ID</MudTh>
+                    <MudTh>Well ID</MudTh>
+                    <MudTh>Abandonment Date</MudTh>
+                    <MudTh>Abandonment Type</MudTh>
+                    <MudTh>Status</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Abandonment ID">@GetPropertyValue(context, "WELL_ABANDONMENT_ID")</MudTd>
+                    <MudTd DataLabel="Well ID">@GetPropertyValue(context, "WELL_ID")</MudTd>
+                    <MudTd DataLabel="Abandonment Date">@FormatDate(GetPropertyValue(context, "ABANDONMENT_DATE"))</MudTd>
+                    <MudTd DataLabel="Abandonment Type">@GetPropertyValue(context, "ABANDONMENT_TYPE")</MudTd>
+                    <MudTd DataLabel="Status">@GetPropertyValue(context, "ABANDONMENT_STATUS")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No abandoned wells found for the current field.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<WELL>? _abandonedWells;
+    private bool _isLoading = false;
+    private string? _currentUserId = "system"; // TODO: Get from authentication context
+    private string? _selectedWellId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAbandonedWells();
+    }
+
+    private async Task LoadAbandonedWells()
+    {
+        _isLoading = true;
+        try
+        {
+            _abandonedWells = await ApiClient.GetAsync<List<WELL>>("/api/field/current/decommissioning/wells-abandoned");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading abandoned wells: {ex.Message}", Severity.Error);
+            _abandonedWells = new List<WELL>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OpenAbandonDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<WellAbandonmentDialog>("Record Well Abandonment", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data is Dictionary<string, object> resultData)
+        {
+            try
+            {
+                var wellId = resultData.ContainsKey("wellId") ? resultData["wellId"]?.ToString() : null;
+                var abandonmentData = resultData.ContainsKey("abandonmentData") && resultData["abandonmentData"] is Dictionary<string, object> data 
+                    ? data 
+                    : new Dictionary<string, object>();
+
+                if (string.IsNullOrWhiteSpace(wellId))
+                {
+                    Snackbar.Add("Well ID is required", Severity.Warning);
+                    return;
+                }
+
+                var created = await ApiClient.PostAsync<object, Dictionary<string, object>>(
+                    $"/api/field/current/decommissioning/abandon-well?wellId={wellId}&userId={_currentUserId}",
+                    abandonmentData);
+                
+                Snackbar.Add("Well abandonment recorded successfully", Severity.Success);
+                await LoadAbandonedWells();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error recording well abandonment: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        {
+            return dict[propertyName]?.ToString() ?? "N/A";
+        }
+        return "N/A";
+    }
+
+    private string FormatDate(string? dateStr)
+    {
+        if (string.IsNullOrEmpty(dateStr) || dateStr == "N/A")
+            return "N/A";
+
+        if (DateTime.TryParse(dateStr, out var date))
+            return date.ToString("yyyy-MM-dd");
+
+        return dateStr;
+    }
+}

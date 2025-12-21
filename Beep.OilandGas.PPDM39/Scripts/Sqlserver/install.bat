@@ -105,6 +105,26 @@ echo This script is OPTIONAL for %ver%
 %sqlcmd% -d %database_name% -i GUID.sql 
 
 
+echo Creating Access Control Tables [ACCESS_CONTROL_TAB.sql]
+echo This script is REQUIRED for access control functionality
+%sqlcmd% -d %database_name% -i ACCESS_CONTROL_TAB.sql
+
+
+echo Creating Access Control Primary Keys [ACCESS_CONTROL_PK.sql]
+echo This script is REQUIRED for access control functionality
+%sqlcmd% -d %database_name% -i ACCESS_CONTROL_PK.sql
+
+
+echo Creating Access Control Foreign Keys [ACCESS_CONTROL_FK.sql]
+echo This script is REQUIRED for access control functionality
+%sqlcmd% -d %database_name% -i ACCESS_CONTROL_FK.sql
+
+
+echo Creating Access Control Indexes [ACCESS_CONTROL_IX.sql]
+echo This script is REQUIRED for access control functionality
+%sqlcmd% -d %database_name% -i ACCESS_CONTROL_IX.sql
+
+
 echo Cleaning up temp files..
 if exist %create_script% del %create_script%
 if exist %drop_script% del %drop_script%

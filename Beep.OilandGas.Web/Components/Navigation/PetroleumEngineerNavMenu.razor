@@ -1,0 +1,79 @@
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Style="height: 100%;">
+    <!-- Production Menu - Primary focus for Petroleum Engineers -->
+    <MudMenu Icon="@Icons.Material.Filled.OilBarrel" Color="Color.Inherit" Style="color: white;">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Style="color: white; height: 100%; display: flex; align-items: center; padding: 8px 12px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                    <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Size="Size.Small" />
+                    <MudText Style="font-size: 0.875rem; text-transform: uppercase; white-space: nowrap;">Production</MudText>
+                </MudStack>
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Href="/ppdm39/production/fields">
+                <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Small" Class="mr-2" />
+                Fields
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/production/pools">
+                <MudIcon Icon="@Icons.Material.Filled.WaterDrop" Size="Size.Small" Class="mr-2" />
+                Pools
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/production/reporting">
+                <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" Class="mr-2" />
+                Production Reporting
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+    
+    <!-- Well Analysis Menu -->
+    <MudMenu Icon="@Icons.Material.Filled.PrecisionManufacturing" Color="Color.Inherit" Style="color: white;">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Style="color: white; height: 100%; display: flex; align-items: center; padding: 8px 12px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                    <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small" />
+                    <MudText Style="font-size: 0.875rem; text-transform: uppercase; white-space: nowrap;">Wells</MudText>
+                </MudStack>
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Href="/ppdm39/wells/wellbores">
+                <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small" Class="mr-2" />
+                Wellbores
+            </MudMenuItem>
+            <MudMenuItem Href="/ppdm39/wells/logs">
+                <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small" Class="mr-2" />
+                Well Logs
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+    
+    <!-- Analysis & Forecasting Menu -->
+    <MudMenu Icon="@Icons.Material.Filled.Analytics" Color="Color.Inherit" Style="color: white;">
+        <ActivatorContent>
+            <MudButton Variant="Variant.Text" Style="color: white; height: 100%; display: flex; align-items: center; padding: 8px 12px;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4">
+                    <MudIcon Icon="@Icons.Material.Filled.Analytics" Size="Size.Small" />
+                    <MudText Style="font-size: 0.875rem; text-transform: uppercase; white-space: nowrap;">Analysis</MudText>
+                </MudStack>
+            </MudButton>
+        </ActivatorContent>
+        <ChildContent>
+            <MudMenuItem Href="/analysis/decline-curve">
+                <MudIcon Icon="@Icons.Material.Filled.ShowChart" Size="Size.Small" Class="mr-2" />
+                Decline Curve Analysis
+            </MudMenuItem>
+            <MudMenuItem Href="/analysis/production-forecasting">
+                <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Small" Class="mr-2" />
+                Production Forecasting
+            </MudMenuItem>
+            <MudMenuItem Href="/analysis/well-test">
+                <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" Class="mr-2" />
+                Well Test Analysis
+            </MudMenuItem>
+            <MudMenuItem Href="/analysis/nodal">
+                <MudIcon Icon="@Icons.Material.Filled.Polyline" Size="Size.Small" Class="mr-2" />
+                Nodal Analysis
+            </MudMenuItem>
+        </ChildContent>
+    </MudMenu>
+</MudStack>

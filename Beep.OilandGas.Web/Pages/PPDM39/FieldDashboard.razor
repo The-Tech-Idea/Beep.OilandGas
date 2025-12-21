@@ -1,0 +1,411 @@
+@page "/ppdm39/field/dashboard"
+@using Beep.OilandGas.PPDM39.Core.DTOs
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<PageTitle>Field Dashboard - PPDM39</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Field Dashboard</MudText>
+
+    @if (_dashboard == null)
+    {
+        <MudPaper Class="pa-4">
+            @if (_isLoading)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                <MudText Class="mt-2">Loading field dashboard...</MudText>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Warning">No active field selected. Please select a field to view its dashboard.</MudAlert>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" Href="/ppdm39">Select Field</MudButton>
+            }
+        </MudPaper>
+    }
+    else
+    {
+        <!-- KPI Cards -->
+        @if (_dashboard.KPIs != null && _dashboard.KPIs.Any())
+        {
+            <MudGrid Class="mb-4">
+                @foreach (var kpi in _dashboard.KPIs)
+                {
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudCard Elevation="2" Class="h-100">
+                            <MudCardContent>
+                                <MudText Typo="Typo.h6" Class="mb-2">@kpi.Key</MudText>
+                                <MudText Typo="Typo.h4" Color="Color.Primary">@(kpi.Value?.ToString() ?? "N/A")</MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+
+        <!-- Phase Summaries -->
+        <MudTabs Elevation="2" Class="mb-4">
+            @if (_dashboard.ExplorationSummary != null)
+            {
+                <MudTabPanel Text="Exploration">
+                    <MudGrid Class="mt-4">
+                        <MudItem xs="12" md="6">
+                            <MudCard Elevation="1">
+                                <MudCardContent>
+                                    <MudText Typo="Typo.h6" Class="mb-3">Exploration Overview</MudText>
+                                    <MudSimpleTable Dense="true" Hover="true">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Status:</strong></td>
+                                                <td>@GetPhaseStatus(_dashboard.ExplorationSummary)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Entity Count:</strong></td>
+                                                <td>@_dashboard.ExplorationSummary.EntityCount</td>
+                                            </tr>
+                                            @if (_dashboard.ExplorationSummary.LastActivityDate.HasValue)
+                                            {
+                                                <tr>
+                                                    <td><strong>Last Activity:</strong></td>
+                                                    <td>@_dashboard.ExplorationSummary.LastActivityDate.Value.ToString("yyyy-MM-dd")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </MudSimpleTable>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudCard Elevation="1">
+                                <MudCardContent>
+                                    <MudText Typo="Typo.h6" Class="mb-3">Metrics</MudText>
+                                    @if (_dashboard.ExplorationSummary.PhaseMetrics != null && _dashboard.ExplorationSummary.PhaseMetrics.Any())
+                                    {
+                                        <MudList Dense="true">
+                                            @foreach (var metric in _dashboard.ExplorationSummary.PhaseMetrics)
+                                            {
+                                                <MudListItem>
+                                                    <MudText>@metric.MetricLabel: <strong>@(metric.CurrentValue?.ToString() ?? "N/A")</strong></MudText>
+                                                </MudListItem>
+                                            }
+                                        </MudList>
+                                    }
+                                    else
+                                    {
+                                        <MudText Color="Color.Secondary">No metrics available</MudText>
+                                    }
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+            }
+            @if (_dashboard.DevelopmentSummary != null)
+            {
+                <MudTabPanel Text="Development">
+                    <MudGrid Class="mt-4">
+                        <MudItem xs="12" md="6">
+                            <MudCard Elevation="1">
+                                <MudCardContent>
+                                    <MudText Typo="Typo.h6" Class="mb-3">Development Overview</MudText>
+                                    <MudSimpleTable Dense="true" Hover="true">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Status:</strong></td>
+                                                <td>@GetPhaseStatus(_dashboard.DevelopmentSummary)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Entity Count:</strong></td>
+                                                <td>@_dashboard.DevelopmentSummary.EntityCount</td>
+                                            </tr>
+                                            @if (_dashboard.DevelopmentSummary.LastActivityDate.HasValue)
+                                            {
+                                                <tr>
+                                                    <td><strong>Last Activity:</strong></td>
+                                                    <td>@_dashboard.DevelopmentSummary.LastActivityDate.Value.ToString("yyyy-MM-dd")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </MudSimpleTable>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudCard Elevation="1">
+                                <MudCardContent>
+                                    <MudText Typo="Typo.h6" Class="mb-3">Metrics</MudText>
+                                    @if (_dashboard.DevelopmentSummary.PhaseMetrics != null && _dashboard.DevelopmentSummary.PhaseMetrics.Any())
+                                    {
+                                        <MudList Dense="true">
+                                            @foreach (var metric in _dashboard.DevelopmentSummary.PhaseMetrics)
+                                            {
+                                                <MudListItem>
+                                                    <MudText>@metric.MetricLabel: <strong>@(metric.CurrentValue?.ToString() ?? "N/A")</strong></MudText>
+                                                </MudListItem>
+                                            }
+                                        </MudList>
+                                    }
+                                    else
+                                    {
+                                        <MudText Color="Color.Secondary">No metrics available</MudText>
+                                    }
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+            }
+            @if (_dashboard.ProductionSummary != null)
+            {
+                <MudTabPanel Text="Production">
+                    <MudGrid Class="mt-4">
+                        <MudItem xs="12" md="6">
+                            <MudCard Elevation="1">
+                                <MudCardContent>
+                                    <MudText Typo="Typo.h6" Class="mb-3">Production Overview</MudText>
+                                    <MudSimpleTable Dense="true" Hover="true">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Status:</strong></td>
+                                                <td>@GetPhaseStatus(_dashboard.ProductionSummary)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Entity Count:</strong></td>
+                                                <td>@_dashboard.ProductionSummary.EntityCount</td>
+                                            </tr>
+                                            @if (_dashboard.ProductionSummary.LastActivityDate.HasValue)
+                                            {
+                                                <tr>
+                                                    <td><strong>Last Activity:</strong></td>
+                                                    <td>@_dashboard.ProductionSummary.LastActivityDate.Value.ToString("yyyy-MM-dd")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </MudSimpleTable>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudCard Elevation="1">
+                                <MudCardContent>
+                                    <MudText Typo="Typo.h6" Class="mb-3">Metrics</MudText>
+                                    @if (_dashboard.ProductionSummary.PhaseMetrics != null && _dashboard.ProductionSummary.PhaseMetrics.Any())
+                                    {
+                                        <MudList Dense="true">
+                                            @foreach (var metric in _dashboard.ProductionSummary.PhaseMetrics)
+                                            {
+                                                <MudListItem>
+                                                    <MudText>@metric.MetricLabel: <strong>@(metric.CurrentValue?.ToString() ?? "N/A")</strong></MudText>
+                                                </MudListItem>
+                                            }
+                                        </MudList>
+                                    }
+                                    else
+                                    {
+                                        <MudText Color="Color.Secondary">No metrics available</MudText>
+                                    }
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+            }
+            @if (_dashboard.DecommissioningSummary != null)
+            {
+                <MudTabPanel Text="Decommissioning">
+                    <MudGrid Class="mt-4">
+                        <MudItem xs="12" md="6">
+                            <MudCard Elevation="1">
+                                <MudCardContent>
+                                    <MudText Typo="Typo.h6" Class="mb-3">Decommissioning Overview</MudText>
+                                    <MudSimpleTable Dense="true" Hover="true">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Status:</strong></td>
+                                                <td>@GetPhaseStatus(_dashboard.DecommissioningSummary)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Entity Count:</strong></td>
+                                                <td>@_dashboard.DecommissioningSummary.EntityCount</td>
+                                            </tr>
+                                            @if (_dashboard.DecommissioningSummary.LastActivityDate.HasValue)
+                                            {
+                                                <tr>
+                                                    <td><strong>Last Activity:</strong></td>
+                                                    <td>@_dashboard.DecommissioningSummary.LastActivityDate.Value.ToString("yyyy-MM-dd")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </MudSimpleTable>
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudCard Elevation="1">
+                                <MudCardContent>
+                                    <MudText Typo="Typo.h6" Class="mb-3">Metrics</MudText>
+                                    @if (_dashboard.DecommissioningSummary.PhaseMetrics != null && _dashboard.DecommissioningSummary.PhaseMetrics.Any())
+                                    {
+                                        <MudList Dense="true">
+                                            @foreach (var metric in _dashboard.DecommissioningSummary.PhaseMetrics)
+                                            {
+                                                <MudListItem>
+                                                    <MudText>@metric.MetricLabel: <strong>@(metric.CurrentValue?.ToString() ?? "N/A")</strong></MudText>
+                                                </MudListItem>
+                                            }
+                                        </MudList>
+                                    }
+                                    else
+                                    {
+                                        <MudText Color="Color.Secondary">No metrics available</MudText>
+                                    }
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+            }
+        </MudTabs>
+
+        <!-- Performance Metrics -->
+        <MudCard Elevation="2" Class="mb-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Performance Metrics</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                @if (_dashboard.PerformanceMetrics != null && _dashboard.PerformanceMetrics.Any())
+                {
+                    <MudTable Items="@_dashboard.PerformanceMetrics" Hover="true" Dense="true">
+                        <HeaderContent>
+                            <MudTh>Metric</MudTh>
+                            <MudTh>Phase</MudTh>
+                            <MudTh>Current Value</MudTh>
+                            <MudTh>As Of Date</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Metric">@context.MetricLabel</MudTd>
+                            <MudTd DataLabel="Phase">@context.Phase</MudTd>
+                            <MudTd DataLabel="Current Value">@context.CurrentValue</MudTd>
+                            <MudTd DataLabel="As Of Date">@context.AsOfDate.ToString("yyyy-MM-dd")</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+                else
+                {
+                    <MudText Color="Color.Secondary">No performance metrics available</MudText>
+                }
+            </MudCardContent>
+        </MudCard>
+
+        <!-- Recent Events -->
+        @if (_dashboard.RecentEvents != null && _dashboard.RecentEvents.Any())
+        {
+            <MudCard Elevation="2" Class="mb-4">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Recent Events</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudList Dense="true">
+                        @foreach (var evt in _dashboard.RecentEvents.Take(10))
+                        {
+                            <MudListItem>
+                                <MudText Typo="Typo.body2">@evt.EventDescription</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@evt.EventDate.ToString("yyyy-MM-dd HH:mm")</MudText>
+                            </MudListItem>
+                        }
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        }
+
+        <!-- Alerts -->
+        @if (_dashboard.Alerts != null && _dashboard.Alerts.Any())
+        {
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Alerts & Warnings</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @foreach (var alert in _dashboard.Alerts.Where(a => a.IsActive))
+                    {
+                        <MudAlert Severity="@GetSeverity(alert.AlertType)" Class="mb-2" Dense="true">
+                            <MudText><strong>@alert.Title:</strong> @alert.Message</MudText>
+                        </MudAlert>
+                    }
+                </MudCardContent>
+            </MudCard>
+        }
+
+        <!-- Dashboard As Of Date -->
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-4">
+            Dashboard data as of: @_dashboard.DashboardAsOfDate.ToString("yyyy-MM-dd HH:mm:ss")
+        </MudText>
+    }
+</MudContainer>
+
+@code {
+    private FieldDashboard? _dashboard;
+    private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboard();
+    }
+
+    private async Task LoadDashboard()
+    {
+        _isLoading = true;
+        try
+        {
+            _dashboard = await ApiClient.GetAsync<FieldDashboard>("/api/field/current/dashboard");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading field dashboard: {ex.Message}", Severity.Error);
+            _dashboard = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private Severity GetSeverity(string? severity)
+    {
+        return severity?.ToUpper() switch
+        {
+            "ERROR" => Severity.Error,
+            "WARNING" => Severity.Warning,
+            "INFO" => Severity.Info,
+            "SUCCESS" => Severity.Success,
+            _ => Severity.Info
+        };
+    }
+
+    private string GetPhaseStatus(FieldDashboardPhaseSummary phase)
+    {
+        // Determine status based on entity count and activity
+        if (phase.EntityCount > 0 && phase.LastActivityDate.HasValue)
+        {
+            var daysSinceActivity = (DateTime.UtcNow - phase.LastActivityDate.Value).Days;
+            if (daysSinceActivity < 30)
+                return "Active";
+            else if (daysSinceActivity < 90)
+                return "Recently Active";
+            else
+                return "Inactive";
+        }
+        else if (phase.EntityCount > 0)
+        {
+            return "Active";
+        }
+        return "No Data";
+    }
+}

@@ -1,4 +1,6 @@
 using Beep.OilandGas.PPDM39.DataManagement.Services;
+using Beep.OilandGas.LifeCycle.Services;
+using Beep.OilandGas.PPDM39.Core.DTOs;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
@@ -14,6 +16,7 @@ using TheTechIdea.Beep;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.DTOs;
+using Beep.OilandGas.PPDM39.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL;
 using TheTechIdea.Beep.Utilities;
 using TheTechIdea.Beep.Container;
@@ -187,6 +190,9 @@ builder.Services.AddScoped<IPPDM39DefaultsRepository>(sp =>
     return new PPDM39DefaultsRepository(editor, connectionName, metadata);
 });
 
+// PPDM Mapping Service
+builder.Services.AddScoped<PPDMMappingService>();
+
 // Data Management Services
 builder.Services.AddScoped<IPPDMDataValidationService>(sp =>
 {
@@ -222,7 +228,7 @@ builder.Services.AddScoped<IWellComparisonService>(sp =>
     var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-    return new WellComparisonService(editor, commonColumnHandler, defaults, metadata, connectionName);
+    return new Beep.OilandGas.LifeCycle.Services.WellComparisonService(editor, commonColumnHandler, defaults, metadata, connectionName);
 });
 
 builder.Services.AddScoped<IPPDMDataAccessAuditService>(sp =>
@@ -254,34 +260,95 @@ builder.Services.AddScoped<WellRepository>(sp =>
 });
 
 // PPDM39 Section Services
-builder.Services.AddScoped<IPPDMStratigraphyService>(sp =>
-{
-    var editor = sp.GetRequiredService<IDMEEditor>();
-    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
-    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
-    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-    return new Beep.OilandGas.PPDM39.DataManagement.Services.Stratigraphy.PPDMStratigraphyService(
-        editor, commonColumnHandler, defaults, metadata, connectionName);
-});
-
 builder.Services.AddScoped<IPPDMProductionService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
     var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-    return new Beep.OilandGas.PPDM39.DataManagement.Services.Production.PPDMProductionService(
-        editor, commonColumnHandler, defaults, metadata, connectionName);
+    var mappingService = sp.GetRequiredService<PPDMMappingService>();
+    return new Beep.OilandGas.LifeCycle.Services.Production.PPDMProductionService(
+        editor, commonColumnHandler, defaults, metadata, mappingService, connectionName);
 });
 
-builder.Services.AddScoped<IPPDMSeismicService>(sp =>
+// Field Orchestrator Service (scoped per request)
+builder.Services.AddScoped<IFieldOrchestrator>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
     var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-    return new Beep.OilandGas.PPDM39.DataManagement.Services.Seismic.PPDMSeismicService(
-        editor, commonColumnHandler, defaults, metadata, connectionName);
+    var mappingService = sp.GetRequiredService<PPDMMappingService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.FieldOrchestrator>();
+    var accessControlService = sp.GetService<IAccessControlService>();
+    var httpContextAccessor = sp.GetService<Microsoft.AspNetCore.Http.IHttpContextAccessor>();
+    return new Beep.OilandGas.LifeCycle.Services.FieldOrchestrator(
+        editor, commonColumnHandler, defaults, metadata, mappingService, connectionName, logger, accessControlService, httpContextAccessor);
+});
+
+// Calculation Service
+builder.Services.AddScoped<ICalculationService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Calculations.PPDMCalculationService>();
+    return new Beep.OilandGas.LifeCycle.Services.Calculations.PPDMCalculationService(
+        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+});
+
+// Accounting Service
+builder.Services.AddScoped<IAccountingService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Accounting.PPDMAccountingService>();
+    return new Beep.OilandGas.LifeCycle.Services.Accounting.PPDMAccountingService(
+        editor, commonColumnHandler, defaults, metadata, connectionName, logger);
+});
+
+// ============================================
+// REGISTER ACCESS CONTROL SERVICES
+// ============================================
+builder.Services.AddScoped<IAccessControlService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var mappingService = sp.GetRequiredService<PPDMMappingService>();
+    return new Beep.OilandGas.LifeCycle.Services.AccessControl.UserAssetAccessService(
+        editor, commonColumnHandler, defaults, metadata, mappingService, connectionName);
+});
+
+builder.Services.AddScoped<IAssetHierarchyService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var mappingService = sp.GetRequiredService<PPDMMappingService>();
+    var accessControlService = sp.GetRequiredService<IAccessControlService>();
+    return new Beep.OilandGas.LifeCycle.Services.AccessControl.AssetHierarchyService(
+        editor, commonColumnHandler, defaults, metadata, mappingService, accessControlService, connectionName);
+});
+
+builder.Services.AddScoped<IUserProfileService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var mappingService = sp.GetRequiredService<PPDMMappingService>();
+    var accessControlService = sp.GetRequiredService<IAccessControlService>();
+    return new Beep.OilandGas.LifeCycle.Services.AccessControl.UserProfileService(
+        editor, commonColumnHandler, defaults, metadata, mappingService, accessControlService, connectionName);
 });
 
 // PPDM39 Setup Service
@@ -314,6 +381,9 @@ builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PPDM39WorkflowServ
     return new Beep.OilandGas.ApiService.Services.PPDM39WorkflowService(
         editor, commonColumnHandler, defaults, metadata, logger, progressTracking);
 });
+
+// Add HttpContextAccessor for accessing HttpContext in services
+builder.Services.AddHttpContextAccessor();
 
 // SignalR for progress tracking
 builder.Services.AddSignalR();
@@ -412,6 +482,10 @@ app.UseCors();
 
 // Authentication must come before Authorization
 app.UseAuthentication();
+
+// Add Asset Access Middleware (after authentication, before authorization)
+app.UseMiddleware<Beep.OilandGas.ApiService.Middleware.AssetAccessMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();

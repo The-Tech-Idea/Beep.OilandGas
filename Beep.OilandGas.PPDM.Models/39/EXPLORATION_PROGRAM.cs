@@ -1,0 +1,246 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using TheTechIdea.Beep.Editor;
+
+ namespace Beep.OilandGas.PPDM39.Models 
+{
+public partial class EXPLORATION_PROGRAM: Entity
+
+{
+
+private  System.String PROGRAM_IDValue; 
+ public System.String PROGRAM_ID
+        {  
+            get  
+            {  
+                return this.PROGRAM_IDValue;  
+            }  
+
+          set { SetProperty(ref  PROGRAM_IDValue, value); }
+        } 
+private  System.String PROGRAM_NAMEValue; 
+ public System.String PROGRAM_NAME
+        {  
+            get  
+            {  
+                return this.PROGRAM_NAMEValue;  
+            }  
+
+          set { SetProperty(ref  PROGRAM_NAMEValue, value); }
+        } 
+private  System.String FIELD_IDValue; 
+ public System.String FIELD_ID
+        {  
+            get  
+            {  
+                return this.FIELD_IDValue;  
+            }  
+
+          set { SetProperty(ref  FIELD_IDValue, value); }
+        } 
+private  System.String OPERATORValue; 
+ public System.String OPERATOR
+        {  
+            get  
+            {  
+                return this.OPERATORValue;  
+            }  
+
+          set { SetProperty(ref  OPERATORValue, value); }
+        } 
+private  System.String OBJECTIVESValue; 
+ public System.String OBJECTIVES
+        {  
+            get  
+            {  
+                return this.OBJECTIVESValue;  
+            }  
+
+          set { SetProperty(ref  OBJECTIVESValue, value); }
+        } 
+private  System.DateTime? PROGRAM_START_DATEValue; 
+ public System.DateTime? PROGRAM_START_DATE
+        {  
+            get  
+            {  
+                return this.PROGRAM_START_DATEValue;  
+            }  
+
+          set { SetProperty(ref  PROGRAM_START_DATEValue, value); }
+        } 
+private  System.DateTime? PROGRAM_END_DATEValue; 
+ public System.DateTime? PROGRAM_END_DATE
+        {  
+            get  
+            {  
+                return this.PROGRAM_END_DATEValue;  
+            }  
+
+          set { SetProperty(ref  PROGRAM_END_DATEValue, value); }
+        } 
+private  System.Decimal? BUDGETValue; 
+ public System.Decimal? BUDGET
+        {  
+            get  
+            {  
+                return this.BUDGETValue;  
+            }  
+
+          set { SetProperty(ref  BUDGETValue, value); }
+        } 
+private  System.String BUDGET_CURRENCYValue; 
+ public System.String BUDGET_CURRENCY
+        {  
+            get  
+            {  
+                return this.BUDGET_CURRENCYValue;  
+            }  
+
+          set { SetProperty(ref  BUDGET_CURRENCYValue, value); }
+        } 
+private  System.String DESCRIPTIONValue; 
+ public System.String DESCRIPTION
+        {  
+            get  
+            {  
+                return this.DESCRIPTIONValue;  
+            }  
+
+          set { SetProperty(ref  DESCRIPTIONValue, value); }
+        } 
+private  System.String ACTIVE_INDValue; 
+ public System.String ACTIVE_IND
+        {  
+            get  
+            {  
+                return this.ACTIVE_INDValue;  
+            }  
+
+          set { SetProperty(ref  ACTIVE_INDValue, value); }
+        } 
+private  System.DateTime? EFFECTIVE_DATEValue; 
+ public System.DateTime? EFFECTIVE_DATE
+        {  
+            get  
+            {  
+                return this.EFFECTIVE_DATEValue;  
+            }  
+
+          set { SetProperty(ref  EFFECTIVE_DATEValue, value); }
+        } 
+private  System.DateTime? EXPIRY_DATEValue; 
+ public System.DateTime? EXPIRY_DATE
+        {  
+            get  
+            {  
+                return this.EXPIRY_DATEValue;  
+            }  
+
+          set { SetProperty(ref  EXPIRY_DATEValue, value); }
+        } 
+private  System.String PPDM_GUIDValue; 
+ public System.String PPDM_GUID
+        {  
+            get  
+            {  
+                return this.PPDM_GUIDValue;  
+            }  
+
+          set { SetProperty(ref  PPDM_GUIDValue, value); }
+        } 
+private  System.String REMARKValue; 
+ public System.String REMARK
+        {  
+            get  
+            {  
+                return this.REMARKValue;  
+            }  
+
+          set { SetProperty(ref  REMARKValue, value); }
+        } 
+private  System.String SOURCEValue; 
+ public System.String SOURCE
+        {  
+            get  
+            {  
+                return this.SOURCEValue;  
+            }  
+
+          set { SetProperty(ref  SOURCEValue, value); }
+        } 
+private  System.String ROW_CHANGED_BYValue; 
+ public System.String ROW_CHANGED_BY
+        {  
+            get  
+            {  
+                return this.ROW_CHANGED_BYValue;  
+            }  
+
+          set { SetProperty(ref  ROW_CHANGED_BYValue, value); }
+        } 
+private  System.DateTime? ROW_CHANGED_DATEValue; 
+ public System.DateTime? ROW_CHANGED_DATE
+        {  
+            get  
+            {  
+                return this.ROW_CHANGED_DATEValue;  
+            }  
+
+          set { SetProperty(ref  ROW_CHANGED_DATEValue, value); }
+        } 
+private  System.String ROW_CREATED_BYValue; 
+ public System.String ROW_CREATED_BY
+        {  
+            get  
+            {  
+                return this.ROW_CREATED_BYValue;  
+            }  
+
+          set { SetProperty(ref  ROW_CREATED_BYValue, value); }
+        } 
+private  System.DateTime? ROW_CREATED_DATEValue; 
+ public System.DateTime? ROW_CREATED_DATE
+        {  
+            get  
+            {  
+                return this.ROW_CREATED_DATEValue;  
+            }  
+
+          set { SetProperty(ref  ROW_CREATED_DATEValue, value); }
+        } 
+private  System.DateTime? ROW_EFFECTIVE_DATEValue; 
+ public System.DateTime? ROW_EFFECTIVE_DATE
+        {  
+            get  
+            {  
+                return this.ROW_EFFECTIVE_DATEValue;  
+            }  
+
+          set { SetProperty(ref  ROW_EFFECTIVE_DATEValue, value); }
+        } 
+private  System.DateTime? ROW_EXPIRY_DATEValue; 
+ public System.DateTime? ROW_EXPIRY_DATE
+        {  
+            get  
+            {  
+                return this.ROW_EXPIRY_DATEValue;  
+            }  
+
+          set { SetProperty(ref  ROW_EXPIRY_DATEValue, value); }
+        } 
+private  System.String ROW_QUALITYValue; 
+ public System.String ROW_QUALITY
+        {  
+            get  
+            {  
+                return this.ROW_QUALITYValue;  
+            }  
+
+          set { SetProperty(ref  ROW_QUALITYValue, value); }
+        } 
+
+
+    public EXPLORATION_PROGRAM () { }
+
+  }
+}

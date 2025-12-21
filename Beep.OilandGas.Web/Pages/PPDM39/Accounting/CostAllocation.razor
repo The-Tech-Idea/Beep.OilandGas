@@ -1,0 +1,182 @@
+@page "/ppdm39/accounting/cost-allocation"
+@using Beep.OilandGas.PPDM39.Core.DTOs
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Cost Allocation - Accounting</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Cost Allocation</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Spacing="3" Class="mb-4">
+            <MudSelect T="CostAllocationMethod" @bind-Value="@_allocationMethod" Label="Allocation Method" Variant="Variant.Outlined">
+                <MudSelectItem Value="@CostAllocationMethod.VolumeBased">Volume Based</MudSelectItem>
+                <MudSelectItem Value="@CostAllocationMethod.RevenueBased">Revenue Based</MudSelectItem>
+                <MudSelectItem Value="@CostAllocationMethod.FixedPercentage">Fixed Percentage</MudSelectItem>
+                <MudSelectItem Value="@CostAllocationMethod.EqualShare">Equal Share</MudSelectItem>
+                <MudSelectItem Value="@CostAllocationMethod.Manual">Manual</MudSelectItem>
+            </MudSelect>
+
+            <MudDatePicker @bind-Date="@_allocationDate" Label="Allocation Date" Variant="Variant.Outlined" Required="true" />
+
+            <MudTextField T="decimal?" @bind-Value="@_totalOperatingCosts" 
+                         Label="Total Operating Costs" 
+                         Variant="Variant.Outlined" />
+
+            <MudTextField T="decimal?" @bind-Value="@_totalCapitalCosts" 
+                         Label="Total Capital Costs" 
+                         Variant="Variant.Outlined" />
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Calculate" OnClick="AllocateCosts">
+                Allocate Costs
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_allocationResult != null)
+        {
+            <MudGrid Class="mt-4">
+                <MudItem xs="12">
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Cost Allocation Summary</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudSimpleTable Dense="true" Hover="true">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Allocation Method:</strong></td>
+                                        <td>@_allocationResult.AllocationMethod</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total Operating Costs:</strong></td>
+                                        <td>@FormatCurrency(_allocationResult.TotalOperatingCosts?.ToString())</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total Capital Costs:</strong></td>
+                                        <td>@FormatCurrency(_allocationResult.TotalCapitalCosts?.ToString())</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total Costs:</strong></td>
+                                        <td>@FormatCurrency(_allocationResult.TotalCosts?.ToString())</td>
+                                    </tr>
+                                </tbody>
+                            </MudSimpleTable>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            @if (_allocationResult.AllocationDetails != null && _allocationResult.AllocationDetails.Any())
+            {
+                <MudCard Elevation="2" Class="mt-4">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6">Allocation Details</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudTable Items="@_allocationResult.AllocationDetails" Hover="true" Dense="true" Striped="true">
+                            <HeaderContent>
+                                <MudTh>Entity Type</MudTh>
+                                <MudTh>Entity Name</MudTh>
+                                <MudTh>Allocated Operating Cost</MudTh>
+                                <MudTh>Allocated Capital Cost</MudTh>
+                                <MudTh>Total Allocated Cost</MudTh>
+                                <MudTh>Allocation %</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Entity Type">@context.EntityType</MudTd>
+                                <MudTd DataLabel="Entity Name">@context.EntityName</MudTd>
+                                <MudTd DataLabel="Allocated Operating Cost">@FormatCurrency(context.AllocatedOperatingCost?.ToString())</MudTd>
+                                <MudTd DataLabel="Allocated Capital Cost">@FormatCurrency(context.AllocatedCapitalCost?.ToString())</MudTd>
+                                <MudTd DataLabel="Total Allocated Cost">@FormatCurrency(context.TotalAllocatedCost?.ToString())</MudTd>
+                                <MudTd DataLabel="Allocation %">@FormatDecimal(context.AllocationPercentage?.ToString())%</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudCardContent>
+                </MudCard>
+            }
+        }
+        else if (!_isLoading)
+        {
+            <MudAlert Severity="Severity.Info">Select allocation parameters and click 'Allocate Costs' to start cost allocation.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private CostAllocationMethod _allocationMethod = CostAllocationMethod.VolumeBased;
+    private DateTime? _allocationDate = DateTime.Today;
+    private decimal? _totalOperatingCosts;
+    private decimal? _totalCapitalCosts;
+    private bool _isLoading = false;
+    private CostAllocationResult? _allocationResult;
+
+    private async Task AllocateCosts()
+    {
+        if (!_allocationDate.HasValue)
+        {
+            Snackbar.Add("Allocation date is required", Severity.Warning);
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            var request = new Dictionary<string, object>
+            {
+                { "AllocationDate", _allocationDate.Value },
+                { "AllocationMethod", _allocationMethod.ToString() }
+            };
+
+            if (_totalOperatingCosts.HasValue)
+                request["TotalOperatingCosts"] = _totalOperatingCosts.Value;
+
+            if (_totalCapitalCosts.HasValue)
+                request["TotalCapitalCosts"] = _totalCapitalCosts.Value;
+
+            _allocationResult = await ApiClient.PostAsync<CostAllocationResult, Dictionary<string, object>>(
+                "/api/accounting/allocate-costs",
+                request);
+
+            Snackbar.Add("Cost allocation completed", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error allocating costs: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string FormatCurrency(string? valueStr)
+    {
+        if (string.IsNullOrEmpty(valueStr))
+            return "N/A";
+
+        if (decimal.TryParse(valueStr, out var value))
+            return value.ToString("C2");
+
+        return valueStr;
+    }
+
+    private string FormatDecimal(string? valueStr)
+    {
+        if (string.IsNullOrEmpty(valueStr))
+            return "N/A";
+
+        if (decimal.TryParse(valueStr, out var value))
+            return value.ToString("F2");
+
+        return valueStr;
+    }
+}

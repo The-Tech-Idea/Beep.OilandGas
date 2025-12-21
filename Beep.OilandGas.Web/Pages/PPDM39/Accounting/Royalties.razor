@@ -1,0 +1,151 @@
+@page "/ppdm39/accounting/royalties"
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Royalty Calculations - Accounting</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Royalty Calculations</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">Royalty Calculation Records</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCalculateDialog">
+                Calculate Royalties
+            </MudButton>
+        </MudStack>
+
+        <MudStack Spacing="3" Class="mb-4">
+            <MudDatePicker @bind-Date="@_filterStartDate" Label="Filter Start Date" Variant="Variant.Outlined" />
+            <MudDatePicker @bind-Date="@_filterEndDate" Label="Filter End Date" Variant="Variant.Outlined" />
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Search" OnClick="LoadRoyalties">
+                Filter
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_royalties != null && _royalties.Any())
+        {
+            <MudTable Items="@_royalties" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Calculation Date</MudTh>
+                    <MudTh>Pool ID</MudTh>
+                    <MudTh>Gross Oil Volume</MudTh>
+                    <MudTh>Gross Gas Volume</MudTh>
+                    <MudTh>Royalty Oil Volume</MudTh>
+                    <MudTh>Royalty Gas Volume</MudTh>
+                    <MudTh>Total Royalty Value</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Calculation Date">@FormatDate(GetPropertyValue(context, "CALCULATION_DATE"))</MudTd>
+                    <MudTd DataLabel="Pool ID">@GetPropertyValue(context, "POOL_ID")</MudTd>
+                    <MudTd DataLabel="Gross Oil Volume">@FormatDecimal(GetPropertyValue(context, "GROSS_OIL_VOLUME"))</MudTd>
+                    <MudTd DataLabel="Gross Gas Volume">@FormatDecimal(GetPropertyValue(context, "GROSS_GAS_VOLUME"))</MudTd>
+                    <MudTd DataLabel="Royalty Oil Volume">@FormatDecimal(GetPropertyValue(context, "ROYALTY_OIL_VOLUME"))</MudTd>
+                    <MudTd DataLabel="Royalty Gas Volume">@FormatDecimal(GetPropertyValue(context, "ROYALTY_GAS_VOLUME"))</MudTd>
+                    <MudTd DataLabel="Total Royalty Value">@FormatCurrency(GetPropertyValue(context, "TOTAL_ROYALTY_VALUE"))</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else if (!_isLoading)
+        {
+            <MudAlert Severity="Severity.Info">No royalty calculation records found.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<ROYALTY_CALCULATION>? _royalties;
+    private bool _isLoading = false;
+    private DateTime? _filterStartDate;
+    private DateTime? _filterEndDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRoyalties();
+    }
+
+    private async Task LoadRoyalties()
+    {
+        _isLoading = true;
+        try
+        {
+            var queryParams = new List<string>();
+            if (_filterStartDate.HasValue)
+                queryParams.Add($"startDate={_filterStartDate.Value:yyyy-MM-dd}");
+            if (_filterEndDate.HasValue)
+                queryParams.Add($"endDate={_filterEndDate.Value:yyyy-MM-dd}");
+
+            var query = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+            _royalties = await ApiClient.GetAsync<List<ROYALTY_CALCULATION>>($"/api/accounting/royalties{query}");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading royalty calculations: {ex.Message}", Severity.Error);
+            _royalties = new List<ROYALTY_CALCULATION>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OpenCalculateDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<RoyaltyCalculationDialog>("Calculate Royalties", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadRoyalties();
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        {
+            return dict[propertyName]?.ToString() ?? "N/A";
+        }
+        return "N/A";
+    }
+
+    private string FormatDate(string? dateStr)
+    {
+        if (string.IsNullOrEmpty(dateStr) || dateStr == "N/A")
+            return "N/A";
+
+        if (DateTime.TryParse(dateStr, out var date))
+            return date.ToString("yyyy-MM-dd");
+
+        return dateStr;
+    }
+
+    private string FormatDecimal(string? valueStr)
+    {
+        if (string.IsNullOrEmpty(valueStr) || valueStr == "N/A")
+            return "N/A";
+
+        if (decimal.TryParse(valueStr, out var value))
+            return value.ToString("F2");
+
+        return valueStr;
+    }
+
+    private string FormatCurrency(string? valueStr)
+    {
+        if (string.IsNullOrEmpty(valueStr) || valueStr == "N/A")
+            return "N/A";
+
+        if (decimal.TryParse(valueStr, out var value))
+            return value.ToString("C2");
+
+        return valueStr;
+    }
+}

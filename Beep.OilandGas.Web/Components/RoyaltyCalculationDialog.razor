@@ -1,0 +1,102 @@
+@using System.Collections.Generic
+@using Beep.OilandGas.PPDM39.Core.DTOs
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="@_poolId" 
+                             Label="Pool ID (Optional)" 
+                             Variant="Variant.Outlined" />
+
+                <MudDatePicker @bind-Date="@_calculationDate" 
+                              Label="Calculation Date" 
+                              Variant="Variant.Outlined" 
+                              Required="true" />
+
+                <MudTextField T="decimal?" @bind-Value="@_oilRoyaltyRate" 
+                             Label="Oil Royalty Rate (%)" 
+                             Variant="Variant.Outlined" 
+                             HelperText="Default: 12.5%" />
+
+                <MudTextField T="decimal?" @bind-Value="@_gasRoyaltyRate" 
+                             Label="Gas Royalty Rate (%)" 
+                             Variant="Variant.Outlined" 
+                             HelperText="Default: 12.5%" />
+
+                <MudTextField T="decimal?" @bind-Value="@_oilPrice" 
+                             Label="Oil Price" 
+                             Variant="Variant.Outlined" />
+
+                <MudTextField T="decimal?" @bind-Value="@_gasPrice" 
+                             Label="Gas Price" 
+                             Variant="Variant.Outlined" />
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Calculate">Calculate</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Inject] ApiClient ApiClient { get; set; } = default!;
+    [Inject] ISnackbar Snackbar { get; set; } = default!;
+
+    private string _poolId = string.Empty;
+    private DateTime? _calculationDate = DateTime.Today;
+    private decimal? _oilRoyaltyRate = 12.5m;
+    private decimal? _gasRoyaltyRate = 12.5m;
+    private decimal? _oilPrice;
+    private decimal? _gasPrice;
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task Calculate()
+    {
+        if (!_calculationDate.HasValue)
+        {
+            Snackbar.Add("Calculation date is required", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var request = new Dictionary<string, object>
+            {
+                { "CalculationDate", _calculationDate.Value }
+            };
+
+            if (!string.IsNullOrWhiteSpace(_poolId))
+                request["PoolId"] = _poolId;
+
+            if (_oilRoyaltyRate.HasValue)
+                request["OilRoyaltyRate"] = _oilRoyaltyRate.Value;
+
+            if (_gasRoyaltyRate.HasValue)
+                request["GasRoyaltyRate"] = _gasRoyaltyRate.Value;
+
+            if (_oilPrice.HasValue)
+                request["OilPrice"] = _oilPrice.Value;
+
+            if (_gasPrice.HasValue)
+                request["GasPrice"] = _gasPrice.Value;
+
+            var result = await ApiClient.PostAsync<object, Dictionary<string, object>>(
+                "/api/accounting/calculate-royalties",
+                request);
+
+            Snackbar.Add("Royalty calculation completed successfully", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error calculating royalties: {ex.Message}", Severity.Error);
+        }
+    }
+}

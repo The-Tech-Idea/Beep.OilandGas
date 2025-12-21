@@ -1,0 +1,4 @@
+raiserror ('CREATING PRIMARY KEY FOR ROYALTY_CALCULATION', 10,1) with nowait
+ALTER TABLE royalty_calculation
+ADD CONSTRAINT royalty_calculation_PK PRIMARY KEY (ROYALTY_CALCULATION_ID)
+

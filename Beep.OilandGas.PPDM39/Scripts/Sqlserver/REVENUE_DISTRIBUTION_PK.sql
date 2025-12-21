@@ -1,0 +1,4 @@
+raiserror ('CREATING PRIMARY KEY FOR REVENUE_DISTRIBUTION', 10,1) with nowait
+ALTER TABLE revenue_distribution
+ADD CONSTRAINT revenue_distribution_PK PRIMARY KEY (REVENUE_DISTRIBUTION_ID)
+

@@ -1,0 +1,135 @@
+@page "/ppdm39/production/well-tests"
+@using Beep.OilandGas.PPDM39.Models
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>Well Tests - Production</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Well Tests</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Spacing="3" Class="mb-4">
+            <MudTextField @bind-Value="@_wellIdFilter" 
+                         Label="Well ID Filter" 
+                         Variant="Variant.Outlined" 
+                         Adornment="Adornment.End"
+                         AdornmentIcon="@Icons.Material.Filled.Search"
+                         OnAdornmentClick="LoadWellTests"
+                         Immediate="true" />
+
+            @if (!string.IsNullOrWhiteSpace(_selectedWellId))
+            {
+                <MudText Typo="Typo.body1">Showing tests for Well: <strong>@_selectedWellId</strong></MudText>
+            }
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_wellTests != null && _wellTests.Any())
+        {
+            <MudTable Items="@_wellTests" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Test ID</MudTh>
+                    <MudTh>Well ID</MudTh>
+                    <MudTh>Test Date</MudTh>
+                    <MudTh>Test Type</MudTh>
+                    <MudTh>Oil Rate (bbl/d)</MudTh>
+                    <MudTh>Gas Rate (Mscf/d)</MudTh>
+                    <MudTh>Water Rate (bbl/d)</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Test ID">@GetPropertyValue(context, "WELL_TEST_ID")</MudTd>
+                    <MudTd DataLabel="Well ID">@GetPropertyValue(context, "WELL_ID")</MudTd>
+                    <MudTd DataLabel="Test Date">@FormatDate(GetPropertyValue(context, "TEST_DATE"))</MudTd>
+                    <MudTd DataLabel="Test Type">@GetPropertyValue(context, "TEST_TYPE")</MudTd>
+                    <MudTd DataLabel="Oil Rate">@FormatDecimal(GetPropertyValue(context, "OIL_RATE"))</MudTd>
+                    <MudTd DataLabel="Gas Rate">@FormatDecimal(GetPropertyValue(context, "GAS_RATE"))</MudTd>
+                    <MudTd DataLabel="Water Rate">@FormatDecimal(GetPropertyValue(context, "WATER_RATE"))</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else if (!_isLoading)
+        {
+            <MudAlert Severity="Severity.Info">
+                @if (string.IsNullOrWhiteSpace(_selectedWellId))
+                {
+                    <MudText>Enter a Well ID to view well tests for the current field.</MudText>
+                }
+                else
+                {
+                    <MudText>No well tests found for well @_selectedWellId.</MudText>
+                }
+            </MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<WELL_TEST>? _wellTests;
+    private bool _isLoading = false;
+    private string? _wellIdFilter;
+    private string? _selectedWellId;
+
+    private async Task LoadWellTests()
+    {
+        if (string.IsNullOrWhiteSpace(_wellIdFilter))
+        {
+            Snackbar.Add("Please enter a Well ID", Severity.Warning);
+            return;
+        }
+
+        _selectedWellId = _wellIdFilter;
+        _isLoading = true;
+        try
+        {
+            _wellTests = await ApiClient.GetAsync<List<WELL_TEST>>($"/api/production/field/wells/{_selectedWellId}/tests");
+            if (_wellTests == null || !_wellTests.Any())
+            {
+                Snackbar.Add($"No well tests found for well {_selectedWellId}", Severity.Info);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading well tests: {ex.Message}", Severity.Error);
+            _wellTests = new List<WELL_TEST>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        {
+            return dict[propertyName]?.ToString() ?? "N/A";
+        }
+        return "N/A";
+    }
+
+    private string FormatDate(string? dateStr)
+    {
+        if (string.IsNullOrEmpty(dateStr) || dateStr == "N/A")
+            return "N/A";
+
+        if (DateTime.TryParse(dateStr, out var date))
+            return date.ToString("yyyy-MM-dd");
+
+        return dateStr;
+    }
+
+    private string FormatDecimal(string? valueStr)
+    {
+        if (string.IsNullOrEmpty(valueStr) || valueStr == "N/A")
+            return "N/A";
+
+        if (decimal.TryParse(valueStr, out var value))
+            return value.ToString("F2");
+
+        return valueStr;
+    }
+}

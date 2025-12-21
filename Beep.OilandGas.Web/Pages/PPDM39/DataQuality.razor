@@ -119,7 +119,7 @@
         _isLoading = true;
         try
         {
-            _dashboard = await ApiClient.GetAsync<QualityDashboardData>($"/api/ppdm39/quality/{_selectedTable}/dashboard");
+            _dashboard = await ApiClient.GetAsync<QualityDashboardData>($"/api/datamanagement/quality/{_selectedTable}/dashboard");
             if (_dashboard != null)
             {
                 Snackbar.Add("Quality dashboard loaded", Severity.Success);

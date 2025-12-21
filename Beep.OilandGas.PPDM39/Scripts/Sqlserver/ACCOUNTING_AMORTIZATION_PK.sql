@@ -1,0 +1,4 @@
+raiserror ('CREATING PRIMARY KEY FOR ACCOUNTING_AMORTIZATION', 10,1) with nowait
+ALTER TABLE accounting_amortization
+ADD CONSTRAINT accounting_amortization_PK PRIMARY KEY (ACCOUNTING_AMORTIZATION_ID)
+

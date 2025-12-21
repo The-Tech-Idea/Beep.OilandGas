@@ -1,0 +1,77 @@
+@using System.Collections.Generic
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.Medium">
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="@_poolName" 
+                             Label="Pool Name" 
+                             Variant="Variant.Outlined" 
+                             Required="true" />
+
+                <MudTextField @bind-Value="@_poolType" 
+                             Label="Pool Type" 
+                             Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="@_poolStatus" 
+                             Label="Pool Status" 
+                             Variant="Variant.Outlined" />
+
+                <MudTextField @bind-Value="@_description" 
+                             Label="Description" 
+                             Variant="Variant.Outlined" 
+                             Lines="3" />
+            </MudStack>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public Dictionary<string, object>? Pool { get; set; }
+
+    private string _poolName = string.Empty;
+    private string _poolType = string.Empty;
+    private string _poolStatus = string.Empty;
+    private string _description = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        if (Pool != null)
+        {
+            _poolName = GetPropertyValue(Pool, "POOL_NAME") ?? string.Empty;
+            _poolType = GetPropertyValue(Pool, "POOL_TYPE") ?? string.Empty;
+            _poolStatus = GetPropertyValue(Pool, "POOL_STATUS") ?? string.Empty;
+            _description = GetPropertyValue(Pool, "DESCRIPTION") ?? string.Empty;
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Save()
+    {
+        var poolData = new Dictionary<string, object>
+        {
+            { "POOL_NAME", _poolName },
+            { "POOL_TYPE", _poolType },
+            { "POOL_STATUS", _poolStatus },
+            { "DESCRIPTION", _description }
+        };
+
+        MudDialog.Close(DialogResult.Ok(poolData));
+    }
+
+    private string? GetPropertyValue(Dictionary<string, object> dict, string key)
+    {
+        if (dict.ContainsKey(key))
+            return dict[key]?.ToString();
+        return null;
+    }
+}

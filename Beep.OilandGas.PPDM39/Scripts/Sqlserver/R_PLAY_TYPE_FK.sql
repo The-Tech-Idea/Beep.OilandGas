@@ -1,0 +1,1 @@
+-- R_PLAY_TYPE has no foreign keys
