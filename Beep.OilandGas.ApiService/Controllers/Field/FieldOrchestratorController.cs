@@ -4,8 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core.DTOs;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Models;
@@ -79,14 +79,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 
                 var fieldList = fields.Select(f =>
                 {
-                    if (f is IDictionary<string, object> dict)
+                    if (f is FIELD field)
                     {
                         return new FieldListItem
                         {
-                            FieldId = dict.ContainsKey("FIELD_ID") ? dict["FIELD_ID"]?.ToString() ?? string.Empty : string.Empty,
-                            FieldName = dict.ContainsKey("FIELD_NAME") ? dict["FIELD_NAME"]?.ToString() ?? string.Empty : string.Empty,
-                            Description = dict.ContainsKey("REMARK") ? dict["REMARK"]?.ToString() : null,
-                            LastModifiedDate = dict.ContainsKey("ROW_CHANGED_DATE") && dict["ROW_CHANGED_DATE"] is DateTime dt ? dt : null
+                            FieldId = field.FIELD_ID ?? string.Empty,
+                            FieldName = field.FIELD_NAME ?? string.Empty,
+                            Description = field.REMARK,
+                            LastModifiedDate = field.ROW_CHANGED_DATE
                         };
                     }
                     return new FieldListItem();
@@ -156,10 +156,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 string? fieldId = null;
                 string? fieldName = null;
 
-                if (field is IDictionary<string, object> dict)
+                if (field is FIELD fieldEntity)
                 {
-                    fieldId = dict.ContainsKey("FIELD_ID") ? dict["FIELD_ID"]?.ToString() : null;
-                    fieldName = dict.ContainsKey("FIELD_NAME") ? dict["FIELD_NAME"]?.ToString() : null;
+                    fieldId = fieldEntity.FIELD_ID;
+                    fieldName = fieldEntity.FIELD_NAME;
                 }
 
                 return Ok(new FieldResponse 

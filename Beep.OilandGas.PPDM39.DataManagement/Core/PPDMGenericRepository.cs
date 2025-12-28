@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Globalization;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
@@ -203,23 +203,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
 
-            // Get UnitOfWork for this entity type
-            var uow = GetOrCreateUnitOfWork(entityType, tableName);
-            uow.EntityName = tableName;
+            // Use IDataSource.GetEntityAsync directly - preferred for simple single-table queries
+            var dataSource = _editor.GetDataSource(_connectionName);
+            if (dataSource == null)
+            {
+                throw new InvalidOperationException($"DataSource not found for connection: {_connectionName}");
+            }
 
-            // Try to use Get method with filters
-            try
-            {
-                var result = await uow.Get(filters);
-                return ConvertToTypedList(result, entityType);
-            }
-            catch
-            {
-                // Fallback: Build SQL from AppFilter (for SQL-based data sources)
-                var sql = BuildSqlFromFilters(tableName, filters);
-                var queryResult = await uow.GetQuery(sql);
-                return ConvertToTypedList(queryResult, entityType);
-            }
+            // GetEntityAsync handles parameter delimiters automatically
+            var result = await dataSource.GetEntityAsync(tableName, filters ?? new List<AppFilter>());
+            return ConvertToTypedList(result, entityType);
         }
 
         /// <summary>
@@ -251,23 +244,46 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
 
         /// <summary>
         /// Builds SQL query from AppFilter list (fallback for SQL data sources)
+        /// Uses IDataSource.ParameterDelimiter and IDataSource.ColumnDelimiter for database compatibility
         /// </summary>
         protected virtual string BuildSqlFromFilters(string tableName, List<AppFilter> filters)
         {
-            var sql = $"SELECT * FROM {tableName}";
+            // Get IDataSource to access delimiters
+            var dataSource = _editor.GetDataSource(_connectionName);
+            if (dataSource == null)
+            {
+                throw new InvalidOperationException($"DataSource not found for connection: {_connectionName}");
+            }
+
+            var paramDelim = dataSource.ParameterDelimiter ?? "@";
+            var columnDelim = dataSource.ColumnDelimiter ?? "";
+            var columnDelimEnd = string.IsNullOrEmpty(columnDelim) ? "" : columnDelim;
+
+            // Apply column delimiters to table name if needed
+            var delimitedTableName = string.IsNullOrEmpty(columnDelim) 
+                ? tableName 
+                : $"{columnDelim}{tableName}{columnDelimEnd}";
+
+            var sql = $"SELECT * FROM {delimitedTableName}";
             
             if (filters != null && filters.Count > 0)
             {
                 var whereClauses = new List<string>();
+                var paramIndex = 0;
+                
                 foreach (var filter in filters)
                 {
                     if (string.IsNullOrWhiteSpace(filter.FieldName) || string.IsNullOrWhiteSpace(filter.Operator))
                         continue;
 
-                    var value = filter.FilterValue ?? string.Empty;
                     var operatorStr = filter.Operator.ToUpper();
+                    var delimitedFieldName = string.IsNullOrEmpty(columnDelim) 
+                        ? filter.FieldName 
+                        : $"{columnDelim}{filter.FieldName}{columnDelimEnd}";
 
                     string clause;
+                    string paramName = $"param{paramIndex++}";
+                    
                     switch (operatorStr)
                     {
                         case "=":
@@ -277,16 +293,31 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                         case ">=":
                         case "<":
                         case "<=":
-                            clause = $"{filter.FieldName} {operatorStr} '{value}'";
+                            clause = $"{delimitedFieldName} {operatorStr} {paramDelim}{paramName}";
                             break;
                         case "LIKE":
-                            clause = $"{filter.FieldName} LIKE '%{value}%'";
+                            clause = $"{delimitedFieldName} LIKE {paramDelim}{paramName}";
                             break;
                         case "IN":
-                            clause = $"{filter.FieldName} IN ({value})";
+                            // For IN clause, handle multiple values
+                            if (filter.FilterValue is string strValue && strValue.Contains(","))
+                            {
+                                var values = strValue.Split(',');
+                                var paramNames = new List<string>();
+                                for (int i = 0; i < values.Length; i++)
+                                {
+                                    var inParamName = $"{paramName}_{i}";
+                                    paramNames.Add($"{paramDelim}{inParamName}");
+                                }
+                                clause = $"{delimitedFieldName} IN ({string.Join(", ", paramNames)})";
+                            }
+                            else
+                            {
+                                clause = $"{delimitedFieldName} IN ({paramDelim}{paramName})";
+                            }
                             break;
                         default:
-                            clause = $"{filter.FieldName} {operatorStr} '{value}'";
+                            clause = $"{delimitedFieldName} {operatorStr} {paramDelim}{paramName}";
                             break;
                     }
                     whereClauses.Add(clause);
@@ -885,14 +916,19 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
             // Prepare entity for insertion
             _commonColumnHandler.PrepareForInsert(entity as IPPDMEntity, userId);
 
-            // Insert into database - set EntityName from metadata
-            var uow = GetOrCreateUnitOfWork(_entityType, _tableName);
-            uow.EntityName = _tableName;
-            var result = await uow.InsertAsync(entity as Entity);
-            if (result != null && !string.IsNullOrEmpty(result.Message))
+            // Insert into database using IDataSource.InsertEntity directly
+            var dataSource = _editor.GetDataSource(_connectionName);
+            if (dataSource == null)
             {
-                _logger?.LogError("Insert failed for table {TableName}: {Message}", _tableName, result.Message);
-                throw new Exception($"Insert failed: {result.Message}");
+                throw new InvalidOperationException($"DataSource not found for connection: {_connectionName}");
+            }
+
+            var result = dataSource.InsertEntity(_tableName, entity);
+            if (result != null && result.Errors != null && result.Errors.Count > 0)
+            {
+                var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
+                _logger?.LogError("Insert failed for table {TableName}: {Message}", _tableName, errorMessage);
+                throw new Exception($"Insert failed: {errorMessage}");
             }
 
             _logger?.LogDebug("Successfully inserted entity into table {TableName}", _tableName);
@@ -908,8 +944,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                 throw new ArgumentNullException(nameof(entities));
 
             var entityList = entities.ToList();
-            var uow = GetOrCreateUnitOfWork(_entityType, _tableName);
-            uow.EntityName = _tableName;
+            var dataSource = _editor.GetDataSource(_connectionName);
+            if (dataSource == null)
+            {
+                throw new InvalidOperationException($"DataSource not found for connection: {_connectionName}");
+            }
             
             foreach (var entity in entityList)
             {
@@ -919,10 +958,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                 }
 
                 _commonColumnHandler.PrepareForInsert(entity as IPPDMEntity, userId);
-                var result = await uow.InsertAsync(entity as Entity);
-                if (result != null && !string.IsNullOrEmpty(result.Message))
+                var result = dataSource.InsertEntity(_tableName, entity);
+                if (result != null && result.Errors != null && result.Errors.Count > 0)
                 {
-                    throw new Exception($"Batch insert failed: {result.Message}");
+                    var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
+                    throw new Exception($"Batch insert failed: {errorMessage}");
                 }
             }
 
@@ -951,14 +991,19 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
             // Prepare entity for update
             _commonColumnHandler.PrepareForUpdate(entity as IPPDMEntity, userId);
 
-            // Update in database - set EntityName from metadata
-            var uow = GetOrCreateUnitOfWork(_entityType, _tableName);
-            uow.EntityName = _tableName;
-            var result = await uow.UpdateAsync(entity as Entity);
-            if (result != null && !string.IsNullOrEmpty(result.Message))
+            // Update in database using IDataSource.UpdateEntity directly
+            var dataSource = _editor.GetDataSource(_connectionName);
+            if (dataSource == null)
             {
-                _logger?.LogError("Update failed for table {TableName}: {Message}", _tableName, result.Message);
-                throw new Exception($"Update failed: {result.Message}");
+                throw new InvalidOperationException($"DataSource not found for connection: {_connectionName}");
+            }
+
+            var result = dataSource.UpdateEntity(_tableName, entity);
+            if (result != null && result.Errors != null && result.Errors.Count > 0)
+            {
+                var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
+                _logger?.LogError("Update failed for table {TableName}: {Message}", _tableName, errorMessage);
+                throw new Exception($"Update failed: {errorMessage}");
             }
 
             _logger?.LogDebug("Successfully updated entity in table {TableName}", _tableName);
@@ -974,8 +1019,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                 throw new ArgumentNullException(nameof(entities));
 
             var entityList = entities.ToList();
-            var uow = GetOrCreateUnitOfWork(_entityType, _tableName);
-            uow.EntityName = _tableName;
+            var dataSource = _editor.GetDataSource(_connectionName);
+            if (dataSource == null)
+            {
+                throw new InvalidOperationException($"DataSource not found for connection: {_connectionName}");
+            }
             
             foreach (var entity in entityList)
             {
@@ -985,10 +1033,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
                 }
 
                 _commonColumnHandler.PrepareForUpdate(entity as IPPDMEntity, userId);
-                var result = await uow.UpdateAsync(entity as Entity);
-                if (result != null && !string.IsNullOrEmpty(result.Message))
+                var result = dataSource.UpdateEntity(_tableName, entity);
+                if (result != null && result.Errors != null && result.Errors.Count > 0)
                 {
-                    throw new Exception($"Batch update failed: {result.Message}");
+                    var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
+                    throw new Exception($"Batch update failed: {errorMessage}");
                 }
             }
 
@@ -1023,10 +1072,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
 
             _logger?.LogDebug("Deleting entity of type {EntityType} from table {TableName}", _entityType.Name, _tableName);
 
-            var uow = GetOrCreateUnitOfWork(_entityType, _tableName);
-            uow.EntityName = _tableName;
-            var result = await uow.DeleteAsync(entity as Entity);
-            bool success = result == null || string.IsNullOrEmpty(result.Message);
+            // Delete from database using IDataSource.DeleteEntity directly
+            var dataSource = _editor.GetDataSource(_connectionName);
+            if (dataSource == null)
+            {
+                throw new InvalidOperationException($"DataSource not found for connection: {_connectionName}");
+            }
+
+            var result = dataSource.DeleteEntity(_tableName, entity);
+            bool success = result == null || (result.Errors == null || result.Errors.Count == 0);
             
             if (success)
             {
@@ -1034,7 +1088,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
             }
             else
             {
-                _logger?.LogWarning("Delete operation returned message: {Message}", result?.Message);
+                var errorMessage = result?.Errors != null ? string.Join("; ", result.Errors.Select(e => e.Message)) : "Unknown error";
+                _logger?.LogWarning("Delete operation failed: {Message}", errorMessage);
             }
             
             return success;

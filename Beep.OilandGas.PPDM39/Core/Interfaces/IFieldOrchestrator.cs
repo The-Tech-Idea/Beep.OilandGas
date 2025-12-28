@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core.DTOs;
 using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Core.Interfaces;
 
 namespace Beep.OilandGas.PPDM39.Core.Interfaces
 {

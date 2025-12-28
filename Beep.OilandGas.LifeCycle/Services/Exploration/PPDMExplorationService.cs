@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core.DTOs;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
@@ -394,5 +394,190 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
                 throw;
             }
         }
+
+        #region Prospect Identification Integration
+
+        /// <summary>
+        /// Identifies and evaluates a prospect using ProspectIdentification service
+        /// </summary>
+        public async Task<ProspectEvaluationDto> IdentifyProspectAsync(string fieldId, ProspectRequest prospectData, string userId)
+        {
+            try
+            {
+                _logger?.LogInformation("Identifying prospect for field: {FieldId}", fieldId);
+
+                // Create prospect first
+                var prospect = await CreateProspectForFieldAsync(fieldId, prospectData, userId);
+
+                // If ProspectEvaluationService is available, evaluate it
+                // For now, return basic evaluation
+                return new ProspectEvaluationDto
+                {
+                    ProspectId = prospect.PROSPECT_ID ?? string.Empty,
+                    FieldId = fieldId,
+                    EvaluationDate = DateTime.UtcNow,
+                    RiskLevel = "MEDIUM",
+                    Potential = "MODERATE",
+                    Recommendation = "FURTHER_EVALUATION"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error identifying prospect for field: {FieldId}", fieldId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Evaluates a prospect using ProspectIdentification service
+        /// </summary>
+        public async Task<ProspectEvaluationDto> EvaluateProspectAsync(string fieldId, string prospectId)
+        {
+            try
+            {
+                _logger?.LogInformation("Evaluating prospect: {ProspectId} for field: {FieldId}", prospectId, fieldId);
+
+                var prospect = await GetProspectForFieldAsync(fieldId, prospectId);
+                if (prospect == null)
+                {
+                    throw new InvalidOperationException($"Prospect {prospectId} not found for field {fieldId}");
+                }
+
+                // Basic evaluation - in full implementation, would use ProspectEvaluationService
+                return new ProspectEvaluationDto
+                {
+                    ProspectId = prospectId,
+                    FieldId = fieldId,
+                    EvaluationDate = DateTime.UtcNow,
+                    RiskLevel = "MEDIUM",
+                    Potential = "MODERATE",
+                    Recommendation = "FURTHER_EVALUATION"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error evaluating prospect: {ProspectId}", prospectId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Lease Acquisition Integration
+
+        /// <summary>
+        /// Acquires a lease using LeaseAcquisition service
+        /// </summary>
+        public async Task<LeaseDto> AcquireLeaseAsync(string fieldId, CreateLeaseDto leaseData, string userId)
+        {
+            try
+            {
+                _logger?.LogInformation("Acquiring lease for field: {FieldId}", fieldId);
+
+                // Create lease in PPDM LEASE table
+                var metadata = await _metadata.GetTableMetadataAsync("LEASE");
+                if (metadata == null)
+                {
+                    throw new InvalidOperationException("LEASE table metadata not found");
+                }
+
+                var entityType = typeof(LEASE);
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, _connectionName, "LEASE", null);
+
+                var lease = new LEASE();
+                lease.LEASE_NAME = leaseData.LeaseNumber ?? string.Empty;
+                lease.FIELD_ID = _defaults.FormatIdForTable("LEASE", fieldId);
+                if (leaseData.StartDate.HasValue)
+                    lease.LEASE_EFF_DATE = leaseData.StartDate.Value;
+                if (leaseData.EndDate.HasValue)
+                    lease.LEASE_EXPIRY_DATE = leaseData.EndDate.Value;
+                lease.ACTIVE_IND = "Y";
+
+                if (lease is IPPDMEntity entity)
+                    _commonColumnHandler.PrepareForInsert(entity, userId);
+                var result = await repo.InsertAsync(lease, userId);
+                var createdLease = result as LEASE ?? throw new InvalidOperationException("Failed to create lease");
+
+                _logger?.LogInformation("Lease acquired: {LeaseId}, Name: {LeaseName}", createdLease.LEASE_ID, createdLease.LEASE_NAME);
+
+                return new LeaseDto
+                {
+                    LeaseId = createdLease.LEASE_ID ?? string.Empty,
+                    LeaseName = createdLease.LEASE_NAME ?? string.Empty,
+                    FieldId = fieldId,
+                    StartDate = leaseData.StartDate,
+                    EndDate = leaseData.EndDate,
+                    Status = "ACTIVE"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error acquiring lease for field: {FieldId}", fieldId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Manages lease operations using LeaseAcquisition service
+        /// </summary>
+        public async Task<LeaseDto> ManageLeaseAsync(string fieldId, string leaseId, UpdateLeaseDto updateData, string userId)
+        {
+            try
+            {
+                _logger?.LogInformation("Managing lease: {LeaseId} for field: {FieldId}", leaseId, fieldId);
+
+                var metadata = await _metadata.GetTableMetadataAsync("LEASE");
+                if (metadata == null)
+                {
+                    throw new InvalidOperationException("LEASE table metadata not found");
+                }
+
+                var entityType = typeof(LEASE);
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, _connectionName, "LEASE", null);
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId },
+                    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("LEASE", fieldId) }
+                };
+
+                var leases = await repo.GetAsync(filters);
+                var lease = leases.FirstOrDefault() as LEASE;
+                if (lease == null)
+                {
+                    throw new InvalidOperationException($"Lease {leaseId} not found for field {fieldId}");
+                }
+
+                // Update lease properties
+                // Note: UpdateLeaseDto doesn't have LeaseName, only status and dates
+                if (updateData.StartDate.HasValue)
+                    lease.LEASE_EFF_DATE = updateData.StartDate.Value;
+                if (updateData.EndDate.HasValue)
+                    lease.LEASE_EXPIRY_DATE = updateData.EndDate.Value;
+
+                if (lease is IPPDMEntity entity)
+                    _commonColumnHandler.PrepareForUpdate(entity, userId);
+                await repo.UpdateAsync(lease, userId);
+
+                return new LeaseDto
+                {
+                    LeaseId = lease.LEASE_ID ?? string.Empty,
+                    LeaseName = lease.LEASE_NAME ?? string.Empty,
+                    FieldId = fieldId,
+                    StartDate = lease.LEASE_EFF_DATE,
+                    EndDate = lease.LEASE_EXPIRY_DATE,
+                    Status = "ACTIVE"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error managing lease: {LeaseId}", leaseId);
+                throw;
+            }
+        }
+
+        #endregion
     }
 }

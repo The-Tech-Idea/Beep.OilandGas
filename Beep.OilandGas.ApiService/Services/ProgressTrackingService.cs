@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.ApiService.Models;
+using Beep.OilandGas.Models.DTOs.DataManagement;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 

@@ -135,6 +135,7 @@ namespace Beep.OilandGas.ProductionAccounting.Models
         /// Gets or sets whether this is an Indian lease.
         /// </summary>
         public bool IsIndian { get; set; }
+        public string LeaseNumber { get; internal set; }
 
         public GovernmentLease()
         {
@@ -238,6 +239,8 @@ namespace Beep.OilandGas.ProductionAccounting.Models
         /// Gets or sets the date the lease became HBP.
         /// </summary>
         public DateTime? HeldByProductionDate { get; set; }
+        public bool IsShutInRoyalty { get; internal set; }
+        public object ShutInRoyaltyRate { get; internal set; }
     }
 
     /// <summary>

@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.ApiService.Models;
+using Beep.OilandGas.Models.DTOs.DataManagement;
 using Beep.OilandGas.ApiService.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;

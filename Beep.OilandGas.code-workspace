@@ -4,7 +4,10 @@
 			"path": "."
 		},
 		{
-			"path": "../Beep.Authentication"
+			"path": "../../fahadTheTechIdea/MyWebSite/TheTechIdeaWeb"
+		},
+		{
+			"path": "../../../../OneDrive/SimpleInfoapps/PPDM/html"
 		},
 		{
 			"path": "../BeepDM/DataManagementEngineStandard"
@@ -14,18 +17,6 @@
 		},
 		{
 			"path": "../Beep.Shell/BeepShell"
-		},
-		{
-			"path": "../BeepDataSources/DataSourcesPlugins/RDBMSDataSource"
-		},
-		{
-			"path": "../../../../OneDrive/SimpleInfoapps/PPDM/ppdm39_SqlServerScript/ms"
-		},
-		{
-			"path": "../../fahadTheTechIdea/MyWebSite/TheTechIdeaWeb"
-		},
-		{
-			"path": "../../../../OneDrive/SimpleInfoapps/PPDM/html"
 		}
 	],
 	"settings": {

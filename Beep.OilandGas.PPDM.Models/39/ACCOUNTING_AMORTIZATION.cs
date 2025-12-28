@@ -62,15 +62,15 @@ namespace Beep.OilandGas.PPDM39.Models
             set { SetProperty(ref CAPITALIZED_COSTValue, value); }
         }
 
-        private Decimal?? PRODUCTION_BOEValue;
-        public Decimal?? PRODUCTION_BOE
+        private Decimal? PRODUCTION_BOEValue;
+        public Decimal? PRODUCTION_BOE
         {
             get { return this.PRODUCTION_BOEValue; }
             set { SetProperty(ref PRODUCTION_BOEValue, value); }
         }
 
-        private Decimal?? TOTAL_RESERVES_BOEValue;
-        public Decimal?? TOTAL_RESERVES_BOE
+        private Decimal? TOTAL_RESERVES_BOEValue;
+        public Decimal? TOTAL_RESERVES_BOE
         {
             get { return this.TOTAL_RESERVES_BOEValue; }
             set { SetProperty(ref TOTAL_RESERVES_BOEValue, value); }
@@ -132,8 +132,8 @@ namespace Beep.OilandGas.PPDM39.Models
             set { SetProperty(ref ROW_CHANGED_BYValue, value); }
         }
 
-        private DateTime?? ROW_CHANGED_DATEValue;
-        public DateTime?? ROW_CHANGED_DATE
+        private DateTime? ROW_CHANGED_DATEValue;
+        public DateTime? ROW_CHANGED_DATE
         {
             get { return this.ROW_CHANGED_DATEValue; }
             set { SetProperty(ref ROW_CHANGED_DATEValue, value); }
@@ -146,22 +146,22 @@ namespace Beep.OilandGas.PPDM39.Models
             set { SetProperty(ref ROW_CREATED_BYValue, value); }
         }
 
-        private DateTime?? ROW_CREATED_DATEValue;
-        public DateTime?? ROW_CREATED_DATE
+        private DateTime? ROW_CREATED_DATEValue;
+        public DateTime? ROW_CREATED_DATE
         {
             get { return this.ROW_CREATED_DATEValue; }
             set { SetProperty(ref ROW_CREATED_DATEValue, value); }
         }
 
-        private DateTime?? ROW_EFFECTIVE_DATEValue;
-        public DateTime?? ROW_EFFECTIVE_DATE
+        private DateTime? ROW_EFFECTIVE_DATEValue;
+        public DateTime? ROW_EFFECTIVE_DATE
         {
             get { return this.ROW_EFFECTIVE_DATEValue; }
             set { SetProperty(ref ROW_EFFECTIVE_DATEValue, value); }
         }
 
-        private DateTime?? ROW_EXPIRY_DATEValue;
-        public DateTime?? ROW_EXPIRY_DATE
+        private DateTime? ROW_EXPIRY_DATEValue;
+        public DateTime? ROW_EXPIRY_DATE
         {
             get { return this.ROW_EXPIRY_DATEValue; }
             set { SetProperty(ref ROW_EXPIRY_DATEValue, value); }

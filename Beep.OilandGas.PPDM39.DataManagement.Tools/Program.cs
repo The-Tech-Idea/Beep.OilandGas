@@ -9,6 +9,30 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Tools
     {
         static void Main(string[] args)
         {
+            // Check for help command
+            if (args.Length > 0 && (args[0].Equals("help", StringComparison.OrdinalIgnoreCase) || 
+                                    args[0].Equals("--help", StringComparison.OrdinalIgnoreCase) ||
+                                    args[0].Equals("-h", StringComparison.OrdinalIgnoreCase) ||
+                                    args[0].Equals("/?", StringComparison.OrdinalIgnoreCase)))
+            {
+                ShowHelp();
+                return;
+            }
+
+            // Check if consolidation command is requested
+            if (args.Length > 0 && (args[0].Equals("consolidate", StringComparison.OrdinalIgnoreCase) || 
+                                    args[0].Equals("--consolidate", StringComparison.OrdinalIgnoreCase) ||
+                                    args[0].Equals("-c", StringComparison.OrdinalIgnoreCase)))
+            {
+                // Extract consolidation arguments (skip the command)
+                var consolidateArgs = args.Length > 1 ? args.Skip(1).ToArray() : new string[0];
+                ConsolidateSeedData.Run(consolidateArgs);
+                Console.WriteLine();
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadKey();
+                return;
+            }
+
             Console.WriteLine("========================================");
             Console.WriteLine("PPDM39 Metadata Generator");
             Console.WriteLine("========================================");
@@ -67,8 +91,13 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Tools
                 }
                 Console.ResetColor();
                 Console.WriteLine();
-                Console.WriteLine("Usage: Beep.OilandGas.PPDM39.DataManagement.Tools.exe [scriptFolder]");
-                Console.WriteLine("Example: Beep.OilandGas.PPDM39.DataManagement.Tools.exe \"C:\\Path\\To\\Scripts\"");
+                Console.WriteLine("Usage: Beep.OilandGas.PPDM39.DataManagement.Tools.exe [scriptFolder] [csvFolder]");
+                Console.WriteLine("   OR: Beep.OilandGas.PPDM39.DataManagement.Tools.exe consolidate [csvDataPath] [referenceDataPath]");
+                Console.WriteLine();
+                Console.WriteLine("Examples:");
+                Console.WriteLine("  Metadata generation: Beep.OilandGas.PPDM39.DataManagement.Tools.exe \"C:\\Path\\To\\Scripts\"");
+                Console.WriteLine("  Consolidate seed data: Beep.OilandGas.PPDM39.DataManagement.Tools.exe consolidate");
+                Console.WriteLine("  Consolidate with custom paths: Beep.OilandGas.PPDM39.DataManagement.Tools.exe consolidate \"C:\\Path\\To\\PPDMCSVData.json\" \"C:\\Path\\To\\PPDMReferenceData.json\"");
                 Environment.Exit(1);
                 return;
             }
@@ -133,7 +162,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Tools
                     var csvDataJsonOutput = Path.Combine(csvDataOutputFolder, "PPDMCSVData.json");
                     
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    PPDMCSVDataGenerator.GenerateJsonFromCsvFiles(csvFolder, csvDataJsonOutput);
+                    // TODO: Implement PPDMCSVDataGenerator.GenerateJsonFromCsvFiles
+                    // PPDMCSVDataGenerator.GenerateJsonFromCsvFiles(csvFolder, csvDataJsonOutput);
+                    Console.WriteLine($"CSV data generation not yet implemented. Expected output: {csvDataJsonOutput}");
                     Console.ResetColor();
                     Console.WriteLine();
                     Console.WriteLine("CSV data JSON generated:");
@@ -168,6 +199,31 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Tools
             Console.WriteLine();
             Console.WriteLine("Press any key to exit...");
             Console.ReadKey();
+        }
+
+        private static void ShowHelp()
+        {
+            Console.WriteLine("========================================");
+            Console.WriteLine("PPDM39 Data Management Tools");
+            Console.WriteLine("========================================");
+            Console.WriteLine();
+            Console.WriteLine("Available Commands:");
+            Console.WriteLine();
+            Console.WriteLine("1. Metadata Generation (default):");
+            Console.WriteLine("   Generates PPDM39 metadata from SQL scripts");
+            Console.WriteLine("   Usage: Beep.OilandGas.PPDM39.DataManagement.Tools.exe [scriptFolder] [csvFolder]");
+            Console.WriteLine("   Example: Beep.OilandGas.PPDM39.DataManagement.Tools.exe \"C:\\Path\\To\\Scripts\" \"C:\\Path\\To\\CSV\"");
+            Console.WriteLine();
+            Console.WriteLine("2. Consolidate Seed Data:");
+            Console.WriteLine("   Consolidates PPDM seed data from PPDMCSVData.json into PPDMReferenceData.json");
+            Console.WriteLine("   Usage: Beep.OilandGas.PPDM39.DataManagement.Tools.exe consolidate [csvDataPath] [referenceDataPath]");
+            Console.WriteLine("   Example: Beep.OilandGas.PPDM39.DataManagement.Tools.exe consolidate");
+            Console.WriteLine("   Example: Beep.OilandGas.PPDM39.DataManagement.Tools.exe consolidate \"C:\\Path\\To\\PPDMCSVData.json\" \"C:\\Path\\To\\PPDMReferenceData.json\"");
+            Console.WriteLine();
+            Console.WriteLine("3. Help:");
+            Console.WriteLine("   Shows this help message");
+            Console.WriteLine("   Usage: Beep.OilandGas.PPDM39.DataManagement.Tools.exe help");
+            Console.WriteLine();
         }
     }
 }

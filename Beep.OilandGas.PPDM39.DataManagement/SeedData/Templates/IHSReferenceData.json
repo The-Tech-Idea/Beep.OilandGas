@@ -1,0 +1,288 @@
+{
+  "category": "IHS",
+  "version": "1.0",
+  "description": "IHS Markit standard reference values. Values are mapped to PPDM RA_* tables where applicable, or stored in LIST_OF_VALUE for IHS-specific codes.",
+  "ihsData": {
+    "WELL_CLASSIFICATION": [
+      {
+        "code": "OIL",
+        "name": "Oil Well",
+        "description": "IHS classification: Well primarily producing oil",
+        "targetTable": "RA_WELL_STATUS",
+        "statusType": "Fluid_Type",
+        "status": "Oil",
+        "mapToPPDM": true
+      },
+      {
+        "code": "GAS",
+        "name": "Gas Well",
+        "description": "IHS classification: Well primarily producing gas",
+        "targetTable": "RA_WELL_STATUS",
+        "statusType": "Fluid_Type",
+        "status": "Gas",
+        "mapToPPDM": true
+      },
+      {
+        "code": "OIL_GAS",
+        "name": "Oil and Gas Well",
+        "description": "IHS classification: Well producing both oil and gas",
+        "targetTable": "RA_WELL_STATUS",
+        "statusType": "Fluid_Type",
+        "status": "Oil",
+        "mapToPPDM": true
+      },
+      {
+        "code": "DRY_HOLE",
+        "name": "Dry Hole",
+        "description": "IHS classification: Well that did not encounter commercial hydrocarbons",
+        "targetTable": "RA_WELL_STATUS",
+        "statusType": "Life_Cycle",
+        "status": "Abandoned",
+        "mapToPPDM": true
+      },
+      {
+        "code": "INJECTION",
+        "name": "Injection Well",
+        "description": "IHS classification: Well used for injection purposes",
+        "targetTable": "RA_WELL_STATUS",
+        "statusType": "Role",
+        "status": "Injector",
+        "mapToPPDM": true
+      },
+      {
+        "code": "DISPOSAL",
+        "name": "Disposal Well",
+        "description": "IHS classification: Well used for disposal",
+        "targetTable": "RA_WELL_STATUS",
+        "statusType": "Role",
+        "status": "Disposal",
+        "mapToPPDM": true
+      }
+    ],
+    "COMPLETION_TYPE": [
+      {
+        "code": "OPEN_HOLE",
+        "name": "Open Hole",
+        "description": "IHS completion type: Open hole completion",
+        "targetTable": "RA_COMPLETION_TYPE",
+        "completionType": "Open Hole",
+        "mapToPPDM": true
+      },
+      {
+        "code": "CASED_HOLE",
+        "name": "Cased Hole",
+        "description": "IHS completion type: Cased hole completion",
+        "targetTable": "RA_COMPLETION_TYPE",
+        "completionType": "Cased Hole",
+        "mapToPPDM": true
+      },
+      {
+        "code": "LINER",
+        "name": "Liner",
+        "description": "IHS completion type: Liner completion",
+        "targetTable": "RA_COMPLETION_TYPE",
+        "completionType": "Liner",
+        "mapToPPDM": true
+      },
+      {
+        "code": "PERFORATED",
+        "name": "Perforated",
+        "description": "IHS completion type: Perforated completion",
+        "targetTable": "RA_COMPLETION_TYPE",
+        "completionType": "Perforated",
+        "mapToPPDM": true
+      },
+      {
+        "code": "SLOTTED_LINER",
+        "name": "Slotted Liner",
+        "description": "IHS completion type: Slotted liner completion",
+        "targetTable": "RA_COMPLETION_TYPE",
+        "completionType": "Slotted Liner",
+        "mapToPPDM": true
+      }
+    ],
+    "PRODUCTION_STATUS": [
+      {
+        "code": "PRODUCING",
+        "name": "Producing",
+        "description": "IHS status: Well is currently producing",
+        "targetTable": "RA_WELL_STATUS",
+        "statusType": "Life_Cycle",
+        "status": "Producing",
+        "mapToPPDM": true
+      },
+      {
+        "code": "SHUT_IN",
+        "name": "Shut In",
+        "description": "IHS status: Well is shut in",
+        "targetTable": "RA_WELL_STATUS",
+        "statusType": "Life_Cycle",
+        "status": "Shut-In",
+        "mapToPPDM": true
+      },
+      {
+        "code": "ABANDONED",
+        "name": "Abandoned",
+        "description": "IHS status: Well has been abandoned",
+        "targetTable": "RA_WELL_STATUS",
+        "statusType": "Life_Cycle",
+        "status": "Abandoned",
+        "mapToPPDM": true
+      },
+      {
+        "code": "DRILLING",
+        "name": "Drilling",
+        "description": "IHS status: Well is being drilled",
+        "targetTable": "RA_WELL_STATUS",
+        "statusType": "Life_Cycle",
+        "status": "Drilling",
+        "mapToPPDM": true
+      },
+      {
+        "code": "COMPLETED",
+        "name": "Completed",
+        "description": "IHS status: Well has been completed",
+        "targetTable": "RA_WELL_STATUS",
+        "statusType": "Life_Cycle",
+        "status": "Completed",
+        "mapToPPDM": true
+      },
+      {
+        "code": "PAYING_OUT",
+        "name": "Paying Out",
+        "description": "IHS status: Well is paying out (flowing back after completion)",
+        "targetTable": "RA_WELL_STATUS",
+        "statusType": "Life_Cycle",
+        "status": "Producing",
+        "mapToPPDM": true
+      }
+    ],
+    "PRODUCTION_METHOD": [
+      {
+        "code": "NATURAL_FLOW",
+        "name": "Natural Flow",
+        "description": "IHS production method: Natural flow production",
+        "targetTable": "RA_PRODUCTION_METHOD",
+        "productionMethod": "Natural Flow",
+        "mapToPPDM": true
+      },
+      {
+        "code": "GAS_LIFT",
+        "name": "Gas Lift",
+        "description": "IHS production method: Gas lift artificial lift",
+        "targetTable": "RA_PRODUCTION_METHOD",
+        "productionMethod": "Gas Lift",
+        "mapToPPDM": true
+      },
+      {
+        "code": "ROD_PUMP",
+        "name": "Rod Pump",
+        "description": "IHS production method: Sucker rod pump",
+        "targetTable": "RA_PRODUCTION_METHOD",
+        "productionMethod": "Sucker Rod Pump",
+        "mapToPPDM": true
+      },
+      {
+        "code": "ESP",
+        "name": "Electric Submersible Pump",
+        "description": "IHS production method: Electric submersible pump",
+        "targetTable": "RA_PRODUCTION_METHOD",
+        "productionMethod": "Electric Submersible Pump",
+        "mapToPPDM": true
+      },
+      {
+        "code": "PLUNGER_LIFT",
+        "name": "Plunger Lift",
+        "description": "IHS production method: Plunger lift",
+        "targetTable": "RA_PRODUCTION_METHOD",
+        "productionMethod": "Plunger Lift",
+        "mapToPPDM": true
+      }
+    ],
+    "DRILLING_METHOD": [
+      {
+        "code": "ROTARY",
+        "name": "Rotary",
+        "description": "IHS drilling method: Rotary drilling",
+        "targetTable": "RA_DRILLING_METHOD",
+        "drillingMethod": "Rotary",
+        "mapToPPDM": true
+      },
+      {
+        "code": "DIRECTIONAL",
+        "name": "Directional",
+        "description": "IHS drilling method: Directional drilling",
+        "targetTable": "RA_DRILLING_METHOD",
+        "drillingMethod": "Directional",
+        "mapToPPDM": true
+      },
+      {
+        "code": "HORIZONTAL",
+        "name": "Horizontal",
+        "description": "IHS drilling method: Horizontal drilling",
+        "targetTable": "RA_DRILLING_METHOD",
+        "drillingMethod": "Horizontal",
+        "mapToPPDM": true
+      }
+    ],
+    "WELL_TYPE": [
+      {
+        "code": "EXPLORATORY",
+        "name": "Exploratory",
+        "description": "IHS well type: Exploratory well",
+        "targetTable": "RA_DRILLING_TYPE",
+        "drillingType": "Exploratory",
+        "mapToPPDM": true
+      },
+      {
+        "code": "DEVELOPMENT",
+        "name": "Development",
+        "description": "IHS well type: Development well",
+        "targetTable": "RA_DRILLING_TYPE",
+        "drillingType": "Development",
+        "mapToPPDM": true
+      },
+      {
+        "code": "APPRAISAL",
+        "name": "Appraisal",
+        "description": "IHS well type: Appraisal well",
+        "targetTable": "RA_DRILLING_TYPE",
+        "drillingType": "Appraisal",
+        "mapToPPDM": true
+      }
+    ],
+    "IHS_SPECIFIC_CODES": [
+      {
+        "code": "IHS_WELL_ID_FORMAT",
+        "name": "IHS Well ID Format",
+        "description": "IHS-specific well identification format standard",
+        "targetTable": null,
+        "storeInLOV": true,
+        "valueType": "IHS_WELL_ID_FORMAT",
+        "category": "IHS",
+        "module": "WellManagement"
+      },
+      {
+        "code": "IHS_PRODUCTION_CATEGORY",
+        "name": "IHS Production Category",
+        "description": "IHS-specific production categorization codes",
+        "targetTable": null,
+        "storeInLOV": true,
+        "valueType": "IHS_PRODUCTION_CATEGORY",
+        "category": "IHS",
+        "module": "Production"
+      },
+      {
+        "code": "IHS_RESERVE_CLASSIFICATION",
+        "name": "IHS Reserve Classification",
+        "description": "IHS-specific reserve classification system",
+        "targetTable": null,
+        "storeInLOV": true,
+        "valueType": "IHS_RESERVE_CLASSIFICATION",
+        "category": "IHS",
+        "module": "Reserves"
+      }
+    ]
+  }
+}
+

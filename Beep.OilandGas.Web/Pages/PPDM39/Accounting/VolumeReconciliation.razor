@@ -1,5 +1,5 @@
 @page "/ppdm39/accounting/volume-reconciliation"
-@using Beep.OilandGas.PPDM39.Core.DTOs
+@using Beep.OilandGas.Models.DTOs
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
@@ -150,7 +150,7 @@
             };
 
             _reconciliationResult = await ApiClient.PostAsync<VolumeReconciliationResult, object>(
-                "/api/accounting/reconcile-volumes",
+                "/api/accounting/allocation/reconcile",
                 request);
 
             Snackbar.Add("Volume reconciliation completed", Severity.Success);

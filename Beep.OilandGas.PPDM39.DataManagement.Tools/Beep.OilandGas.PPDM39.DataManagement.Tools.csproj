@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.4" />
+    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.6" />
   </ItemGroup>
 
   <ItemGroup>

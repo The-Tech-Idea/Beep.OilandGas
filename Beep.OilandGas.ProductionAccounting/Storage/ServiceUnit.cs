@@ -53,6 +53,8 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
         /// Gets or sets the associated tank battery.
         /// </summary>
         public string? TankBatteryId { get; set; }
+        public string UnitType { get; internal set; }
+        public string LeaseId { get; internal set; }
     }
 
     /// <summary>

@@ -1,5 +1,5 @@
 @page "/ppdm39/accounting/cost-allocation"
-@using Beep.OilandGas.PPDM39.Core.DTOs
+@using Beep.OilandGas.Models.DTOs
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
@@ -143,7 +143,7 @@
                 request["TotalCapitalCosts"] = _totalCapitalCosts.Value;
 
             _allocationResult = await ApiClient.PostAsync<CostAllocationResult, Dictionary<string, object>>(
-                "/api/accounting/allocate-costs",
+                "/api/accounting/cost/allocations/allocate",
                 request);
 
             Snackbar.Add("Cost allocation completed", Severity.Success);

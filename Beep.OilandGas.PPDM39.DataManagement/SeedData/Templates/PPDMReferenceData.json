@@ -1,0 +1,2087 @@
+﻿{
+    "category":  "PPDM",
+    "version":  "1.0",
+    "description":  "PPDM standard reference tables (RA_* tables) with comprehensive standard values. This file contains consolidated seed data from PPDMCSVData.json and additional priority tables.",
+    "tables":  [
+                   {
+                       "tableName":  "RA_WELL_STATUS",
+                       "description":  "Well status reference values with multiple facets (Life_Cycle, Role, Business_Interest, Fluid_Type, etc.)",
+                       "data":  [
+                                    {
+                                        "STATUS_TYPE":  "Life_Cycle",
+                                        "STATUS":  "Drilling",
+                                        "ALIAS_ID":  "WS-LC-DRILLING",
+                                        "ALIAS_LONG_NAME":  "Drilling",
+                                        "ALIAS_SHORT_NAME":  "Drilling",
+                                        "ABBREVIATION":  "DRL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Life_Cycle",
+                                        "STATUS":  "Completed",
+                                        "ALIAS_ID":  "WS-LC-COMPLETED",
+                                        "ALIAS_LONG_NAME":  "Completed",
+                                        "ALIAS_SHORT_NAME":  "Completed",
+                                        "ABBREVIATION":  "COMP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Life_Cycle",
+                                        "STATUS":  "Producing",
+                                        "ALIAS_ID":  "WS-LC-PRODUCING",
+                                        "ALIAS_LONG_NAME":  "Producing",
+                                        "ALIAS_SHORT_NAME":  "Producing",
+                                        "ABBREVIATION":  "PROD",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Life_Cycle",
+                                        "STATUS":  "Shut-In",
+                                        "ALIAS_ID":  "WS-LC-SHUTIN",
+                                        "ALIAS_LONG_NAME":  "Shut-In",
+                                        "ALIAS_SHORT_NAME":  "Shut-In",
+                                        "ABBREVIATION":  "SI",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Life_Cycle",
+                                        "STATUS":  "Abandoned",
+                                        "ALIAS_ID":  "WS-LC-ABANDONED",
+                                        "ALIAS_LONG_NAME":  "Abandoned",
+                                        "ALIAS_SHORT_NAME":  "Abandoned",
+                                        "ABBREVIATION":  "ABN",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Role",
+                                        "STATUS":  "Producer",
+                                        "ALIAS_ID":  "WS-ROLE-PRODUCER",
+                                        "ALIAS_LONG_NAME":  "Producer",
+                                        "ALIAS_SHORT_NAME":  "Producer",
+                                        "ABBREVIATION":  "PROD",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Role",
+                                        "STATUS":  "Injector",
+                                        "ALIAS_ID":  "WS-ROLE-INJECTOR",
+                                        "ALIAS_LONG_NAME":  "Injector",
+                                        "ALIAS_SHORT_NAME":  "Injector",
+                                        "ABBREVIATION":  "INJ",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Role",
+                                        "STATUS":  "Disposal",
+                                        "ALIAS_ID":  "WS-ROLE-DISPOSAL",
+                                        "ALIAS_LONG_NAME":  "Disposal",
+                                        "ALIAS_SHORT_NAME":  "Disposal",
+                                        "ABBREVIATION":  "DSP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Role",
+                                        "STATUS":  "Observation",
+                                        "ALIAS_ID":  "WS-ROLE-OBSERVATION",
+                                        "ALIAS_LONG_NAME":  "Observation",
+                                        "ALIAS_SHORT_NAME":  "Observation",
+                                        "ABBREVIATION":  "OBS",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Business_Interest",
+                                        "STATUS":  "Operator",
+                                        "ALIAS_ID":  "WS-BI-OPERATOR",
+                                        "ALIAS_LONG_NAME":  "Operator",
+                                        "ALIAS_SHORT_NAME":  "Operator",
+                                        "ABBREVIATION":  "OPR",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Business_Interest",
+                                        "STATUS":  "Non-Operator",
+                                        "ALIAS_ID":  "WS-BI-NONOPERATOR",
+                                        "ALIAS_LONG_NAME":  "Non-Operator",
+                                        "ALIAS_SHORT_NAME":  "Non-Operator",
+                                        "ABBREVIATION":  "NOP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Fluid_Type",
+                                        "STATUS":  "Oil",
+                                        "ALIAS_ID":  "WS-FT-OIL",
+                                        "ALIAS_LONG_NAME":  "Oil",
+                                        "ALIAS_SHORT_NAME":  "Oil",
+                                        "ABBREVIATION":  "OIL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Fluid_Type",
+                                        "STATUS":  "Gas",
+                                        "ALIAS_ID":  "WS-FT-GAS",
+                                        "ALIAS_LONG_NAME":  "Gas",
+                                        "ALIAS_SHORT_NAME":  "Gas",
+                                        "ABBREVIATION":  "GAS",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Fluid_Type",
+                                        "STATUS":  "Water",
+                                        "ALIAS_ID":  "WS-FT-WATER",
+                                        "ALIAS_LONG_NAME":  "Water",
+                                        "ALIAS_SHORT_NAME":  "Water",
+                                        "ABBREVIATION":  "WTR",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Fluid_Type",
+                                        "STATUS":  "Condensate",
+                                        "ALIAS_ID":  "WS-FT-CONDENSATE",
+                                        "ALIAS_LONG_NAME":  "Condensate",
+                                        "ALIAS_SHORT_NAME":  "Condensate",
+                                        "ABBREVIATION":  "COND",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_WELL_STATUS_TYPE",
+                       "description":  "Well status type reference values (Life_Cycle, Role, Business_Interest, Fluid_Type, etc.)",
+                       "data":  [
+                                    {
+                                        "STATUS_TYPE":  "Life_Cycle",
+                                        "ALIAS_ID":  "WST-LIFECYCLE",
+                                        "ALIAS_LONG_NAME":  "Life Cycle",
+                                        "ALIAS_SHORT_NAME":  "Life Cycle",
+                                        "ABBREVIATION":  "LC",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Role",
+                                        "ALIAS_ID":  "WST-ROLE",
+                                        "ALIAS_LONG_NAME":  "Role",
+                                        "ALIAS_SHORT_NAME":  "Role",
+                                        "ABBREVIATION":  "ROLE",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Business_Interest",
+                                        "ALIAS_ID":  "WST-BUSINESSINTEREST",
+                                        "ALIAS_LONG_NAME":  "Business Interest",
+                                        "ALIAS_SHORT_NAME":  "Business Interest",
+                                        "ABBREVIATION":  "BI",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Fluid_Type",
+                                        "ALIAS_ID":  "WST-FLUIDTYPE",
+                                        "ALIAS_LONG_NAME":  "Fluid Type",
+                                        "ALIAS_SHORT_NAME":  "Fluid Type",
+                                        "ABBREVIATION":  "FT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_FIELD_STATUS",
+                       "description":  "Field status reference values",
+                       "data":  [
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Active",
+                                        "ALIAS_ID":  "FS-OP-ACTIVE",
+                                        "ALIAS_LONG_NAME":  "Active",
+                                        "ALIAS_SHORT_NAME":  "Active",
+                                        "ABBREVIATION":  "ACT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Inactive",
+                                        "ALIAS_ID":  "FS-OP-INACTIVE",
+                                        "ALIAS_LONG_NAME":  "Inactive",
+                                        "ALIAS_SHORT_NAME":  "Inactive",
+                                        "ABBREVIATION":  "INA",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Development",
+                                        "ALIAS_ID":  "FS-OP-DEVELOPMENT",
+                                        "ALIAS_LONG_NAME":  "Development",
+                                        "ALIAS_SHORT_NAME":  "Development",
+                                        "ABBREVIATION":  "DEV",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Abandoned",
+                                        "ALIAS_ID":  "FS-OP-ABANDONED",
+                                        "ALIAS_LONG_NAME":  "Abandoned",
+                                        "ALIAS_SHORT_NAME":  "Abandoned",
+                                        "ABBREVIATION":  "ABN",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_COST_TYPE",
+                       "description":  "Cost type classifications",
+                       "data":  [
+                                    {
+                                        "COST_TYPE":  "Exploration",
+                                        "ALIAS_ID":  "CT-EXPLORATION",
+                                        "ALIAS_LONG_NAME":  "Exploration",
+                                        "ALIAS_SHORT_NAME":  "Exploration",
+                                        "ABBREVIATION":  "EXP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COST_TYPE":  "Development",
+                                        "ALIAS_ID":  "CT-DEVELOPMENT",
+                                        "ALIAS_LONG_NAME":  "Development",
+                                        "ALIAS_SHORT_NAME":  "Development",
+                                        "ABBREVIATION":  "DEV",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COST_TYPE":  "Production",
+                                        "ALIAS_ID":  "CT-PRODUCTION",
+                                        "ALIAS_LONG_NAME":  "Production",
+                                        "ALIAS_SHORT_NAME":  "Production",
+                                        "ABBREVIATION":  "PROD",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COST_TYPE":  "Lease Acquisition",
+                                        "ALIAS_ID":  "CT-LEASEACQ",
+                                        "ALIAS_LONG_NAME":  "Lease Acquisition",
+                                        "ALIAS_SHORT_NAME":  "Lease Acquisition",
+                                        "ABBREVIATION":  "LACQ",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COST_TYPE":  "Workover",
+                                        "ALIAS_ID":  "CT-WORKOVER",
+                                        "ALIAS_LONG_NAME":  "Workover",
+                                        "ALIAS_SHORT_NAME":  "Workover",
+                                        "ABBREVIATION":  "WO",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COST_TYPE":  "Abandonment",
+                                        "ALIAS_ID":  "CT-ABANDONMENT",
+                                        "ALIAS_LONG_NAME":  "Abandonment",
+                                        "ALIAS_SHORT_NAME":  "Abandonment",
+                                        "ABBREVIATION":  "ABN",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_ACCOUNTING_METHOD",
+                       "description":  "Accounting method reference values (Successful Efforts, Full Cost)",
+                       "data":  [
+                                    {
+                                        "ACCOUNTING_METHOD":  "Successful Efforts",
+                                        "ALIAS_ID":  "AM-SE",
+                                        "ALIAS_LONG_NAME":  "Successful Efforts",
+                                        "ALIAS_SHORT_NAME":  "Successful Efforts",
+                                        "ABBREVIATION":  "SE",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ACCOUNTING_METHOD":  "Full Cost",
+                                        "ALIAS_ID":  "AM-FC",
+                                        "ALIAS_LONG_NAME":  "Full Cost",
+                                        "ALIAS_SHORT_NAME":  "Full Cost",
+                                        "ABBREVIATION":  "FC",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_UNIT_OF_MEASURE",
+                       "description":  "Units of measure reference values - comprehensive list for oil and gas operations",
+                       "data":  [
+                                    {
+                                        "UOM":  "BBL",
+                                        "ALIAS_ID":  "UOM-BBL",
+                                        "ALIAS_LONG_NAME":  "Barrel",
+                                        "ALIAS_SHORT_NAME":  "Barrel",
+                                        "ABBREVIATION":  "BBL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "UOM":  "MCF",
+                                        "ALIAS_ID":  "UOM-MCF",
+                                        "ALIAS_LONG_NAME":  "Thousand Cubic Feet",
+                                        "ALIAS_SHORT_NAME":  "MCF",
+                                        "ABBREVIATION":  "MCF",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "UOM":  "MMCF",
+                                        "ALIAS_ID":  "UOM-MMCF",
+                                        "ALIAS_LONG_NAME":  "Million Cubic Feet",
+                                        "ALIAS_SHORT_NAME":  "MMCF",
+                                        "ABBREVIATION":  "MMCF",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "UOM":  "GAL",
+                                        "ALIAS_ID":  "UOM-GAL",
+                                        "ALIAS_LONG_NAME":  "Gallon",
+                                        "ALIAS_SHORT_NAME":  "Gallon",
+                                        "ABBREVIATION":  "GAL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "UOM":  "FT",
+                                        "ALIAS_ID":  "UOM-FT",
+                                        "ALIAS_LONG_NAME":  "Foot",
+                                        "ALIAS_SHORT_NAME":  "Foot",
+                                        "ABBREVIATION":  "FT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "UOM":  "IN",
+                                        "ALIAS_ID":  "UOM-IN",
+                                        "ALIAS_LONG_NAME":  "Inch",
+                                        "ALIAS_SHORT_NAME":  "Inch",
+                                        "ABBREVIATION":  "IN",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "UOM":  "PSI",
+                                        "ALIAS_ID":  "UOM-PSI",
+                                        "ALIAS_LONG_NAME":  "Pounds per Square Inch",
+                                        "ALIAS_SHORT_NAME":  "PSI",
+                                        "ABBREVIATION":  "PSI",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "UOM":  "DEG_F",
+                                        "ALIAS_ID":  "UOM-DEGF",
+                                        "ALIAS_LONG_NAME":  "Degrees Fahrenheit",
+                                        "ALIAS_SHORT_NAME":  "Degrees F",
+                                        "ABBREVIATION":  "F",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "UOM":  "LB",
+                                        "ALIAS_ID":  "UOM-LB",
+                                        "ALIAS_LONG_NAME":  "Pound",
+                                        "ALIAS_SHORT_NAME":  "Pound",
+                                        "ABBREVIATION":  "LB",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "UOM":  "TON",
+                                        "ALIAS_ID":  "UOM-TON",
+                                        "ALIAS_LONG_NAME":  "Ton",
+                                        "ALIAS_SHORT_NAME":  "Ton",
+                                        "ABBREVIATION":  "TON",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_ROW_QUALITY",
+                       "description":  "Row quality indicators",
+                       "data":  [
+                                    {
+                                        "ROW_QUALITY":  "Good",
+                                        "ALIAS_ID":  "RQ-GOOD",
+                                        "ALIAS_LONG_NAME":  "Good",
+                                        "ALIAS_SHORT_NAME":  "Good",
+                                        "ABBREVIATION":  "GD",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ROW_QUALITY":  "Fair",
+                                        "ALIAS_ID":  "RQ-FAIR",
+                                        "ALIAS_LONG_NAME":  "Fair",
+                                        "ALIAS_SHORT_NAME":  "Fair",
+                                        "ABBREVIATION":  "FR",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ROW_QUALITY":  "Poor",
+                                        "ALIAS_ID":  "RQ-POOR",
+                                        "ALIAS_LONG_NAME":  "Poor",
+                                        "ALIAS_SHORT_NAME":  "Poor",
+                                        "ABBREVIATION":  "PR",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ROW_QUALITY":  "Excellent",
+                                        "ALIAS_ID":  "RQ-EXCELLENT",
+                                        "ALIAS_LONG_NAME":  "Excellent",
+                                        "ALIAS_SHORT_NAME":  "Excellent",
+                                        "ABBREVIATION":  "EX",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ROW_QUALITY":  "Unknown",
+                                        "ALIAS_ID":  "RQ-UNKNOWN",
+                                        "ALIAS_LONG_NAME":  "Unknown",
+                                        "ALIAS_SHORT_NAME":  "Unknown",
+                                        "ABBREVIATION":  "UNK",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_SOURCE",
+                       "description":  "Data source indicators",
+                       "data":  [
+                                    {
+                                        "SOURCE":  "PPDM",
+                                        "ALIAS_ID":  "SRC-MANUAL",
+                                        "ALIAS_LONG_NAME":  "Manual Entry",
+                                        "ALIAS_SHORT_NAME":  "Manual",
+                                        "ABBREVIATION":  "MAN",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y"
+                                    },
+                                    {
+                                        "SOURCE":  "PPDM",
+                                        "ALIAS_ID":  "SRC-AUTOMATED",
+                                        "ALIAS_LONG_NAME":  "Automated",
+                                        "ALIAS_SHORT_NAME":  "Automated",
+                                        "ABBREVIATION":  "AUT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y"
+                                    },
+                                    {
+                                        "SOURCE":  "PPDM",
+                                        "ALIAS_ID":  "SRC-IMPORT",
+                                        "ALIAS_LONG_NAME":  "Import",
+                                        "ALIAS_SHORT_NAME":  "Import",
+                                        "ABBREVIATION":  "IMP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y"
+                                    },
+                                    {
+                                        "SOURCE":  "PPDM",
+                                        "ALIAS_ID":  "SRC-IHS",
+                                        "ALIAS_LONG_NAME":  "IHS Markit",
+                                        "ALIAS_SHORT_NAME":  "IHS",
+                                        "ABBREVIATION":  "IHS",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y"
+                                    },
+                                    {
+                                        "SOURCE":  "PPDM",
+                                        "ALIAS_ID":  "SRC-PPDM",
+                                        "ALIAS_LONG_NAME":  "PPDM Standard",
+                                        "ALIAS_SHORT_NAME":  "PPDM",
+                                        "ABBREVIATION":  "PPDM",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_COMPLETION_TYPE",
+                       "description":  "Completion type reference values",
+                       "data":  [
+                                    {
+                                        "COMPLETION_TYPE":  "Open Hole",
+                                        "ALIAS_ID":  "CT-OPENHOLE",
+                                        "ALIAS_LONG_NAME":  "Open Hole",
+                                        "ALIAS_SHORT_NAME":  "Open Hole",
+                                        "ABBREVIATION":  "OH",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COMPLETION_TYPE":  "Cased Hole",
+                                        "ALIAS_ID":  "CT-CASEDHOLE",
+                                        "ALIAS_LONG_NAME":  "Cased Hole",
+                                        "ALIAS_SHORT_NAME":  "Cased Hole",
+                                        "ABBREVIATION":  "CH",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COMPLETION_TYPE":  "Liner",
+                                        "ALIAS_ID":  "CT-LINER",
+                                        "ALIAS_LONG_NAME":  "Liner",
+                                        "ALIAS_SHORT_NAME":  "Liner",
+                                        "ABBREVIATION":  "LIN",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COMPLETION_TYPE":  "Perforated",
+                                        "ALIAS_ID":  "CT-PERFORATED",
+                                        "ALIAS_LONG_NAME":  "Perforated",
+                                        "ALIAS_SHORT_NAME":  "Perforated",
+                                        "ABBREVIATION":  "PERF",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COMPLETION_TYPE":  "Slotted Liner",
+                                        "ALIAS_ID":  "CT-SLOTTEDLINER",
+                                        "ALIAS_LONG_NAME":  "Slotted Liner",
+                                        "ALIAS_SHORT_NAME":  "Slotted Liner",
+                                        "ABBREVIATION":  "SL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_COMPLETION_STATUS_TYPE",
+                       "description":  "Completion status type reference values",
+                       "data":  [
+                                    {
+                                        "COMPLETION_STATUS_TYPE":  "Active",
+                                        "ALIAS_ID":  "CST-ACTIVE",
+                                        "ALIAS_LONG_NAME":  "Active",
+                                        "ALIAS_SHORT_NAME":  "Active",
+                                        "ABBREVIATION":  "ACT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COMPLETION_STATUS_TYPE":  "Inactive",
+                                        "ALIAS_ID":  "CST-INACTIVE",
+                                        "ALIAS_LONG_NAME":  "Inactive",
+                                        "ALIAS_SHORT_NAME":  "Inactive",
+                                        "ABBREVIATION":  "INA",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COMPLETION_STATUS_TYPE":  "Plugged",
+                                        "ALIAS_ID":  "CST-PLUGGED",
+                                        "ALIAS_LONG_NAME":  "Plugged",
+                                        "ALIAS_SHORT_NAME":  "Plugged",
+                                        "ABBREVIATION":  "PLG",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_PROPERTY_STATUS",
+                       "description":  "Property status reference values",
+                       "data":  [
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Active",
+                                        "ALIAS_ID":  "PS-OP-ACTIVE",
+                                        "ALIAS_LONG_NAME":  "Active",
+                                        "ALIAS_SHORT_NAME":  "Active",
+                                        "ABBREVIATION":  "ACT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Inactive",
+                                        "ALIAS_ID":  "PS-OP-INACTIVE",
+                                        "ALIAS_LONG_NAME":  "Inactive",
+                                        "ALIAS_SHORT_NAME":  "Inactive",
+                                        "ABBREVIATION":  "INA",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Expired",
+                                        "ALIAS_ID":  "PS-OP-EXPIRED",
+                                        "ALIAS_LONG_NAME":  "Expired",
+                                        "ALIAS_SHORT_NAME":  "Expired",
+                                        "ABBREVIATION":  "EXP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Terminated",
+                                        "ALIAS_ID":  "PS-OP-TERMINATED",
+                                        "ALIAS_LONG_NAME":  "Terminated",
+                                        "ALIAS_SHORT_NAME":  "Terminated",
+                                        "ABBREVIATION":  "TER",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_FACILITY_STATUS",
+                       "description":  "Facility status reference values",
+                       "data":  [
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Active",
+                                        "ALIAS_ID":  "FCS-OP-ACTIVE",
+                                        "ALIAS_LONG_NAME":  "Active",
+                                        "ALIAS_SHORT_NAME":  "Active",
+                                        "ABBREVIATION":  "ACT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Inactive",
+                                        "ALIAS_ID":  "FCS-OP-INACTIVE",
+                                        "ALIAS_LONG_NAME":  "Inactive",
+                                        "ALIAS_SHORT_NAME":  "Inactive",
+                                        "ABBREVIATION":  "INA",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Maintenance",
+                                        "ALIAS_ID":  "FCS-OP-MAINTENANCE",
+                                        "ALIAS_LONG_NAME":  "Maintenance",
+                                        "ALIAS_SHORT_NAME":  "Maintenance",
+                                        "ABBREVIATION":  "MNT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Decommissioned",
+                                        "ALIAS_ID":  "FCS-OP-DECOMMISSIONED",
+                                        "ALIAS_LONG_NAME":  "Decommissioned",
+                                        "ALIAS_SHORT_NAME":  "Decommissioned",
+                                        "ABBREVIATION":  "DEC",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_PIPELINE_STATUS",
+                       "description":  "Pipeline status reference values",
+                       "data":  [
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Active",
+                                        "ALIAS_ID":  "PLS-OP-ACTIVE",
+                                        "ALIAS_LONG_NAME":  "Active",
+                                        "ALIAS_SHORT_NAME":  "Active",
+                                        "ABBREVIATION":  "ACT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Inactive",
+                                        "ALIAS_ID":  "PLS-OP-INACTIVE",
+                                        "ALIAS_LONG_NAME":  "Inactive",
+                                        "ALIAS_SHORT_NAME":  "Inactive",
+                                        "ABBREVIATION":  "INA",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Maintenance",
+                                        "ALIAS_ID":  "PLS-OP-MAINTENANCE",
+                                        "ALIAS_LONG_NAME":  "Maintenance",
+                                        "ALIAS_SHORT_NAME":  "Maintenance",
+                                        "ABBREVIATION":  "MNT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Abandoned",
+                                        "ALIAS_ID":  "PLS-OP-ABANDONED",
+                                        "ALIAS_LONG_NAME":  "Abandoned",
+                                        "ALIAS_SHORT_NAME":  "Abandoned",
+                                        "ABBREVIATION":  "ABN",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_ALLOCATION_TYPE",
+                       "description":  "Allocation type reference values",
+                       "data":  [
+                                    {
+                                        "ALLOCATION_TYPE":  "Volumetric",
+                                        "ALIAS_ID":  "AT-VOLUMETRIC",
+                                        "ALIAS_LONG_NAME":  "Volumetric",
+                                        "ALIAS_SHORT_NAME":  "Volumetric",
+                                        "ABBREVIATION":  "VOL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ALLOCATION_TYPE":  "Value Based",
+                                        "ALIAS_ID":  "AT-VALUEBASED",
+                                        "ALIAS_LONG_NAME":  "Value Based",
+                                        "ALIAS_SHORT_NAME":  "Value Based",
+                                        "ABBREVIATION":  "VAL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ALLOCATION_TYPE":  "Equal",
+                                        "ALIAS_ID":  "AT-EQUAL",
+                                        "ALIAS_LONG_NAME":  "Equal",
+                                        "ALIAS_SHORT_NAME":  "Equal",
+                                        "ABBREVIATION":  "EQL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ALLOCATION_TYPE":  "Working Interest",
+                                        "ALIAS_ID":  "AT-WORKINGINTEREST",
+                                        "ALIAS_LONG_NAME":  "Working Interest",
+                                        "ALIAS_SHORT_NAME":  "Working Interest",
+                                        "ABBREVIATION":  "WI",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ALLOCATION_TYPE":  "Revenue Interest",
+                                        "ALIAS_ID":  "AT-REVENUEINTEREST",
+                                        "ALIAS_LONG_NAME":  "Revenue Interest",
+                                        "ALIAS_SHORT_NAME":  "Revenue Interest",
+                                        "ABBREVIATION":  "RI",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_ACCOUNT_PROC_TYPE",
+                       "description":  "Account processing type reference values",
+                       "data":  [
+                                    {
+                                        "ACCOUNT_PROC_TYPE":  "Manual",
+                                        "ALIAS_ID":  "APT-MANUAL",
+                                        "ALIAS_LONG_NAME":  "Manual",
+                                        "ALIAS_SHORT_NAME":  "Manual",
+                                        "ABBREVIATION":  "MAN",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ACCOUNT_PROC_TYPE":  "Automated",
+                                        "ALIAS_ID":  "APT-AUTOMATED",
+                                        "ALIAS_LONG_NAME":  "Automated",
+                                        "ALIAS_SHORT_NAME":  "Automated",
+                                        "ABBREVIATION":  "AUT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ACCOUNT_PROC_TYPE":  "Batch",
+                                        "ALIAS_ID":  "APT-BATCH",
+                                        "ALIAS_LONG_NAME":  "Batch",
+                                        "ALIAS_SHORT_NAME":  "Batch",
+                                        "ABBREVIATION":  "BAT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_ALLOWABLE_EXPENSE",
+                       "description":  "Allowable expense reference values",
+                       "data":  [
+                                    {
+                                        "ALLOWABLE_EXPENSE":  "Lease Operating Expense",
+                                        "ALIAS_ID":  "AE-LOE",
+                                        "ALIAS_LONG_NAME":  "Lease Operating Expense",
+                                        "ALIAS_SHORT_NAME":  "LOE",
+                                        "ABBREVIATION":  "LOE",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ALLOWABLE_EXPENSE":  "Production Tax",
+                                        "ALIAS_ID":  "AE-PRODTAX",
+                                        "ALIAS_LONG_NAME":  "Production Tax",
+                                        "ALIAS_SHORT_NAME":  "Production Tax",
+                                        "ABBREVIATION":  "PTX",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ALLOWABLE_EXPENSE":  "Ad Valorem Tax",
+                                        "ALIAS_ID":  "AE-ADVALOREM",
+                                        "ALIAS_LONG_NAME":  "Ad Valorem Tax",
+                                        "ALIAS_SHORT_NAME":  "Ad Valorem",
+                                        "ABBREVIATION":  "AVT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ALLOWABLE_EXPENSE":  "Severance Tax",
+                                        "ALIAS_ID":  "AE-SEVERANCE",
+                                        "ALIAS_LONG_NAME":  "Severance Tax",
+                                        "ALIAS_SHORT_NAME":  "Severance Tax",
+                                        "ABBREVIATION":  "SVT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_ACTIVITY_TYPE",
+                       "description":  "Activity type reference values",
+                       "data":  [
+                                    {
+                                        "ACTIVITY_TYPE":  "Drilling",
+                                        "ALIAS_ID":  "ACT-DRILLING",
+                                        "ALIAS_LONG_NAME":  "Drilling",
+                                        "ALIAS_SHORT_NAME":  "Drilling",
+                                        "ABBREVIATION":  "DRL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ACTIVITY_TYPE":  "Completion",
+                                        "ALIAS_ID":  "ACT-COMPLETION",
+                                        "ALIAS_LONG_NAME":  "Completion",
+                                        "ALIAS_SHORT_NAME":  "Completion",
+                                        "ABBREVIATION":  "COMP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ACTIVITY_TYPE":  "Workover",
+                                        "ALIAS_ID":  "ACT-WORKOVER",
+                                        "ALIAS_LONG_NAME":  "Workover",
+                                        "ALIAS_SHORT_NAME":  "Workover",
+                                        "ABBREVIATION":  "WO",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ACTIVITY_TYPE":  "Production",
+                                        "ALIAS_ID":  "ACT-PRODUCTION",
+                                        "ALIAS_LONG_NAME":  "Production",
+                                        "ALIAS_SHORT_NAME":  "Production",
+                                        "ABBREVIATION":  "PROD",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ACTIVITY_TYPE":  "Maintenance",
+                                        "ALIAS_ID":  "ACT-MAINTENANCE",
+                                        "ALIAS_LONG_NAME":  "Maintenance",
+                                        "ALIAS_SHORT_NAME":  "Maintenance",
+                                        "ABBREVIATION":  "MNT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ACTIVITY_TYPE":  "Inspection",
+                                        "ALIAS_ID":  "ACT-INSPECTION",
+                                        "ALIAS_LONG_NAME":  "Inspection",
+                                        "ALIAS_SHORT_NAME":  "Inspection",
+                                        "ABBREVIATION":  "INSP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_ACTIVITY_SET_TYPE",
+                       "description":  "Activity set type reference values",
+                       "data":  [
+                                    {
+                                        "ACTIVITY_SET_TYPE":  "Drilling Program",
+                                        "ALIAS_ID":  "AST-DRILLPROG",
+                                        "ALIAS_LONG_NAME":  "Drilling Program",
+                                        "ALIAS_SHORT_NAME":  "Drilling Program",
+                                        "ABBREVIATION":  "DPRG",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ACTIVITY_SET_TYPE":  "Completion Program",
+                                        "ALIAS_ID":  "AST-COMPPROG",
+                                        "ALIAS_LONG_NAME":  "Completion Program",
+                                        "ALIAS_SHORT_NAME":  "Completion Program",
+                                        "ABBREVIATION":  "CPRG",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ACTIVITY_SET_TYPE":  "Workover Program",
+                                        "ALIAS_ID":  "AST-WOPROG",
+                                        "ALIAS_LONG_NAME":  "Workover Program",
+                                        "ALIAS_SHORT_NAME":  "Workover Program",
+                                        "ABBREVIATION":  "WOPRG",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ACTIVITY_SET_TYPE":  "Maintenance Schedule",
+                                        "ALIAS_ID":  "AST-MAINTSCHE",
+                                        "ALIAS_LONG_NAME":  "Maintenance Schedule",
+                                        "ALIAS_SHORT_NAME":  "Maintenance Schedule",
+                                        "ABBREVIATION":  "MSCHE",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_ANL_METHOD_SET_TYPE",
+                       "description":  "Analysis method set type reference values",
+                       "data":  [
+                                    {
+                                        "ANL_METHOD_SET_TYPE":  "Standard",
+                                        "ALIAS_ID":  "AMST-STANDARD",
+                                        "ALIAS_LONG_NAME":  "Standard",
+                                        "ALIAS_SHORT_NAME":  "Standard",
+                                        "ABBREVIATION":  "STD",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ANL_METHOD_SET_TYPE":  "Custom",
+                                        "ALIAS_ID":  "AMST-CUSTOM",
+                                        "ALIAS_LONG_NAME":  "Custom",
+                                        "ALIAS_SHORT_NAME":  "Custom",
+                                        "ABBREVIATION":  "CUST",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ANL_METHOD_SET_TYPE":  "Regulatory",
+                                        "ALIAS_ID":  "AMST-REGULATORY",
+                                        "ALIAS_LONG_NAME":  "Regulatory",
+                                        "ALIAS_SHORT_NAME":  "Regulatory",
+                                        "ABBREVIATION":  "REG",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_ANL_CONFIDENCE_TYPE",
+                       "description":  "Analysis confidence type reference values",
+                       "data":  [
+                                    {
+                                        "ANL_CONFIDENCE_TYPE":  "High",
+                                        "ALIAS_ID":  "ACT-HIGH",
+                                        "ALIAS_LONG_NAME":  "High",
+                                        "ALIAS_SHORT_NAME":  "High",
+                                        "ABBREVIATION":  "HI",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ANL_CONFIDENCE_TYPE":  "Medium",
+                                        "ALIAS_ID":  "ACT-MEDIUM",
+                                        "ALIAS_LONG_NAME":  "Medium",
+                                        "ALIAS_SHORT_NAME":  "Medium",
+                                        "ABBREVIATION":  "MED",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ANL_CONFIDENCE_TYPE":  "Low",
+                                        "ALIAS_ID":  "ACT-LOW",
+                                        "ALIAS_LONG_NAME":  "Low",
+                                        "ALIAS_SHORT_NAME":  "Low",
+                                        "ABBREVIATION":  "LO",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_ANL_REPEATABILITY",
+                       "description":  "Analysis repeatability reference values",
+                       "data":  [
+                                    {
+                                        "ANL_REPEATABILITY":  "Excellent",
+                                        "ALIAS_ID":  "AR-EXCELLENT",
+                                        "ALIAS_LONG_NAME":  "Excellent",
+                                        "ALIAS_SHORT_NAME":  "Excellent",
+                                        "ABBREVIATION":  "EX",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ANL_REPEATABILITY":  "Good",
+                                        "ALIAS_ID":  "AR-GOOD",
+                                        "ALIAS_LONG_NAME":  "Good",
+                                        "ALIAS_SHORT_NAME":  "Good",
+                                        "ABBREVIATION":  "GD",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ANL_REPEATABILITY":  "Fair",
+                                        "ALIAS_ID":  "AR-FAIR",
+                                        "ALIAS_LONG_NAME":  "Fair",
+                                        "ALIAS_SHORT_NAME":  "Fair",
+                                        "ABBREVIATION":  "FR",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "ANL_REPEATABILITY":  "Poor",
+                                        "ALIAS_ID":  "AR-POOR",
+                                        "ALIAS_LONG_NAME":  "Poor",
+                                        "ALIAS_SHORT_NAME":  "Poor",
+                                        "ABBREVIATION":  "PR",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_PROPERTY_TYPE",
+                       "description":  "Property type reference values",
+                       "data":  [
+                                    {
+                                        "PROPERTY_TYPE":  "Fee",
+                                        "ALIAS_ID":  "PT-FEE",
+                                        "ALIAS_LONG_NAME":  "Fee",
+                                        "ALIAS_SHORT_NAME":  "Fee",
+                                        "ABBREVIATION":  "FEE",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "PROPERTY_TYPE":  "Lease",
+                                        "ALIAS_ID":  "PT-LEASE",
+                                        "ALIAS_LONG_NAME":  "Lease",
+                                        "ALIAS_SHORT_NAME":  "Lease",
+                                        "ABBREVIATION":  "LSE",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "PROPERTY_TYPE":  "Unit",
+                                        "ALIAS_ID":  "PT-UNIT",
+                                        "ALIAS_LONG_NAME":  "Unit",
+                                        "ALIAS_SHORT_NAME":  "Unit",
+                                        "ABBREVIATION":  "UNT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "PROPERTY_TYPE":  "Working Interest",
+                                        "ALIAS_ID":  "PT-WORKINGINT",
+                                        "ALIAS_LONG_NAME":  "Working Interest",
+                                        "ALIAS_SHORT_NAME":  "Working Interest",
+                                        "ABBREVIATION":  "WI",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_LEASE_TYPE",
+                       "description":  "Lease type reference values",
+                       "data":  [
+                                    {
+                                        "LEASE_TYPE":  "Oil and Gas",
+                                        "ALIAS_ID":  "LT-OILGAS",
+                                        "ALIAS_LONG_NAME":  "Oil and Gas",
+                                        "ALIAS_SHORT_NAME":  "Oil and Gas",
+                                        "ABBREVIATION":  "O\u0026G",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "LEASE_TYPE":  "Oil Only",
+                                        "ALIAS_ID":  "LT-OILONLY",
+                                        "ALIAS_LONG_NAME":  "Oil Only",
+                                        "ALIAS_SHORT_NAME":  "Oil Only",
+                                        "ABBREVIATION":  "OIL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "LEASE_TYPE":  "Gas Only",
+                                        "ALIAS_ID":  "LT-GASONLY",
+                                        "ALIAS_LONG_NAME":  "Gas Only",
+                                        "ALIAS_SHORT_NAME":  "Gas Only",
+                                        "ABBREVIATION":  "GAS",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "LEASE_TYPE":  "Mineral",
+                                        "ALIAS_ID":  "LT-MINERAL",
+                                        "ALIAS_LONG_NAME":  "Mineral",
+                                        "ALIAS_SHORT_NAME":  "Mineral",
+                                        "ABBREVIATION":  "MIN",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_LEASE_STATUS",
+                       "description":  "Lease status reference values",
+                       "data":  [
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Active",
+                                        "ALIAS_ID":  "LS-OP-ACTIVE",
+                                        "ALIAS_LONG_NAME":  "Active",
+                                        "ALIAS_SHORT_NAME":  "Active",
+                                        "ABBREVIATION":  "ACT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Expired",
+                                        "ALIAS_ID":  "LS-OP-EXPIRED",
+                                        "ALIAS_LONG_NAME":  "Expired",
+                                        "ALIAS_SHORT_NAME":  "Expired",
+                                        "ABBREVIATION":  "EXP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Terminated",
+                                        "ALIAS_ID":  "LS-OP-TERMINATED",
+                                        "ALIAS_LONG_NAME":  "Terminated",
+                                        "ALIAS_SHORT_NAME":  "Terminated",
+                                        "ABBREVIATION":  "TER",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Released",
+                                        "ALIAS_ID":  "LS-OP-RELEASED",
+                                        "ALIAS_LONG_NAME":  "Released",
+                                        "ALIAS_SHORT_NAME":  "Released",
+                                        "ABBREVIATION":  "REL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_PRODUCTION_METHOD",
+                       "description":  "Production method reference values",
+                       "data":  [
+                                    {
+                                        "PRODUCTION_METHOD":  "Natural Flow",
+                                        "ALIAS_ID":  "PM-NATURALFLOW",
+                                        "ALIAS_LONG_NAME":  "Natural Flow",
+                                        "ALIAS_SHORT_NAME":  "Natural Flow",
+                                        "ABBREVIATION":  "NFL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "PRODUCTION_METHOD":  "Gas Lift",
+                                        "ALIAS_ID":  "PM-GASLIFT",
+                                        "ALIAS_LONG_NAME":  "Gas Lift",
+                                        "ALIAS_SHORT_NAME":  "Gas Lift",
+                                        "ABBREVIATION":  "GL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "PRODUCTION_METHOD":  "Sucker Rod Pump",
+                                        "ALIAS_ID":  "PM-SUCKERROD",
+                                        "ALIAS_LONG_NAME":  "Sucker Rod Pump",
+                                        "ALIAS_SHORT_NAME":  "Sucker Rod",
+                                        "ABBREVIATION":  "SRP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "PRODUCTION_METHOD":  "Electric Submersible Pump",
+                                        "ALIAS_ID":  "PM-ESP",
+                                        "ALIAS_LONG_NAME":  "Electric Submersible Pump",
+                                        "ALIAS_SHORT_NAME":  "ESP",
+                                        "ABBREVIATION":  "ESP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "PRODUCTION_METHOD":  "Hydraulic Pump",
+                                        "ALIAS_ID":  "PM-HYDRAULIC",
+                                        "ALIAS_LONG_NAME":  "Hydraulic Pump",
+                                        "ALIAS_SHORT_NAME":  "Hydraulic Pump",
+                                        "ABBREVIATION":  "HP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "PRODUCTION_METHOD":  "Plunger Lift",
+                                        "ALIAS_ID":  "PM-PLUNGERLIFT",
+                                        "ALIAS_LONG_NAME":  "Plunger Lift",
+                                        "ALIAS_SHORT_NAME":  "Plunger Lift",
+                                        "ABBREVIATION":  "PL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_PRODUCTION_STATUS",
+                       "description":  "Production status reference values",
+                       "data":  [
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Producing",
+                                        "ALIAS_ID":  "PS-OP-PRODUCING",
+                                        "ALIAS_LONG_NAME":  "Producing",
+                                        "ALIAS_SHORT_NAME":  "Producing",
+                                        "ABBREVIATION":  "PROD",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Shut-In",
+                                        "ALIAS_ID":  "PS-OP-SHUTIN",
+                                        "ALIAS_LONG_NAME":  "Shut-In",
+                                        "ALIAS_SHORT_NAME":  "Shut-In",
+                                        "ABBREVIATION":  "SI",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Testing",
+                                        "ALIAS_ID":  "PS-OP-TESTING",
+                                        "ALIAS_LONG_NAME":  "Testing",
+                                        "ALIAS_SHORT_NAME":  "Testing",
+                                        "ABBREVIATION":  "TEST",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Abandoned",
+                                        "ALIAS_ID":  "PS-OP-ABANDONED",
+                                        "ALIAS_LONG_NAME":  "Abandoned",
+                                        "ALIAS_SHORT_NAME":  "Abandoned",
+                                        "ABBREVIATION":  "ABN",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_PRODUCTION_TYPE",
+                       "description":  "Production type reference values",
+                       "data":  [
+                                    {
+                                        "PRODUCTION_TYPE":  "Oil",
+                                        "ALIAS_ID":  "PT-OIL",
+                                        "ALIAS_LONG_NAME":  "Oil",
+                                        "ALIAS_SHORT_NAME":  "Oil",
+                                        "ABBREVIATION":  "OIL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "PRODUCTION_TYPE":  "Gas",
+                                        "ALIAS_ID":  "PT-GAS",
+                                        "ALIAS_LONG_NAME":  "Gas",
+                                        "ALIAS_SHORT_NAME":  "Gas",
+                                        "ABBREVIATION":  "GAS",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "PRODUCTION_TYPE":  "Condensate",
+                                        "ALIAS_ID":  "PT-CONDENSATE",
+                                        "ALIAS_LONG_NAME":  "Condensate",
+                                        "ALIAS_SHORT_NAME":  "Condensate",
+                                        "ABBREVIATION":  "COND",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "PRODUCTION_TYPE":  "Water",
+                                        "ALIAS_ID":  "PT-WATER",
+                                        "ALIAS_LONG_NAME":  "Water",
+                                        "ALIAS_SHORT_NAME":  "Water",
+                                        "ABBREVIATION":  "WTR",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_EQUIPMENT_TYPE",
+                       "description":  "Equipment type reference values",
+                       "data":  [
+                                    {
+                                        "EQUIPMENT_TYPE":  "Pump",
+                                        "ALIAS_ID":  "ET-PUMP",
+                                        "ALIAS_LONG_NAME":  "Pump",
+                                        "ALIAS_SHORT_NAME":  "Pump",
+                                        "ABBREVIATION":  "PMP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "EQUIPMENT_TYPE":  "Compressor",
+                                        "ALIAS_ID":  "ET-COMPRESSOR",
+                                        "ALIAS_LONG_NAME":  "Compressor",
+                                        "ALIAS_SHORT_NAME":  "Compressor",
+                                        "ABBREVIATION":  "COMP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "EQUIPMENT_TYPE":  "Separator",
+                                        "ALIAS_ID":  "ET-SEPARATOR",
+                                        "ALIAS_LONG_NAME":  "Separator",
+                                        "ALIAS_SHORT_NAME":  "Separator",
+                                        "ABBREVIATION":  "SEP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "EQUIPMENT_TYPE":  "Tank",
+                                        "ALIAS_ID":  "ET-TANK",
+                                        "ALIAS_LONG_NAME":  "Tank",
+                                        "ALIAS_SHORT_NAME":  "Tank",
+                                        "ABBREVIATION":  "TNK",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "EQUIPMENT_TYPE":  "Meter",
+                                        "ALIAS_ID":  "ET-METER",
+                                        "ALIAS_LONG_NAME":  "Meter",
+                                        "ALIAS_SHORT_NAME":  "Meter",
+                                        "ABBREVIATION":  "MTR",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_EQUIPMENT_STATUS",
+                       "description":  "Equipment status reference values",
+                       "data":  [
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Active",
+                                        "ALIAS_ID":  "ES-OP-ACTIVE",
+                                        "ALIAS_LONG_NAME":  "Active",
+                                        "ALIAS_SHORT_NAME":  "Active",
+                                        "ABBREVIATION":  "ACT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Inactive",
+                                        "ALIAS_ID":  "ES-OP-INACTIVE",
+                                        "ALIAS_LONG_NAME":  "Inactive",
+                                        "ALIAS_SHORT_NAME":  "Inactive",
+                                        "ABBREVIATION":  "INA",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Maintenance",
+                                        "ALIAS_ID":  "ES-OP-MAINTENANCE",
+                                        "ALIAS_LONG_NAME":  "Maintenance",
+                                        "ALIAS_SHORT_NAME":  "Maintenance",
+                                        "ABBREVIATION":  "MNT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "STATUS_TYPE":  "Operational",
+                                        "STATUS":  "Decommissioned",
+                                        "ALIAS_ID":  "ES-OP-DECOMMISSIONED",
+                                        "ALIAS_LONG_NAME":  "Decommissioned",
+                                        "ALIAS_SHORT_NAME":  "Decommissioned",
+                                        "ABBREVIATION":  "DEC",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_FACILITY_TYPE",
+                       "description":  "Facility type reference values",
+                       "data":  [
+                                    {
+                                        "FACILITY_TYPE":  "Processing Plant",
+                                        "ALIAS_ID":  "FT-PROCESSING",
+                                        "ALIAS_LONG_NAME":  "Processing Plant",
+                                        "ALIAS_SHORT_NAME":  "Processing Plant",
+                                        "ABBREVIATION":  "PROC",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "FACILITY_TYPE":  "Gathering System",
+                                        "ALIAS_ID":  "FT-GATHERING",
+                                        "ALIAS_LONG_NAME":  "Gathering System",
+                                        "ALIAS_SHORT_NAME":  "Gathering System",
+                                        "ABBREVIATION":  "GATH",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "FACILITY_TYPE":  "Terminal",
+                                        "ALIAS_ID":  "FT-TERMINAL",
+                                        "ALIAS_LONG_NAME":  "Terminal",
+                                        "ALIAS_SHORT_NAME":  "Terminal",
+                                        "ABBREVIATION":  "TERM",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "FACILITY_TYPE":  "Storage",
+                                        "ALIAS_ID":  "FT-STORAGE",
+                                        "ALIAS_LONG_NAME":  "Storage",
+                                        "ALIAS_SHORT_NAME":  "Storage",
+                                        "ABBREVIATION":  "STOR",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_DRILLING_METHOD",
+                       "description":  "Drilling method reference values",
+                       "data":  [
+                                    {
+                                        "DRILLING_METHOD":  "Rotary",
+                                        "ALIAS_ID":  "DM-ROTARY",
+                                        "ALIAS_LONG_NAME":  "Rotary",
+                                        "ALIAS_SHORT_NAME":  "Rotary",
+                                        "ABBREVIATION":  "ROT",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "DRILLING_METHOD":  "Directional",
+                                        "ALIAS_ID":  "DM-DIRECTIONAL",
+                                        "ALIAS_LONG_NAME":  "Directional",
+                                        "ALIAS_SHORT_NAME":  "Directional",
+                                        "ABBREVIATION":  "DIR",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "DRILLING_METHOD":  "Horizontal",
+                                        "ALIAS_ID":  "DM-HORIZONTAL",
+                                        "ALIAS_LONG_NAME":  "Horizontal",
+                                        "ALIAS_SHORT_NAME":  "Horizontal",
+                                        "ABBREVIATION":  "HOR",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "DRILLING_METHOD":  "Vertical",
+                                        "ALIAS_ID":  "DM-VERTICAL",
+                                        "ALIAS_LONG_NAME":  "Vertical",
+                                        "ALIAS_SHORT_NAME":  "Vertical",
+                                        "ABBREVIATION":  "VER",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_DRILLING_TYPE",
+                       "description":  "Drilling type reference values",
+                       "data":  [
+                                    {
+                                        "DRILLING_TYPE":  "Exploratory",
+                                        "ALIAS_ID":  "DT-EXPLORATORY",
+                                        "ALIAS_LONG_NAME":  "Exploratory",
+                                        "ALIAS_SHORT_NAME":  "Exploratory",
+                                        "ABBREVIATION":  "EXP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "DRILLING_TYPE":  "Development",
+                                        "ALIAS_ID":  "DT-DEVELOPMENT",
+                                        "ALIAS_LONG_NAME":  "Development",
+                                        "ALIAS_SHORT_NAME":  "Development",
+                                        "ABBREVIATION":  "DEV",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "DRILLING_TYPE":  "Appraisal",
+                                        "ALIAS_ID":  "DT-APPRAISAL",
+                                        "ALIAS_LONG_NAME":  "Appraisal",
+                                        "ALIAS_SHORT_NAME":  "Appraisal",
+                                        "ABBREVIATION":  "APP",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_COMPLETION_METHOD",
+                       "description":  "Completion method reference values",
+                       "data":  [
+                                    {
+                                        "COMPLETION_METHOD":  "Open Hole",
+                                        "ALIAS_ID":  "CM-OPENHOLE",
+                                        "ALIAS_LONG_NAME":  "Open Hole",
+                                        "ALIAS_SHORT_NAME":  "Open Hole",
+                                        "ABBREVIATION":  "OH",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COMPLETION_METHOD":  "Cased Hole",
+                                        "ALIAS_ID":  "CM-CASEDHOLE",
+                                        "ALIAS_LONG_NAME":  "Cased Hole",
+                                        "ALIAS_SHORT_NAME":  "Cased Hole",
+                                        "ABBREVIATION":  "CH",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COMPLETION_METHOD":  "Perforated",
+                                        "ALIAS_ID":  "CM-PERFORATED",
+                                        "ALIAS_LONG_NAME":  "Perforated",
+                                        "ALIAS_SHORT_NAME":  "Perforated",
+                                        "ABBREVIATION":  "PERF",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "COMPLETION_METHOD":  "Slotted Liner",
+                                        "ALIAS_ID":  "CM-SLOTTEDLINER",
+                                        "ALIAS_LONG_NAME":  "Slotted Liner",
+                                        "ALIAS_SHORT_NAME":  "Slotted Liner",
+                                        "ABBREVIATION":  "SL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_RESERVOIR_TYPE",
+                       "description":  "Reservoir type reference values",
+                       "data":  [
+                                    {
+                                        "RESERVOIR_TYPE":  "Oil",
+                                        "ALIAS_ID":  "RT-OIL",
+                                        "ALIAS_LONG_NAME":  "Oil",
+                                        "ALIAS_SHORT_NAME":  "Oil",
+                                        "ABBREVIATION":  "OIL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "RESERVOIR_TYPE":  "Gas",
+                                        "ALIAS_ID":  "RT-GAS",
+                                        "ALIAS_LONG_NAME":  "Gas",
+                                        "ALIAS_SHORT_NAME":  "Gas",
+                                        "ABBREVIATION":  "GAS",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "RESERVOIR_TYPE":  "Oil and Gas",
+                                        "ALIAS_ID":  "RT-OILGAS",
+                                        "ALIAS_LONG_NAME":  "Oil and Gas",
+                                        "ALIAS_SHORT_NAME":  "Oil and Gas",
+                                        "ABBREVIATION":  "O\u0026G",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "RESERVOIR_TYPE":  "Condensate",
+                                        "ALIAS_ID":  "RT-CONDENSATE",
+                                        "ALIAS_LONG_NAME":  "Condensate",
+                                        "ALIAS_SHORT_NAME":  "Condensate",
+                                        "ABBREVIATION":  "COND",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_FORMATION_TYPE",
+                       "description":  "Formation type reference values",
+                       "data":  [
+                                    {
+                                        "FORMATION_TYPE":  "Sandstone",
+                                        "ALIAS_ID":  "FT-SANDSTONE",
+                                        "ALIAS_LONG_NAME":  "Sandstone",
+                                        "ALIAS_SHORT_NAME":  "Sandstone",
+                                        "ABBREVIATION":  "SST",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "FORMATION_TYPE":  "Limestone",
+                                        "ALIAS_ID":  "FT-LIMESTONE",
+                                        "ALIAS_LONG_NAME":  "Limestone",
+                                        "ALIAS_SHORT_NAME":  "Limestone",
+                                        "ABBREVIATION":  "LST",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "FORMATION_TYPE":  "Dolomite",
+                                        "ALIAS_ID":  "FT-DOLOMITE",
+                                        "ALIAS_LONG_NAME":  "Dolomite",
+                                        "ALIAS_SHORT_NAME":  "Dolomite",
+                                        "ABBREVIATION":  "DOL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "FORMATION_TYPE":  "Shale",
+                                        "ALIAS_ID":  "FT-SHALE",
+                                        "ALIAS_LONG_NAME":  "Shale",
+                                        "ALIAS_SHORT_NAME":  "Shale",
+                                        "ABBREVIATION":  "SHL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   },
+                   {
+                       "tableName":  "RA_LITHOLOGY_TYPE",
+                       "description":  "Lithology type reference values",
+                       "data":  [
+                                    {
+                                        "LITHOLOGY_TYPE":  "Sandstone",
+                                        "ALIAS_ID":  "LT-SANDSTONE",
+                                        "ALIAS_LONG_NAME":  "Sandstone",
+                                        "ALIAS_SHORT_NAME":  "Sandstone",
+                                        "ABBREVIATION":  "SST",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "LITHOLOGY_TYPE":  "Limestone",
+                                        "ALIAS_ID":  "LT-LIMESTONE",
+                                        "ALIAS_LONG_NAME":  "Limestone",
+                                        "ALIAS_SHORT_NAME":  "Limestone",
+                                        "ABBREVIATION":  "LST",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "LITHOLOGY_TYPE":  "Dolomite",
+                                        "ALIAS_ID":  "LT-DOLOMITE",
+                                        "ALIAS_LONG_NAME":  "Dolomite",
+                                        "ALIAS_SHORT_NAME":  "Dolomite",
+                                        "ABBREVIATION":  "DOL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "LITHOLOGY_TYPE":  "Shale",
+                                        "ALIAS_ID":  "LT-SHALE",
+                                        "ALIAS_LONG_NAME":  "Shale",
+                                        "ALIAS_SHORT_NAME":  "Shale",
+                                        "ABBREVIATION":  "SHL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    },
+                                    {
+                                        "LITHOLOGY_TYPE":  "Conglomerate",
+                                        "ALIAS_ID":  "LT-CONGLOMERATE",
+                                        "ALIAS_LONG_NAME":  "Conglomerate",
+                                        "ALIAS_SHORT_NAME":  "Conglomerate",
+                                        "ABBREVIATION":  "CGL",
+                                        "ACTIVE_IND":  "Y",
+                                        "PREFERRED_IND":  "Y",
+                                        "ORIGINAL_IND":  "Y",
+                                        "SOURCE":  "PPDM"
+                                    }
+                                ]
+                   }
+               ]
+}

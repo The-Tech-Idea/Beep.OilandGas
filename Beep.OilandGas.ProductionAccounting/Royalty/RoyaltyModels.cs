@@ -43,6 +43,9 @@ namespace Beep.OilandGas.ProductionAccounting.Royalty
         /// Gets or sets the division order reference.
         /// </summary>
         public string? DivisionOrderId { get; set; }
+        public decimal RoyaltyRate { get; internal set; }
+        public DateTime EffectiveDate { get; internal set; }
+        public object ExpirationDate { get; internal set; }
     }
 
     /// <summary>

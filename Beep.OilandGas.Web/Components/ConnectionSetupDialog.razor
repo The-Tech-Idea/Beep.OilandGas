@@ -1,0 +1,439 @@
+@using Beep.OilandGas.ApiService.Models
+@using Beep.OilandGas.Models.DTOs
+@using System.Net.Http.Json
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+            <MudText Typo="Typo.h5" Class="mb-4">
+                <MudIcon Icon="@Icons.Material.Filled.Database" Class="mr-2" />
+                Database Connection Setup
+            </MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
+                @if (IsBlocking)
+                {
+                    <text>No database connections found. You must create a connection to continue using the application.</text>
+                }
+                else
+                {
+                    <text>Create a new database connection or set up a new PPDM39 database.</text>
+                }
+            </MudText>
+
+            <!-- Mode Selection -->
+            @if (!_modeSelected)
+            {
+                <MudPaper Elevation="2" Class="pa-4">
+                    <MudText Typo="Typo.h6" Class="mb-3">Choose Setup Option</MudText>
+                    <MudStack Spacing="3">
+                        <MudButton Variant="Variant.Outlined" 
+                                  Color="Color.Primary" 
+                                  Size="Size.Large"
+                                  FullWidth="true"
+                                  StartIcon="@Icons.Material.Filled.Link"
+                                  OnClick="@(() => SelectMode(SetupMode.ConnectionOnly))">
+                            <MudStack AlignItems="AlignItems.Start" Spacing="1">
+                                <MudText Typo="Typo.h6">Create Connection Only</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    Connect to an existing database
+                                </MudText>
+                            </MudStack>
+                        </MudButton>
+
+                        <MudButton Variant="Variant.Outlined" 
+                                  Color="Color.Primary" 
+                                  Size="Size.Large"
+                                  FullWidth="true"
+                                  StartIcon="@Icons.Material.Filled.Build"
+                                  OnClick="@(() => SelectMode(SetupMode.FullWizard))">
+                            <MudStack AlignItems="AlignItems.Start" Spacing="1">
+                                <MudText Typo="Typo.h6">Create Connection & Database</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    Create a new PPDM39 database and connection
+                                </MudText>
+                            </MudStack>
+                        </MudButton>
+                    </MudStack>
+                </MudPaper>
+            }
+            else
+            {
+                <!-- Connection Only Mode -->
+                @if (_currentMode == SetupMode.ConnectionOnly)
+                {
+                    <MudStepper @bind-ActiveStep="@_activeStep" Variant="Variant.Outlined" Color="Color.Primary" Class="mb-4">
+                        <!-- Step 1: Database Type -->
+                        <MudStep Title="Database Type" Icon="@Icons.Material.Filled.Storage">
+                            <MudPaper Class="pa-4" Elevation="1">
+                                <MudText Typo="Typo.h6" Class="mb-3">Select Database Type</MudText>
+                                <MudSelect T="string" 
+                                          Label="Database Type" 
+                                          Variant="Variant.Outlined"
+                                          @bind-Value="@_selectedDatabaseType"
+                                          Required="true">
+                                    @foreach (var dbType in _availableDatabaseTypes)
+                                    {
+                                        <MudSelectItem Value="@dbType">@dbType</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudPaper>
+                        </MudStep>
+
+                        <!-- Step 2: Connection Details -->
+                        <MudStep Title="Connection Details" Icon="@Icons.Material.Filled.Settings" Disabled="@(string.IsNullOrEmpty(_selectedDatabaseType))">
+                            <MudPaper Class="pa-4" Elevation="1">
+                                <MudText Typo="Typo.h6" Class="mb-3">Enter Connection Details</MudText>
+                                <MudGrid>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField @bind-Value="@_connectionName" 
+                                                     Label="Connection Name" 
+                                                     Variant="Variant.Outlined" 
+                                                     Required="true" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField @bind-Value="@_host" 
+                                                     Label="Host/Server" 
+                                                     Variant="Variant.Outlined" 
+                                                     Required="true"
+                                                     Placeholder="localhost" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField T="int?" 
+                                                     @bind-Value="@_port" 
+                                                     Label="Port" 
+                                                     Variant="Variant.Outlined"
+                                                     HelperText="@GetPortHelperText()" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="6">
+                                        <MudTextField @bind-Value="@_database" 
+                                                     Label="Database Name" 
+                                                     Variant="Variant.Outlined" 
+                                                     Required="true" />
+                                    </MudItem>
+                                    @if (_selectedDatabaseType != "SQLite")
+                                    {
+                                        <MudItem xs="12" md="6">
+                                            <MudTextField @bind-Value="@_schema" 
+                                                         Label="Schema (Optional)" 
+                                                         Variant="Variant.Outlined" />
+                                        </MudItem>
+                                        <MudItem xs="12" md="6">
+                                            <MudTextField @bind-Value="@_username" 
+                                                         Label="Username" 
+                                                         Variant="Variant.Outlined" />
+                                        </MudItem>
+                                        <MudItem xs="12" md="6">
+                                            <MudTextField @bind-Value="@_password" 
+                                                         Label="Password" 
+                                                         Variant="Variant.Outlined"
+                                                         InputType="InputType.Password" />
+                                        </MudItem>
+                                    }
+                                </MudGrid>
+
+                                <MudButton Variant="Variant.Filled" 
+                                          Color="Color.Primary" 
+                                          Class="mt-4"
+                                          StartIcon="@Icons.Material.Filled.CheckCircle"
+                                          OnClick="TestConnection"
+                                          Disabled="@(_isTestingConnection || !CanTestConnection())">
+                                    @if (_isTestingConnection)
+                                    {
+                                        <text>Testing...</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Test Connection</text>
+                                    }
+                                </MudButton>
+
+                                @if (_connectionTestResult != null)
+                                {
+                                    <MudAlert Severity="@(_connectionTestResult.Success ? Severity.Success : Severity.Error)" Class="mt-4">
+                                        @_connectionTestResult.Message
+                                    </MudAlert>
+                                }
+                            </MudPaper>
+                        </MudStep>
+
+                        <!-- Step 3: Save Connection -->
+                        <MudStep Title="Save Connection" Icon="@Icons.Material.Filled.Save" Disabled="@(_connectionTestResult == null || !_connectionTestResult.Success)">
+                            <MudPaper Class="pa-4" Elevation="1">
+                                <MudText Typo="Typo.h6" Class="mb-3">Save Connection</MudText>
+                                <MudCheckBox T="bool" @bind-Value="@_setAsCurrent" Label="Set as current connection" Class="mb-4" />
+                                
+                                <MudButton Variant="Variant.Filled" 
+                                          Color="Color.Primary" 
+                                          StartIcon="@Icons.Material.Filled.Save"
+                                          OnClick="SaveConnection"
+                                          Disabled="@(_isSavingConnection)">
+                                    @if (_isSavingConnection)
+                                    {
+                                        <text>Saving...</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Save Connection</text>
+                                    }
+                                </MudButton>
+
+                                @if (_saveResult != null)
+                                {
+                                    <MudAlert Severity="@(_saveResult.Success ? Severity.Success : Severity.Error)" Class="mt-4">
+                                        @_saveResult.Message
+                                    </MudAlert>
+                                }
+                            </MudPaper>
+                        </MudStep>
+                    </MudStepper>
+                }
+                else
+                {
+                    <!-- Full Wizard Mode - Redirect to full wizard page -->
+                    <MudPaper Elevation="2" Class="pa-4">
+                        <MudText Typo="Typo.h6" Class="mb-3">Full Database Creation Wizard</MudText>
+                        <MudText Typo="Typo.body1" Class="mb-4">
+                            The full database creation wizard will open in a new page. This process includes:
+                        </MudText>
+                        <MudList>
+                            <MudListItem Icon="@Icons.Material.Filled.CheckCircle">Database type selection</MudListItem>
+                            <MudListItem Icon="@Icons.Material.Filled.CheckCircle">Connection configuration</MudListItem>
+                            <MudListItem Icon="@Icons.Material.Filled.CheckCircle">Script selection and execution</MudListItem>
+                            <MudListItem Icon="@Icons.Material.Filled.CheckCircle">Database creation</MudListItem>
+                            <MudListItem Icon="@Icons.Material.Filled.CheckCircle">Connection saving</MudListItem>
+                        </MudList>
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  Class="mt-4"
+                                  StartIcon="@Icons.Material.Filled.OpenInNew"
+                                  OnClick="OpenFullWizard">
+                            Open Full Wizard
+                        </MudButton>
+                    </MudPaper>
+                }
+            }
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        @if (!_modeSelected || _currentMode == SetupMode.FullWizard)
+        {
+            <MudButton OnClick="Cancel">@(IsBlocking ? "Cancel" : "Close")</MudButton>
+        }
+        @if (_modeSelected && _currentMode == SetupMode.ConnectionOnly && _saveResult?.Success == true)
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Complete">Done</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public bool IsBlocking { get; set; } = false;
+    [Parameter] public EventCallback OnConnectionCreated { get; set; }
+
+    [Inject] ApiClient ApiClient { get; set; } = default!;
+    [Inject] ISnackbar Snackbar { get; set; } = default!;
+    [Inject] NavigationManager NavigationManager { get; set; } = default!;
+    [Inject] IDataManagementService DataManagementService { get; set; } = default!;
+
+    private enum SetupMode
+    {
+        ConnectionOnly,
+        FullWizard
+    }
+
+    private bool _modeSelected = false;
+    private SetupMode _currentMode;
+    private int _activeStep = 0;
+
+    // Database type
+    private string? _selectedDatabaseType;
+    private readonly List<string> _availableDatabaseTypes = new() { "SQL Server", "PostgreSQL", "MySQL", "Oracle", "SQLite" };
+    private readonly Dictionary<string, int> _defaultPorts = new()
+    {
+        { "SQL Server", 1433 },
+        { "PostgreSQL", 5432 },
+        { "MySQL", 3306 },
+        { "Oracle", 1521 },
+        { "SQLite", 0 }
+    };
+
+    // Connection details
+    private string _connectionName = string.Empty;
+    private string _host = "localhost";
+    private int? _port;
+    private string _database = string.Empty;
+    private string _schema = string.Empty;
+    private string _username = string.Empty;
+    private string _password = string.Empty;
+    private bool _setAsCurrent = true;
+
+    // Connection test
+    private bool _isTestingConnection = false;
+    private ConnectionTestResult? _connectionTestResult;
+
+    // Save connection
+    private bool _isSavingConnection = false;
+    private SaveConnectionResult? _saveResult;
+
+    private void SelectMode(SetupMode mode)
+    {
+        _currentMode = mode;
+        _modeSelected = true;
+        if (mode == SetupMode.FullWizard)
+        {
+            // For full wizard, we'll redirect to the full wizard page
+        }
+    }
+
+    private void OpenFullWizard()
+    {
+        // Close dialog and navigate to full wizard
+        MudDialog.Close();
+        NavigationManager.NavigateTo("/ppdm39/create-database");
+    }
+
+    private bool CanTestConnection()
+    {
+        return !string.IsNullOrEmpty(_selectedDatabaseType) &&
+               !string.IsNullOrEmpty(_connectionName) &&
+               !string.IsNullOrEmpty(_host) &&
+               !string.IsNullOrEmpty(_database);
+    }
+
+    private string GetPortHelperText()
+    {
+        if (!string.IsNullOrEmpty(_selectedDatabaseType) && _defaultPorts.ContainsKey(_selectedDatabaseType))
+        {
+            return $"Default: {_defaultPorts[_selectedDatabaseType]}";
+        }
+        return string.Empty;
+    }
+
+    private async Task TestConnection()
+    {
+        _isTestingConnection = true;
+        _connectionTestResult = null;
+
+        try
+        {
+            var config = BuildConnectionConfig();
+            _connectionTestResult = await ApiClient.PostAsync<ConnectionConfig, ConnectionTestResult>(
+                "/api/ppdm39/setup/test-connection", config);
+
+            if (_connectionTestResult?.Success == true)
+            {
+                Snackbar.Add("Connection test successful", Severity.Success);
+                // Auto-advance to next step
+                if (_activeStep < 2)
+                {
+                    _activeStep = 2;
+                }
+            }
+            else
+            {
+                Snackbar.Add($"Connection test failed: {_connectionTestResult?.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error testing connection: {ex.Message}", Severity.Error);
+            _connectionTestResult = new ConnectionTestResult
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+        finally
+        {
+            _isTestingConnection = false;
+        }
+    }
+
+    private ConnectionConfig BuildConnectionConfig()
+    {
+        return new ConnectionConfig
+        {
+            DatabaseType = _selectedDatabaseType ?? string.Empty,
+            ConnectionName = _connectionName,
+            Host = _host,
+            Port = _port ?? (_defaultPorts.ContainsKey(_selectedDatabaseType ?? "") ? _defaultPorts[_selectedDatabaseType!] : 0),
+            Database = _database,
+            Schema = _schema,
+            Username = _username,
+            Password = _password
+        };
+    }
+
+    private async Task SaveConnection()
+    {
+        _isSavingConnection = true;
+        _saveResult = null;
+
+        try
+        {
+            var config = BuildConnectionConfig();
+            var saveRequest = new SaveConnectionRequest
+            {
+                Connection = config,
+                TestAfterSave = false,
+                OpenAfterSave = _setAsCurrent
+            };
+
+            _saveResult = await ApiClient.PostAsync<SaveConnectionRequest, SaveConnectionResult>(
+                "/api/ppdm39/setup/save-connection", saveRequest);
+
+            if (_saveResult?.Success == true)
+            {
+                Snackbar.Add("Connection saved successfully", Severity.Success);
+                
+                if (_setAsCurrent)
+                {
+                    await DataManagementService.SetCurrentConnectionAsync(_connectionName);
+                }
+
+                // Refresh connections
+                await DataManagementService.RefreshConnectionsAsync();
+
+                // Notify parent
+                await OnConnectionCreated.InvokeAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to save connection: {_saveResult?.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving connection: {ex.Message}", Severity.Error);
+            _saveResult = new SaveConnectionResult
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
+        finally
+        {
+            _isSavingConnection = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        if (IsBlocking)
+        {
+            // Don't allow cancel if blocking - user must create connection
+            Snackbar.Add("You must create a database connection to continue", Severity.Warning);
+        }
+        else
+        {
+            MudDialog.Cancel();
+        }
+    }
+
+    private void Complete()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}
+

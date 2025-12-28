@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Core.Interfaces;
 
 namespace Beep.OilandGas.PPDM39.Core.Interfaces
 {

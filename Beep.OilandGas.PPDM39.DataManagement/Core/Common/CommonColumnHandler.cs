@@ -1,5 +1,5 @@
 using System;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Interfaces;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Core.Common
 {

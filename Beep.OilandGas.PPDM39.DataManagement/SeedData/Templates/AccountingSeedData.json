@@ -1,0 +1,263 @@
+{
+  "category": "Accounting",
+  "version": "1.0",
+  "description": "Seed data for ProductionAccounting workflows. Note: Custom LOV values are also available in LIST_OF_VALUE table via CustomLOVSeedData.json for unified LOV management.",
+  "tables": [
+    {
+      "tableName": "GL_ACCOUNT",
+      "description": "Chart of accounts",
+      "data": [
+        {
+          "GL_ACCOUNT_ID": "1000",
+          "ACCOUNT_NUMBER": "1000",
+          "ACCOUNT_NAME": "Cash",
+          "ACCOUNT_TYPE": "Asset",
+          "ACCOUNT_CATEGORY": "Current Assets",
+          "NORMAL_BALANCE": "Debit",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "GL_ACCOUNT_ID": "1100",
+          "ACCOUNT_NUMBER": "1100",
+          "ACCOUNT_NAME": "Accounts Receivable",
+          "ACCOUNT_TYPE": "Asset",
+          "ACCOUNT_CATEGORY": "Current Assets",
+          "NORMAL_BALANCE": "Debit",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "GL_ACCOUNT_ID": "1200",
+          "ACCOUNT_NUMBER": "1200",
+          "ACCOUNT_NAME": "Inventory",
+          "ACCOUNT_TYPE": "Asset",
+          "ACCOUNT_CATEGORY": "Current Assets",
+          "NORMAL_BALANCE": "Debit",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "GL_ACCOUNT_ID": "2000",
+          "ACCOUNT_NUMBER": "2000",
+          "ACCOUNT_NAME": "Accounts Payable",
+          "ACCOUNT_TYPE": "Liability",
+          "ACCOUNT_CATEGORY": "Current Liabilities",
+          "NORMAL_BALANCE": "Credit",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "GL_ACCOUNT_ID": "4000",
+          "ACCOUNT_NUMBER": "4000",
+          "ACCOUNT_NAME": "Oil Revenue",
+          "ACCOUNT_TYPE": "Revenue",
+          "ACCOUNT_CATEGORY": "Operating Revenue",
+          "NORMAL_BALANCE": "Credit",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "GL_ACCOUNT_ID": "4100",
+          "ACCOUNT_NUMBER": "4100",
+          "ACCOUNT_NAME": "Gas Revenue",
+          "ACCOUNT_TYPE": "Revenue",
+          "ACCOUNT_CATEGORY": "Operating Revenue",
+          "NORMAL_BALANCE": "Credit",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "GL_ACCOUNT_ID": "5000",
+          "ACCOUNT_NUMBER": "5000",
+          "ACCOUNT_NAME": "Exploration Costs",
+          "ACCOUNT_TYPE": "Expense",
+          "ACCOUNT_CATEGORY": "Operating Expenses",
+          "NORMAL_BALANCE": "Debit",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "GL_ACCOUNT_ID": "5100",
+          "ACCOUNT_NUMBER": "5100",
+          "ACCOUNT_NAME": "Development Costs",
+          "ACCOUNT_TYPE": "Expense",
+          "ACCOUNT_CATEGORY": "Operating Expenses",
+          "NORMAL_BALANCE": "Debit",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "GL_ACCOUNT_ID": "5200",
+          "ACCOUNT_NUMBER": "5200",
+          "ACCOUNT_NAME": "Production Costs",
+          "ACCOUNT_TYPE": "Expense",
+          "ACCOUNT_CATEGORY": "Operating Expenses",
+          "NORMAL_BALANCE": "Debit",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "COST_TYPE",
+      "description": "Cost type classifications",
+      "data": [
+        {
+          "COST_TYPE_ID": "EXPLORATION",
+          "COST_TYPE_NAME": "Exploration",
+          "DESCRIPTION": "Exploration costs",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "COST_TYPE_ID": "DEVELOPMENT",
+          "COST_TYPE_NAME": "Development",
+          "DESCRIPTION": "Development costs",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "COST_TYPE_ID": "PRODUCTION",
+          "COST_TYPE_NAME": "Production",
+          "DESCRIPTION": "Production costs",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "COST_CATEGORY",
+      "description": "Cost category classifications",
+      "data": [
+        {
+          "COST_CATEGORY_ID": "DRILLING",
+          "COST_CATEGORY_NAME": "Drilling",
+          "DESCRIPTION": "Drilling costs",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "COST_CATEGORY_ID": "COMPLETION",
+          "COST_CATEGORY_NAME": "Completion",
+          "DESCRIPTION": "Completion costs",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "COST_CATEGORY_ID": "WORKOVER",
+          "COST_CATEGORY_NAME": "Workover",
+          "DESCRIPTION": "Workover costs",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "COST_CATEGORY_ID": "OPERATIONS",
+          "COST_CATEGORY_NAME": "Operations",
+          "DESCRIPTION": "Operations costs",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "REVENUE_TYPE",
+      "description": "Revenue type classifications",
+      "data": [
+        {
+          "REVENUE_TYPE_ID": "OIL",
+          "REVENUE_TYPE_NAME": "Oil",
+          "DESCRIPTION": "Oil revenue",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "REVENUE_TYPE_ID": "GAS",
+          "REVENUE_TYPE_NAME": "Gas",
+          "DESCRIPTION": "Gas revenue",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "REVENUE_TYPE_ID": "NGL",
+          "REVENUE_TYPE_NAME": "Natural Gas Liquids",
+          "DESCRIPTION": "NGL revenue",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "INVOICE_TYPE",
+      "description": "Invoice type classifications",
+      "data": [
+        {
+          "INVOICE_TYPE_ID": "SERVICE",
+          "INVOICE_TYPE_NAME": "Service",
+          "DESCRIPTION": "Service invoice",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "INVOICE_TYPE_ID": "MATERIAL",
+          "INVOICE_TYPE_NAME": "Material",
+          "DESCRIPTION": "Material invoice",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "INVOICE_TYPE_ID": "EQUIPMENT",
+          "INVOICE_TYPE_NAME": "Equipment",
+          "DESCRIPTION": "Equipment invoice",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "PAYMENT_METHOD",
+      "description": "Payment method classifications",
+      "data": [
+        {
+          "PAYMENT_METHOD_ID": "CHECK",
+          "PAYMENT_METHOD_NAME": "Check",
+          "DESCRIPTION": "Payment by check",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "PAYMENT_METHOD_ID": "WIRE",
+          "PAYMENT_METHOD_NAME": "Wire Transfer",
+          "DESCRIPTION": "Payment by wire transfer",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "PAYMENT_METHOD_ID": "ACH",
+          "PAYMENT_METHOD_NAME": "ACH",
+          "DESCRIPTION": "Payment by ACH",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "TAX_TYPE",
+      "description": "Tax type classifications",
+      "data": [
+        {
+          "TAX_TYPE_ID": "INCOME",
+          "TAX_TYPE_NAME": "Income Tax",
+          "DESCRIPTION": "Income tax",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "TAX_TYPE_ID": "PROPERTY",
+          "TAX_TYPE_NAME": "Property Tax",
+          "DESCRIPTION": "Property tax",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "TAX_TYPE_ID": "SEVERANCE",
+          "TAX_TYPE_NAME": "Severance Tax",
+          "DESCRIPTION": "Severance tax",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "ROYALTY_TYPE",
+      "description": "Royalty type classifications",
+      "data": [
+        {
+          "ROYALTY_TYPE_ID": "MINERAL",
+          "ROYALTY_TYPE_NAME": "Mineral Royalty",
+          "DESCRIPTION": "Mineral royalty",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "ROYALTY_TYPE_ID": "OVERRIDING",
+          "ROYALTY_TYPE_NAME": "Overriding Royalty",
+          "DESCRIPTION": "Overriding royalty",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    }
+  ]
+}
+

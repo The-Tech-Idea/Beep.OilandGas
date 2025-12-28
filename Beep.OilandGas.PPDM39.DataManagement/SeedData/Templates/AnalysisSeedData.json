@@ -1,0 +1,176 @@
+{
+  "category": "Analysis",
+  "version": "1.0",
+  "description": "Seed data for analysis modules",
+  "tables": [
+    {
+      "tableName": "ANALYSIS_STATUS",
+      "description": "Analysis result status values",
+      "data": [
+        {
+          "STATUS_ID": "PENDING",
+          "STATUS_NAME": "Pending",
+          "DESCRIPTION": "Analysis is pending",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "IN_PROGRESS",
+          "STATUS_NAME": "In Progress",
+          "DESCRIPTION": "Analysis is in progress",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "COMPLETED",
+          "STATUS_NAME": "Completed",
+          "DESCRIPTION": "Analysis has been completed",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "FAILED",
+          "STATUS_NAME": "Failed",
+          "DESCRIPTION": "Analysis has failed",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "CANCELLED",
+          "STATUS_NAME": "Cancelled",
+          "DESCRIPTION": "Analysis has been cancelled",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "ANALYSIS_TYPE",
+      "description": "Analysis type classifications",
+      "data": [
+        {
+          "ANALYSIS_TYPE_ID": "CHOKE_ANALYSIS",
+          "ANALYSIS_TYPE_NAME": "Choke Analysis",
+          "DESCRIPTION": "Choke performance analysis",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "ANALYSIS_TYPE_ID": "GAS_LIFT_ANALYSIS",
+          "ANALYSIS_TYPE_NAME": "Gas Lift Analysis",
+          "DESCRIPTION": "Gas lift system analysis",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "ANALYSIS_TYPE_ID": "PUMP_ANALYSIS",
+          "ANALYSIS_TYPE_NAME": "Pump Analysis",
+          "DESCRIPTION": "Pump performance analysis",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "ANALYSIS_TYPE_ID": "SUCKER_ROD_ANALYSIS",
+          "ANALYSIS_TYPE_NAME": "Sucker Rod Analysis",
+          "DESCRIPTION": "Sucker rod pumping analysis",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "ANALYSIS_TYPE_ID": "COMPRESSOR_ANALYSIS",
+          "ANALYSIS_TYPE_NAME": "Compressor Analysis",
+          "DESCRIPTION": "Compressor performance analysis",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "ANALYSIS_TYPE_ID": "PIPELINE_ANALYSIS",
+          "ANALYSIS_TYPE_NAME": "Pipeline Analysis",
+          "DESCRIPTION": "Pipeline flow analysis",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "ANALYSIS_TYPE_ID": "PLUNGER_LIFT_ANALYSIS",
+          "ANALYSIS_TYPE_NAME": "Plunger Lift Analysis",
+          "DESCRIPTION": "Plunger lift system analysis",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "ANALYSIS_TYPE_ID": "HYDRAULIC_PUMP_ANALYSIS",
+          "ANALYSIS_TYPE_NAME": "Hydraulic Pump Analysis",
+          "DESCRIPTION": "Hydraulic pump analysis",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "ANALYSIS_TYPE_ID": "NODAL_ANALYSIS",
+          "ANALYSIS_TYPE_NAME": "Nodal Analysis",
+          "DESCRIPTION": "Nodal analysis",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "ANALYSIS_TYPE_ID": "DCA",
+          "ANALYSIS_TYPE_NAME": "Decline Curve Analysis",
+          "DESCRIPTION": "Decline curve analysis",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "ANALYSIS_TYPE_ID": "WELL_TEST",
+          "ANALYSIS_TYPE_NAME": "Well Test Analysis",
+          "DESCRIPTION": "Well test analysis",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "ANALYSIS_TYPE_ID": "PRODUCTION_FORECAST",
+          "ANALYSIS_TYPE_NAME": "Production Forecast",
+          "DESCRIPTION": "Production forecasting analysis",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "EQUIPMENT_TYPE",
+      "description": "Equipment type classifications",
+      "data": [
+        {
+          "EQUIPMENT_TYPE_ID": "CHOKE",
+          "EQUIPMENT_TYPE_NAME": "Choke",
+          "DESCRIPTION": "Choke equipment",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "EQUIPMENT_TYPE_ID": "GAS_LIFT_VALVE",
+          "EQUIPMENT_TYPE_NAME": "Gas Lift Valve",
+          "DESCRIPTION": "Gas lift valve equipment",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "EQUIPMENT_TYPE_ID": "PUMP",
+          "EQUIPMENT_TYPE_NAME": "Pump",
+          "DESCRIPTION": "Pump equipment",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "EQUIPMENT_TYPE_ID": "COMPRESSOR",
+          "EQUIPMENT_TYPE_NAME": "Compressor",
+          "DESCRIPTION": "Compressor equipment",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "EQUIPMENT_TYPE_ID": "SEPARATOR",
+          "EQUIPMENT_TYPE_NAME": "Separator",
+          "DESCRIPTION": "Separator equipment",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "EQUIPMENT_TYPE_ID": "TANK",
+          "EQUIPMENT_TYPE_NAME": "Tank",
+          "DESCRIPTION": "Tank equipment",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "EQUIPMENT_TYPE_ID": "VALVE",
+          "EQUIPMENT_TYPE_NAME": "Valve",
+          "DESCRIPTION": "Valve equipment",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "EQUIPMENT_TYPE_ID": "METER",
+          "EQUIPMENT_TYPE_NAME": "Meter",
+          "DESCRIPTION": "Meter equipment",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    }
+  ]
+}
+

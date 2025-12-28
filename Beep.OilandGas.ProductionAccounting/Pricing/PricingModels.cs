@@ -224,6 +224,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
         /// Gets or sets the source of the price.
         /// </summary>
         public string Source { get; set; } = string.Empty;
+        public string Currency { get; internal set; }
     }
 
     /// <summary>

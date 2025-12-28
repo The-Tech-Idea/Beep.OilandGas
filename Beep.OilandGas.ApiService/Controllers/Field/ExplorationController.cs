@@ -2,38 +2,55 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Linq;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
-using Beep.OilandGas.PPDM39.Core.DTOs;
-using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.Extensions.Logging;
-using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
     /// <summary>
-    /// API controller for Exploration phase operations, field-scoped
+    /// API controller for Exploration phase business workflows, field-scoped
+    /// 
+    /// NOTE: For CRUD operations (Create, Read, Update, Delete), please use DataManagementController:
+    /// - Get prospects: GET /api/datamanagement/PROSPECT?filters=[{"field":"FIELD_ID","operator":"equals","value":"{fieldId}"}]
+    /// - Get prospect: GET /api/datamanagement/PROSPECT/{id}
+    /// - Create prospect: POST /api/datamanagement/PROSPECT
+    /// - Update prospect: PUT /api/datamanagement/PROSPECT/{id}
+    /// - Delete prospect: DELETE /api/datamanagement/PROSPECT/{id}
+    /// - Get seismic surveys: GET /api/datamanagement/SEIS_ACQTN_SURVEY
+    /// - Create seismic survey: POST /api/datamanagement/SEIS_ACQTN_SURVEY
+    /// - Get seismic lines: GET /api/datamanagement/SEIS_LINE
+    /// - Get exploratory wells: GET /api/datamanagement/WELL with filters
+    /// 
+    /// This controller focuses on exploration workflow processes via ExplorationProcessService.
     /// </summary>
     [ApiController]
     [Route("api/field/current/exploration")]
     public class ExplorationController : ControllerBase
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;
+        private readonly Beep.OilandGas.LifeCycle.Services.Exploration.Processes.ExplorationProcessService _explorationProcessService;
         private readonly ILogger<ExplorationController> _logger;
 
         public ExplorationController(
             IFieldOrchestrator fieldOrchestrator,
+            Beep.OilandGas.LifeCycle.Services.Exploration.Processes.ExplorationProcessService explorationProcessService,
             ILogger<ExplorationController> logger)
         {
             _fieldOrchestrator = fieldOrchestrator ?? throw new ArgumentNullException(nameof(fieldOrchestrator));
+            _explorationProcessService = explorationProcessService ?? throw new ArgumentNullException(nameof(explorationProcessService));
             _logger = logger;
         }
 
+        // ============================================
+        // EXPLORATION WORKFLOW ENDPOINTS
+        // ============================================
+
         /// <summary>
-        /// Get all prospects for the current field
+        /// Start Lead to Prospect workflow
         /// </summary>
-        [HttpGet("prospects")]
-        public async Task<ActionResult<List<PROSPECT>>> GetProspects([FromQuery] List<AppFilter>? filters = null)
+        [HttpPost("workflows/lead-to-prospect")]
+        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartLeadToProspectProcess(
+            [FromBody] StartLeadToProspectRequest request)
         {
             try
             {
@@ -43,27 +60,96 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                     return BadRequest(new { error = "No active field is set" });
                 }
 
-                var explorationService = _fieldOrchestrator.GetExplorationService();
-                var prospects = await explorationService.GetProspectsForFieldAsync(currentFieldId, filters);
+                if (string.IsNullOrWhiteSpace(request.LeadId))
+                {
+                    return BadRequest(new { error = "LeadId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var instance = await _explorationProcessService.StartLeadToProspectProcessAsync(
+                    request.LeadId, 
+                    currentFieldId, 
+                    request.UserId);
                 
-                return Ok(prospects);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
+                return Ok(instance);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting prospects for current field");
+                _logger.LogError(ex, "Error starting Lead to Prospect process");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
 
         /// <summary>
-        /// Get a prospect by ID (must belong to current field)
+        /// Evaluate lead
         /// </summary>
-        [HttpGet("prospects/{id}")]
-        public async Task<ActionResult<PROSPECT>> GetProspect(string id)
+        [HttpPost("workflows/evaluate-lead")]
+        public async Task<ActionResult<bool>> EvaluateLead([FromBody] EvaluateLeadRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _explorationProcessService.EvaluateLeadAsync(
+                    request.InstanceId, 
+                    request.EvaluationData ?? new Dictionary<string, object>(), 
+                    request.UserId);
+                
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error evaluating lead");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Approve lead
+        /// </summary>
+        [HttpPost("workflows/approve-lead")]
+        public async Task<ActionResult<bool>> ApproveLead([FromBody] ApproveLeadRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _explorationProcessService.ApproveLeadAsync(request.InstanceId, request.UserId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving lead");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Start Prospect to Discovery workflow
+        /// </summary>
+        [HttpPost("workflows/prospect-to-discovery")]
+        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartProspectToDiscoveryProcess(
+            [FromBody] StartProspectToDiscoveryRequest request)
         {
             try
             {
@@ -73,32 +159,36 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                     return BadRequest(new { error = "No active field is set" });
                 }
 
-                var explorationService = _fieldOrchestrator.GetExplorationService();
-                var prospect = await explorationService.GetProspectForFieldAsync(currentFieldId, id);
-                
-                if (prospect == null)
+                if (string.IsNullOrWhiteSpace(request.ProspectId))
                 {
-                    return NotFound(new { error = $"Prospect {id} not found or does not belong to current field" });
+                    return BadRequest(new { error = "ProspectId is required" });
                 }
 
-                return Ok(prospect);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var instance = await _explorationProcessService.StartProspectToDiscoveryProcessAsync(
+                    request.ProspectId, 
+                    currentFieldId, 
+                    request.UserId);
+                
+                return Ok(instance);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting prospect {ProspectId} for current field", id);
+                _logger.LogError(ex, "Error starting Prospect to Discovery process");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
 
         /// <summary>
-        /// Create a new prospect for the current field
+        /// Start Discovery to Development workflow
         /// </summary>
-        [HttpPost("prospects")]
-        public async Task<ActionResult<PROSPECT>> CreateProspect([FromBody] ProspectRequest request, [FromQuery] string userId)
+        [HttpPost("workflows/discovery-to-development")]
+        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartDiscoveryToDevelopmentProcess(
+            [FromBody] StartDiscoveryToDevelopmentRequest request)
         {
             try
             {
@@ -108,220 +198,64 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                     return BadRequest(new { error = "No active field is set" });
                 }
 
-                if (string.IsNullOrWhiteSpace(userId))
+                if (string.IsNullOrWhiteSpace(request.DiscoveryId))
                 {
-                    return BadRequest(new { error = "userId is required" });
+                    return BadRequest(new { error = "DiscoveryId is required" });
                 }
 
-                var explorationService = _fieldOrchestrator.GetExplorationService();
-                var prospect = await explorationService.CreateProspectForFieldAsync(currentFieldId, request, userId);
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var instance = await _explorationProcessService.StartDiscoveryToDevelopmentProcessAsync(
+                    request.DiscoveryId, 
+                    currentFieldId, 
+                    request.UserId);
                 
-                // Get prospect ID from the returned PROSPECT object
-                var prospectIdProperty = prospect.GetType().GetProperty("PROSPECT_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                var prospectId = prospectIdProperty?.GetValue(prospect)?.ToString() ?? string.Empty;
-                
-                return CreatedAtAction(nameof(GetProspect), new { id = prospectId }, prospect);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
+                return Ok(instance);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating prospect for current field");
+                _logger.LogError(ex, "Error starting Discovery to Development process");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
 
-        /// <summary>
-        /// Update a prospect (must belong to current field)
-        /// </summary>
-        [HttpPut("prospects/{id}")]
-        public async Task<ActionResult<PROSPECT>> UpdateProspect(string id, [FromBody] ProspectRequest request, [FromQuery] string userId)
-        {
-            try
-            {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                    return BadRequest(new { error = "No active field is set" });
-                }
+    }
 
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    return BadRequest(new { error = "userId is required" });
-                }
+    // ============================================
+    // REQUEST DTOs
+    // ============================================
 
-                var explorationService = _fieldOrchestrator.GetExplorationService();
-                var prospect = await explorationService.UpdateProspectForFieldAsync(currentFieldId, id, request, userId);
-                
-                return Ok(prospect);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating prospect {ProspectId} for current field", id);
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
+    public class StartLeadToProspectRequest
+    {
+        public string LeadId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
 
-        /// <summary>
-        /// Soft delete a prospect (must belong to current field)
-        /// </summary>
-        [HttpDelete("prospects/{id}")]
-        public async Task<ActionResult> DeleteProspect(string id, [FromQuery] string userId)
-        {
-            try
-            {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                    return BadRequest(new { error = "No active field is set" });
-                }
+    public class EvaluateLeadRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public Dictionary<string, object>? EvaluationData { get; set; }
+        public string UserId { get; set; } = string.Empty;
+    }
 
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    return BadRequest(new { error = "userId is required" });
-                }
+    public class ApproveLeadRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
 
-                var explorationService = _fieldOrchestrator.GetExplorationService();
-                var success = await explorationService.DeleteProspectForFieldAsync(currentFieldId, id, userId);
-                
-                if (!success)
-                {
-                    return NotFound(new { error = $"Prospect {id} not found or could not be deleted" });
-                }
+    public class StartProspectToDiscoveryRequest
+    {
+        public string ProspectId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
 
-                return NoContent();
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting prospect {ProspectId} for current field", id);
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Get all seismic surveys for the current field
-        /// </summary>
-        [HttpGet("seismic-surveys")]
-        public async Task<ActionResult<List<SEIS_ACQTN_SURVEY>>> GetSeismicSurveys([FromQuery] List<AppFilter>? filters = null)
-        {
-            try
-            {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                    return BadRequest(new { error = "No active field is set" });
-                }
-
-                var explorationService = _fieldOrchestrator.GetExplorationService();
-                var surveys = await explorationService.GetSeismicSurveysForFieldAsync(currentFieldId, filters);
-                
-                return Ok(surveys);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting seismic surveys for current field");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Create a new seismic survey for the current field
-        /// </summary>
-        [HttpPost("seismic-surveys")]
-        public async Task<ActionResult<SEIS_ACQTN_SURVEY>> CreateSeismicSurvey([FromBody] SeismicSurveyRequest request, [FromQuery] string userId)
-        {
-            try
-            {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                    return BadRequest(new { error = "No active field is set" });
-                }
-
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    return BadRequest(new { error = "userId is required" });
-                }
-
-                var explorationService = _fieldOrchestrator.GetExplorationService();
-                var survey = await explorationService.CreateSeismicSurveyForFieldAsync(currentFieldId, request, userId);
-                
-                return Ok(survey);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating seismic survey for current field");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Get seismic lines for a seismic survey
-        /// </summary>
-        [HttpGet("seismic-surveys/{surveyId}/lines")]
-        public async Task<ActionResult<List<SEIS_LINE>>> GetSeismicLines(string surveyId, [FromQuery] List<AppFilter>? filters = null)
-        {
-            try
-            {
-                var explorationService = _fieldOrchestrator.GetExplorationService();
-                var lines = await explorationService.GetSeismicLinesForSurveyAsync(surveyId, filters);
-                
-                return Ok(lines);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting seismic lines for survey {SurveyId}", surveyId);
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Get all exploratory wells for the current field
-        /// </summary>
-        [HttpGet("exploratory-wells")]
-        public async Task<ActionResult<List<WELL>>> GetExploratoryWells([FromQuery] List<AppFilter>? filters = null)
-        {
-            try
-            {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                    return BadRequest(new { error = "No active field is set" });
-                }
-
-                var explorationService = _fieldOrchestrator.GetExplorationService();
-                var wells = await explorationService.GetExploratoryWellsForFieldAsync(currentFieldId, filters);
-                
-                return Ok(wells);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting exploratory wells for current field");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
+    public class StartDiscoveryToDevelopmentRequest
+    {
+        public string DiscoveryId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
     }
 }

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
@@ -60,7 +59,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
             return UnitOfWorkFactory.CreateUnitOfWork(typeof(FACILITY), _editor, _connectionName, "FACILITY", "FACILITY_ID");
         }
 
-        public async Task<List<ProductionOperationDto>> GetProductionOperationsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<List<PDEN>> GetProductionOperationsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
@@ -81,19 +80,10 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (endDate.HasValue)
                 pdenList = pdenList.Where(p => p.CURRENT_STATUS_DATE <= endDate.Value).ToList();
 
-            var operations = new List<ProductionOperationDto>();
-            var wellUow = GetWellUnitOfWork();
-
-            foreach (var pden in pdenList)
-            {
-                var well = wellUow.Read(string.Empty) as WELL; // PDEN doesn't have UWI - use empty string or find alternative
-                operations.Add(MapToProductionOperationDto(pden, well));
-            }
-
-            return operations;
+            return pdenList;
         }
 
-        public async Task<ProductionOperationDto?> GetProductionOperationAsync(string operationId)
+        public async Task<PDEN?> GetProductionOperationAsync(string operationId)
         {
             if (string.IsNullOrWhiteSpace(operationId))
                 return null;
@@ -103,16 +93,13 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (pden == null || pden.ACTIVE_IND != "Y")
                 return null;
 
-            var wellUow = GetWellUnitOfWork();
-            var well = wellUow.Read(pden.AREA_ID ?? string.Empty) as WELL;
-
-            return MapToProductionOperationDto(pden, well);
+            return pden;
         }
 
-        public async Task<ProductionOperationDto> CreateProductionOperationAsync(CreateProductionOperationDto createDto)
+        public async Task<PDEN> CreateProductionOperationAsync(CreateProductionOperationRequest createRequest)
         {
-            if (createDto == null)
-                throw new ArgumentNullException(nameof(createDto));
+            if (createRequest == null)
+                throw new ArgumentNullException(nameof(createRequest));
 
             var pdenUow = GetPDENUnitOfWork();
             var pden = new PDEN
@@ -120,7 +107,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
                 PDEN_ID = Guid.NewGuid().ToString(),
                 PDEN_SUBTYPE = "PRODUCTION",
                 ACTIVE_IND = "Y",
-                CURRENT_STATUS_DATE = createDto.OperationDate,
+                CURRENT_STATUS_DATE = createRequest.OperationDate ?? DateTime.UtcNow,
                 ROW_CREATED_DATE = DateTime.UtcNow,
                 ROW_CHANGED_DATE = DateTime.UtcNow
             };
@@ -131,13 +118,10 @@ namespace Beep.OilandGas.ProductionOperations.Services
 
             await pdenUow.Commit();
 
-            var wellUow = GetWellUnitOfWork();
-            var well = wellUow.Read(createDto.WellUWI) as WELL;
-
-            return MapToProductionOperationDto(pden, well);
+            return pden;
         }
 
-        public async Task<List<ProductionReportDto>> GetProductionReportsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<List<PDEN>> GetProductionReportsAsync(string? wellUWI = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
@@ -158,19 +142,13 @@ namespace Beep.OilandGas.ProductionOperations.Services
             if (endDate.HasValue)
                 pdenList = pdenList.Where(p => p.CURRENT_STATUS_DATE <= endDate.Value).ToList();
 
-            return pdenList.Select(p => new ProductionReportDto
-            {
-                ReportId = p.PDEN_ID ?? string.Empty,
-                WellUWI = string.Empty, // PDEN doesn't have UWI - production reports may be field-level
-                ReportDate = p.CURRENT_STATUS_DATE,
-                Status = p.ACTIVE_IND == "Y" ? "Active" : "Inactive"
-            }).ToList();
+            return pdenList;
         }
 
-        public async Task<List<WellOperationDto>> GetWellOperationsAsync(string wellUWI)
+        public async Task<List<PDEN>> GetWellOperationsAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
-                return new List<WellOperationDto>();
+                return new List<PDEN>();
 
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
@@ -181,50 +159,20 @@ namespace Beep.OilandGas.ProductionOperations.Services
             var units = await pdenUow.Get(filters);
             List<PDEN> pdenList = ConvertToList<PDEN>(units);
 
-            return pdenList.Select(p => new WellOperationDto
-            {
-                OperationId = p.PDEN_ID ?? string.Empty,
-                WellUWI = wellUWI,
-                OperationType = p.PDEN_SUBTYPE ?? "Production",
-                OperationDate = p.CURRENT_STATUS_DATE,
-                Status = p.ACTIVE_IND == "Y" ? "Active" : "Inactive"
-            }).ToList();
+            return pdenList;
         }
 
-        public async Task<List<FacilityOperationDto>> GetFacilityOperationsAsync(string facilityId)
+        public async Task<List<FACILITY>> GetFacilityOperationsAsync(string facilityId)
         {
             if (string.IsNullOrWhiteSpace(facilityId))
-                return new List<FacilityOperationDto>();
+                return new List<FACILITY>();
 
             var facilityUow = GetFacilityUnitOfWork();
             var facility = facilityUow.Read(facilityId) as FACILITY;
             if (facility == null)
-                return new List<FacilityOperationDto>();
+                return new List<FACILITY>();
 
-            return new List<FacilityOperationDto>
-            {
-                new FacilityOperationDto
-                {
-                    OperationId = facility.FACILITY_ID ?? string.Empty,
-                    FacilityId = facilityId,
-                    FacilityName = facility.FACILITY_SHORT_NAME ?? string.Empty,
-                    OperationDate = facility.ACTIVE_DATE,
-                    OperationType = facility.FACILITY_TYPE ?? string.Empty,
-                    Status = facility.ACTIVE_IND == "Y" ? "Active" : "Inactive"
-                }
-            };
-        }
-
-        private ProductionOperationDto MapToProductionOperationDto(PDEN pden, WELL? well)
-        {
-            return new ProductionOperationDto
-            {
-                OperationId = pden.PDEN_ID ?? string.Empty,
-                WellUWI = well?.UWI ?? string.Empty,
-                WellName = well?.UWI ?? string.Empty,
-                OperationDate = pden.CURRENT_STATUS_DATE,
-                Status = pden.ACTIVE_IND == "Y" ? "Active" : "Inactive"
-            };
+            return new List<FACILITY> { facility };
         }
     }
 }

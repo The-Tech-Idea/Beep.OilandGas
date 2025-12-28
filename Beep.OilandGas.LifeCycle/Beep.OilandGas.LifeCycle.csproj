@@ -8,14 +8,26 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
-    <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.DCA\Beep.OilandGas.DCA.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.ProductionForecasting\Beep.OilandGas.ProductionForecasting.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.EconomicAnalysis\Beep.OilandGas.EconomicAnalysis.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.NodalAnalysis\Beep.OilandGas.NodalAnalysis.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.WellTestAnalysis\Beep.OilandGas.WellTestAnalysis.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.FlashCalculations\Beep.OilandGas.FlashCalculations.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.ProductionAccounting\Beep.OilandGas.ProductionAccounting.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.GasLift\Beep.OilandGas.GasLift.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.PipelineAnalysis\Beep.OilandGas.PipelineAnalysis.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.CompressorAnalysis\Beep.OilandGas.CompressorAnalysis.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.ChokeAnalysis\Beep.OilandGas.ChokeAnalysis.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.SuckerRodPumping\Beep.OilandGas.SuckerRodPumping.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.PermitsAndApplications\Beep.OilandGas.PermitsAndApplications.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.4" />
+    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.6" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
     <PackageReference Include="TheTechIdea.Beep.AssemblyLoader" Version="2.0.15" />
     <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.55" />

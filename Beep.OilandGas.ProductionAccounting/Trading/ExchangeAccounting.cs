@@ -195,6 +195,10 @@ namespace Beep.OilandGas.ProductionAccounting.Trading
         /// Gets the net value (receipt - delivery).
         /// </summary>
         public decimal NetValue => ReceiptValue - DeliveryValue;
+
+        public string DeliveryPoint { get; internal set; }
+        public object PricePerBarrel { get; internal set; }
+        public object TotalValue { get; internal set; }
     }
 
     /// <summary>

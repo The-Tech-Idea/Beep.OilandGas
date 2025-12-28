@@ -58,6 +58,7 @@ namespace Beep.OilandGas.ProductionAccounting.Royalty
         /// Gets or sets the payment information.
         /// </summary>
         public RoyaltyPayment? Payment { get; set; }
+        public decimal TotalRoyaltyAmount { get; internal set; }
     }
 
     /// <summary>

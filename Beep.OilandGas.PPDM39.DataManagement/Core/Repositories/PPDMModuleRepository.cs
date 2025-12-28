@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
@@ -487,11 +487,31 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Repositories
                     {
                         list.Add(typedItem);
                     }
+                    else if (typeof(TResult) == typeof(Dictionary<string, object>) && item is Dictionary<string, object> dictItem)
+                    {
+                        list.Add((TResult)(object)dictItem);
+                    }
+                    else if (item != null)
+                    {
+                        // Try explicit cast for Dictionary<string, object>
+                        if (typeof(TResult) == typeof(Dictionary<string, object>))
+                        {
+                            var dict = item as Dictionary<string, object>;
+                            if (dict != null)
+                            {
+                                list.Add((TResult)(object)dict);
+                            }
+                        }
+                    }
                 }
             }
             else if (result is TResult singleItem)
             {
                 list.Add(singleItem);
+            }
+            else if (typeof(TResult) == typeof(Dictionary<string, object>) && result is Dictionary<string, object> dictResult)
+            {
+                list.Add((TResult)(object)dictResult);
             }
 
             return list;

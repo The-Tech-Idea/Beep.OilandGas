@@ -3,16 +3,26 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core.DTOs;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.GasLift;
+using Beep.OilandGas.GasLift.Calculations;
+using Beep.OilandGas.GasLift.Models;
+using Beep.OilandGas.PipelineAnalysis;
+using Beep.OilandGas.PipelineAnalysis.Calculations;
+using Beep.OilandGas.PipelineAnalysis.Models;
+using Beep.OilandGas.CompressorAnalysis;
+using Beep.OilandGas.CompressorAnalysis.Calculations;
+using Beep.OilandGas.CompressorAnalysis.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Beep.OilandGas.LifeCycle.Services.Development
 {
@@ -469,7 +479,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             }
         }
 
-        public async Task<FACILITY> CreateFacilityForFieldAsync(string fieldId, FacilityRequest facilityData, string userId)
+        public async Task<FacilityResponse> CreateFacilityForFieldAsync(string fieldId, FacilityRequest facilityData, string userId)
         {
             try
             {
@@ -501,7 +511,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 var result = await repo.InsertAsync(facilityEntity, userId);
                 
                 // Convert PPDM model back to DTO
-                return (FacilityResponse)_mappingService.ConvertPPDMModelToDTORuntime(result, typeof(FacilityResponse), entityType);
+                return _mappingService.ConvertPPDMModelToDTORuntime(result, typeof(FacilityResponse), entityType) as FacilityResponse 
+                    ?? throw new InvalidOperationException("Failed to convert facility entity to FacilityResponse");
             }
             catch (Exception ex)
             {
@@ -587,5 +598,1079 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 throw;
             }
         }
+
+        #region Gas Lift Integration
+
+        /// <summary>
+        /// Analyzes gas lift potential for a well
+        /// </summary>
+        public async Task<GasLiftPotentialResult> AnalyzeGasLiftPotentialAsync(
+            string fieldId,
+            string wellId,
+            decimal minGasInjectionRate = 100m,
+            decimal maxGasInjectionRate = 5000m,
+            int numberOfPoints = 50,
+            string? userId = null)
+        {
+            try
+            {
+                _logger?.LogInformation("Analyzing gas lift potential for well {WellId} in field {FieldId}", wellId, fieldId);
+
+                // Get well properties from PPDM
+                var wellProperties = await GetGasLiftWellPropertiesAsync(fieldId, wellId);
+
+                // Perform gas lift potential analysis
+                var result = GasLiftPotentialCalculator.AnalyzeGasLiftPotential(
+                    wellProperties,
+                    minGasInjectionRate,
+                    maxGasInjectionRate,
+                    numberOfPoints);
+
+                // Store results in WELL_EQUIPMENT table
+                await StoreGasLiftPotentialResultsAsync(wellId, result, userId ?? "SYSTEM");
+
+                _logger?.LogInformation("Gas lift potential analysis completed for well {WellId}. Optimal injection rate: {Rate} Mscf/day, Max production: {Production} bbl/day",
+                    wellId, result.OptimalGasInjectionRate, result.MaximumProductionRate);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error analyzing gas lift potential for well {WellId}", wellId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Designs gas lift valves for a well (US field units)
+        /// </summary>
+        public async Task<GasLiftValveDesignResult> DesignGasLiftValvesAsync(
+            string fieldId,
+            string wellId,
+            decimal gasInjectionPressure,
+            int numberOfValves = 5,
+            bool useSIUnits = false,
+            string? userId = null)
+        {
+            try
+            {
+                _logger?.LogInformation("Designing gas lift valves for well {WellId} in field {FieldId}", wellId, fieldId);
+
+                // Get well properties from PPDM
+                var wellProperties = await GetGasLiftWellPropertiesAsync(fieldId, wellId);
+
+                // Design valves
+                GasLiftValveDesignResult result;
+                if (useSIUnits)
+                {
+                    result = GasLiftValveDesignCalculator.DesignValvesSI(
+                        wellProperties, gasInjectionPressure, numberOfValves);
+                }
+                else
+                {
+                    result = GasLiftValveDesignCalculator.DesignValvesUS(
+                        wellProperties, gasInjectionPressure, numberOfValves);
+                }
+
+                // Store valve design in WELL_EQUIPMENT table
+                await StoreGasLiftValveDesignAsync(wellId, result, userId ?? "SYSTEM");
+
+                _logger?.LogInformation("Gas lift valve design completed for well {WellId}. Designed {Count} valves",
+                    wellId, result.Valves.Count);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error designing gas lift valves for well {WellId}", wellId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Calculates gas lift valve spacing
+        /// </summary>
+        public async Task<GasLiftValveSpacingResult> CalculateGasLiftValveSpacingAsync(
+            string fieldId,
+            string wellId,
+            decimal gasInjectionPressure,
+            int numberOfValves = 5,
+            string spacingMethod = "EQUAL_PRESSURE_DROP", // EQUAL_PRESSURE_DROP or EQUAL_DEPTH
+            string? userId = null)
+        {
+            try
+            {
+                _logger?.LogInformation("Calculating gas lift valve spacing for well {WellId} in field {FieldId}", wellId, fieldId);
+
+                // Get well properties from PPDM
+                var wellProperties = await GetGasLiftWellPropertiesAsync(fieldId, wellId);
+
+                // Calculate valve spacing
+                GasLiftValveSpacingResult result;
+                if (spacingMethod == "EQUAL_DEPTH")
+                {
+                    result = GasLiftValveSpacingCalculator.CalculateEqualDepthSpacing(
+                        wellProperties, gasInjectionPressure, numberOfValves);
+                }
+                else
+                {
+                    result = GasLiftValveSpacingCalculator.CalculateEqualPressureDropSpacing(
+                        wellProperties, gasInjectionPressure, numberOfValves);
+                }
+
+                // Store spacing results
+                await StoreGasLiftValveSpacingAsync(wellId, result, spacingMethod, userId ?? "SYSTEM");
+
+                _logger?.LogInformation("Gas lift valve spacing calculated for well {WellId}. Method: {Method}",
+                    wellId, spacingMethod);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error calculating gas lift valve spacing for well {WellId}", wellId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Gas Lift Helper Methods
+
+        /// <summary>
+        /// Retrieves well properties from PPDM for gas lift analysis
+        /// </summary>
+        private async Task<GasLiftWellProperties> GetGasLiftWellPropertiesAsync(string fieldId, string wellId)
+        {
+            try
+            {
+                // Get well data from PPDM
+                var wellMetadata = await _metadata.GetTableMetadataAsync("WELL");
+                if (wellMetadata == null)
+                {
+                    throw new InvalidOperationException("WELL table metadata not found");
+                }
+
+                var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL), _connectionName, "WELL", null);
+
+                var wellFilters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = wellId },
+                    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId }
+                };
+
+                var wells = await wellRepo.GetAsync(wellFilters);
+                var wellsList = wells?.ToList() ?? new List<object>();
+                if (wellsList.Count == 0)
+                {
+                    throw new InvalidOperationException($"Well {wellId} not found in field {fieldId}");
+                }
+
+                var well = wellsList[0] as WELL;
+                if (well == null)
+                {
+                    throw new InvalidOperationException($"Failed to retrieve well {wellId}");
+                }
+
+                // Get wellbore/tubing data from WELL_EQUIPMENT or WELLBORE
+                // This is a simplified implementation - in production, you would retrieve actual values
+                var wellProperties = new GasLiftWellProperties
+                {
+                    WellDepth = !string.IsNullOrEmpty(well.FINAL_TD_OUOM) && well.FINAL_TD_OUOM == "FT" 
+                        ? well.FINAL_TD 
+                        : 10000m, // Default 10,000 feet
+                    TubingDiameter = 2.875m, // Default - would retrieve from WELL_EQUIPMENT
+                    CasingDiameter = 7.0m, // Default - would retrieve from WELL_EQUIPMENT
+                    WellheadPressure = 100m, // Default - would retrieve from well test or production data
+                    BottomHolePressure = 2000m, // Default - would retrieve from well test or reservoir data
+                    WellheadTemperature = 520m, // Default 60°F = 520°R
+                    BottomHoleTemperature = 580m, // Default 120°F = 580°R
+                    OilGravity = 35m, // Default 35 API - would retrieve from reservoir/fluid data
+                    WaterCut = 0.3m, // Default 30% - would retrieve from production data
+                    GasOilRatio = 500m, // Default 500 scf/bbl - would retrieve from production data
+                    GasSpecificGravity = 0.65m, // Default - would retrieve from gas analysis
+                    DesiredProductionRate = 2000m // Default 2000 bbl/day
+                };
+
+                _logger?.LogWarning("Using default values for some well properties. For accurate analysis, provide well properties in request or ensure PPDM data is complete.");
+
+                return wellProperties;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving well properties for gas lift analysis");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Stores gas lift potential analysis results in WELL_EQUIPMENT table
+        /// </summary>
+        private async Task StoreGasLiftPotentialResultsAsync(
+            string wellId,
+            GasLiftPotentialResult result,
+            string userId)
+        {
+            try
+            {
+                var equipmentMetadata = await _metadata.GetTableMetadataAsync("WELL_EQUIPMENT");
+                if (equipmentMetadata == null)
+                {
+                    _logger?.LogWarning("WELL_EQUIPMENT table metadata not found, skipping storage");
+                    return;
+                }
+
+                var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(Dictionary<string, object>), _connectionName, "WELL_EQUIPMENT", null);
+
+                var equipmentRecord = new Dictionary<string, object>
+                {
+                    ["WELL_EQUIPMENT_ID"] = Guid.NewGuid().ToString(),
+                    ["WELL_ID"] = wellId,
+                    ["EQUIPMENT_TYPE"] = "GAS_LIFT_SYSTEM",
+                    ["EQUIPMENT_NAME"] = "Gas Lift Potential Analysis",
+                    ["DESCRIPTION"] = $"Optimal injection rate: {result.OptimalGasInjectionRate:F2} Mscf/day, Max production: {result.MaximumProductionRate:F2} bbl/day",
+                    ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
+                    {
+                        OptimalGasInjectionRate = result.OptimalGasInjectionRate,
+                        MaximumProductionRate = result.MaximumProductionRate,
+                        OptimalGasLiquidRatio = result.OptimalGasLiquidRatio,
+                        PerformancePoints = result.PerformancePoints.Select(p => new
+                        {
+                            p.GasInjectionRate,
+                            p.ProductionRate,
+                            p.GasLiquidRatio,
+                            p.BottomHolePressure
+                        })
+                    })
+                };
+
+                await equipmentRepo.InsertAsync(equipmentRecord, userId);
+                _logger?.LogInformation("Stored gas lift potential results for well {WellId}", wellId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error storing gas lift potential results for well {WellId}", wellId);
+                // Don't throw - storage failure shouldn't fail the operation
+            }
+        }
+
+        /// <summary>
+        /// Stores gas lift valve design in WELL_EQUIPMENT table
+        /// </summary>
+        private async Task StoreGasLiftValveDesignAsync(
+            string wellId,
+            GasLiftValveDesignResult result,
+            string userId)
+        {
+            try
+            {
+                var equipmentMetadata = await _metadata.GetTableMetadataAsync("WELL_EQUIPMENT");
+                if (equipmentMetadata == null)
+                {
+                    _logger?.LogWarning("WELL_EQUIPMENT table metadata not found, skipping storage");
+                    return;
+                }
+
+                var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(Dictionary<string, object>), _connectionName, "WELL_EQUIPMENT", null);
+
+                // Store each valve as a separate equipment record
+                foreach (var valve in result.Valves)
+                {
+                    var equipmentRecord = new Dictionary<string, object>
+                    {
+                        ["WELL_EQUIPMENT_ID"] = Guid.NewGuid().ToString(),
+                        ["WELL_ID"] = wellId,
+                        ["EQUIPMENT_TYPE"] = "GAS_LIFT_VALVE",
+                        ["EQUIPMENT_NAME"] = $"Gas Lift Valve at {valve.Depth:F0} ft",
+                        ["DESCRIPTION"] = $"Port size: {valve.PortSize:F3} in, Opening pressure: {valve.OpeningPressure:F2} psia",
+                        ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
+                        {
+                            valve.Depth,
+                            valve.PortSize,
+                            valve.OpeningPressure,
+                            valve.ClosingPressure,
+                            valve.ValveType,
+                            valve.Temperature,
+                            valve.GasInjectionRate
+                        })
+                    };
+
+                    await equipmentRepo.InsertAsync(equipmentRecord, userId);
+                }
+
+                _logger?.LogInformation("Stored gas lift valve design for well {WellId} ({Count} valves)", wellId, result.Valves.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error storing gas lift valve design for well {WellId}", wellId);
+                // Don't throw - storage failure shouldn't fail the operation
+            }
+        }
+
+        /// <summary>
+        /// Stores gas lift valve spacing results
+        /// </summary>
+        private async Task StoreGasLiftValveSpacingAsync(
+            string wellId,
+            GasLiftValveSpacingResult result,
+            string spacingMethod,
+            string userId)
+        {
+            try
+            {
+                var equipmentMetadata = await _metadata.GetTableMetadataAsync("WELL_EQUIPMENT");
+                if (equipmentMetadata == null)
+                {
+                    _logger?.LogWarning("WELL_EQUIPMENT table metadata not found, skipping storage");
+                    return;
+                }
+
+                var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(Dictionary<string, object>), _connectionName, "WELL_EQUIPMENT", null);
+
+                var equipmentRecord = new Dictionary<string, object>
+                {
+                    ["WELL_EQUIPMENT_ID"] = Guid.NewGuid().ToString(),
+                    ["WELL_ID"] = wellId,
+                    ["EQUIPMENT_TYPE"] = "GAS_LIFT_VALVE_SPACING",
+                    ["EQUIPMENT_NAME"] = "Gas Lift Valve Spacing",
+                    ["DESCRIPTION"] = $"Spacing method: {spacingMethod}, {result.NumberOfValves} valves",
+                    ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
+                    {
+                        SpacingMethod = spacingMethod,
+                        TotalDepthCoverage = result.TotalDepthCoverage,
+                        NumberOfValves = result.NumberOfValves,
+                        ValveDepths = result.ValveDepths,
+                        OpeningPressures = result.OpeningPressures
+                    })
+                };
+
+                await equipmentRepo.InsertAsync(equipmentRecord, userId);
+                _logger?.LogInformation("Stored gas lift valve spacing for well {WellId}", wellId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error storing gas lift valve spacing for well {WellId}", wellId);
+                // Don't throw - storage failure shouldn't fail the operation
+            }
+        }
+
+        #endregion
+
+        #region Pipeline Analysis Integration
+
+        /// <summary>
+        /// Analyzes pipeline capacity for gas or liquid pipelines
+        /// </summary>
+        public async Task<PipelineCapacityResult> AnalyzePipelineCapacityAsync(
+            string fieldId,
+            string pipelineId,
+            string pipelineType = "GAS", // GAS or LIQUID
+            decimal? gasFlowRate = null,
+            decimal? liquidFlowRate = null,
+            decimal? gasSpecificGravity = null,
+            decimal? liquidSpecificGravity = null,
+            string? userId = null)
+        {
+            try
+            {
+                _logger?.LogInformation("Analyzing pipeline capacity for pipeline {PipelineId} in field {FieldId}, type: {Type}",
+                    pipelineId, fieldId, pipelineType);
+
+                // Get pipeline properties from PPDM
+                var pipelineProperties = await GetPipelinePropertiesFromPPDMAsync(fieldId, pipelineId);
+
+                PipelineCapacityResult result;
+                if (pipelineType.ToUpper() == "GAS")
+                {
+                    // Gas pipeline capacity
+                    var gasFlowProperties = new GasPipelineFlowProperties
+                    {
+                        Pipeline = pipelineProperties,
+                        GasFlowRate = gasFlowRate ?? 1000m, // Default
+                        GasSpecificGravity = gasSpecificGravity ?? 0.65m,
+                        GasMolecularWeight = (gasSpecificGravity ?? 0.65m) * 28.9645m,
+                        BasePressure = 14.7m,
+                        BaseTemperature = 520m
+                    };
+
+                    result = PipelineCapacityCalculator.CalculateGasPipelineCapacity(gasFlowProperties);
+                }
+                else
+                {
+                    // Liquid pipeline capacity
+                    var liquidFlowProperties = new LiquidPipelineFlowProperties
+                    {
+                        Pipeline = pipelineProperties,
+                        LiquidFlowRate = liquidFlowRate ?? 1000m, // Default
+                        LiquidSpecificGravity = liquidSpecificGravity ?? 0.85m,
+                        LiquidViscosity = 1.0m
+                    };
+
+                    result = PipelineCapacityCalculator.CalculateLiquidPipelineCapacity(liquidFlowProperties);
+                }
+
+                // Store results in PIPELINE table
+                await StorePipelineCapacityResultsAsync(pipelineId, result, pipelineType, userId ?? "SYSTEM");
+
+                _logger?.LogInformation("Pipeline capacity analysis completed for pipeline {PipelineId}. Max flow rate: {FlowRate}, Pressure drop: {PressureDrop}",
+                    pipelineId, result.MaximumFlowRate, result.PressureDrop);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error analyzing pipeline capacity for pipeline {PipelineId}", pipelineId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Analyzes pipeline flow (flow rate or pressure drop) for gas or liquid pipelines
+        /// </summary>
+        public async Task<PipelineFlowAnalysisResult> AnalyzePipelineFlowAsync(
+            string fieldId,
+            string pipelineId,
+            string pipelineType = "GAS", // GAS or LIQUID
+            decimal? gasFlowRate = null,
+            decimal? liquidFlowRate = null,
+            decimal? gasSpecificGravity = null,
+            decimal? liquidSpecificGravity = null,
+            string? userId = null)
+        {
+            try
+            {
+                _logger?.LogInformation("Analyzing pipeline flow for pipeline {PipelineId} in field {FieldId}, type: {Type}",
+                    pipelineId, fieldId, pipelineType);
+
+                // Get pipeline properties from PPDM
+                var pipelineProperties = await GetPipelinePropertiesFromPPDMAsync(fieldId, pipelineId);
+
+                PipelineFlowAnalysisResult result;
+                if (pipelineType.ToUpper() == "GAS")
+                {
+                    // Gas pipeline flow
+                    var gasFlowProperties = new GasPipelineFlowProperties
+                    {
+                        Pipeline = pipelineProperties,
+                        GasFlowRate = gasFlowRate ?? 1000m,
+                        GasSpecificGravity = gasSpecificGravity ?? 0.65m,
+                        GasMolecularWeight = (gasSpecificGravity ?? 0.65m) * 28.9645m,
+                        BasePressure = 14.7m,
+                        BaseTemperature = 520m
+                    };
+
+                    result = PipelineFlowCalculator.CalculateGasFlow(gasFlowProperties);
+                }
+                else
+                {
+                    // Liquid pipeline flow
+                    var liquidFlowProperties = new LiquidPipelineFlowProperties
+                    {
+                        Pipeline = pipelineProperties,
+                        LiquidFlowRate = liquidFlowRate ?? 1000m,
+                        LiquidSpecificGravity = liquidSpecificGravity ?? 0.85m,
+                        LiquidViscosity = 1.0m
+                    };
+
+                    result = PipelineFlowCalculator.CalculateLiquidFlow(liquidFlowProperties);
+                }
+
+                // Store results in PIPELINE table
+                await StorePipelineFlowResultsAsync(pipelineId, result, pipelineType, userId ?? "SYSTEM");
+
+                _logger?.LogInformation("Pipeline flow analysis completed for pipeline {PipelineId}. Flow rate: {FlowRate}, Pressure drop: {PressureDrop}",
+                    pipelineId, result.FlowRate, result.PressureDrop);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error analyzing pipeline flow for pipeline {PipelineId}", pipelineId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Pipeline Analysis Helper Methods
+
+        /// <summary>
+        /// Retrieves pipeline properties from PPDM for analysis
+        /// </summary>
+        private async Task<PipelineProperties> GetPipelinePropertiesFromPPDMAsync(string fieldId, string pipelineId)
+        {
+            try
+            {
+                // Get pipeline data from PPDM
+                var pipelineMetadata = await _metadata.GetTableMetadataAsync("PIPELINE");
+                if (pipelineMetadata == null)
+                {
+                    throw new InvalidOperationException("PIPELINE table metadata not found");
+                }
+
+                var pipelineRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(PIPELINE), _connectionName, "PIPELINE", null);
+
+                var pipelineFilters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "PIPELINE_ID", Operator = "=", FilterValue = pipelineId },
+                    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId }
+                };
+
+                var pipelines = await pipelineRepo.GetAsync(pipelineFilters);
+                var pipelinesList = pipelines?.ToList() ?? new List<object>();
+                if (pipelinesList.Count == 0)
+                {
+                    throw new InvalidOperationException($"Pipeline {pipelineId} not found in field {fieldId}");
+                }
+
+                var pipeline = pipelinesList[0] as PIPELINE;
+                if (pipeline == null)
+                {
+                    throw new InvalidOperationException($"Failed to retrieve pipeline {pipelineId}");
+                }
+
+                // Map PPDM pipeline to PipelineProperties
+                // This is a simplified implementation - in production, you would retrieve actual values from PIPELINE and related tables
+                var pipelineProperties = new PipelineProperties
+                {
+                    Diameter = !string.IsNullOrEmpty(pipeline.DIAMETER_OUOM) && pipeline.DIAMETER_OUOM == "IN"
+                        ? (pipeline.DIAMETER ?? 12m)
+                        : 12m, // Default 12 inches
+                    Length = !string.IsNullOrEmpty(pipeline.LENGTH_OUOM) && pipeline.LENGTH_OUOM == "FT"
+                        ? (pipeline.LENGTH ?? 50000m)
+                        : 50000m, // Default 50,000 feet
+                    Roughness = 0.00015m, // Default for steel pipe
+                    ElevationChange = 0m, // Would retrieve from pipeline route data
+                    InletPressure = 1000m, // Default - would retrieve from operational data
+                    OutletPressure = 500m, // Default - would retrieve from operational data
+                    AverageTemperature = 540m // Default 80°F = 540°R
+                };
+
+                _logger?.LogWarning("Using default values for some pipeline properties. For accurate analysis, provide pipeline properties in request or ensure PPDM data is complete.");
+
+                return pipelineProperties;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving pipeline properties for analysis");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Stores pipeline capacity analysis results in PIPELINE table
+        /// </summary>
+        private async Task StorePipelineCapacityResultsAsync(
+            string pipelineId,
+            PipelineCapacityResult result,
+            string pipelineType,
+            string userId)
+        {
+            try
+            {
+                var pipelineRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(PIPELINE), _connectionName, "PIPELINE", null);
+
+                // Update pipeline with capacity results
+                // Note: In production, you might want to store in a separate PIPELINE_ANALYSIS table
+                var updateData = new Dictionary<string, object>
+                {
+                    ["PIPELINE_ID"] = pipelineId,
+                    ["CAPACITY_ANALYSIS_JSON"] = JsonSerializer.Serialize(new
+                    {
+                        PipelineType = pipelineType,
+                        MaximumFlowRate = result.MaximumFlowRate,
+                        PressureDrop = result.PressureDrop,
+                        FlowVelocity = result.FlowVelocity,
+                        ReynoldsNumber = result.ReynoldsNumber,
+                        FrictionFactor = result.FrictionFactor,
+                        PressureGradient = result.PressureGradient,
+                        OutletPressure = result.OutletPressure,
+                        AnalysisDate = DateTime.UtcNow
+                    })
+                };
+
+                await pipelineRepo.UpdateAsync(updateData, userId);
+                _logger?.LogInformation("Stored pipeline capacity results for pipeline {PipelineId}", pipelineId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error storing pipeline capacity results for pipeline {PipelineId}", pipelineId);
+                // Don't throw - storage failure shouldn't fail the operation
+            }
+        }
+
+        /// <summary>
+        /// Stores pipeline flow analysis results in PIPELINE table
+        /// </summary>
+        private async Task StorePipelineFlowResultsAsync(
+            string pipelineId,
+            PipelineFlowAnalysisResult result,
+            string pipelineType,
+            string userId)
+        {
+            try
+            {
+                var pipelineRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(PIPELINE), _connectionName, "PIPELINE", null);
+
+                // Update pipeline with flow results
+                var updateData = new Dictionary<string, object>
+                {
+                    ["PIPELINE_ID"] = pipelineId,
+                    ["FLOW_ANALYSIS_JSON"] = JsonSerializer.Serialize(new
+                    {
+                        PipelineType = pipelineType,
+                        FlowRate = result.FlowRate,
+                        PressureDrop = result.PressureDrop,
+                        FlowVelocity = result.FlowVelocity,
+                        ReynoldsNumber = result.ReynoldsNumber,
+                        FrictionFactor = result.FrictionFactor,
+                        FlowRegime = result.FlowRegime,
+                        AnalysisDate = DateTime.UtcNow
+                    })
+                };
+
+                await pipelineRepo.UpdateAsync(updateData, userId);
+                _logger?.LogInformation("Stored pipeline flow results for pipeline {PipelineId}", pipelineId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error storing pipeline flow results for pipeline {PipelineId}", pipelineId);
+                // Don't throw - storage failure shouldn't fail the operation
+            }
+        }
+
+        #endregion
+
+        #region Compressor Analysis Integration
+
+        /// <summary>
+        /// Analyzes compressor power requirements for centrifugal or reciprocating compressors
+        /// </summary>
+        public async Task<CompressorPowerResult> AnalyzeCompressorPowerAsync(
+            string fieldId,
+            string facilityId,
+            string compressorType = "CENTRIFUGAL", // CENTRIFUGAL or RECIPROCATING
+            decimal? suctionPressure = null,
+            decimal? dischargePressure = null,
+            decimal? gasFlowRate = null,
+            decimal? gasSpecificGravity = null,
+            bool useSIUnits = false,
+            string? userId = null)
+        {
+            try
+            {
+                _logger?.LogInformation("Analyzing compressor power for facility {FacilityId} in field {FieldId}, type: {Type}",
+                    facilityId, fieldId, compressorType);
+
+                // Get compressor operating conditions from PPDM or request
+                var operatingConditions = await GetCompressorOperatingConditionsAsync(
+                    fieldId, facilityId, suctionPressure, dischargePressure, gasFlowRate, gasSpecificGravity);
+
+                CompressorPowerResult result;
+                if (compressorType.ToUpper() == "RECIPROCATING")
+                {
+                    // Reciprocating compressor
+                    var compressorProperties = await GetReciprocatingCompressorPropertiesAsync(
+                        facilityId, operatingConditions);
+                    result = ReciprocatingCompressorCalculator.CalculatePower(compressorProperties, useSIUnits);
+                }
+                else
+                {
+                    // Centrifugal compressor
+                    var compressorProperties = await GetCentrifugalCompressorPropertiesAsync(
+                        facilityId, operatingConditions);
+                    result = CentrifugalCompressorCalculator.CalculatePower(compressorProperties, useSIUnits);
+                }
+
+                // Store results in FACILITY_EQUIPMENT table
+                await StoreCompressorPowerResultsAsync(facilityId, result, compressorType, userId ?? "SYSTEM");
+
+                _logger?.LogInformation("Compressor power analysis completed for facility {FacilityId}. Brake HP: {BHP}, Motor HP: {MotorHP}",
+                    facilityId, result.BrakeHorsepower, result.MotorHorsepower);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error analyzing compressor power for facility {FacilityId}", facilityId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Analyzes compressor pressure requirements
+        /// </summary>
+        public async Task<CompressorPressureResult> AnalyzeCompressorPressureAsync(
+            string fieldId,
+            string facilityId,
+            decimal requiredFlowRate,
+            decimal? maxPower = null,
+            decimal? compressorEfficiency = null,
+            decimal? suctionPressure = null,
+            decimal? gasSpecificGravity = null,
+            string? userId = null)
+        {
+            try
+            {
+                _logger?.LogInformation("Analyzing compressor pressure for facility {FacilityId} in field {FieldId}",
+                    facilityId, fieldId);
+
+                // Get compressor operating conditions
+                var operatingConditions = await GetCompressorOperatingConditionsAsync(
+                    fieldId, facilityId, suctionPressure, null, requiredFlowRate, gasSpecificGravity);
+
+                // Calculate required pressure
+                var result = CompressorPressureCalculator.CalculateRequiredPressure(
+                    operatingConditions,
+                    requiredFlowRate,
+                    maxPower ?? 1000m,
+                    compressorEfficiency ?? 0.75m);
+
+                // Store results in FACILITY_EQUIPMENT table
+                await StoreCompressorPressureResultsAsync(facilityId, result, userId ?? "SYSTEM");
+
+                _logger?.LogInformation("Compressor pressure analysis completed for facility {FacilityId}. Required discharge pressure: {Pressure} psia",
+                    facilityId, result.RequiredDischargePressure);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error analyzing compressor pressure for facility {FacilityId}", facilityId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Compressor Analysis Helper Methods
+
+        /// <summary>
+        /// Retrieves compressor operating conditions from PPDM
+        /// </summary>
+        private async Task<CompressorOperatingConditions> GetCompressorOperatingConditionsAsync(
+            string fieldId,
+            string facilityId,
+            decimal? suctionPressure,
+            decimal? dischargePressure,
+            decimal? gasFlowRate,
+            decimal? gasSpecificGravity)
+        {
+            try
+            {
+                // Get facility/equipment data from PPDM
+                // This is a simplified implementation - in production, you would retrieve actual values
+                var operatingConditions = new CompressorOperatingConditions
+                {
+                    SuctionPressure = suctionPressure ?? 100m, // Default 100 psia
+                    DischargePressure = dischargePressure ?? 500m, // Default 500 psia
+                    SuctionTemperature = 520m, // Default 60°F = 520°R
+                    DischargeTemperature = 600m, // Default 140°F = 600°R
+                    GasFlowRate = gasFlowRate ?? 1000m, // Default 1000 Mscf/day
+                    GasSpecificGravity = gasSpecificGravity ?? 0.65m,
+                    GasMolecularWeight = (gasSpecificGravity ?? 0.65m) * 28.9645m,
+                    CompressorEfficiency = 0.75m,
+                    MechanicalEfficiency = 0.95m
+                };
+
+                _logger?.LogWarning("Using default values for some compressor operating conditions. For accurate analysis, provide values in request or ensure PPDM data is complete.");
+
+                return operatingConditions;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving compressor operating conditions");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets centrifugal compressor properties from PPDM
+        /// </summary>
+        private async Task<CentrifugalCompressorProperties> GetCentrifugalCompressorPropertiesAsync(
+            string facilityId,
+            CompressorOperatingConditions operatingConditions)
+        {
+            // This is a simplified implementation
+            return new CentrifugalCompressorProperties
+            {
+                OperatingConditions = operatingConditions,
+                PolytropicEfficiency = 0.75m,
+                SpecificHeatRatio = 1.3m,
+                NumberOfStages = 1,
+                Speed = 3600m // Default 3600 RPM
+            };
+        }
+
+        /// <summary>
+        /// Gets reciprocating compressor properties from PPDM
+        /// </summary>
+        private async Task<ReciprocatingCompressorProperties> GetReciprocatingCompressorPropertiesAsync(
+            string facilityId,
+            CompressorOperatingConditions operatingConditions)
+        {
+            // This is a simplified implementation
+            return new ReciprocatingCompressorProperties
+            {
+                OperatingConditions = operatingConditions,
+                CylinderDiameter = 12m, // Default 12 inches
+                StrokeLength = 6m, // Default 6 inches
+                RotationalSpeed = 300m, // Default 300 RPM
+                NumberOfCylinders = 2,
+                VolumetricEfficiency = 0.85m,
+                ClearanceFactor = 0.05m
+            };
+        }
+
+        /// <summary>
+        /// Stores compressor power analysis results in FACILITY_EQUIPMENT table
+        /// </summary>
+        private async Task StoreCompressorPowerResultsAsync(
+            string facilityId,
+            CompressorPowerResult result,
+            string compressorType,
+            string userId)
+        {
+            try
+            {
+                var equipmentMetadata = await _metadata.GetTableMetadataAsync("FACILITY_EQUIPMENT");
+                if (equipmentMetadata == null)
+                {
+                    _logger?.LogWarning("FACILITY_EQUIPMENT table metadata not found, skipping storage");
+                    return;
+                }
+
+                var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(Dictionary<string, object>), _connectionName, "FACILITY_EQUIPMENT", null);
+
+                var equipmentRecord = new Dictionary<string, object>
+                {
+                    ["FACILITY_EQUIPMENT_ID"] = Guid.NewGuid().ToString(),
+                    ["FACILITY_ID"] = facilityId,
+                    ["EQUIPMENT_TYPE"] = "COMPRESSOR",
+                    ["EQUIPMENT_NAME"] = $"{compressorType} Compressor Power Analysis",
+                    ["DESCRIPTION"] = $"Brake HP: {result.BrakeHorsepower:F2}, Motor HP: {result.MotorHorsepower:F2}",
+                    ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
+                    {
+                        CompressorType = compressorType,
+                        TheoreticalPower = result.TheoreticalPower,
+                        BrakeHorsepower = result.BrakeHorsepower,
+                        MotorHorsepower = result.MotorHorsepower,
+                        PowerConsumptionKW = result.PowerConsumptionKW,
+                        CompressionRatio = result.CompressionRatio,
+                        PolytropicHead = result.PolytropicHead,
+                        AdiabaticHead = result.AdiabaticHead,
+                        AnalysisDate = DateTime.UtcNow
+                    })
+                };
+
+                await equipmentRepo.InsertAsync(equipmentRecord, userId);
+                _logger?.LogInformation("Stored compressor power results for facility {FacilityId}", facilityId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error storing compressor power results for facility {FacilityId}", facilityId);
+                // Don't throw - storage failure shouldn't fail the operation
+            }
+        }
+
+        /// <summary>
+        /// Stores compressor pressure analysis results in FACILITY_EQUIPMENT table
+        /// </summary>
+        private async Task StoreCompressorPressureResultsAsync(
+            string facilityId,
+            CompressorPressureResult result,
+            string userId)
+        {
+            try
+            {
+                var equipmentMetadata = await _metadata.GetTableMetadataAsync("FACILITY_EQUIPMENT");
+                if (equipmentMetadata == null)
+                {
+                    _logger?.LogWarning("FACILITY_EQUIPMENT table metadata not found, skipping storage");
+                    return;
+                }
+
+                var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(Dictionary<string, object>), _connectionName, "FACILITY_EQUIPMENT", null);
+
+                var equipmentRecord = new Dictionary<string, object>
+                {
+                    ["FACILITY_EQUIPMENT_ID"] = Guid.NewGuid().ToString(),
+                    ["FACILITY_ID"] = facilityId,
+                    ["EQUIPMENT_TYPE"] = "COMPRESSOR",
+                    ["EQUIPMENT_NAME"] = "Compressor Pressure Analysis",
+                    ["DESCRIPTION"] = $"Required discharge pressure: {result.RequiredDischargePressure:F2} psia",
+                    ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
+                    {
+                        RequiredDischargePressure = result.RequiredDischargePressure,
+                        CompressionRatio = result.CompressionRatio,
+                        RequiredPower = result.RequiredPower,
+                        DischargeTemperature = result.DischargeTemperature,
+                        AnalysisDate = DateTime.UtcNow
+                    })
+                };
+
+                await equipmentRepo.InsertAsync(equipmentRecord, userId);
+                _logger?.LogInformation("Stored compressor pressure results for facility {FacilityId}", facilityId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error storing compressor pressure results for facility {FacilityId}", facilityId);
+                // Don't throw - storage failure shouldn't fail the operation
+            }
+        }
+
+        #endregion
+
+        #region Development Planning Integration
+
+        /// <summary>
+        /// Plans development for a field using DevelopmentPlanning service
+        /// </summary>
+        public async Task<DevelopmentPlanDto> PlanDevelopmentAsync(string fieldId, CreateDevelopmentPlanDto planData, string userId)
+        {
+            try
+            {
+                _logger?.LogInformation("Planning development for field: {FieldId}", fieldId);
+
+                // Create development plan entity in PPDM
+                // For now, store plan data in a generic table or use existing structures
+                // In full implementation, would use DevelopmentPlanService
+
+                return new DevelopmentPlanDto
+                {
+                    PlanId = Guid.NewGuid().ToString(),
+                    FieldId = fieldId,
+                    PlanName = planData.PlanName ?? "Development Plan",
+                    Status = "DRAFT",
+                    CreatedDate = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error planning development for field: {FieldId}", fieldId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Designs a well using DevelopmentPlanning service
+        /// </summary>
+        public async Task<WellPlanDto> DesignWellAsync(string fieldId, string planId, CreateWellPlanDto wellPlanData, string userId)
+        {
+            try
+            {
+                _logger?.LogInformation("Designing well for plan: {PlanId} in field: {FieldId}", planId, fieldId);
+
+                // Create well design
+                // In full implementation, would use DevelopmentPlanService to add well plan to development plan
+
+                return new WellPlanDto
+                {
+                    WellPlanId = Guid.NewGuid().ToString(),
+                    PlanId = planId,
+                    WellName = wellPlanData.WellName ?? "Well",
+                    WellType = wellPlanData.WellType ?? "PRODUCTION",
+                    Status = "DESIGNED",
+                    CreatedDate = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error designing well for plan: {PlanId}", planId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Drilling and Construction Integration
+
+        /// <summary>
+        /// Executes drilling operation using DrillingAndConstruction service
+        /// </summary>
+        public async Task<DrillingOperationDto> ExecuteDrillingAsync(string fieldId, string wellId, CreateDrillingOperationDto drillingData, string userId)
+        {
+            try
+            {
+                _logger?.LogInformation("Executing drilling for well: {WellId} in field: {FieldId}", wellId, fieldId);
+
+                // Create drilling operation in PPDM DRILLING_OPERATION table
+                var metadata = await _metadata.GetTableMetadataAsync("DRILLING_OPERATION");
+                if (metadata == null)
+                {
+                    throw new InvalidOperationException("DRILLING_OPERATION table metadata not found");
+                }
+
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}") ?? typeof(object);
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, _connectionName, "DRILLING_OPERATION", null);
+
+                // Create drilling operation entity
+                var drillingOp = Activator.CreateInstance(entityType);
+                var wellIdProp = entityType.GetProperty("WELL_ID");
+                var operationDateProp = entityType.GetProperty("OPERATION_DATE") ?? entityType.GetProperty("DRILLING_DATE");
+                var statusProp = entityType.GetProperty("STATUS") ?? entityType.GetProperty("OPERATION_STATUS");
+
+                if (wellIdProp != null)
+                    wellIdProp.SetValue(drillingOp, _defaults.FormatIdForTable("DRILLING_OPERATION", wellId));
+                if (operationDateProp != null)
+                    operationDateProp.SetValue(drillingOp, drillingData.PlannedSpudDate ?? DateTime.UtcNow);
+                if (statusProp != null)
+                    statusProp.SetValue(drillingOp, "IN_PROGRESS");
+
+                if (drillingOp is IPPDMEntity entity)
+                    _commonColumnHandler.PrepareForInsert(entity, userId);
+                var result = await repo.InsertAsync(drillingOp, userId);
+
+                var operationId = result.GetType().GetProperty("ROW_ID")?.GetValue(result)?.ToString() 
+                    ?? result.GetType().GetProperty("DRILLING_OPERATION_ID")?.GetValue(result)?.ToString()
+                    ?? Guid.NewGuid().ToString();
+
+                _logger?.LogInformation("Drilling operation created: {OperationId} for well: {WellId}", operationId, wellId);
+
+                return new DrillingOperationDto
+                {
+                    OperationId = operationId,
+                    WellUWI = wellId,
+                    SpudDate = drillingData.PlannedSpudDate ?? DateTime.UtcNow,
+                    Status = "IN_PROGRESS"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error executing drilling for well: {WellId}", wellId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Constructs facility using DrillingAndConstruction service
+        /// </summary>
+        public async Task<FacilityResponse> ConstructFacilityAsync(string fieldId, string facilityId, FacilityRequest facilityData, string userId)
+        {
+            try
+            {
+                _logger?.LogInformation("Constructing facility: {FacilityId} in field: {FieldId}", facilityId, fieldId);
+
+                // Use existing CreateFacilityForFieldAsync method
+                return await CreateFacilityForFieldAsync(fieldId, facilityData, userId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error constructing facility: {FacilityId}", facilityId);
+                throw;
+            }
+        }
+
+        #endregion
     }
 }

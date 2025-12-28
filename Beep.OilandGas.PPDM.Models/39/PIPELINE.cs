@@ -398,6 +398,46 @@ private  System.String ROW_QUALITYValue;
 
           set { SetProperty(ref  ROW_QUALITYValue, value); }
         } 
+private  System.Decimal? DIAMETERValue; 
+ public System.Decimal? DIAMETER
+        {  
+            get  
+            {  
+                return this.DIAMETERValue;  
+            }  
+
+          set { SetProperty(ref  DIAMETERValue, value); }
+        } 
+private  System.String DIAMETER_OUOMValue; 
+ public System.String DIAMETER_OUOM
+        {  
+            get  
+            {  
+                return this.DIAMETER_OUOMValue;  
+            }  
+
+          set { SetProperty(ref  DIAMETER_OUOMValue, value); }
+        } 
+private  System.Decimal? LENGTHValue; 
+ public System.Decimal? LENGTH
+        {  
+            get  
+            {  
+                return this.LENGTHValue;  
+            }  
+
+          set { SetProperty(ref  LENGTHValue, value); }
+        } 
+private  System.String LENGTH_OUOMValue; 
+ public System.String LENGTH_OUOM
+        {  
+            get  
+            {  
+                return this.LENGTH_OUOMValue;  
+            }  
+
+          set { SetProperty(ref  LENGTH_OUOMValue, value); }
+        } 
 
 
     public PIPELINE () { }

@@ -69,8 +69,8 @@ namespace Beep.OilandGas.PPDM39.Models
             set { SetProperty(ref AMOUNTValue, value); }
         }
 
-        private DateTime?? COST_DATEValue;
-        public DateTime?? COST_DATE
+        private DateTime? COST_DATEValue;
+        public DateTime? COST_DATE
         {
             get { return this.COST_DATEValue; }
             set { SetProperty(ref COST_DATEValue, value); }
@@ -139,8 +139,8 @@ namespace Beep.OilandGas.PPDM39.Models
             set { SetProperty(ref ROW_CHANGED_BYValue, value); }
         }
 
-        private DateTime?? ROW_CHANGED_DATEValue;
-        public DateTime?? ROW_CHANGED_DATE
+        private DateTime? ROW_CHANGED_DATEValue;
+        public DateTime? ROW_CHANGED_DATE
         {
             get { return this.ROW_CHANGED_DATEValue; }
             set { SetProperty(ref ROW_CHANGED_DATEValue, value); }
@@ -153,22 +153,22 @@ namespace Beep.OilandGas.PPDM39.Models
             set { SetProperty(ref ROW_CREATED_BYValue, value); }
         }
 
-        private DateTime?? ROW_CREATED_DATEValue;
-        public DateTime?? ROW_CREATED_DATE
+        private DateTime? ROW_CREATED_DATEValue;
+        public DateTime? ROW_CREATED_DATE
         {
             get { return this.ROW_CREATED_DATEValue; }
             set { SetProperty(ref ROW_CREATED_DATEValue, value); }
         }
 
-        private DateTime?? ROW_EFFECTIVE_DATEValue;
-        public DateTime?? ROW_EFFECTIVE_DATE
+        private DateTime? ROW_EFFECTIVE_DATEValue;
+        public DateTime? ROW_EFFECTIVE_DATE
         {
             get { return this.ROW_EFFECTIVE_DATEValue; }
             set { SetProperty(ref ROW_EFFECTIVE_DATEValue, value); }
         }
 
-        private DateTime?? ROW_EXPIRY_DATEValue;
-        public DateTime?? ROW_EXPIRY_DATE
+        private DateTime? ROW_EXPIRY_DATEValue;
+        public DateTime? ROW_EXPIRY_DATE
         {
             get { return this.ROW_EXPIRY_DATEValue; }
             set { SetProperty(ref ROW_EXPIRY_DATEValue, value); }

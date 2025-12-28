@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.ApiService.Models;
+using Beep.OilandGas.Models.DTOs.DataManagement;
 using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -37,8 +37,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             {
                 _logger.LogInformation("Getting defaults for entity type {EntityType}", entityType);
                 
-                // GetDefaultsAsync doesn't exist - return a basic defaults structure
-                // This would need to be implemented based on actual requirements
                 var result = new Dictionary<string, object>
                 {
                     { "ActiveIndicator", _defaultsRepository.GetActiveIndicatorYes() },

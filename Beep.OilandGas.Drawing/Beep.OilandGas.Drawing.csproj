@@ -27,6 +27,7 @@
 		<Copy SourceFiles="$(TargetDir)$(PackageId).dll" DestinationFolder="$(ProjectDir)..\..\outputDLL\$(PackageId)\$(TargetFramework)" SkipUnchangedFiles="false" />
 	</Target>
 	<ItemGroup>
+	  <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.6" />
 	  <PackageReference Include="SkiaSharp" Version="3.119.1" />
 	  <PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />
 	</ItemGroup>

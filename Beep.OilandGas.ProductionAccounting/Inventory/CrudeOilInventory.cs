@@ -1,6 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
+using Beep.OilandGas.PPDM39.Repositories;
+using Microsoft.Extensions.Logging;
+using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.ProductionAccounting.Inventory
 {
@@ -147,11 +153,34 @@ namespace Beep.OilandGas.ProductionAccounting.Inventory
 
     /// <summary>
     /// Manages crude oil inventory and valuation.
+    /// Uses database access via IDataSource instead of in-memory dictionaries.
     /// </summary>
     public class InventoryManager
     {
-        private readonly Dictionary<string, CrudeOilInventory> inventories = new();
-        private readonly Dictionary<string, List<InventoryTransaction>> transactions = new();
+        private readonly IDMEEditor _editor;
+        private readonly ICommonColumnHandler _commonColumnHandler;
+        private readonly IPPDM39DefaultsRepository _defaults;
+        private readonly IPPDMMetadataRepository _metadata;
+        private readonly ILogger<InventoryManager>? _logger;
+        private readonly string _connectionName;
+        private const string CRUDE_OIL_INVENTORY_TABLE = "CRUDE_OIL_INVENTORY";
+        private const string CRUDE_OIL_INVENTORY_TRANSACTION_TABLE = "CRUDE_OIL_INVENTORY_TRANSACTION";
+
+        public InventoryManager(
+            IDMEEditor editor,
+            ICommonColumnHandler commonColumnHandler,
+            IPPDM39DefaultsRepository defaults,
+            IPPDMMetadataRepository metadata,
+            ILoggerFactory loggerFactory,
+            string connectionName = "PPDM39")
+        {
+            _editor = editor ?? throw new ArgumentNullException(nameof(editor));
+            _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
+            _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
+            _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+            _logger = loggerFactory?.CreateLogger<InventoryManager>();
+            _connectionName = connectionName ?? "PPDM39";
+        }
 
         /// <summary>
         /// Records an inventory transaction.
@@ -161,20 +190,35 @@ namespace Beep.OilandGas.ProductionAccounting.Inventory
             InventoryTransactionType transactionType,
             decimal volume,
             decimal unitCost,
-            DateTime transactionDate)
+            DateTime transactionDate,
+            string? connectionName = null)
         {
-            if (!inventories.TryGetValue(inventoryId, out var inventory))
+            var connName = connectionName ?? _connectionName;
+            var dataSource = _editor.GetDataSource(connName);
+            if (dataSource == null)
+                throw new InvalidOperationException($"DataSource not found for connection: {connName}");
+
+            // Get or create inventory
+            var inventory = GetInventory(inventoryId, connName);
+            if (inventory == null)
             {
                 inventory = new CrudeOilInventory
                 {
                     InventoryId = inventoryId,
                     InventoryDate = transactionDate
                 };
-                inventories[inventoryId] = inventory;
+                // Save new inventory
+                var inventoryEntity = ConvertCrudeOilInventoryToEntity(inventory);
+                if (inventoryEntity is IPPDMEntity invPpdmEntity)
+                    _commonColumnHandler.PrepareForInsert(invPpdmEntity, "SYSTEM");
+                var invResult = dataSource.InsertEntity(CRUDE_OIL_INVENTORY_TABLE, inventoryEntity);
+                if (invResult != null && invResult.Errors != null && invResult.Errors.Count > 0)
+                {
+                    var errorMessage = string.Join("; ", invResult.Errors.Select(e => e.Message));
+                    _logger?.LogError("Failed to create inventory {InventoryId}: {Error}", inventoryId, errorMessage);
+                    throw new InvalidOperationException($"Failed to create inventory: {errorMessage}");
+                }
             }
-
-            if (!transactions.ContainsKey(inventoryId))
-                transactions[inventoryId] = new List<InventoryTransaction>();
 
             var transaction = new InventoryTransaction
             {
@@ -185,10 +229,34 @@ namespace Beep.OilandGas.ProductionAccounting.Inventory
                 UnitCost = unitCost
             };
 
-            transactions[inventoryId].Add(transaction);
+            // Save transaction
+            var transactionEntity = ConvertInventoryTransactionToEntity(transaction, inventoryId);
+            if (transactionEntity is IPPDMEntity transPpdmEntity)
+                _commonColumnHandler.PrepareForInsert(transPpdmEntity, "SYSTEM");
+            var transResult = dataSource.InsertEntity(CRUDE_OIL_INVENTORY_TRANSACTION_TABLE, transactionEntity);
+            if (transResult != null && transResult.Errors != null && transResult.Errors.Count > 0)
+            {
+                var errorMessage = string.Join("; ", transResult.Errors.Select(e => e.Message));
+                _logger?.LogError("Failed to record transaction {TransactionId}: {Error}", transaction.TransactionId, errorMessage);
+                throw new InvalidOperationException($"Failed to record transaction: {errorMessage}");
+            }
 
             // Update inventory based on valuation method
             UpdateInventory(inventory, transaction);
+            
+            // Save updated inventory
+            var updatedInventoryEntity = ConvertCrudeOilInventoryToEntity(inventory);
+            if (updatedInventoryEntity is IPPDMEntity updatedPpdmEntity)
+                _commonColumnHandler.PrepareForUpdate(updatedPpdmEntity, "SYSTEM");
+            var updateResult = dataSource.UpdateEntity(CRUDE_OIL_INVENTORY_TABLE, updatedInventoryEntity);
+            if (updateResult != null && updateResult.Errors != null && updateResult.Errors.Count > 0)
+            {
+                var errorMessage = string.Join("; ", updateResult.Errors.Select(e => e.Message));
+                _logger?.LogError("Failed to update inventory {InventoryId}: {Error}", inventoryId, errorMessage);
+                throw new InvalidOperationException($"Failed to update inventory: {errorMessage}");
+            }
+
+            _logger?.LogDebug("Recorded transaction {TransactionId} for inventory {InventoryId}", transaction.TransactionId, inventoryId);
         }
 
         /// <summary>
@@ -278,19 +346,118 @@ namespace Beep.OilandGas.ProductionAccounting.Inventory
         /// <summary>
         /// Gets inventory by ID.
         /// </summary>
-        public CrudeOilInventory? GetInventory(string inventoryId)
+        public CrudeOilInventory? GetInventory(string inventoryId, string? connectionName = null)
         {
-            return inventories.TryGetValue(inventoryId, out var inventory) ? inventory : null;
+            if (string.IsNullOrEmpty(inventoryId))
+                return null;
+
+            var connName = connectionName ?? _connectionName;
+            var dataSource = _editor.GetDataSource(connName);
+            if (dataSource == null)
+                throw new InvalidOperationException($"DataSource not found for connection: {connName}");
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "INVENTORY_ID", Operator = "=", FilterValue = inventoryId }
+            };
+
+            var results = dataSource.GetEntityAsync(CRUDE_OIL_INVENTORY_TABLE, filters).GetAwaiter().GetResult();
+            var inventoryEntity = results?.OfType<CRUDE_OIL_INVENTORY>().FirstOrDefault();
+            
+            if (inventoryEntity == null)
+                return null;
+
+            return ConvertEntityToCrudeOilInventory(inventoryEntity);
         }
 
         /// <summary>
         /// Gets inventory transactions.
         /// </summary>
-        public IEnumerable<InventoryTransaction> GetTransactions(string inventoryId)
+        public IEnumerable<InventoryTransaction> GetTransactions(string inventoryId, string? connectionName = null)
         {
-            return transactions.TryGetValue(inventoryId, out var trans) 
-                ? trans 
-                : Enumerable.Empty<InventoryTransaction>();
+            if (string.IsNullOrEmpty(inventoryId))
+                return Enumerable.Empty<InventoryTransaction>();
+
+            var connName = connectionName ?? _connectionName;
+            var dataSource = _editor.GetDataSource(connName);
+            if (dataSource == null)
+                throw new InvalidOperationException($"DataSource not found for connection: {connName}");
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "INVENTORY_ID", Operator = "=", FilterValue = inventoryId }
+            };
+
+            var results = dataSource.GetEntityAsync(CRUDE_OIL_INVENTORY_TRANSACTION_TABLE, filters).GetAwaiter().GetResult();
+            if (results == null || !results.Any())
+                return Enumerable.Empty<InventoryTransaction>();
+
+            return results.OfType<CRUDE_OIL_INVENTORY_TRANSACTION>().Select(ConvertEntityToInventoryTransaction).Where(t => t != null)!;
+        }
+
+        private CRUDE_OIL_INVENTORY ConvertCrudeOilInventoryToEntity(CrudeOilInventory inventory)
+        {
+            var entity = new CRUDE_OIL_INVENTORY
+            {
+                INVENTORY_ID = inventory.InventoryId,
+                PROPERTY_OR_LEASE_ID = inventory.PropertyOrLeaseId,
+                TANK_BATTERY_ID = inventory.TankBatteryId,
+                INVENTORY_DATE = inventory.InventoryDate,
+                VOLUME = inventory.Volume,
+                UNIT_COST = inventory.UnitCost,
+                VALUATION_METHOD = inventory.ValuationMethod.ToString(),
+                MARKET_PRICE = inventory.MarketPrice
+            };
+            return entity;
+        }
+
+        private CrudeOilInventory ConvertEntityToCrudeOilInventory(CRUDE_OIL_INVENTORY entity)
+        {
+            var inventory = new CrudeOilInventory
+            {
+                InventoryId = entity.INVENTORY_ID ?? string.Empty,
+                PropertyOrLeaseId = entity.PROPERTY_OR_LEASE_ID,
+                TankBatteryId = entity.TANK_BATTERY_ID,
+                InventoryDate = entity.INVENTORY_DATE ?? DateTime.MinValue,
+                Volume = entity.VOLUME ?? 0m,
+                UnitCost = entity.UNIT_COST ?? 0m,
+                MarketPrice = entity.MARKET_PRICE
+            };
+            
+            if (!string.IsNullOrEmpty(entity.VALUATION_METHOD) && Enum.TryParse<InventoryValuationMethod>(entity.VALUATION_METHOD, out var valMethod))
+                inventory.ValuationMethod = valMethod;
+            
+            return inventory;
+        }
+
+        private CRUDE_OIL_INVENTORY_TRANSACTION ConvertInventoryTransactionToEntity(InventoryTransaction transaction, string inventoryId)
+        {
+            var entity = new CRUDE_OIL_INVENTORY_TRANSACTION
+            {
+                TRANSACTION_ID = transaction.TransactionId,
+                INVENTORY_ID = inventoryId,
+                TRANSACTION_DATE = transaction.TransactionDate,
+                TRANSACTION_TYPE = transaction.TransactionType.ToString(),
+                VOLUME = transaction.Volume,
+                UNIT_COST = transaction.UnitCost
+            };
+            return entity;
+        }
+
+        private InventoryTransaction ConvertEntityToInventoryTransaction(CRUDE_OIL_INVENTORY_TRANSACTION entity)
+        {
+            var transaction = new InventoryTransaction
+            {
+                TransactionId = entity.TRANSACTION_ID ?? string.Empty,
+                TransactionDate = entity.TRANSACTION_DATE ?? DateTime.MinValue,
+                Volume = entity.VOLUME ?? 0m,
+                UnitCost = entity.UNIT_COST ?? 0m
+            };
+            
+            if (!string.IsNullOrEmpty(entity.TRANSACTION_TYPE) && Enum.TryParse<InventoryTransactionType>(entity.TRANSACTION_TYPE, out var type))
+                transaction.TransactionType = type;
+            
+            return transaction;
         }
     }
 }

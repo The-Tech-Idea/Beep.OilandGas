@@ -82,7 +82,7 @@
                 queryParams.Add($"endDate={_filterEndDate.Value:yyyy-MM-dd}");
 
             var query = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
-            _royalties = await ApiClient.GetAsync<List<ROYALTY_CALCULATION>>($"/api/accounting/royalties{query}");
+            _royalties = await ApiClient.GetAsync<List<ROYALTY_CALCULATION>>($"/api/accounting/royalty/calculations{query}");
         }
         catch (Exception ex)
         {

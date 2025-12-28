@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core.DTOs;
+using Beep.OilandGas.Models.DTOs;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.ConfigUtil;
@@ -310,43 +310,17 @@ namespace Beep.OilandGas.ApiService.Services
         /// <summary>
         /// Execute a query and return DataTable results if available
         /// </summary>
-        private DataTable? ExecuteQuery(object dataSourceObj, string sql)
-        {
-            try
-            {
-                // Use dynamic to call IDataSource methods directly (no reflection needed)
-                dynamic dataSource = dataSourceObj;
-                return dataSource.GetDataTable(sql) as DataTable;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error executing query to get results: {Sql}", sql);
-                return null;
-            }
-        }
-
         /// <summary>
-        /// Get scalar boolean value from query result
+        /// Get scalar boolean value from query result using IDataSource.GetScalar
         /// </summary>
         private bool GetScalarBoolean(IDataSource dataSource, string sql, bool defaultValue = false)
         {
             try
             {
-                var dataTable = ExecuteQuery(dataSource, sql);
-                if (dataTable != null && dataTable.Rows.Count > 0)
-                {
-                    var value = dataTable.Rows[0][0];
-                    if (value != null && value != DBNull.Value)
-                    {
-                        if (value is bool boolValue)
-                            return boolValue;
-                        if (int.TryParse(value.ToString(), out int intValue))
-                            return intValue != 0;
-                        if (bool.TryParse(value.ToString(), out bool parsedBool))
-                            return parsedBool;
-                    }
-                }
-                return defaultValue;
+                // Use GetScalar for scalar queries - returns double
+                var scalarValue = dataSource.GetScalar(sql);
+                // Convert double to bool: 0 = false, non-zero = true
+                return scalarValue != 0;
             }
             catch (Exception ex)
             {
@@ -356,22 +330,49 @@ namespace Beep.OilandGas.ApiService.Services
         }
 
         /// <summary>
-        /// Get list of string values from first column of query result
+        /// Get list of string values from first column of query result using IDataSource.RunQuery
         /// </summary>
         private List<string> GetStringList(IDataSource dataSource, string sql)
         {
             var results = new List<string>();
             try
             {
-                var dataTable = ExecuteQuery(dataSource, sql);
-                if (dataTable != null && dataTable.Columns.Count > 0)
+                // Use RunQuery for multi-row queries - returns IEnumerable<object>
+                var queryResults = dataSource.RunQuery(sql);
+                if (queryResults != null)
                 {
-                    foreach (DataRow row in dataTable.Rows)
+                    foreach (var row in queryResults)
                     {
-                        var value = row[0];
-                        if (value != null && value != DBNull.Value)
+                        // Extract first property/value from the row object
+                        if (row != null)
                         {
-                            results.Add(value.ToString() ?? string.Empty);
+                            object? firstValue = null;
+
+                            // Handle dictionaries (most common case for dynamic queries)
+                            if (row is IDictionary<string, object> dict)
+                            {
+                                firstValue = dict.Values.FirstOrDefault();
+                            }
+                            else if (row is System.Dynamic.ExpandoObject expando)
+                            {
+                                var expandoDict = (IDictionary<string, object>)expando;
+                                firstValue = expandoDict.Values.FirstOrDefault();
+                            }
+                            else
+                            {
+                                // Try to get first property using reflection
+                                var properties = row.GetType().GetProperties();
+                                if (properties.Length > 0)
+                                {
+                                    var firstProp = properties[0];
+                                    firstValue = firstProp.GetValue(row);
+                                }
+                            }
+
+                            if (firstValue != null && firstValue != DBNull.Value)
+                            {
+                                results.Add(firstValue.ToString() ?? string.Empty);
+                            }
                         }
                     }
                 }

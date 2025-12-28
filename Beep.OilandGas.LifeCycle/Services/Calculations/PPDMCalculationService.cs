@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core.DTOs;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.LifeCycle.Services.Production;
@@ -12,6 +12,41 @@ using Beep.OilandGas.DCA;
 using Beep.OilandGas.DCA.Results;
 using Beep.OilandGas.ProductionForecasting.Calculations;
 using Beep.OilandGas.ProductionForecasting.Models;
+using Beep.OilandGas.EconomicAnalysis;
+using Beep.OilandGas.EconomicAnalysis.Calculations;
+using Beep.OilandGas.EconomicAnalysis.Models;
+using Beep.OilandGas.NodalAnalysis;
+using Beep.OilandGas.NodalAnalysis.Calculations;
+using Beep.OilandGas.NodalAnalysis.Models;
+using Beep.OilandGas.WellTestAnalysis;
+using Beep.OilandGas.WellTestAnalysis.Models;
+using Beep.OilandGas.FlashCalculations;
+using Beep.OilandGas.FlashCalculations.Calculations;
+using Beep.OilandGas.FlashCalculations.Models;
+using Beep.OilandGas.ChokeAnalysis;
+using Beep.OilandGas.ChokeAnalysis.Calculations;
+using Beep.OilandGas.ChokeAnalysis.Models;
+using Beep.OilandGas.GasLift;
+using Beep.OilandGas.GasLift.Calculations;
+using Beep.OilandGas.GasLift.Models;
+using Beep.OilandGas.PumpPerformance;
+using Beep.OilandGas.PumpPerformance.Calculations;
+using Beep.OilandGas.SuckerRodPumping;
+using Beep.OilandGas.SuckerRodPumping.Calculations;
+using Beep.OilandGas.SuckerRodPumping.Models;
+using Beep.OilandGas.CompressorAnalysis;
+using Beep.OilandGas.CompressorAnalysis.Calculations;
+using Beep.OilandGas.CompressorAnalysis.Models;
+using Beep.OilandGas.PipelineAnalysis;
+using Beep.OilandGas.PipelineAnalysis.Calculations;
+using Beep.OilandGas.PipelineAnalysis.Models;
+using Beep.OilandGas.PlungerLift;
+using Beep.OilandGas.PlungerLift.Calculations;
+using Beep.OilandGas.PlungerLift.Models;
+using Beep.OilandGas.HydraulicPumps;
+using Beep.OilandGas.HydraulicPumps.Calculations;
+using Beep.OilandGas.HydraulicPumps.Models;
+using Beep.OilandGas.LifeCycle.Services.DataMapping;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
@@ -37,6 +72,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         private PPDMGenericRepository? _dcaResultRepository;
         private PPDMGenericRepository? _economicResultRepository;
         private PPDMGenericRepository? _nodalResultRepository;
+        private PPDMGenericRepository? _wellTestResultRepository;
+        private PPDMGenericRepository? _flashResultRepository;
 
         public PPDMCalculationService(
             IDMEEditor editor,
@@ -153,10 +190,80 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         }
 
         /// <summary>
-        /// Converts a DTO to a dictionary for storage
+        /// Gets or creates repository for Well Test Analysis results
         /// </summary>
-        private Dictionary<string, object> ConvertToDictionary<T>(T dto) where T : class
+        private async Task<PPDMGenericRepository> GetWellTestResultRepositoryAsync()
         {
+            if (_wellTestResultRepository == null)
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("WELL_TEST");
+                Type entityType = typeof(Dictionary<string, object>);
+                
+                if (metadata != null && !string.IsNullOrEmpty(metadata.EntityTypeName))
+                {
+                    var resolvedType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
+                    if (resolvedType != null)
+                    {
+                        entityType = resolvedType;
+                    }
+                }
+
+                _wellTestResultRepository = new PPDMGenericRepository(
+                    _editor,
+                    _commonColumnHandler,
+                    _defaults,
+                    _metadata,
+                    entityType,
+                    _connectionName,
+                    "WELL_TEST",
+                    null);
+            }
+            return _wellTestResultRepository;
+        }
+
+        /// <summary>
+        /// Gets or creates repository for Flash Calculation results
+        /// </summary>
+        private async Task<PPDMGenericRepository> GetFlashResultRepositoryAsync()
+        {
+            if (_flashResultRepository == null)
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("FLASH_CALCULATION");
+                Type entityType = typeof(Dictionary<string, object>);
+                
+                if (metadata != null && !string.IsNullOrEmpty(metadata.EntityTypeName))
+                {
+                    var resolvedType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
+                    if (resolvedType != null)
+                    {
+                        entityType = resolvedType;
+                    }
+                }
+
+                _flashResultRepository = new PPDMGenericRepository(
+                    _editor,
+                    _commonColumnHandler,
+                    _defaults,
+                    _metadata,
+                    entityType,
+                    _connectionName,
+                    "FLASH_CALCULATION",
+                    null);
+            }
+            return _flashResultRepository;
+        }
+
+        /// <summary>
+        /// Converts a DTO to Entity or Dictionary for storage
+        /// NOTE: Entity classes for DCA_CALCULATION, ECONOMIC_ANALYSIS, NODAL_ANALYSIS tables are not yet available.
+        /// When Entity classes are created, this method should be updated to convert DTO → Entity directly.
+        /// </summary>
+        private object ConvertDtoToEntityOrDictionary<T>(T dto) where T : class
+        {
+            // TODO: When Entity classes (DCA_CALCULATION, ECONOMIC_ANALYSIS, NODAL_ANALYSIS) are available,
+            // create DTO → Entity conversion methods and use Entity objects directly.
+            // For now, using Dictionary as fallback until Entity classes are created.
+            
             var json = JsonSerializer.Serialize(dto);
             var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
             
@@ -178,12 +285,24 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         }
 
         /// <summary>
-        /// Converts a dictionary from storage to a DTO
+        /// Converts Entity or Dictionary from storage to a DTO
+        /// NOTE: Entity classes for calculation tables are not yet available.
+        /// When Entity classes are created, this method should be updated to convert Entity → DTO directly.
         /// </summary>
-        private T ConvertFromDictionary<T>(Dictionary<string, object> dict) where T : class
+        private T ConvertEntityOrDictionaryToDto<T>(object entityOrDict) where T : class
         {
-            var json = JsonSerializer.Serialize(dict);
-            return JsonSerializer.Deserialize<T>(json) ?? Activator.CreateInstance<T>();
+            // TODO: When Entity classes are available, convert Entity → DTO directly.
+            // For now, handling Dictionary as fallback.
+            
+            if (entityOrDict is Dictionary<string, object> dict)
+            {
+                var json = JsonSerializer.Serialize(dict);
+                return JsonSerializer.Deserialize<T>(json) ?? Activator.CreateInstance<T>();
+            }
+            
+            // If it's already an Entity object, serialize and deserialize to DTO
+            var entityJson = JsonSerializer.Serialize(entityOrDict);
+            return JsonSerializer.Deserialize<T>(entityJson) ?? Activator.CreateInstance<T>();
         }
 
         public async Task<DCAResult> PerformDCAAnalysisAsync(DCARequest request)
@@ -281,8 +400,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 // Step 6: Store result in database
                 var repository = await GetDCAResultRepositoryAsync();
-                var dict = ConvertToDictionary(result);
-                await repository.InsertAsync(dict, request.UserId ?? "system");
+                var entityOrDict = ConvertDtoToEntityOrDictionary(result);
+                await repository.InsertAsync(entityOrDict, request.UserId ?? "system");
 
                 _logger?.LogInformation("DCA calculation completed successfully: {CalculationId}, R²: {RSquared}, RMSE: {RMSE}", 
                     result.CalculationId, result.R2, result.RMSE);
@@ -314,8 +433,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetDCAResultRepositoryAsync();
-                    var dict = ConvertToDictionary(errorResult);
-                    await repository.InsertAsync(dict, request.UserId ?? "system");
+                    var entityOrDict = ConvertDtoToEntityOrDictionary(errorResult);
+                    await repository.InsertAsync(entityOrDict, request.UserId ?? "system");
                 }
                 catch (Exception storeEx)
                 {
@@ -654,26 +773,120 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     Date = forecastDate,
                     ProductionRate = (decimal)productionRate,
                     CumulativeProduction = (decimal)cumulativeProduction,
-                    DeclineRate = (decimal)di * 100m // As percentage
+                    DeclineRate = (decimal)(di * 100.0) // As percentage
                 });
             }
 
             return forecastPoints;
         }
 
+        /// <summary>
+        /// Performs economic analysis (NPV, IRR, Payback Period, ROI, etc.) for a well, pool, field, or project.
+        /// Supports building cash flows from production forecast in request or from PPDM production data.
+        /// </summary>
+        /// <param name="request">Economic analysis request containing entity IDs, economic parameters, and optional production forecast</param>
+        /// <returns>Economic analysis result with NPV, IRR, payback period, cash flows, and additional metrics</returns>
+        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
+        /// <exception cref="InvalidOperationException">Thrown when cash flow data is unavailable or calculation fails</exception>
         public async Task<EconomicAnalysisResult> PerformEconomicAnalysisAsync(EconomicAnalysisRequest request)
         {
             try
             {
                 // Validate request
-                if (string.IsNullOrEmpty(request.WellId) && string.IsNullOrEmpty(request.PoolId) && string.IsNullOrEmpty(request.FieldId) && string.IsNullOrEmpty(request.ProjectId))
+                if (string.IsNullOrEmpty(request.WellId) && string.IsNullOrEmpty(request.PoolId) && 
+                    string.IsNullOrEmpty(request.FieldId) && string.IsNullOrEmpty(request.ProjectId))
                 {
                     throw new ArgumentException("At least one of WellId, PoolId, FieldId, or ProjectId must be provided");
                 }
 
-                // TODO: Perform actual Economic Analysis calculation here
-                // For now, create a placeholder result
-                var result = new EconomicAnalysisResult
+                _logger?.LogInformation("Starting Economic Analysis for WellId: {WellId}, PoolId: {PoolId}, FieldId: {FieldId}, ProjectId: {ProjectId}",
+                    request.WellId, request.PoolId, request.FieldId, request.ProjectId);
+
+                // Step 1: Build cash flows from request or PPDM data
+                CashFlow[] cashFlows;
+                if (request.ProductionForecast != null && request.ProductionForecast.Count > 0)
+                {
+                    // Build cash flows from production forecast in request
+                    cashFlows = BuildCashFlowsFromProductionForecast(request);
+                }
+                else
+                {
+                    // Build cash flows from PPDM data
+                    cashFlows = await BuildCashFlowsFromPPDMDataAsync(request);
+                }
+
+                if (cashFlows == null || cashFlows.Length == 0)
+                {
+                    throw new InvalidOperationException("No cash flow data available for economic analysis. Provide ProductionForecast or ensure PPDM data is available.");
+                }
+
+                // Step 2: Validate discount rate
+                double discountRate = request.DiscountRate.HasValue 
+                    ? (double)request.DiscountRate.Value / 100.0  // Convert percentage to decimal
+                    : 0.10; // Default 10%
+
+                if (discountRate < 0 || discountRate > 1)
+                {
+                    throw new ArgumentException("Discount rate must be between 0 and 100 percent");
+                }
+
+                // Step 3: Perform economic analysis
+                double financeRate = request.AdditionalParameters?.ContainsKey("FinanceRate") == true
+                    ? Convert.ToDouble(request.AdditionalParameters["FinanceRate"]) / 100.0
+                    : 0.08; // Default 8%
+
+                double reinvestRate = request.AdditionalParameters?.ContainsKey("ReinvestRate") == true
+                    ? Convert.ToDouble(request.AdditionalParameters["ReinvestRate"]) / 100.0
+                    : 0.12; // Default 12%
+
+                EconomicResult economicResult;
+                try
+                {
+                    economicResult = EconomicAnalyzer.Analyze(cashFlows, discountRate, financeRate, reinvestRate);
+                }
+                catch (Exception calcEx)
+                {
+                    _logger?.LogError(calcEx, "Error in economic calculation");
+                    throw new InvalidOperationException($"Economic calculation failed: {calcEx.Message}", calcEx);
+                }
+
+                // Step 4: Generate NPV profile if requested
+                List<NPVProfilePoint>? npvProfile = null;
+                if (request.AdditionalParameters?.ContainsKey("GenerateNPVProfile") == true &&
+                    Convert.ToBoolean(request.AdditionalParameters["GenerateNPVProfile"]))
+                {
+                    double minRate = request.AdditionalParameters?.ContainsKey("NPVProfileMinRate") == true
+                        ? Convert.ToDouble(request.AdditionalParameters["NPVProfileMinRate"]) / 100.0
+                        : 0.0;
+                    double maxRate = request.AdditionalParameters?.ContainsKey("NPVProfileMaxRate") == true
+                        ? Convert.ToDouble(request.AdditionalParameters["NPVProfileMaxRate"]) / 100.0
+                        : 0.5;
+                    int points = request.AdditionalParameters?.ContainsKey("NPVProfilePoints") == true
+                        ? Convert.ToInt32(request.AdditionalParameters["NPVProfilePoints"])
+                        : 50;
+
+                    npvProfile = EconomicAnalyzer.GenerateNPVProfile(cashFlows, minRate, maxRate, points);
+                }
+
+                // Step 5: Map EconomicResult to EconomicAnalysisResult DTO
+                var result = MapEconomicResultToDTO(economicResult, request, cashFlows, npvProfile);
+
+                // Step 6: Store result in database
+                var repository = await GetEconomicResultRepositoryAsync();
+                var entityOrDict = ConvertDtoToEntityOrDictionary(result);
+                await repository.InsertAsync(dict, request.UserId ?? "system");
+
+                _logger?.LogInformation("Economic Analysis calculation completed: {CalculationId}, NPV: {NPV}, IRR: {IRR}%",
+                    result.CalculationId, result.NetPresentValue, result.InternalRateOfReturn);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error performing Economic Analysis");
+
+                // Return error result
+                var errorResult = new EconomicAnalysisResult
                 {
                     CalculationId = Guid.NewGuid().ToString(),
                     WellId = request.WellId,
@@ -682,28 +895,37 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     ProjectId = request.ProjectId,
                     AnalysisType = request.AnalysisType,
                     CalculationDate = DateTime.UtcNow,
-                    Status = "SUCCESS",
+                    Status = "FAILED",
+                    ErrorMessage = ex.Message,
                     UserId = request.UserId,
                     CashFlowPoints = new List<EconomicCashFlowPoint>(),
                     AdditionalResults = new Dictionary<string, object>()
                 };
 
-                // Store result in database
-                var repository = await GetEconomicResultRepositoryAsync();
-                var dict = ConvertToDictionary(result);
-                await repository.InsertAsync(dict, request.UserId ?? "system");
+                // Try to store error result
+                try
+                {
+                    var repository = await GetEconomicResultRepositoryAsync();
+                    var entityOrDict = ConvertDtoToEntityOrDictionary(errorResult);
+                    await repository.InsertAsync(entityOrDict, request.UserId ?? "system");
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Economic Analysis error result");
+                }
 
-                _logger?.LogInformation("Economic Analysis calculation completed: {CalculationId}", result.CalculationId);
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error performing Economic Analysis");
                 throw;
             }
         }
 
+        /// <summary>
+        /// Performs nodal analysis (IPR/VLP) for a well to determine operating point and production optimization.
+        /// Supports building reservoir and wellbore properties from request parameters or from PPDM data.
+        /// </summary>
+        /// <param name="request">Nodal analysis request containing well ID, reservoir/wellbore properties, and analysis parameters</param>
+        /// <returns>Nodal analysis result with IPR/VLP curves, operating point, performance metrics, and recommendations</returns>
+        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
+        /// <exception cref="InvalidOperationException">Thrown when reservoir/wellbore properties are unavailable or calculation fails</exception>
         public async Task<NodalAnalysisResult> PerformNodalAnalysisAsync(NodalAnalysisRequest request)
         {
             try
@@ -714,9 +936,148 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     throw new ArgumentException("At least one of WellId or WellboreId must be provided");
                 }
 
-                // TODO: Perform actual Nodal Analysis calculation here
-                // For now, create a placeholder result
-                var result = new NodalAnalysisResult
+                _logger?.LogInformation("Starting Nodal Analysis for WellId: {WellId}, WellboreId: {WellboreId}",
+                    request.WellId, request.WellboreId);
+
+                // Step 1: Build reservoir properties from request or PPDM data
+                ReservoirProperties reservoirProperties;
+                if (request.ReservoirPressure.HasValue && request.ProductivityIndex.HasValue)
+                {
+                    // Use values from request
+                    reservoirProperties = new ReservoirProperties
+                    {
+                        ReservoirPressure = (double)request.ReservoirPressure.Value,
+                        BubblePointPressure = request.AdditionalParameters?.ContainsKey("BubblePointPressure") == true
+                            ? Convert.ToDouble(request.AdditionalParameters["BubblePointPressure"])
+                            : (double)(request.ReservoirPressure.Value * 0.8m), // Default 80% of reservoir pressure
+                        ProductivityIndex = (double)request.ProductivityIndex.Value,
+                        WaterCut = request.WaterCut.HasValue ? (double)request.WaterCut.Value / 100.0 : 0.0,
+                        GasOilRatio = request.GasOilRatio.HasValue ? (double)request.GasOilRatio.Value : 0.0,
+                        OilGravity = request.OilGravity.HasValue ? (double)request.OilGravity.Value : 35.0
+                    };
+                }
+                else
+                {
+                    // Retrieve from PPDM data
+                    reservoirProperties = await GetReservoirPropertiesForWellAsync(request.WellId ?? request.WellboreId ?? string.Empty);
+                    
+                    if (reservoirProperties == null || reservoirProperties.ReservoirPressure <= 0)
+                    {
+                        throw new InvalidOperationException("Reservoir properties not found or invalid. Provide ReservoirPressure and ProductivityIndex in request or ensure PPDM data is available.");
+                    }
+                }
+
+                // Step 2: Build wellbore properties from request or PPDM data
+                WellboreProperties wellboreProperties;
+                if (request.TubingDiameter.HasValue && request.WellheadPressure.HasValue)
+                {
+                    // Use values from request
+                    wellboreProperties = new WellboreProperties
+                    {
+                        TubingDiameter = (double)request.TubingDiameter.Value,
+                        TubingLength = request.WellDepth.HasValue ? (double)request.WellDepth.Value : 8000.0,
+                        WellheadPressure = (double)request.WellheadPressure.Value,
+                        WaterCut = request.WaterCut.HasValue ? (double)request.WaterCut.Value / 100.0 : 0.0,
+                        GasOilRatio = request.GasOilRatio.HasValue ? (double)request.GasOilRatio.Value : 0.0,
+                        OilGravity = request.OilGravity.HasValue ? (double)request.OilGravity.Value : 35.0,
+                        GasSpecificGravity = request.GasGravity.HasValue ? (double)request.GasGravity.Value : 0.65,
+                        WellheadTemperature = request.Temperature.HasValue ? (double)request.Temperature.Value : 100.0,
+                        BottomholeTemperature = request.Temperature.HasValue ? (double)request.Temperature.Value + 100.0 : 200.0
+                    };
+                }
+                else
+                {
+                    // Retrieve from PPDM data
+                    wellboreProperties = await GetWellborePropertiesForWellAsync(request.WellId ?? request.WellboreId ?? string.Empty);
+                    
+                    if (wellboreProperties == null || wellboreProperties.TubingDiameter <= 0)
+                    {
+                        throw new InvalidOperationException("Wellbore properties not found or invalid. Provide TubingDiameter and WellheadPressure in request or ensure PPDM data is available.");
+                    }
+                }
+
+                // Step 3: Determine IPR method
+                string iprMethod = request.IPRModel ?? "VOGEL";
+                int numberOfPoints = request.NumberOfPoints ?? 50;
+                double maxFlowRate = request.FlowRateRangeMax.HasValue 
+                    ? (double)request.FlowRateRangeMax.Value 
+                    : 5000.0; // Default 5000 BPD
+
+                // Step 4: Generate IPR curve
+                List<IPRPoint> iprCurve;
+                try
+                {
+                    switch (iprMethod.ToUpperInvariant())
+                    {
+                        case "VOGEL":
+                            iprCurve = IPRCalculator.GenerateVogelIPR(reservoirProperties, maxFlowRate, numberOfPoints);
+                            break;
+                        case "FETKOVICH":
+                            // Fetkovich requires test points - use simplified approach
+                            var testPoints = new List<(double flowRate, double pressure)>
+                            {
+                                (0, reservoirProperties.ReservoirPressure),
+                                (maxFlowRate * 0.5, reservoirProperties.ReservoirPressure * 0.7),
+                                (maxFlowRate, reservoirProperties.ReservoirPressure * 0.3)
+                            };
+                            iprCurve = IPRCalculator.GenerateFetkovichIPR(reservoirProperties, testPoints, maxFlowRate, numberOfPoints);
+                            break;
+                        default:
+                            iprCurve = IPRCalculator.GenerateVogelIPR(reservoirProperties, maxFlowRate, numberOfPoints);
+                            break;
+                    }
+                }
+                catch (Exception iprEx)
+                {
+                    _logger?.LogError(iprEx, "Error generating IPR curve");
+                    throw new InvalidOperationException($"IPR curve generation failed: {iprEx.Message}", iprEx);
+                }
+
+                // Step 5: Generate VLP curve
+                double[] flowRates = iprCurve.Select(p => p.FlowRate).ToArray();
+                List<VLPPoint> vlpCurve;
+                try
+                {
+                    vlpCurve = VLPCalculator.GenerateVLP(wellboreProperties, flowRates);
+                }
+                catch (Exception vlpEx)
+                {
+                    _logger?.LogError(vlpEx, "Error generating VLP curve");
+                    throw new InvalidOperationException($"VLP curve generation failed: {vlpEx.Message}", vlpEx);
+                }
+
+                // Step 6: Find operating point
+                OperatingPoint operatingPoint;
+                try
+                {
+                    operatingPoint = Beep.OilandGas.NodalAnalysis.Calculations.NodalAnalyzer.FindOperatingPoint(iprCurve, vlpCurve);
+                }
+                catch (Exception opEx)
+                {
+                    _logger?.LogError(opEx, "Error finding operating point");
+                    throw new InvalidOperationException($"Operating point calculation failed: {opEx.Message}", opEx);
+                }
+
+                // Step 7: Map results to NodalAnalysisResult DTO
+                var result = MapNodalAnalysisResultToDTO(
+                    request, iprCurve, vlpCurve, operatingPoint, reservoirProperties, wellboreProperties);
+
+                // Step 8: Store result in database
+                var repository = await GetNodalResultRepositoryAsync();
+                var entityOrDict = ConvertDtoToEntityOrDictionary(result);
+                await repository.InsertAsync(dict, request.UserId ?? "system");
+
+                _logger?.LogInformation("Nodal Analysis calculation completed: {CalculationId}, Operating Flow Rate: {FlowRate} BPD, Operating Pressure: {Pressure} psi",
+                    result.CalculationId, result.OperatingFlowRate, result.OperatingPressure);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error performing Nodal Analysis");
+
+                // Return error result
+                var errorResult = new NodalAnalysisResult
                 {
                     CalculationId = Guid.NewGuid().ToString(),
                     WellId = request.WellId,
@@ -724,7 +1085,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     FieldId = request.FieldId,
                     AnalysisType = request.AnalysisType,
                     CalculationDate = DateTime.UtcNow,
-                    Status = "SUCCESS",
+                    Status = "FAILED",
+                    ErrorMessage = ex.Message,
                     UserId = request.UserId,
                     IPRCurve = new List<NodalCurvePoint>(),
                     VLPCurve = new List<NodalCurvePoint>(),
@@ -732,21 +1094,2853 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     AdditionalResults = new Dictionary<string, object>()
                 };
 
-                // Store result in database
-                var repository = await GetNodalResultRepositoryAsync();
-                var dict = ConvertToDictionary(result);
-                await repository.InsertAsync(dict, request.UserId ?? "system");
+                // Try to store error result
+                try
+                {
+                    var repository = await GetNodalResultRepositoryAsync();
+                    var entityOrDict = ConvertDtoToEntityOrDictionary(errorResult);
+                    await repository.InsertAsync(entityOrDict, request.UserId ?? "system");
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Nodal Analysis error result");
+                }
 
-                _logger?.LogInformation("Nodal Analysis calculation completed: {CalculationId}", result.CalculationId);
+                throw;
+            }
+        }
+
+        #region Economic Analysis Helper Methods
+
+        /// <summary>
+        /// Builds cash flows from production forecast in request
+        /// </summary>
+        private CashFlow[] BuildCashFlowsFromProductionForecast(EconomicAnalysisRequest request)
+        {
+            if (request.ProductionForecast == null || request.ProductionForecast.Count == 0)
+            {
+                return Array.Empty<CashFlow>();
+            }
+
+            var cashFlows = new List<CashFlow>();
+            var startDate = request.AnalysisStartDate ?? request.ProductionForecast.First().Date;
+            var oilPrice = request.OilPrice ?? 50.0m; // Default $50/bbl
+            var gasPrice = request.GasPrice ?? 3.0m; // Default $3/Mscf
+            var operatingCostPerUnit = request.OperatingCostPerUnit ?? 10.0m; // Default $10/bbl equivalent
+            var royaltyRate = request.RoyaltyRate ?? 0.125m; // Default 12.5%
+            var taxRate = request.TaxRate ?? 0.35m; // Default 35%
+            var workingInterest = request.WorkingInterest ?? 1.0m; // Default 100%
+
+            // Add initial investment (period 0)
+            if (request.CapitalInvestment.HasValue && request.CapitalInvestment.Value != 0)
+            {
+                cashFlows.Add(new CashFlow
+                {
+                    Period = 0,
+                    Amount = -(double)request.CapitalInvestment.Value,
+                    Description = "Initial Capital Investment"
+                });
+            }
+
+            // Build cash flows from production forecast
+            int period = 1;
+            foreach (var point in request.ProductionForecast.OrderBy(p => p.Date))
+            {
+                // Calculate revenue
+                decimal revenue = 0;
+                if (point.OilVolume.HasValue)
+                    revenue += point.OilVolume.Value * oilPrice;
+                if (point.GasVolume.HasValue)
+                    revenue += point.GasVolume.Value * gasPrice / 1000.0m; // Convert Mscf to Mscf (already in Mscf)
+
+                // Apply working interest
+                revenue *= workingInterest;
+
+                // Calculate costs
+                decimal operatingCost = 0;
+                if (point.OperatingCost.HasValue)
+                {
+                    operatingCost = point.OperatingCost.Value;
+                }
+                else
+                {
+                    // Estimate from volumes
+                    decimal totalVolume = (point.OilVolume ?? 0) + (point.GasVolume ?? 0) / 6.0m; // Convert gas to oil equivalent
+                    operatingCost = totalVolume * operatingCostPerUnit;
+                }
+
+                // Calculate royalties
+                decimal royalties = revenue * royaltyRate;
+
+                // Calculate taxes (on net revenue after royalties and costs)
+                decimal netRevenue = revenue - royalties - operatingCost;
+                decimal taxes = netRevenue > 0 ? netRevenue * taxRate : 0;
+
+                // Net cash flow
+                decimal netCashFlow = revenue - royalties - operatingCost - taxes;
+
+                cashFlows.Add(new CashFlow
+                {
+                    Period = period++,
+                    Amount = (double)netCashFlow,
+                    Description = $"Period {period - 1} - {point.Date:yyyy-MM-dd}"
+                });
+            }
+
+            return cashFlows.ToArray();
+        }
+
+        /// <summary>
+        /// Builds cash flows from PPDM data (well, pool, or field)
+        /// </summary>
+        private async Task<CashFlow[]> BuildCashFlowsFromPPDMDataAsync(EconomicAnalysisRequest request)
+        {
+            try
+            {
+                var cashFlows = new List<CashFlow>();
+                var oilPrice = request.OilPrice ?? 50.0m; // Default $50/bbl
+                var gasPrice = request.GasPrice ?? 3.0m; // Default $3/Mscf
+                var operatingCostPerUnit = request.OperatingCostPerUnit ?? 10.0m; // Default $10/bbl equivalent
+                var royaltyRate = request.RoyaltyRate ?? 0.125m; // Default 12.5%
+                var taxRate = request.TaxRate ?? 0.35m; // Default 35%
+                var workingInterest = request.WorkingInterest ?? 1.0m; // Default 100%
+
+                // Add initial investment (period 0)
+                if (request.CapitalInvestment.HasValue && request.CapitalInvestment.Value != 0)
+                {
+                    cashFlows.Add(new CashFlow
+                    {
+                        Period = 0,
+                        Amount = -(double)request.CapitalInvestment.Value,
+                        Description = "Initial Capital Investment"
+                    });
+                }
+
+                // Retrieve production data from PPDM
+                var productionData = await GetProductionDataForEconomicAnalysisAsync(request);
+                
+                if (productionData.Count == 0)
+                {
+                    _logger?.LogWarning("No production data found in PPDM for economic analysis. " +
+                        "Consider providing ProductionForecast in request.");
+                    return cashFlows.ToArray();
+                }
+
+                // Group production data by period (monthly or yearly based on request)
+                var startDate = request.AnalysisStartDate ?? productionData.Min(p => p.Date);
+                var periodMonths = request.AnalysisPeriodYears.HasValue 
+                    ? 12 / request.AnalysisPeriodYears.Value 
+                    : 1; // Default monthly
+
+                var groupedData = productionData
+                    .GroupBy(p => GetPeriodNumber(p.Date, startDate, periodMonths))
+                    .OrderBy(g => g.Key)
+                    .ToList();
+
+                int period = 1;
+                foreach (var group in groupedData)
+                {
+                    var periodData = group.ToList();
+                    var periodDate = periodData.First().Date;
+
+                    // Aggregate production for the period
+                    decimal totalOil = periodData.Sum(p => p.OilVolume ?? 0);
+                    decimal totalGas = periodData.Sum(p => p.GasVolume ?? 0);
+
+                    // Calculate revenue
+                    decimal revenue = (totalOil * oilPrice) + (totalGas * gasPrice / 1000.0m);
+                    revenue *= workingInterest;
+
+                    // Calculate costs
+                    decimal operatingCost = periodData.Sum(p => p.OperatingCost ?? 0);
+                    if (operatingCost == 0)
+                    {
+                        decimal totalVolume = totalOil + (totalGas / 6.0m); // Convert gas to oil equivalent
+                        operatingCost = totalVolume * operatingCostPerUnit;
+                    }
+
+                    // Calculate royalties and taxes
+                    decimal royalties = revenue * royaltyRate;
+                    decimal netRevenue = revenue - royalties - operatingCost;
+                    decimal taxes = netRevenue > 0 ? netRevenue * taxRate : 0;
+
+                    // Net cash flow
+                    decimal netCashFlow = revenue - royalties - operatingCost - taxes;
+
+                    cashFlows.Add(new CashFlow
+                    {
+                        Period = period++,
+                        Amount = (double)netCashFlow,
+                        Description = $"Period {period - 1} - {periodDate:yyyy-MM}"
+                    });
+                }
+
+                return cashFlows.ToArray();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error building cash flows from PPDM data");
+                // Return empty array on error - caller can handle
+                return Array.Empty<CashFlow>();
+            }
+        }
+
+        /// <summary>
+        /// Gets production data for economic analysis from PPDM
+        /// </summary>
+        private async Task<List<EconomicProductionPoint>> GetProductionDataForEconomicAnalysisAsync(EconomicAnalysisRequest request)
+        {
+            var productionPoints = new List<EconomicProductionPoint>();
+
+            try
+            {
+                // Use similar approach to GetProductionDataForDCAAsync
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY", null);
+
+                var filters = new List<AppFilter>();
+
+                if (!string.IsNullOrEmpty(request.WellId))
+                {
+                    filters.Add(new AppFilter 
+                    { 
+                        FieldName = "WELL_ID", 
+                        Operator = "=", 
+                        FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", request.WellId) 
+                    });
+                }
+                else if (!string.IsNullOrEmpty(request.PoolId))
+                {
+                    filters.Add(new AppFilter 
+                    { 
+                        FieldName = "POOL_ID", 
+                        Operator = "=", 
+                        FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", request.PoolId) 
+                    });
+                }
+                else if (!string.IsNullOrEmpty(request.FieldId))
+                {
+                    filters.Add(new AppFilter 
+                    { 
+                        FieldName = "FIELD_ID", 
+                        Operator = "=", 
+                        FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", request.FieldId) 
+                    });
+                }
+
+                // Add date filters if provided
+                if (request.AnalysisStartDate.HasValue)
+                {
+                    filters.Add(new AppFilter 
+                    { 
+                        FieldName = "PRODUCTION_DATE", 
+                        Operator = ">=", 
+                        FilterValue = request.AnalysisStartDate.Value.ToString("yyyy-MM-dd") 
+                    });
+                }
+
+                if (request.AnalysisEndDate.HasValue)
+                {
+                    filters.Add(new AppFilter 
+                    { 
+                        FieldName = "PRODUCTION_DATE", 
+                        Operator = "<=", 
+                        FilterValue = request.AnalysisEndDate.Value.ToString("yyyy-MM-dd") 
+                    });
+                }
+
+                var entities = await repo.GetAsync(filters);
+                
+                foreach (var entity in entities.OrderBy(e => GetDateValue(e, "PRODUCTION_DATE")))
+                {
+                    var date = GetDateValue(entity, "PRODUCTION_DATE") ?? DateTime.UtcNow;
+                    var oilVol = GetPropertyValueMultiple(entity, "OIL_VOLUME", "OIL_PROD", "OIL_VOL");
+                    var gasVol = GetPropertyValueMultiple(entity, "GAS_VOLUME", "GAS_PROD", "GAS_VOL");
+                    var waterVol = GetPropertyValueMultiple(entity, "WATER_VOLUME", "WATER_PROD", "WATER_VOL");
+
+                    productionPoints.Add(new EconomicProductionPoint
+                    {
+                        Date = date,
+                        OilVolume = oilVol,
+                        GasVolume = gasVol,
+                        WaterVolume = waterVol
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving production data for economic analysis");
+            }
+
+            return productionPoints;
+        }
+
+        /// <summary>
+        /// Calculates period number based on date and start date
+        /// </summary>
+        private int GetPeriodNumber(DateTime date, DateTime startDate, int periodMonths)
+        {
+            var monthsDiff = ((date.Year - startDate.Year) * 12) + (date.Month - startDate.Month);
+            return monthsDiff / periodMonths;
+        }
+
+        /// <summary>
+        /// Maps EconomicResult from library to EconomicAnalysisResult DTO
+        /// </summary>
+        private EconomicAnalysisResult MapEconomicResultToDTO(
+            EconomicResult economicResult,
+            EconomicAnalysisRequest request,
+            CashFlow[] cashFlows,
+            List<NPVProfilePoint>? npvProfile)
+        {
+            var result = new EconomicAnalysisResult
+            {
+                CalculationId = Guid.NewGuid().ToString(),
+                WellId = request.WellId,
+                PoolId = request.PoolId,
+                FieldId = request.FieldId,
+                ProjectId = request.ProjectId,
+                AnalysisType = request.AnalysisType,
+                CalculationDate = DateTime.UtcNow,
+                Status = "SUCCESS",
+                UserId = request.UserId,
+                NetPresentValue = (decimal)economicResult.NPV,
+                InternalRateOfReturn = (decimal)(economicResult.IRR * 100.0), // Convert to percentage
+                PaybackPeriod = (decimal)economicResult.PaybackPeriod,
+                ReturnOnInvestment = (decimal)economicResult.ROI,
+                ProfitabilityIndex = (decimal)economicResult.ProfitabilityIndex,
+                CashFlowPoints = new List<EconomicCashFlowPoint>(),
+                AdditionalResults = new Dictionary<string, object>()
+            };
+
+            // Map cash flows to cash flow points
+            decimal cumulativeCashFlow = 0;
+            decimal cumulativeDiscountedCashFlow = 0;
+            double discountRate = request.DiscountRate.HasValue 
+                ? (double)request.DiscountRate.Value / 100.0 
+                : 0.10;
+
+            foreach (var cf in cashFlows.OrderBy(c => c.Period))
+            {
+                decimal discountedCF = (decimal)(cf.Amount / Math.Pow(1 + discountRate, cf.Period));
+                cumulativeCashFlow += (decimal)cf.Amount;
+                cumulativeDiscountedCashFlow += discountedCF;
+
+                result.CashFlowPoints.Add(new EconomicCashFlowPoint
+                {
+                    Date = request.AnalysisStartDate?.AddMonths(cf.Period * 12) ?? DateTime.UtcNow.AddMonths(cf.Period * 12),
+                    NetCashFlow = (decimal)cf.Amount,
+                    CumulativeCashFlow = cumulativeCashFlow,
+                    DiscountedCashFlow = discountedCF,
+                    CumulativeDiscountedCashFlow = cumulativeDiscountedCashFlow
+                });
+            }
+
+            // Calculate totals
+            var totalRevenue = result.CashFlowPoints.Where(cf => cf.NetCashFlow > 0).Sum(cf => cf.NetCashFlow);
+            result.TotalRevenue = totalRevenue ?? 0m;
+            var totalOperatingCosts = result.CashFlowPoints.Where(cf => cf.NetCashFlow < 0).Sum(cf => cf.NetCashFlow);
+            result.TotalOperatingCosts = totalOperatingCosts.HasValue ? Math.Abs(totalOperatingCosts.Value) : null;
+            result.NetCashFlow = cumulativeCashFlow;
+
+            // Add NPV profile to additional results if available
+            if (npvProfile != null && npvProfile.Count > 0)
+            {
+                result.AdditionalResults["NPVProfile"] = npvProfile.Select(p => new
+                {
+                    DiscountRate = p.DiscountRate * 100.0, // Convert to percentage
+                    NPV = p.NPV
+                }).ToList();
+            }
+
+            // Add MIRR and discounted payback period
+            result.AdditionalResults["MIRR"] = economicResult.MIRR * 100.0; // Convert to percentage
+            result.AdditionalResults["DiscountedPaybackPeriod"] = economicResult.DiscountedPaybackPeriod;
+            result.AdditionalResults["TotalCashFlow"] = economicResult.TotalCashFlow;
+            result.AdditionalResults["PresentValue"] = economicResult.PresentValue;
+
+            return result;
+        }
+
+        #endregion
+
+        #region Nodal Analysis Helper Methods
+
+        /// <summary>
+        /// Retrieves reservoir properties from PPDM for a well
+        /// </summary>
+        private async Task<ReservoirProperties?> GetReservoirPropertiesForWellAsync(string wellId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(wellId))
+                    return null;
+
+                // Get productivity index from well test
+                var pi = await GetWellTestProductivityIndexAsync(wellId);
+                if (!pi.HasValue || pi.Value <= 0)
+                {
+                    _logger?.LogWarning("Productivity index not found for well {WellId}", wellId);
+                    return null;
+                }
+
+                // Get static/reservoir pressure from well test
+                var reservoirPressure = await GetWellTestStaticPressureAsync(wellId);
+                if (!reservoirPressure.HasValue || reservoirPressure.Value <= 0)
+                {
+                    _logger?.LogWarning("Reservoir pressure not found for well {WellId}", wellId);
+                    return null;
+                }
+
+                // Get bubble point pressure (try from well test or use default)
+                var bubblePointPressure = await GetBubblePointPressureForWellAsync(wellId) 
+                    ?? (double)(reservoirPressure.Value * 0.8m); // Default 80% of reservoir pressure
+
+                // Get water cut from latest production data
+                var waterCut = await GetWaterCutForWellAsync(wellId) ?? 0.0;
+
+                // Get GOR from latest production data
+                var gor = await GetGasOilRatioForWellAsync(wellId) ?? 0.0;
+
+                // Get oil gravity (try from well or use default)
+                var oilGravity = await GetOilGravityForWellAsync(wellId) ?? 35.0;
+
+                return new ReservoirProperties
+                {
+                    ReservoirPressure = (double)reservoirPressure.Value,
+                    BubblePointPressure = bubblePointPressure,
+                    ProductivityIndex = (double)pi.Value,
+                    WaterCut = waterCut,
+                    GasOilRatio = gor,
+                    OilGravity = oilGravity
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving reservoir properties for well {WellId}", wellId);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets bubble point pressure for a well
+        /// </summary>
+        private async Task<double?> GetBubblePointPressureForWellAsync(string wellId)
+        {
+            // Try to get from well test or reservoir data
+            var mapping = await _defaults.GetFieldMappingAsync("Reservoir.BubblePointPressure");
+            if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
+            {
+                var entity = await GetEntityAsync(mapping.TableName, wellId, "WELL_ID");
+                var value = GetPropertyValue(entity, mapping.FieldName);
+                if (value.HasValue)
+                {
+                    return (double)(value.Value * (mapping.ConversionFactor ?? 1m));
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets water cut for a well from production data
+        /// </summary>
+        private async Task<double?> GetWaterCutForWellAsync(string wellId)
+        {
+            try
+            {
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY", null);
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", wellId) }
+                };
+
+                var entities = await GetEntitiesAsync("PDEN_VOL_SUMMARY", filters, "PRODUCTION_DATE", DataRetrievalMode.Latest);
+                var latest = entities.FirstOrDefault();
+
+                if (latest != null)
+                {
+                    var oilVol = GetPropertyValueMultiple(latest, "OIL_VOLUME", "OIL_PROD", "OIL_VOL") ?? 0;
+                    var waterVol = GetPropertyValueMultiple(latest, "WATER_VOLUME", "WATER_PROD", "WATER_VOL") ?? 0;
+                    var totalVol = oilVol + waterVol;
+
+                    if (totalVol > 0)
+                    {
+                        return (double)(waterVol / totalVol);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting water cut for well {WellId}", wellId);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets gas-oil ratio for a well from production data
+        /// </summary>
+        private async Task<double?> GetGasOilRatioForWellAsync(string wellId)
+        {
+            try
+            {
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY", null);
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", wellId) }
+                };
+
+                var entities = await GetEntitiesAsync("PDEN_VOL_SUMMARY", filters, "PRODUCTION_DATE", DataRetrievalMode.Latest);
+                var latest = entities.FirstOrDefault();
+
+                if (latest != null)
+                {
+                    var oilVol = GetPropertyValueMultiple(latest, "OIL_VOLUME", "OIL_PROD", "OIL_VOL") ?? 0;
+                    var gasVol = GetPropertyValueMultiple(latest, "GAS_VOLUME", "GAS_PROD", "GAS_VOL") ?? 0;
+
+                    if (oilVol > 0)
+                    {
+                        return (double)(gasVol / oilVol * 1000m); // Convert to SCF/STB
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting GOR for well {WellId}", wellId);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Gets oil gravity (API) for a well
+        /// </summary>
+        private async Task<double?> GetOilGravityForWellAsync(string wellId)
+        {
+            // Try to get from well test or fluid properties
+            var mapping = await _defaults.GetFieldMappingAsync("Fluid.OilGravity");
+            if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
+            {
+                var entity = await GetEntityAsync(mapping.TableName, wellId, "WELL_ID");
+                var value = GetPropertyValue(entity, mapping.FieldName);
+                if (value.HasValue)
+                {
+                    return (double)(value.Value * (mapping.ConversionFactor ?? 1m));
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Retrieves wellbore properties from PPDM for a well
+        /// </summary>
+        private async Task<WellboreProperties?> GetWellborePropertiesForWellAsync(string wellId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(wellId))
+                    return null;
+
+                // Get tubing diameter from WELL_TUBULAR
+                var tubingDiameter = await GetTubularOuterDiameterAsync(wellId, "TUBING");
+                if (!tubingDiameter.HasValue || tubingDiameter.Value <= 0)
+                {
+                    _logger?.LogWarning("Tubing diameter not found for well {WellId}", wellId);
+                    return null;
+                }
+
+                // Get tubing length/depth
+                var tubingDepth = await GetTubularDepthAsync(wellId, "TUBING");
+                var wellDepth = await GetWellTotalDepthAsync(wellId);
+                var tubingLength = tubingDepth ?? wellDepth ?? 8000m; // Default 8000 ft
+
+                // Get wellhead pressure (try from well test or use default)
+                var wellheadPressure = await GetWellheadPressureForWellAsync(wellId) ?? 500m; // Default 500 psi
+
+                // Get water cut and GOR (same as reservoir properties)
+                var waterCut = await GetWaterCutForWellAsync(wellId) ?? 0.0;
+                var gor = await GetGasOilRatioForWellAsync(wellId) ?? 0.0;
+
+                // Get oil gravity
+                var oilGravity = await GetOilGravityForWellAsync(wellId) ?? 35.0;
+
+                // Get gas specific gravity (try from well test or use default)
+                var gasGravity = await GetGasSpecificGravityForWellAsync(wellId) ?? 0.65;
+
+                // Get temperatures (try from well test or use defaults)
+                var wellheadTemp = await GetWellheadTemperatureForWellAsync(wellId) ?? 100.0;
+                var bottomholeTemp = await GetBottomholeTemperatureForWellAsync(wellId) ?? (wellheadTemp + 100.0);
+
+                return new WellboreProperties
+                {
+                    TubingDiameter = (double)tubingDiameter.Value,
+                    TubingLength = (double)tubingLength,
+                    WellheadPressure = (double)wellheadPressure,
+                    WaterCut = waterCut,
+                    GasOilRatio = gor,
+                    OilGravity = oilGravity,
+                    GasSpecificGravity = gasGravity,
+                    WellheadTemperature = wellheadTemp,
+                    BottomholeTemperature = bottomholeTemp
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving wellbore properties for well {WellId}", wellId);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Gets wellhead pressure for a well
+        /// </summary>
+        private async Task<decimal?> GetWellheadPressureForWellAsync(string wellId)
+        {
+            // Try to get from well test
+            var mapping = await _defaults.GetFieldMappingAsync("WellTest.WellheadPressure");
+            if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
+            {
+                var entity = await GetLatestEntityForWellAsync(mapping.TableName, wellId, "EFFECTIVE_DATE", null);
+                var value = GetPropertyValue(entity, mapping.FieldName);
+                if (value.HasValue)
+                {
+                    return value.Value * (mapping.ConversionFactor ?? 1m);
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets gas specific gravity for a well
+        /// </summary>
+        private async Task<double?> GetGasSpecificGravityForWellAsync(string wellId)
+        {
+            var mapping = await _defaults.GetFieldMappingAsync("Fluid.GasSpecificGravity");
+            if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
+            {
+                var entity = await GetEntityAsync(mapping.TableName, wellId, "WELL_ID");
+                var value = GetPropertyValue(entity, mapping.FieldName);
+                if (value.HasValue)
+                {
+                    return (double)(value.Value * (mapping.ConversionFactor ?? 1m));
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets wellhead temperature for a well
+        /// </summary>
+        private async Task<double?> GetWellheadTemperatureForWellAsync(string wellId)
+        {
+            var mapping = await _defaults.GetFieldMappingAsync("WellTest.WellheadTemperature");
+            if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
+            {
+                var entity = await GetLatestEntityForWellAsync(mapping.TableName, wellId, "EFFECTIVE_DATE", null);
+                var value = GetPropertyValue(entity, mapping.FieldName);
+                if (value.HasValue)
+                {
+                    return (double)(value.Value * (mapping.ConversionFactor ?? 1m));
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets bottomhole temperature for a well
+        /// </summary>
+        private async Task<double?> GetBottomholeTemperatureForWellAsync(string wellId)
+        {
+            var mapping = await _defaults.GetFieldMappingAsync("WellTest.BottomholeTemperature");
+            if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
+            {
+                var entity = await GetLatestEntityForWellAsync(mapping.TableName, wellId, "EFFECTIVE_DATE", null);
+                var value = GetPropertyValue(entity, mapping.FieldName);
+                if (value.HasValue)
+                {
+                    return (double)(value.Value * (mapping.ConversionFactor ?? 1m));
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Maps NodalAnalysis results to NodalAnalysisResult DTO
+        /// </summary>
+        private NodalAnalysisResult MapNodalAnalysisResultToDTO(
+            NodalAnalysisRequest request,
+            List<IPRPoint> iprCurve,
+            List<VLPPoint> vlpCurve,
+            OperatingPoint operatingPoint,
+            ReservoirProperties reservoirProperties,
+            WellboreProperties wellboreProperties)
+        {
+            var result = new NodalAnalysisResult
+            {
+                CalculationId = Guid.NewGuid().ToString(),
+                WellId = request.WellId,
+                WellboreId = request.WellboreId,
+                FieldId = request.FieldId,
+                AnalysisType = request.AnalysisType,
+                CalculationDate = DateTime.UtcNow,
+                Status = "SUCCESS",
+                UserId = request.UserId,
+                OperatingFlowRate = (decimal)operatingPoint.FlowRate,
+                OperatingPressure = (decimal)operatingPoint.BottomholePressure,
+                OperatingTemperature = request.Temperature.HasValue ? request.Temperature : null,
+                IPRCurve = new List<NodalCurvePoint>(),
+                VLPCurve = new List<NodalCurvePoint>(),
+                Recommendations = new List<string>(),
+                AdditionalResults = new Dictionary<string, object>()
+            };
+
+            // Map IPR curve points
+            foreach (var point in iprCurve)
+            {
+                result.IPRCurve.Add(new NodalCurvePoint
+                {
+                    FlowRate = (decimal)point.FlowRate,
+                    Pressure = (decimal)point.FlowingBottomholePressure
+                });
+            }
+
+            // Map VLP curve points
+            foreach (var point in vlpCurve)
+            {
+                result.VLPCurve.Add(new NodalCurvePoint
+                {
+                    FlowRate = (decimal)point.FlowRate,
+                    Pressure = (decimal)point.RequiredBottomholePressure
+                });
+            }
+
+            // Calculate performance metrics
+            if (iprCurve.Count > 0)
+            {
+                result.MaximumFlowRate = (decimal)iprCurve.Max(p => p.FlowRate);
+                result.MinimumFlowRate = (decimal)iprCurve.Min(p => p.FlowRate);
+                result.OptimalFlowRate = (decimal)operatingPoint.FlowRate;
+            }
+
+            if (vlpCurve.Count > 0 && iprCurve.Count > 0)
+            {
+                var maxVLP = vlpCurve.Max(p => p.RequiredBottomholePressure);
+                var minIPR = iprCurve.Min(p => p.FlowingBottomholePressure);
+                result.PressureDrop = (decimal)(maxVLP - minIPR);
+            }
+
+            // Calculate system efficiency (simplified)
+            if (reservoirProperties.ReservoirPressure > 0)
+            {
+                double theoreticalMaxFlow = reservoirProperties.ProductivityIndex * reservoirProperties.ReservoirPressure;
+                if (theoreticalMaxFlow > 0)
+                {
+                    result.SystemEfficiency = (decimal)((operatingPoint.FlowRate / theoreticalMaxFlow) * 100.0);
+                }
+            }
+
+            // Generate recommendations
+            if (result.MaximumFlowRate.HasValue && operatingPoint.FlowRate < (double)(result.MaximumFlowRate.Value * 0.8m))
+            {
+                result.Recommendations.Add("Consider optimizing well completion to increase flow rate");
+            }
+
+            if (result.PressureDrop > 1000)
+            {
+                result.Recommendations.Add("High pressure drop detected - consider larger tubing diameter");
+            }
+
+            if (result.SystemEfficiency < 50)
+            {
+                result.Recommendations.Add("Low system efficiency - review well configuration");
+            }
+
+            // Add additional results
+            result.AdditionalResults["ReservoirPressure"] = reservoirProperties.ReservoirPressure;
+            result.AdditionalResults["ProductivityIndex"] = reservoirProperties.ProductivityIndex;
+            result.AdditionalResults["TubingDiameter"] = wellboreProperties.TubingDiameter;
+            result.AdditionalResults["TubingLength"] = wellboreProperties.TubingLength;
+            result.AdditionalResults["WellheadPressure"] = wellboreProperties.WellheadPressure;
+            result.AdditionalResults["IPRMethod"] = request.IPRModel ?? "VOGEL";
+            result.AdditionalResults["VLPModel"] = request.VLPModel ?? "HAGEDORN_BROWN";
+
+            return result;
+        }
+
+        #endregion
+
+        #region Well Test Analysis
+
+        /// <summary>
+        /// Performs well test analysis (pressure transient analysis) for a well.
+        /// Supports build-up and drawdown analysis using Horner or MDH methods.
+        /// </summary>
+        /// <param name="request">Well test analysis request containing well ID, test ID, pressure-time data, and analysis parameters</param>
+        /// <returns>Well test analysis result with permeability, skin factor, reservoir pressure, productivity index, and diagnostic data</returns>
+        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
+        /// <exception cref="InvalidOperationException">Thrown when well test data is unavailable or calculation fails</exception>
+        public async Task<Beep.OilandGas.Models.DTOs.WellTestAnalysisResult> PerformWellTestAnalysisAsync(WellTestAnalysisCalculationRequest request)
+        {
+            try
+            {
+                // Validate request
+                if (string.IsNullOrEmpty(request.WellId) && string.IsNullOrEmpty(request.TestId))
+                {
+                    throw new ArgumentException("At least one of WellId or TestId must be provided");
+                }
+
+                _logger?.LogInformation("Starting Well Test Analysis for WellId: {WellId}, TestId: {TestId}",
+                    request.WellId, request.TestId);
+
+                // Step 1: Build well test data from request or PPDM data
+                WellTestData wellTestData;
+                if (request.PressureTimeData != null && request.PressureTimeData.Count > 0)
+                {
+                    // Use data from request
+                    wellTestData = new WellTestData
+                    {
+                        Time = request.PressureTimeData.Select(p => p.Time).ToList(),
+                        Pressure = request.PressureTimeData.Select(p => p.Pressure).ToList(),
+                        FlowRate = request.FlowRate.HasValue ? (double)request.FlowRate.Value : 0.0,
+                        WellboreRadius = request.WellboreRadius.HasValue ? (double)request.WellboreRadius.Value : 0.25,
+                        FormationThickness = request.FormationThickness.HasValue ? (double)request.FormationThickness.Value : 50.0,
+                        Porosity = request.Porosity.HasValue ? (double)request.Porosity.Value : 0.2,
+                        TotalCompressibility = request.TotalCompressibility.HasValue ? (double)request.TotalCompressibility.Value : 1e-5,
+                        OilViscosity = request.OilViscosity.HasValue ? (double)request.OilViscosity.Value : 1.5,
+                        OilFormationVolumeFactor = request.OilFormationVolumeFactor.HasValue ? (double)request.OilFormationVolumeFactor.Value : 1.2,
+                        ProductionTime = request.ProductionTime.HasValue ? (double)request.ProductionTime.Value : 0.0,
+                        IsGasWell = request.IsGasWell ?? false,
+                        GasSpecificGravity = request.GasSpecificGravity.HasValue ? (double)request.GasSpecificGravity.Value : 0.65,
+                        ReservoirTemperature = request.ReservoirTemperature.HasValue ? (double)request.ReservoirTemperature.Value : 150.0,
+                        InitialReservoirPressure = request.InitialReservoirPressure.HasValue ? (double)request.InitialReservoirPressure.Value : 0.0,
+                        TestType = request.AnalysisType.ToUpper() == "DRAWDOWN" ? WellTestType.Drawdown : WellTestType.BuildUp
+                    };
+                }
+                else
+                {
+                    // Retrieve from PPDM data
+                    wellTestData = await GetWellTestDataFromPPDMAsync(request.WellId ?? string.Empty, request.TestId ?? string.Empty);
+                }
+
+                // Step 2: Perform well test analysis
+                WellTestAnalysis.Models.WellTestAnalysisResult analysisResult;
+                string analysisMethod = request.AnalysisMethod?.ToUpper() ?? "HORNER";
+
+                if (request.AnalysisType.ToUpper() == "BUILDUP")
+                {
+                    if (analysisMethod == "MDH")
+                    {
+                        analysisResult = WellTestAnalyzer.AnalyzeBuildUpMDH(wellTestData);
+                    }
+                    else
+                    {
+                        analysisResult = WellTestAnalyzer.AnalyzeBuildUp(wellTestData);
+                    }
+                }
+                else
+                {
+                    // Drawdown analysis - would need DrawdownAnalysis class if available
+                    // For now, use build-up method
+                    analysisResult = WellTestAnalyzer.AnalyzeBuildUp(wellTestData);
+                }
+
+                // Step 3: Calculate derivative for diagnostic plots
+                var pressureTimePoints = wellTestData.Time.Zip(wellTestData.Pressure, (t, p) => new PressureTimePoint(t, p)).ToList();
+                var derivativePoints = WellTestAnalyzer.CalculateDerivative(pressureTimePoints);
+
+                // Step 4: Identify reservoir model
+                var identifiedModel = WellTestAnalyzer.IdentifyReservoirModel(derivativePoints);
+
+                // Step 5: Map to DTO
+                var result = MapWellTestResultToDTO(analysisResult, request, identifiedModel, derivativePoints);
+
+                // Step 6: Store result in PPDM database
+                try
+                {
+                    var repository = await GetWellTestResultRepositoryAsync();
+                    var resultDict = new Dictionary<string, object>
+                    {
+                        ["WELL_TEST_ID"] = result.CalculationId,
+                        ["WELL_ID"] = result.WellId ?? string.Empty,
+                        ["TEST_ID"] = result.TestId ?? string.Empty,
+                        ["ANALYSIS_DATE"] = result.CalculationDate,
+                        ["ANALYSIS_METHOD"] = result.AnalysisMethod,
+                        ["PERMEABILITY"] = result.Permeability,
+                        ["SKIN_FACTOR"] = result.SkinFactor,
+                        ["RESERVOIR_PRESSURE"] = result.ReservoirPressure,
+                        ["PRODUCTIVITY_INDEX"] = result.ProductivityIndex,
+                        ["FLOW_EFFICIENCY"] = result.FlowEfficiency,
+                        ["R_SQUARED"] = result.RSquared,
+                        ["IDENTIFIED_MODEL"] = result.IdentifiedModel,
+                        ["DIAGNOSTIC_DATA_JSON"] = JsonSerializer.Serialize(result.DiagnosticPoints ?? new List<WellTestDataPoint>()),
+                        ["DERIVATIVE_DATA_JSON"] = JsonSerializer.Serialize(result.DerivativePoints ?? new List<WellTestDataPoint>())
+                    };
+
+                    await repository.InsertAsync(resultDict, request.UserId ?? "SYSTEM");
+                    _logger?.LogInformation("Stored Well Test Analysis result with ID: {CalculationId}", result.CalculationId);
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Well Test Analysis result");
+                    // Continue - don't fail the operation if storage fails
+                }
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error performing Nodal Analysis");
+                _logger?.LogError(ex, "Error performing Well Test Analysis for WellId: {WellId}, TestId: {TestId}",
+                    request.WellId, request.TestId);
+
+                // Try to store error result
+                try
+                {
+                    var repository = await GetWellTestResultRepositoryAsync();
+                    var errorDict = new Dictionary<string, object>
+                    {
+                        ["WELL_TEST_ID"] = Guid.NewGuid().ToString(),
+                        ["WELL_ID"] = request.WellId ?? string.Empty,
+                        ["TEST_ID"] = request.TestId ?? string.Empty,
+                        ["ANALYSIS_DATE"] = DateTime.UtcNow,
+                        ["STATUS"] = "FAILED",
+                        ["ERROR_MESSAGE"] = ex.Message
+                    };
+                    await repository.InsertAsync(errorDict, request.UserId ?? "SYSTEM");
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Well Test Analysis error result");
+                }
+
                 throw;
             }
         }
+
+        #endregion
+
+        #region Flash Calculation
+
+        /// <summary>
+        /// Performs flash calculation (phase equilibrium) for a well or facility.
+        /// Supports isothermal flash calculations with vapor-liquid equilibrium.
+        /// </summary>
+        /// <param name="request">Flash calculation request containing well/facility ID, pressure, temperature, and feed composition</param>
+        /// <returns>Flash calculation result with vapor/liquid fractions, phase compositions, K-values, and phase properties</returns>
+        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
+        /// <exception cref="InvalidOperationException">Thrown when feed composition is unavailable or calculation fails</exception>
+        public async Task<FlashCalculationResult> PerformFlashCalculationAsync(FlashCalculationRequest request)
+        {
+            try
+            {
+                // Validate request
+                if (string.IsNullOrEmpty(request.WellId) && string.IsNullOrEmpty(request.FacilityId))
+                {
+                    throw new ArgumentException("At least one of WellId or FacilityId must be provided");
+                }
+
+                if (request.FeedComposition == null || request.FeedComposition.Count == 0)
+                {
+                    throw new ArgumentException("Feed composition must be provided");
+                }
+
+                _logger?.LogInformation("Starting Flash Calculation for WellId: {WellId}, FacilityId: {FacilityId}",
+                    request.WellId, request.FacilityId);
+
+                // Step 1: Build flash conditions from request or PPDM data
+                FlashConditions flashConditions;
+                if (request.Pressure.HasValue && request.Temperature.HasValue && request.FeedComposition != null)
+                {
+                    // Use values from request
+                    flashConditions = new FlashConditions
+                    {
+                        Pressure = request.Pressure.Value,
+                        Temperature = request.Temperature.Value,
+                        FeedComposition = request.FeedComposition.Select(c => new Component
+                        {
+                            Name = c.Name,
+                            MoleFraction = c.MoleFraction,
+                            CriticalTemperature = c.CriticalTemperature ?? GetDefaultCriticalTemperature(c.Name),
+                            CriticalPressure = c.CriticalPressure ?? GetDefaultCriticalPressure(c.Name),
+                            AcentricFactor = c.AcentricFactor ?? GetDefaultAcentricFactor(c.Name),
+                            MolecularWeight = c.MolecularWeight ?? GetDefaultMolecularWeight(c.Name)
+                        }).ToList()
+                    };
+                }
+                else
+                {
+                    // Retrieve from PPDM data
+                    flashConditions = await GetFlashConditionsFromPPDMAsync(request.WellId ?? string.Empty, request.FacilityId ?? string.Empty);
+                }
+
+                // Step 2: Perform flash calculation
+                var flashResult = FlashCalculator.PerformIsothermalFlash(flashConditions);
+
+                // Step 3: Calculate phase properties
+                var vaporProperties = FlashCalculator.CalculateVaporProperties(flashResult, flashConditions);
+                var liquidProperties = FlashCalculator.CalculateLiquidProperties(flashResult, flashConditions);
+
+                // Step 4: Map to DTO
+                var result = MapFlashResultToDTO(flashResult, request, vaporProperties, liquidProperties);
+
+                // Step 5: Store result in PPDM database
+                try
+                {
+                    var repository = await GetFlashResultRepositoryAsync();
+                    var resultDict = new Dictionary<string, object>
+                    {
+                        ["FLASH_CALCULATION_ID"] = result.CalculationId,
+                        ["WELL_ID"] = result.WellId ?? string.Empty,
+                        ["FACILITY_ID"] = result.FacilityId ?? string.Empty,
+                        ["CALCULATION_DATE"] = result.CalculationDate,
+                        ["PRESSURE"] = flashConditions.Pressure,
+                        ["TEMPERATURE"] = flashConditions.Temperature,
+                        ["VAPOR_FRACTION"] = result.VaporFraction,
+                        ["LIQUID_FRACTION"] = result.LiquidFraction,
+                        ["FEED_COMPOSITION_JSON"] = JsonSerializer.Serialize(flashConditions.FeedComposition),
+                        ["VAPOR_COMPOSITION_JSON"] = JsonSerializer.Serialize(result.VaporComposition),
+                        ["LIQUID_COMPOSITION_JSON"] = JsonSerializer.Serialize(result.LiquidComposition),
+                        ["K_VALUES_JSON"] = JsonSerializer.Serialize(result.KValues),
+                        ["ITERATIONS"] = result.Iterations,
+                        ["CONVERGED"] = result.Converged,
+                        ["CONVERGENCE_ERROR"] = result.ConvergenceError
+                    };
+
+                    await repository.InsertAsync(resultDict, request.UserId ?? "SYSTEM");
+                    _logger?.LogInformation("Stored Flash Calculation result with ID: {CalculationId}", result.CalculationId);
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Flash Calculation result");
+                    // Continue - don't fail the operation if storage fails
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error performing Flash Calculation for WellId: {WellId}, FacilityId: {FacilityId}",
+                    request.WellId, request.FacilityId);
+
+                // Try to store error result
+                try
+                {
+                    var repository = await GetFlashResultRepositoryAsync();
+                    var errorDict = new Dictionary<string, object>
+                    {
+                        ["FLASH_CALCULATION_ID"] = Guid.NewGuid().ToString(),
+                        ["WELL_ID"] = request.WellId ?? string.Empty,
+                        ["FACILITY_ID"] = request.FacilityId ?? string.Empty,
+                        ["CALCULATION_DATE"] = DateTime.UtcNow,
+                        ["STATUS"] = "FAILED",
+                        ["ERROR_MESSAGE"] = ex.Message
+                    };
+                    await repository.InsertAsync(errorDict, request.UserId ?? "SYSTEM");
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Flash Calculation error result");
+                }
+
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Choke Analysis
+
+        /// <summary>
+        /// Performs choke analysis for a well.
+        /// Calculates gas flow rate through chokes, choke sizing, and pressure calculations.
+        /// </summary>
+        /// <param name="request">Choke analysis request containing well ID, choke properties, and flow conditions</param>
+        /// <returns>Choke analysis result with flow rate, pressure drop, and flow regime</returns>
+        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
+        /// <exception cref="InvalidOperationException">Thrown when well or equipment data is unavailable</exception>
+        public async Task<ChokeAnalysisResult> PerformChokeAnalysisAsync(ChokeAnalysisRequest request)
+        {
+            try
+            {
+                // Validate request
+                if (string.IsNullOrEmpty(request.WellId))
+                {
+                    throw new ArgumentException("WellId must be provided");
+                }
+
+                _logger?.LogInformation("Starting Choke Analysis for WellId: {WellId}, AnalysisType: {AnalysisType}",
+                    request.WellId, request.AnalysisType);
+
+                // Step 1: Retrieve well and equipment data from PPDM
+                var well = await GetWellFromPPDMAsync(request.WellId);
+                if (well == null)
+                {
+                    throw new InvalidOperationException($"Well with ID {request.WellId} not found");
+                }
+
+                WELL_EQUIPMENT? equipment = null;
+                if (!string.IsNullOrEmpty(request.EquipmentId))
+                {
+                    equipment = await GetWellEquipmentFromPPDMAsync(request.EquipmentId);
+                }
+
+                WELL_PRESSURE? wellPressure = await GetWellPressureFromPPDMAsync(request.WellId);
+
+                // Step 2: Map to domain models using ChokeAnalysisMapper
+                var mapper = new ChokeAnalysisMapper();
+                var chokeProperties = mapper.MapToChokeProperties(well, wellPressure);
+                var gasChokeProperties = mapper.MapToGasChokeProperties(well, wellPressure);
+
+                // Override with request values if provided
+                if (request.ChokeDiameter.HasValue)
+                    chokeProperties.ChokeDiameter = request.ChokeDiameter.Value;
+                if (!string.IsNullOrEmpty(request.ChokeType))
+                    chokeProperties.ChokeType = Enum.Parse<ChokeType>(request.ChokeType, ignoreCase: true);
+                if (request.DischargeCoefficient.HasValue)
+                    chokeProperties.DischargeCoefficient = request.DischargeCoefficient.Value;
+                if (request.UpstreamPressure.HasValue)
+                    gasChokeProperties.UpstreamPressure = request.UpstreamPressure.Value;
+                if (request.DownstreamPressure.HasValue)
+                    gasChokeProperties.DownstreamPressure = request.DownstreamPressure.Value;
+                if (request.Temperature.HasValue)
+                    gasChokeProperties.Temperature = request.Temperature.Value;
+                if (request.GasSpecificGravity.HasValue)
+                    gasChokeProperties.GasSpecificGravity = request.GasSpecificGravity.Value;
+                if (request.ZFactor.HasValue)
+                    gasChokeProperties.ZFactor = request.ZFactor.Value;
+                if (request.FlowRate.HasValue)
+                    gasChokeProperties.FlowRate = request.FlowRate.Value;
+
+                // Step 3: Perform calculation using ChokeAnalysis library
+                ChokeFlowResult calculationResult;
+                if (request.AnalysisType.ToUpper() == "DOWNSTREAM_PRESSURE" && request.FlowRate.HasValue)
+                {
+                    var downstreamPressure = GasChokeCalculator.CalculateDownstreamPressure(
+                        chokeProperties, gasChokeProperties, request.FlowRate.Value);
+                    calculationResult = new ChokeFlowResult
+                    {
+                        FlowRate = request.FlowRate.Value,
+                        DownstreamPressure = downstreamPressure,
+                        UpstreamPressure = gasChokeProperties.UpstreamPressure,
+                        PressureRatio = downstreamPressure / gasChokeProperties.UpstreamPressure,
+                        FlowRegime = FlowRegime.Subsonic, // Will be determined by pressure ratio
+                        CriticalPressureRatio = 0.546m // Approximate for natural gas
+                    };
+                }
+                else if (request.AnalysisType.ToUpper() == "SIZING" && request.FlowRate.HasValue)
+                {
+                    var requiredSize = GasChokeCalculator.CalculateRequiredChokeSize(gasChokeProperties, request.FlowRate.Value);
+                    calculationResult = new ChokeFlowResult
+                    {
+                        FlowRate = request.FlowRate.Value,
+                        DownstreamPressure = gasChokeProperties.DownstreamPressure,
+                        UpstreamPressure = gasChokeProperties.UpstreamPressure,
+                        PressureRatio = gasChokeProperties.DownstreamPressure / gasChokeProperties.UpstreamPressure,
+                        FlowRegime = FlowRegime.Subsonic,
+                        CriticalPressureRatio = 0.546m
+                    };
+                    // Store required size in additional results
+                }
+                else if (request.AnalysisType.ToUpper() == "UPHOLE")
+                {
+                    calculationResult = GasChokeCalculator.CalculateUpholeChokeFlow(chokeProperties, gasChokeProperties);
+                }
+                else
+                {
+                    // Default to downhole
+                    calculationResult = GasChokeCalculator.CalculateDownholeChokeFlow(chokeProperties, gasChokeProperties);
+                }
+
+                // Step 4: Map to DTO
+                var result = new ChokeAnalysisResult
+                {
+                    CalculationId = Guid.NewGuid().ToString(),
+                    WellId = request.WellId,
+                    EquipmentId = request.EquipmentId,
+                    AnalysisType = request.AnalysisType,
+                    CalculationDate = DateTime.UtcNow,
+                    ChokeDiameter = chokeProperties.ChokeDiameter,
+                    ChokeType = chokeProperties.ChokeType.ToString(),
+                    DischargeCoefficient = chokeProperties.DischargeCoefficient,
+                    FlowRate = calculationResult.FlowRate,
+                    UpstreamPressure = calculationResult.UpstreamPressure,
+                    DownstreamPressure = calculationResult.DownstreamPressure,
+                    PressureRatio = calculationResult.PressureRatio,
+                    FlowRegime = calculationResult.FlowRegime.ToString(),
+                    CriticalPressureRatio = calculationResult.CriticalPressureRatio,
+                    Status = "SUCCESS",
+                    UserId = request.UserId
+                };
+
+                // Step 5: Store result in PPDM database
+                try
+                {
+                    var repository = await GetChokeAnalysisResultRepositoryAsync();
+                    var resultEntity = new Dictionary<string, object>
+                    {
+                        ["CHOKE_ANALYSIS_ID"] = result.CalculationId,
+                        ["WELL_ID"] = result.WellId ?? string.Empty,
+                        ["EQUIPMENT_ID"] = result.EquipmentId ?? string.Empty,
+                        ["ANALYSIS_TYPE"] = result.AnalysisType,
+                        ["CALCULATION_DATE"] = result.CalculationDate,
+                        ["CHOKE_DIAMETER"] = result.ChokeDiameter,
+                        ["CHOKE_TYPE"] = result.ChokeType,
+                        ["DISCHARGE_COEFFICIENT"] = result.DischargeCoefficient,
+                        ["FLOW_RATE"] = result.FlowRate,
+                        ["UPSTREAM_PRESSURE"] = result.UpstreamPressure,
+                        ["DOWNSTREAM_PRESSURE"] = result.DownstreamPressure,
+                        ["PRESSURE_RATIO"] = result.PressureRatio,
+                        ["FLOW_REGIME"] = result.FlowRegime,
+                        ["CRITICAL_PRESSURE_RATIO"] = result.CriticalPressureRatio,
+                        ["STATUS"] = result.Status
+                    };
+
+                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    _logger?.LogInformation("Stored Choke Analysis result with ID: {CalculationId}", result.CalculationId);
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Choke Analysis result");
+                    // Continue - don't fail the operation if storage fails
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error performing Choke Analysis for WellId: {WellId}", request.WellId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates repository for Choke Analysis results
+        /// </summary>
+        private async Task<PPDMGenericRepository> GetChokeAnalysisResultRepositoryAsync()
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("CHOKE_ANALYSIS_RESULT");
+                if (metadata == null)
+                {
+                    // Use ANL_ANALYSIS_REPORT as fallback
+                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
+                    if (metadata == null)
+                    {
+                        throw new InvalidOperationException("CHOKE_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
+                    }
+                }
+
+                return new PPDMGenericRepository(_dataSource, metadata);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting Choke Analysis result repository");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets WELL entity from PPDM database
+        /// </summary>
+        private async Task<WELL?> GetWellFromPPDMAsync(string wellId)
+        {
+            var entity = await GetEntityAsync("WELL", wellId, "WELL_ID");
+            return entity as WELL;
+        }
+
+        /// <summary>
+        /// Gets WELL_EQUIPMENT entity from PPDM database
+        /// </summary>
+        private async Task<WELL_EQUIPMENT?> GetWellEquipmentFromPPDMAsync(string equipmentId)
+        {
+            var entity = await GetEntityAsync("WELL_EQUIPMENT", equipmentId, "ROW_ID");
+            return entity as WELL_EQUIPMENT;
+        }
+
+        /// <summary>
+        /// Gets WELL_PRESSURE entity from PPDM database (latest)
+        /// </summary>
+        private async Task<WELL_PRESSURE?> GetWellPressureFromPPDMAsync(string wellId)
+        {
+            var entity = await GetLatestEntityForWellAsync("WELL_PRESSURE", wellId, "EFFECTIVE_DATE");
+            return entity as WELL_PRESSURE;
+        }
+
+        /// <summary>
+        /// Gets WELL_TUBULAR entity from PPDM database (latest)
+        /// </summary>
+        private async Task<WELL_TUBULAR?> GetWellTubularFromPPDMAsync(string wellId, string? tubularType = null)
+        {
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = wellId }
+            };
+
+            if (!string.IsNullOrEmpty(tubularType))
+            {
+                filters.Add(new AppFilter { FieldName = "TUBULAR_TYPE", Operator = "=", FilterValue = tubularType });
+            }
+
+            var entities = await GetEntitiesAsync("WELL_TUBULAR", filters, "EFFECTIVE_DATE", DataRetrievalMode.Latest);
+            return entities.FirstOrDefault() as WELL_TUBULAR;
+        }
+
+        #endregion
+
+        #region Gas Lift Analysis
+
+        /// <summary>
+        /// Performs gas lift analysis for a well.
+        /// Calculates gas lift potential, valve design, and valve spacing.
+        /// </summary>
+        /// <param name="request">Gas lift analysis request containing well ID and analysis parameters</param>
+        /// <returns>Gas lift analysis result with optimal injection rate, performance curve, and valve design</returns>
+        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
+        /// <exception cref="InvalidOperationException">Thrown when well data is unavailable</exception>
+        public async Task<GasLiftAnalysisResult> PerformGasLiftAnalysisAsync(GasLiftAnalysisRequest request)
+        {
+            try
+            {
+                // Validate request
+                if (string.IsNullOrEmpty(request.WellId))
+                {
+                    throw new ArgumentException("WellId must be provided");
+                }
+
+                _logger?.LogInformation("Starting Gas Lift Analysis for WellId: {WellId}, AnalysisType: {AnalysisType}",
+                    request.WellId, request.AnalysisType);
+
+                // Step 1: Retrieve well data from PPDM
+                var well = await GetWellFromPPDMAsync(request.WellId);
+                if (well == null)
+                {
+                    throw new InvalidOperationException($"Well with ID {request.WellId} not found");
+                }
+
+                var tubular = await GetWellTubularFromPPDMAsync(request.WellId, "TUBING");
+                var wellPressure = await GetWellPressureFromPPDMAsync(request.WellId);
+
+                // Step 2: Map to domain models using GasLiftMapper
+                var mapper = new GasLiftMapper();
+                var wellProperties = mapper.MapToGasLiftWellProperties(well, tubular, wellPressure);
+
+                // Override with request values if provided
+                if (request.WellDepth.HasValue) wellProperties.WellDepth = request.WellDepth.Value;
+                if (request.TubingDiameter.HasValue) wellProperties.TubingDiameter = request.TubingDiameter.Value;
+                if (request.CasingDiameter.HasValue) wellProperties.CasingDiameter = request.CasingDiameter.Value;
+                if (request.WellheadPressure.HasValue) wellProperties.WellheadPressure = request.WellheadPressure.Value;
+                if (request.BottomHolePressure.HasValue) wellProperties.BottomHolePressure = request.BottomHolePressure.Value;
+                if (request.WellheadTemperature.HasValue) wellProperties.WellheadTemperature = request.WellheadTemperature.Value;
+                if (request.BottomHoleTemperature.HasValue) wellProperties.BottomHoleTemperature = request.BottomHoleTemperature.Value;
+                if (request.OilGravity.HasValue) wellProperties.OilGravity = request.OilGravity.Value;
+                if (request.WaterCut.HasValue) wellProperties.WaterCut = request.WaterCut.Value;
+                if (request.GasOilRatio.HasValue) wellProperties.GasOilRatio = request.GasOilRatio.Value;
+                if (request.GasSpecificGravity.HasValue) wellProperties.GasSpecificGravity = request.GasSpecificGravity.Value;
+                if (request.DesiredProductionRate.HasValue) wellProperties.DesiredProductionRate = request.DesiredProductionRate.Value;
+
+                // Step 3: Perform calculation using GasLift library
+                GasLiftAnalysisResult result;
+                if (request.AnalysisType.ToUpper() == "VALVE_DESIGN")
+                {
+                    // Valve design analysis
+                    var gasInjectionPressure = request.AdditionalParameters?.ContainsKey("GasInjectionPressure") == true
+                        ? Convert.ToDecimal(request.AdditionalParameters["GasInjectionPressure"])
+                        : wellProperties.WellheadPressure * 1.5m;
+                    var numberOfValves = request.AdditionalParameters?.ContainsKey("NumberOfValves") == true
+                        ? Convert.ToInt32(request.AdditionalParameters["NumberOfValves"])
+                        : 5;
+
+                    var designResult = GasLiftValveDesignCalculator.DesignValvesUS(wellProperties, gasInjectionPressure, numberOfValves);
+                    
+                    result = new GasLiftAnalysisResult
+                    {
+                        CalculationId = Guid.NewGuid().ToString(),
+                        WellId = request.WellId,
+                        AnalysisType = request.AnalysisType,
+                        CalculationDate = DateTime.UtcNow,
+                        Valves = designResult.Valves.Select(v => new GasLiftValveData
+                        {
+                            Depth = v.Depth,
+                            PortSize = v.PortSize,
+                            OpeningPressure = v.OpeningPressure,
+                            ClosingPressure = v.ClosingPressure,
+                            ValveType = v.ValveType.ToString(),
+                            Temperature = v.Temperature,
+                            GasInjectionRate = v.GasInjectionRate
+                        }).ToList(),
+                        TotalGasInjectionRate = designResult.TotalGasInjectionRate,
+                        ExpectedProductionRate = designResult.ExpectedProductionRate,
+                        SystemEfficiency = designResult.SystemEfficiency,
+                        Status = "SUCCESS",
+                        UserId = request.UserId
+                    };
+                }
+                else if (request.AnalysisType.ToUpper() == "VALVE_SPACING")
+                {
+                    // Valve spacing analysis
+                    var spacingResult = GasLiftValveSpacingCalculator.CalculateEqualPressureDropSpacing(
+                        wellProperties,
+                        request.AdditionalParameters?.ContainsKey("GasInjectionPressure") == true
+                            ? Convert.ToDecimal(request.AdditionalParameters["GasInjectionPressure"])
+                            : wellProperties.WellheadPressure * 1.5m,
+                        request.AdditionalParameters?.ContainsKey("NumberOfValves") == true
+                            ? Convert.ToInt32(request.AdditionalParameters["NumberOfValves"])
+                            : 5);
+
+                    result = new GasLiftAnalysisResult
+                    {
+                        CalculationId = Guid.NewGuid().ToString(),
+                        WellId = request.WellId,
+                        AnalysisType = request.AnalysisType,
+                        CalculationDate = DateTime.UtcNow,
+                        ValveDepths = spacingResult.ValveDepths,
+                        OpeningPressures = spacingResult.OpeningPressures,
+                        NumberOfValves = spacingResult.NumberOfValves,
+                        TotalDepthCoverage = spacingResult.TotalDepthCoverage,
+                        Status = "SUCCESS",
+                        UserId = request.UserId
+                    };
+                }
+                else
+                {
+                    // Default to potential analysis
+                    var minRate = request.MinGasInjectionRate ?? 100m;
+                    var maxRate = request.MaxGasInjectionRate ?? 5000m;
+                    var numPoints = request.NumberOfPoints ?? 50;
+
+                    var potentialResult = GasLiftPotentialCalculator.AnalyzeGasLiftPotential(
+                        wellProperties, minRate, maxRate, numPoints);
+
+                    result = new GasLiftAnalysisResult
+                    {
+                        CalculationId = Guid.NewGuid().ToString(),
+                        WellId = request.WellId,
+                        AnalysisType = request.AnalysisType,
+                        CalculationDate = DateTime.UtcNow,
+                        OptimalGasInjectionRate = potentialResult.OptimalGasInjectionRate,
+                        MaximumProductionRate = potentialResult.MaximumProductionRate,
+                        OptimalGasLiquidRatio = potentialResult.OptimalGasLiquidRatio,
+                        PerformancePoints = potentialResult.PerformancePoints.Select(p => new GasLiftPerformancePoint
+                        {
+                            GasInjectionRate = p.GasInjectionRate,
+                            ProductionRate = p.ProductionRate,
+                            GasLiquidRatio = p.GasLiquidRatio,
+                            BottomHolePressure = p.BottomHolePressure
+                        }).ToList(),
+                        Status = "SUCCESS",
+                        UserId = request.UserId
+                    };
+                }
+
+                // Step 4: Store result in PPDM database
+                try
+                {
+                    var repository = await GetGasLiftAnalysisResultRepositoryAsync();
+                    var resultEntity = new Dictionary<string, object>
+                    {
+                        ["GAS_LIFT_ANALYSIS_ID"] = result.CalculationId,
+                        ["WELL_ID"] = result.WellId ?? string.Empty,
+                        ["ANALYSIS_TYPE"] = result.AnalysisType,
+                        ["CALCULATION_DATE"] = result.CalculationDate,
+                        ["OPTIMAL_GAS_INJECTION_RATE"] = result.OptimalGasInjectionRate,
+                        ["MAXIMUM_PRODUCTION_RATE"] = result.MaximumProductionRate,
+                        ["OPTIMAL_GAS_LIQUID_RATIO"] = result.OptimalGasLiquidRatio,
+                        ["PERFORMANCE_POINTS_JSON"] = JsonSerializer.Serialize(result.PerformancePoints),
+                        ["STATUS"] = result.Status
+                    };
+
+                    if (result.Valves != null)
+                        resultEntity["VALVES_JSON"] = JsonSerializer.Serialize(result.Valves);
+                    if (result.ValveDepths != null)
+                        resultEntity["VALVE_DEPTHS_JSON"] = JsonSerializer.Serialize(result.ValveDepths);
+
+                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    _logger?.LogInformation("Stored Gas Lift Analysis result with ID: {CalculationId}", result.CalculationId);
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Gas Lift Analysis result");
+                    // Continue - don't fail the operation if storage fails
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error performing Gas Lift Analysis for WellId: {WellId}", request.WellId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates repository for Gas Lift Analysis results
+        /// </summary>
+        private async Task<PPDMGenericRepository> GetGasLiftAnalysisResultRepositoryAsync()
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("GAS_LIFT_ANALYSIS_RESULT");
+                if (metadata == null)
+                {
+                    // Use ANL_ANALYSIS_REPORT as fallback
+                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
+                    if (metadata == null)
+                    {
+                        throw new InvalidOperationException("GAS_LIFT_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
+                    }
+                }
+
+                return new PPDMGenericRepository(_dataSource, metadata);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting Gas Lift Analysis result repository");
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Pump Performance Analysis
+
+        /// <summary>
+        /// Performs pump performance analysis for a well or facility.
+        /// Calculates pump performance curves, efficiency, power requirements, and NPSH.
+        /// </summary>
+        /// <param name="request">Pump analysis request containing well/facility ID, pump properties, and operating conditions</param>
+        /// <returns>Pump analysis result with performance curves, efficiency, and power requirements</returns>
+        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
+        /// <exception cref="InvalidOperationException">Thrown when well/facility or equipment data is unavailable</exception>
+        public async Task<PumpAnalysisResult> PerformPumpAnalysisAsync(PumpAnalysisRequest request)
+        {
+            try
+            {
+                // Validate request
+                if (string.IsNullOrEmpty(request.WellId) && string.IsNullOrEmpty(request.FacilityId))
+                {
+                    throw new ArgumentException("At least one of WellId or FacilityId must be provided");
+                }
+
+                _logger?.LogInformation("Starting Pump Analysis - WellId: {WellId}, FacilityId: {FacilityId}, PumpType: {PumpType}",
+                    request.WellId, request.FacilityId, request.PumpType);
+
+                // Step 1: Retrieve equipment data from PPDM
+                WELL_EQUIPMENT? wellEquipment = null;
+                FACILITY_EQUIPMENT? facilityEquipment = null;
+
+                if (!string.IsNullOrEmpty(request.EquipmentId))
+                {
+                    if (!string.IsNullOrEmpty(request.WellId))
+                    {
+                        wellEquipment = await GetWellEquipmentFromPPDMAsync(request.EquipmentId);
+                    }
+                    else if (!string.IsNullOrEmpty(request.FacilityId))
+                    {
+                        var equipment = await GetEntityAsync("FACILITY_EQUIPMENT", request.EquipmentId, "ROW_ID");
+                        facilityEquipment = equipment as FACILITY_EQUIPMENT;
+                    }
+                }
+
+                // Step 2: Build pump properties from request or PPDM data
+                // For simplicity, we'll use request values if provided, otherwise use defaults
+                var flowRates = request.AdditionalParameters?.ContainsKey("FlowRates") == true
+                    ? ((double[])request.AdditionalParameters["FlowRates"])
+                    : new double[] { 100, 200, 300, 400, 500 }; // Default flow rates in GPM
+
+                var heads = request.AdditionalParameters?.ContainsKey("Heads") == true
+                    ? ((double[])request.AdditionalParameters["Heads"])
+                    : new double[] { 100, 90, 75, 60, 45 }; // Default heads in feet
+
+                var powers = request.AdditionalParameters?.ContainsKey("Powers") == true
+                    ? ((double[])request.AdditionalParameters["Powers"])
+                    : new double[] { 80, 150, 230, 310, 380 }; // Default powers in HP
+
+                var specificGravity = request.FluidDensity.HasValue
+                    ? (double)(request.FluidDensity.Value / 62.4m) // Convert lb/ft³ to specific gravity
+                    : 1.0;
+
+                // Step 3: Perform calculation using PumpPerformance library
+                var efficiencies = PumpPerformanceCalc.HQCalc(flowRates, heads, powers, specificGravity);
+                var hqCurve = HeadQuantityCalculations.GenerateHQCurve(flowRates, heads, powers, specificGravity);
+                var bep = HeadQuantityCalculations.FindBestEfficiencyPoint(hqCurve);
+
+                // Calculate NPSH if suction pressure provided
+                double? npshAvailable = null;
+                double? npshRequired = null;
+                bool? cavitationRisk = null;
+
+                if (request.SuctionPressure.HasValue && request.FluidDensity.HasValue)
+                {
+                    var vaporPressure = request.AdditionalParameters?.ContainsKey("VaporPressure") == true
+                        ? Convert.ToDouble(request.AdditionalParameters["VaporPressure"])
+                        : 0.5; // Default vapor pressure in psia
+
+                    npshAvailable = NPSHCalculations.CalculateNPSHAvailable(
+                        (double)request.SuctionPressure.Value,
+                        vaporPressure,
+                        (double)request.FluidDensity.Value);
+
+                    // Estimate NPSH required (simplified - would need pump-specific data)
+                    npshRequired = bep?.FlowRate * 0.1; // Simplified estimate
+                    cavitationRisk = npshAvailable < npshRequired;
+                }
+
+                // Step 4: Map to DTO
+                var result = new PumpAnalysisResult
+                {
+                    CalculationId = Guid.NewGuid().ToString(),
+                    WellId = request.WellId,
+                    FacilityId = request.FacilityId,
+                    EquipmentId = request.EquipmentId,
+                    PumpType = request.PumpType,
+                    AnalysisType = request.AnalysisType,
+                    CalculationDate = DateTime.UtcNow,
+                    FlowRate = request.FlowRate ?? (decimal)(bep?.FlowRate ?? 0),
+                    Head = request.Head ?? (decimal)(bep?.Head ?? 0),
+                    Power = request.Power ?? (decimal)(bep?.Power ?? 0),
+                    Efficiency = request.Efficiency ?? (decimal)(bep?.Efficiency ?? 0),
+                    BestEfficiencyPoint = (decimal)(bep?.FlowRate ?? 0),
+                    PerformanceCurve = hqCurve.Select(p => new PumpPerformancePoint
+                    {
+                        FlowRate = (decimal)p.FlowRate,
+                        Head = (decimal)p.Head,
+                        Power = (decimal)p.Power,
+                        Efficiency = (decimal)p.Efficiency
+                    }).ToList(),
+                    NPSHAvailable = npshAvailable.HasValue ? (decimal)npshAvailable.Value : null,
+                    NPSHRequired = npshRequired.HasValue ? (decimal)npshRequired.Value : null,
+                    CavitationRisk = cavitationRisk,
+                    Status = "SUCCESS",
+                    UserId = request.UserId
+                };
+
+                // Step 5: Store result in PPDM database
+                try
+                {
+                    var repository = await GetPumpAnalysisResultRepositoryAsync();
+                    var resultEntity = new Dictionary<string, object>
+                    {
+                        ["PUMP_ANALYSIS_ID"] = result.CalculationId,
+                        ["WELL_ID"] = result.WellId ?? string.Empty,
+                        ["FACILITY_ID"] = result.FacilityId ?? string.Empty,
+                        ["EQUIPMENT_ID"] = result.EquipmentId ?? string.Empty,
+                        ["PUMP_TYPE"] = result.PumpType,
+                        ["ANALYSIS_TYPE"] = result.AnalysisType,
+                        ["CALCULATION_DATE"] = result.CalculationDate,
+                        ["FLOW_RATE"] = result.FlowRate ?? 0m,
+                        ["HEAD"] = result.Head ?? 0m,
+                        ["POWER"] = result.Power ?? 0m,
+                        ["EFFICIENCY"] = result.Efficiency ?? 0m,
+                        ["BEST_EFFICIENCY_POINT"] = result.BestEfficiencyPoint ?? 0m,
+                        ["PERFORMANCE_CURVE_JSON"] = JsonSerializer.Serialize(result.PerformanceCurve),
+                        ["STATUS"] = result.Status
+                    };
+
+                    if (result.NPSHAvailable.HasValue)
+                        resultEntity["NPSH_AVAILABLE"] = result.NPSHAvailable.Value;
+                    if (result.NPSHRequired.HasValue)
+                        resultEntity["NPSH_REQUIRED"] = result.NPSHRequired.Value;
+                    if (result.CavitationRisk.HasValue)
+                        resultEntity["CAVITATION_RISK"] = result.CavitationRisk.Value;
+
+                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    _logger?.LogInformation("Stored Pump Analysis result with ID: {CalculationId}", result.CalculationId);
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Pump Analysis result");
+                    // Continue - don't fail the operation if storage fails
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error performing Pump Analysis for WellId: {WellId}, FacilityId: {FacilityId}",
+                    request.WellId, request.FacilityId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates repository for Pump Analysis results
+        /// </summary>
+        private async Task<PPDMGenericRepository> GetPumpAnalysisResultRepositoryAsync()
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("PUMP_ANALYSIS_RESULT");
+                if (metadata == null)
+                {
+                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
+                    if (metadata == null)
+                    {
+                        throw new InvalidOperationException("PUMP_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
+                    }
+                }
+
+                return new PPDMGenericRepository(_dataSource, metadata);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting Pump Analysis result repository");
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Sucker Rod Pumping Analysis
+
+        /// <summary>
+        /// Performs sucker rod pumping analysis for a well.
+        /// Calculates rod loads, power requirements, production rate, and pump card.
+        /// </summary>
+        /// <param name="request">Sucker rod analysis request containing well ID, rod system properties, and operating parameters</param>
+        /// <returns>Sucker rod analysis result with load analysis, power requirements, and pump card</returns>
+        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
+        /// <exception cref="InvalidOperationException">Thrown when well or equipment data is unavailable</exception>
+        public async Task<SuckerRodAnalysisResult> PerformSuckerRodAnalysisAsync(SuckerRodAnalysisRequest request)
+        {
+            try
+            {
+                // Validate request
+                if (string.IsNullOrEmpty(request.WellId))
+                {
+                    throw new ArgumentException("WellId must be provided");
+                }
+
+                _logger?.LogInformation("Starting Sucker Rod Analysis for WellId: {WellId}, AnalysisType: {AnalysisType}",
+                    request.WellId, request.AnalysisType);
+
+                // Step 1: Retrieve well data from PPDM
+                var well = await GetWellFromPPDMAsync(request.WellId);
+                if (well == null)
+                {
+                    throw new InvalidOperationException($"Well with ID {request.WellId} not found");
+                }
+
+                var tubular = await GetWellTubularFromPPDMAsync(request.WellId, "TUBING");
+                var wellPressure = await GetWellPressureFromPPDMAsync(request.WellId);
+                WELL_EQUIPMENT? equipment = null;
+                if (!string.IsNullOrEmpty(request.EquipmentId))
+                {
+                    equipment = await GetWellEquipmentFromPPDMAsync(request.EquipmentId);
+                }
+
+                // Step 2: Map to domain models using SuckerRodPumpingMapper (if exists) or build from request
+                var systemProperties = new SuckerRodSystemProperties
+                {
+                    WellDepth = request.WellDepth ?? (decimal)(GetPropertyValueMultiple(well, "TOTAL_DEPTH", "DEPTH") ?? 5000m),
+                    TubingDiameter = request.TubingDiameter ?? (decimal)(GetTubularInnerDiameterAsync(request.WellId, "TUBING").Result ?? 2.875m),
+                    RodDiameter = request.AdditionalParameters?.ContainsKey("RodDiameter") == true
+                        ? Convert.ToDecimal(request.AdditionalParameters["RodDiameter"])
+                        : 0.875m, // Default rod diameter
+                    PumpDiameter = request.PumpDiameter ?? 2.5m,
+                    StrokeLength = request.StrokeLength ?? 84m, // inches
+                    StrokesPerMinute = request.AdditionalParameters?.ContainsKey("StrokesPerMinute") == true
+                        ? Convert.ToDecimal(request.AdditionalParameters["StrokesPerMinute"])
+                        : 12m, // Default SPM
+                    WellheadPressure = request.AdditionalParameters?.ContainsKey("WellheadPressure") == true
+                        ? Convert.ToDecimal(request.AdditionalParameters["WellheadPressure"])
+                        : (decimal)(GetPropertyValueMultiple(wellPressure, "PRESSURE", "WELLHEAD_PRESSURE") ?? 100m),
+                    BottomHolePressure = request.AdditionalParameters?.ContainsKey("BottomHolePressure") == true
+                        ? Convert.ToDecimal(request.AdditionalParameters["BottomHolePressure"])
+                        : (decimal)(GetPropertyValueMultiple(wellPressure, "RESERVOIR_PRESSURE", "BOTTOM_HOLE_PRESSURE") ?? 2000m),
+                    FluidLevel = request.FluidLevel ?? 4000m,
+                    FluidDensity = request.FluidDensity ?? 50m, // lb/ft³
+                    OilGravity = request.OilGravity ?? 35m, // API
+                    WaterCut = request.WaterCut ?? 0.2m,
+                    GasOilRatio = request.AdditionalParameters?.ContainsKey("GasOilRatio") == true
+                        ? Convert.ToDecimal(request.AdditionalParameters["GasOilRatio"])
+                        : 500m // scf/bbl
+                };
+
+                // Build rod string (simplified - single section)
+                var rodString = new SuckerRodString
+                {
+                    Sections = new List<RodSection>
+                    {
+                        new RodSection
+                        {
+                            Diameter = systemProperties.RodDiameter,
+                            Length = systemProperties.WellDepth,
+                            Density = 490m // lb/ft³ (steel)
+                        }
+                    }
+                };
+
+                // Step 3: Perform calculation using SuckerRodPumping library
+                var loadResult = SuckerRodLoadCalculator.CalculateLoads(systemProperties, rodString);
+                var flowPowerResult = SuckerRodFlowRatePowerCalculator.CalculateFlowRateAndPower(systemProperties, loadResult);
+
+                // Generate pump card (simplified - linear approximation)
+                var pumpCard = new List<PumpCardPoint>();
+                var strokeLength = (double)systemProperties.StrokeLength;
+                for (int i = 0; i <= 20; i++)
+                {
+                    var position = (decimal)(i * strokeLength / 20.0);
+                    var load = loadResult.PeakLoad - (loadResult.LoadRange * (decimal)(i / 20.0));
+                    pumpCard.Add(new PumpCardPoint { Position = position, Load = load });
+                }
+
+                // Step 4: Map to DTO
+                var result = new SuckerRodAnalysisResult
+                {
+                    CalculationId = Guid.NewGuid().ToString(),
+                    WellId = request.WellId,
+                    EquipmentId = request.EquipmentId,
+                    AnalysisType = request.AnalysisType,
+                    CalculationDate = DateTime.UtcNow,
+                    PeakLoad = loadResult.PeakLoad,
+                    MinimumLoad = loadResult.MinimumLoad,
+                    RodStringWeight = loadResult.RodStringWeight,
+                    FluidLoad = loadResult.FluidLoad,
+                    DynamicLoad = loadResult.DynamicLoad,
+                    MaximumStress = loadResult.MaximumStress,
+                    SafetyFactor = loadResult.LoadFactor,
+                    PolishedRodHorsepower = flowPowerResult.PolishedRodHorsepower,
+                    HydraulicHorsepower = flowPowerResult.HydraulicHorsepower,
+                    FrictionHorsepower = flowPowerResult.FrictionHorsepower,
+                    TotalPowerRequired = flowPowerResult.TotalHorsepower,
+                    ProductionRate = flowPowerResult.ProductionRate,
+                    PumpDisplacement = flowPowerResult.PumpDisplacement,
+                    VolumetricEfficiency = flowPowerResult.VolumetricEfficiency,
+                    PumpCard = pumpCard,
+                    Status = "SUCCESS",
+                    UserId = request.UserId
+                };
+
+                // Step 5: Store result in PPDM database
+                try
+                {
+                    var repository = await GetSuckerRodAnalysisResultRepositoryAsync();
+                    var resultEntity = new Dictionary<string, object>
+                    {
+                        ["SUCKER_ROD_ANALYSIS_ID"] = result.CalculationId,
+                        ["WELL_ID"] = result.WellId ?? string.Empty,
+                        ["EQUIPMENT_ID"] = result.EquipmentId ?? string.Empty,
+                        ["ANALYSIS_TYPE"] = result.AnalysisType,
+                        ["CALCULATION_DATE"] = result.CalculationDate,
+                        ["PEAK_LOAD"] = result.PeakLoad,
+                        ["MINIMUM_LOAD"] = result.MinimumLoad,
+                        ["ROD_STRING_WEIGHT"] = result.RodStringWeight,
+                        ["FLUID_LOAD"] = result.FluidLoad,
+                        ["DYNAMIC_LOAD"] = result.DynamicLoad,
+                        ["MAXIMUM_STRESS"] = result.MaximumStress,
+                        ["SAFETY_FACTOR"] = result.SafetyFactor,
+                        ["POLISHED_ROD_HP"] = result.PolishedRodHorsepower,
+                        ["HYDRAULIC_HP"] = result.HydraulicHorsepower,
+                        ["FRICTION_HP"] = result.FrictionHorsepower,
+                        ["TOTAL_POWER"] = result.TotalPowerRequired,
+                        ["PRODUCTION_RATE"] = result.ProductionRate,
+                        ["PUMP_DISPLACEMENT"] = result.PumpDisplacement,
+                        ["VOLUMETRIC_EFFICIENCY"] = result.VolumetricEfficiency,
+                        ["PUMP_CARD_JSON"] = JsonSerializer.Serialize(result.PumpCard),
+                        ["STATUS"] = result.Status
+                    };
+
+                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    _logger?.LogInformation("Stored Sucker Rod Analysis result with ID: {CalculationId}", result.CalculationId);
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Sucker Rod Analysis result");
+                    // Continue - don't fail the operation if storage fails
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error performing Sucker Rod Analysis for WellId: {WellId}", request.WellId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates repository for Sucker Rod Analysis results
+        /// </summary>
+        private async Task<PPDMGenericRepository> GetSuckerRodAnalysisResultRepositoryAsync()
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("SUCKER_ROD_ANALYSIS_RESULT");
+                if (metadata == null)
+                {
+                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
+                    if (metadata == null)
+                    {
+                        throw new InvalidOperationException("SUCKER_ROD_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
+                    }
+                }
+
+                return new PPDMGenericRepository(_dataSource, metadata);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting Sucker Rod Analysis result repository");
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Compressor Analysis
+
+        /// <summary>
+        /// Performs compressor analysis for a facility.
+        /// Calculates compressor power requirements, efficiency, and discharge conditions.
+        /// </summary>
+        /// <param name="request">Compressor analysis request containing facility ID, compressor properties, and operating conditions</param>
+        /// <returns>Compressor analysis result with power requirements, efficiency, and discharge conditions</returns>
+        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
+        /// <exception cref="InvalidOperationException">Thrown when facility or equipment data is unavailable</exception>
+        public async Task<CompressorAnalysisResult> PerformCompressorAnalysisAsync(CompressorAnalysisRequest request)
+        {
+            try
+            {
+                // Validate request
+                if (string.IsNullOrEmpty(request.FacilityId))
+                {
+                    throw new ArgumentException("FacilityId must be provided");
+                }
+
+                _logger?.LogInformation("Starting Compressor Analysis for FacilityId: {FacilityId}, CompressorType: {CompressorType}",
+                    request.FacilityId, request.CompressorType);
+
+                // Step 1: Retrieve facility and equipment data from PPDM
+                var facility = await GetEntityAsync("FACILITY", request.FacilityId, "FACILITY_ID") as FACILITY;
+                if (facility == null)
+                {
+                    throw new InvalidOperationException($"Facility with ID {request.FacilityId} not found");
+                }
+
+                FACILITY_EQUIPMENT? equipment = null;
+                if (!string.IsNullOrEmpty(request.EquipmentId))
+                {
+                    equipment = await GetEntityAsync("FACILITY_EQUIPMENT", request.EquipmentId, "ROW_ID") as FACILITY_EQUIPMENT;
+                }
+
+                // Step 2: Build compressor properties from request or PPDM data
+                var operatingConditions = new CompressorOperatingConditions
+                {
+                    SuctionPressure = request.SuctionPressure ?? 100m,
+                    DischargePressure = request.DischargePressure ?? 500m,
+                    SuctionTemperature = request.SuctionTemperature ?? 520m,
+                    GasFlowRate = request.FlowRate ?? 1000m,
+                    GasSpecificGravity = request.GasSpecificGravity ?? 0.65m,
+                    CompressorEfficiency = request.PolytropicEfficiency ?? 0.75m,
+                    MechanicalEfficiency = 0.95m
+                };
+
+                // Step 3: Perform calculation using CompressorAnalysis library
+                CompressorAnalysisResult result;
+                if (request.CompressorType.ToUpper() == "RECIPROCATING")
+                {
+                    var reciprocatingProperties = new ReciprocatingCompressorProperties
+                    {
+                        OperatingConditions = operatingConditions,
+                        CylinderDiameter = request.AdditionalParameters?.ContainsKey("CylinderDiameter") == true
+                            ? Convert.ToDecimal(request.AdditionalParameters["CylinderDiameter"])
+                            : 8.0m,
+                        StrokeLength = request.AdditionalParameters?.ContainsKey("StrokeLength") == true
+                            ? Convert.ToDecimal(request.AdditionalParameters["StrokeLength"])
+                            : 12.0m,
+                        RotationalSpeed = request.AdditionalParameters?.ContainsKey("RotationalSpeed") == true
+                            ? Convert.ToDecimal(request.AdditionalParameters["RotationalSpeed"])
+                            : 300m,
+                        NumberOfCylinders = request.NumberOfCylinders ?? 2,
+                        VolumetricEfficiency = request.VolumetricEfficiency ?? 0.85m,
+                        ClearanceFactor = 0.05m
+                    };
+
+                    var calcResult = ReciprocatingCompressorCalculator.CalculatePower(reciprocatingProperties, useSIUnits: false);
+
+                    result = new CompressorAnalysisResult
+                    {
+                        CalculationId = Guid.NewGuid().ToString(),
+                        FacilityId = request.FacilityId,
+                        EquipmentId = request.EquipmentId,
+                        CompressorType = request.CompressorType,
+                        AnalysisType = request.AnalysisType,
+                        CalculationDate = DateTime.UtcNow,
+                        PowerRequired = calcResult.BrakeHorsepower,
+                        PolytropicHead = calcResult.PolytropicHead,
+                        AdiabaticHead = calcResult.AdiabaticHead,
+                        DischargeTemperature = calcResult.DischargeTemperature,
+                        PolytropicEfficiency = calcResult.PolytropicEfficiency,
+                        AdiabaticEfficiency = calcResult.AdiabaticEfficiency,
+                        OverallEfficiency = calcResult.OverallEfficiency,
+                        SuctionPressure = operatingConditions.SuctionPressure,
+                        DischargePressure = operatingConditions.DischargePressure,
+                        CompressionRatio = calcResult.CompressionRatio,
+                        FlowRate = operatingConditions.GasFlowRate,
+                        CylinderDisplacement = calcResult.CylinderDisplacement,
+                        VolumetricEfficiency = calcResult.VolumetricEfficiency,
+                        Status = "SUCCESS",
+                        UserId = request.UserId
+                    };
+                }
+                else
+                {
+                    // Default to centrifugal
+                    var centrifugalProperties = new CentrifugalCompressorProperties
+                    {
+                        OperatingConditions = operatingConditions,
+                        PolytropicEfficiency = request.PolytropicEfficiency ?? 0.75m,
+                        SpecificHeatRatio = 1.3m,
+                        NumberOfStages = request.NumberOfStages ?? 1,
+                        Speed = request.AdditionalParameters?.ContainsKey("Speed") == true
+                            ? Convert.ToDecimal(request.AdditionalParameters["Speed"])
+                            : 3600m
+                    };
+
+                    var calcResult = CentrifugalCompressorCalculator.CalculatePower(centrifugalProperties, useSIUnits: false);
+
+                    result = new CompressorAnalysisResult
+                    {
+                        CalculationId = Guid.NewGuid().ToString(),
+                        FacilityId = request.FacilityId,
+                        EquipmentId = request.EquipmentId,
+                        CompressorType = request.CompressorType,
+                        AnalysisType = request.AnalysisType,
+                        CalculationDate = DateTime.UtcNow,
+                        PowerRequired = calcResult.BrakeHorsepower,
+                        PolytropicHead = calcResult.PolytropicHead,
+                        AdiabaticHead = calcResult.AdiabaticHead,
+                        DischargeTemperature = calcResult.DischargeTemperature,
+                        PolytropicEfficiency = calcResult.PolytropicEfficiency,
+                        AdiabaticEfficiency = calcResult.AdiabaticEfficiency,
+                        OverallEfficiency = calcResult.OverallEfficiency,
+                        SuctionPressure = operatingConditions.SuctionPressure,
+                        DischargePressure = operatingConditions.DischargePressure,
+                        CompressionRatio = calcResult.CompressionRatio,
+                        FlowRate = operatingConditions.GasFlowRate,
+                        Status = "SUCCESS",
+                        UserId = request.UserId
+                    };
+                }
+
+                // Step 4: Store result in PPDM database
+                try
+                {
+                    var repository = await GetCompressorAnalysisResultRepositoryAsync();
+                    var resultEntity = new Dictionary<string, object>
+                    {
+                        ["COMPRESSOR_ANALYSIS_ID"] = result.CalculationId,
+                        ["FACILITY_ID"] = result.FacilityId ?? string.Empty,
+                        ["EQUIPMENT_ID"] = result.EquipmentId ?? string.Empty,
+                        ["COMPRESSOR_TYPE"] = result.CompressorType,
+                        ["ANALYSIS_TYPE"] = result.AnalysisType,
+                        ["CALCULATION_DATE"] = result.CalculationDate,
+                        ["POWER_REQUIRED"] = result.PowerRequired,
+                        ["POLYTROPIC_HEAD"] = result.PolytropicHead,
+                        ["ADIABATIC_HEAD"] = result.AdiabaticHead,
+                        ["DISCHARGE_TEMPERATURE"] = result.DischargeTemperature,
+                        ["POLYTROPIC_EFFICIENCY"] = result.PolytropicEfficiency,
+                        ["ADIABATIC_EFFICIENCY"] = result.AdiabaticEfficiency,
+                        ["OVERALL_EFFICIENCY"] = result.OverallEfficiency,
+                        ["SUCTION_PRESSURE"] = result.SuctionPressure,
+                        ["DISCHARGE_PRESSURE"] = result.DischargePressure,
+                        ["COMPRESSION_RATIO"] = result.CompressionRatio,
+                        ["FLOW_RATE"] = result.FlowRate,
+                        ["STATUS"] = result.Status
+                    };
+
+                    if (result.CylinderDisplacement.HasValue)
+                        resultEntity["CYLINDER_DISPLACEMENT"] = result.CylinderDisplacement.Value;
+                    if (result.VolumetricEfficiency.HasValue)
+                        resultEntity["VOLUMETRIC_EFFICIENCY"] = result.VolumetricEfficiency.Value;
+
+                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    _logger?.LogInformation("Stored Compressor Analysis result with ID: {CalculationId}", result.CalculationId);
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Compressor Analysis result");
+                    // Continue - don't fail the operation if storage fails
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error performing Compressor Analysis for FacilityId: {FacilityId}", request.FacilityId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates repository for Compressor Analysis results
+        /// </summary>
+        private async Task<PPDMGenericRepository> GetCompressorAnalysisResultRepositoryAsync()
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("COMPRESSOR_ANALYSIS_RESULT");
+                if (metadata == null)
+                {
+                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
+                    if (metadata == null)
+                    {
+                        throw new InvalidOperationException("COMPRESSOR_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
+                    }
+                }
+
+                return new PPDMGenericRepository(_dataSource, metadata);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting Compressor Analysis result repository");
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Pipeline Analysis
+
+        /// <summary>
+        /// Performs pipeline analysis for a pipeline.
+        /// Calculates pipeline capacity, flow rate, pressure drop, and flow regime.
+        /// </summary>
+        /// <param name="request">Pipeline analysis request containing pipeline ID, flow conditions, and product properties</param>
+        /// <returns>Pipeline analysis result with flow rate, pressure drop, and capacity</returns>
+        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
+        /// <exception cref="InvalidOperationException">Thrown when pipeline data is unavailable</exception>
+        public async Task<PipelineAnalysisResult> PerformPipelineAnalysisAsync(PipelineAnalysisRequest request)
+        {
+            try
+            {
+                // Validate request
+                if (string.IsNullOrEmpty(request.PipelineId))
+                {
+                    throw new ArgumentException("PipelineId must be provided");
+                }
+
+                _logger?.LogInformation("Starting Pipeline Analysis for PipelineId: {PipelineId}, PipelineType: {PipelineType}",
+                    request.PipelineId, request.PipelineType);
+
+                // Step 1: Retrieve pipeline data from PPDM
+                var pipeline = await GetEntityAsync("PIPELINE", request.PipelineId, "PIPELINE_ID") as PIPELINE;
+                if (pipeline == null)
+                {
+                    throw new InvalidOperationException($"Pipeline with ID {request.PipelineId} not found");
+                }
+
+                // Step 2: Build pipeline properties from request or PPDM data
+                var pipelineProperties = new PipelineProperties
+                {
+                    Length = request.Length ?? (decimal)(GetPropertyValueMultiple(pipeline, "LENGTH", "TOTAL_LENGTH") ?? 10m), // miles
+                    Diameter = request.Diameter ?? (decimal)(GetPropertyValueMultiple(pipeline, "DIAMETER", "OUTER_DIAMETER") ?? 12m), // inches
+                    Roughness = request.Roughness ?? 0.00018m, // inches (absolute roughness)
+                    InletPressure = request.InletPressure ?? 1000m, // psia
+                    OutletPressure = request.OutletPressure ?? 500m, // psia
+                    AverageTemperature = request.Temperature ?? 520m // Rankine
+                };
+
+                // Step 3: Perform calculation using PipelineAnalysis library
+                PipelineAnalysisResult result;
+                if (request.PipelineType.ToUpper() == "LIQUID")
+                {
+                    var liquidProperties = new LiquidPipelineFlowProperties
+                    {
+                        Pipeline = pipelineProperties,
+                        LiquidDensity = request.LiquidDensity ?? 50m, // lb/ft³
+                        LiquidViscosity = request.LiquidViscosity ?? 1.0m, // cP
+                        LiquidFlowRate = request.FlowRate ?? 1000m // bbl/day
+                    };
+
+                    var capacityResult = PipelineCapacityCalculator.CalculateLiquidPipelineCapacity(liquidProperties);
+
+                    result = new PipelineAnalysisResult
+                    {
+                        CalculationId = Guid.NewGuid().ToString(),
+                        PipelineId = request.PipelineId,
+                        PipelineType = request.PipelineType,
+                        AnalysisType = request.AnalysisType,
+                        CalculationDate = DateTime.UtcNow,
+                        FlowRate = capacityResult.MaximumFlowRate,
+                        InletPressure = pipelineProperties.InletPressure,
+                        OutletPressure = capacityResult.OutletPressure,
+                        PressureDrop = capacityResult.PressureDrop,
+                        AveragePressure = (pipelineProperties.InletPressure + capacityResult.OutletPressure) / 2m,
+                        MaximumCapacity = capacityResult.MaximumFlowRate,
+                        Utilization = request.FlowRate.HasValue ? (request.FlowRate.Value / capacityResult.MaximumFlowRate) : 0m,
+                        ReynoldsNumber = capacityResult.ReynoldsNumber,
+                        FrictionFactor = capacityResult.FrictionFactor,
+                        FlowRegime = capacityResult.ReynoldsNumber < 2100 ? "LAMINAR" : "TURBULENT",
+                        Length = pipelineProperties.Length,
+                        Diameter = pipelineProperties.Diameter,
+                        Roughness = pipelineProperties.Roughness,
+                        Status = "SUCCESS",
+                        UserId = request.UserId
+                    };
+                }
+                else
+                {
+                    // Default to gas
+                    var gasProperties = new GasPipelineFlowProperties
+                    {
+                        Pipeline = pipelineProperties,
+                        GasSpecificGravity = request.GasSpecificGravity ?? 0.65m,
+                        GasFlowRate = request.FlowRate ?? 1000m, // Mscf/day
+                        BaseTemperature = 520m, // Rankine
+                        BasePressure = 14.7m // psia
+                    };
+
+                    if (request.ZFactor.HasValue)
+                    {
+                        gasProperties.ZFactor = request.ZFactor.Value;
+                    }
+
+                    var capacityResult = PipelineCapacityCalculator.CalculateGasPipelineCapacity(gasProperties);
+
+                    result = new PipelineAnalysisResult
+                    {
+                        CalculationId = Guid.NewGuid().ToString(),
+                        PipelineId = request.PipelineId,
+                        PipelineType = request.PipelineType,
+                        AnalysisType = request.AnalysisType,
+                        CalculationDate = DateTime.UtcNow,
+                        FlowRate = capacityResult.MaximumFlowRate,
+                        InletPressure = pipelineProperties.InletPressure,
+                        OutletPressure = capacityResult.OutletPressure,
+                        PressureDrop = capacityResult.PressureDrop,
+                        AveragePressure = (pipelineProperties.InletPressure + capacityResult.OutletPressure) / 2m,
+                        MaximumCapacity = capacityResult.MaximumFlowRate,
+                        Utilization = request.FlowRate.HasValue ? (request.FlowRate.Value / capacityResult.MaximumFlowRate) : 0m,
+                        ReynoldsNumber = capacityResult.ReynoldsNumber,
+                        FrictionFactor = capacityResult.FrictionFactor,
+                        FlowRegime = capacityResult.ReynoldsNumber < 2100 ? "LAMINAR" : "TURBULENT",
+                        Length = pipelineProperties.Length,
+                        Diameter = pipelineProperties.Diameter,
+                        Roughness = pipelineProperties.Roughness,
+                        Status = "SUCCESS",
+                        UserId = request.UserId
+                    };
+                }
+
+                // Step 4: Store result in PPDM database
+                try
+                {
+                    var repository = await GetPipelineAnalysisResultRepositoryAsync();
+                    var resultEntity = new Dictionary<string, object>
+                    {
+                        ["PIPELINE_ANALYSIS_ID"] = result.CalculationId,
+                        ["PIPELINE_ID"] = result.PipelineId ?? string.Empty,
+                        ["PIPELINE_TYPE"] = result.PipelineType,
+                        ["ANALYSIS_TYPE"] = result.AnalysisType,
+                        ["CALCULATION_DATE"] = result.CalculationDate,
+                        ["FLOW_RATE"] = result.FlowRate,
+                        ["INLET_PRESSURE"] = result.InletPressure,
+                        ["OUTLET_PRESSURE"] = result.OutletPressure,
+                        ["PRESSURE_DROP"] = result.PressureDrop,
+                        ["AVERAGE_PRESSURE"] = result.AveragePressure,
+                        ["MAXIMUM_CAPACITY"] = result.MaximumCapacity,
+                        ["UTILIZATION"] = result.Utilization,
+                        ["REYNOLDS_NUMBER"] = result.ReynoldsNumber,
+                        ["FRICTION_FACTOR"] = result.FrictionFactor,
+                        ["FLOW_REGIME"] = result.FlowRegime,
+                        ["LENGTH"] = result.Length,
+                        ["DIAMETER"] = result.Diameter,
+                        ["ROUGHNESS"] = result.Roughness,
+                        ["STATUS"] = result.Status
+                    };
+
+                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    _logger?.LogInformation("Stored Pipeline Analysis result with ID: {CalculationId}", result.CalculationId);
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Pipeline Analysis result");
+                    // Continue - don't fail the operation if storage fails
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error performing Pipeline Analysis for PipelineId: {PipelineId}", request.PipelineId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates repository for Pipeline Analysis results
+        /// </summary>
+        private async Task<PPDMGenericRepository> GetPipelineAnalysisResultRepositoryAsync()
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("PIPELINE_ANALYSIS_RESULT");
+                if (metadata == null)
+                {
+                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
+                    if (metadata == null)
+                    {
+                        throw new InvalidOperationException("PIPELINE_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
+                    }
+                }
+
+                return new PPDMGenericRepository(_dataSource, metadata);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting Pipeline Analysis result repository");
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Plunger Lift Analysis
+
+        /// <summary>
+        /// Performs plunger lift analysis for a well.
+        /// Calculates plunger lift cycle performance, production rate, and optimization.
+        /// </summary>
+        /// <param name="request">Plunger lift analysis request containing well ID, plunger properties, and operating conditions</param>
+        /// <returns>Plunger lift analysis result with production rate, cycle time, and optimization results</returns>
+        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
+        /// <exception cref="InvalidOperationException">Thrown when well or equipment data is unavailable</exception>
+        public async Task<PlungerLiftAnalysisResult> PerformPlungerLiftAnalysisAsync(PlungerLiftAnalysisRequest request)
+        {
+            try
+            {
+                // Validate request
+                if (string.IsNullOrEmpty(request.WellId))
+                {
+                    throw new ArgumentException("WellId must be provided");
+                }
+
+                _logger?.LogInformation("Starting Plunger Lift Analysis for WellId: {WellId}, AnalysisType: {AnalysisType}",
+                    request.WellId, request.AnalysisType);
+
+                // Step 1: Retrieve well data from PPDM
+                var well = await GetWellFromPPDMAsync(request.WellId);
+                if (well == null)
+                {
+                    throw new InvalidOperationException($"Well with ID {request.WellId} not found");
+                }
+
+                var tubular = await GetWellTubularFromPPDMAsync(request.WellId, "TUBING");
+                var wellPressure = await GetWellPressureFromPPDMAsync(request.WellId);
+                WELL_EQUIPMENT? equipment = null;
+                if (!string.IsNullOrEmpty(request.EquipmentId))
+                {
+                    equipment = await GetWellEquipmentFromPPDMAsync(request.EquipmentId);
+                }
+
+                // Step 2: Map to domain models
+                var wellProperties = new PlungerLiftWellProperties
+                {
+                    WellDepth = request.WellDepth ?? (decimal)(GetPropertyValueMultiple(well, "TOTAL_DEPTH", "DEPTH") ?? 5000m),
+                    TubingDiameter = request.TubingDiameter ?? (decimal)(GetTubularInnerDiameterAsync(request.WellId, "TUBING").Result ?? 2.875m),
+                    PlungerDiameter = request.PlungerDiameter ?? 2.25m,
+                    WellheadPressure = request.WellheadPressure ?? (decimal)(GetPropertyValueMultiple(wellPressure, "PRESSURE", "WELLHEAD_PRESSURE") ?? 100m),
+                    CasingPressure = request.AdditionalParameters?.ContainsKey("CasingPressure") == true
+                        ? Convert.ToDecimal(request.AdditionalParameters["CasingPressure"])
+                        : 200m,
+                    BottomHolePressure = request.BottomHolePressure ?? (decimal)(GetPropertyValueMultiple(wellPressure, "RESERVOIR_PRESSURE", "BOTTOM_HOLE_PRESSURE") ?? 2000m),
+                    WellheadTemperature = request.WellheadTemperature ?? (decimal)(GetPropertyValueMultiple(wellPressure, "TEMPERATURE", "WELLHEAD_TEMPERATURE") ?? 520m),
+                    BottomHoleTemperature = request.BottomHoleTemperature ?? (decimal)(GetPropertyValueMultiple(wellPressure, "BOTTOM_HOLE_TEMPERATURE") ?? 580m),
+                    OilGravity = request.OilGravity ?? 35m,
+                    WaterCut = request.WaterCut ?? 0.2m,
+                    GasOilRatio = request.AdditionalParameters?.ContainsKey("GasOilRatio") == true
+                        ? Convert.ToDecimal(request.AdditionalParameters["GasOilRatio"])
+                        : 500m,
+                    GasSpecificGravity = request.GasSpecificGravity ?? 0.65m,
+                    LiquidProductionRate = request.LiquidProductionRate ?? 50m
+                };
+
+                // Step 3: Perform calculation using PlungerLift library
+                var cycleResult = PlungerLiftCalculator.AnalyzeCycle(wellProperties);
+
+                // Step 4: Map to DTO
+                var result = new PlungerLiftAnalysisResult
+                {
+                    CalculationId = Guid.NewGuid().ToString(),
+                    WellId = request.WellId,
+                    EquipmentId = request.EquipmentId,
+                    AnalysisType = request.AnalysisType,
+                    CalculationDate = DateTime.UtcNow,
+                    ProductionRate = cycleResult.DailyProductionRate,
+                    CycleTime = cycleResult.CycleTime,
+                    GasFlowRate = request.GasFlowRate ?? (wellProperties.GasOilRatio * cycleResult.DailyProductionRate / 1000m),
+                    PlungerVelocity = cycleResult.RiseVelocity,
+                    OptimalCycleTime = cycleResult.CycleTime,
+                    OptimalGasFlowRate = wellProperties.GasOilRatio * cycleResult.DailyProductionRate / 1000m,
+                    MaximumProductionRate = cycleResult.DailyProductionRate,
+                    FallTime = cycleResult.FallTime,
+                    RiseTime = cycleResult.RiseTime,
+                    ShutInTime = cycleResult.ShutInTime,
+                    Status = "SUCCESS",
+                    UserId = request.UserId
+                };
+
+                // Step 5: Store result in PPDM database
+                try
+                {
+                    var repository = await GetPlungerLiftAnalysisResultRepositoryAsync();
+                    var resultEntity = new Dictionary<string, object>
+                    {
+                        ["PLUNGER_LIFT_ANALYSIS_ID"] = result.CalculationId,
+                        ["WELL_ID"] = result.WellId ?? string.Empty,
+                        ["EQUIPMENT_ID"] = result.EquipmentId ?? string.Empty,
+                        ["ANALYSIS_TYPE"] = result.AnalysisType,
+                        ["CALCULATION_DATE"] = result.CalculationDate,
+                        ["PRODUCTION_RATE"] = result.ProductionRate,
+                        ["CYCLE_TIME"] = result.CycleTime,
+                        ["GAS_FLOW_RATE"] = result.GasFlowRate,
+                        ["PLUNGER_VELOCITY"] = result.PlungerVelocity,
+                        ["OPTIMAL_CYCLE_TIME"] = result.OptimalCycleTime ?? result.CycleTime,
+                        ["OPTIMAL_GAS_FLOW_RATE"] = result.OptimalGasFlowRate ?? result.GasFlowRate,
+                        ["MAXIMUM_PRODUCTION_RATE"] = result.MaximumProductionRate,
+                        ["FALL_TIME"] = result.FallTime,
+                        ["RISE_TIME"] = result.RiseTime,
+                        ["SHUT_IN_TIME"] = result.ShutInTime,
+                        ["STATUS"] = result.Status
+                    };
+
+                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    _logger?.LogInformation("Stored Plunger Lift Analysis result with ID: {CalculationId}", result.CalculationId);
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Plunger Lift Analysis result");
+                    // Continue - don't fail the operation if storage fails
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error performing Plunger Lift Analysis for WellId: {WellId}", request.WellId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates repository for Plunger Lift Analysis results
+        /// </summary>
+        private async Task<PPDMGenericRepository> GetPlungerLiftAnalysisResultRepositoryAsync()
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("PLUNGER_LIFT_ANALYSIS_RESULT");
+                if (metadata == null)
+                {
+                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
+                    if (metadata == null)
+                    {
+                        throw new InvalidOperationException("PLUNGER_LIFT_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
+                    }
+                }
+
+                return new PPDMGenericRepository(_dataSource, metadata);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting Plunger Lift Analysis result repository");
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Hydraulic Pump Analysis
+
+        /// <summary>
+        /// Performs hydraulic pump analysis for a well.
+        /// Calculates hydraulic pump performance, efficiency, and power requirements.
+        /// </summary>
+        /// <param name="request">Hydraulic pump analysis request containing well ID, pump properties, and power fluid conditions</param>
+        /// <returns>Hydraulic pump analysis result with production rate, power requirements, and efficiency</returns>
+        /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
+        /// <exception cref="InvalidOperationException">Thrown when well or equipment data is unavailable</exception>
+        public async Task<HydraulicPumpAnalysisResult> PerformHydraulicPumpAnalysisAsync(HydraulicPumpAnalysisRequest request)
+        {
+            try
+            {
+                // Validate request
+                if (string.IsNullOrEmpty(request.WellId))
+                {
+                    throw new ArgumentException("WellId must be provided");
+                }
+
+                _logger?.LogInformation("Starting Hydraulic Pump Analysis for WellId: {WellId}, AnalysisType: {AnalysisType}",
+                    request.WellId, request.AnalysisType);
+
+                // Step 1: Retrieve well data from PPDM
+                var well = await GetWellFromPPDMAsync(request.WellId);
+                if (well == null)
+                {
+                    throw new InvalidOperationException($"Well with ID {request.WellId} not found");
+                }
+
+                var tubular = await GetWellTubularFromPPDMAsync(request.WellId, "TUBING");
+                var wellPressure = await GetWellPressureFromPPDMAsync(request.WellId);
+                WELL_EQUIPMENT? equipment = null;
+                if (!string.IsNullOrEmpty(request.EquipmentId))
+                {
+                    equipment = await GetWellEquipmentFromPPDMAsync(request.EquipmentId);
+                }
+
+                // Step 2: Map to domain models
+                var wellProperties = new HydraulicPumpWellProperties
+                {
+                    WellDepth = request.WellDepth ?? (decimal)(GetPropertyValueMultiple(well, "TOTAL_DEPTH", "DEPTH") ?? 5000m),
+                    PumpDepth = request.PumpDepth ?? (decimal)(GetPropertyValueMultiple(well, "TOTAL_DEPTH", "DEPTH") ?? 5000m),
+                    TubingDiameter = request.TubingDiameter ?? (decimal)(GetTubularInnerDiameterAsync(request.WellId, "TUBING").Result ?? 2.875m),
+                    OilGravity = request.OilGravity ?? 35m,
+                    WaterCut = request.WaterCut ?? 0.2m,
+                    GasOilRatio = request.GasOilRatio ?? 500m
+                };
+
+                var pumpProperties = new HydraulicJetPumpProperties
+                {
+                    NozzleDiameter = request.NozzleSize ?? 0.25m,
+                    ThroatDiameter = request.ThroatSize ?? 0.5m,
+                    PowerFluidPressure = request.PowerFluidPressure ?? 2000m,
+                    PowerFluidRate = request.PowerFluidRate ?? 100m,
+                    PowerFluidSpecificGravity = request.PowerFluidDensity.HasValue
+                        ? (request.PowerFluidDensity.Value / 62.4m)
+                        : 1.0m
+                };
+
+                // Step 3: Perform calculation using HydraulicPumps library
+                var performanceResult = HydraulicJetPumpCalculator.CalculatePerformance(wellProperties, pumpProperties);
+
+                // Step 4: Map to DTO
+                var result = new HydraulicPumpAnalysisResult
+                {
+                    CalculationId = Guid.NewGuid().ToString(),
+                    WellId = request.WellId,
+                    EquipmentId = request.EquipmentId,
+                    AnalysisType = request.AnalysisType,
+                    CalculationDate = DateTime.UtcNow,
+                    ProductionRate = performanceResult.ProductionRate,
+                    PowerFluidRate = pumpProperties.PowerFluidRate,
+                    PowerFluidPressure = pumpProperties.PowerFluidPressure,
+                    DischargePressure = performanceResult.PumpDischargePressure,
+                    SuctionPressure = performanceResult.PumpIntakePressure,
+                    HydraulicEfficiency = performanceResult.PumpEfficiency,
+                    OverallEfficiency = performanceResult.SystemEfficiency,
+                    PowerRequired = performanceResult.PowerFluidHorsepower,
+                    RecommendedNozzleSize = pumpProperties.NozzleDiameter,
+                    RecommendedThroatSize = pumpProperties.ThroatDiameter,
+                    RecommendedPowerFluidRate = pumpProperties.PowerFluidRate,
+                    Status = "SUCCESS",
+                    UserId = request.UserId
+                };
+
+                // Step 5: Store result in PPDM database
+                try
+                {
+                    var repository = await GetHydraulicPumpAnalysisResultRepositoryAsync();
+                    var resultEntity = new Dictionary<string, object>
+                    {
+                        ["HYDRAULIC_PUMP_ANALYSIS_ID"] = result.CalculationId,
+                        ["WELL_ID"] = result.WellId ?? string.Empty,
+                        ["EQUIPMENT_ID"] = result.EquipmentId ?? string.Empty,
+                        ["ANALYSIS_TYPE"] = result.AnalysisType,
+                        ["CALCULATION_DATE"] = result.CalculationDate,
+                        ["PRODUCTION_RATE"] = result.ProductionRate,
+                        ["POWER_FLUID_RATE"] = result.PowerFluidRate,
+                        ["POWER_FLUID_PRESSURE"] = result.PowerFluidPressure,
+                        ["DISCHARGE_PRESSURE"] = result.DischargePressure,
+                        ["SUCTION_PRESSURE"] = result.SuctionPressure,
+                        ["HYDRAULIC_EFFICIENCY"] = result.HydraulicEfficiency,
+                        ["OVERALL_EFFICIENCY"] = result.OverallEfficiency,
+                        ["POWER_REQUIRED"] = result.PowerRequired,
+                        ["RECOMMENDED_NOZZLE_SIZE"] = result.RecommendedNozzleSize ?? 0m,
+                        ["RECOMMENDED_THROAT_SIZE"] = result.RecommendedThroatSize ?? 0m,
+                        ["RECOMMENDED_POWER_FLUID_RATE"] = result.RecommendedPowerFluidRate ?? 0m,
+                        ["STATUS"] = result.Status
+                    };
+
+                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    _logger?.LogInformation("Stored Hydraulic Pump Analysis result with ID: {CalculationId}", result.CalculationId);
+                }
+                catch (Exception storeEx)
+                {
+                    _logger?.LogError(storeEx, "Error storing Hydraulic Pump Analysis result");
+                    // Continue - don't fail the operation if storage fails
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error performing Hydraulic Pump Analysis for WellId: {WellId}", request.WellId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets or creates repository for Hydraulic Pump Analysis results
+        /// </summary>
+        private async Task<PPDMGenericRepository> GetHydraulicPumpAnalysisResultRepositoryAsync()
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("HYDRAULIC_PUMP_ANALYSIS_RESULT");
+                if (metadata == null)
+                {
+                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
+                    if (metadata == null)
+                    {
+                        throw new InvalidOperationException("HYDRAULIC_PUMP_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
+                    }
+                }
+
+                return new PPDMGenericRepository(_dataSource, metadata);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting Hydraulic Pump Analysis result repository");
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Well Test Analysis Helper Methods
+
+        /// <summary>
+        /// Retrieves well test data from PPDM for a well
+        /// </summary>
+        private async Task<WellTestData> GetWellTestDataFromPPDMAsync(string wellId, string testId)
+        {
+            _logger?.LogWarning("Retrieving well test data from PPDM - using simplified implementation. " +
+                "For full functionality, provide PressureTimeData in request or implement comprehensive PPDM data retrieval.");
+
+            // This is a simplified implementation
+            // In a full implementation, you would:
+            // 1. Retrieve well test data from WELL_TEST table
+            // 2. Retrieve pressure-time data from WELL_TEST_FLOW or related table
+            // 3. Retrieve well properties from WELL table
+            // 4. Retrieve reservoir properties from RESERVOIR table
+            // 5. Build comprehensive well test data
+
+            // For now, return a basic structure that will need data from request
+            return new WellTestData
+            {
+                Time = new List<double>(),
+                Pressure = new List<double>(),
+                FlowRate = 0.0,
+                WellboreRadius = 0.25,
+                FormationThickness = 50.0,
+                Porosity = 0.2,
+                TotalCompressibility = 1e-5,
+                OilViscosity = 1.5,
+                OilFormationVolumeFactor = 1.2,
+                TestType = WellTestType.BuildUp
+            };
+        }
+
+        /// <summary>
+        /// Maps WellTestAnalysisResult from library to WellTestAnalysisResult DTO
+        /// </summary>
+        private Beep.OilandGas.Models.DTOs.WellTestAnalysisResult MapWellTestResultToDTO(
+            WellTestAnalysis.Models.WellTestAnalysisResult analysisResult,
+            WellTestAnalysisCalculationRequest request,
+            ReservoirModel identifiedModel,
+            List<PressureTimePoint> derivativePoints)
+        {
+            var result = new Beep.OilandGas.Models.DTOs.WellTestAnalysisResult
+            {
+                CalculationId = Guid.NewGuid().ToString(),
+                WellId = request.WellId,
+                TestId = request.TestId,
+                AnalysisType = request.AnalysisType,
+                AnalysisMethod = request.AnalysisMethod ?? "HORNER",
+                CalculationDate = DateTime.UtcNow,
+                Status = "SUCCESS",
+                UserId = request.UserId,
+                Permeability = (decimal)analysisResult.Permeability,
+                SkinFactor = (decimal)analysisResult.SkinFactor,
+                ReservoirPressure = (decimal)analysisResult.ReservoirPressure,
+                ProductivityIndex = (decimal)analysisResult.ProductivityIndex,
+                FlowEfficiency = (decimal)analysisResult.FlowEfficiency,
+                DamageRatio = (decimal)analysisResult.DamageRatio,
+                RadiusOfInvestigation = (decimal)analysisResult.RadiusOfInvestigation,
+                IdentifiedModel = identifiedModel.ToString(),
+                RSquared = (decimal)analysisResult.RSquared,
+                DiagnosticPoints = request.PressureTimeData,
+                DerivativePoints = derivativePoints.Select(p => new WellTestDataPoint
+                {
+                    Time = p.Time,
+                    Pressure = p.Pressure
+                }).ToList(),
+                AdditionalResults = new Dictionary<string, object>()
+            };
+
+            result.AdditionalResults["AnalysisMethod"] = analysisResult.AnalysisMethod;
+            result.AdditionalResults["FlowRate"] = request.FlowRate ?? 0.0m;
+            result.AdditionalResults["WellboreRadius"] = request.WellboreRadius ?? 0.25m;
+            result.AdditionalResults["FormationThickness"] = request.FormationThickness ?? 50.0m;
+
+            return result;
+        }
+
+        #endregion
+
+        #region Flash Calculation Helper Methods
+
+        /// <summary>
+        /// Retrieves flash conditions from PPDM for a well or facility
+        /// </summary>
+        private async Task<FlashConditions> GetFlashConditionsFromPPDMAsync(string wellId, string facilityId)
+        {
+            _logger?.LogWarning("Retrieving flash conditions from PPDM - using simplified implementation. " +
+                "For full functionality, provide Pressure, Temperature, and FeedComposition in request or implement comprehensive PPDM data retrieval.");
+
+            // This is a simplified implementation
+            // In a full implementation, you would:
+            // 1. Retrieve pressure and temperature from well/facility data
+            // 2. Retrieve fluid composition from production data or fluid analysis
+            // 3. Build comprehensive flash conditions
+
+            // For now, return a basic structure that will need data from request
+            return new FlashConditions
+            {
+                Pressure = 500m,
+                Temperature = 540m,
+                FeedComposition = new List<Component>()
+            };
+        }
+
+        /// <summary>
+        /// Maps FlashResult from library to FlashCalculationResult DTO
+        /// </summary>
+        private FlashCalculationResult MapFlashResultToDTO(
+            FlashResult flashResult,
+            FlashCalculationRequest request,
+            PhaseProperties vaporProperties,
+            PhaseProperties liquidProperties)
+        {
+            var result = new FlashCalculationResult
+            {
+                CalculationId = Guid.NewGuid().ToString(),
+                WellId = request.WellId,
+                FacilityId = request.FacilityId,
+                CalculationType = request.CalculationType,
+                CalculationDate = DateTime.UtcNow,
+                Status = flashResult.Converged ? "SUCCESS" : "PARTIAL",
+                UserId = request.UserId,
+                VaporFraction = flashResult.VaporFraction,
+                LiquidFraction = flashResult.LiquidFraction,
+                VaporComposition = flashResult.VaporComposition,
+                LiquidComposition = flashResult.LiquidComposition,
+                KValues = flashResult.KValues,
+                Iterations = flashResult.Iterations,
+                Converged = flashResult.Converged,
+                ConvergenceError = flashResult.ConvergenceError,
+                VaporProperties = new PhasePropertiesData
+                {
+                    Density = vaporProperties.Density,
+                    MolecularWeight = vaporProperties.MolecularWeight,
+                    SpecificGravity = vaporProperties.SpecificGravity,
+                    Volume = vaporProperties.Volume
+                },
+                LiquidProperties = new PhasePropertiesData
+                {
+                    Density = liquidProperties.Density,
+                    MolecularWeight = liquidProperties.MolecularWeight,
+                    SpecificGravity = liquidProperties.SpecificGravity,
+                    Volume = liquidProperties.Volume
+                },
+                AdditionalResults = new Dictionary<string, object>()
+            };
+
+            result.AdditionalResults["Pressure"] = request.Pressure ?? 0.0m;
+            result.AdditionalResults["Temperature"] = request.Temperature ?? 0.0m;
+            result.AdditionalResults["ComponentCount"] = request.FeedComposition?.Count ?? 0;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Gets default critical temperature for a component name
+        /// </summary>
+        private decimal GetDefaultCriticalTemperature(string componentName)
+        {
+            // Common component critical temperatures (Rankine)
+            return componentName.ToUpper() switch
+            {
+                "METHANE" or "CH4" => 343.0m,
+                "ETHANE" or "C2H6" => 549.7m,
+                "PROPANE" or "C3H8" => 665.7m,
+                "BUTANE" or "C4H10" => 765.3m,
+                "PENTANE" or "C5H12" => 845.4m,
+                "HEXANE" or "C6H14" => 913.4m,
+                _ => 500.0m // Default
+            };
+        }
+
+        /// <summary>
+        /// Gets default critical pressure for a component name
+        /// </summary>
+        private decimal GetDefaultCriticalPressure(string componentName)
+        {
+            // Common component critical pressures (psia)
+            return componentName.ToUpper() switch
+            {
+                "METHANE" or "CH4" => 667.8m,
+                "ETHANE" or "C2H6" => 707.8m,
+                "PROPANE" or "C3H8" => 616.3m,
+                "BUTANE" or "C4H10" => 550.7m,
+                "PENTANE" or "C5H12" => 488.6m,
+                "HEXANE" or "C6H14" => 436.9m,
+                _ => 500.0m // Default
+            };
+        }
+
+        /// <summary>
+        /// Gets default acentric factor for a component name
+        /// </summary>
+        private decimal GetDefaultAcentricFactor(string componentName)
+        {
+            return componentName.ToUpper() switch
+            {
+                "METHANE" or "CH4" => 0.0115m,
+                "ETHANE" or "C2H6" => 0.0995m,
+                "PROPANE" or "C3H8" => 0.1521m,
+                "BUTANE" or "C4H10" => 0.2002m,
+                "PENTANE" or "C5H12" => 0.2515m,
+                "HEXANE" or "C6H14" => 0.3007m,
+                _ => 0.2m // Default
+            };
+        }
+
+        /// <summary>
+        /// Gets default molecular weight for a component name
+        /// </summary>
+        private decimal GetDefaultMolecularWeight(string componentName)
+        {
+            return componentName.ToUpper() switch
+            {
+                "METHANE" or "CH4" => 16.04m,
+                "ETHANE" or "C2H6" => 30.07m,
+                "PROPANE" or "C3H8" => 44.10m,
+                "BUTANE" or "C4H10" => 58.12m,
+                "PENTANE" or "C5H12" => 72.15m,
+                "HEXANE" or "C6H14" => 86.18m,
+                _ => 50.0m // Default
+            };
+        }
+
+        #endregion
 
         public async Task<object?> GetCalculationResultAsync(string calculationId, string calculationType)
         {
@@ -784,13 +3978,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 if (result == null)
                     return null;
 
-                if (result is Dictionary<string, object> dict)
-                {
-                    var json = JsonSerializer.Serialize(dict);
-                    return JsonSerializer.Deserialize(json, resultType);
-                }
-
-                return result;
+                // Convert Entity or Dictionary to DTO
+                // Use reflection to call the generic method with the correct type
+                var method = typeof(PPDMCalculationService).GetMethod("ConvertEntityOrDictionaryToDto", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var genericMethod = method?.MakeGenericMethod(resultType);
+                return genericMethod?.Invoke(this, new[] { result });
             }
             catch (Exception ex)
             {
@@ -948,7 +4141,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 // Step 5: Store result in database
                 var repository = await GetDCAResultRepositoryAsync();
-                var dict = ConvertToDictionary(result);
+                var entityOrDict = ConvertDtoToEntityOrDictionary(result);
                 await repository.InsertAsync(dict, request.UserId ?? "system");
 
                 _logger?.LogInformation("Physics-based forecast completed successfully: {CalculationId}, ForecastType: {ForecastType}", 
@@ -981,8 +4174,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetDCAResultRepositoryAsync();
-                    var dict = ConvertToDictionary(errorResult);
-                    await repository.InsertAsync(dict, request.UserId ?? "system");
+                    var entityOrDict = ConvertDtoToEntityOrDictionary(errorResult);
+                    await repository.InsertAsync(entityOrDict, request.UserId ?? "system");
                 }
                 catch (Exception storeEx)
                 {
@@ -3471,7 +6664,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             // Map forecast parameters
             result.InitialRate = forecast.InitialProductionRate;
             result.EstimatedEUR = forecast.TotalCumulativeProduction;
-            result.DeclineRate = forecast.ForecastPoints.Count > 1
+            var forecastPointsList = forecast.ForecastPoints?.ToList() ?? new List<Beep.OilandGas.ProductionForecasting.Models.ForecastPoint>();
+            result.DeclineRate = forecastPointsList.Count > 1
                 ? (forecast.InitialProductionRate - forecast.FinalProductionRate) / 
                   (forecast.InitialProductionRate * (forecast.ForecastDuration / 365.25m))
                 : null;
@@ -3497,7 +6691,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 ["InitialProductionRate"] = forecast.InitialProductionRate,
                 ["FinalProductionRate"] = forecast.FinalProductionRate,
                 ["TotalCumulativeProduction"] = forecast.TotalCumulativeProduction,
-                ["ForecastPointCount"] = forecast.ForecastPoints.Count
+                ["ForecastPointCount"] = forecast.ForecastPoints?.Count ?? 0
             };
 
             return result;

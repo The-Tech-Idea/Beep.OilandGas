@@ -1,0 +1,117 @@
+{
+  "FIELD_PHASE": {
+    "CommonColumns": [
+      "ACTIVE_IND",
+      "ROW_CREATED_BY",
+      "ROW_CREATED_DATE",
+      "ROW_CHANGED_BY",
+      "ROW_CHANGED_DATE",
+      "PPDM_GUID",
+      "ROW_EFFECTIVE_DATE",
+      "ROW_EXPIRY_DATE",
+      "ROW_QUALITY"
+    ],
+    "EntityTypeName": "FIELD_PHASE",
+    "ForeignKeys": [
+      {
+        "ForeignKeyColumn": "FIELD_ID",
+        "ReferencedPrimaryKey": "FIELD_ID",
+        "ReferencedTable": "FIELD",
+        "RelationshipType": "OneToMany"
+      }
+    ],
+    "Module": "Fields",
+    "OriginalModule": "Area",
+    "PrimaryKeyColumn": "FIELD_PHASE_ID",
+    "SubjectArea": "Production & Reserves",
+    "TableName": "FIELD_PHASE"
+  },
+  "RESERVOIR_STATUS": {
+    "CommonColumns": [
+      "ACTIVE_IND",
+      "ROW_CREATED_BY",
+      "ROW_CREATED_DATE",
+      "ROW_CHANGED_BY",
+      "ROW_CHANGED_DATE",
+      "PPDM_GUID",
+      "ROW_EFFECTIVE_DATE",
+      "ROW_EXPIRY_DATE",
+      "ROW_QUALITY"
+    ],
+    "EntityTypeName": "RESERVOIR_STATUS",
+    "ForeignKeys": [
+      {
+        "ForeignKeyColumn": "RESERVE_ENTITY_ID",
+        "ReferencedPrimaryKey": "RESERVE_ENTITY_ID",
+        "ReferencedTable": "RESERVE_ENTITY",
+        "RelationshipType": "OneToMany"
+      },
+      {
+        "ForeignKeyColumn": "POOL_ID",
+        "ReferencedPrimaryKey": "POOL_ID",
+        "ReferencedTable": "POOL",
+        "RelationshipType": "OneToMany"
+      }
+    ],
+    "Module": "Production & Reserves",
+    "OriginalModule": "Production & Reserves",
+    "PrimaryKeyColumn": "RESERVOIR_STATUS_ID",
+    "SubjectArea": "Production & Reserves",
+    "TableName": "RESERVOIR_STATUS"
+  },
+  "ABANDONMENT_STATUS": {
+    "CommonColumns": [
+      "ACTIVE_IND",
+      "ROW_CREATED_BY",
+      "ROW_CREATED_DATE",
+      "ROW_CHANGED_BY",
+      "ROW_CHANGED_DATE",
+      "PPDM_GUID",
+      "ROW_EFFECTIVE_DATE",
+      "ROW_EXPIRY_DATE",
+      "ROW_QUALITY"
+    ],
+    "EntityTypeName": "ABANDONMENT_STATUS",
+    "ForeignKeys": [
+      {
+        "ForeignKeyColumn": "WELL_ABANDONMENT_ID",
+        "ReferencedPrimaryKey": "WELL_ABANDONMENT_ID",
+        "ReferencedTable": "WELL_ABANDONMENT",
+        "RelationshipType": "OneToMany"
+      }
+    ],
+    "Module": "Wells",
+    "OriginalModule": "Wells",
+    "PrimaryKeyColumn": "ABANDONMENT_STATUS_ID",
+    "SubjectArea": "Production & Reserves",
+    "TableName": "ABANDONMENT_STATUS"
+  },
+  "DECOMMISSIONING_STATUS": {
+    "CommonColumns": [
+      "ACTIVE_IND",
+      "ROW_CREATED_BY",
+      "ROW_CREATED_DATE",
+      "ROW_CHANGED_BY",
+      "ROW_CHANGED_DATE",
+      "PPDM_GUID",
+      "ROW_EFFECTIVE_DATE",
+      "ROW_EXPIRY_DATE",
+      "ROW_QUALITY"
+    ],
+    "EntityTypeName": "DECOMMISSIONING_STATUS",
+    "ForeignKeys": [
+      {
+        "ForeignKeyColumn": "FACILITY_DECOMMISSIONING_ID",
+        "ReferencedPrimaryKey": "FACILITY_DECOMMISSIONING_ID",
+        "ReferencedTable": "FACILITY_DECOMMISSIONING",
+        "RelationshipType": "OneToMany"
+      }
+    ],
+    "Module": "Facilities",
+    "OriginalModule": "Facilities",
+    "PrimaryKeyColumn": "DECOMMISSIONING_STATUS_ID",
+    "SubjectArea": "Production & Reserves",
+    "TableName": "DECOMMISSIONING_STATUS"
+  }
+}
+

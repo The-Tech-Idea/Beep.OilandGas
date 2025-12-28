@@ -60,7 +60,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             return UnitOfWorkFactory.CreateUnitOfWork(typeof(FACILITY), _editor, _connectionName, "FACILITY", "FACILITY_ID");
         }
 
-        public async Task<List<WellPluggingDto>> GetWellPluggingOperationsAsync(string? wellUWI = null)
+        public async Task<List<WELL_PLUGBACK>> GetWellPluggingOperationsAsync(string? wellUWI = null)
         {
             var plugbackUow = GetWellPlugbackUnitOfWork();
             List<WELL_PLUGBACK> plugbacks;
@@ -82,19 +82,10 @@ namespace Beep.OilandGas.Decommissioning.Services
                 plugbacks = allPlugbacks.Where(p => p.ACTIVE_IND == "Y").ToList();
             }
 
-            var wellUow = GetWellUnitOfWork();
-            var pluggings = new List<WellPluggingDto>();
-
-            foreach (var plugback in plugbacks)
-            {
-                var well = wellUow.Read(plugback.UWI ?? string.Empty) as WELL;
-                pluggings.Add(MapToWellPluggingDto(plugback, well));
-            }
-
-            return pluggings;
+            return plugbacks;
         }
 
-        public async Task<WellPluggingDto?> GetWellPluggingOperationAsync(string pluggingId)
+        public async Task<WELL_PLUGBACK?> GetWellPluggingOperationAsync(string pluggingId)
         {
             if (string.IsNullOrWhiteSpace(pluggingId))
                 return null;
@@ -109,24 +100,18 @@ namespace Beep.OilandGas.Decommissioning.Services
             var plugbacks = ConvertToList<WELL_PLUGBACK>(units);
             var plugback = plugbacks.FirstOrDefault();
 
-            if (plugback == null)
-                return null;
-
-            var wellUow = GetWellUnitOfWork();
-            var well = wellUow.Read(pluggingId) as WELL;
-
-            return MapToWellPluggingDto(plugback, well);
+            return plugback;
         }
 
-        public async Task<WellPluggingDto> CreateWellPluggingOperationAsync(CreateWellPluggingDto createDto)
+        public async Task<WELL_PLUGBACK> CreateWellPluggingOperationAsync(CreateWellPluggingRequest createRequest)
         {
-            if (createDto == null)
-                throw new ArgumentNullException(nameof(createDto));
+            if (createRequest == null)
+                throw new ArgumentNullException(nameof(createRequest));
 
             var plugbackUow = GetWellPlugbackUnitOfWork();
             var plugback = new WELL_PLUGBACK
             {
-                UWI = createDto.WellUWI,
+                UWI = createRequest.WellUWI,
                 PLUGBACK_OBS_NO = 1,
                 ACTIVE_IND = "Y",
                 ROW_CREATED_DATE = DateTime.UtcNow,
@@ -139,13 +124,10 @@ namespace Beep.OilandGas.Decommissioning.Services
 
             await plugbackUow.Commit();
 
-            var wellUow = GetWellUnitOfWork();
-            var well = wellUow.Read(createDto.WellUWI) as WELL;
-
-            return MapToWellPluggingDto(plugback, well);
+            return plugback;
         }
 
-        public async Task<WellPluggingDto> VerifyWellPluggingAsync(string pluggingId, string verifiedBy, bool passed)
+        public async Task<WELL_PLUGBACK> VerifyWellPluggingAsync(string pluggingId, string verifiedBy, bool passed)
         {
             if (string.IsNullOrWhiteSpace(pluggingId))
                 throw new ArgumentException("Plugging ID cannot be null or empty.", nameof(pluggingId));
@@ -154,15 +136,13 @@ namespace Beep.OilandGas.Decommissioning.Services
             if (plugging == null)
                 throw new KeyNotFoundException($"Well plugging operation with ID {pluggingId} not found.");
 
-            plugging.VerifiedBy = verifiedBy;
-            plugging.VerificationDate = DateTime.UtcNow;
-            plugging.VerificationPassed = passed;
-            plugging.Status = passed ? "Verified" : "Failed";
-
+            // Note: WELL_PLUGBACK entity doesn't have verification fields
+            // This would need to be stored in a separate table or added to the entity
+            // For now, just return the plugging entity
             return plugging;
         }
 
-        public async Task<List<FacilityDecommissioningDto>> GetFacilityDecommissioningOperationsAsync(string? facilityId = null)
+        public async Task<List<FacilityDecommissioningResponse>> GetFacilityDecommissioningOperationsAsync(string? facilityId = null)
         {
             var facilityUow = GetFacilityUnitOfWork();
             List<FACILITY> facilities;
@@ -170,7 +150,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             if (!string.IsNullOrWhiteSpace(facilityId))
             {
                 var facility = facilityUow.Read(facilityId) as FACILITY;
-                facilities = facility != null && !string.IsNullOrEmpty(facility.ABANDONED_DATE.ToString()) 
+                facilities = facility != null && facility.ABANDONED_DATE != default(DateTime) 
                     ? new List<FACILITY> { facility } 
                     : new List<FACILITY>();
             }
@@ -178,28 +158,27 @@ namespace Beep.OilandGas.Decommissioning.Services
             {
                 var units = await facilityUow.Get();
                 List<FACILITY> allFacilities = ConvertToList<FACILITY>(units);
-                facilities = allFacilities.Where(f => !string.IsNullOrEmpty(f.ABANDONED_DATE.ToString())).ToList();
+                facilities = allFacilities.Where(f => f.ABANDONED_DATE != default(DateTime)).ToList();
             }
 
-            return facilities.Select(f => new FacilityDecommissioningDto
+            return facilities.Select(f => new FacilityDecommissioningResponse
             {
                 DecommissioningId = f.FACILITY_ID ?? string.Empty,
                 FacilityId = f.FACILITY_ID ?? string.Empty,
-                FacilityName = f.FACILITY_SHORT_NAME ?? string.Empty,
-                CompletionDate = f.ABANDONED_DATE,
+                DecommissioningEndDate = f.ABANDONED_DATE,
                 Status = f.ACTIVE_IND == "Y" ? "Active" : "Inactive"
             }).ToList();
         }
 
-        public async Task<List<SiteRestorationDto>> GetSiteRestorationOperationsAsync(string? siteId = null)
+        public async Task<List<EnvironmentalRestorationResponse>> GetSiteRestorationOperationsAsync(string? siteId = null)
         {
             // Note: Site restoration might be stored in FACILITY or a separate entity
             // For now, returning empty list as placeholder
             await Task.CompletedTask;
-            return new List<SiteRestorationDto>();
+            return new List<EnvironmentalRestorationResponse>();
         }
 
-        public async Task<List<AbandonmentDto>> GetAbandonmentOperationsAsync(string? wellUWI = null)
+        public async Task<List<WellAbandonmentResponse>> GetAbandonmentOperationsAsync(string? wellUWI = null)
         {
             var wellUow = GetWellUnitOfWork();
             List<WELL> wells;
@@ -207,7 +186,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             if (!string.IsNullOrWhiteSpace(wellUWI))
             {
                 var well = wellUow.Read(wellUWI) as WELL;
-                wells = well != null && !string.IsNullOrEmpty(well.ABANDONMENT_DATE.ToString())
+                wells = well != null && well.ABANDONMENT_DATE != default(DateTime)
                     ? new List<WELL> { well }
                     : new List<WELL>();
             }
@@ -215,29 +194,16 @@ namespace Beep.OilandGas.Decommissioning.Services
             {
                 var units = await wellUow.Get();
                 List<WELL> allWells = ConvertToList<WELL>(units);
-                wells = allWells.Where(w => !string.IsNullOrEmpty(w.ABANDONMENT_DATE.ToString())).ToList();
+                wells = allWells.Where(w => w.ABANDONMENT_DATE != default(DateTime)).ToList();
             }
 
-            return wells.Select(w => new AbandonmentDto
+            return wells.Select(w => new WellAbandonmentResponse
             {
                 AbandonmentId = w.UWI ?? string.Empty,
-                WellUWI = w.UWI ?? string.Empty,
-                WellName = w.UWI ?? string.Empty,
-                AbandonmentDate = w.ABANDONMENT_DATE,
+                WellId = w.UWI ?? string.Empty,
+                AbandonmentEndDate = w.ABANDONMENT_DATE,
                 Status = w.ACTIVE_IND == "Y" ? "Active" : "Inactive"
             }).ToList();
-        }
-
-        private WellPluggingDto MapToWellPluggingDto(WELL_PLUGBACK plugback, WELL? well)
-        {
-            return new WellPluggingDto
-            {
-                PluggingId = plugback.UWI ?? string.Empty,
-                WellUWI = plugback.UWI ?? string.Empty,
-                WellName = well?.UWI ?? string.Empty,
-                PlugDepth = plugback.BASE_DEPTH,
-                Status = plugback.ACTIVE_IND == "Y" ? "Active" : "Inactive"
-            };
         }
     }
 }

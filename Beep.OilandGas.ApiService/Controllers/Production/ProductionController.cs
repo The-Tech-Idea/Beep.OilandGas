@@ -2,130 +2,37 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core.DTOs;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
-using Beep.OilandGas.LifeCycle.Services.Production;
-using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Core.Interfaces;
 using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ApiService.Controllers.Production
 {
     /// <summary>
-    /// API controller for Production & Reserves operations
+    /// API controller for Production business operations
+    /// 
+    /// NOTE: For CRUD operations (Create, Read, Update, Delete), please use DataManagementController:
+    /// - Get fields: GET /api/datamanagement/FIELD
+    /// - Get pools: GET /api/datamanagement/POOL
+    /// - Get production: GET /api/datamanagement/PDEN_VOL_SUMMARY
+    /// - Get reserves: GET /api/datamanagement/RESERVE_ENTITY
+    /// - Get production reporting: GET /api/datamanagement/PDEN_VOL_SUMMARY with filters
+    /// 
+    /// This controller focuses on field-scoped business logic operations via FieldOrchestrator.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class ProductionController : ControllerBase
     {
-        private readonly IPPDMProductionService _productionService;
         private readonly IFieldOrchestrator? _fieldOrchestrator;
         private readonly ILogger<ProductionController> _logger;
 
         public ProductionController(
-            IPPDMProductionService productionService,
+            IFieldOrchestrator fieldOrchestrator,
             ILogger<ProductionController> logger)
         {
-            _productionService = productionService;
-            _logger = logger;
-        }
-
-        // Constructor with FieldOrchestrator for field-scoped endpoints
-        public ProductionController(
-            IPPDMProductionService productionService,
-            IFieldOrchestrator fieldOrchestrator,
-            ILogger<ProductionController> logger) : this(productionService, logger)
-        {
             _fieldOrchestrator = fieldOrchestrator;
-        }
-
-        /// <summary>
-        /// Get fields
-        /// </summary>
-        [HttpGet("fields")]
-        public async Task<ActionResult<List<FIELD>>> GetFields([FromQuery] List<AppFilter>? filters = null)
-        {
-            try
-            {
-                var fields = await _productionService.GetFieldsAsync(filters);
-                return Ok(fields);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting fields");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Get pools
-        /// </summary>
-        [HttpGet("pools")]
-        public async Task<ActionResult<List<POOL>>> GetPools([FromQuery] List<AppFilter>? filters = null)
-        {
-            try
-            {
-                var pools = await _productionService.GetPoolsAsync(filters);
-                return Ok(pools);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting pools");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Get production data
-        /// </summary>
-        [HttpGet("production")]
-        public async Task<ActionResult<List<PDEN_VOL_SUMMARY>>> GetProduction([FromQuery] List<AppFilter>? filters = null)
-        {
-            try
-            {
-                var production = await _productionService.GetProductionAsync(filters);
-                return Ok(production);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting production data");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Get reserves data
-        /// </summary>
-        [HttpGet("reserves")]
-        public async Task<ActionResult<List<RESERVE_ENTITY>>> GetReserves([FromQuery] List<AppFilter>? filters = null)
-        {
-            try
-            {
-                var reserves = await _productionService.GetReservesAsync(filters);
-                return Ok(reserves);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting reserves data");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Get production reporting data
-        /// </summary>
-        [HttpGet("reporting")]
-        public async Task<ActionResult<List<PDEN_VOL_SUMMARY>>> GetProductionReporting([FromQuery] List<AppFilter>? filters = null)
-        {
-            try
-            {
-                var reporting = await _productionService.GetProductionReportingAsync(filters);
-                return Ok(reporting);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting production reporting data");
-                return StatusCode(500, new { error = ex.Message });
-            }
+            _logger = logger;
         }
 
         // ============================================

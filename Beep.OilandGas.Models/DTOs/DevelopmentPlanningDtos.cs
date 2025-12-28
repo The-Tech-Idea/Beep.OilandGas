@@ -23,6 +23,7 @@ namespace Beep.OilandGas.Models.DTOs
         public List<WellPlanDto> WellPlans { get; set; } = new();
         public List<FacilityPlanDto> FacilityPlans { get; set; } = new();
         public List<PermitApplicationDto> PermitApplications { get; set; } = new();
+        public DateTime CreatedDate { get; set; }
     }
 
     /// <summary>
@@ -43,6 +44,7 @@ namespace Beep.OilandGas.Models.DTOs
         public decimal? EstimatedCost { get; set; }
         public string? Status { get; set; }
         public string? Remarks { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
 
     /// <summary>
@@ -105,6 +107,21 @@ namespace Beep.OilandGas.Models.DTOs
         public string? Status { get; set; }
         public DateTime? TargetStartDate { get; set; }
         public DateTime? TargetCompletionDate { get; set; }
+        public decimal? EstimatedCost { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for creating a well plan.
+    /// </summary>
+    public class CreateWellPlanDto
+    {
+        public string WellName { get; set; } = string.Empty;
+        public string? WellType { get; set; }
+        public string? DrillingMethod { get; set; }
+        public decimal? TargetDepth { get; set; }
+        public string? TargetFormation { get; set; }
+        public DateTime? PlannedSpudDate { get; set; }
+        public DateTime? PlannedCompletionDate { get; set; }
         public decimal? EstimatedCost { get; set; }
     }
 }

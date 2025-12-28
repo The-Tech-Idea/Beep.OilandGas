@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.ApiService.Models;
-using Beep.OilandGas.PPDM39.Core.DTOs;
+using Beep.OilandGas.Models.DTOs.DataManagement;
+using Beep.OilandGas.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -45,15 +45,14 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 
                 _logger.LogInformation("Creating version for entity {EntityId} in table {TableName}", entityId, tableName);
 
-                // Note: This is a simplified implementation. 
-                // In practice, you'd need to retrieve the actual entity object first
-                // For now, we'll need to adapt based on how the versioning service works
-                // TODO: Fix this once the actual CreateVersionAsync signature is known
-                var entityData = new System.Collections.Generic.Dictionary<string, object>(); // Get from entity retrieval
+                // Retrieve the entity first - in a real implementation, this would use a repository
+                // For now, we'll pass the entityId as the entity object
+                // The versioning service will handle the entity retrieval internally
                 var version = await _versioningService.CreateVersionAsync(
                     tableName,
-                    entityData,
-                    userId);
+                    entityId,
+                    userId,
+                    request.VersionLabel);
 
                 return Ok(new VersioningResult
                 {
@@ -87,9 +86,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 var versionInfos = versions?.Select(v => new VersionInfo
                 {
                     VersionId = v.VersionNumber.ToString(),
-                    CreatedAt = DateTime.UtcNow, // v.VersionDate doesn't exist - using current time as fallback
-                    CreatedBy = string.Empty, // v.VersionUser doesn't exist
-                    Description = v.VersionLabel ?? string.Empty,
+                    CreatedAt = v.CreatedDate,
+                    CreatedBy = v.CreatedBy ?? string.Empty,
+                    Description = v.VersionLabel ?? v.ChangeDescription ?? string.Empty,
                     EntityData = v.EntityData as System.Collections.Generic.Dictionary<string, object>
                 }).ToList() ?? new System.Collections.Generic.List<VersionInfo>();
 
@@ -121,9 +120,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 var versionInfo = new VersionInfo
                 {
                     VersionId = version.VersionNumber.ToString(),
-                    CreatedAt = DateTime.UtcNow, // version.VersionDate doesn't exist - using current time as fallback
-                    CreatedBy = string.Empty, // version.VersionUser doesn't exist
-                    Description = version.VersionLabel ?? string.Empty,
+                    CreatedAt = version.CreatedDate,
+                    CreatedBy = version.CreatedBy ?? string.Empty,
+                    Description = version.VersionLabel ?? version.ChangeDescription ?? string.Empty,
                     EntityData = version.EntityData as System.Collections.Generic.Dictionary<string, object>
                 };
 
@@ -158,9 +157,11 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 // Parse version ID (could be version number or GUID)
                 if (int.TryParse(request.VersionId, out int versionNumber))
                 {
-                    // TODO: RestoreVersionAsync doesn't exist - need to implement or use alternative method
-                    // await _versioningService.RestoreVersionAsync(tableName, entityId, versionNumber, userId);
-                    throw new NotImplementedException("RestoreVersionAsync is not implemented in the versioning service");
+                    var restoreResult = await _versioningService.RestoreToVersionAsync(tableName, entityId, versionNumber, userId);
+                    if (!restoreResult.Success)
+                    {
+                        return BadRequest(new VersioningResult { Success = false, ErrorMessage = restoreResult.Message ?? "Failed to restore version" });
+                    }
                 }
                 else
                 {
@@ -169,9 +170,11 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     var version = versions?.FirstOrDefault(v => v.VersionNumber.ToString() == request.VersionId);
                     if (version != null)
                     {
-                        // TODO: RestoreVersionAsync doesn't exist - need to implement or use alternative method
-                        // await _versioningService.RestoreVersionAsync(tableName, entityId, version.VersionNumber, userId);
-                        throw new NotImplementedException("RestoreVersionAsync is not implemented in the versioning service");
+                        var restoreResult = await _versioningService.RestoreToVersionAsync(tableName, entityId, version.VersionNumber, userId);
+                        if (!restoreResult.Success)
+                        {
+                            return BadRequest(new VersioningResult { Success = false, ErrorMessage = restoreResult.Message ?? "Failed to restore version" });
+                        }
                     }
                     else
                     {

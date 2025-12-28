@@ -6,6 +6,7 @@ using Beep.OilandGas.ProductionAccounting.Production;
 using Beep.OilandGas.ProductionAccounting.Inventory;
 using Beep.OilandGas.ProductionAccounting.Allocation;
 using Beep.OilandGas.ProductionAccounting.Royalty;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 
 namespace Beep.OilandGas.ProductionAccounting.Reporting
 {

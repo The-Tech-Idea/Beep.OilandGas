@@ -2,38 +2,59 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Linq;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
-using Beep.OilandGas.PPDM39.Core.DTOs;
-using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.Extensions.Logging;
-using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
     /// <summary>
-    /// API controller for Development phase operations, field-scoped
+    /// API controller for Development phase business workflows, field-scoped
+    /// 
+    /// NOTE: For CRUD operations (Create, Read, Update, Delete), please use DataManagementController:
+    /// - Get pools: GET /api/datamanagement/POOL
+    /// - Get pool: GET /api/datamanagement/POOL/{id}
+    /// - Create pool: POST /api/datamanagement/POOL
+    /// - Update pool: PUT /api/datamanagement/POOL/{id}
+    /// - Get development wells: GET /api/datamanagement/WELL with filters
+    /// - Create development well: POST /api/datamanagement/WELL
+    /// - Get wellbores: GET /api/datamanagement/WELL with filters
+    /// - Get facilities: GET /api/datamanagement/FACILITY
+    /// - Create facility: POST /api/datamanagement/FACILITY
+    /// - Get pipelines: GET /api/datamanagement/PIPELINE
+    /// - Create pipeline: POST /api/datamanagement/PIPELINE
+    /// 
+    /// This controller focuses on development workflow processes via DevelopmentProcessService.
     /// </summary>
     [ApiController]
     [Route("api/field/current/development")]
     public class DevelopmentController : ControllerBase
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;
+        private readonly Beep.OilandGas.LifeCycle.Services.Development.Processes.DevelopmentProcessService _developmentProcessService;
         private readonly ILogger<DevelopmentController> _logger;
 
         public DevelopmentController(
             IFieldOrchestrator fieldOrchestrator,
+            Beep.OilandGas.LifeCycle.Services.Development.Processes.DevelopmentProcessService developmentProcessService,
             ILogger<DevelopmentController> logger)
         {
             _fieldOrchestrator = fieldOrchestrator ?? throw new ArgumentNullException(nameof(fieldOrchestrator));
+            _developmentProcessService = developmentProcessService ?? throw new ArgumentNullException(nameof(developmentProcessService));
             _logger = logger;
         }
 
+        // ============================================
+        // DEVELOPMENT WORKFLOW ENDPOINTS
+        // ============================================
+
+        #region Pool Definition Workflow
+
         /// <summary>
-        /// Get all pools for the current field
+        /// Start Pool Definition workflow
         /// </summary>
-        [HttpGet("pools")]
-        public async Task<ActionResult<List<POOL>>> GetPools([FromQuery] List<AppFilter>? filters = null)
+        [HttpPost("workflows/pool-definition")]
+        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartPoolDefinitionProcess(
+            [FromBody] StartPoolDefinitionRequest request)
         {
             try
             {
@@ -43,27 +64,160 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                     return BadRequest(new { error = "No active field is set" });
                 }
 
-                var developmentService = _fieldOrchestrator.GetDevelopmentService();
-                var pools = await developmentService.GetPoolsForFieldAsync(currentFieldId, filters);
+                if (string.IsNullOrWhiteSpace(request.PoolId))
+                {
+                    return BadRequest(new { error = "PoolId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var instance = await _developmentProcessService.StartPoolDefinitionProcessAsync(
+                    request.PoolId, 
+                    currentFieldId, 
+                    request.UserId);
                 
-                return Ok(pools);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
+                return Ok(instance);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting pools for current field");
+                _logger.LogError(ex, "Error starting Pool Definition process");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
 
         /// <summary>
-        /// Get a pool by ID (must belong to current field)
+        /// Delineate pool
         /// </summary>
-        [HttpGet("pools/{id}")]
-        public async Task<ActionResult<POOL>> GetPool(string id)
+        [HttpPost("workflows/delineate-pool")]
+        public async Task<ActionResult<bool>> DelineatePool([FromBody] DelineatePoolRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _developmentProcessService.DelineatePoolAsync(
+                    request.InstanceId, 
+                    request.DelineationData ?? new Dictionary<string, object>(), 
+                    request.UserId);
+                
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error delineating pool");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Assign reserves to pool
+        /// </summary>
+        [HttpPost("workflows/assign-reserves")]
+        public async Task<ActionResult<bool>> AssignReserves([FromBody] AssignReservesRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _developmentProcessService.AssignReservesAsync(
+                    request.InstanceId, 
+                    request.ReserveData ?? new Dictionary<string, object>(), 
+                    request.UserId);
+                
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error assigning reserves");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Approve pool
+        /// </summary>
+        [HttpPost("workflows/approve-pool")]
+        public async Task<ActionResult<bool>> ApprovePool([FromBody] ApprovePoolRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _developmentProcessService.ApprovePoolAsync(request.InstanceId, request.UserId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving pool");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Activate pool
+        /// </summary>
+        [HttpPost("workflows/activate-pool")]
+        public async Task<ActionResult<bool>> ActivatePool([FromBody] ActivatePoolRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _developmentProcessService.ActivatePoolAsync(request.InstanceId, request.UserId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error activating pool");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region Facility Development Workflow
+
+        /// <summary>
+        /// Start Facility Development workflow
+        /// </summary>
+        [HttpPost("workflows/facility-development")]
+        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartFacilityDevelopmentProcess(
+            [FromBody] StartFacilityDevelopmentRequest request)
         {
             try
             {
@@ -73,32 +227,40 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                     return BadRequest(new { error = "No active field is set" });
                 }
 
-                var developmentService = _fieldOrchestrator.GetDevelopmentService();
-                var pool = await developmentService.GetPoolForFieldAsync(currentFieldId, id);
-                
-                if (pool == null)
+                if (string.IsNullOrWhiteSpace(request.FacilityId))
                 {
-                    return NotFound(new { error = $"Pool {id} not found or does not belong to current field" });
+                    return BadRequest(new { error = "FacilityId is required" });
                 }
 
-                return Ok(pool);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var instance = await _developmentProcessService.StartFacilityDevelopmentProcessAsync(
+                    request.FacilityId, 
+                    currentFieldId, 
+                    request.UserId);
+                
+                return Ok(instance);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting pool {PoolId} for current field", id);
+                _logger.LogError(ex, "Error starting Facility Development process");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
 
+        #endregion
+
+        #region Well Development Workflow
+
         /// <summary>
-        /// Create a new pool for the current field
+        /// Start Well Development workflow
         /// </summary>
-        [HttpPost("pools")]
-        public async Task<ActionResult<POOL>> CreatePool([FromBody] PoolRequest request, [FromQuery] string userId)
+        [HttpPost("workflows/well-development")]
+        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartWellDevelopmentProcess(
+            [FromBody] StartWellDevelopmentRequest request)
         {
             try
             {
@@ -108,36 +270,40 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                     return BadRequest(new { error = "No active field is set" });
                 }
 
-                if (string.IsNullOrWhiteSpace(userId))
+                if (string.IsNullOrWhiteSpace(request.WellId))
                 {
-                    return BadRequest(new { error = "userId is required" });
+                    return BadRequest(new { error = "WellId is required" });
                 }
 
-                var developmentService = _fieldOrchestrator.GetDevelopmentService();
-                var pool = await developmentService.CreatePoolForFieldAsync(currentFieldId, request, userId);
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var instance = await _developmentProcessService.StartWellDevelopmentProcessAsync(
+                    request.WellId, 
+                    currentFieldId, 
+                    request.UserId);
                 
-                // Get pool ID from the returned POOL object using reflection
-                var poolIdProperty = typeof(POOL).GetProperty("POOL_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                var poolId = poolIdProperty?.GetValue(pool)?.ToString() ?? string.Empty;
-                
-                return CreatedAtAction(nameof(GetPool), new { id = poolId }, pool);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
+                return Ok(instance);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating pool for current field");
+                _logger.LogError(ex, "Error starting Well Development process");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
 
+        #endregion
+
+        #region Pipeline Development Workflow
+
         /// <summary>
-        /// Update a pool (must belong to current field)
+        /// Start Pipeline Development workflow
         /// </summary>
-        [HttpPut("pools/{id}")]
-        public async Task<ActionResult<POOL>> UpdatePool(string id, [FromBody] PoolRequest request, [FromQuery] string userId)
+        [HttpPost("workflows/pipeline-development")]
+        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartPipelineDevelopmentProcess(
+            [FromBody] StartPipelineDevelopmentRequest request)
         {
             try
             {
@@ -147,252 +313,85 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                     return BadRequest(new { error = "No active field is set" });
                 }
 
-                if (string.IsNullOrWhiteSpace(userId))
+                if (string.IsNullOrWhiteSpace(request.PipelineId))
                 {
-                    return BadRequest(new { error = "userId is required" });
+                    return BadRequest(new { error = "PipelineId is required" });
                 }
 
-                var developmentService = _fieldOrchestrator.GetDevelopmentService();
-                var pool = await developmentService.UpdatePoolForFieldAsync(currentFieldId, id, request, userId);
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var instance = await _developmentProcessService.StartPipelineDevelopmentProcessAsync(
+                    request.PipelineId, 
+                    currentFieldId, 
+                    request.UserId);
                 
-                return Ok(pool);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
+                return Ok(instance);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating pool {PoolId} for current field", id);
+                _logger.LogError(ex, "Error starting Pipeline Development process");
                 return StatusCode(500, new { error = ex.Message });
             }
         }
 
-        /// <summary>
-        /// Get all development wells for the current field
-        /// </summary>
-        [HttpGet("wells")]
-        public async Task<ActionResult<List<WELL>>> GetDevelopmentWells([FromQuery] List<AppFilter>? filters = null)
-        {
-            try
-            {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                    return BadRequest(new { error = "No active field is set" });
-                }
+        #endregion
 
-                var developmentService = _fieldOrchestrator.GetDevelopmentService();
-                var wells = await developmentService.GetDevelopmentWellsForFieldAsync(currentFieldId, filters);
-                
-                return Ok(wells);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting development wells for current field");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
+    }
 
-        /// <summary>
-        /// Create a new development well for the current field
-        /// </summary>
-        [HttpPost("wells")]
-        public async Task<ActionResult<WELL>> CreateDevelopmentWell([FromBody] DevelopmentWellRequest request, [FromQuery] string userId)
-        {
-            try
-            {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                    return BadRequest(new { error = "No active field is set" });
-                }
+    // ============================================
+    // REQUEST DTOs
+    // ============================================
 
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    return BadRequest(new { error = "userId is required" });
-                }
+    public class StartPoolDefinitionRequest
+    {
+        public string PoolId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
 
-                var developmentService = _fieldOrchestrator.GetDevelopmentService();
-                var well = await developmentService.CreateDevelopmentWellForFieldAsync(currentFieldId, request, userId);
-                
-                return Ok(well);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating development well for current field");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
+    public class DelineatePoolRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public Dictionary<string, object>? DelineationData { get; set; }
+        public string UserId { get; set; } = string.Empty;
+    }
 
-        /// <summary>
-        /// Get wellbores for a well (must belong to current field)
-        /// Wellbores are WELL table records with specific well_level_type, linked via WELL_XREF
-        /// </summary>
-        [HttpGet("wells/{wellId}/wellbores")]
-        public async Task<ActionResult<List<WELL>>> GetWellbores(string wellId, [FromQuery] List<AppFilter>? filters = null)
-        {
-            try
-            {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                    return BadRequest(new { error = "No active field is set" });
-                }
+    public class AssignReservesRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public Dictionary<string, object>? ReserveData { get; set; }
+        public string UserId { get; set; } = string.Empty;
+    }
 
-                var developmentService = _fieldOrchestrator.GetDevelopmentService();
-                var wellbores = await developmentService.GetWellboresForWellAsync(currentFieldId, wellId, filters);
-                
-                return Ok(wellbores);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting wellbores for well {WellId} in current field", wellId);
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
+    public class ApprovePoolRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
 
-        /// <summary>
-        /// Get all facilities for the current field
-        /// </summary>
-        [HttpGet("facilities")]
-        public async Task<ActionResult<List<FACILITY>>> GetFacilities([FromQuery] List<AppFilter>? filters = null)
-        {
-            try
-            {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                    return BadRequest(new { error = "No active field is set" });
-                }
+    public class ActivatePoolRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
 
-                var developmentService = _fieldOrchestrator.GetDevelopmentService();
-                var facilities = await developmentService.GetFacilitiesForFieldAsync(currentFieldId, filters);
-                
-                return Ok(facilities);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting facilities for current field");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
+    public class StartFacilityDevelopmentRequest
+    {
+        public string FacilityId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
 
-        /// <summary>
-        /// Create a new facility for the current field
-        /// </summary>
-        [HttpPost("facilities")]
-        public async Task<ActionResult<FACILITY>> CreateFacility([FromBody] FacilityRequest request, [FromQuery] string userId)
-        {
-            try
-            {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                    return BadRequest(new { error = "No active field is set" });
-                }
+    public class StartWellDevelopmentRequest
+    {
+        public string WellId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
 
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    return BadRequest(new { error = "userId is required" });
-                }
-
-                var developmentService = _fieldOrchestrator.GetDevelopmentService();
-                var facility = await developmentService.CreateFacilityForFieldAsync(currentFieldId, request, userId);
-                
-                return Ok(facility);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating facility for current field");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Get all pipelines for the current field
-        /// </summary>
-        [HttpGet("pipelines")]
-        public async Task<ActionResult<List<PIPELINE>>> GetPipelines([FromQuery] List<AppFilter>? filters = null)
-        {
-            try
-            {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                    return BadRequest(new { error = "No active field is set" });
-                }
-
-                var developmentService = _fieldOrchestrator.GetDevelopmentService();
-                var pipelines = await developmentService.GetPipelinesForFieldAsync(currentFieldId, filters);
-                
-                return Ok(pipelines);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting pipelines for current field");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        /// <summary>
-        /// Create a new pipeline for the current field
-        /// </summary>
-        [HttpPost("pipelines")]
-        public async Task<ActionResult<PIPELINE>> CreatePipeline([FromBody] PipelineRequest request, [FromQuery] string userId)
-        {
-            try
-            {
-                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
-                if (string.IsNullOrEmpty(currentFieldId))
-                {
-                    return BadRequest(new { error = "No active field is set" });
-                }
-
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    return BadRequest(new { error = "userId is required" });
-                }
-
-                var developmentService = _fieldOrchestrator.GetDevelopmentService();
-                var pipeline = await developmentService.CreatePipelineForFieldAsync(currentFieldId, request, userId);
-                
-                return Ok(pipeline);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating pipeline for current field");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
+    public class StartPipelineDevelopmentRequest
+    {
+        public string PipelineId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
     }
 }

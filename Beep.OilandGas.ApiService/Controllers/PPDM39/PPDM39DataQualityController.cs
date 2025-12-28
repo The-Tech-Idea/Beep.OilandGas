@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
-using Beep.OilandGas.ApiService.Models;
-using Beep.OilandGas.PPDM39.Core.DTOs;
+using Beep.OilandGas.Models.DTOs.DataManagement;
+using Beep.OilandGas.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -44,16 +44,16 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return NotFound(new { error = "Metrics not found" });
                 }
 
-                // Convert to API model
-                // TODO: Fix this once DataQualityMetrics properties are known
                 var result = new DataQualityResult
                 {
                     TableName = tableName,
-                    OverallQualityScore = 0, // metrics.OverallScore doesn't exist
-                    TotalRows = 0, // metrics.TotalRows doesn't exist
-                    CompleteRows = 0, // metrics.CompleteRows doesn't exist
-                    FieldQualityScores = new System.Collections.Generic.Dictionary<string, double>(), // metrics.FieldScores doesn't exist
-                    QualityIssues = new System.Collections.Generic.List<string>() // metrics.Issues doesn't exist
+                    OverallQualityScore = metrics.OverallQualityScore,
+                    TotalRows = metrics.TotalRecords,
+                    CompleteRows = metrics.CompleteRecords,
+                    FieldQualityScores = metrics.FieldMetrics?.ToDictionary(
+                        f => f.Key,
+                        f => f.Value.Completeness) ?? new System.Collections.Generic.Dictionary<string, double>(),
+                    QualityIssues = new System.Collections.Generic.List<string>() // Issues are retrieved separately via FindQualityIssuesAsync
                 };
 
                 return Ok(result);
@@ -74,23 +74,35 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             try
             {
                 _logger.LogInformation("Getting data quality dashboard");
-                // TODO: GetQualityDashboardAsync doesn't exist - need to implement or use alternative method
-                // var dashboard = await _dashboardService.GetQualityDashboardAsync();
-                var dashboard = (object?)null;
+                var dashboard = await _dashboardService.GetDashboardDataAsync(null);
                 
                 if (dashboard == null)
                 {
                     return NotFound(new { error = "Dashboard data not found" });
                 }
 
-                // Convert to API model
-                // TODO: Fix this once the actual dashboard type and properties are known
                 var result = new DataQualityDashboardResult
                 {
-                    OverallQualityScore = 0, // dashboard.OverallScore doesn't exist
-                    TotalTables = 0, // dashboard.TableMetrics doesn't exist
-                    TablesWithIssues = 0, // dashboard.TableMetrics doesn't exist
-                    TableQualityResults = new System.Collections.Generic.Dictionary<string, DataQualityResult>() // dashboard.TableMetrics doesn't exist
+                    OverallQualityScore = dashboard.OverallQualityScore,
+                    TotalTables = 1, // Single table dashboard
+                    TablesWithIssues = dashboard.ActiveAlerts?.Count(a => !a.IsResolved) ?? 0,
+                    TableQualityResults = dashboard.CurrentMetrics != null
+                        ? new System.Collections.Generic.Dictionary<string, DataQualityResult>
+                        {
+                            {
+                                dashboard.TableName ?? tableName ?? "Unknown",
+                                new DataQualityResult
+                                {
+                                    TableName = dashboard.TableName ?? tableName ?? "Unknown",
+                                    OverallQualityScore = dashboard.CurrentMetrics.OverallQualityScore,
+                                    TotalRows = dashboard.CurrentMetrics.TotalRecords,
+                                    CompleteRows = dashboard.CurrentMetrics.CompleteRecords,
+                                    FieldQualityScores = dashboard.FieldQualityScores ?? new System.Collections.Generic.Dictionary<string, double>(),
+                                    QualityIssues = dashboard.ActiveAlerts?.Where(a => !a.IsResolved).Select(a => a.AlertMessage).ToList() ?? new System.Collections.Generic.List<string>()
+                                }
+                            }
+                        }
+                        : new System.Collections.Generic.Dictionary<string, DataQualityResult>()
                 };
 
                 return Ok(result);

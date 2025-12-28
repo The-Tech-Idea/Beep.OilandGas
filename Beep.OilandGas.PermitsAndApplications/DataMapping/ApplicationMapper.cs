@@ -222,7 +222,7 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             };
         }
 
-        private string MapApplicationTypeToString(PermitApplicationType applicationType)
+        public string MapApplicationTypeToString(PermitApplicationType applicationType)
         {
             return applicationType switch
             {
@@ -257,7 +257,7 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             };
         }
 
-        private string MapApplicationStatusToString(PermitApplicationStatus status)
+        public string MapApplicationStatusToString(PermitApplicationStatus status)
         {
             return status switch
             {

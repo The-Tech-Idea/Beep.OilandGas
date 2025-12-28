@@ -2,13 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.ApiService.Models;
-using Beep.OilandGas.PPDM39.Core.DTOs;
+using Beep.OilandGas.Models.DTOs.DataManagement;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
-using ValidationResult = Beep.OilandGas.ApiService.Models.ValidationResult;
-using ValidationError = Beep.OilandGas.ApiService.Models.ValidationError;
 
 namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 {
@@ -34,7 +31,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Validate a single entity
         /// </summary>
         [HttpPost("{tableName}/validate")]
-        public async Task<ActionResult<Beep.OilandGas.ApiService.Models.ValidationResult>> ValidateEntity(
+        public async Task<ActionResult<ValidationResult>> ValidateEntity(
             string tableName,
             [FromBody] ValidationRequest request)
         {
@@ -47,9 +44,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 
                 _logger.LogInformation("Validating entity in table {TableName}", tableName);
 
-                // Convert dictionary to entity object (simplified - in real scenario would use proper deserialization)
-                // For now, we'll need to work with the service's actual entity type
-                // This is a placeholder - actual implementation would need entity type resolution
                 var validationResult = await _validationService.ValidateAsync(request.EntityData, tableName);
 
                 return Ok(new ValidationResult
@@ -78,7 +72,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Validate multiple entities in batch
         /// </summary>
         [HttpPost("{tableName}/validate-batch")]
-        public async Task<ActionResult<List<Beep.OilandGas.ApiService.Models.ValidationResult>>> ValidateBatch(
+        public async Task<ActionResult<List<ValidationResult>>> ValidateBatch(
             string tableName,
             [FromBody] BatchValidationRequest request)
         {

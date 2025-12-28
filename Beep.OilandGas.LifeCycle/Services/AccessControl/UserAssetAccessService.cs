@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core.DTOs;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
@@ -147,24 +147,244 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                 });
             }
 
-            // TODO: If includeInherited, add child assets based on hierarchy
+            // If includeInherited, add child assets based on hierarchy
+            if (includeInherited)
+            {
+                var inheritedAssets = new List<AssetAccessDTO>();
+
+                foreach (var assetAccess in assetAccessList.Where(a => a.Inherit && a.Active))
+                {
+                    // FIELD → WELL, POOL, FACILITY
+                    if (assetAccess.AssetType?.ToUpper() == "FIELD")
+                    {
+                        // Get wells for this field
+                        var wellRepo = new PPDMGenericRepository(
+                            _editor, _commonColumnHandler, _defaults, _metadata,
+                            typeof(object), _connectionName, "WELL");
+                        var wellFilters = new List<AppFilter>
+                        {
+                            new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = assetAccess.AssetId }
+                        };
+                        var wells = await wellRepo.GetAsync(wellFilters);
+                        foreach (var well in wells ?? Enumerable.Empty<object>())
+                        {
+                            var wellId = GetPropertyValue(well, "WELL_ID")?.ToString();
+                            if (!string.IsNullOrEmpty(wellId) && !assetAccessList.Any(a => a.AssetId == wellId && a.AssetType == "WELL"))
+                            {
+                                inheritedAssets.Add(new AssetAccessDTO
+                                {
+                                    UserId = userId,
+                                    AssetType = "WELL",
+                                    AssetId = wellId,
+                                    AccessLevel = assetAccess.AccessLevel,
+                                    Inherit = false, // Don't inherit from inherited assets
+                                    OrganizationId = assetAccess.OrganizationId,
+                                    Active = true
+                                });
+                            }
+                        }
+
+                        // Get pools for this field
+                        var poolRepo = new PPDMGenericRepository(
+                            _editor, _commonColumnHandler, _defaults, _metadata,
+                            typeof(object), _connectionName, "POOL");
+                        var poolFilters = new List<AppFilter>
+                        {
+                            new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = assetAccess.AssetId }
+                        };
+                        var pools = await poolRepo.GetAsync(poolFilters);
+                        foreach (var pool in pools ?? Enumerable.Empty<object>())
+                        {
+                            var poolId = GetPropertyValue(pool, "POOL_ID")?.ToString();
+                            if (!string.IsNullOrEmpty(poolId) && !assetAccessList.Any(a => a.AssetId == poolId && a.AssetType == "POOL"))
+                            {
+                                inheritedAssets.Add(new AssetAccessDTO
+                                {
+                                    UserId = userId,
+                                    AssetType = "POOL",
+                                    AssetId = poolId,
+                                    AccessLevel = assetAccess.AccessLevel,
+                                    Inherit = false,
+                                    OrganizationId = assetAccess.OrganizationId,
+                                    Active = true
+                                });
+                            }
+                        }
+
+                        // Get facilities for this field
+                        var facilityRepo = new PPDMGenericRepository(
+                            _editor, _commonColumnHandler, _defaults, _metadata,
+                            typeof(object), _connectionName, "FACILITY");
+                        var facilityFilters = new List<AppFilter>
+                        {
+                            new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = assetAccess.AssetId }
+                        };
+                        var facilities = await facilityRepo.GetAsync(facilityFilters);
+                        foreach (var facility in facilities ?? Enumerable.Empty<object>())
+                        {
+                            var facilityId = GetPropertyValue(facility, "FACILITY_ID")?.ToString();
+                            if (!string.IsNullOrEmpty(facilityId) && !assetAccessList.Any(a => a.AssetId == facilityId && a.AssetType == "FACILITY"))
+                            {
+                                inheritedAssets.Add(new AssetAccessDTO
+                                {
+                                    UserId = userId,
+                                    AssetType = "FACILITY",
+                                    AssetId = facilityId,
+                                    AccessLevel = assetAccess.AccessLevel,
+                                    Inherit = false,
+                                    OrganizationId = assetAccess.OrganizationId,
+                                    Active = true
+                                });
+                            }
+                        }
+                    }
+
+                    // POOL → WELL
+                    if (assetAccess.AssetType?.ToUpper() == "POOL")
+                    {
+                        var wellRepo = new PPDMGenericRepository(
+                            _editor, _commonColumnHandler, _defaults, _metadata,
+                            typeof(object), _connectionName, "WELL");
+                        var wellFilters = new List<AppFilter>
+                        {
+                            new AppFilter { FieldName = "POOL_ID", Operator = "=", FilterValue = assetAccess.AssetId }
+                        };
+                        var wells = await wellRepo.GetAsync(wellFilters);
+                        foreach (var well in wells ?? Enumerable.Empty<object>())
+                        {
+                            var wellId = GetPropertyValue(well, "WELL_ID")?.ToString();
+                            if (!string.IsNullOrEmpty(wellId) && !assetAccessList.Any(a => a.AssetId == wellId && a.AssetType == "WELL"))
+                            {
+                                inheritedAssets.Add(new AssetAccessDTO
+                                {
+                                    UserId = userId,
+                                    AssetType = "WELL",
+                                    AssetId = wellId,
+                                    AccessLevel = assetAccess.AccessLevel,
+                                    Inherit = false,
+                                    OrganizationId = assetAccess.OrganizationId,
+                                    Active = true
+                                });
+                            }
+                        }
+                    }
+                }
+
+                assetAccessList.AddRange(inheritedAssets);
+            }
+
             return assetAccessList;
         }
 
         public async Task<List<string>> GetUserRolesAsync(string userId, string? organizationId = null)
         {
-            // This would query BA_AUTHORITY or a user-role mapping table
-            // For now, return empty list - will be implemented with role service integration
-            return new List<string>();
+            try
+            {
+                // Query USER_ROLE or BA_AUTHORITY table for user roles
+                var userRoleRepo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(object), _connectionName, "USER_ROLE");
+                
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "USER_ID", Operator = "=", FilterValue = userId },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                if (!string.IsNullOrEmpty(organizationId))
+                {
+                    filters.Add(new AppFilter { FieldName = "ORGANIZATION_ID", Operator = "=", FilterValue = organizationId });
+                }
+
+                var results = await userRoleRepo.GetAsync(filters);
+                var roles = new List<string>();
+
+                foreach (var result in results ?? Enumerable.Empty<object>())
+                {
+                    var roleId = GetPropertyValue(result, "ROLE_ID")?.ToString();
+                    if (!string.IsNullOrEmpty(roleId))
+                    {
+                        roles.Add(roleId);
+                    }
+                }
+
+                // If USER_ROLE table doesn't exist, try BA_AUTHORITY
+                if (!roles.Any())
+                {
+                    var authorityRepo = new PPDMGenericRepository(
+                        _editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(object), _connectionName, "BA_AUTHORITY");
+                    
+                    var authorityFilters = new List<AppFilter>
+                    {
+                        new AppFilter { FieldName = "USER_ID", Operator = "=", FilterValue = userId }
+                    };
+
+                    var authorityResults = await authorityRepo.GetAsync(authorityFilters);
+                    foreach (var result in authorityResults ?? Enumerable.Empty<object>())
+                    {
+                        var roleId = GetPropertyValue(result, "ROLE_ID")?.ToString() ?? 
+                                    GetPropertyValue(result, "AUTHORITY_ID")?.ToString();
+                        if (!string.IsNullOrEmpty(roleId))
+                        {
+                            roles.Add(roleId);
+                        }
+                    }
+                }
+
+                return roles;
+            }
+            catch (Exception)
+            {
+                // If tables don't exist, return empty list
+                return new List<string>();
+            }
         }
 
         public async Task<bool> HasPermissionAsync(string userId, string permissionId, string? organizationId = null)
         {
-            // This requires integration with role permission service
-            // Check user's roles, then check if any role has the permission
-            var roles = await GetUserRolesAsync(userId, organizationId);
-            // TODO: Check permissions for roles
-            return false;
+            try
+            {
+                // Get user's roles
+                var roles = await GetUserRolesAsync(userId, organizationId);
+                if (!roles.Any())
+                {
+                    return false;
+                }
+
+                // Query ROLE_PERMISSION table to check if any role has the permission
+                var rolePermissionRepo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(object), _connectionName, "ROLE_PERMISSION");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "PERMISSION_ID", Operator = "=", FilterValue = permissionId },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                if (!string.IsNullOrEmpty(organizationId))
+                {
+                    filters.Add(new AppFilter { FieldName = "ORGANIZATION_ID", Operator = "=", FilterValue = organizationId });
+                }
+
+                var results = await rolePermissionRepo.GetAsync(filters);
+
+                foreach (var result in results ?? Enumerable.Empty<object>())
+                {
+                    var roleId = GetPropertyValue(result, "ROLE_ID")?.ToString();
+                    if (!string.IsNullOrEmpty(roleId) && roles.Contains(roleId))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         public async Task<bool> GrantAssetAccessAsync(string userId, string assetId, string assetType, string accessLevel = "READ", bool inherit = true, string? organizationId = null)
@@ -217,7 +437,32 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                     typeof(object), _connectionName, "USER_ASSET_ACCESS");
 
                 var results = await repo.GetAsync(filters);
-                // TODO: Soft delete by setting ACTIVE_IND = 'N'
+                
+                // Soft delete by setting ACTIVE_IND = 'N'
+                foreach (var result in results ?? Enumerable.Empty<object>())
+                {
+                    if (result is IDictionary<string, object> entity)
+                    {
+                        entity["ACTIVE_IND"] = "N";
+                        entity["UPDATE_DATE"] = DateTime.UtcNow;
+                        // UPDATE_USER would be set if userId parameter is available
+                        await repo.UpdateAsync(entity, userId);
+                    }
+                    else
+                    {
+                        // Use reflection to update properties
+                        var activeIndProp = result.GetType().GetProperty("ACTIVE_IND");
+                        var updateDateProp = result.GetType().GetProperty("UPDATE_DATE");
+                        var updateUserProp = result.GetType().GetProperty("UPDATE_USER");
+
+                        if (activeIndProp != null) activeIndProp.SetValue(result, "N");
+                        if (updateDateProp != null) updateDateProp.SetValue(result, DateTime.UtcNow);
+                        if (updateUserProp != null) updateUserProp.SetValue(result, userId);
+
+                        await repo.UpdateAsync(result, userId);
+                    }
+                }
+
                 return true;
             }
             catch

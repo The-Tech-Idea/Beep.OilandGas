@@ -51,6 +51,9 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
         public decimal UtilizationPercentage => TotalCapacity > 0 
             ? (CurrentInventory / TotalCapacity) * 100m 
             : 0m;
+
+        public string FacilityType { get; internal set; }
+        public decimal Capacity { get; internal set; }
     }
 
     /// <summary>

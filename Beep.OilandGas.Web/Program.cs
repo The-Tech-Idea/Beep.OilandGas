@@ -13,7 +13,7 @@ using Beep.OilandGas.PPDM39.Core.Tree;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Tree;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories;
 using Beep.OilandGas.Web.Theme;

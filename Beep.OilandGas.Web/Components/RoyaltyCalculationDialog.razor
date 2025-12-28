@@ -1,5 +1,5 @@
 @using System.Collections.Generic
-@using Beep.OilandGas.PPDM39.Core.DTOs
+@using Beep.OilandGas.Models.DTOs
 
 <MudDialog>
     <DialogContent>
@@ -88,7 +88,7 @@
                 request["GasPrice"] = _gasPrice.Value;
 
             var result = await ApiClient.PostAsync<object, Dictionary<string, object>>(
-                "/api/accounting/calculate-royalties",
+                "/api/accounting/royalty/calculate",
                 request);
 
             Snackbar.Add("Royalty calculation completed successfully", Severity.Success);

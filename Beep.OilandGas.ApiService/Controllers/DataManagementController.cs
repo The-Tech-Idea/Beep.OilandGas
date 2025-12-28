@@ -8,12 +8,12 @@ using Beep.OilandGas.PPDM39.DataManagement.Services;
 using TheTechIdea.Beep.Editor;
 using System.Reflection;
 using System.Text.Json;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
-using Beep.OilandGas.PPDM39.Core.DTOs;
+using Beep.OilandGas.Models.DTOs;
 
 namespace Beep.OilandGas.ApiService.Controllers
 {

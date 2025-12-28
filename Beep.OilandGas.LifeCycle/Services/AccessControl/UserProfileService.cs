@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core.DTOs;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
@@ -106,7 +106,15 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             // Otherwise, use default layout based on primary role
             if (!string.IsNullOrEmpty(profile.PrimaryRole))
             {
-                return RoleDefinitions.GetDefaultLayoutForRole(profile.PrimaryRole);
+                // Return default layout based on role
+                return profile.PrimaryRole switch
+                {
+                    "ADMIN" => "AdminLayout",
+                    "ENGINEER" => "EngineerLayout",
+                    "OPERATOR" => "OperatorLayout",
+                    "MANAGER" => "ManagerLayout",
+                    _ => "DefaultLayout"
+                };
             }
 
             return "DefaultLayout";

@@ -1,0 +1,339 @@
+{
+  "category": "IndustryStandards",
+  "version": "1.0",
+  "description": "API, ISO, and regulatory agency reference codes. Values are mapped to PPDM RA_* tables where applicable, or stored in LIST_OF_VALUE for standard-specific codes.",
+  "standards": {
+    "API": {
+      "WELL_NUMBERING": [
+        {
+          "code": "API-10",
+          "name": "API Well Numbering Standard",
+          "description": "API Recommended Practice 10: Standard for well numbering and identification",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "API_WELL_NUMBERING_STANDARD",
+          "category": "API",
+          "module": "WellManagement"
+        }
+      ],
+      "EQUIPMENT_CODES": [
+        {
+          "code": "API-6A",
+          "name": "API 6A Wellhead Equipment",
+          "description": "API Specification 6A: Wellhead and Christmas Tree Equipment",
+          "targetTable": "RA_EQUIPMENT_TYPE",
+          "equipmentType": "Wellhead",
+          "mapToPPDM": true,
+          "storeInLOV": false
+        },
+        {
+          "code": "API-6D",
+          "name": "API 6D Pipeline Valves",
+          "description": "API Specification 6D: Pipeline Valves",
+          "targetTable": "RA_EQUIPMENT_TYPE",
+          "equipmentType": "Valve",
+          "mapToPPDM": true,
+          "storeInLOV": false
+        },
+        {
+          "code": "API-11E",
+          "name": "API 11E Sucker Rod Pump",
+          "description": "API Specification 11E: Sucker Rod Pump",
+          "targetTable": "RA_EQUIPMENT_TYPE",
+          "equipmentType": "Pump",
+          "mapToPPDM": true,
+          "storeInLOV": false
+        },
+        {
+          "code": "API-14A",
+          "name": "API 14A Subsurface Safety Valve",
+          "description": "API Specification 14A: Subsurface Safety Valve Equipment",
+          "targetTable": "RA_EQUIPMENT_TYPE",
+          "equipmentType": "Safety Valve",
+          "mapToPPDM": true,
+          "storeInLOV": false
+        }
+      ],
+      "PRODUCTION_METHODS": [
+        {
+          "code": "API-RP-11S",
+          "name": "API RP 11S Sucker Rod Pump",
+          "description": "API Recommended Practice 11S: Sucker Rod Pump",
+          "targetTable": "RA_PRODUCTION_METHOD",
+          "productionMethod": "Sucker Rod Pump",
+          "mapToPPDM": true
+        },
+        {
+          "code": "API-RP-11V8",
+          "name": "API RP 11V8 Gas Lift",
+          "description": "API Recommended Practice 11V8: Gas Lift",
+          "targetTable": "RA_PRODUCTION_METHOD",
+          "productionMethod": "Gas Lift",
+          "mapToPPDM": true
+        }
+      ],
+      "DRILLING_STANDARDS": [
+        {
+          "code": "API-RP-13B",
+          "name": "API RP 13B Drilling Fluid Testing",
+          "description": "API Recommended Practice 13B: Drilling Fluid Testing",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "API_DRILLING_STANDARD",
+          "category": "API",
+          "module": "Drilling"
+        },
+        {
+          "code": "API-RP-59",
+          "name": "API RP 59 Well Control",
+          "description": "API Recommended Practice 59: Well Control Operations",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "API_DRILLING_STANDARD",
+          "category": "API",
+          "module": "Drilling"
+        }
+      ],
+      "COMPLETION_STANDARDS": [
+        {
+          "code": "API-RP-5C5",
+          "name": "API RP 5C5 Casing",
+          "description": "API Recommended Practice 5C5: Casing Design",
+          "targetTable": "RA_COMPLETION_TYPE",
+          "completionType": "Cased Hole",
+          "mapToPPDM": true
+        }
+      ]
+    },
+    "ISO": {
+      "STANDARDS": [
+        {
+          "code": "ISO-14224",
+          "name": "Petroleum and natural gas industries - Collection and exchange of reliability and maintenance data",
+          "description": "ISO 14224: Reliability and maintenance data collection and exchange",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "ISO_STANDARD",
+          "category": "ISO",
+          "module": "Maintenance"
+        },
+        {
+          "code": "ISO-29001",
+          "name": "Petroleum, petrochemical and natural gas industries - Sector-specific quality management systems",
+          "description": "ISO 29001: Quality management systems for oil and gas",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "ISO_STANDARD",
+          "category": "ISO",
+          "module": "Quality"
+        },
+        {
+          "code": "ISO-13678",
+          "name": "Petroleum and natural gas industries - Evaluation and testing of thread compounds",
+          "description": "ISO 13678: Thread compound evaluation and testing",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "ISO_STANDARD",
+          "category": "ISO",
+          "module": "Drilling"
+        },
+        {
+          "code": "ISO-10423",
+          "name": "Petroleum and natural gas industries - Wellhead and Christmas tree equipment",
+          "description": "ISO 10423: Wellhead and Christmas tree equipment (maps to RA_EQUIPMENT_TYPE)",
+          "targetTable": "RA_EQUIPMENT_TYPE",
+          "equipmentType": "Wellhead",
+          "mapToPPDM": true,
+          "storeInLOV": false
+        },
+        {
+          "code": "ISO-15156",
+          "name": "Petroleum and natural gas industries - Materials for use in H2S-containing environments",
+          "description": "ISO 15156: Materials for H2S environments",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "ISO_STANDARD",
+          "category": "ISO",
+          "module": "Materials"
+        },
+        {
+          "code": "ISO-19901",
+          "name": "Petroleum and natural gas industries - Specific requirements for offshore structures",
+          "description": "ISO 19901: Offshore structures requirements",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "ISO_STANDARD",
+          "category": "ISO",
+          "module": "Offshore"
+        }
+      ],
+      "PRODUCTION_METHODS": [
+        {
+          "code": "ISO-13628-6",
+          "name": "ISO 13628-6 Subsea Production Control Systems",
+          "description": "ISO 13628-6: Subsea production control systems",
+          "targetTable": "RA_PRODUCTION_METHOD",
+          "productionMethod": "Subsea",
+          "mapToPPDM": true
+        }
+      ]
+    },
+    "REGULATORY": {
+      "AGENCIES": [
+        {
+          "code": "BOEM",
+          "name": "Bureau of Ocean Energy Management",
+          "description": "US federal agency for offshore energy management",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "REGULATORY_AGENCY",
+          "category": "Regulatory",
+          "module": "Compliance",
+          "jurisdiction": "US_Federal"
+        },
+        {
+          "code": "BSEE",
+          "name": "Bureau of Safety and Environmental Enforcement",
+          "description": "US federal agency for offshore safety and environmental enforcement",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "REGULATORY_AGENCY",
+          "category": "Regulatory",
+          "module": "Compliance",
+          "jurisdiction": "US_Federal"
+        },
+        {
+          "code": "RRC",
+          "name": "Railroad Commission of Texas",
+          "description": "Texas state agency for oil and gas regulation",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "REGULATORY_AGENCY",
+          "category": "Regulatory",
+          "module": "Compliance",
+          "jurisdiction": "Texas"
+        },
+        {
+          "code": "OCD",
+          "name": "Oklahoma Corporation Commission - Oil and Gas Division",
+          "description": "Oklahoma state agency for oil and gas regulation",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "REGULATORY_AGENCY",
+          "category": "Regulatory",
+          "module": "Compliance",
+          "jurisdiction": "Oklahoma"
+        },
+        {
+          "code": "DNR",
+          "name": "Louisiana Department of Natural Resources",
+          "description": "Louisiana state agency for oil and gas regulation",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "REGULATORY_AGENCY",
+          "category": "Regulatory",
+          "module": "Compliance",
+          "jurisdiction": "Louisiana"
+        },
+        {
+          "code": "COGCC",
+          "name": "Colorado Oil and Gas Conservation Commission",
+          "description": "Colorado state agency for oil and gas regulation",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "REGULATORY_AGENCY",
+          "category": "Regulatory",
+          "module": "Compliance",
+          "jurisdiction": "Colorado"
+        },
+        {
+          "code": "NDIC",
+          "name": "North Dakota Industrial Commission",
+          "description": "North Dakota state agency for oil and gas regulation",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "REGULATORY_AGENCY",
+          "category": "Regulatory",
+          "module": "Compliance",
+          "jurisdiction": "North_Dakota"
+        },
+        {
+          "code": "AER",
+          "name": "Alberta Energy Regulator",
+          "description": "Alberta, Canada provincial agency for oil and gas regulation",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "REGULATORY_AGENCY",
+          "category": "Regulatory",
+          "module": "Compliance",
+          "jurisdiction": "Alberta_Canada"
+        },
+        {
+          "code": "NEB",
+          "name": "National Energy Board",
+          "description": "Canada federal agency for energy regulation",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "REGULATORY_AGENCY",
+          "category": "Regulatory",
+          "module": "Compliance",
+          "jurisdiction": "Canada_Federal"
+        }
+      ],
+      "WELL_STATUS_CODES": [
+        {
+          "code": "RRC-ACTIVE",
+          "name": "RRC Active Well",
+          "description": "Texas RRC active well status",
+          "targetTable": "RA_WELL_STATUS",
+          "statusType": "Life_Cycle",
+          "status": "Producing",
+          "mapToPPDM": true
+        },
+        {
+          "code": "RRC-INACTIVE",
+          "name": "RRC Inactive Well",
+          "description": "Texas RRC inactive well status",
+          "targetTable": "RA_WELL_STATUS",
+          "statusType": "Life_Cycle",
+          "status": "Shut-In",
+          "mapToPPDM": true
+        },
+        {
+          "code": "RRC-PLUGGED",
+          "name": "RRC Plugged Well",
+          "description": "Texas RRC plugged/abandoned well status",
+          "targetTable": "RA_WELL_STATUS",
+          "statusType": "Life_Cycle",
+          "status": "Abandoned",
+          "mapToPPDM": true
+        }
+      ],
+      "PRODUCTION_REPORTING": [
+        {
+          "code": "RRC-P-5",
+          "name": "RRC P-5 Production Report",
+          "description": "Texas RRC monthly production reporting form",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "REGULATORY_REPORT_FORM",
+          "category": "Regulatory",
+          "module": "Reporting",
+          "jurisdiction": "Texas"
+        },
+        {
+          "code": "OCD-1002",
+          "name": "OCD 1002 Production Report",
+          "description": "Oklahoma monthly production reporting form",
+          "targetTable": null,
+          "storeInLOV": true,
+          "valueType": "REGULATORY_REPORT_FORM",
+          "category": "Regulatory",
+          "module": "Reporting",
+          "jurisdiction": "Oklahoma"
+        }
+      ]
+    }
+  }
+}
+

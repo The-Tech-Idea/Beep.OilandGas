@@ -3,29 +3,35 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
-using Beep.OilandGas.PPDM39.Core.DTOs;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs;
 using Beep.OilandGas.PPDM39.Models;
 using Microsoft.Extensions.Logging;
-using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
     /// <summary>
-    /// API controller for Decommissioning phase operations, field-scoped
+    /// API controller for Decommissioning phase business operations, field-scoped
+    /// 
+    /// This controller focuses on decommissioning business logic and workflow processes.
+    /// Business logic endpoints (aggregations, cost estimation) are kept here.
+    /// Workflow endpoints use DecommissioningProcessService for process orchestration.
     /// </summary>
     [ApiController]
     [Route("api/field/current/decommissioning")]
     public class DecommissioningController : ControllerBase
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;
+        private readonly Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes.DecommissioningProcessService _decommissioningProcessService;
         private readonly ILogger<DecommissioningController> _logger;
 
         public DecommissioningController(
             IFieldOrchestrator fieldOrchestrator,
+            Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes.DecommissioningProcessService decommissioningProcessService,
             ILogger<DecommissioningController> logger)
         {
             _fieldOrchestrator = fieldOrchestrator ?? throw new ArgumentNullException(nameof(fieldOrchestrator));
+            _decommissioningProcessService = decommissioningProcessService ?? throw new ArgumentNullException(nameof(decommissioningProcessService));
             _logger = logger;
         }
 
@@ -203,9 +209,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// Decommission a facility (must belong to current field)
         /// </summary>
         [HttpPost("facilities/{facilityId}/decommission")]
-        public async Task<ActionResult<object>> DecommissionFacility(
+        public async Task<ActionResult<FacilityDecommissioningResponse>> DecommissionFacility(
             string facilityId,
-            [FromBody] Dictionary<string, object> decommissionData,
+            [FromBody] FacilityDecommissioningRequest decommissionData,
             [FromQuery] string userId)
         {
             try
@@ -358,5 +364,481 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+
+        // ============================================
+        // DECOMMISSIONING WORKFLOW ENDPOINTS
+        // ============================================
+
+        #region Well Abandonment Workflow
+
+        /// <summary>
+        /// Start Well Abandonment workflow
+        /// </summary>
+        [HttpPost("workflows/well-abandonment")]
+        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartWellAbandonmentProcess(
+            [FromBody] StartWellAbandonmentRequest request)
+        {
+            try
+            {
+                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+                if (string.IsNullOrEmpty(currentFieldId))
+                {
+                    return BadRequest(new { error = "No active field is set" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.WellId))
+                {
+                    return BadRequest(new { error = "WellId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var instance = await _decommissioningProcessService.StartWellAbandonmentProcessAsync(
+                    request.WellId, 
+                    currentFieldId, 
+                    request.UserId);
+                
+                return Ok(instance);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error starting Well Abandonment process");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Plan abandonment
+        /// </summary>
+        [HttpPost("workflows/plan-abandonment")]
+        public async Task<ActionResult<bool>> PlanAbandonment([FromBody] PlanAbandonmentRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _decommissioningProcessService.PlanAbandonmentAsync(
+                    request.InstanceId, 
+                    request.PlanData ?? new Dictionary<string, object>(), 
+                    request.UserId);
+                
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error planning abandonment");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Obtain regulatory approval
+        /// </summary>
+        [HttpPost("workflows/obtain-regulatory-approval")]
+        public async Task<ActionResult<bool>> ObtainRegulatoryApproval([FromBody] ObtainRegulatoryApprovalRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _decommissioningProcessService.ObtainRegulatoryApprovalAsync(request.InstanceId, request.UserId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error obtaining regulatory approval");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Plug well
+        /// </summary>
+        [HttpPost("workflows/plug-well")]
+        public async Task<ActionResult<bool>> PlugWell([FromBody] PlugWellRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _decommissioningProcessService.PlugWellAsync(
+                    request.InstanceId, 
+                    request.PluggingData ?? new Dictionary<string, object>(), 
+                    request.UserId);
+                
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error plugging well");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Restore site
+        /// </summary>
+        [HttpPost("workflows/restore-site")]
+        public async Task<ActionResult<bool>> RestoreSite([FromBody] RestoreSiteRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _decommissioningProcessService.RestoreSiteAsync(
+                    request.InstanceId, 
+                    request.RestorationData ?? new Dictionary<string, object>(), 
+                    request.UserId);
+                
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error restoring site");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Complete abandonment
+        /// </summary>
+        [HttpPost("workflows/complete-abandonment")]
+        public async Task<ActionResult<bool>> CompleteAbandonment([FromBody] CompleteAbandonmentRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _decommissioningProcessService.CompleteAbandonmentAsync(request.InstanceId, request.UserId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error completing abandonment");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        #endregion
+
+        #region Facility Decommissioning Workflow
+
+        /// <summary>
+        /// Start Facility Decommissioning workflow
+        /// </summary>
+        [HttpPost("workflows/facility-decommissioning")]
+        public async Task<ActionResult<Beep.OilandGas.LifeCycle.Models.Processes.ProcessInstance>> StartFacilityDecommissioningProcess(
+            [FromBody] StartFacilityDecommissioningRequest request)
+        {
+            try
+            {
+                var currentFieldId = _fieldOrchestrator.CurrentFieldId;
+                if (string.IsNullOrEmpty(currentFieldId))
+                {
+                    return BadRequest(new { error = "No active field is set" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.FacilityId))
+                {
+                    return BadRequest(new { error = "FacilityId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var instance = await _decommissioningProcessService.StartFacilityDecommissioningProcessAsync(
+                    request.FacilityId, 
+                    currentFieldId, 
+                    request.UserId);
+                
+                return Ok(instance);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error starting Facility Decommissioning process");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Plan decommissioning
+        /// </summary>
+        [HttpPost("workflows/plan-decommissioning")]
+        public async Task<ActionResult<bool>> PlanDecommissioning([FromBody] PlanDecommissioningRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _decommissioningProcessService.PlanDecommissioningAsync(
+                    request.InstanceId, 
+                    request.PlanData ?? new Dictionary<string, object>(), 
+                    request.UserId);
+                
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error planning decommissioning");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Remove equipment
+        /// </summary>
+        [HttpPost("workflows/remove-equipment")]
+        public async Task<ActionResult<bool>> RemoveEquipment([FromBody] RemoveEquipmentRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _decommissioningProcessService.RemoveEquipmentAsync(
+                    request.InstanceId, 
+                    request.RemovalData ?? new Dictionary<string, object>(), 
+                    request.UserId);
+                
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing equipment");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Cleanup site
+        /// </summary>
+        [HttpPost("workflows/cleanup-site")]
+        public async Task<ActionResult<bool>> CleanupSite([FromBody] CleanupSiteRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _decommissioningProcessService.CleanupSiteAsync(
+                    request.InstanceId, 
+                    request.CleanupData ?? new Dictionary<string, object>(), 
+                    request.UserId);
+                
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cleaning up site");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Obtain regulatory closure
+        /// </summary>
+        [HttpPost("workflows/obtain-regulatory-closure")]
+        public async Task<ActionResult<bool>> ObtainRegulatoryClosure([FromBody] ObtainRegulatoryClosureRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _decommissioningProcessService.ObtainRegulatoryClosureAsync(request.InstanceId, request.UserId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error obtaining regulatory closure");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Complete decommissioning
+        /// </summary>
+        [HttpPost("workflows/complete-decommissioning")]
+        public async Task<ActionResult<bool>> CompleteDecommissioning([FromBody] CompleteDecommissioningRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.InstanceId))
+                {
+                    return BadRequest(new { error = "InstanceId is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.UserId))
+                {
+                    return BadRequest(new { error = "UserId is required" });
+                }
+
+                var result = await _decommissioningProcessService.CompleteDecommissioningAsync(request.InstanceId, request.UserId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error completing decommissioning");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        #endregion
+    }
+
+    // ============================================
+    // REQUEST DTOs
+    // ============================================
+
+    public class StartWellAbandonmentRequest
+    {
+        public string WellId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    public class PlanAbandonmentRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public Dictionary<string, object>? PlanData { get; set; }
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    public class ObtainRegulatoryApprovalRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    public class PlugWellRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public Dictionary<string, object>? PluggingData { get; set; }
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    public class RestoreSiteRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public Dictionary<string, object>? RestorationData { get; set; }
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    public class CompleteAbandonmentRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    public class StartFacilityDecommissioningRequest
+    {
+        public string FacilityId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    public class PlanDecommissioningRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public Dictionary<string, object>? PlanData { get; set; }
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    public class RemoveEquipmentRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public Dictionary<string, object>? RemovalData { get; set; }
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    public class CleanupSiteRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public Dictionary<string, object>? CleanupData { get; set; }
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    public class ObtainRegulatoryClosureRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+    }
+
+    public class CompleteDecommissioningRequest
+    {
+        public string InstanceId { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
     }
 }

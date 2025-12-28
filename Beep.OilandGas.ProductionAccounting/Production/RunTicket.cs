@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Measurement;
 using Beep.OilandGas.ProductionAccounting.Models;
 
@@ -93,7 +94,7 @@ namespace Beep.OilandGas.ProductionAccounting.Production
         /// <summary>
         /// Gets or sets the measurement method.
         /// </summary>
-        public MeasurementMethod MeasurementMethod { get; set; }
+        public Measurement.MeasurementMethod MeasurementMethod { get; set; }
 
         /// <summary>
         /// Gets or sets the measurement record reference.
@@ -114,42 +115,6 @@ namespace Beep.OilandGas.ProductionAccounting.Production
         /// Gets or sets the processing date.
         /// </summary>
         public DateTime? ProcessedDate { get; set; }
-    }
-
-    /// <summary>
-    /// Type of disposition.
-    /// </summary>
-    public enum DispositionType
-    {
-        /// <summary>
-        /// Sale to purchaser.
-        /// </summary>
-        Sale,
-
-        /// <summary>
-        /// Transfer to another location.
-        /// </summary>
-        Transfer,
-
-        /// <summary>
-        /// Exchange transaction.
-        /// </summary>
-        Exchange,
-
-        /// <summary>
-        /// Inventory (not disposed).
-        /// </summary>
-        Inventory,
-
-        /// <summary>
-        /// Royalty in kind.
-        /// </summary>
-        RoyaltyInKind,
-
-        /// <summary>
-        /// Working interest in kind.
-        /// </summary>
-        WorkingInterestInKind
     }
 
     /// <summary>

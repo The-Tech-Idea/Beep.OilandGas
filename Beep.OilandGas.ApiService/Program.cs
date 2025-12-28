@@ -1,6 +1,6 @@
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.LifeCycle.Services;
-using Beep.OilandGas.PPDM39.Core.DTOs;
+using Beep.OilandGas.Models.DTOs;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
@@ -14,9 +14,9 @@ using TheTechIdea.Beep.Logger;
 using TheTechIdea.Beep.Utils;
 using TheTechIdea.Beep;
 using Beep.OilandGas.PPDM39.Core.Metadata;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
-using Beep.OilandGas.PPDM39.Core.DTOs;
-using Beep.OilandGas.PPDM39.Core.Interfaces;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL;
 using TheTechIdea.Beep.Utilities;
 using TheTechIdea.Beep.Container;
@@ -24,6 +24,7 @@ using TheTechIdea.Beep.Container.Services;
 using TheTechIdea.Beep.Addin;
 using Microsoft.OpenApi;
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.ProductionAccounting.Services;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -267,8 +268,85 @@ builder.Services.AddScoped<IPPDMProductionService>(sp =>
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var mappingService = sp.GetRequiredService<PPDMMappingService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Production.PPDMProductionService>();
     return new Beep.OilandGas.LifeCycle.Services.Production.PPDMProductionService(
-        editor, commonColumnHandler, defaults, metadata, mappingService, connectionName);
+        editor, commonColumnHandler, defaults, metadata, mappingService, connectionName, logger);
+});
+
+// LifeCycle Process Services
+builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Processes.IProcessService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Processes.ProcessServiceBase>();
+    return new Beep.OilandGas.LifeCycle.Services.Processes.PPDMProcessService(
+        editor, commonColumnHandler, defaults, metadata, connectionName, connectionName, logger);
+});
+
+// Exploration Process Service
+builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Exploration.Processes.ExplorationProcessService>(sp =>
+{
+    var processService = sp.GetRequiredService<Beep.OilandGas.LifeCycle.Services.Processes.IProcessService>();
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var mappingService = sp.GetRequiredService<PPDMMappingService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Exploration.Processes.ExplorationProcessService>();
+    var explorationService = new Beep.OilandGas.LifeCycle.Services.Exploration.PPDMExplorationService(
+        editor, commonColumnHandler, defaults, metadata, mappingService, connectionName, logger);
+    return new Beep.OilandGas.LifeCycle.Services.Exploration.Processes.ExplorationProcessService(
+        processService, explorationService, logger);
+});
+
+// Development Process Service
+builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Development.Processes.DevelopmentProcessService>(sp =>
+{
+    var processService = sp.GetRequiredService<Beep.OilandGas.LifeCycle.Services.Processes.IProcessService>();
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var mappingService = sp.GetRequiredService<PPDMMappingService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Development.Processes.DevelopmentProcessService>();
+    var developmentService = new Beep.OilandGas.LifeCycle.Services.Development.PPDMDevelopmentService(
+        editor, commonColumnHandler, defaults, metadata, mappingService, connectionName, logger);
+    return new Beep.OilandGas.LifeCycle.Services.Development.Processes.DevelopmentProcessService(
+        processService, developmentService, logger);
+});
+
+// Production Process Service
+builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Production.Processes.ProductionProcessService>(sp =>
+{
+    var processService = sp.GetRequiredService<Beep.OilandGas.LifeCycle.Services.Processes.IProcessService>();
+    var productionService = sp.GetRequiredService<IPPDMProductionService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Production.Processes.ProductionProcessService>();
+    return new Beep.OilandGas.LifeCycle.Services.Production.Processes.ProductionProcessService(
+        processService, productionService as Beep.OilandGas.LifeCycle.Services.Production.PPDMProductionService, logger);
+});
+
+// Decommissioning Process Service
+builder.Services.AddScoped<Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes.DecommissioningProcessService>(sp =>
+{
+    var processService = sp.GetRequiredService<Beep.OilandGas.LifeCycle.Services.Processes.IProcessService>();
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var mappingService = sp.GetRequiredService<PPDMMappingService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes.DecommissioningProcessService>();
+    var decommissioningService = new Beep.OilandGas.LifeCycle.Services.Decommissioning.PPDMDecommissioningService(
+        editor, commonColumnHandler, defaults, metadata, mappingService, connectionName, logger);
+    return new Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes.DecommissioningProcessService(
+        processService, decommissioningService, logger);
 });
 
 // Field Orchestrator Service (scoped per request)
@@ -313,6 +391,38 @@ builder.Services.AddScoped<IAccountingService>(sp =>
         editor, commonColumnHandler, defaults, metadata, connectionName, logger);
 });
 
+// Production Accounting Service
+builder.Services.AddScoped<ProductionAccountingService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new ProductionAccountingService(
+        editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
+});
+
+// GL Integration Services
+builder.Services.AddScoped<GLAccountMappingService>(sp =>
+{
+    var glAccountManager = sp.GetRequiredService<ProductionAccountingService>()
+        .TraditionalAccounting.GeneralLedger;
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<GLAccountMappingService>();
+    return new GLAccountMappingService(glAccountManager, logger);
+});
+
+builder.Services.AddScoped<GLIntegrationService>(sp =>
+{
+    var journalEntryManager = sp.GetRequiredService<ProductionAccountingService>()
+        .TraditionalAccounting.JournalEntry;
+    var accountMapping = sp.GetRequiredService<GLAccountMappingService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<GLIntegrationService>();
+    return new GLIntegrationService(journalEntryManager, accountMapping, logger);
+});
+
 // ============================================
 // REGISTER ACCESS CONTROL SERVICES
 // ============================================
@@ -353,6 +463,87 @@ builder.Services.AddScoped<IUserProfileService>(sp =>
 
 // PPDM39 Setup Service
 builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PPDM39SetupService>();
+
+// PPDM Database Creator Service
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.Services.IPPDMDatabaseCreatorService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.PPDM39.DataManagement.Services.PPDMDatabaseCreatorService>();
+    return new Beep.OilandGas.PPDM39.DataManagement.Services.PPDMDatabaseCreatorService(editor, logger);
+});
+
+// PPDM Reference Data Seeder
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMReferenceDataSeeder>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    return new Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMReferenceDataSeeder(
+        editor, commonColumnHandler, defaults, metadata, connectionName);
+});
+
+// LOV Management Service
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.Services.LOVManagementService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.PPDM39.DataManagement.Services.LOVManagementService>();
+    return new Beep.OilandGas.PPDM39.DataManagement.Services.LOVManagementService(
+        editor, commonColumnHandler, defaults, metadata, logger);
+});
+
+// CSV LOV Importer
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.CSVLOVImporter>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.CSVLOVImporter>();
+    return new Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.CSVLOVImporter(
+        editor, commonColumnHandler, defaults, metadata, logger);
+});
+
+// PPDM Standard Value Importer
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.PPDMStandardValueImporter>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.PPDMStandardValueImporter>();
+    return new Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.PPDMStandardValueImporter(
+        editor, commonColumnHandler, defaults, metadata, logger);
+});
+
+// IHS Standard Value Importer
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.IHSStandardValueImporter>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.IHSStandardValueImporter>();
+    return new Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.IHSStandardValueImporter(
+        editor, commonColumnHandler, defaults, metadata, logger);
+});
+
+// Standard Value Mapper
+builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.StandardValueMapper>(sp =>
+{
+    var lovManagementService = sp.GetRequiredService<Beep.OilandGas.PPDM39.DataManagement.Services.LOVManagementService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.StandardValueMapper>();
+    return new Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.StandardValueMapper(lovManagementService, logger);
+});
 
 // PPDM39 Data Service
 builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PPDM39DataService>(sp =>

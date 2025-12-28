@@ -1,0 +1,118 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IDataManagementService DataManagementService
+@inject IDialogService DialogService
+@inject ILogger<ConnectionCheck> Logger
+
+<CascadingAuthenticationState>
+    <AuthorizeView>
+        <Authorized>
+            @if (!_hasCheckedConnections)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+            }
+        </Authorized>
+    </AuthorizeView>
+</CascadingAuthenticationState>
+
+@code {
+    private bool _hasCheckedConnections = false;
+    private bool _hasValidConnection = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CheckConnections();
+        }
+    }
+
+    private async Task CheckConnections()
+    {
+        try
+        {
+            // Check authentication state
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var isAuthenticated = authState.User?.Identity?.IsAuthenticated ?? false;
+
+            if (!isAuthenticated)
+            {
+                // User not authenticated, skip check
+                _hasCheckedConnections = true;
+                return;
+            }
+
+            // Refresh connections from API server and get count directly
+            await DataManagementService.RefreshConnectionsAsync();
+            var connections = await DataManagementService.GetAllConnectionsAsync();
+            var connectionCount = connections.Count;
+
+            if (connectionCount == 0)
+            {
+                // No connections found, show dialog
+                await ShowConnectionSetupDialog();
+            }
+            else
+            {
+                _hasValidConnection = true;
+            }
+
+            _hasCheckedConnections = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error checking database connections on startup");
+            // Don't block app if check fails - allow user to continue
+            _hasCheckedConnections = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ShowConnectionSetupDialog()
+    {
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = false,
+            DisableBackdropClick = true,
+            MaxWidth = MaxWidth.ExtraLarge,
+            FullWidth = true,
+            CloseButton = false
+        };
+
+        var parameters = new DialogParameters<ConnectionSetupDialog>
+        {
+            { x => x.IsBlocking, true },
+            { x => x.OnConnectionCreated, EventCallback.Factory.Create(this, OnConnectionCreated) }
+        };
+
+        var dialog = await DialogService.ShowAsync<ConnectionSetupDialog>(
+            "Database Connection Required", 
+            parameters, 
+            options);
+
+        var result = await dialog.Result;
+        
+        // If dialog was cancelled without creating connection, show again
+        if (result.Canceled && !_hasValidConnection)
+        {
+            // User must create a connection - show dialog again
+            await Task.Delay(500); // Small delay before showing again
+            await ShowConnectionSetupDialog();
+        }
+    }
+
+    private async Task OnConnectionCreated()
+    {
+        // Refresh connections and get count directly
+        await DataManagementService.RefreshConnectionsAsync();
+        var connections = await DataManagementService.GetAllConnectionsAsync();
+        _hasValidConnection = connections.Count > 0;
+        
+        if (_hasValidConnection)
+        {
+            StateHasChanged();
+        }
+    }
+}
+

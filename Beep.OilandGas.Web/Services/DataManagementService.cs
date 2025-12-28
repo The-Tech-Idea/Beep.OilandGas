@@ -1,5 +1,5 @@
 using Beep.OilandGas.ApiService.Models;
-using Beep.OilandGas.PPDM39.Core.DTOs;
+using Beep.OilandGas.Models.DTOs;
 using Beep.OilandGas.Web.Services;
 using System.Collections.ObjectModel;
 using System.IO;

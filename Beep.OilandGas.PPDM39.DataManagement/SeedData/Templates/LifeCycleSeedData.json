@@ -1,0 +1,588 @@
+{
+  "category": "LifeCycle",
+  "version": "1.0",
+  "description": "Seed data for LifeCycle workflows. Note: These values are also available in LIST_OF_VALUE table via CustomLOVSeedData.json for unified LOV management.",
+  "tables": [
+    {
+      "tableName": "WORK_ORDER_TYPE",
+      "description": "Work order types",
+      "data": [
+        {
+          "WORK_ORDER_TYPE_ID": "MAINTENANCE",
+          "WORK_ORDER_TYPE_NAME": "Maintenance",
+          "DESCRIPTION": "Maintenance work order",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "WORK_ORDER_TYPE_ID": "INSPECTION",
+          "WORK_ORDER_TYPE_NAME": "Inspection",
+          "DESCRIPTION": "Inspection work order",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "WORK_ORDER_TYPE_ID": "REPAIR",
+          "WORK_ORDER_TYPE_NAME": "Repair",
+          "DESCRIPTION": "Repair work order",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "WORK_ORDER_TYPE_ID": "MODIFICATION",
+          "WORK_ORDER_TYPE_NAME": "Modification",
+          "DESCRIPTION": "Modification work order",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "WORK_ORDER_TYPE_ID": "RIG_WORKOVER",
+          "WORK_ORDER_TYPE_NAME": "Rig Workover",
+          "DESCRIPTION": "Rig workover operation",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "WORK_ORDER_TYPE_ID": "RIGLESS_WORKOVER",
+          "WORK_ORDER_TYPE_NAME": "Rigless Workover",
+          "DESCRIPTION": "Rigless workover operation",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "WORK_ORDER_TYPE_ID": "WIRELINE",
+          "WORK_ORDER_TYPE_NAME": "Wireline",
+          "DESCRIPTION": "Wireline operation",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "WORK_ORDER_TYPE_ID": "COILED_TUBING",
+          "WORK_ORDER_TYPE_NAME": "Coiled Tubing",
+          "DESCRIPTION": "Coiled tubing operation",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "WORK_ORDER_TYPE_ID": "SNUBBING",
+          "WORK_ORDER_TYPE_NAME": "Snubbing",
+          "DESCRIPTION": "Snubbing operation",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "WORK_ORDER_TYPE_ID": "TESTING",
+          "WORK_ORDER_TYPE_NAME": "Testing",
+          "DESCRIPTION": "Testing operation",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "WORK_ORDER_TYPE_ID": "STIMULATION",
+          "WORK_ORDER_TYPE_NAME": "Stimulation",
+          "DESCRIPTION": "Stimulation operation",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "WORK_ORDER_TYPE_ID": "CLEANOUT",
+          "WORK_ORDER_TYPE_NAME": "Cleanout",
+          "DESCRIPTION": "Cleanout operation",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "WORK_ORDER_STATUS",
+      "description": "Work order status values",
+      "data": [
+        {
+          "STATUS_ID": "DRAFT",
+          "STATUS_NAME": "Draft",
+          "DESCRIPTION": "Work order is in draft status",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "APPROVED",
+          "STATUS_NAME": "Approved",
+          "DESCRIPTION": "Work order has been approved",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "IN_PROGRESS",
+          "STATUS_NAME": "In Progress",
+          "DESCRIPTION": "Work order is in progress",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "COMPLETED",
+          "STATUS_NAME": "Completed",
+          "DESCRIPTION": "Work order has been completed",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "CANCELLED",
+          "STATUS_NAME": "Cancelled",
+          "DESCRIPTION": "Work order has been cancelled",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "ON_HOLD",
+          "STATUS_NAME": "On Hold",
+          "DESCRIPTION": "Work order is on hold",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "PRIORITY",
+      "description": "Priority levels",
+      "data": [
+        {
+          "PRIORITY_ID": "LOW",
+          "PRIORITY_NAME": "Low",
+          "PRIORITY_LEVEL": 1,
+          "DESCRIPTION": "Low priority",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "PRIORITY_ID": "MEDIUM",
+          "PRIORITY_NAME": "Medium",
+          "PRIORITY_LEVEL": 2,
+          "DESCRIPTION": "Medium priority",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "PRIORITY_ID": "HIGH",
+          "PRIORITY_NAME": "High",
+          "PRIORITY_LEVEL": 3,
+          "DESCRIPTION": "High priority",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "PRIORITY_ID": "CRITICAL",
+          "PRIORITY_NAME": "Critical",
+          "PRIORITY_LEVEL": 4,
+          "DESCRIPTION": "Critical priority",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "MAINTENANCE_TYPE",
+      "description": "Maintenance types",
+      "data": [
+        {
+          "MAINTENANCE_TYPE_ID": "PREVENTIVE",
+          "MAINTENANCE_TYPE_NAME": "Preventive",
+          "DESCRIPTION": "Preventive maintenance",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "MAINTENANCE_TYPE_ID": "CORRECTIVE",
+          "MAINTENANCE_TYPE_NAME": "Corrective",
+          "DESCRIPTION": "Corrective maintenance",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "MAINTENANCE_TYPE_ID": "PREDICTIVE",
+          "MAINTENANCE_TYPE_NAME": "Predictive",
+          "DESCRIPTION": "Predictive maintenance",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "MAINTENANCE_TYPE_ID": "EMERGENCY",
+          "MAINTENANCE_TYPE_NAME": "Emergency",
+          "DESCRIPTION": "Emergency maintenance",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "MAINTENANCE_STATUS",
+      "description": "Maintenance status values",
+      "data": [
+        {
+          "STATUS_ID": "SCHEDULED",
+          "STATUS_NAME": "Scheduled",
+          "DESCRIPTION": "Maintenance is scheduled",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "IN_PROGRESS",
+          "STATUS_NAME": "In Progress",
+          "DESCRIPTION": "Maintenance is in progress",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "COMPLETED",
+          "STATUS_NAME": "Completed",
+          "DESCRIPTION": "Maintenance has been completed",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "DEFERRED",
+          "STATUS_NAME": "Deferred",
+          "DESCRIPTION": "Maintenance has been deferred",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "CANCELLED",
+          "STATUS_NAME": "Cancelled",
+          "DESCRIPTION": "Maintenance has been cancelled",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "INSPECTION_TYPE",
+      "description": "Inspection types",
+      "data": [
+        {
+          "INSPECTION_TYPE_ID": "REGULAR",
+          "INSPECTION_TYPE_NAME": "Regular",
+          "DESCRIPTION": "Regular inspection",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "INSPECTION_TYPE_ID": "COMPLIANCE",
+          "INSPECTION_TYPE_NAME": "Compliance",
+          "DESCRIPTION": "Compliance inspection",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "INSPECTION_TYPE_ID": "SAFETY",
+          "INSPECTION_TYPE_NAME": "Safety",
+          "DESCRIPTION": "Safety inspection",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "INSPECTION_TYPE_ID": "INTEGRITY",
+          "INSPECTION_TYPE_NAME": "Integrity",
+          "DESCRIPTION": "Integrity inspection",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "INSPECTION_TYPE_ID": "ENVIRONMENTAL",
+          "INSPECTION_TYPE_NAME": "Environmental",
+          "DESCRIPTION": "Environmental inspection",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "INSPECTION_STATUS",
+      "description": "Inspection status values",
+      "data": [
+        {
+          "STATUS_ID": "SCHEDULED",
+          "STATUS_NAME": "Scheduled",
+          "DESCRIPTION": "Inspection is scheduled",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "IN_PROGRESS",
+          "STATUS_NAME": "In Progress",
+          "DESCRIPTION": "Inspection is in progress",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "COMPLETED",
+          "STATUS_NAME": "Completed",
+          "DESCRIPTION": "Inspection has been completed",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "FAILED",
+          "STATUS_NAME": "Failed",
+          "DESCRIPTION": "Inspection has failed",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "CANCELLED",
+          "STATUS_NAME": "Cancelled",
+          "DESCRIPTION": "Inspection has been cancelled",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "INSPECTION_RESULT",
+      "description": "Inspection result values",
+      "data": [
+        {
+          "RESULT_ID": "PASS",
+          "RESULT_NAME": "Pass",
+          "DESCRIPTION": "Inspection passed",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "RESULT_ID": "FAIL",
+          "RESULT_NAME": "Fail",
+          "DESCRIPTION": "Inspection failed",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "RESULT_ID": "CONDITIONAL",
+          "RESULT_NAME": "Conditional",
+          "DESCRIPTION": "Inspection passed with conditions",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "RESULT_ID": "N/A",
+          "RESULT_NAME": "Not Applicable",
+          "DESCRIPTION": "Inspection not applicable",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "OPERATION_TYPE",
+      "description": "Operation types",
+      "data": [
+        {
+          "OPERATION_TYPE_ID": "PRODUCTION",
+          "OPERATION_TYPE_NAME": "Production",
+          "DESCRIPTION": "Production operation",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "OPERATION_TYPE_ID": "INJECTION",
+          "OPERATION_TYPE_NAME": "Injection",
+          "DESCRIPTION": "Injection operation",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "OPERATION_TYPE_ID": "TESTING",
+          "OPERATION_TYPE_NAME": "Testing",
+          "DESCRIPTION": "Testing operation",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "OPERATION_TYPE_ID": "MONITORING",
+          "OPERATION_TYPE_NAME": "Monitoring",
+          "DESCRIPTION": "Monitoring operation",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "OPERATION_TYPE_ID": "OPTIMIZATION",
+          "OPERATION_TYPE_NAME": "Optimization",
+          "DESCRIPTION": "Optimization operation",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "SHIFT_TYPE",
+      "description": "Shift types",
+      "data": [
+        {
+          "SHIFT_TYPE_ID": "DAY",
+          "SHIFT_TYPE_NAME": "Day",
+          "DESCRIPTION": "Day shift",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "SHIFT_TYPE_ID": "NIGHT",
+          "SHIFT_TYPE_NAME": "Night",
+          "DESCRIPTION": "Night shift",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "SHIFT_TYPE_ID": "SWING",
+          "SHIFT_TYPE_NAME": "Swing",
+          "DESCRIPTION": "Swing shift",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "SHIFT_TYPE_ID": "CONTINUOUS",
+          "SHIFT_TYPE_NAME": "Continuous",
+          "DESCRIPTION": "Continuous shift",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "INCIDENT_TYPE",
+      "description": "Incident types",
+      "data": [
+        {
+          "INCIDENT_TYPE_ID": "SAFETY",
+          "INCIDENT_TYPE_NAME": "Safety",
+          "DESCRIPTION": "Safety incident",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "INCIDENT_TYPE_ID": "ENVIRONMENTAL",
+          "INCIDENT_TYPE_NAME": "Environmental",
+          "DESCRIPTION": "Environmental incident",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "INCIDENT_TYPE_ID": "EQUIPMENT_FAILURE",
+          "INCIDENT_TYPE_NAME": "Equipment Failure",
+          "DESCRIPTION": "Equipment failure incident",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "INCIDENT_TYPE_ID": "PRODUCTION_LOSS",
+          "INCIDENT_TYPE_NAME": "Production Loss",
+          "DESCRIPTION": "Production loss incident",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "INCIDENT_TYPE_ID": "SECURITY",
+          "INCIDENT_TYPE_NAME": "Security",
+          "DESCRIPTION": "Security incident",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "OPERATION_STATUS",
+      "description": "Operation status values",
+      "data": [
+        {
+          "STATUS_ID": "ACTIVE",
+          "STATUS_NAME": "Active",
+          "DESCRIPTION": "Operation is active",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "INACTIVE",
+          "STATUS_NAME": "Inactive",
+          "DESCRIPTION": "Operation is inactive",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "SUSPENDED",
+          "STATUS_NAME": "Suspended",
+          "DESCRIPTION": "Operation is suspended",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "COMPLETED",
+          "STATUS_NAME": "Completed",
+          "DESCRIPTION": "Operation is completed",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "FIELD_STATUS",
+      "description": "Field status values",
+      "data": [
+        {
+          "STATUS_ID": "ACTIVE",
+          "STATUS_NAME": "Active",
+          "DESCRIPTION": "Field is active",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "INACTIVE",
+          "STATUS_NAME": "Inactive",
+          "DESCRIPTION": "Field is inactive",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "DEVELOPMENT",
+          "STATUS_NAME": "Development",
+          "DESCRIPTION": "Field is in development",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "ABANDONED",
+          "STATUS_NAME": "Abandoned",
+          "DESCRIPTION": "Field has been abandoned",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "WELL_STATUS",
+      "description": "Well status values",
+      "data": [
+        {
+          "STATUS_ID": "PRODUCING",
+          "STATUS_NAME": "Producing",
+          "DESCRIPTION": "Well is producing",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "SHUT_IN",
+          "STATUS_NAME": "Shut In",
+          "DESCRIPTION": "Well is shut in",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "DRILLING",
+          "STATUS_NAME": "Drilling",
+          "DESCRIPTION": "Well is being drilled",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "COMPLETED",
+          "STATUS_NAME": "Completed",
+          "DESCRIPTION": "Well has been completed",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "ABANDONED",
+          "STATUS_NAME": "Abandoned",
+          "DESCRIPTION": "Well has been abandoned",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "PIPELINE_STATUS",
+      "description": "Pipeline status values",
+      "data": [
+        {
+          "STATUS_ID": "ACTIVE",
+          "STATUS_NAME": "Active",
+          "DESCRIPTION": "Pipeline is active",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "INACTIVE",
+          "STATUS_NAME": "Inactive",
+          "DESCRIPTION": "Pipeline is inactive",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "MAINTENANCE",
+          "STATUS_NAME": "Maintenance",
+          "DESCRIPTION": "Pipeline is under maintenance",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "ABANDONED",
+          "STATUS_NAME": "Abandoned",
+          "DESCRIPTION": "Pipeline has been abandoned",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    },
+    {
+      "tableName": "FACILITY_STATUS",
+      "description": "Facility status values",
+      "data": [
+        {
+          "STATUS_ID": "ACTIVE",
+          "STATUS_NAME": "Active",
+          "DESCRIPTION": "Facility is active",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "INACTIVE",
+          "STATUS_NAME": "Inactive",
+          "DESCRIPTION": "Facility is inactive",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "MAINTENANCE",
+          "STATUS_NAME": "Maintenance",
+          "DESCRIPTION": "Facility is under maintenance",
+          "ACTIVE_IND": "Y"
+        },
+        {
+          "STATUS_ID": "DECOMMISSIONED",
+          "STATUS_NAME": "Decommissioned",
+          "DESCRIPTION": "Facility has been decommissioned",
+          "ACTIVE_IND": "Y"
+        }
+      ]
+    }
+  ]
+}
+
