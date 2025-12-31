@@ -1,5 +1,5 @@
 using System;
-using Beep.OilandGas.GasLift.Models;
+using Beep.OilandGas.Models.GasLift;
 using Beep.OilandGas.GasLift.Constants;
 using Beep.OilandGas.GasLift.Exceptions;
 

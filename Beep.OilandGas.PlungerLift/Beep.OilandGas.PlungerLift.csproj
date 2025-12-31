@@ -27,6 +27,8 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\Beep.OilandGas.GasProperties\Beep.OilandGas.GasProperties.csproj" />
+	  <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
+	  <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
 	</ItemGroup>
 	<Target Name="CopyPackage" AfterTargets="Pack">
 		<Copy SourceFiles="$(OutputPath)$(PackageId).$(PackageVersion).nupkg" DestinationFolder="..\..\..\LocalNugetFiles" />

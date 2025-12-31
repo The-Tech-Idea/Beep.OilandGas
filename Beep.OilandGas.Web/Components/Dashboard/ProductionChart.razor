@@ -1,0 +1,136 @@
+@using MudBlazor
+
+<MudCard Elevation="@Elevation" Class="@($"production-chart {Class}")">
+    <MudCardContent>
+        <MudStack Spacing="3">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.h6">@Title</MudText>
+                @if (ShowRefresh)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                                  Size="Size.Small"
+                                  OnClick="@RefreshData" />
+                }
+            </MudStack>
+            
+            @if (_isLoading)
+            {
+                <MudProgressLinear Indeterminate="true" />
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">
+                    Loading chart data...
+                </MudText>
+            }
+            else if (_chartData.Any())
+            {
+                <MudChart ChartType="@ChartType" 
+                         ChartOptions="@_chartOptions" 
+                         ChartSeries="@_chartSeries" />
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">
+                    No data available
+                </MudText>
+            }
+            
+            @if (ShowLegend && _chartData.Any())
+            {
+                <MudDivider />
+                <MudStack Spacing="1">
+                    @foreach (var series in _chartSeries)
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <div style="width: 16px; height: 16px; background-color: @series.Color; border-radius: 2px;"></div>
+                            <MudText Typo="Typo.body2">@series.Name</MudText>
+                        </MudStack>
+                    }
+                </MudStack>
+            }
+        </MudStack>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Production Chart";
+    [Parameter] public ChartType ChartType { get; set; } = ChartType.LineChart;
+    [Parameter] public List<ChartDataPoint> ChartData { get; set; } = new();
+    [Parameter] public bool ShowRefresh { get; set; } = true;
+    [Parameter] public bool ShowLegend { get; set; } = true;
+    [Parameter] public int Elevation { get; set; } = 2;
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public EventCallback OnRefresh { get; set; }
+
+    private List<ChartDataPoint> _chartData = new();
+    private List<ChartSeries> _chartSeries = new();
+    private ChartOptions _chartOptions = new();
+    private bool _isLoading = false;
+
+    protected override void OnParametersSet()
+    {
+        _chartData = ChartData;
+        UpdateChart();
+    }
+
+    protected override void OnInitialized()
+    {
+        _chartOptions = new ChartOptions
+        {
+            ChartPalette = new[] { Colors.Blue.Default, Colors.Green.Default, Colors.Orange.Default, Colors.Red.Default },
+            DisableLegend = !ShowLegend,
+            LineStrokeWidth = 3,
+            YAxisTicks = 5
+        };
+        UpdateChart();
+    }
+
+    private void UpdateChart()
+    {
+        if (!_chartData.Any())
+        {
+            _chartSeries = new List<ChartSeries>();
+            return;
+        }
+
+        // Group data by series name
+        var seriesGroups = _chartData.GroupBy(d => d.SeriesName);
+        _chartSeries = seriesGroups.Select((group, index) => new ChartSeries
+        {
+            Name = group.Key,
+            Data = group.Select(d => d.Value).ToArray(),
+            Index = index
+        }).ToList();
+
+        // Set colors for each series
+        var colors = new[] { Colors.Blue.Default, Colors.Green.Default, Colors.Orange.Default, Colors.Red.Default, Colors.Purple.Default };
+        for (int i = 0; i < _chartSeries.Count; i++)
+        {
+            _chartSeries[i].Color = colors[i % colors.Length];
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        
+        await OnRefresh.InvokeAsync();
+        
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    public class ChartDataPoint
+    {
+        public string SeriesName { get; set; } = string.Empty;
+        public double Value { get; set; }
+        public DateTime? Timestamp { get; set; }
+        public string? Label { get; set; }
+    }
+}
+
+<style>
+    .production-chart {
+        height: 100%;
+    }
+</style>
+

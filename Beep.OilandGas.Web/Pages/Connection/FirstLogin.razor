@@ -1,0 +1,179 @@
+@page "/first-login"
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.Connection
+@using Beep.OilandGas.Web.Components.Demo
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IConnectionService ConnectionService
+@inject IDemoDatabaseService DemoDatabaseService
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<PageTitle>First Login - Connection Setup</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    <MudPaper Elevation="3" Class="pa-6">
+        <MudStack AlignItems="AlignItems.Center" Spacing="4">
+            <MudIcon Icon="@Icons.Material.Filled.Storage" 
+                    Size="Size.Large" 
+                    Color="Color.Primary" 
+                    Style="font-size: 64px;" />
+            
+            <MudText Typo="Typo.h4" Align="Align.Center">
+                Welcome to Beep Oil & Gas
+            </MudText>
+            
+            <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
+                Before you can start using the application, you need to connect to a database.
+            </MudText>
+
+            @if (_isCheckingConnection)
+            {
+                <MudStack AlignItems="AlignItems.Center" Spacing="3" Class="mt-4">
+                    <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+                    <MudText Typo="Typo.body2">Checking for existing connection...</MudText>
+                </MudStack>
+            }
+            else if (_hasConnection)
+            {
+                <MudAlert Severity="Severity.Success" Class="mt-4">
+                    <MudText Typo="Typo.body1">
+                        Connection found: <strong>@_currentConnectionName</strong>
+                    </MudText>
+                </MudAlert>
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          Size="Size.Large"
+                          OnClick="@NavigateToDashboard">
+                    Continue to Dashboard
+                </MudButton>
+            }
+            else
+            {
+                <MudStack Spacing="3" Class="mt-4" Style="width: 100%;">
+                    <MudButton Variant="Variant.Filled" 
+                              Color="Color.Primary" 
+                              Size="Size.Large"
+                              FullWidth="true"
+                              StartIcon="@Icons.Material.Filled.PlayCircle"
+                              OnClick="@ShowDemoDatabaseWizard">
+                        Create Demo Database
+                    </MudButton>
+                    
+                    <MudButton Variant="Variant.Outlined" 
+                              Color="Color.Primary" 
+                              Size="Size.Large"
+                              FullWidth="true"
+                              StartIcon="@Icons.Material.Filled.Settings"
+                              OnClick="@ShowConnectionWizard">
+                        Set Up Database Connection
+                    </MudButton>
+                    
+                    <MudButton Variant="Variant.Outlined" 
+                              Color="Color.Primary" 
+                              Size="Size.Large"
+                              FullWidth="true"
+                              StartIcon="@Icons.Material.Filled.Build"
+                              OnClick="@NavigateToCreateDatabase">
+                        Create New Database
+                    </MudButton>
+                </MudStack>
+            }
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool _isCheckingConnection = true;
+    private bool _hasConnection = false;
+    private string? _currentConnectionName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckConnection();
+    }
+
+    private async Task CheckConnection()
+    {
+        _isCheckingConnection = true;
+        try
+        {
+            var currentConnection = await ConnectionService.GetCurrentConnectionAsync();
+            if (!string.IsNullOrEmpty(currentConnection?.ConnectionName))
+            {
+                _hasConnection = true;
+                _currentConnectionName = currentConnection.ConnectionName;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error checking connection: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isCheckingConnection = false;
+        }
+    }
+
+    private async Task ShowDemoDatabaseWizard()
+    {
+        var parameters = new DialogParameters();
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = false,
+            DisableBackdropClick = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<DemoDatabaseWizard>(
+            "Create Demo Database", 
+            parameters, 
+            options);
+
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            // Demo database created, refresh and check again
+            await CheckConnection();
+        }
+    }
+
+    private async Task ShowConnectionWizard()
+    {
+        var parameters = new DialogParameters();
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = false,
+            DisableBackdropClick = true,
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<FirstLoginConnectionWizard>(
+            "Database Connection Setup", 
+            parameters, 
+            options);
+
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            // Connection setup completed, refresh and check again
+            await CheckConnection();
+        }
+    }
+
+    private void NavigateToCreateDatabase()
+    {
+        NavigationManager.NavigateTo("/ppdm39/create-database-wizard");
+    }
+
+    private void NavigateToDashboard()
+    {
+        NavigationManager.NavigateTo("/dashboard");
+    }
+}
+

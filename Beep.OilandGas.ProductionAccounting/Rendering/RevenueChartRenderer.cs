@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using SkiaSharp;
 using Beep.OilandGas.ProductionAccounting.Accounting;
 
@@ -252,4 +250,3 @@ namespace Beep.OilandGas.ProductionAccounting.Rendering
         }
     }
 }
-

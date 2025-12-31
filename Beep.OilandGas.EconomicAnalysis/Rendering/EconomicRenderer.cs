@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SkiaSharp;
-using Beep.OilandGas.EconomicAnalysis.Models;
+using Beep.OilandGas.Models.EconomicAnalysis;
 using Beep.OilandGas.EconomicAnalysis.Calculations;
 
 namespace Beep.OilandGas.EconomicAnalysis.Rendering

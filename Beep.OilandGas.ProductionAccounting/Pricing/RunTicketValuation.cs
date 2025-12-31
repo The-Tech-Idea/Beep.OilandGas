@@ -1,4 +1,4 @@
-using System;
+
 using Beep.OilandGas.ProductionAccounting.Models;
 using Beep.OilandGas.ProductionAccounting.Production;
 using Beep.OilandGas.ProductionAccounting.Calculations;
@@ -192,4 +192,3 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
         }
     }
 }
-

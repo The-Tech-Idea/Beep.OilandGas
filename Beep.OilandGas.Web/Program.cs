@@ -214,6 +214,30 @@ builder.Services.AddHostedService<Beep.OilandGas.Web.Services.BrandingRegistrati
         // Progress Tracking Client - SignalR client for real-time progress updates
         builder.Services.AddScoped<IProgressTrackingClient, ProgressTrackingClient>();
 
+        // Connection Service - Client service for connection management operations
+        builder.Services.AddScoped<IConnectionService, ConnectionService>();
+
+        // LifeCycle Service - Client service for lifecycle management operations
+        builder.Services.AddScoped<ILifeCycleService, LifeCycleService>();
+
+        // Accounting Service Client - Client service for accounting operations
+        builder.Services.AddScoped<IAccountingServiceClient, AccountingServiceClient>();
+
+        // Demo Database Service - Client service for demo database operations
+        builder.Services.AddScoped<IDemoDatabaseService, DemoDatabaseService>();
+
+        // Calculation Service Client - Client service for calculation operations
+        builder.Services.AddScoped<ICalculationServiceClient, CalculationServiceClient>();
+
+        // Operations Service Client - Client service for operations
+        builder.Services.AddScoped<IOperationsServiceClient, OperationsServiceClient>();
+
+        // Pump Service Client - Client service for pump operations
+        builder.Services.AddScoped<IPumpServiceClient, PumpServiceClient>();
+
+        // Properties Service Client - Client service for properties operations
+        builder.Services.AddScoped<IPropertiesServiceClient, PropertiesServiceClient>();
+
 // PPDM39 Data Management Services
 
 // Common Column Handler

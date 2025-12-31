@@ -1,0 +1,165 @@
+@page "/ppdm39/operations/drillingoperations"
+@using Beep.OilandGas.Models.DTOs
+@using Beep.OilandGas.Web.Services
+@inject IOperationsServiceClient OperationsService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Drilling Operations</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Drilling Operations</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">Drilling Operations</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+                Create Drilling Operation
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_operations != null && _operations.Any())
+        {
+            <MudTable Items="@_operations" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Operation ID</MudTh>
+                    <MudTh>Well UWI</MudTh>
+                    <MudTh>Well Name</MudTh>
+                    <MudTh>Spud Date</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Current Depth</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.OperationId</MudTd>
+                    <MudTd>@context.WellUWI</MudTd>
+                    <MudTd>@context.WellName</MudTd>
+                    <MudTd>@(context.SpudDate?.ToString("yyyy-MM-dd") ?? "N/A")</MudTd>
+                    <MudTd>@(context.Status ?? "Unknown")</MudTd>
+                    <MudTd>@(context.CurrentDepth?.ToString("F2") ?? "N/A") ft</MudTd>
+                    <MudTd>
+                        <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
+                            <MudButton StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditDialog(context))">
+                                Edit
+                            </MudButton>
+                            <MudButton StartIcon="@Icons.Material.Filled.Description" OnClick="@(() => ViewReports(context.OperationId))">
+                                Reports
+                            </MudButton>
+                        </MudButtonGroup>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No drilling operations found.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<DrillingOperationDto>? _operations;
+    private bool _isLoading = false;
+    private string? _currentUserId = "system";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOperations();
+    }
+
+    private async Task LoadOperations()
+    {
+        _isLoading = true;
+        try
+        {
+            _operations = await OperationsService.GetDrillingOperationsAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading drilling operations: {ex.Message}", Severity.Error);
+            _operations = new List<DrillingOperationDto>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<MudDialog>("Create Drilling Operation", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                var createDto = new CreateDrillingOperationDto
+                {
+                    WellUWI = Guid.NewGuid().ToString(), // Would come from dialog
+                    PlannedSpudDate = DateTime.Now.AddDays(30),
+                    TargetDepth = 10000,
+                    DrillingContractor = "Contractor Name",
+                    RigName = "Rig-001",
+                    EstimatedDailyCost = 50000
+                };
+
+                var operation = await OperationsService.CreateDrillingOperationAsync(createDto);
+                Snackbar.Add("Drilling operation created successfully", Severity.Success);
+                await LoadOperations();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error creating drilling operation: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task OpenEditDialog(DrillingOperationDto operation)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<MudDialog>("Edit Drilling Operation", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            try
+            {
+                var updateDto = new UpdateDrillingOperationDto
+                {
+                    Status = operation.Status,
+                    CurrentDepth = operation.CurrentDepth,
+                    DailyCost = operation.DailyCost,
+                    CompletionDate = operation.CompletionDate
+                };
+
+                var updated = await OperationsService.UpdateDrillingOperationAsync(operation.OperationId, updateDto);
+                Snackbar.Add("Drilling operation updated successfully", Severity.Success);
+                await LoadOperations();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error updating drilling operation: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task ViewReports(string operationId)
+    {
+        try
+        {
+            var reports = await OperationsService.GetDrillingReportsAsync(operationId);
+            Snackbar.Add($"Found {reports.Count} drilling reports", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading drilling reports: {ex.Message}", Severity.Error);
+        }
+    }
+}
+

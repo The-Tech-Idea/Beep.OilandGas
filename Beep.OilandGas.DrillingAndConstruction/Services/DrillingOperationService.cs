@@ -3,114 +3,185 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.PPDM39.Core.Metadata;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Beep.Editor.UOW;
-using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Beep.ConfigUtil;
+using TheTechIdea.Beep.DataBase;
+using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.DrillingAndConstruction.Services
 {
     /// <summary>
     /// Service for managing drilling operations.
-    /// Uses UnitOfWork directly for data access.
+    /// Uses PPDMGenericRepository for data access following LifeCycle patterns.
     /// </summary>
     public class DrillingOperationService : IDrillingOperationService
     {
         private readonly IDMEEditor _editor;
+        private readonly ICommonColumnHandler _commonColumnHandler;
+        private readonly IPPDM39DefaultsRepository _defaults;
+        private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
+        private readonly ILogger<DrillingOperationService>? _logger;
 
-        public DrillingOperationService(IDMEEditor editor, string connectionName = "PPDM39")
+        // Cached repositories
+        private PPDMGenericRepository? _wellRepository;
+        private PPDMGenericRepository? _drillReportRepository;
+
+        public DrillingOperationService(
+            IDMEEditor editor,
+            ICommonColumnHandler commonColumnHandler,
+            IPPDM39DefaultsRepository defaults,
+            IPPDMMetadataRepository metadata,
+            string connectionName = "PPDM39",
+            ILogger<DrillingOperationService>? logger = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
-            _connectionName = connectionName;
+            _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
+            _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
+            _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+            _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
+            _logger = logger;
         }
 
-        private List<T> ConvertToList<T>(object units) where T : class
+        #region Repository Helpers
+
+        private async Task<PPDMGenericRepository> GetWellRepositoryAsync()
+        {
+            if (_wellRepository == null)
+            {
+                _wellRepository = new PPDMGenericRepository(
+                    _editor,
+                    _commonColumnHandler,
+                    _defaults,
+                    _metadata,
+                    typeof(WELL),
+                    _connectionName,
+                    "WELL",
+                    null);
+            }
+            return _wellRepository;
+        }
+
+        private async Task<PPDMGenericRepository> GetDrillReportRepositoryAsync()
+        {
+            if (_drillReportRepository == null)
+            {
+                _drillReportRepository = new PPDMGenericRepository(
+                    _editor,
+                    _commonColumnHandler,
+                    _defaults,
+                    _metadata,
+                    typeof(WELL_DRILL_REPORT),
+                    _connectionName,
+                    "WELL_DRILL_REPORT",
+                    null);
+            }
+            return _drillReportRepository;
+        }
+
+        private List<T> ConvertToList<T>(IEnumerable<object>? entities) where T : class
         {
             var result = new List<T>();
-            if (units == null) return result;
+            if (entities == null) return result;
             
-            if (units is System.Collections.IEnumerable enumerable)
+            foreach (var item in entities)
             {
-                foreach (var item in enumerable)
+                if (item is T entity)
                 {
-                    if (item is T entity)
-                    {
-                        result.Add(entity);
-                    }
+                    result.Add(entity);
                 }
             }
             return result;
         }
 
-        private IUnitOfWorkWrapper GetWellUnitOfWork()
-        {
-            return UnitOfWorkFactory.CreateUnitOfWork(typeof(WELL), _editor, _connectionName, "WELL", "UWI");
-        }
-
-        private IUnitOfWorkWrapper GetDrillReportUnitOfWork()
-        {
-            return UnitOfWorkFactory.CreateUnitOfWork(typeof(WELL_DRILL_REPORT), _editor, _connectionName, "WELL_DRILL_REPORT", "REPORT_ID");
-        }
+        #endregion
 
         public async Task<List<DrillingOperationDto>> GetDrillingOperationsAsync(string? wellUWI = null)
         {
-            var wellUow = GetWellUnitOfWork();
+            _logger?.LogInformation("Getting drilling operations for well UWI: {WellUWI}", wellUWI ?? "all");
+
+            var wellRepo = await GetWellRepositoryAsync();
             List<WELL> wells;
 
             if (!string.IsNullOrWhiteSpace(wellUWI))
             {
-                var well = wellUow.Read(wellUWI) as WELL;
-                wells = well != null ? new List<WELL> { well } : new List<WELL>();
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "UWI", FilterValue = wellUWI, Operator = "=" },
+                    new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
+                };
+                var wellEntities = await wellRepo.GetAsync(filters);
+                wells = ConvertToList<WELL>(wellEntities);
             }
             else
             {
-                var units = await wellUow.Get();
-                List<WELL> allWells = ConvertToList<WELL>(units);
-                wells = allWells.Where(w => w.ACTIVE_IND == "Y").ToList();
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
+                };
+                var wellEntities = await wellRepo.GetAsync(filters);
+                wells = ConvertToList<WELL>(wellEntities);
             }
 
             var operations = new List<DrillingOperationDto>();
-            var drillReportUow = GetDrillReportUnitOfWork();
+            var drillReportRepo = await GetDrillReportRepositoryAsync();
 
             foreach (var well in wells)
             {
-                var filters = new List<AppFilter>
+                var reportFilters = new List<AppFilter>
                 {
                     new AppFilter { FieldName = "UWI", FilterValue = well.UWI, Operator = "=" },
                     new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
                 };
-                var reportUnits = await drillReportUow.Get(filters);
-                var reports = ConvertToList<WELL_DRILL_REPORT>(reportUnits);
+                var reportEntities = await drillReportRepo.GetAsync(reportFilters);
+                var reports = ConvertToList<WELL_DRILL_REPORT>(reportEntities);
 
                 var operation = MapToDrillingOperationDto(well, reports);
                 operations.Add(operation);
             }
 
+            _logger?.LogInformation("Retrieved {Count} drilling operations", operations.Count);
             return operations;
         }
 
         public async Task<DrillingOperationDto?> GetDrillingOperationAsync(string operationId)
         {
-            // operationId is the UWI
             if (string.IsNullOrWhiteSpace(operationId))
+            {
+                _logger?.LogWarning("GetDrillingOperationAsync called with null or empty operationId");
                 return null;
+            }
 
-            var wellUow = GetWellUnitOfWork();
-            var well = wellUow.Read(operationId) as WELL;
-            if (well == null)
-                return null;
+            _logger?.LogInformation("Getting drilling operation for UWI: {OperationId}", operationId);
 
-            var drillReportUow = GetDrillReportUnitOfWork();
-            var filters = new List<AppFilter>
+            var wellRepo = await GetWellRepositoryAsync();
+            var wellFilters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "UWI", FilterValue = operationId, Operator = "=" },
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
             };
-            var reportUnits = await drillReportUow.Get(filters);
-            var reports = ConvertToList<WELL_DRILL_REPORT>(reportUnits);
+            var wellEntities = await wellRepo.GetAsync(wellFilters);
+            var wells = ConvertToList<WELL>(wellEntities);
+            var well = wells.FirstOrDefault();
+
+            if (well == null)
+            {
+                _logger?.LogWarning("Well not found for UWI: {OperationId}", operationId);
+                return null;
+            }
+
+            var drillReportRepo = await GetDrillReportRepositoryAsync();
+            var reportFilters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "UWI", FilterValue = operationId, Operator = "=" },
+                new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
+            };
+            var reportEntities = await drillReportRepo.GetAsync(reportFilters);
+            var reports = ConvertToList<WELL_DRILL_REPORT>(reportEntities);
 
             return MapToDrillingOperationDto(well, reports);
         }
@@ -120,40 +191,52 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
 
-            var wellUow = GetWellUnitOfWork();
-            var well = wellUow.Read(createDto.WellUWI) as WELL;
-            if (well == null)
+            if (string.IsNullOrWhiteSpace(createDto.WellUWI))
+                throw new ArgumentException("Well UWI cannot be null or empty", nameof(createDto));
+
+            _logger?.LogInformation("Creating drilling operation for well UWI: {WellUWI}", createDto.WellUWI);
+
+            var wellRepo = await GetWellRepositoryAsync();
+            
+            // Check if well exists
+            var wellFilters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "UWI", FilterValue = createDto.WellUWI, Operator = "=" }
+            };
+            var existingWells = await wellRepo.GetAsync(wellFilters);
+            var existingWell = ConvertToList<WELL>(existingWells).FirstOrDefault();
+
+            WELL well;
+            if (existingWell == null)
             {
                 // Create new well if it doesn't exist
+                _logger?.LogInformation("Creating new well for UWI: {WellUWI}", createDto.WellUWI);
                 well = new WELL
                 {
                     UWI = createDto.WellUWI,
                     ACTIVE_IND = "Y",
-                    ROW_CREATED_DATE = DateTime.UtcNow,
-                    ROW_CHANGED_DATE = DateTime.UtcNow
+                    BASE_DEPTH = createDto.TargetDepth ?? 0m
                 };
-                var wellResult = await wellUow.InsertDoc(well);
-                if (wellResult.Flag != Errors.Ok)
-                    throw new InvalidOperationException($"Failed to create well: {wellResult.Message}");
-                await wellUow.Commit();
+                await wellRepo.InsertAsync(well, "SYSTEM");
+            }
+            else
+            {
+                well = existingWell;
             }
 
-            var drillReportUow = GetDrillReportUnitOfWork();
+            // Create drilling report
+            var drillReportRepo = await GetDrillReportRepositoryAsync();
             var report = new WELL_DRILL_REPORT
             {
-                REPORT_ID = Guid.NewGuid().ToString(),
+                REPORT_ID = _defaults.FormatIdForTable("WELL_DRILL_REPORT", Guid.NewGuid().ToString()),
                 UWI = createDto.WellUWI,
                 ACTIVE_IND = "Y",
-                EFFECTIVE_DATE = createDto.PlannedSpudDate ?? DateTime.UtcNow,
-                ROW_CREATED_DATE = DateTime.UtcNow,
-                ROW_CHANGED_DATE = DateTime.UtcNow
+                EFFECTIVE_DATE = createDto.PlannedSpudDate ?? DateTime.UtcNow
             };
 
-            var result = await drillReportUow.InsertDoc(report);
-            if (result.Flag != Errors.Ok)
-                throw new InvalidOperationException($"Failed to create drilling operation: {result.Message}");
+            await drillReportRepo.InsertAsync(report, "SYSTEM");
 
-            await drillReportUow.Commit();
+            _logger?.LogInformation("Successfully created drilling operation for well UWI: {WellUWI}", createDto.WellUWI);
 
             return MapToDrillingOperationDto(well, new List<WELL_DRILL_REPORT> { report });
         }
@@ -166,27 +249,44 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             if (updateDto == null)
                 throw new ArgumentNullException(nameof(updateDto));
 
-            var wellUow = GetWellUnitOfWork();
-            var well = wellUow.Read(operationId) as WELL;
-            if (well == null)
-                throw new KeyNotFoundException($"Drilling operation with ID {operationId} not found.");
+            _logger?.LogInformation("Updating drilling operation for UWI: {OperationId}", operationId);
 
-            well.ROW_CHANGED_DATE = DateTime.UtcNow;
-
-            var result = await wellUow.UpdateDoc(well);
-            if (result.Flag != Errors.Ok)
-                throw new InvalidOperationException($"Failed to update drilling operation: {result.Message}");
-
-            await wellUow.Commit();
-
-            var drillReportUow = GetDrillReportUnitOfWork();
-            var filters = new List<AppFilter>
+            var wellRepo = await GetWellRepositoryAsync();
+            var wellFilters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "UWI", FilterValue = operationId, Operator = "=" },
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
             };
-            var reportUnits = await drillReportUow.Get(filters);
-            var reports = ConvertToList<WELL_DRILL_REPORT>(reportUnits);
+            var wellEntities = await wellRepo.GetAsync(wellFilters);
+            var wells = ConvertToList<WELL>(wellEntities);
+            var well = wells.FirstOrDefault();
+
+            if (well == null)
+                throw new KeyNotFoundException($"Drilling operation with ID {operationId} not found.");
+
+            // Update well properties if provided
+            if (updateDto.Status != null)
+            {
+                // Status could be stored in a custom field or derived from ACTIVE_IND
+                // For now, we'll update ACTIVE_IND based on status
+                if (updateDto.Status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
+                    well.ACTIVE_IND = "N";
+                else if (updateDto.Status.Equals("Active", StringComparison.OrdinalIgnoreCase))
+                    well.ACTIVE_IND = "Y";
+            }
+
+            await wellRepo.UpdateAsync(well, "SYSTEM");
+
+            var drillReportRepo = await GetDrillReportRepositoryAsync();
+            var reportFilters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "UWI", FilterValue = operationId, Operator = "=" },
+                new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
+            };
+            var reportEntities = await drillReportRepo.GetAsync(reportFilters);
+            var reports = ConvertToList<WELL_DRILL_REPORT>(reportEntities);
+
+            _logger?.LogInformation("Successfully updated drilling operation for UWI: {OperationId}", operationId);
 
             return MapToDrillingOperationDto(well, reports);
         }
@@ -194,24 +294,33 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
         public async Task<List<DrillingReportDto>> GetDrillingReportsAsync(string operationId)
         {
             if (string.IsNullOrWhiteSpace(operationId))
+            {
+                _logger?.LogWarning("GetDrillingReportsAsync called with null or empty operationId");
                 return new List<DrillingReportDto>();
+            }
 
-            var drillReportUow = GetDrillReportUnitOfWork();
+            _logger?.LogInformation("Getting drilling reports for operation UWI: {OperationId}", operationId);
+
+            var drillReportRepo = await GetDrillReportRepositoryAsync();
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "UWI", FilterValue = operationId, Operator = "=" },
                 new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
             };
-            var units = await drillReportUow.Get(filters);
-            List<WELL_DRILL_REPORT> reports = ConvertToList<WELL_DRILL_REPORT>(units);
+            var reportEntities = await drillReportRepo.GetAsync(filters);
+            var reports = ConvertToList<WELL_DRILL_REPORT>(reportEntities);
 
-            return reports.Select(r => new DrillingReportDto
+            var result = reports.Select(r => new DrillingReportDto
             {
                 ReportId = r.REPORT_ID ?? string.Empty,
                 OperationId = operationId,
                 ReportDate = r.EFFECTIVE_DATE,
                 Remarks = r.REMARK
             }).ToList();
+
+            _logger?.LogInformation("Retrieved {Count} drilling reports for operation UWI: {OperationId}", result.Count, operationId);
+
+            return result;
         }
 
         public async Task<DrillingReportDto> CreateDrillingReportAsync(string operationId, CreateDrillingReportDto createDto)
@@ -222,23 +331,22 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
 
-            var drillReportUow = GetDrillReportUnitOfWork();
+            _logger?.LogInformation("Creating drilling report for operation UWI: {OperationId}", operationId);
+
+            var drillReportRepo = await GetDrillReportRepositoryAsync();
             var report = new WELL_DRILL_REPORT
             {
-                REPORT_ID = Guid.NewGuid().ToString(),
+                REPORT_ID = _defaults.FormatIdForTable("WELL_DRILL_REPORT", Guid.NewGuid().ToString()),
                 UWI = operationId,
                 ACTIVE_IND = "Y",
                 EFFECTIVE_DATE = createDto.ReportDate,
-                ROW_CREATED_DATE = DateTime.UtcNow,
-                ROW_CHANGED_DATE = DateTime.UtcNow,
                 REMARK = createDto.Remarks
             };
 
-            var result = await drillReportUow.InsertDoc(report);
-            if (result.Flag != Errors.Ok)
-                throw new InvalidOperationException($"Failed to create drilling report: {result.Message}");
+            await drillReportRepo.InsertAsync(report, "SYSTEM");
 
-            await drillReportUow.Commit();
+            _logger?.LogInformation("Successfully created drilling report {ReportId} for operation UWI: {OperationId}", 
+                report.REPORT_ID, operationId);
 
             return new DrillingReportDto
             {

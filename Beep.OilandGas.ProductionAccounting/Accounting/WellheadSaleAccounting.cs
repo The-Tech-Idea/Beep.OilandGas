@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.ProductionAccounting.Measurement;
 using Beep.OilandGas.ProductionAccounting.Production;
-using Beep.OilandGas.ProductionAccounting.Pricing;
 
 namespace Beep.OilandGas.ProductionAccounting.Accounting
 {
@@ -52,7 +54,7 @@ namespace Beep.OilandGas.ProductionAccounting.Accounting
         /// <summary>
         /// Gets or sets the measurement method.
         /// </summary>
-        public Measurement.MeasurementMethod MeasurementMethod { get; set; }
+        public MeasurementMethod MeasurementMethod { get; set; }
 
         /// <summary>
         /// Gets or sets whether a run ticket was created.
@@ -104,7 +106,7 @@ namespace Beep.OilandGas.ProductionAccounting.Accounting
                 GrossVolume = sale.NetVolume, // Assume no BS&W for wellhead sales
                 BSWVolume = 0,
                 BSWPercentage = 0,
-                DispositionType = Production.DispositionType.Sale,
+                DispositionType = DispositionType.Sale,
                 Purchaser = sale.Purchaser,
                 PricePerBarrel = sale.PricePerBarrel,
                 MeasurementMethod = sale.MeasurementMethod

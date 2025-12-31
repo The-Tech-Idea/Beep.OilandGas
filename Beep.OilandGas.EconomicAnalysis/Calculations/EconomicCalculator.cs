@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.EconomicAnalysis.Models;
+using Beep.OilandGas.Models.EconomicAnalysis;
 
 namespace Beep.OilandGas.EconomicAnalysis.Calculations
 {

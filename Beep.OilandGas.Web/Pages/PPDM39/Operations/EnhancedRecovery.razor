@@ -1,0 +1,150 @@
+@page "/ppdm39/operations/enhancedrecovery"
+@using Beep.OilandGas.Models.DTOs
+@using Beep.OilandGas.Web.Services
+@inject IOperationsServiceClient OperationsService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Enhanced Recovery</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Enhanced Oil Recovery (EOR)</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="@_fieldId" Label="Field ID" Variant="Variant.Outlined" Required="true" />
+            <MudSelect @bind-Value="@_eorMethod" Label="EOR Method" Variant="Variant.Outlined">
+                <MudSelectItem Value="WaterFlooding">Water Flooding</MudSelectItem>
+                <MudSelectItem Value="GasInjection">Gas Injection</MudSelectItem>
+                <MudSelectItem Value="Chemical">Chemical EOR</MudSelectItem>
+                <MudSelectItem Value="Thermal">Thermal EOR</MudSelectItem>
+            </MudSelect>
+            
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AnalyzeEOR" Disabled="@_isAnalyzing">
+                    Analyze EOR Potential
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CalculateRecoveryFactor" Disabled="@_isCalculating">
+                    Calculate Recovery Factor
+                </MudButton>
+            </MudStack>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-4" />
+        }
+
+        @if (_eorResult != null)
+        {
+            <MudPaper Class="pa-4 mt-4" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-4">EOR Analysis Results</MudText>
+                <MudStack Spacing="2">
+                    <MudText>Operation ID: @_eorResult.OperationId</MudText>
+                    <MudText>EOR Type: @_eorResult.EORType</MudText>
+                    <MudText>Injection Rate: @(_eorResult.InjectionRate?.ToString("F2") ?? "N/A") @(_eorResult.InjectionRateUnit ?? "")</MudText>
+                    <MudText>Production Increase: @(_eorResult.ProductionIncrease?.ToString("F2") ?? "N/A") @(_eorResult.ProductionUnit ?? "")</MudText>
+                    <MudText>Efficiency: @(_eorResult.Efficiency?.ToString("F2") ?? "N/A")%</MudText>
+                </MudStack>
+            </MudPaper>
+        }
+    </MudPaper>
+
+    <MudPaper Class="pa-4 mt-4">
+        <MudText Typo="Typo.h6" Class="mb-4">Injection Management</MudText>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="@_injectionWellId" Label="Injection Well ID" Variant="Variant.Outlined" />
+            <MudNumericField @bind-Value="@_injectionRate" Label="Injection Rate" Variant="Variant.Outlined" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ManageInjection" Disabled="@_isManaging">
+                Manage Injection
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _fieldId = string.Empty;
+    private string _eorMethod = "WaterFlooding";
+    private string _injectionWellId = string.Empty;
+    private decimal _injectionRate = 1000;
+    private bool _isAnalyzing = false;
+    private bool _isCalculating = false;
+    private bool _isManaging = false;
+    private bool _isLoading = false;
+    private EnhancedRecoveryOperationDto? _eorResult;
+    private string? _currentUserId = "system";
+
+    private async Task AnalyzeEOR()
+    {
+        if (string.IsNullOrEmpty(_fieldId))
+        {
+            Snackbar.Add("Please enter a Field ID", Severity.Warning);
+            return;
+        }
+
+        _isAnalyzing = true;
+        try
+        {
+            _eorResult = await OperationsService.AnalyzeEORPotentialAsync(_fieldId, _eorMethod);
+            Snackbar.Add("EOR potential analysis completed", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error analyzing EOR potential: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isAnalyzing = false;
+        }
+    }
+
+    private async Task CalculateRecoveryFactor()
+    {
+        if (string.IsNullOrEmpty(_fieldId))
+        {
+            Snackbar.Add("Please enter a Field ID", Severity.Warning);
+            return;
+        }
+
+        _isCalculating = true;
+        try
+        {
+            var projectId = Guid.NewGuid().ToString(); // Would come from selected project
+            _eorResult = await OperationsService.CalculateRecoveryFactorAsync(projectId);
+            Snackbar.Add("Recovery factor calculated", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error calculating recovery factor: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isCalculating = false;
+        }
+    }
+
+    private async Task ManageInjection()
+    {
+        if (string.IsNullOrEmpty(_injectionWellId))
+        {
+            Snackbar.Add("Please enter an Injection Well ID", Severity.Warning);
+            return;
+        }
+
+        _isManaging = true;
+        try
+        {
+            var result = await OperationsService.ManageInjectionAsync(_injectionWellId, _injectionRate);
+            Snackbar.Add("Injection operation managed successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error managing injection: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isManaging = false;
+        }
+    }
+}
+

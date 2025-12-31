@@ -1,0 +1,167 @@
+@page "/ppdm39/pumps/plungerlift"
+@using Beep.OilandGas.Models.DTOs
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Web.Services
+@inject IPumpServiceClient PumpService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Plunger Lift</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Plunger Lift Design & Analysis</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-4">Design Plunger Lift System</MudText>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="@_wellUWI" Label="Well UWI" Variant="Variant.Outlined" Required="true" />
+            <MudNumericField @bind-Value="@_wellDepth" Label="Well Depth (ft)" Variant="Variant.Outlined" />
+            <MudNumericField @bind-Value="@_tubingDiameter" Label="Tubing Diameter (in)" Variant="Variant.Outlined" />
+            <MudNumericField @bind-Value="@_wellheadPressure" Label="Wellhead Pressure (PSI)" Variant="Variant.Outlined" />
+            <MudNumericField @bind-Value="@_bottomHolePressure" Label="Bottom Hole Pressure (PSI)" Variant="Variant.Outlined" />
+            <MudNumericField @bind-Value="@_gasOilRatio" Label="Gas Oil Ratio (SCF/BBL)" Variant="Variant.Outlined" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="DesignPlungerLift" Disabled="@_isDesigning">
+                Design Plunger Lift System
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-4" />
+        }
+
+        @if (_plungerDesign != null)
+        {
+            <MudPaper Class="pa-4 mt-4" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-4">Plunger Lift Design Results</MudText>
+                <MudStack Spacing="2">
+                    <MudText>Design ID: @_plungerDesign.DesignId</MudText>
+                    <MudText>Plunger Type: @_plungerDesign.PlungerType</MudText>
+                    <MudText>Operating Pressure: @_plungerDesign.OperatingPressure.ToString("F2") PSI</MudText>
+                    <MudText>Cycle Time: @_plungerDesign.CycleTime.ToString("F2") minutes</MudText>
+                </MudStack>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="SaveDesign">
+                    Save Design
+                </MudButton>
+            </MudPaper>
+        }
+    </MudPaper>
+
+    <MudPaper Class="pa-4 mt-4">
+        <MudText Typo="Typo.h6" Class="mb-4">Performance Analysis</MudText>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="@_performanceWellUWI" Label="Well UWI" Variant="Variant.Outlined" />
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="AnalyzePerformance" Disabled="@_isAnalyzing">
+                Analyze Performance
+            </MudButton>
+        </MudStack>
+
+        @if (_performance != null)
+        {
+            <MudPaper Class="pa-4 mt-4" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-4">Performance Results</MudText>
+                <MudStack Spacing="2">
+                    <MudText>Production Rate: @_performance.ProductionRate.ToString("F2") BBL/D</MudText>
+                    <MudText>Cycle Time: @_performance.CycleTime.ToString("F2") minutes</MudText>
+                    <MudText>Efficiency: @_performance.Efficiency.ToString("F2")%</MudText>
+                </MudStack>
+            </MudPaper>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _wellUWI = string.Empty;
+    private decimal _wellDepth = 5000;
+    private decimal _tubingDiameter = 2.5m;
+    private decimal _wellheadPressure = 100;
+    private decimal _bottomHolePressure = 2000;
+    private decimal _gasOilRatio = 500;
+    private string _performanceWellUWI = string.Empty;
+    private bool _isDesigning = false;
+    private bool _isAnalyzing = false;
+    private bool _isLoading = false;
+    private PlungerLiftDesignDto? _plungerDesign;
+    private PlungerLiftPerformanceDto? _performance;
+    private string? _currentUserId = "system";
+
+    private async Task DesignPlungerLift()
+    {
+        if (string.IsNullOrEmpty(_wellUWI))
+        {
+            Snackbar.Add("Please enter a Well UWI", Severity.Warning);
+            return;
+        }
+
+        _isDesigning = true;
+        try
+        {
+            var wellProperties = new PlungerLiftWellPropertiesDto
+            {
+                WellDepth = _wellDepth,
+                TubingDiameter = _tubingDiameter,
+                WellheadPressure = _wellheadPressure,
+                BottomHolePressure = _bottomHolePressure,
+                GasOilRatio = _gasOilRatio
+            };
+
+            _plungerDesign = await PumpService.DesignPlungerLiftSystemAsync(_wellUWI, wellProperties);
+            Snackbar.Add("Plunger lift design completed", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error designing plunger lift: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isDesigning = false;
+        }
+    }
+
+    private async Task SaveDesign()
+    {
+        if (_plungerDesign == null)
+        {
+            Snackbar.Add("No design to save", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var saved = await PumpService.SavePlungerLiftDesignAsync(_plungerDesign, _currentUserId);
+            if (saved)
+            {
+                Snackbar.Add("Plunger lift design saved successfully", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving design: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task AnalyzePerformance()
+    {
+        if (string.IsNullOrEmpty(_performanceWellUWI))
+        {
+            Snackbar.Add("Please enter a Well UWI", Severity.Warning);
+            return;
+        }
+
+        _isAnalyzing = true;
+        try
+        {
+            _performance = await PumpService.AnalyzePlungerLiftPerformanceAsync(_performanceWellUWI);
+            Snackbar.Add("Performance analysis completed", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error analyzing performance: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isAnalyzing = false;
+        }
+    }
+}
+

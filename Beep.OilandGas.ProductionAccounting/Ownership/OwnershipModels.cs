@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Beep.OilandGas.ProductionAccounting.Ownership
 {
     /// <summary>
@@ -285,4 +282,3 @@ namespace Beep.OilandGas.ProductionAccounting.Ownership
         public string? DivisionOrderId { get; set; }
     }
 }
-

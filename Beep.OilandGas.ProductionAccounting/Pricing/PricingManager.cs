@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+
 using Beep.OilandGas.ProductionAccounting.Models;
 using Beep.OilandGas.ProductionAccounting.Production;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -32,19 +29,19 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILoggerFactory loggerFactory,
+            ILogger<PricingManager>? logger = null,
             string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _logger = loggerFactory?.CreateLogger<PricingManager>();
+            _logger = logger;
             _connectionName = connectionName ?? "PPDM39";
 
-            _indexManager = new PriceIndexManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
+            _indexManager = new PriceIndexManager(editor, commonColumnHandler, defaults, metadata, null, connectionName);
             _indexManager.InitializeStandardIndexes();
-            _regulatedPricingManager = new RegulatedPricingManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
+            _regulatedPricingManager = new RegulatedPricingManager(editor, commonColumnHandler, defaults, metadata, null, connectionName);
         }
 
         /// <summary>
@@ -264,4 +261,3 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
         #endregion
     }
 }
-

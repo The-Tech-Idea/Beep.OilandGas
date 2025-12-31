@@ -1,0 +1,115 @@
+@page "/ppdm39/calculations/pipelineanalysis"
+@using Beep.OilandGas.Models.DTOs
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Web.Services
+@inject ICalculationServiceClient CalculationService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Pipeline Analysis</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Pipeline Analysis</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="@_pipelineId" Label="Pipeline ID" Variant="Variant.Outlined" Required="true" />
+            <MudNumericField @bind-Value="@_flowRate" Label="Flow Rate (BBL/D)" Variant="Variant.Outlined" />
+            <MudNumericField @bind-Value="@_inletPressure" Label="Inlet Pressure (PSI)" Variant="Variant.Outlined" />
+            
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AnalyzeFlow" Disabled="@_isAnalyzing">
+                    Analyze Flow
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CalculatePressureDrop" Disabled="@_isCalculating">
+                    Calculate Pressure Drop
+                </MudButton>
+            </MudStack>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-4" />
+        }
+
+        @if (_analysisResult != null)
+        {
+            <MudPaper Class="pa-4 mt-4" Elevation="2">
+                <MudText Typo="Typo.h6" Class="mb-4">Analysis Results</MudText>
+                <MudStack Spacing="2">
+                    <MudText>Pipeline ID: @_analysisResult.PipelineId</MudText>
+                    <MudText>Flow Rate: @_analysisResult.FlowRate.ToString("F2") BBL/D</MudText>
+                    <MudText>Inlet Pressure: @_analysisResult.InletPressure.ToString("F2") PSI</MudText>
+                    <MudText>Outlet Pressure: @_analysisResult.OutletPressure.ToString("F2") PSI</MudText>
+                    <MudText>Pressure Drop: @_analysisResult.PressureDrop.ToString("F2") PSI</MudText>
+                    <MudText>Velocity: @_analysisResult.Velocity.ToString("F2") ft/s</MudText>
+                </MudStack>
+            </MudPaper>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string _pipelineId = string.Empty;
+    private decimal _flowRate = 1000;
+    private decimal _inletPressure = 500;
+    private bool _isAnalyzing = false;
+    private bool _isCalculating = false;
+    private bool _isLoading = false;
+    private PipelineAnalysisResultDto? _analysisResult;
+    private string? _currentUserId = "system";
+
+    private async Task AnalyzeFlow()
+    {
+        if (string.IsNullOrEmpty(_pipelineId))
+        {
+            Snackbar.Add("Please enter a Pipeline ID", Severity.Warning);
+            return;
+        }
+
+        _isAnalyzing = true;
+        try
+        {
+            _analysisResult = await CalculationService.AnalyzePipelineFlowAsync(_pipelineId, _flowRate, _inletPressure);
+            
+            // Save the result
+            await CalculationService.SavePipelineAnalysisResultAsync(_analysisResult, _currentUserId);
+            
+            Snackbar.Add("Pipeline flow analysis completed", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error analyzing pipeline flow: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isAnalyzing = false;
+        }
+    }
+
+    private async Task CalculatePressureDrop()
+    {
+        if (string.IsNullOrEmpty(_pipelineId))
+        {
+            Snackbar.Add("Please enter a Pipeline ID", Severity.Warning);
+            return;
+        }
+
+        _isCalculating = true;
+        try
+        {
+            var result = await CalculationService.CalculatePressureDropAsync(_pipelineId, _flowRate);
+            
+            Snackbar.Add($"Pressure drop: {result.PressureDrop.ToString("F2")} PSI", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error calculating pressure drop: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isCalculating = false;
+        }
+    }
+}
+

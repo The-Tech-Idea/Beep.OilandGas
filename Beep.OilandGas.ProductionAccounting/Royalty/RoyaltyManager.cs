@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+
 using Beep.OilandGas.ProductionAccounting.Accounting;
 using Beep.OilandGas.ProductionAccounting.Ownership;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -33,14 +30,14 @@ namespace Beep.OilandGas.ProductionAccounting.Royalty
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILoggerFactory loggerFactory,
+            ILogger<RoyaltyManager>? logger = null,
             string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _logger = loggerFactory?.CreateLogger<RoyaltyManager>();
+            _logger = logger;
             _connectionName = connectionName ?? "PPDM39";
         }
 
@@ -426,4 +423,3 @@ namespace Beep.OilandGas.ProductionAccounting.Royalty
 
     }
 }
-

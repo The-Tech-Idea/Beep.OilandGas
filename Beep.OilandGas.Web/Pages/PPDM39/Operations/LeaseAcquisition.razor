@@ -1,0 +1,168 @@
+@page "/ppdm39/operations/leaseacquisition"
+@using Beep.OilandGas.Models.DTOs.Lease
+@using Beep.OilandGas.Web.Services
+@inject IOperationsServiceClient OperationsService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Lease Acquisition</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Lease Acquisition</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">Available Leases</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+                Create Lease Acquisition
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_leases != null && _leases.Any())
+        {
+            <MudTable Items="@_leases" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Lease Number</MudTh>
+                    <MudTh>Lease Name</MudTh>
+                    <MudTh>Lease Type</MudTh>
+                    <MudTh>Effective Date</MudTh>
+                    <MudTh>Expiration Date</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.LeaseNumber</MudTd>
+                    <MudTd>@context.LeaseName</MudTd>
+                    <MudTd>@context.LeaseType</MudTd>
+                    <MudTd>@context.EffectiveDate.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd>@(context.ExpirationDate?.ToString("yyyy-MM-dd") ?? "N/A")</MudTd>
+                    <MudTd>@(context.IsActive ? "Active" : "Inactive")</MudTd>
+                    <MudTd>
+                        <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
+                            <MudButton StartIcon="@Icons.Material.Filled.Info" OnClick="@(() => EvaluateLease(context.LeaseId))">
+                                Evaluate
+                            </MudButton>
+                            <MudButton StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => UpdateLeaseStatus(context.LeaseId))">
+                                Update Status
+                            </MudButton>
+                        </MudButtonGroup>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No available leases found.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<LeaseSummary>? _leases;
+    private bool _isLoading = false;
+    private string? _currentUserId = "system";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLeases();
+    }
+
+    private async Task LoadLeases()
+    {
+        _isLoading = true;
+        try
+        {
+            _leases = await OperationsService.GetAvailableLeasesAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading leases: {ex.Message}", Severity.Error);
+            _leases = new List<LeaseSummary>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OpenCreateDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<MudDialog>("Create Lease Acquisition", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            // Create lease acquisition using service client
+            try
+            {
+                var leaseRequest = new CreateLeaseAcquisitionDto
+                {
+                    PropertyId = Guid.NewGuid().ToString(), // Would come from dialog
+                    LeaseNumber = "L-" + DateTime.Now.ToString("yyyyMMdd"),
+                    LeaseName = "New Lease",
+                    EffectiveDate = DateTime.Now,
+                    ExpirationDate = DateTime.Now.AddYears(5),
+                    WorkingInterest = 100,
+                    NetRevenueInterest = 75,
+                    RoyaltyRate = 12.5m
+                };
+
+                var leaseId = await OperationsService.CreateLeaseAcquisitionAsync(leaseRequest, _currentUserId);
+                Snackbar.Add("Lease acquisition created successfully", Severity.Success);
+                await LoadLeases();
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error creating lease acquisition: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task EvaluateLease(string leaseId)
+    {
+        try
+        {
+            var evaluation = await OperationsService.EvaluateLeaseAsync(leaseId);
+            Snackbar.Add($"Lease evaluation completed for {evaluation.LeaseName}", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error evaluating lease: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task UpdateLeaseStatus(string leaseId)
+    {
+        var result = await DialogService.ShowMessageBox(
+            "Update Lease Status",
+            "Enter new status:",
+            yesText: "Update", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            try
+            {
+                var updated = await OperationsService.UpdateLeaseStatusAsync(leaseId, "Active", _currentUserId);
+                if (updated)
+                {
+                    Snackbar.Add("Lease status updated successfully", Severity.Success);
+                    await LoadLeases();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to update lease status", Severity.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error updating lease status: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+}
+

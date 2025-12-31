@@ -32,4 +32,8 @@
 		<PackageReference Include="SkiaSharp" Version="3.119.1" />
 		<PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />
 	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
+		<ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
+	</ItemGroup>
 </Project>

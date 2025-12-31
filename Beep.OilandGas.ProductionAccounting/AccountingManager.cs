@@ -29,10 +29,10 @@ namespace Beep.OilandGas.ProductionAccounting
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILoggerFactory loggerFactory,
+            ILogger<SuccessfulEffortsAccounting>? logger = null,
             string connectionName = "PPDM39")
         {
-            return new SuccessfulEffortsAccounting(editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
+            return new SuccessfulEffortsAccounting(editor, commonColumnHandler, defaults, metadata, logger, connectionName);
         }
 
         /// <summary>
@@ -43,10 +43,10 @@ namespace Beep.OilandGas.ProductionAccounting
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILoggerFactory loggerFactory,
+            ILogger<FullCostAccounting>? logger = null,
             string connectionName = "PPDM39")
         {
-            return new FullCostAccounting(editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
+            return new FullCostAccounting(editor, commonColumnHandler, defaults, metadata, logger, connectionName);
         }
 
         /// <summary>
@@ -113,16 +113,15 @@ namespace Beep.OilandGas.ProductionAccounting
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILoggerFactory loggerFactory,
             string connectionName = "PPDM39")
         {
-            GeneralLedger = new GLAccountManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
-            JournalEntry = new JournalEntryManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
-            Invoice = new InvoiceManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
-            PurchaseOrder = new PurchaseOrderManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
-            AccountsPayable = new AccountsPayable.APManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
-            AccountsReceivable = new AccountsReceivable.ARManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
-            Inventory = new InventoryTransactionManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
+            GeneralLedger = new GLAccountManager(editor, commonColumnHandler, defaults, metadata, null, connectionName);
+            JournalEntry = new JournalEntryManager(editor, commonColumnHandler, defaults, metadata, null, connectionName);
+            Invoice = new InvoiceManager(editor, commonColumnHandler, defaults, metadata, null, connectionName);
+            PurchaseOrder = new PurchaseOrderManager(editor, commonColumnHandler, defaults, metadata, null, connectionName);
+            AccountsPayable = new AccountsPayable.APManager(editor, commonColumnHandler, defaults, metadata, null, connectionName);
+            AccountsReceivable = new AccountsReceivable.ARManager(editor, commonColumnHandler, null, connectionName);
+            Inventory = new InventoryTransactionManager(editor, commonColumnHandler, defaults, metadata, null, connectionName);
         }
     }
 }

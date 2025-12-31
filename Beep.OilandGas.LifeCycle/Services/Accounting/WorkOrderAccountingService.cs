@@ -247,7 +247,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
                     try
                     {
                         var glAccountType = request.IsCapitalized ? "DevelopmentCost" : "OperatingExpense";
-                        await _glIntegrationService.PostFinancialAccountingToGL(
+                        _logger?.LogInformation("Posting work order cost to GL: TransactionId={TransactionId}, AccountType={AccountType}, Amount={Amount}",
+                            costTransaction.COST_TRANSACTION_ID, glAccountType, request.Amount);
+                        
+                        var journalEntryId = await _glIntegrationService.PostFinancialAccountingToGL(
                             costTransaction.COST_TRANSACTION_ID,
                             glAccountType,
                             request.Amount,
@@ -255,12 +258,21 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
                             false,
                             request.TransactionDate,
                             userId);
+                        
+                        _logger?.LogInformation("Successfully posted work order cost to GL: TransactionId={TransactionId}, JournalEntryId={JournalEntryId}",
+                            costTransaction.COST_TRANSACTION_ID, journalEntryId);
                     }
                     catch (Exception glEx)
                     {
-                        _logger?.LogWarning(glEx, "Failed to post work order cost to GL: {CostTransactionId}", costTransaction.COST_TRANSACTION_ID);
+                        _logger?.LogWarning(glEx, "Failed to post work order cost to GL: CostTransactionId={CostTransactionId}, Amount={Amount}, AccountType={AccountType}",
+                            costTransaction.COST_TRANSACTION_ID, request.Amount, request.IsCapitalized ? "DevelopmentCost" : "OperatingExpense");
                         // Don't throw - GL posting failure shouldn't fail the cost recording
                     }
+                }
+                else
+                {
+                    _logger?.LogDebug("GLIntegrationService not available, skipping GL posting for work order cost: {CostTransactionId}",
+                        costTransaction.COST_TRANSACTION_ID);
                 }
 
                 _logger?.LogInformation("Cost {Amount} recorded for work order {WorkOrderId}, CostTransaction: {CostTransactionId}",

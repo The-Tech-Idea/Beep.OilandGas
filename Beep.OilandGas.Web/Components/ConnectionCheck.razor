@@ -1,7 +1,10 @@
 @using Microsoft.AspNetCore.Components.Authorization
+@using Beep.OilandGas.Web.Services
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IDataManagementService DataManagementService
+@inject IConnectionService ConnectionService
 @inject IDialogService DialogService
+@inject NavigationManager NavigationManager
 @inject ILogger<ConnectionCheck> Logger
 
 <CascadingAuthenticationState>
@@ -42,19 +45,28 @@
                 return;
             }
 
-            // Refresh connections from API server and get count directly
-            await DataManagementService.RefreshConnectionsAsync();
-            var connections = await DataManagementService.GetAllConnectionsAsync();
-            var connectionCount = connections.Count;
-
-            if (connectionCount == 0)
+            // Check if user has a current connection set
+            var currentConnection = await ConnectionService.GetCurrentConnectionAsync();
+            
+            // Get current route
+            var currentPath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+            
+            // Don't redirect if already on first-login page or login/register pages
+            if (!currentPath.StartsWith("first-login", StringComparison.OrdinalIgnoreCase) &&
+                !currentPath.StartsWith("login", StringComparison.OrdinalIgnoreCase) &&
+                !currentPath.StartsWith("register", StringComparison.OrdinalIgnoreCase) &&
+                !currentPath.StartsWith("authentication", StringComparison.OrdinalIgnoreCase))
             {
-                // No connections found, show dialog
-                await ShowConnectionSetupDialog();
-            }
-            else
-            {
-                _hasValidConnection = true;
+                if (string.IsNullOrEmpty(currentConnection?.ConnectionName))
+                {
+                    // No connection found, redirect to first-login page
+                    NavigationManager.NavigateTo("/first-login");
+                    return;
+                }
+                else
+                {
+                    _hasValidConnection = true;
+                }
             }
 
             _hasCheckedConnections = true;

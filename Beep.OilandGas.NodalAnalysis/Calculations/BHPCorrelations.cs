@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Beep.OilandGas.NodalAnalysis.Models;
+using Beep.OilandGas.Models.NodalAnalysis;
 using Beep.OilandGas.GasProperties.Calculations;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations

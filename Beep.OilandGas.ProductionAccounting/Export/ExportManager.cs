@@ -1,5 +1,4 @@
-using System;
-using System.Collections.Generic;
+
 using System.IO;
 using System.Text;
 using Beep.OilandGas.ProductionAccounting.Reporting;
@@ -149,4 +148,3 @@ namespace Beep.OilandGas.ProductionAccounting.Export
         }
     }
 }
-

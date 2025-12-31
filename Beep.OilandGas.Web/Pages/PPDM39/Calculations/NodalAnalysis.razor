@@ -1,0 +1,112 @@
+@page "/ppdm39/calculations/nodalanalysis"
+@using Beep.OilandGas.Models.DTOs
+@using Beep.OilandGas.Web.Services
+@inject ICalculationServiceClient CalculationService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Nodal Analysis</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Nodal Analysis</MudText>
+
+    <MudPaper Class="pa-4">
+        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">Nodal Analysis for Wells</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAnalysisDialog">
+                Perform Analysis
+            </MudButton>
+        </MudStack>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        }
+        else if (_analysisHistory != null && _analysisHistory.Any())
+        {
+            <MudTable Items="@_analysisHistory" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Analysis ID</MudTh>
+                    <MudTh>Well UWI</MudTh>
+                    <MudTh>Analysis Date</MudTh>
+                    <MudTh>Optimal Flow Rate</MudTh>
+                    <MudTh>Status</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.AnalysisId</MudTd>
+                    <MudTd>@context.WellUWI</MudTd>
+                    <MudTd>@context.AnalysisDate.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd>@context.OptimalFlowRate.ToString("F2")</MudTd>
+                    <MudTd>@(context.Status ?? "Active")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No nodal analysis results found. Perform an analysis to get started.</MudAlert>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private List<NodalAnalysisResultDto>? _analysisHistory;
+    private bool _isLoading = false;
+    private string? _currentUserId = "system";
+    private string? _selectedWellUWI;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load analysis history if well is selected
+    }
+
+    private async Task OpenAnalysisDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<MudDialog>("Nodal Analysis Parameters", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await PerformAnalysis();
+        }
+    }
+
+    private async Task PerformAnalysis()
+    {
+        if (string.IsNullOrEmpty(_selectedWellUWI))
+        {
+            Snackbar.Add("Please select a well", Severity.Warning);
+            return;
+        }
+
+        _isLoading = true;
+        try
+        {
+            var parameters = new NodalAnalysisParametersDto
+            {
+                MinFlowRate = 0,
+                MaxFlowRate = 1000,
+                NumberOfPoints = 50
+            };
+
+            var result = await CalculationService.PerformNodalAnalysisAsync(_selectedWellUWI, parameters);
+            
+            // Save the result
+            await CalculationService.SaveNodalAnalysisResultAsync(result, _currentUserId);
+            
+            Snackbar.Add("Nodal analysis completed successfully", Severity.Success);
+            
+            // Reload history
+            _analysisHistory = await CalculationService.GetNodalAnalysisHistoryAsync(_selectedWellUWI);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error performing nodal analysis: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
+

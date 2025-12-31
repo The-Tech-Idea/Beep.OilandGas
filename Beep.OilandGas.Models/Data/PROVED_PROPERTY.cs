@@ -132,6 +132,10 @@ namespace Beep.OilandGas.Models.Data
             get { return this.ROW_IDValue; }
             set { SetProperty(ref ROW_IDValue, value); }
         }
+
+        public decimal PROVED_RESERVES_GAS { get; set; }
+        public decimal PROVED_RESERVES_OIL { get; set; }
+        public object PROVED_RESERVES_BOE { get; set; }
     }
 }
 

@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Beep.OilandGas.ProductionAccounting.Imbalance
 {
     /// <summary>
@@ -396,4 +393,3 @@ namespace Beep.OilandGas.ProductionAccounting.Imbalance
         public string Reason { get; set; } = string.Empty;
     }
 }
-

@@ -1,4 +1,4 @@
-using System;
+
 using SkiaSharp;
 using Beep.OilandGas.ProductionAccounting.Rendering;
 
@@ -78,4 +78,3 @@ namespace Beep.OilandGas.ProductionAccounting.Interaction
         }
     }
 }
-

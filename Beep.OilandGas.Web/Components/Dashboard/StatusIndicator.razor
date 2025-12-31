@@ -1,0 +1,54 @@
+@using MudBlazor
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="@Class">
+    <MudChip Size="@Size" 
+             Color="@GetStatusColor()" 
+             Variant="Variant.Filled"
+             Icon="@GetStatusIcon()">
+        @StatusText
+    </MudChip>
+    @if (!string.IsNullOrEmpty(Description))
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary">@Description</MudText>
+    }
+</MudStack>
+
+@code {
+    [Parameter] public string Status { get; set; } = "Unknown";
+    [Parameter] public string? StatusText { get; set; }
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public Size Size { get; set; } = Size.Small;
+    [Parameter] public string? Class { get; set; }
+
+    private string GetStatusText()
+    {
+        return StatusText ?? Status;
+    }
+
+    private Color GetStatusColor()
+    {
+        return Status.ToUpperInvariant() switch
+        {
+            "ACTIVE" or "ONLINE" or "RUNNING" or "PRODUCING" => Color.Success,
+            "INACTIVE" or "OFFLINE" or "STOPPED" or "SHUTDOWN" => Color.Default,
+            "WARNING" or "DEGRADED" or "MAINTENANCE" => Color.Warning,
+            "ERROR" or "FAILED" or "ABANDONED" => Color.Error,
+            "PENDING" or "PLANNED" => Color.Info,
+            _ => Color.Default
+        };
+    }
+
+    private string GetStatusIcon()
+    {
+        return Status.ToUpperInvariant() switch
+        {
+            "ACTIVE" or "ONLINE" or "RUNNING" or "PRODUCING" => Icons.Material.Filled.CheckCircle,
+            "INACTIVE" or "OFFLINE" or "STOPPED" or "SHUTDOWN" => Icons.Material.Filled.StopCircle,
+            "WARNING" or "DEGRADED" or "MAINTENANCE" => Icons.Material.Filled.Warning,
+            "ERROR" or "FAILED" or "ABANDONED" => Icons.Material.Filled.Error,
+            "PENDING" or "PLANNED" => Icons.Material.Filled.Schedule,
+            _ => Icons.Material.Filled.Help
+        };
+    }
+}
+

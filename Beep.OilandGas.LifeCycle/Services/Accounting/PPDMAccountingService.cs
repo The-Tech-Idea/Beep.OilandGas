@@ -32,6 +32,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
         private readonly string _connectionName;
         private readonly ILogger<PPDMAccountingService>? _logger;
 
+        // Optional ProductionAccounting service interfaces for enhanced integration
+        private readonly IRoyaltyService? _royaltyService;
+        private readonly IAllocationService? _allocationService;
+        private readonly IAmortizationService? _amortizationService;
+
         // Cache for repositories
         private PPDMGenericRepository? _productionRepository;
         private PPDMGenericRepository? _accountingAllocationRepository;
@@ -48,7 +53,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
             string connectionName = "PPDM39",
-            ILogger<PPDMAccountingService>? logger = null)
+            ILogger<PPDMAccountingService>? logger = null,
+            IRoyaltyService? royaltyService = null,
+            IAllocationService? allocationService = null,
+            IAmortizationService? amortizationService = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -56,6 +64,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
+            _royaltyService = royaltyService;
+            _allocationService = allocationService;
+            _amortizationService = amortizationService;
+            
+            if (_royaltyService != null)
+                _logger?.LogInformation("PPDMAccountingService initialized with IRoyaltyService integration");
+            if (_allocationService != null)
+                _logger?.LogInformation("PPDMAccountingService initialized with IAllocationService integration");
+            if (_amortizationService != null)
+                _logger?.LogInformation("PPDMAccountingService initialized with IAmortizationService integration");
         }
 
         #region Repository Helpers

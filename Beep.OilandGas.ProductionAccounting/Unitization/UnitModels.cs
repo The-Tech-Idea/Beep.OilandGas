@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Beep.OilandGas.ProductionAccounting.Unitization
 {
     /// <summary>
@@ -256,4 +253,3 @@ namespace Beep.OilandGas.ProductionAccounting.Unitization
         public bool BasedOnTractParticipation { get; set; } = false;
     }
 }
-

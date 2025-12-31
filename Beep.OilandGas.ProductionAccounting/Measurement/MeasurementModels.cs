@@ -1,4 +1,4 @@
-using System;
+
 using Beep.OilandGas.ProductionAccounting.Models;
 
 namespace Beep.OilandGas.ProductionAccounting.Measurement
@@ -194,4 +194,3 @@ namespace Beep.OilandGas.ProductionAccounting.Measurement
         }
     }
 }
-

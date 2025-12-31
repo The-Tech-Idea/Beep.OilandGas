@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using Beep.OilandGas.ProductionAccounting.GeneralLedger;
 using Microsoft.Extensions.Logging;
 
@@ -30,18 +28,26 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             // If account number provided, try to find by account number first
             if (!string.IsNullOrEmpty(accountNumber))
             {
+
                 var account = _glAccountManager.GetAllAccounts()
+
                     .FirstOrDefault(a => a.ACCOUNT_NUMBER == accountNumber);
+
                 if (account != null)
+
                     return account.GL_ACCOUNT_ID;
             }
 
             // Otherwise, use mapping
             if (_accountMappings.TryGetValue(operationType, out var mappedAccountNumber))
             {
+
                 var account = _glAccountManager.GetAllAccounts()
+
                     .FirstOrDefault(a => a.ACCOUNT_NUMBER == mappedAccountNumber);
+
                 if (account != null)
+
                     return account.GL_ACCOUNT_ID;
             }
 
@@ -57,13 +63,17 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var account = _glAccountManager.GetAccount(glAccountId);
             if (account == null)
             {
+
                 _logger?.LogWarning("GL account not found: {GlAccountId}", glAccountId);
+
                 return false;
             }
 
             if (account.ACTIVE_IND != "Y")
             {
+
                 _logger?.LogWarning("GL account is not active: {GlAccountId}", glAccountId);
+
                 return false;
             }
 
@@ -78,45 +88,76 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             return new Dictionary<string, string>
             {
+
                 // Production Revenue
+
                 { "ProductionRevenue", "4000" },
+
                 { "ProductionRevenue_AR", "1200" }, // Accounts Receivable
+
                 { "ProductionRevenue_Cash", "1000" }, // Cash
 
+
                 // Cost Operations
+
                 { "OperatingExpense", "5000" },
+
                 { "CapitalizedCost", "1500" },
+
                 { "Cost_AP", "2000" }, // Accounts Payable
+
                 { "Cost_Cash", "1000" }, // Cash
 
+
                 // Royalty
+
                 { "RoyaltyExpense", "5100" },
+
                 { "Royalty_Cash", "1000" }, // Cash
 
+
                 // Financial Accounting
+
                 { "ExplorationExpense", "5200" },
+
                 { "UnprovedProperty", "1600" },
+
                 { "ProvedProperty", "1700" },
+
                 { "DevelopmentCost", "1800" },
+
                 { "AmortizationExpense", "5300" },
+
                 { "ImpairmentExpense", "5400" },
 
+
                 // Traditional Accounting
+
                 { "AR_Invoice", "1200" }, // Accounts Receivable
+
                 { "AR_Revenue", "4000" }, // Revenue
+
                 { "AP_Invoice", "2000" }, // Accounts Payable
+
                 { "AP_Expense", "5000" }, // Expense
+
                 { "Inventory", "1300" },
+
                 { "Inventory_CostOfGoodsSold", "5100" },
 
+
                 // Default accounts
+
                 { "Cash", "1000" },
+
                 { "AccountsReceivable", "1200" },
+
                 { "AccountsPayable", "2000" },
+
                 { "Revenue", "4000" },
+
                 { "Expense", "5000" }
             };
         }
     }
 }
-

@@ -91,6 +91,7 @@ namespace Beep.OilandGas.Models.DTOs.ProductionAccounting
         [Required]
         public string Purchaser { get; set; } = string.Empty;
         public DateTime? TicketDateTime { get; set; }
+        public MeasurementMethod MeasurementMethod { get; set; }
     }
 }
 

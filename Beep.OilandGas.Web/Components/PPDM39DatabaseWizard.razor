@@ -2,6 +2,7 @@
 @inject ISnackbar Snackbar
 @inject IProgressTrackingClient ProgressClient
 @using Beep.OilandGas.Web.Components
+@using Beep.OilandGas.Web.Components.Demo
 @using Beep.OilandGas.ApiService.Models
 
 <MudDialog MaxWidth="MaxWidth.Large" FullWidth="true">
@@ -376,7 +377,63 @@
             </MudStep>
             }
 
-            <!-- Step 5: Save Connection -->
+            <!-- Step 5: Seed Data (Skip in edit mode) -->
+            @if (!IsEditMode)
+            {
+                <MudStep Title="Seed Data" Icon="@Icons.Material.Filled.DataObject" Disabled="@(_allScriptsResult == null || !_allScriptsResult.AllSucceeded)">
+                    <MudPaper Class="pa-4" Elevation="1">
+                        <MudText Typo="Typo.h6" Class="mb-3">Step 5: Seed Database Data</MudText>
+                        <MudText Typo="Typo.body2" Class="mb-4" Color="Color.Secondary">
+                            Optionally seed your database with reference data and sample entities
+                        </MudText>
+
+                        <SeedDataSelector @bind-SelectedOption="@_selectedSeedOption" />
+
+                        @if (_selectedSeedOption != SeedDataOption.None && !string.IsNullOrEmpty(_connectionName))
+                        {
+                            <MudDivider Class="my-4" />
+                            
+                            @if (_isSeedingData)
+                            {
+                                <MudStack Spacing="3" AlignItems="AlignItems.Center">
+                                    <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+                                    <MudText Typo="Typo.body1">Seeding database data...</MudText>
+                                    @if (!string.IsNullOrEmpty(_seedingOperationId) && _seedingProgress != null)
+                                    {
+                                        <ProgressDisplay OperationId="@_seedingOperationId" 
+                                                       Title="Seeding Data" 
+                                                       ShowCancel="false" 
+                                                       Class="mt-4" />
+                                    }
+                                </MudStack>
+                            }
+                            else if (_seedDataResult != null)
+                            {
+                                <MudAlert Severity="@(_seedDataResult.Success ? Severity.Success : Severity.Error)" Class="mt-4">
+                                    <MudText Typo="Typo.body1">@_seedDataResult.Message</MudText>
+                                    @if (!string.IsNullOrEmpty(_seedDataResult.ErrorDetails))
+                                    {
+                                        <MudText Typo="Typo.body2" Class="mt-2">@_seedDataResult.ErrorDetails</MudText>
+                                    }
+                                </MudAlert>
+                            }
+                            else
+                            {
+                                <MudButton Variant="Variant.Filled" 
+                                          Color="Color.Primary" 
+                                          OnClick="SeedData"
+                                          StartIcon="@Icons.Material.Filled.PlayArrow"
+                                          Disabled="@(_isSeedingData || string.IsNullOrEmpty(_connectionName))"
+                                          Class="mt-4">
+                                    Seed Data
+                                </MudButton>
+                            }
+                        }
+                    </MudPaper>
+                </MudStep>
+            }
+
+            <!-- Step 6: Save Connection -->
             <MudStep Title="@(IsEditMode ? "Update Connection" : "Save Connection")" Icon="@Icons.Material.Filled.Save" Disabled="@(!IsEditMode && (_allScriptsResult == null || !_allScriptsResult.AllSucceeded))">
                 <MudPaper Class="pa-4" Elevation="1">
                     <MudText Typo="Typo.h6" Class="mb-3">Step 5: Save Connection</MudText>
@@ -469,7 +526,7 @@
         {
             <MudButton Variant="Variant.Text" OnClick="PreviousStep">Previous</MudButton>
         }
-        @if (_activeStep < (IsEditMode ? 2 : 4))
+        @if (_activeStep < (IsEditMode ? 2 : 5))
         {
             <MudButton Color="Color.Primary" 
                       Variant="Variant.Filled"
@@ -515,6 +572,13 @@
     private bool _isSavingConnection = false;
     private SaveConnectionResult? _saveResult;
     private string? _originalConnectionName; // For edit mode
+    
+    // Seed data fields
+    private SeedDataOption _selectedSeedOption = SeedDataOption.None;
+    private bool _isSeedingData = false;
+    private SeedDataResponse? _seedDataResult;
+    private string? _seedingOperationId;
+    private ProgressUpdate? _seedingProgress;
 
     protected override async Task OnInitializedAsync()
     {
@@ -901,6 +965,83 @@
         };
     }
 
+    private async Task SeedData()
+    {
+        if (string.IsNullOrEmpty(_connectionName) || _selectedSeedOption == SeedDataOption.None)
+        {
+            Snackbar.Add("Please select a seed data option", Severity.Warning);
+            return;
+        }
+
+        _isSeedingData = true;
+        _seedDataResult = null;
+        _seedingOperationId = null;
+        _seedingProgress = null;
+
+        try
+        {
+            var request = new SeedDataRequest
+            {
+                ConnectionName = _connectionName
+            };
+
+            SeedDataResponse? result = null;
+
+            switch (_selectedSeedOption)
+            {
+                case SeedDataOption.ReferenceOnly:
+                    result = await ApiClient.PostAsync<SeedDataRequest, SeedDataResponse>(
+                        "/api/ppdm39/setup/seed/reference", request);
+                    break;
+
+                case SeedDataOption.ReferenceAndSample:
+                    // First seed reference data
+                    result = await ApiClient.PostAsync<SeedDataRequest, SeedDataResponse>(
+                        "/api/ppdm39/setup/seed/reference", request);
+                    
+                    if (result?.Success == true)
+                    {
+                        // Then seed sample entities (would need additional endpoint)
+                        // For now, just use reference data
+                        Snackbar.Add("Reference data seeded. Sample entities seeding not yet implemented.", Severity.Info);
+                    }
+                    break;
+
+                case SeedDataOption.FullDemo:
+                    // Seed full demo dataset
+                    result = await ApiClient.PostAsync<SeedDataRequest, SeedDataResponse>(
+                        "/api/ppdm39/setup/seed/demo-full", request);
+                    break;
+            }
+
+            _seedDataResult = result;
+
+            if (_seedDataResult?.Success == true)
+            {
+                Snackbar.Add("Database seeded successfully", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"Failed to seed database: {_seedDataResult?.Message ?? "Unknown error"}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _seedDataResult = new SeedDataResponse
+            {
+                Success = false,
+                Message = "Error seeding database",
+                ErrorDetails = ex.Message
+            };
+            Snackbar.Add($"Error seeding database: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSeedingData = false;
+            StateHasChanged();
+        }
+    }
+
     private void NextStep()
     {
         if (_activeStep == 0 && !string.IsNullOrEmpty(_selectedDatabaseType))
@@ -930,7 +1071,7 @@
             CheckSchemaPrivileges().GetAwaiter().GetResult();
         }
 
-        if (_activeStep < (IsEditMode ? 2 : 4))
+        if (_activeStep < (IsEditMode ? 2 : 5))
         {
             _activeStep++;
             StateHasChanged();
@@ -956,7 +1097,8 @@
                  (_connectionTestResult?.Success == true),
             2 => _driverInfo != null && _driverInfo.IsInstalled,
             3 => IsEditMode || (_allScriptsResult != null && _allScriptsResult.AllSucceeded), // Skip script execution check in edit mode
-            4 => true, // Always allow going to save step
+            4 => _selectedSeedOption == SeedDataOption.None || (_seedDataResult != null && _seedDataResult.Success), // Seed data step
+            5 => true, // Always allow going to save step
             _ => false
         };
     }
