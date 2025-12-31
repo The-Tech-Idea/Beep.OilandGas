@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class REVENUE_DISTRIBUTION : Entity
+    public partial class REVENUE_DISTRIBUTION : Entity,IPPDMEntity
     {
         private String REVENUE_DISTRIBUTION_IDValue;
         public String REVENUE_DISTRIBUTION_ID
@@ -26,7 +26,12 @@ namespace Beep.OilandGas.Models.Data
             get { return this.INT_SET_PARTNER_IDValue; }
             set { SetProperty(ref INT_SET_PARTNER_IDValue, value); }
         }
-
+        private System.String ROW_QUALITYValue;
+        public System.String ROW_QUALITY
+        {
+            get { return this.ROW_QUALITYValue; }
+            set { SetProperty(ref ROW_QUALITYValue, value); }
+        }
         private String BUSINESS_ASSOCIATE_IDValue;
         public String BUSINESS_ASSOCIATE_ID
         {

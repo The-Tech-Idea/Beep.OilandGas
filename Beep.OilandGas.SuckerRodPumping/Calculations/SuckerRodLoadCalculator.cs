@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.SuckerRodPumping.Models;
 using Beep.OilandGas.GasProperties.Calculations;
+using Beep.OilandGas.Models.DTOs;
 
 namespace Beep.OilandGas.SuckerRodPumping.Calculations
 {

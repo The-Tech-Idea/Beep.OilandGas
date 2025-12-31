@@ -68,8 +68,8 @@ namespace Beep.OilandGas.ProductionAccounting.PurchaseOrder
             if (dataSource == null)
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");
 
-            var poData = ConvertPurchaseOrderToDictionary(po);
-            var result = dataSource.InsertEntity(PURCHASE_ORDER_TABLE, poData);
+      
+            var result = dataSource.InsertEntity(PURCHASE_ORDER_TABLE, po);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
             {
@@ -109,41 +109,7 @@ namespace Beep.OilandGas.ProductionAccounting.PurchaseOrder
             return poData as PURCHASE_ORDER;
         }
 
-        private Dictionary<string, object> ConvertPurchaseOrderToDictionary(PURCHASE_ORDER po)
-        {
-            var dict = new Dictionary<string, object>();
-            if (!string.IsNullOrEmpty(po.PURCHASE_ORDER_ID)) dict["PURCHASE_ORDER_ID"] = po.PURCHASE_ORDER_ID;
-            if (!string.IsNullOrEmpty(po.PO_NUMBER)) dict["PO_NUMBER"] = po.PO_NUMBER;
-            if (!string.IsNullOrEmpty(po.VENDOR_BA_ID)) dict["VENDOR_BA_ID"] = po.VENDOR_BA_ID;
-            if (po.PO_DATE.HasValue) dict["PO_DATE"] = po.PO_DATE.Value;
-            if (po.EXPECTED_DELIVERY_DATE.HasValue) dict["EXPECTED_DELIVERY_DATE"] = po.EXPECTED_DELIVERY_DATE.Value;
-            if (!string.IsNullOrEmpty(po.STATUS)) dict["STATUS"] = po.STATUS;
-            if (!string.IsNullOrEmpty(po.DESCRIPTION)) dict["DESCRIPTION"] = po.DESCRIPTION;
-            if (!string.IsNullOrEmpty(po.ACTIVE_IND)) dict["ACTIVE_IND"] = po.ACTIVE_IND;
-            if (!string.IsNullOrEmpty(po.ROW_CREATED_BY)) dict["ROW_CREATED_BY"] = po.ROW_CREATED_BY;
-            if (po.ROW_CREATED_DATE.HasValue) dict["ROW_CREATED_DATE"] = po.ROW_CREATED_DATE.Value;
-            if (!string.IsNullOrEmpty(po.ROW_CHANGED_BY)) dict["ROW_CHANGED_BY"] = po.ROW_CHANGED_BY;
-            if (po.ROW_CHANGED_DATE.HasValue) dict["ROW_CHANGED_DATE"] = po.ROW_CHANGED_DATE.Value;
-            return dict;
-        }
-
-        private PURCHASE_ORDER ConvertDictionaryToPurchaseOrder(Dictionary<string, object> dict)
-        {
-            var po = new PURCHASE_ORDER();
-            if (dict.TryGetValue("PURCHASE_ORDER_ID", out var poId)) po.PURCHASE_ORDER_ID = poId?.ToString();
-            if (dict.TryGetValue("PO_NUMBER", out var poNumber)) po.PO_NUMBER = poNumber?.ToString();
-            if (dict.TryGetValue("VENDOR_BA_ID", out var vendorBaId)) po.VENDOR_BA_ID = vendorBaId?.ToString();
-            if (dict.TryGetValue("PO_DATE", out var poDate)) po.PO_DATE = poDate != null ? Convert.ToDateTime(poDate) : (DateTime?)null;
-            if (dict.TryGetValue("EXPECTED_DELIVERY_DATE", out var expectedDate)) po.EXPECTED_DELIVERY_DATE = expectedDate != null ? Convert.ToDateTime(expectedDate) : (DateTime?)null;
-            if (dict.TryGetValue("STATUS", out var status)) po.STATUS = status?.ToString();
-            if (dict.TryGetValue("DESCRIPTION", out var description)) po.DESCRIPTION = description?.ToString();
-            if (dict.TryGetValue("ACTIVE_IND", out var activeInd)) po.ACTIVE_IND = activeInd?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_BY", out var createdBy)) po.ROW_CREATED_BY = createdBy?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_DATE", out var createdDate)) po.ROW_CREATED_DATE = createdDate != null ? Convert.ToDateTime(createdDate) : (DateTime?)null;
-            if (dict.TryGetValue("ROW_CHANGED_BY", out var changedBy)) po.ROW_CHANGED_BY = changedBy?.ToString();
-            if (dict.TryGetValue("ROW_CHANGED_DATE", out var changedDate)) po.ROW_CHANGED_DATE = changedDate != null ? Convert.ToDateTime(changedDate) : (DateTime?)null;
-            return po;
-        }
+     
     }
 }
 

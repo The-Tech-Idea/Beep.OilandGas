@@ -20,6 +20,11 @@ using Beep.OilandGas.Models.Data;
 using System.Reflection;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
+using TheTechIdea.Beep.ConfigUtil;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.ApiService.Models;
+using Beep.OilandGas.PPDM39.DataManagement.SeedData.Services;
 
 namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 {
@@ -56,11 +61,11 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             IPPDM39DefaultsRepository? defaults = null,
             IPPDMMetadataRepository? metadata = null,
             LOVManagementService? lovManagementService = null,
-            Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.CSVLOVImporter? csvLovImporter = null,
-            Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.PPDMStandardValueImporter? ppdmStandardValueImporter = null,
-            Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.IHSStandardValueImporter? ihsStandardValueImporter = null,
-            Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.StandardValueMapper? standardValueMapper = null,
-            Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMReferenceDataSeeder? referenceDataSeeder = null)
+            CSVLOVImporter? csvLovImporter = null,
+            PPDMStandardValueImporter? ppdmStandardValueImporter = null,
+            IHSStandardValueImporter? ihsStandardValueImporter = null,
+           StandardValueMapper? standardValueMapper = null,
+            PPDMReferenceDataSeeder? referenceDataSeeder = null)
         {
             _setupService = setupService ?? throw new ArgumentNullException(nameof(setupService));
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -214,7 +219,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     ScriptName = request?.ScriptName ?? "Unknown",
                     Success = false,
                     Message = "Script execution failed",
-                    ErrorDetails = ex.Message
+                    Exception = ex
                 });
             }
         }
@@ -1383,7 +1388,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 "mysql" or "mariadb" => $"Server={config.Host};Port={config.Port};Database={config.Database};User Id={config.Username};Password={config.Password};",
                 "oracle" => $"Data Source={config.Host}:{config.Port}/{config.Database};User Id={config.Username};Password={config.Password};",
                 "sqlite" => $"Data Source={config.Database};",
-                _ => config.ConnectionString ?? string.Empty
+                _ => config.ToConnectionProperties().ConnectionString ?? string.Empty
             };
         }
 
@@ -1789,30 +1794,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         }
 
         #endregion
-    }
+    
 
-    // Request DTOs for LOV import
-    public class LOVImportRequest
-    {
-        public string FilePath { get; set; } = string.Empty;
-        public string? TargetTable { get; set; }
-        public Dictionary<string, string>? ColumnMapping { get; set; }
-        public bool? SkipExisting { get; set; }
-        public string? UserId { get; set; }
-        public string? ConnectionName { get; set; }
-    }
-
-    // Request DTOs for controller
-    public class CheckDriverRequest
-    {
-        public string DatabaseType { get; set; } = string.Empty;
-    }
-
-    public class ExecuteScriptRequest
-    {
-        public ConnectionConfig Connection { get; set; } = null!;
-        public string ScriptName { get; set; } = string.Empty;
-    }
+  
 
         /// <summary>
         /// Extract all RA_* table names from PPDM scripts
@@ -1946,5 +1930,27 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 });
             }
         }
+    }
+    // Request DTOs for LOV import
+    public class LOVImportRequest
+    {
+        public string FilePath { get; set; } = string.Empty;
+        public string? TargetTable { get; set; }
+        public Dictionary<string, string>? ColumnMapping { get; set; }
+        public bool? SkipExisting { get; set; }
+        public string? UserId { get; set; }
+        public string? ConnectionName { get; set; }
+    }
+
+    // Request DTOs for controller
+    public class CheckDriverRequest
+    {
+        public string DatabaseType { get; set; } = string.Empty;
+    }
+
+    public class ExecuteScriptRequest
+    {
+        public ConnectionProperties Connection { get; set; } = null!;
+        public string ScriptName { get; set; } = string.Empty;
     }
 }

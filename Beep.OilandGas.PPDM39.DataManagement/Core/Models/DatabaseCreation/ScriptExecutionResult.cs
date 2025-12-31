@@ -18,6 +18,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation
         public int? RowsAffected { get; set; }
         public string? ExecutionLog { get; set; }
         public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public string ScriptName { get; set; }
+        public string Message { get; set; }
     }
 }
 

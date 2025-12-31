@@ -299,7 +299,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Models
         /// <summary>
         /// Date the application was created.
         /// </summary>
-        public DateTime CreatedDate { get; set; }
+        public DateTime? CreatedDate { get; set; }
 
         /// <summary>
         /// Date the application was submitted.

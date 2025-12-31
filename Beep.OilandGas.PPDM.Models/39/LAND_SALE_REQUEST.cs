@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
  namespace Beep.OilandGas.PPDM39.Models 
 {
-public partial class LAND_SALE_REQUEST: Entity
+public partial class LAND_SALE_REQUEST: Entity,IPPDMEntity
 
 {
 
@@ -98,8 +98,8 @@ private  System.String CONTACT_BA_IDValue;
 
           set { SetProperty(ref  CONTACT_BA_IDValue, value); }
         } 
-private  System.DateTime CRITICAL_DATEValue; 
- public System.DateTime CRITICAL_DATE
+private  System.DateTime? CRITICAL_DATEValue; 
+ public System.DateTime? CRITICAL_DATE
         {  
             get  
             {  
@@ -118,8 +118,8 @@ private  System.String DRILLING_PRIORITY_INDValue;
 
           set { SetProperty(ref  DRILLING_PRIORITY_INDValue, value); }
         } 
-private  System.DateTime EFFECTIVE_DATEValue; 
- public System.DateTime EFFECTIVE_DATE
+private  System.DateTime? EFFECTIVE_DATEValue; 
+ public System.DateTime? EFFECTIVE_DATE
         {  
             get  
             {  
@@ -128,8 +128,8 @@ private  System.DateTime EFFECTIVE_DATEValue;
 
           set { SetProperty(ref  EFFECTIVE_DATEValue, value); }
         } 
-private  System.DateTime EXPIRY_DATEValue; 
- public System.DateTime EXPIRY_DATE
+private  System.DateTime? EXPIRY_DATEValue; 
+ public System.DateTime? EXPIRY_DATE
         {  
             get  
             {  
@@ -238,8 +238,8 @@ private  System.String LAND_SALE_OFFERING_IDValue;
 
           set { SetProperty(ref  LAND_SALE_OFFERING_IDValue, value); }
         } 
-private  System.DateTime LESSOR_REFUSED_DATEValue; 
- public System.DateTime LESSOR_REFUSED_DATE
+private  System.DateTime? LESSOR_REFUSED_DATEValue; 
+ public System.DateTime? LESSOR_REFUSED_DATE
         {  
             get  
             {  
@@ -308,8 +308,8 @@ private  System.String REMARKValue;
 
           set { SetProperty(ref  REMARKValue, value); }
         } 
-private  System.DateTime REQUESTED_SALE_DATEValue; 
- public System.DateTime REQUESTED_SALE_DATE
+private  System.DateTime? REQUESTED_SALE_DATEValue; 
+ public System.DateTime? REQUESTED_SALE_DATE
         {  
             get  
             {  
@@ -338,8 +338,8 @@ private  System.String REQUESTERValue;
 
           set { SetProperty(ref  REQUESTERValue, value); }
         } 
-private  System.DateTime REQUEST_CANCEL_DATEValue; 
- public System.DateTime REQUEST_CANCEL_DATE
+private  System.DateTime? REQUEST_CANCEL_DATEValue; 
+ public System.DateTime? REQUEST_CANCEL_DATE
         {  
             get  
             {  
@@ -358,8 +358,8 @@ private  System.String REQUEST_DESCRIPTIONValue;
 
           set { SetProperty(ref  REQUEST_DESCRIPTIONValue, value); }
         } 
-private  System.DateTime REQUEST_RECEIVED_DATEValue; 
- public System.DateTime REQUEST_RECEIVED_DATE
+private  System.DateTime? REQUEST_RECEIVED_DATEValue; 
+ public System.DateTime? REQUEST_RECEIVED_DATE
         {  
             get  
             {  
@@ -398,8 +398,8 @@ private  System.String REQUEST_TYPEValue;
 
           set { SetProperty(ref  REQUEST_TYPEValue, value); }
         } 
-private  System.DateTime RESPONSE_DATEValue; 
- public System.DateTime RESPONSE_DATE
+private  System.DateTime? RESPONSE_DATEValue; 
+ public System.DateTime? RESPONSE_DATE
         {  
             get  
             {  
@@ -428,8 +428,8 @@ private  System.String SOURCEValue;
 
           set { SetProperty(ref  SOURCEValue, value); }
         } 
-private  System.DateTime SUBMITTED_DATEValue; 
- public System.DateTime SUBMITTED_DATE
+private  System.DateTime? SUBMITTED_DATEValue; 
+ public System.DateTime? SUBMITTED_DATE
         {  
             get  
             {  
@@ -488,8 +488,8 @@ private  System.String WELL_SOURCEValue;
 
           set { SetProperty(ref  WELL_SOURCEValue, value); }
         } 
-private  System.DateTime WITHDRAWN_DATEValue; 
- public System.DateTime WITHDRAWN_DATE
+private  System.DateTime? WITHDRAWN_DATEValue; 
+ public System.DateTime? WITHDRAWN_DATE
         {  
             get  
             {  
@@ -508,8 +508,8 @@ private  System.String ROW_CHANGED_BYValue;
 
           set { SetProperty(ref  ROW_CHANGED_BYValue, value); }
         } 
-private  System.DateTime ROW_CHANGED_DATEValue; 
- public System.DateTime ROW_CHANGED_DATE
+private  System.DateTime? ROW_CHANGED_DATEValue; 
+ public System.DateTime? ROW_CHANGED_DATE
         {  
             get  
             {  
@@ -528,8 +528,8 @@ private  System.String ROW_CREATED_BYValue;
 
           set { SetProperty(ref  ROW_CREATED_BYValue, value); }
         } 
-private  System.DateTime ROW_CREATED_DATEValue; 
- public System.DateTime ROW_CREATED_DATE
+private  System.DateTime? ROW_CREATED_DATEValue; 
+ public System.DateTime? ROW_CREATED_DATE
         {  
             get  
             {  
@@ -538,8 +538,8 @@ private  System.DateTime ROW_CREATED_DATEValue;
 
           set { SetProperty(ref  ROW_CREATED_DATEValue, value); }
         } 
-private  System.DateTime ROW_EFFECTIVE_DATEValue; 
- public System.DateTime ROW_EFFECTIVE_DATE
+private  System.DateTime? ROW_EFFECTIVE_DATEValue; 
+ public System.DateTime? ROW_EFFECTIVE_DATE
         {  
             get  
             {  
@@ -548,8 +548,8 @@ private  System.DateTime ROW_EFFECTIVE_DATEValue;
 
           set { SetProperty(ref  ROW_EFFECTIVE_DATEValue, value); }
         } 
-private  System.DateTime ROW_EXPIRY_DATEValue; 
- public System.DateTime ROW_EXPIRY_DATE
+private  System.DateTime? ROW_EXPIRY_DATEValue; 
+ public System.DateTime? ROW_EXPIRY_DATE
         {  
             get  
             {  

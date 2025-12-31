@@ -1,5 +1,6 @@
 using System;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Core.Common
 {
@@ -156,6 +157,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Common
                 throw new ArgumentNullException(nameof(entity));
 
             entity.ROW_EXPIRY_DATE = expiryDate ?? DateTime.UtcNow;
+        }
+
+        public void SetCommonColumns(RECEIVABLE entity, string connName)
+        {
+            throw new NotImplementedException();
         }
     }
 }

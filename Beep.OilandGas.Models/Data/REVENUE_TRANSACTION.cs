@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class REVENUE_TRANSACTION : Entity
+    public partial class REVENUE_TRANSACTION : Entity,IPPDMEntity
     {
         private System.String REVENUE_TRANSACTION_IDValue;
         public System.String REVENUE_TRANSACTION_ID

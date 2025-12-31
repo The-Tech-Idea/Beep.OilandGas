@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class REGULATED_PRICE : Entity
+    public partial class REGULATED_PRICE : Entity,IPPDMEntity
     {
         private System.String REGULATED_PRICE_IDValue;
         public System.String REGULATED_PRICE_ID

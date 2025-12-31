@@ -250,8 +250,8 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
                 return Enumerable.Empty<string>();
 
             return results
-                .Where(r => r.ContainsKey("INDEX_NAME") && r["INDEX_NAME"] != null)
-                .Select(r => r["INDEX_NAME"]?.ToString() ?? string.Empty)
+                .Where(r => r is Dictionary<string, object> dict && dict.ContainsKey("INDEX_NAME") && dict["INDEX_NAME"] != null)
+                .Select(r => ((Dictionary<string, object>)r)["INDEX_NAME"]?.ToString() ?? string.Empty)
                 .Distinct()
                 .Where(name => !string.IsNullOrEmpty(name));
         }

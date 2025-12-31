@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
  namespace Beep.OilandGas.PPDM39.Models 
 {
-public partial class PDEN: Entity
+public partial class PDEN: Entity,IPPDMEntity
 
 {
 
@@ -88,8 +88,8 @@ private  System.String CURRENT_PROD_STR_NAMEValue;
 
           set { SetProperty(ref  CURRENT_PROD_STR_NAMEValue, value); }
         } 
-private  System.DateTime CURRENT_STATUS_DATEValue; 
- public System.DateTime CURRENT_STATUS_DATE
+private  System.DateTime? CURRENT_STATUS_DATEValue; 
+ public System.DateTime? CURRENT_STATUS_DATE
         {  
             get  
             {  
@@ -108,8 +108,8 @@ private  System.String CURRENT_WELL_STR_NUMBERValue;
 
           set { SetProperty(ref  CURRENT_WELL_STR_NUMBERValue, value); }
         } 
-private  System.DateTime EFFECTIVE_DATEValue; 
- public System.DateTime EFFECTIVE_DATE
+private  System.DateTime? EFFECTIVE_DATEValue; 
+ public System.DateTime? EFFECTIVE_DATE
         {  
             get  
             {  
@@ -128,8 +128,8 @@ private  System.String ENHANCED_RECOVERY_TYPEValue;
 
           set { SetProperty(ref  ENHANCED_RECOVERY_TYPEValue, value); }
         } 
-private  System.DateTime EXPIRY_DATEValue; 
- public System.DateTime EXPIRY_DATE
+private  System.DateTime? EXPIRY_DATEValue; 
+ public System.DateTime? EXPIRY_DATE
         {  
             get  
             {  
@@ -148,8 +148,8 @@ private  System.String FIELD_IDValue;
 
           set { SetProperty(ref  FIELD_IDValue, value); }
         } 
-private  System.DateTime LAST_INJECTION_DATEValue; 
- public System.DateTime LAST_INJECTION_DATE
+private  System.DateTime? LAST_INJECTION_DATEValue; 
+ public System.DateTime? LAST_INJECTION_DATE
         {  
             get  
             {  
@@ -158,8 +158,8 @@ private  System.DateTime LAST_INJECTION_DATEValue;
 
           set { SetProperty(ref  LAST_INJECTION_DATEValue, value); }
         } 
-private  System.DateTime LAST_PRODUCTION_DATEValue; 
- public System.DateTime LAST_PRODUCTION_DATE
+private  System.DateTime? LAST_PRODUCTION_DATEValue; 
+ public System.DateTime? LAST_PRODUCTION_DATE
         {  
             get  
             {  
@@ -168,8 +168,8 @@ private  System.DateTime LAST_PRODUCTION_DATEValue;
 
           set { SetProperty(ref  LAST_PRODUCTION_DATEValue, value); }
         } 
-private  System.DateTime LAST_REPORTED_DATEValue; 
- public System.DateTime LAST_REPORTED_DATE
+private  System.DateTime? LAST_REPORTED_DATEValue; 
+ public System.DateTime? LAST_REPORTED_DATE
         {  
             get  
             {  
@@ -198,8 +198,8 @@ private  System.String LOCATION_DESC_TYPEValue;
 
           set { SetProperty(ref  LOCATION_DESC_TYPEValue, value); }
         } 
-private  System.DateTime ON_INJECTION_DATEValue; 
- public System.DateTime ON_INJECTION_DATE
+private  System.DateTime? ON_INJECTION_DATEValue; 
+ public System.DateTime? ON_INJECTION_DATE
         {  
             get  
             {  
@@ -208,8 +208,8 @@ private  System.DateTime ON_INJECTION_DATEValue;
 
           set { SetProperty(ref  ON_INJECTION_DATEValue, value); }
         } 
-private  System.DateTime ON_PRODUCTION_DATEValue; 
- public System.DateTime ON_PRODUCTION_DATE
+private  System.DateTime? ON_PRODUCTION_DATEValue; 
+ public System.DateTime? ON_PRODUCTION_DATE
         {  
             get  
             {  
@@ -388,8 +388,8 @@ private  System.String ROW_CHANGED_BYValue;
 
           set { SetProperty(ref  ROW_CHANGED_BYValue, value); }
         } 
-private  System.DateTime ROW_CHANGED_DATEValue; 
- public System.DateTime ROW_CHANGED_DATE
+private  System.DateTime? ROW_CHANGED_DATEValue; 
+ public System.DateTime? ROW_CHANGED_DATE
         {  
             get  
             {  
@@ -408,8 +408,8 @@ private  System.String ROW_CREATED_BYValue;
 
           set { SetProperty(ref  ROW_CREATED_BYValue, value); }
         } 
-private  System.DateTime ROW_CREATED_DATEValue; 
- public System.DateTime ROW_CREATED_DATE
+private  System.DateTime? ROW_CREATED_DATEValue; 
+ public System.DateTime? ROW_CREATED_DATE
         {  
             get  
             {  
@@ -418,8 +418,8 @@ private  System.DateTime ROW_CREATED_DATEValue;
 
           set { SetProperty(ref  ROW_CREATED_DATEValue, value); }
         } 
-private  System.DateTime ROW_EFFECTIVE_DATEValue; 
- public System.DateTime ROW_EFFECTIVE_DATE
+private  System.DateTime? ROW_EFFECTIVE_DATEValue; 
+ public System.DateTime? ROW_EFFECTIVE_DATE
         {  
             get  
             {  
@@ -428,8 +428,8 @@ private  System.DateTime ROW_EFFECTIVE_DATEValue;
 
           set { SetProperty(ref  ROW_EFFECTIVE_DATEValue, value); }
         } 
-private  System.DateTime ROW_EXPIRY_DATEValue; 
- public System.DateTime ROW_EXPIRY_DATE
+private  System.DateTime? ROW_EXPIRY_DATEValue; 
+ public System.DateTime? ROW_EXPIRY_DATE
         {  
             get  
             {  

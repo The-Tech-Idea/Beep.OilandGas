@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
  namespace Beep.OilandGas.PPDM39.Models 
 {
-public partial class WELL: Entity
+public partial class WELL: Entity,IPPDMEntity
 
 {
 
@@ -18,8 +18,8 @@ private  System.String UWIValue;
 
           set { SetProperty(ref  UWIValue, value); }
         } 
-private  System.DateTime ABANDONMENT_DATEValue; 
- public System.DateTime ABANDONMENT_DATE
+private  System.DateTime? ABANDONMENT_DATEValue; 
+ public System.DateTime? ABANDONMENT_DATE
         {  
             get  
             {  
@@ -158,8 +158,8 @@ private  System.String CASING_FLANGE_ELEV_OUOMValue;
 
           set { SetProperty(ref  CASING_FLANGE_ELEV_OUOMValue, value); }
         } 
-private  System.DateTime COMPLETION_DATEValue; 
- public System.DateTime COMPLETION_DATE
+private  System.DateTime? COMPLETION_DATEValue; 
+ public System.DateTime? COMPLETION_DATE
         {  
             get  
             {  
@@ -168,8 +168,8 @@ private  System.DateTime COMPLETION_DATEValue;
 
           set { SetProperty(ref  COMPLETION_DATEValue, value); }
         } 
-private  System.DateTime CONFIDENTIAL_DATEValue; 
- public System.DateTime CONFIDENTIAL_DATE
+private  System.DateTime? CONFIDENTIAL_DATEValue; 
+ public System.DateTime? CONFIDENTIAL_DATE
         {  
             get  
             {  
@@ -248,8 +248,8 @@ private  System.String CURRENT_STATUSValue;
 
           set { SetProperty(ref  CURRENT_STATUSValue, value); }
         } 
-private  System.DateTime CURRENT_STATUS_DATEValue; 
- public System.DateTime CURRENT_STATUS_DATE
+private  System.DateTime? CURRENT_STATUS_DATEValue; 
+ public System.DateTime? CURRENT_STATUS_DATE
         {  
             get  
             {  
@@ -368,8 +368,8 @@ private  System.String DRILL_TD_OUOMValue;
 
           set { SetProperty(ref  DRILL_TD_OUOMValue, value); }
         } 
-private  System.DateTime EFFECTIVE_DATEValue; 
- public System.DateTime EFFECTIVE_DATE
+private  System.DateTime? EFFECTIVE_DATEValue; 
+ public System.DateTime? EFFECTIVE_DATE
         {  
             get  
             {  
@@ -398,8 +398,8 @@ private  System.String ENVIRONMENT_TYPEValue;
 
           set { SetProperty(ref  ENVIRONMENT_TYPEValue, value); }
         } 
-private  System.DateTime EXPIRY_DATEValue; 
- public System.DateTime EXPIRY_DATE
+private  System.DateTime? EXPIRY_DATEValue; 
+ public System.DateTime? EXPIRY_DATE
         {  
             get  
             {  
@@ -418,8 +418,8 @@ private  System.String FAULTED_INDValue;
 
           set { SetProperty(ref  FAULTED_INDValue, value); }
         } 
-private  System.DateTime FINAL_DRILL_DATEValue; 
- public System.DateTime FINAL_DRILL_DATE
+private  System.DateTime? FINAL_DRILL_DATEValue; 
+ public System.DateTime? FINAL_DRILL_DATE
         {  
             get  
             {  
@@ -768,8 +768,8 @@ private  System.String REMARKValue;
 
           set { SetProperty(ref  REMARKValue, value); }
         } 
-private  System.DateTime RIG_ON_SITE_DATEValue; 
- public System.DateTime RIG_ON_SITE_DATE
+private  System.DateTime? RIG_ON_SITE_DATEValue; 
+ public System.DateTime? RIG_ON_SITE_DATE
         {  
             get  
             {  
@@ -778,8 +778,8 @@ private  System.DateTime RIG_ON_SITE_DATEValue;
 
           set { SetProperty(ref  RIG_ON_SITE_DATEValue, value); }
         } 
-private  System.DateTime RIG_RELEASE_DATEValue; 
- public System.DateTime RIG_RELEASE_DATE
+private  System.DateTime? RIG_RELEASE_DATEValue; 
+ public System.DateTime? RIG_RELEASE_DATE
         {  
             get  
             {  
@@ -818,8 +818,8 @@ private  System.String SOURCE_DOCUMENT_IDValue;
 
           set { SetProperty(ref  SOURCE_DOCUMENT_IDValue, value); }
         } 
-private  System.DateTime SPUD_DATEValue; 
- public System.DateTime SPUD_DATE
+private  System.DateTime? SPUD_DATEValue; 
+ public System.DateTime? SPUD_DATE
         {  
             get  
             {  
@@ -1108,8 +1108,8 @@ private  System.String ROW_CHANGED_BYValue;
 
           set { SetProperty(ref  ROW_CHANGED_BYValue, value); }
         } 
-private  System.DateTime ROW_CHANGED_DATEValue; 
- public System.DateTime ROW_CHANGED_DATE
+private  System.DateTime? ROW_CHANGED_DATEValue; 
+ public System.DateTime? ROW_CHANGED_DATE
         {  
             get  
             {  
@@ -1128,8 +1128,8 @@ private  System.String ROW_CREATED_BYValue;
 
           set { SetProperty(ref  ROW_CREATED_BYValue, value); }
         } 
-private  System.DateTime ROW_CREATED_DATEValue; 
- public System.DateTime ROW_CREATED_DATE
+private  System.DateTime? ROW_CREATED_DATEValue; 
+ public System.DateTime? ROW_CREATED_DATE
         {  
             get  
             {  
@@ -1138,8 +1138,8 @@ private  System.DateTime ROW_CREATED_DATEValue;
 
           set { SetProperty(ref  ROW_CREATED_DATEValue, value); }
         } 
-private  System.DateTime ROW_EFFECTIVE_DATEValue; 
- public System.DateTime ROW_EFFECTIVE_DATE
+private  System.DateTime? ROW_EFFECTIVE_DATEValue; 
+ public System.DateTime? ROW_EFFECTIVE_DATE
         {  
             get  
             {  
@@ -1148,8 +1148,8 @@ private  System.DateTime ROW_EFFECTIVE_DATEValue;
 
           set { SetProperty(ref  ROW_EFFECTIVE_DATEValue, value); }
         } 
-private  System.DateTime ROW_EXPIRY_DATEValue; 
- public System.DateTime ROW_EXPIRY_DATE
+private  System.DateTime? ROW_EXPIRY_DATEValue; 
+ public System.DateTime? ROW_EXPIRY_DATE
         {  
             get  
             {  

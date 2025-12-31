@@ -77,6 +77,8 @@ namespace Beep.OilandGas.SuckerRodPumping.Models
         /// Pump efficiency (0-1).
         /// </summary>
         public decimal PumpEfficiency { get; set; } = 0.85m;
+        public decimal FluidLevel { get; set; }
+        public decimal FluidDensity { get; set; }
     }
 
     /// <summary>
@@ -238,46 +240,25 @@ namespace Beep.OilandGas.SuckerRodPumping.Models
         public decimal Weight { get; set; }
     }
 
-    /// <summary>
-    /// Represents pump card (load vs position).
-    /// </summary>
-    public class PumpCard
-    {
-        /// <summary>
-        /// Load vs position points.
-        /// </summary>
-        public List<PumpCardPoint> Points { get; set; } = new();
+    ///// <summary>
+    ///// Represents pump card (load vs position).
+    ///// </summary>
+   
 
-        /// <summary>
-        /// Peak load in pounds.
-        /// </summary>
-        public decimal PeakLoad { get; set; }
+    ///// <summary>
+    ///// Represents a point on pump card.
+    ///// </summary>
+    //public class PumpCardPoint
+    //{
+    //    /// <summary>
+    //    /// Position (0-1, where 0 = bottom of stroke, 1 = top of stroke).
+    //    /// </summary>
+    //    public decimal Position { get; set; }
 
-        /// <summary>
-        /// Minimum load in pounds.
-        /// </summary>
-        public decimal MinimumLoad { get; set; }
-
-        /// <summary>
-        /// Net area (pump card area) in lb-in.
-        /// </summary>
-        public decimal NetArea { get; set; }
-    }
-
-    /// <summary>
-    /// Represents a point on pump card.
-    /// </summary>
-    public class PumpCardPoint
-    {
-        /// <summary>
-        /// Position (0-1, where 0 = bottom of stroke, 1 = top of stroke).
-        /// </summary>
-        public decimal Position { get; set; }
-
-        /// <summary>
-        /// Load in pounds.
-        /// </summary>
-        public decimal Load { get; set; }
-    }
+    //    /// <summary>
+    //    /// Load in pounds.
+    //    /// </summary>
+    //    public decimal Load { get; set; }
+    //}
 }
 

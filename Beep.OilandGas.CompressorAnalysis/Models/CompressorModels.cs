@@ -175,6 +175,10 @@ namespace Beep.OilandGas.CompressorAnalysis.Models
         /// Overall efficiency (0-1).
         /// </summary>
         public decimal OverallEfficiency { get; set; }
+        public decimal PolytropicEfficiency { get; set; }
+        public decimal AdiabaticEfficiency { get; set; }
+        public decimal? CylinderDisplacement { get; set; }
+        public decimal? VolumetricEfficiency { get; set; }
     }
 
     /// <summary>

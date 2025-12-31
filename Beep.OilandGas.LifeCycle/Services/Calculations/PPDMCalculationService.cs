@@ -52,6 +52,7 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using System.Text.Json;
 using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.LifeCycle.Services.Calculations
 {
@@ -253,58 +254,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             return _flashResultRepository;
         }
 
-        /// <summary>
-        /// Converts a DTO to Entity or Dictionary for storage
-        /// NOTE: Entity classes for DCA_CALCULATION, ECONOMIC_ANALYSIS, NODAL_ANALYSIS tables are not yet available.
-        /// When Entity classes are created, this method should be updated to convert DTO → Entity directly.
-        /// </summary>
-        private object ConvertDtoToEntityOrDictionary<T>(T dto) where T : class
-        {
-            // TODO: When Entity classes (DCA_CALCULATION, ECONOMIC_ANALYSIS, NODAL_ANALYSIS) are available,
-            // create DTO → Entity conversion methods and use Entity objects directly.
-            // For now, using Dictionary as fallback until Entity classes are created.
-            
-            var json = JsonSerializer.Serialize(dto);
-            var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
-            
-            // Ensure CalculationId is set if it's the ID property
-            if (dto is DCAResult dcaResult && !string.IsNullOrEmpty(dcaResult.CalculationId))
-            {
-                dict["CALCULATION_ID"] = dcaResult.CalculationId;
-            }
-            else if (dto is EconomicAnalysisResult economicResult && !string.IsNullOrEmpty(economicResult.CalculationId))
-            {
-                dict["CALCULATION_ID"] = economicResult.CalculationId;
-            }
-            else if (dto is NodalAnalysisResult nodalResult && !string.IsNullOrEmpty(nodalResult.CalculationId))
-            {
-                dict["CALCULATION_ID"] = nodalResult.CalculationId;
-            }
-
-            return dict ?? new Dictionary<string, object>();
-        }
-
-        /// <summary>
-        /// Converts Entity or Dictionary from storage to a DTO
-        /// NOTE: Entity classes for calculation tables are not yet available.
-        /// When Entity classes are created, this method should be updated to convert Entity → DTO directly.
-        /// </summary>
-        private T ConvertEntityOrDictionaryToDto<T>(object entityOrDict) where T : class
-        {
-            // TODO: When Entity classes are available, convert Entity → DTO directly.
-            // For now, handling Dictionary as fallback.
-            
-            if (entityOrDict is Dictionary<string, object> dict)
-            {
-                var json = JsonSerializer.Serialize(dict);
-                return JsonSerializer.Deserialize<T>(json) ?? Activator.CreateInstance<T>();
-            }
-            
-            // If it's already an Entity object, serialize and deserialize to DTO
-            var entityJson = JsonSerializer.Serialize(entityOrDict);
-            return JsonSerializer.Deserialize<T>(entityJson) ?? Activator.CreateInstance<T>();
-        }
-
+      
         public async Task<DCAResult> PerformDCAAnalysisAsync(DCARequest request)
         {
             return await PerformDCAAnalysisAsync(request, null, null);
@@ -400,8 +350,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 // Step 6: Store result in database
                 var repository = await GetDCAResultRepositoryAsync();
-                var entityOrDict = ConvertDtoToEntityOrDictionary(result);
-                await repository.InsertAsync(entityOrDict, request.UserId ?? "system");
+              
+                await repository.InsertAsync(result, request.UserId ?? "system");
 
                 _logger?.LogInformation("DCA calculation completed successfully: {CalculationId}, R²: {RSquared}, RMSE: {RMSE}", 
                     result.CalculationId, result.R2, result.RMSE);
@@ -433,8 +383,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetDCAResultRepositoryAsync();
-                    var entityOrDict = ConvertDtoToEntityOrDictionary(errorResult);
-                    await repository.InsertAsync(entityOrDict, request.UserId ?? "system");
+
+                    await repository.InsertAsync(errorResult, request.UserId ?? "system");
                 }
                 catch (Exception storeEx)
                 {
@@ -873,8 +823,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 // Step 6: Store result in database
                 var repository = await GetEconomicResultRepositoryAsync();
-                var entityOrDict = ConvertDtoToEntityOrDictionary(result);
-                await repository.InsertAsync(dict, request.UserId ?? "system");
+
+                await repository.InsertAsync(result, request.UserId ?? "system");
 
                 _logger?.LogInformation("Economic Analysis calculation completed: {CalculationId}, NPV: {NPV}, IRR: {IRR}%",
                     result.CalculationId, result.NetPresentValue, result.InternalRateOfReturn);
@@ -906,8 +856,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetEconomicResultRepositoryAsync();
-                    var entityOrDict = ConvertDtoToEntityOrDictionary(errorResult);
-                    await repository.InsertAsync(entityOrDict, request.UserId ?? "system");
+
+                    await repository.InsertAsync(errorResult, request.UserId ?? "system");
                 }
                 catch (Exception storeEx)
                 {
@@ -1064,8 +1014,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 // Step 8: Store result in database
                 var repository = await GetNodalResultRepositoryAsync();
-                var entityOrDict = ConvertDtoToEntityOrDictionary(result);
-                await repository.InsertAsync(dict, request.UserId ?? "system");
+
+                await repository.InsertAsync(result, request.UserId ?? "system");
 
                 _logger?.LogInformation("Nodal Analysis calculation completed: {CalculationId}, Operating Flow Rate: {FlowRate} BPD, Operating Pressure: {Pressure} psi",
                     result.CalculationId, result.OperatingFlowRate, result.OperatingPressure);
@@ -1098,8 +1048,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetNodalResultRepositoryAsync();
-                    var entityOrDict = ConvertDtoToEntityOrDictionary(errorResult);
-                    await repository.InsertAsync(entityOrDict, request.UserId ?? "system");
+
+                    await repository.InsertAsync(errorResult, request.UserId ?? "system");
                 }
                 catch (Exception storeEx)
                 {
@@ -4141,8 +4091,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 // Step 5: Store result in database
                 var repository = await GetDCAResultRepositoryAsync();
-                var entityOrDict = ConvertDtoToEntityOrDictionary(result);
-                await repository.InsertAsync(dict, request.UserId ?? "system");
+
+                await repository.InsertAsync(result, request.UserId ?? "system");
 
                 _logger?.LogInformation("Physics-based forecast completed successfully: {CalculationId}, ForecastType: {ForecastType}", 
                     result.CalculationId, forecastType);
@@ -4174,8 +4124,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetDCAResultRepositoryAsync();
-                    var entityOrDict = ConvertDtoToEntityOrDictionary(errorResult);
-                    await repository.InsertAsync(entityOrDict, request.UserId ?? "system");
+                    
+                    await repository.InsertAsync(errorResult, request.UserId ?? "system");
                 }
                 catch (Exception storeEx)
                 {

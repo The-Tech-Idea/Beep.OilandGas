@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
  namespace Beep.OilandGas.PPDM39.Models 
 {
-public partial class R_TRAP_TYPE: Entity
+public partial class R_TRAP_TYPE: Entity,IPPDMEntity
 
 {
 

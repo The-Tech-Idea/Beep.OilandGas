@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class ASSET_RETIREMENT_OBLIGATION : Entity
+    public partial class ASSET_RETIREMENT_OBLIGATION : Entity,IPPDMEntity
     {
         private String ARO_IDValue;
         public String ARO_ID
@@ -19,7 +19,12 @@ namespace Beep.OilandGas.Models.Data
             get { return this.FIELD_IDValue; }
             set { SetProperty(ref FIELD_IDValue, value); }
         }
-
+        private System.String ROW_QUALITYValue;
+        public System.String ROW_QUALITY
+        {
+            get { return this.ROW_QUALITYValue; }
+            set { SetProperty(ref ROW_QUALITYValue, value); }
+        }
         private String WELL_IDValue;
         public String WELL_ID
         {

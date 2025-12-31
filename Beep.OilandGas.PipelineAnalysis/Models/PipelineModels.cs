@@ -78,6 +78,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Models
         /// Base temperature in Rankine.
         /// </summary>
         public decimal BaseTemperature { get; set; } = 520m;
+        public decimal ZFactor { get; set; }
     }
 
     /// <summary>
@@ -104,6 +105,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Models
         /// Liquid viscosity in cp.
         /// </summary>
         public decimal LiquidViscosity { get; set; } = 1.0m;
+        public decimal LiquidDensity { get; set; }
     }
 
     /// <summary>

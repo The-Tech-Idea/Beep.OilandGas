@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class PRODUCTION_ALLOCATION : Entity
+    public partial class PRODUCTION_ALLOCATION : Entity,IPPDMEntity
     {
         private String PRODUCTION_ALLOCATION_IDValue;
         public String PRODUCTION_ALLOCATION_ID
@@ -19,7 +19,12 @@ namespace Beep.OilandGas.Models.Data
             get { return this.PDEN_IDValue; }
             set { SetProperty(ref PDEN_IDValue, value); }
         }
-
+        private System.String ROW_QUALITYValue;
+        public System.String ROW_QUALITY
+        {
+            get { return this.ROW_QUALITYValue; }
+            set { SetProperty(ref ROW_QUALITYValue, value); }
+        }
         private String FIELD_IDValue;
         public String FIELD_ID
         {
@@ -41,8 +46,8 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref POOL_IDValue, value); }
         }
 
-        private DateTime ALLOCATION_DATEValue;
-        public DateTime ALLOCATION_DATE
+        private DateTime? ALLOCATION_DATEValue;
+        public DateTime? ALLOCATION_DATE
         {
             get { return this.ALLOCATION_DATEValue; }
             set { SetProperty(ref ALLOCATION_DATEValue, value); }

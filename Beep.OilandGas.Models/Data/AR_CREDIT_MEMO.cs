@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class AR_CREDIT_MEMO : Entity
+    public partial class AR_CREDIT_MEMO : Entity,IPPDMEntity
     {
         private System.String AR_CREDIT_MEMO_IDValue;
         public System.String AR_CREDIT_MEMO_ID

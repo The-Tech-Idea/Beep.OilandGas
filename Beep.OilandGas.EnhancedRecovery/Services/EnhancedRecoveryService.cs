@@ -164,7 +164,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 OperationId = p.PDEN_ID ?? string.Empty,
                 WellUWI = string.Empty, // PDEN doesn't have UWI - injection operations may be field-level
                 InjectionType = p.PDEN_SUBTYPE ?? "INJECTION",
-                OperationDate = p.CURRENT_STATUS_DATE,
+                OperationDate = p.CURRENT_STATUS_DATE.Value,
                 Status = p.ACTIVE_IND == "Y" ? "Active" : "Inactive"
             }).ToList();
         }

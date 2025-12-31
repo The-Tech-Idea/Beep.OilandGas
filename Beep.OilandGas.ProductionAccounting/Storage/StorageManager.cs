@@ -357,8 +357,8 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
                 return 0m;
 
             return results
-                .Where(r => r.ContainsKey("CURRENT_INVENTORY") && r["CURRENT_INVENTORY"] != DBNull.Value)
-                .Sum(r => Convert.ToDecimal(r["CURRENT_INVENTORY"]));
+                .Where(r => r is Dictionary<string, object> dict && dict.ContainsKey("CURRENT_INVENTORY") && dict["CURRENT_INVENTORY"] != DBNull.Value)
+                .Sum(r => Convert.ToDecimal(((Dictionary<string, object>)r)["CURRENT_INVENTORY"]));
         }
 
         /// <summary>

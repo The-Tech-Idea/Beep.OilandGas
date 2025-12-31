@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class JOINT_OPERATING_AGREEMENT : Entity
+    public partial class JOINT_OPERATING_AGREEMENT : Entity,IPPDMEntity
     {
         private System.String JOA_IDValue;
         public System.String JOA_ID

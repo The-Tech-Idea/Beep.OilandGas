@@ -1,0 +1,1 @@
+﻿global using Beep.OilandGas.PPDM.Models;

@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
  namespace Beep.OilandGas.PPDM39.Models 
 {
-public partial class WELL_DIR_SRVY_VERSION: Entity
+public partial class WELL_DIR_SRVY_VERSION: Entity,IPPDMEntity
 
 {
 
@@ -188,8 +188,8 @@ private  System.String DIR_SURVEY_CLASSValue;
 
           set { SetProperty(ref  DIR_SURVEY_CLASSValue, value); }
         } 
-private  System.DateTime EFFECTIVE_DATEValue; 
- public System.DateTime EFFECTIVE_DATE
+private  System.DateTime? EFFECTIVE_DATEValue; 
+ public System.DateTime? EFFECTIVE_DATE
         {  
             get  
             {  
@@ -198,8 +198,8 @@ private  System.DateTime EFFECTIVE_DATEValue;
 
           set { SetProperty(ref  EFFECTIVE_DATEValue, value); }
         } 
-private  System.DateTime EXPIRY_DATEValue; 
- public System.DateTime EXPIRY_DATE
+private  System.DateTime? EXPIRY_DATEValue; 
+ public System.DateTime? EXPIRY_DATE
         {  
             get  
             {  
@@ -778,8 +778,8 @@ private  System.String SURVEY_DIGITAL_PRVDR_BA_IDValue;
 
           set { SetProperty(ref  SURVEY_DIGITAL_PRVDR_BA_IDValue, value); }
         } 
-private  System.DateTime SURVEY_END_DATEValue; 
- public System.DateTime SURVEY_END_DATE
+private  System.DateTime? SURVEY_END_DATEValue; 
+ public System.DateTime? SURVEY_END_DATE
         {  
             get  
             {  
@@ -848,8 +848,8 @@ private  System.String SURVEY_RUN_NUMValue;
 
           set { SetProperty(ref  SURVEY_RUN_NUMValue, value); }
         } 
-private  System.DateTime SURVEY_START_DATEValue; 
- public System.DateTime SURVEY_START_DATE
+private  System.DateTime? SURVEY_START_DATEValue; 
+ public System.DateTime? SURVEY_START_DATE
         {  
             get  
             {  
@@ -908,8 +908,8 @@ private  System.String ROW_CHANGED_BYValue;
 
           set { SetProperty(ref  ROW_CHANGED_BYValue, value); }
         } 
-private  System.DateTime ROW_CHANGED_DATEValue; 
- public System.DateTime ROW_CHANGED_DATE
+private  System.DateTime? ROW_CHANGED_DATEValue; 
+ public System.DateTime? ROW_CHANGED_DATE
         {  
             get  
             {  
@@ -928,8 +928,8 @@ private  System.String ROW_CREATED_BYValue;
 
           set { SetProperty(ref  ROW_CREATED_BYValue, value); }
         } 
-private  System.DateTime ROW_CREATED_DATEValue; 
- public System.DateTime ROW_CREATED_DATE
+private  System.DateTime? ROW_CREATED_DATEValue; 
+ public System.DateTime? ROW_CREATED_DATE
         {  
             get  
             {  
@@ -938,8 +938,8 @@ private  System.DateTime ROW_CREATED_DATEValue;
 
           set { SetProperty(ref  ROW_CREATED_DATEValue, value); }
         } 
-private  System.DateTime ROW_EFFECTIVE_DATEValue; 
- public System.DateTime ROW_EFFECTIVE_DATE
+private  System.DateTime? ROW_EFFECTIVE_DATEValue; 
+ public System.DateTime? ROW_EFFECTIVE_DATE
         {  
             get  
             {  
@@ -948,8 +948,8 @@ private  System.DateTime ROW_EFFECTIVE_DATEValue;
 
           set { SetProperty(ref  ROW_EFFECTIVE_DATEValue, value); }
         } 
-private  System.DateTime ROW_EXPIRY_DATEValue; 
- public System.DateTime ROW_EXPIRY_DATE
+private  System.DateTime? ROW_EXPIRY_DATEValue; 
+ public System.DateTime? ROW_EXPIRY_DATE
         {  
             get  
             {  

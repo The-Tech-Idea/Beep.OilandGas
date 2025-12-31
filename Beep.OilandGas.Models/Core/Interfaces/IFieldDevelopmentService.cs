@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using TheTechIdea.Beep.Report;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

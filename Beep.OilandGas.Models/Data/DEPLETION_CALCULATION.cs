@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class DEPLETION_CALCULATION : Entity
+    public partial class DEPLETION_CALCULATION : Entity,IPPDMEntity
     {
         private String DEPLETION_IDValue;
         public String DEPLETION_ID
@@ -180,7 +180,12 @@ namespace Beep.OilandGas.Models.Data
             get { return this.ROW_EXPIRY_DATEValue; }
             set { SetProperty(ref ROW_EXPIRY_DATEValue, value); }
         }
-
+        private System.String ROW_QUALITYValue;
+        public System.String ROW_QUALITY
+        {
+            get { return this.ROW_QUALITYValue; }
+            set { SetProperty(ref ROW_QUALITYValue, value); }
+        }
         private String ROW_IDValue;
         public String ROW_ID
         {

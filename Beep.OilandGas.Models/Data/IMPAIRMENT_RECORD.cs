@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class IMPAIRMENT_RECORD : Entity
+    public partial class IMPAIRMENT_RECORD : Entity,IPPDMEntity
     {
         private System.String IMPAIRMENT_RECORD_IDValue;
         public System.String IMPAIRMENT_RECORD_ID

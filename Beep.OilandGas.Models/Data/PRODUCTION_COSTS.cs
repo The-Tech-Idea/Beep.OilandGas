@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class PRODUCTION_COSTS : Entity
+    public partial class PRODUCTION_COSTS : Entity,IPPDMEntity
     {
         private System.String PRODUCTION_COST_IDValue;
         public System.String PRODUCTION_COST_ID

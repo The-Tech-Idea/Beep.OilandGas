@@ -808,7 +808,28 @@ namespace Beep.OilandGas.Models.DTOs
         public decimal Position { get; set; } // inches (0 to stroke length)
         public decimal Load { get; set; } // lb
     }
+    public class PumpCard
+    {
+        /// <summary>
+        /// Load vs position points.
+        /// </summary>
+        public List<PumpCardPoint> Points { get; set; } = new();
 
+        /// <summary>
+        /// Peak load in pounds.
+        /// </summary>
+        public decimal PeakLoad { get; set; }
+
+        /// <summary>
+        /// Minimum load in pounds.
+        /// </summary>
+        public decimal MinimumLoad { get; set; }
+
+        /// <summary>
+        /// Net area (pump card area) in lb-in.
+        /// </summary>
+        public decimal NetArea { get; set; }
+    }
     #endregion
 
     #region Compressor Analysis DTOs

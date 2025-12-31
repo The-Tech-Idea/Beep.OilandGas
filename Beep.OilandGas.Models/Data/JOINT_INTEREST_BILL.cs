@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class JOINT_INTEREST_BILL : Entity
+    public partial class JOINT_INTEREST_BILL : Entity,IPPDMEntity
     {
         private String JIB_IDValue;
         public String JIB_ID
@@ -34,15 +34,15 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref OPERATOR_IDValue, value); }
         }
 
-        private DateTime BILL_PERIOD_START_DATEValue;
-        public DateTime BILL_PERIOD_START_DATE
+        private DateTime? BILL_PERIOD_START_DATEValue;
+        public DateTime? BILL_PERIOD_START_DATE
         {
             get { return this.BILL_PERIOD_START_DATEValue; }
             set { SetProperty(ref BILL_PERIOD_START_DATEValue, value); }
         }
 
-        private DateTime BILL_PERIOD_END_DATEValue;
-        public DateTime BILL_PERIOD_END_DATE
+        private DateTime? BILL_PERIOD_END_DATEValue;
+        public DateTime? BILL_PERIOD_END_DATE
         {
             get { return this.BILL_PERIOD_END_DATEValue; }
             set { SetProperty(ref BILL_PERIOD_END_DATEValue, value); }
@@ -152,7 +152,12 @@ namespace Beep.OilandGas.Models.Data
             get { return this.ROW_EXPIRY_DATEValue; }
             set { SetProperty(ref ROW_EXPIRY_DATEValue, value); }
         }
-
+        private System.String ROW_QUALITYValue;
+        public System.String ROW_QUALITY
+        {
+            get { return this.ROW_QUALITYValue; }
+            set { SetProperty(ref ROW_QUALITYValue, value); }
+        }
         private String ROW_IDValue;
         public String ROW_ID
         {

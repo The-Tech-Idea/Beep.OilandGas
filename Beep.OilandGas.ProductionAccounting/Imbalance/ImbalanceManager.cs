@@ -297,11 +297,6 @@ namespace Beep.OilandGas.ProductionAccounting.Imbalance
                 imbalance.Status = ImbalanceStatus.UnderDelivered;
 
             // Save to database
-            var connName = connectionName ?? _connectionName;
-            var dataSource = _editor.GetDataSource(connName);
-            if (dataSource == null)
-                throw new InvalidOperationException($"DataSource not found for connection: {connName}");
-
             var result = dataSource.InsertEntity(OIL_IMBALANCE_TABLE, imbalance);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)

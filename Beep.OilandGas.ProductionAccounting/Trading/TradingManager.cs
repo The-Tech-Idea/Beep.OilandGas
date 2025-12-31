@@ -241,8 +241,8 @@ namespace Beep.OilandGas.ProductionAccounting.Trading
             var commitmentFilters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "CONTRACT_ID", Operator = "=", FilterValue = transaction.ContractId },
-                new AppFilter { FieldName = "DELIVERY_PERIOD_START", Operator = "<=", FilterValue = transaction.TransactionDate.ToString("yyyy-MM-dd"), LogicalOperator = "AND" },
-                new AppFilter { FieldName = "DELIVERY_PERIOD_END", Operator = ">=", FilterValue = transaction.TransactionDate.ToString("yyyy-MM-dd"), LogicalOperator = "AND" }
+                new AppFilter { FieldName = "DELIVERY_PERIOD_START", Operator = "<=", FilterValue = transaction.TransactionDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "DELIVERY_PERIOD_END", Operator = ">=", FilterValue = transaction.TransactionDate.ToString("yyyy-MM-dd") }
             };
 
             var commitments = await dataSource.GetEntityAsync(EXCHANGE_COMMITMENT_TABLE, commitmentFilters);
@@ -264,7 +264,7 @@ namespace Beep.OilandGas.ProductionAccounting.Trading
                     {
                         new AppFilter { FieldName = "COMMITMENT_ID", Operator = "=", FilterValue = commitment.CommitmentId }
                     };
-                    dataSource.UpdateEntity(EXCHANGE_COMMITMENT_TABLE, commitment, updateFilters);
+                    dataSource.UpdateEntity(EXCHANGE_COMMITMENT_TABLE, commitment);
                 }
             }
 
@@ -299,8 +299,8 @@ namespace Beep.OilandGas.ProductionAccounting.Trading
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "CONTRACT_ID", Operator = "=", FilterValue = contractId },
-                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = ">=", FilterValue = startDate.ToString("yyyy-MM-dd"), LogicalOperator = "AND" },
-                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = endDate.ToString("yyyy-MM-dd"), LogicalOperator = "AND" }
+                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = ">=", FilterValue = startDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = endDate.ToString("yyyy-MM-dd") }
             };
 
             var results = await dataSource.GetEntityAsync(EXCHANGE_TRANSACTION_TABLE, filters);

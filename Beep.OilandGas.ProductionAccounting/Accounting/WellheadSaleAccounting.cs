@@ -1,6 +1,7 @@
 using System;
 using Beep.OilandGas.ProductionAccounting.Production;
 using Beep.OilandGas.ProductionAccounting.Pricing;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 
 namespace Beep.OilandGas.ProductionAccounting.Accounting
 {
@@ -104,7 +105,7 @@ namespace Beep.OilandGas.ProductionAccounting.Accounting
                 GrossVolume = sale.NetVolume, // Assume no BS&W for wellhead sales
                 BSWVolume = 0,
                 BSWPercentage = 0,
-                DispositionType = Production.DispositionType.Sale,
+                DispositionType = DispositionType.Sale,
                 Purchaser = sale.Purchaser,
                 PricePerBarrel = sale.PricePerBarrel,
                 MeasurementMethod = sale.MeasurementMethod

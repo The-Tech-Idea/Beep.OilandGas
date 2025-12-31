@@ -209,7 +209,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             {
                 ReportId = r.REPORT_ID ?? string.Empty,
                 OperationId = operationId,
-                ReportDate = r.EFFECTIVE_DATE,
+                ReportDate = r.EFFECTIVE_DATE.Value,
                 Remarks = r.REMARK
             }).ToList();
         }
@@ -268,7 +268,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
                 {
                     ReportId = r.REPORT_ID ?? string.Empty,
                     OperationId = well.UWI ?? string.Empty,
-                    ReportDate = r.EFFECTIVE_DATE,
+                    ReportDate = r.EFFECTIVE_DATE.Value,
                     Remarks = r.REMARK
                 }).ToList()
             };

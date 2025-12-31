@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class JIB_COST_ALLOCATION : Entity
+    public partial class JIB_COST_ALLOCATION : Entity,IPPDMEntity
     {
         private String JIB_COST_ALLOCATION_IDValue;
         public String JIB_COST_ALLOCATION_ID
@@ -19,7 +19,12 @@ namespace Beep.OilandGas.Models.Data
             get { return this.JIB_IDValue; }
             set { SetProperty(ref JIB_IDValue, value); }
         }
-
+        private System.String ROW_QUALITYValue;
+        public System.String ROW_QUALITY
+        {
+            get { return this.ROW_QUALITYValue; }
+            set { SetProperty(ref ROW_QUALITYValue, value); }
+        }
         private String FINANCE_IDValue;
         public String FINANCE_ID
         {

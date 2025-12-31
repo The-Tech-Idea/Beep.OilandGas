@@ -362,7 +362,7 @@ namespace Beep.OilandGas.ApiService.Services
                     entityType,
                     _connectionName,
                     "WORKFLOW_DEFINITION",
-                    _logger);
+                    (ILogger<PPDMGenericRepository>?)_logger);
             }
             return _workflowRepository;
         }
@@ -394,7 +394,7 @@ namespace Beep.OilandGas.ApiService.Services
                     entityType,
                     _connectionName,
                     "WORKFLOW_EXECUTION",
-                    _logger);
+                    (ILogger<PPDMGenericRepository>?)_logger);
             }
             return _workflowExecutionRepository;
         }

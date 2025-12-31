@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class INVENTORY_VALUATION : Entity
+    public partial class INVENTORY_VALUATION : Entity,IPPDMEntity
     {
         private System.String INVENTORY_VALUATION_IDValue;
         public System.String INVENTORY_VALUATION_ID

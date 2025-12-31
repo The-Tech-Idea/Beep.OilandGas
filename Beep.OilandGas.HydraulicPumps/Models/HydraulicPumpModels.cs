@@ -67,6 +67,7 @@ namespace Beep.OilandGas.HydraulicPumps.Models
         /// Desired production rate in bbl/day.
         /// </summary>
         public decimal DesiredProductionRate { get; set; }
+        public decimal PumpDepth { get; set; }
     }
 
     /// <summary>

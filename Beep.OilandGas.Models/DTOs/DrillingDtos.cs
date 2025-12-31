@@ -31,7 +31,7 @@ namespace Beep.OilandGas.Models.DTOs
     {
         public string ReportId { get; set; } = string.Empty;
         public string OperationId { get; set; } = string.Empty;
-        public DateTime ReportDate { get; set; }
+        public DateTime? ReportDate { get; set; }
         public decimal? Depth { get; set; }
         public string? Activity { get; set; }
         public decimal? Hours { get; set; }

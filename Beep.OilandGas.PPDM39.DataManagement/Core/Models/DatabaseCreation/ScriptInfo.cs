@@ -23,6 +23,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation
         public int ExecutionOrder { get; set; } // Order in which script should be executed
         public List<string> Dependencies { get; set; } = new List<string>(); // Scripts that must execute before this one
         public string? Category { get; set; } // Custom category for grouping
+        public object Name { get; set; }
+        public object Description { get; set; }
+        public bool IsSelected { get; set; }
     }
 }
 

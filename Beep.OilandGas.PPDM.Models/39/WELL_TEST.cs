@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
  namespace Beep.OilandGas.PPDM39.Models 
 {
-public partial class WELL_TEST: Entity
+public partial class WELL_TEST: Entity,IPPDMEntity
 
 {
 
@@ -288,8 +288,8 @@ private  System.String DAMAGE_QUALITYValue;
 
           set { SetProperty(ref  DAMAGE_QUALITYValue, value); }
         } 
-private  System.DateTime EFFECTIVE_DATEValue; 
- public System.DateTime EFFECTIVE_DATE
+private  System.DateTime? EFFECTIVE_DATEValue; 
+ public System.DateTime? EFFECTIVE_DATE
         {  
             get  
             {  
@@ -318,8 +318,8 @@ private  System.String EVENT_SOURCEValue;
 
           set { SetProperty(ref  EVENT_SOURCEValue, value); }
         } 
-private  System.DateTime EXPIRY_DATEValue; 
- public System.DateTime EXPIRY_DATE
+private  System.DateTime? EXPIRY_DATEValue; 
+ public System.DateTime? EXPIRY_DATE
         {  
             get  
             {  
@@ -768,8 +768,8 @@ private  System.Decimal SI_FLOW_RATIOValue;
 
           set { SetProperty(ref  SI_FLOW_RATIOValue, value); }
         } 
-private  System.DateTime START_TIMEValue; 
- public System.DateTime START_TIME
+private  System.DateTime? START_TIMEValue; 
+ public System.DateTime? START_TIME
         {  
             get  
             {  
@@ -918,8 +918,8 @@ private  System.String TEST_COMPANYValue;
 
           set { SetProperty(ref  TEST_COMPANYValue, value); }
         } 
-private  System.DateTime TEST_DATEValue; 
- public System.DateTime TEST_DATE
+private  System.DateTime? TEST_DATEValue; 
+ public System.DateTime? TEST_DATE
         {  
             get  
             {  
@@ -988,8 +988,8 @@ private  System.String TEST_SUBTYPEValue;
 
           set { SetProperty(ref  TEST_SUBTYPEValue, value); }
         } 
-private  System.DateTime TOOL_OPEN_TIMEValue; 
- public System.DateTime TOOL_OPEN_TIME
+private  System.DateTime? TOOL_OPEN_TIMEValue; 
+ public System.DateTime? TOOL_OPEN_TIME
         {  
             get  
             {  
@@ -1128,8 +1128,8 @@ private  System.String ROW_CHANGED_BYValue;
 
           set { SetProperty(ref  ROW_CHANGED_BYValue, value); }
         } 
-private  System.DateTime ROW_CHANGED_DATEValue; 
- public System.DateTime ROW_CHANGED_DATE
+private  System.DateTime? ROW_CHANGED_DATEValue; 
+ public System.DateTime? ROW_CHANGED_DATE
         {  
             get  
             {  
@@ -1148,8 +1148,8 @@ private  System.String ROW_CREATED_BYValue;
 
           set { SetProperty(ref  ROW_CREATED_BYValue, value); }
         } 
-private  System.DateTime ROW_CREATED_DATEValue; 
- public System.DateTime ROW_CREATED_DATE
+private  System.DateTime? ROW_CREATED_DATEValue; 
+ public System.DateTime? ROW_CREATED_DATE
         {  
             get  
             {  
@@ -1158,8 +1158,8 @@ private  System.DateTime ROW_CREATED_DATEValue;
 
           set { SetProperty(ref  ROW_CREATED_DATEValue, value); }
         } 
-private  System.DateTime ROW_EFFECTIVE_DATEValue; 
- public System.DateTime ROW_EFFECTIVE_DATE
+private  System.DateTime? ROW_EFFECTIVE_DATEValue; 
+ public System.DateTime? ROW_EFFECTIVE_DATE
         {  
             get  
             {  
@@ -1168,8 +1168,8 @@ private  System.DateTime ROW_EFFECTIVE_DATEValue;
 
           set { SetProperty(ref  ROW_EFFECTIVE_DATEValue, value); }
         } 
-private  System.DateTime ROW_EXPIRY_DATEValue; 
- public System.DateTime ROW_EXPIRY_DATE
+private  System.DateTime? ROW_EXPIRY_DATEValue; 
+ public System.DateTime? ROW_EXPIRY_DATE
         {  
             get  
             {  

@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class AMORTIZATION_RECORD : Entity
+    public partial class AMORTIZATION_RECORD : Entity,IPPDMEntity
     {
         private System.String AMORTIZATION_RECORD_IDValue;
         public System.String AMORTIZATION_RECORD_ID

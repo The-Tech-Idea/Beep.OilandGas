@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class UNPROVED_PROPERTY : Entity
+    public partial class UNPROVED_PROPERTY : Entity,IPPDMEntity
     {
         private System.String PROPERTY_IDValue;
         public System.String PROPERTY_ID

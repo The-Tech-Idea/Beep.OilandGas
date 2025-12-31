@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
  namespace Beep.OilandGas.PPDM39.Models 
 {
-public partial class LAND_RIGHT: Entity
+public partial class LAND_RIGHT: Entity,IPPDMEntity
 
 {
 
@@ -28,8 +28,8 @@ private  System.String LAND_RIGHT_IDValue;
 
           set { SetProperty(ref  LAND_RIGHT_IDValue, value); }
         } 
-private  System.DateTime ACQTN_DATEValue; 
- public System.DateTime ACQTN_DATE
+private  System.DateTime? ACQTN_DATEValue; 
+ public System.DateTime? ACQTN_DATE
         {  
             get  
             {  
@@ -108,8 +108,8 @@ private  System.String COST_CENTER_NUMValue;
 
           set { SetProperty(ref  COST_CENTER_NUMValue, value); }
         } 
-private  System.DateTime EFFECTIVE_DATEValue; 
- public System.DateTime EFFECTIVE_DATE
+private  System.DateTime? EFFECTIVE_DATEValue; 
+ public System.DateTime? EFFECTIVE_DATE
         {  
             get  
             {  
@@ -118,8 +118,8 @@ private  System.DateTime EFFECTIVE_DATEValue;
 
           set { SetProperty(ref  EFFECTIVE_DATEValue, value); }
         } 
-private  System.DateTime EXPIRY_DATEValue; 
- public System.DateTime EXPIRY_DATE
+private  System.DateTime? EXPIRY_DATEValue; 
+ public System.DateTime? EXPIRY_DATE
         {  
             get  
             {  
@@ -128,8 +128,8 @@ private  System.DateTime EXPIRY_DATEValue;
 
           set { SetProperty(ref  EXPIRY_DATEValue, value); }
         } 
-private  System.DateTime FIRST_PLATFORM_APPROVE_DATEValue; 
- public System.DateTime FIRST_PLATFORM_APPROVE_DATE
+private  System.DateTime? FIRST_PLATFORM_APPROVE_DATEValue; 
+ public System.DateTime? FIRST_PLATFORM_APPROVE_DATE
         {  
             get  
             {  
@@ -138,8 +138,8 @@ private  System.DateTime FIRST_PLATFORM_APPROVE_DATEValue;
 
           set { SetProperty(ref  FIRST_PLATFORM_APPROVE_DATEValue, value); }
         } 
-private  System.DateTime FIRST_PLATFORM_INSTALL_DATEValue; 
- public System.DateTime FIRST_PLATFORM_INSTALL_DATE
+private  System.DateTime? FIRST_PLATFORM_INSTALL_DATEValue; 
+ public System.DateTime? FIRST_PLATFORM_INSTALL_DATE
         {  
             get  
             {  
@@ -148,8 +148,8 @@ private  System.DateTime FIRST_PLATFORM_INSTALL_DATEValue;
 
           set { SetProperty(ref  FIRST_PLATFORM_INSTALL_DATEValue, value); }
         } 
-private  System.DateTime FIRST_PRODUCTION_DATEValue; 
- public System.DateTime FIRST_PRODUCTION_DATE
+private  System.DateTime? FIRST_PRODUCTION_DATEValue; 
+ public System.DateTime? FIRST_PRODUCTION_DATE
         {  
             get  
             {  
@@ -218,8 +218,8 @@ private  System.String HIGH_WATER_DEPTH_OUOMValue;
 
           set { SetProperty(ref  HIGH_WATER_DEPTH_OUOMValue, value); }
         } 
-private  System.DateTime INACTIVATION_DATEValue; 
- public System.DateTime INACTIVATION_DATE
+private  System.DateTime? INACTIVATION_DATEValue; 
+ public System.DateTime? INACTIVATION_DATE
         {  
             get  
             {  
@@ -238,8 +238,8 @@ private  System.Decimal INCENT_CERT_NOValue;
 
           set { SetProperty(ref  INCENT_CERT_NOValue, value); }
         } 
-private  System.DateTime ISSUE_DATEValue; 
- public System.DateTime ISSUE_DATE
+private  System.DateTime? ISSUE_DATEValue; 
+ public System.DateTime? ISSUE_DATE
         {  
             get  
             {  
@@ -328,8 +328,8 @@ private  System.String LAND_SALE_OFFERING_IDValue;
 
           set { SetProperty(ref  LAND_SALE_OFFERING_IDValue, value); }
         } 
-private  System.DateTime LAST_ACTION_DATEValue; 
- public System.DateTime LAST_ACTION_DATE
+private  System.DateTime? LAST_ACTION_DATEValue; 
+ public System.DateTime? LAST_ACTION_DATE
         {  
             get  
             {  
@@ -508,8 +508,8 @@ private  System.String PROPRIETARY_NUMValue;
 
           set { SetProperty(ref  PROPRIETARY_NUMValue, value); }
         } 
-private  System.DateTime QUALIFICATION_DATEValue; 
- public System.DateTime QUALIFICATION_DATE
+private  System.DateTime? QUALIFICATION_DATEValue; 
+ public System.DateTime? QUALIFICATION_DATE
         {  
             get  
             {  
@@ -528,8 +528,8 @@ private  System.String RECLAMATION_CERT_NUMValue;
 
           set { SetProperty(ref  RECLAMATION_CERT_NUMValue, value); }
         } 
-private  System.DateTime RECLAMATION_END_DATEValue; 
- public System.DateTime RECLAMATION_END_DATE
+private  System.DateTime? RECLAMATION_END_DATEValue; 
+ public System.DateTime? RECLAMATION_END_DATE
         {  
             get  
             {  
@@ -538,8 +538,8 @@ private  System.DateTime RECLAMATION_END_DATEValue;
 
           set { SetProperty(ref  RECLAMATION_END_DATEValue, value); }
         } 
-private  System.DateTime RECLAMATION_START_DATEValue; 
- public System.DateTime RECLAMATION_START_DATE
+private  System.DateTime? RECLAMATION_START_DATEValue; 
+ public System.DateTime? RECLAMATION_START_DATE
         {  
             get  
             {  
@@ -598,8 +598,8 @@ private  System.String SCHEME_APPROVAL_NUMValue;
 
           set { SetProperty(ref  SCHEME_APPROVAL_NUMValue, value); }
         } 
-private  System.DateTime SCHEME_EXPIRY_DATEValue; 
- public System.DateTime SCHEME_EXPIRY_DATE
+private  System.DateTime? SCHEME_EXPIRY_DATEValue; 
+ public System.DateTime? SCHEME_EXPIRY_DATE
         {  
             get  
             {  
@@ -678,8 +678,8 @@ private  System.String TERMIN_NOTICE_PERIOD_OUOMValue;
 
           set { SetProperty(ref  TERMIN_NOTICE_PERIOD_OUOMValue, value); }
         } 
-private  System.DateTime TERM_EXIRY_DATEValue; 
- public System.DateTime TERM_EXIRY_DATE
+private  System.DateTime? TERM_EXIRY_DATEValue; 
+ public System.DateTime? TERM_EXIRY_DATE
         {  
             get  
             {  
@@ -718,8 +718,8 @@ private  System.String ROW_CHANGED_BYValue;
 
           set { SetProperty(ref  ROW_CHANGED_BYValue, value); }
         } 
-private  System.DateTime ROW_CHANGED_DATEValue; 
- public System.DateTime ROW_CHANGED_DATE
+private  System.DateTime? ROW_CHANGED_DATEValue; 
+ public System.DateTime? ROW_CHANGED_DATE
         {  
             get  
             {  
@@ -738,8 +738,8 @@ private  System.String ROW_CREATED_BYValue;
 
           set { SetProperty(ref  ROW_CREATED_BYValue, value); }
         } 
-private  System.DateTime ROW_CREATED_DATEValue; 
- public System.DateTime ROW_CREATED_DATE
+private  System.DateTime? ROW_CREATED_DATEValue; 
+ public System.DateTime? ROW_CREATED_DATE
         {  
             get  
             {  
@@ -748,8 +748,8 @@ private  System.DateTime ROW_CREATED_DATEValue;
 
           set { SetProperty(ref  ROW_CREATED_DATEValue, value); }
         } 
-private  System.DateTime ROW_EFFECTIVE_DATEValue; 
- public System.DateTime ROW_EFFECTIVE_DATE
+private  System.DateTime? ROW_EFFECTIVE_DATEValue; 
+ public System.DateTime? ROW_EFFECTIVE_DATE
         {  
             get  
             {  
@@ -758,8 +758,8 @@ private  System.DateTime ROW_EFFECTIVE_DATEValue;
 
           set { SetProperty(ref  ROW_EFFECTIVE_DATEValue, value); }
         } 
-private  System.DateTime ROW_EXPIRY_DATEValue; 
- public System.DateTime ROW_EXPIRY_DATE
+private  System.DateTime? ROW_EXPIRY_DATEValue; 
+ public System.DateTime? ROW_EXPIRY_DATE
         {  
             get  
             {  

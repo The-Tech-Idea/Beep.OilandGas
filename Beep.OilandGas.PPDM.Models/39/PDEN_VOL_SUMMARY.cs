@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
  namespace Beep.OilandGas.PPDM39.Models 
 {
-public partial class PDEN_VOL_SUMMARY: Entity
+public partial class PDEN_VOL_SUMMARY: Entity,IPPDMEntity
 
 {
 
@@ -188,8 +188,8 @@ private  System.Decimal CO2_YTD_VOLUMEValue;
 
           set { SetProperty(ref  CO2_YTD_VOLUMEValue, value); }
         } 
-private  System.DateTime EFFECTIVE_DATEValue; 
- public System.DateTime EFFECTIVE_DATE
+private  System.DateTime? EFFECTIVE_DATEValue; 
+ public System.DateTime? EFFECTIVE_DATE
         {  
             get  
             {  
@@ -198,8 +198,8 @@ private  System.DateTime EFFECTIVE_DATEValue;
 
           set { SetProperty(ref  EFFECTIVE_DATEValue, value); }
         } 
-private  System.DateTime EXPIRY_DATEValue; 
- public System.DateTime EXPIRY_DATE
+private  System.DateTime? EXPIRY_DATEValue; 
+ public System.DateTime? EXPIRY_DATE
         {  
             get  
             {  
@@ -578,8 +578,8 @@ private  System.String PERIOD_ON_PRODUCTION_OUOMValue;
 
           set { SetProperty(ref  PERIOD_ON_PRODUCTION_OUOMValue, value); }
         } 
-private  System.DateTime POSTED_DATEValue; 
- public System.DateTime POSTED_DATE
+private  System.DateTime? POSTED_DATEValue; 
+ public System.DateTime? POSTED_DATE
         {  
             get  
             {  
@@ -708,8 +708,8 @@ private  System.Decimal SULPHUR_YTD_VOLUMEValue;
 
           set { SetProperty(ref  SULPHUR_YTD_VOLUMEValue, value); }
         } 
-private  System.DateTime VOLUME_DATEValue; 
- public System.DateTime VOLUME_DATE
+private  System.DateTime? VOLUME_DATEValue; 
+ public System.DateTime? VOLUME_DATE
         {  
             get  
             {  
@@ -798,8 +798,8 @@ private  System.String ROW_CHANGED_BYValue;
 
           set { SetProperty(ref  ROW_CHANGED_BYValue, value); }
         } 
-private  System.DateTime ROW_CHANGED_DATEValue; 
- public System.DateTime ROW_CHANGED_DATE
+private  System.DateTime? ROW_CHANGED_DATEValue; 
+ public System.DateTime? ROW_CHANGED_DATE
         {  
             get  
             {  
@@ -818,8 +818,8 @@ private  System.String ROW_CREATED_BYValue;
 
           set { SetProperty(ref  ROW_CREATED_BYValue, value); }
         } 
-private  System.DateTime ROW_CREATED_DATEValue; 
- public System.DateTime ROW_CREATED_DATE
+private  System.DateTime? ROW_CREATED_DATEValue; 
+ public System.DateTime? ROW_CREATED_DATE
         {  
             get  
             {  
@@ -828,8 +828,8 @@ private  System.DateTime ROW_CREATED_DATEValue;
 
           set { SetProperty(ref  ROW_CREATED_DATEValue, value); }
         } 
-private  System.DateTime ROW_EFFECTIVE_DATEValue; 
- public System.DateTime ROW_EFFECTIVE_DATE
+private  System.DateTime? ROW_EFFECTIVE_DATEValue; 
+ public System.DateTime? ROW_EFFECTIVE_DATE
         {  
             get  
             {  
@@ -838,8 +838,8 @@ private  System.DateTime ROW_EFFECTIVE_DATEValue;
 
           set { SetProperty(ref  ROW_EFFECTIVE_DATEValue, value); }
         } 
-private  System.DateTime ROW_EXPIRY_DATEValue; 
- public System.DateTime ROW_EXPIRY_DATE
+private  System.DateTime? ROW_EXPIRY_DATEValue; 
+ public System.DateTime? ROW_EXPIRY_DATE
         {  
             get  
             {  

@@ -1444,17 +1444,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             {
                 var value = prop.GetValue(obj);
                 if (value is decimal d) return d;
-                if (value is decimal? dNullable && dNullable.HasValue) return dNullable.Value;
-                if (value is double db) return (decimal)db;
-                if (value is int i) return i;
-                if (value is long l) return l;
-                if (decimal.TryParse(value?.ToString(), out var parsed)) return parsed;
+                // handle nullable decimal stored as object
+                if (value is null) { }
+                else if (value is decimal) return (decimal)value;
+                else if (value is double db) return (decimal)db;
+                else if (value is int i) return i;
+                else if (value is long l) return l;
+                else if (decimal.TryParse(value?.ToString(), out var parsed)) return parsed;
             }
             
             // Fallback to Dictionary for backward compatibility (will be removed when all services are updated)
             if (obj is IDictionary<string, object> dict && dict.TryGetValue(propertyName, out var dictValue))
             {
-                if (dictValue is decimal d) return d;
+                if (dictValue is decimal) return (decimal)dictValue;
                 if (dictValue is double db) return (decimal)db;
                 if (dictValue is int i) return i;
                 if (dictValue is long l) return l;

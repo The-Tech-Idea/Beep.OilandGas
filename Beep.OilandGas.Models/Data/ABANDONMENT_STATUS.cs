@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class ABANDONMENT_STATUS : Entity
+    public partial class ABANDONMENT_STATUS : Entity,IPPDMEntity
     {
         private System.String ABANDONMENT_STATUS_IDValue;
         public System.String ABANDONMENT_STATUS_ID
@@ -36,8 +36,8 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref STATUSValue, value); }
         }
 
-        private System.DateTime STATUS_DATEValue;
-        public System.DateTime STATUS_DATE
+        private System.DateTime? STATUS_DATEValue;
+        public System.DateTime? STATUS_DATE
         {
             get
             {
@@ -116,8 +116,8 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref ROW_CHANGED_BYValue, value); }
         }
 
-        private System.DateTime ROW_CHANGED_DATEValue;
-        public System.DateTime ROW_CHANGED_DATE
+        private System.DateTime? ROW_CHANGED_DATEValue;
+        public System.DateTime? ROW_CHANGED_DATE
         {
             get
             {
@@ -136,8 +136,8 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref ROW_CREATED_BYValue, value); }
         }
 
-        private System.DateTime ROW_CREATED_DATEValue;
-        public System.DateTime ROW_CREATED_DATE
+        private System.DateTime? ROW_CREATED_DATEValue;
+        public System.DateTime? ROW_CREATED_DATE
         {
             get
             {
@@ -146,8 +146,8 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref ROW_CREATED_DATEValue, value); }
         }
 
-        private System.DateTime ROW_EFFECTIVE_DATEValue;
-        public System.DateTime ROW_EFFECTIVE_DATE
+        private System.DateTime? ROW_EFFECTIVE_DATEValue;
+        public System.DateTime? ROW_EFFECTIVE_DATE
         {
             get
             {
@@ -156,8 +156,8 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref ROW_EFFECTIVE_DATEValue, value); }
         }
 
-        private System.DateTime ROW_EXPIRY_DATEValue;
-        public System.DateTime ROW_EXPIRY_DATE
+        private System.DateTime? ROW_EXPIRY_DATEValue;
+        public System.DateTime? ROW_EXPIRY_DATE
         {
             get
             {

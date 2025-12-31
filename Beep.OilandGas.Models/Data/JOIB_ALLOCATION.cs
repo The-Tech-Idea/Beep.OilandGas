@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class JOIB_ALLOCATION : Entity
+    public partial class JOIB_ALLOCATION : Entity,IPPDMEntity
     {
         private System.String JOIB_ALLOCATION_IDValue;
         public System.String JOIB_ALLOCATION_ID

@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class LEAD : Entity
+    public partial class LEAD : Entity,IPPDMEntity
     {
         private System.String LEAD_IDValue;
         public System.String LEAD_ID

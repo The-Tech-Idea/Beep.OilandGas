@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public partial class ACCOUNTING_METHOD : Entity
+    public partial class ACCOUNTING_METHOD : Entity,IPPDMEntity
     {
         private System.String ACCOUNTING_METHOD_IDValue;
         public System.String ACCOUNTING_METHOD_ID
@@ -12,7 +12,12 @@ namespace Beep.OilandGas.Models.Data
             get { return this.ACCOUNTING_METHOD_IDValue; }
             set { SetProperty(ref ACCOUNTING_METHOD_IDValue, value); }
         }
-
+        private System.String ROW_QUALITYValue;
+        public System.String ROW_QUALITY
+        {
+            get { return this.ROW_QUALITYValue; }
+            set { SetProperty(ref ROW_QUALITYValue, value); }
+        }
         private System.String FIELD_IDValue;
         public System.String FIELD_ID
         {

@@ -162,7 +162,7 @@ namespace Beep.OilandGas.ProductionAccounting.Accounting
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");
 
             var entity = ConvertReceivableToEntity(receivable);
-            _commonColumnHandler.SetCommonColumns(entity, _defaults, _metadata, connName);
+            _commonColumnHandler.SetCommonColumns(entity,  connName);
             var result = dataSource.InsertEntity(RECEIVABLE_TABLE, entity);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
@@ -205,7 +205,7 @@ namespace Beep.OilandGas.ProductionAccounting.Accounting
 
             // Update in database
             var entity = ConvertReceivableToEntity(receivable);
-            _commonColumnHandler.SetCommonColumns(entity, _defaults, _metadata, connName);
+            _commonColumnHandler.SetCommonColumns(entity, connName);
             var result = dataSource.UpdateEntity(RECEIVABLE_TABLE, entity);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)

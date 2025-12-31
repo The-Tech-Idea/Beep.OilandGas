@@ -7,7 +7,7 @@ namespace Beep.OilandGas.Models.Data
     /// <summary>
     /// Generic List of Value table for storing custom/non-PPDM LOVs
     /// </summary>
-    public partial class LIST_OF_VALUE : Entity
+    public partial class LIST_OF_VALUE : Entity,IPPDMEntity
     {
         private System.String LIST_OF_VALUE_IDValue;
         public System.String LIST_OF_VALUE_ID

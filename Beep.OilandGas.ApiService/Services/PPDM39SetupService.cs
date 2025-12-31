@@ -15,6 +15,8 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Utilities;
 using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation;
+using Beep.OilandGas.ApiService.Models;
 
 namespace Beep.OilandGas.ApiService.Services
 {
@@ -836,7 +838,7 @@ namespace Beep.OilandGas.ApiService.Services
                 {
                     ConnectionName = config.ConnectionName,
                     DatabaseType = ParseDataSourceType(driverInfo.DataSourceType),
-                    DriverName = driverInfo.NuGetPackage,
+                    DriverName = driverInfo.NuGetPackage.,
                     Host = config.Host,
                     Port = config.Port > 0 ? config.Port : driverInfo.DefaultPort,
                     Database = config.Database,
