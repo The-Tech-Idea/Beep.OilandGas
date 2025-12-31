@@ -1,13 +1,13 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Core.Interfaces;
 
 namespace Beep.OilandGas.DrillingAndConstruction.Services
 {
     /// <summary>
     /// Service for managing drilling operations.
+    /// This interface is now defined in Beep.OilandGas.Models.Core.Interfaces.
+    /// This is kept for backward compatibility.
     /// </summary>
-    public interface IDrillingOperationService
+    public interface IDrillingOperationService : Beep.OilandGas.Models.Core.Interfaces.IDrillingOperationService
     {
         /// <summary>
         /// Gets all drilling operations.

@@ -129,6 +129,7 @@ namespace Beep.OilandGas.Models.DTOs.ProductionAccounting
         /// Gets or sets the gas price used for reserve valuation ($/MCF).
         /// </summary>
         public decimal GasPrice { get; set; }
+        public object TotalProvedReservesBOE { get; set; }
     }
 
     /// <summary>

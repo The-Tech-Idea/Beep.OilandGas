@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Beep.OilandGas.NodalAnalysis.Models;
+using Beep.OilandGas.Models.NodalAnalysis;
 using Beep.OilandGas.GasProperties.Calculations;
 using System.Linq;
 
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
         /// <param name="gasLiquidRatio">Gas-liquid ratio in scf/bbl.</param>
         /// <param name="productivityIndex">Productivity index in bbl/day/psi.</param>
         /// <returns>Operating point (flow rate and bottom hole pressure).</returns>
-        public static Models.OperatingPoint CalculateOperatingPoint(
+        public static OperatingPoint CalculateOperatingPoint(
             decimal reservoirPressure,
             decimal wellheadPressure,
             decimal depth,
@@ -128,7 +128,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
         /// <summary>
         /// Finds intersection point between IPR and VLP curves.
         /// </summary>
-        private static Models.OperatingPoint FindIntersection(
+        private static OperatingPoint FindIntersection(
             List<(double FlowRate, double BottomHolePressure)> iprCurve,
             List<(double FlowRate, double BottomHolePressure)> vlpCurve)
         {
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
                 }
             }
 
-            return new Models.OperatingPoint
+            return new OperatingPoint
             {
                 FlowRate = (double)operatingFlowRate,
                 BottomholePressure = (double)operatingBHP,
@@ -176,11 +176,11 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
         /// <param name="baseConditions">Base operating conditions.</param>
         /// <param name="sensitivityParameters">Parameters to vary for sensitivity analysis.</param>
         /// <returns>List of operating points for different conditions.</returns>
-        public static List<Models.OperatingPoint> CalculateOperatingPointSensitivity(
+        public static List<OperatingPoint> CalculateOperatingPointSensitivity(
             OperatingConditions baseConditions,
             SensitivityParameters sensitivityParameters)
         {
-            var operatingPoints = new List<Models.OperatingPoint>();
+            var operatingPoints = new List<OperatingPoint>();
 
             // Vary wellhead pressure
             if (sensitivityParameters.VaryWellheadPressure)

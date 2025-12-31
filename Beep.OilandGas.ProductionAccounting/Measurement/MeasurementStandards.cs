@@ -1,5 +1,4 @@
-using System;
-using System.Collections.Generic;
+
 using Beep.OilandGas.ProductionAccounting.Measurement;
 
 namespace Beep.OilandGas.ProductionAccounting.Measurement
@@ -75,4 +74,3 @@ namespace Beep.OilandGas.ProductionAccounting.Measurement
         }
     }
 }
-

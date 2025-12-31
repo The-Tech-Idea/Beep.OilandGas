@@ -1,0 +1,191 @@
+@using Beep.OilandGas.Web.Services
+@inject IConnectionService ConnectionService
+@inject ISnackbar Snackbar
+
+<MudCard Elevation="2">
+    <MudCardContent>
+        <MudText Typo="Typo.h6" Class="mb-4">Select Database Connection</MudText>
+        
+        @if (_isLoading)
+        {
+            <MudProgressLinear Indeterminate="true" />
+            <MudText Class="mt-2">Loading connections...</MudText>
+        }
+        else if (_connections.Any())
+        {
+            <MudRadioGroup @bind-SelectedOption="@SelectedConnection">
+                @foreach (var connection in _connections)
+                {
+                    <MudRadio Option="@connection.ConnectionName" Color="Color.Primary" Class="mb-2">
+                        <MudCard Elevation="1" Class="pa-3" Style="width: 100%;">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudStack>
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudIcon Icon="@Icons.Material.Filled.Storage" Color="Color.Primary" />
+                                        <MudText Typo="Typo.h6">@connection.ConnectionName</MudText>
+                                        @if (connection.IsActive)
+                                        {
+                                            <MudChip Size="Size.Small" Color="Color.Success">Active</MudChip>
+                                        }
+                                    </MudStack>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="ml-6">
+                                        <MudIcon Icon="@Icons.Material.Filled.Computer" Size="Size.Small" Class="mr-1" />
+                                        @connection.DatabaseType
+                                    </MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="ml-6">
+                                        <MudIcon Icon="@Icons.Material.Filled.Server" Size="Size.Small" Class="mr-1" />
+                                        @connection.Server
+                                        @if (!string.IsNullOrEmpty(connection.Database))
+                                        {
+                                            <text> / @connection.Database</text>
+                                        }
+                                    </MudText>
+                                    @if (!string.IsNullOrEmpty(connection.Description))
+                                    {
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="ml-6">
+                                            @connection.Description
+                                        </MudText>
+                                    }
+                                </MudStack>
+                                <MudStack AlignItems="AlignItems.End">
+                                    <MudButton Variant="Variant.Text" 
+                                              Size="Size.Small"
+                                              StartIcon="@Icons.Material.Filled.CheckCircle"
+                                              OnClick="@(() => TestConnection(connection.ConnectionName))"
+                                              Disabled="@(_testingConnection == connection.ConnectionName)">
+                                        @if (_testingConnection == connection.ConnectionName)
+                                        {
+                                            <text>Testing...</text>
+                                        }
+                                        else
+                                        {
+                                            <text>Test</text>
+                                        }
+                                    </MudButton>
+                                </MudStack>
+                            </MudStack>
+                        </MudCard>
+                    </MudRadio>
+                }
+            </MudRadioGroup>
+            
+            @if (!string.IsNullOrEmpty(_testResult?.Message))
+            {
+                <MudAlert Severity="@(_testResult.Success ? Severity.Success : Severity.Error)" 
+                         Class="mt-4"
+                         Dismissible="true"
+                         OnClose="@(() => _testResult = null)">
+                    @_testResult.Message
+                </MudAlert>
+            }
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">
+                No database connections found. Please create a new connection.
+            </MudAlert>
+        }
+    </MudCardContent>
+    <MudCardActions>
+        <MudButton Variant="Variant.Text" 
+                  Color="Color.Primary"
+                  StartIcon="@Icons.Material.Filled.Refresh"
+                  OnClick="@LoadConnections"
+                  Disabled="@_isLoading">
+            Refresh
+        </MudButton>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" 
+                  Color="Color.Primary"
+                  OnClick="@OnSelect"
+                  Disabled="@(string.IsNullOrEmpty(SelectedConnection) || _isLoading)">
+            Select Connection
+        </MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter] public string? SelectedConnection { get; set; }
+    [Parameter] public EventCallback<string> OnConnectionSelected { get; set; }
+
+    private List<ConnectionInfo> _connections = new();
+    private bool _isLoading = true;
+    private string? _testingConnection;
+    private ConnectionTestResult? _testResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadConnections();
+    }
+
+    private async Task LoadConnections()
+    {
+        _isLoading = true;
+        try
+        {
+            _connections = await ConnectionService.GetAllConnectionsAsync();
+            
+            // If there's an active connection, select it by default
+            var activeConnection = _connections.FirstOrDefault(c => c.IsActive);
+            if (activeConnection != null && string.IsNullOrEmpty(SelectedConnection))
+            {
+                SelectedConnection = activeConnection.ConnectionName;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading connections: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task TestConnection(string connectionName)
+    {
+        _testingConnection = connectionName;
+        _testResult = null;
+        StateHasChanged();
+
+        try
+        {
+            _testResult = await ConnectionService.TestConnectionAsync(connectionName);
+            if (_testResult.Success)
+            {
+                Snackbar.Add($"Connection '{connectionName}' test successful", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"Connection test failed: {_testResult.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _testResult = new ConnectionTestResult
+            {
+                Success = false,
+                Message = "Connection test failed",
+                ErrorDetails = ex.Message
+            };
+            Snackbar.Add($"Error testing connection: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _testingConnection = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnSelect()
+    {
+        if (string.IsNullOrEmpty(SelectedConnection))
+        {
+            Snackbar.Add("Please select a connection", Severity.Warning);
+            return;
+        }
+
+        await OnConnectionSelected.InvokeAsync(SelectedConnection);
+    }
+}
+

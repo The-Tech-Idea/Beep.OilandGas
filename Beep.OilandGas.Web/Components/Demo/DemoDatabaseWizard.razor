@@ -1,0 +1,218 @@
+@using Beep.OilandGas.Web.Services
+@inject IDemoDatabaseService DemoDatabaseService
+@inject IConnectionService ConnectionService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+
+<MudDialog MaxWidth="MaxWidth.Medium" FullWidth="true">
+    <DialogContent>
+        <MudContainer Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">
+                <MudIcon Icon="@Icons.Material.Filled.PlayCircle" Class="mr-2" />
+                Create Demo Database
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                Create a demo SQLite database on the server to test the application. Demo databases are automatically cleaned up after the retention period.
+            </MudText>
+
+            <MudStepper @bind-ActiveStep="@_activeStep" Color="Color.Primary" Variant="Variant.Filled">
+                <!-- Step 1: Seed Data Selection -->
+                <MudStep Title="Seed Data" Icon="@Icons.Material.Filled.DataObject">
+                    <MudPaper Class="pa-4" Elevation="1">
+                        <SeedDataSelector @bind-SelectedOption="@_selectedSeedOption" />
+                    </MudPaper>
+                </MudStep>
+
+                <!-- Step 2: Create Database -->
+                <MudStep Title="Create Database" Icon="@Icons.Material.Filled.Storage">
+                    <MudPaper Class="pa-4" Elevation="1">
+                        @if (_isCreatingDatabase)
+                        {
+                            <MudStack Spacing="3" AlignItems="AlignItems.Center">
+                                <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+                                <MudText Typo="Typo.body1">Creating demo database...</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                    This may take a few minutes. Please wait.
+                                </MudText>
+                            </MudStack>
+                        }
+                        else if (_createResult != null)
+                        {
+                            @if (_createResult.Success)
+                            {
+                                <MudAlert Severity="Severity.Success" Class="mb-4">
+                                    <MudText Typo="Typo.h6">Demo Database Created Successfully!</MudText>
+                                    <MudText Typo="Typo.body1" Class="mt-2">
+                                        Connection: <strong>@_createResult.ConnectionName</strong>
+                                    </MudText>
+                                    <MudText Typo="Typo.body2" Class="mt-2">
+                                        Expires: @_createResult.ExpiryDate.ToString("g")
+                                    </MudText>
+                                </MudAlert>
+                            }
+                            else
+                            {
+                                <MudAlert Severity="Severity.Error" Class="mb-4">
+                                    <MudText Typo="Typo.h6">Failed to Create Demo Database</MudText>
+                                    <MudText Typo="Typo.body1" Class="mt-2">@_createResult.Message</MudText>
+                                    @if (!string.IsNullOrEmpty(_createResult.ErrorDetails))
+                                    {
+                                        <MudText Typo="Typo.body2" Class="mt-2">@_createResult.ErrorDetails</MudText>
+                                    }
+                                </MudAlert>
+                            }
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body1" Class="mb-4">
+                                Click "Create Database" to create your demo database with the selected seed data option.
+                            </MudText>
+                            <MudButton Variant="Variant.Filled" 
+                                      Color="Color.Primary" 
+                                      Size="Size.Large"
+                                      StartIcon="@Icons.Material.Filled.PlayArrow"
+                                      OnClick="@CreateDatabase"
+                                      FullWidth="true">
+                                Create Database
+                            </MudButton>
+                        }
+                    </MudPaper>
+                </MudStep>
+            </MudStepper>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@Cancel">Cancel</MudButton>
+        @if (_activeStep > 0 && _createResult?.Success == true)
+        {
+            <MudButton Color="Color.Primary" 
+                      Variant="Variant.Filled"
+                      OnClick="@Complete">
+                Done
+            </MudButton>
+        }
+        else if (_activeStep == 0)
+        {
+            <MudButton Color="Color.Primary" 
+                      Variant="Variant.Filled"
+                      OnClick="@NextStep"
+                      Disabled="@(_selectedSeedOption == SeedDataOption.None)">
+                Next
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance? MudDialog { get; set; }
+    [Parameter] public EventCallback OnComplete { get; set; }
+
+    private int _activeStep = 0;
+    private SeedDataOption _selectedSeedOption = SeedDataOption.ReferenceAndSample;
+    private bool _isCreatingDatabase = false;
+    private CreateDemoDatabaseResponse? _createResult;
+    private string? _userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetCurrentUserId();
+    }
+
+    private async Task GetCurrentUserId()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            _userId = authState.User?.FindFirst("sub")?.Value 
+                   ?? authState.User?.Identity?.Name 
+                   ?? "system";
+        }
+        catch
+        {
+            _userId = "system";
+        }
+    }
+
+    private void NextStep()
+    {
+        if (_activeStep < 1)
+        {
+            _activeStep++;
+        }
+    }
+
+    private async Task CreateDatabase()
+    {
+        if (string.IsNullOrEmpty(_userId))
+        {
+            Snackbar.Add("User ID is required", Severity.Warning);
+            return;
+        }
+
+        _isCreatingDatabase = true;
+        _createResult = null;
+        StateHasChanged();
+
+        try
+        {
+            var seedOption = _selectedSeedOption switch
+            {
+                SeedDataOption.None => "none",
+                SeedDataOption.ReferenceOnly => "reference-only",
+                SeedDataOption.ReferenceAndSample => "reference-sample",
+                SeedDataOption.FullDemo => "full-demo",
+                _ => "reference-sample"
+            };
+
+            _createResult = await DemoDatabaseService.CreateDemoDatabaseAsync(_userId, seedOption);
+
+            if (_createResult.Success)
+            {
+                Snackbar.Add("Demo database created successfully", Severity.Success);
+                
+                // Set as current connection
+                var setResult = await ConnectionService.SetCurrentConnectionAsync(_createResult.ConnectionName, _userId);
+                if (setResult.Success)
+                {
+                    Snackbar.Add("Demo database set as current connection", Severity.Success);
+                }
+
+                // Wait a moment before completing
+                await Task.Delay(1000);
+                await OnComplete.InvokeAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to create demo database: {_createResult.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating demo database: {ex.Message}", Severity.Error);
+            _createResult = new CreateDemoDatabaseResponse
+            {
+                Success = false,
+                Message = "Error creating demo database",
+                ErrorDetails = ex.Message
+            };
+        }
+        finally
+        {
+            _isCreatingDatabase = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+
+    private void Complete()
+    {
+        MudDialog?.Close(DialogResult.Ok(true));
+    }
+}
+

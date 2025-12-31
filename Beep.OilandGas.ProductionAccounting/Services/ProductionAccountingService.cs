@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using Beep.OilandGas.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Management;
 using Beep.OilandGas.ProductionAccounting.Production;
@@ -37,7 +35,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
-        private readonly ILoggerFactory _loggerFactory;
         private readonly string _defaultConnectionName;
 
         private readonly LeaseManager _leaseManager;
@@ -56,27 +53,25 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILoggerFactory loggerFactory,
             string defaultConnectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             _defaultConnectionName = defaultConnectionName;
 
             // Initialize managers with data access dependencies
-            _leaseManager = new LeaseManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, defaultConnectionName);
-            _productionManager = new ProductionManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, defaultConnectionName);
-            _pricingManager = new PricingManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, defaultConnectionName);
-            _tradingManager = new TradingManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, defaultConnectionName);
-            _ownershipManager = new OwnershipManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, defaultConnectionName);
-            _royaltyManager = new RoyaltyManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, defaultConnectionName);
-            _reportManager = new ReportManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, defaultConnectionName);
-            _imbalanceManager = new ImbalanceManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, defaultConnectionName);
-            _storageManager = new StorageManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, defaultConnectionName);
-            _traditionalAccounting = new TraditionalAccountingManager(editor, commonColumnHandler, defaults, metadata, loggerFactory, defaultConnectionName);
+            _leaseManager = new LeaseManager(editor, commonColumnHandler, defaults, metadata, null, defaultConnectionName);
+            _productionManager = new ProductionManager(editor, commonColumnHandler, defaults, metadata, null, defaultConnectionName);
+            _pricingManager = new PricingManager(editor, commonColumnHandler, defaults, metadata, null, defaultConnectionName);
+            _tradingManager = new TradingManager(editor, commonColumnHandler, defaults, metadata, null, defaultConnectionName);
+            _ownershipManager = new OwnershipManager(editor, commonColumnHandler, defaults, metadata, null, defaultConnectionName);
+            _royaltyManager = new RoyaltyManager(editor, commonColumnHandler, defaults, metadata, null, defaultConnectionName);
+            _reportManager = new ReportManager(editor, commonColumnHandler, defaults, metadata, null, defaultConnectionName);
+            _imbalanceManager = new ImbalanceManager(editor, commonColumnHandler, defaults, metadata, null, defaultConnectionName);
+            _storageManager = new StorageManager(editor, commonColumnHandler, defaults, metadata, null, defaultConnectionName);
+            _traditionalAccounting = new TraditionalAccountingManager(editor, commonColumnHandler, defaults, metadata, null, defaultConnectionName);
         }
 
         /// <summary>
@@ -137,4 +132,3 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             => AccountingManager.ConvertReservesToBOE(reserves);
     }
 }
-

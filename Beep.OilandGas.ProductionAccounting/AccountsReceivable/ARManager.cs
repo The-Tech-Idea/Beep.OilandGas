@@ -1,14 +1,14 @@
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.DTOs.Accounting;
-using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.Models.Enums;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
-using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
-using Beep.OilandGas.ProductionAccounting.Accounting;
+using TheTechIdea.Beep.DataBase;
 
 namespace Beep.OilandGas.ProductionAccounting.AccountsReceivable
 {
@@ -20,8 +20,6 @@ namespace Beep.OilandGas.ProductionAccounting.AccountsReceivable
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
-        private readonly IPPDM39DefaultsRepository _defaults;
-        private readonly IPPDMMetadataRepository _metadata;
         private readonly ILogger<ARManager>? _logger;
         private readonly string _connectionName;
         private const string AR_INVOICE_TABLE = "AR_INVOICE";
@@ -29,16 +27,12 @@ namespace Beep.OilandGas.ProductionAccounting.AccountsReceivable
         public ARManager(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
-            IPPDM39DefaultsRepository defaults,
-            IPPDMMetadataRepository metadata,
-            ILoggerFactory loggerFactory,
+            ILogger<ARManager>? logger = null,
             string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
-            _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
-            _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _logger = loggerFactory?.CreateLogger<ARManager>();
+            _logger = logger;
             _connectionName = connectionName ?? "PPDM39";
         }
 
@@ -298,4 +292,3 @@ namespace Beep.OilandGas.ProductionAccounting.AccountsReceivable
         }
     }
 }
-

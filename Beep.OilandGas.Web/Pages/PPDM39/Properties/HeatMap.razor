@@ -1,0 +1,154 @@
+@page "/ppdm39/properties/heatmap"
+@using Beep.OilandGas.HeatMap
+@using Beep.OilandGas.HeatMap.Configuration
+@using Beep.OilandGas.Models.DTOs
+@using Beep.OilandGas.Web.Services
+@inject IPropertiesServiceClient PropertiesService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Heat Map</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Heat Map Generation</MudText>
+
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-4">Generate Heat Map from Data Points</MudText>
+                <MudStack Spacing="3">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="GenerateHeatMap" Disabled="@_isGenerating">
+                        Generate Heat Map
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-4">Generate Production Heat Map</MudText>
+                <MudStack Spacing="3">
+                    <MudTextField @bind-Value="@_fieldId" Label="Field ID" Variant="Variant.Outlined" />
+                    <MudDatePicker @bind-Date="@_startDate" Label="Start Date" Variant="Variant.Outlined" />
+                    <MudDatePicker @bind-Date="@_endDate" Label="End Date" Variant="Variant.Outlined" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="GenerateProductionHeatMap" Disabled="@_isGenerating">
+                        Generate Production Heat Map
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-4" />
+    }
+
+    @if (_heatMapResult != null)
+    {
+        <MudPaper Class="pa-4 mt-4" Elevation="2">
+            <MudText Typo="Typo.h6" Class="mb-4">Heat Map Generated</MudText>
+            <MudAlert Severity="Severity.Success">Heat map has been generated successfully.</MudAlert>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-4" OnClick="SaveConfiguration">
+                Save Configuration
+            </MudButton>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    private string _fieldId = string.Empty;
+    private DateTime? _startDate = DateTime.Now.AddMonths(-6);
+    private DateTime? _endDate = DateTime.Now;
+    private bool _isGenerating = false;
+    private bool _isLoading = false;
+    private HeatMapResultDto? _heatMapResult;
+    private string? _currentUserId = "system";
+
+    private async Task GenerateHeatMap()
+    {
+        _isGenerating = true;
+        try
+        {
+            // Create sample data points
+            var dataPoints = new List<HeatMapDataPoint>
+            {
+                new HeatMapDataPoint { X = 0, Y = 0, Value = 100 },
+                new HeatMapDataPoint { X = 1, Y = 0, Value = 150 },
+                new HeatMapDataPoint { X = 0, Y = 1, Value = 120 },
+                new HeatMapDataPoint { X = 1, Y = 1, Value = 180 }
+            };
+
+            var configuration = new HeatMapConfiguration
+            {
+                Width = 800,
+                Height = 600,
+                ColorScheme = "Viridis"
+            };
+
+            _heatMapResult = await PropertiesService.GenerateHeatMapAsync(dataPoints, configuration);
+            Snackbar.Add("Heat map generated successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error generating heat map: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isGenerating = false;
+        }
+    }
+
+    private async Task GenerateProductionHeatMap()
+    {
+        if (string.IsNullOrEmpty(_fieldId))
+        {
+            Snackbar.Add("Please enter a Field ID", Severity.Warning);
+            return;
+        }
+
+        if (!_startDate.HasValue || !_endDate.HasValue)
+        {
+            Snackbar.Add("Please select start and end dates", Severity.Warning);
+            return;
+        }
+
+        _isGenerating = true;
+        try
+        {
+            _heatMapResult = await PropertiesService.GenerateProductionHeatMapAsync(_fieldId, _startDate.Value, _endDate.Value);
+            Snackbar.Add("Production heat map generated successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error generating production heat map: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isGenerating = false;
+        }
+    }
+
+    private async Task SaveConfiguration()
+    {
+        try
+        {
+            var configuration = new HeatMapConfigurationDto
+            {
+                HeatMapId = Guid.NewGuid().ToString(),
+                ConfigurationName = "Production Heat Map",
+                Width = 800,
+                Height = 600,
+                ColorScheme = "Viridis"
+            };
+
+            var heatMapId = await PropertiesService.SaveHeatMapConfigurationAsync(configuration, _currentUserId);
+            Snackbar.Add("Heat map configuration saved successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving configuration: {ex.Message}", Severity.Error);
+        }
+    }
+}
+

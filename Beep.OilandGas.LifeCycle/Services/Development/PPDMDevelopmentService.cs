@@ -12,7 +12,7 @@ using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.GasLift;
 using Beep.OilandGas.GasLift.Calculations;
-using Beep.OilandGas.GasLift.Models;
+using Beep.OilandGas.Models.GasLift;
 using Beep.OilandGas.PipelineAnalysis;
 using Beep.OilandGas.PipelineAnalysis.Calculations;
 using Beep.OilandGas.PipelineAnalysis.Models;

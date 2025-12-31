@@ -107,6 +107,27 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
+        public async Task<bool> PutAsync<TRequest>(
+            string endpoint, 
+            TRequest data, 
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogDebug("PUT {Endpoint}", endpoint);
+                var json = System.Text.Json.JsonSerializer.Serialize(data, JsonOptions);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                
+                var response = await _httpClient.PutAsync(endpoint, content, cancellationToken);
+                return response.IsSuccessStatusCode;
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "HTTP error on PUT {Endpoint}", endpoint);
+                return false;
+            }
+        }
+
         public async Task<bool> DeleteAsync(string endpoint, CancellationToken cancellationToken = default)
         {
             try

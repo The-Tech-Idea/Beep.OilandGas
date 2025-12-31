@@ -41,8 +41,10 @@
         
         // IdentityServer handles registration at /account/register
         // Include client_id so IdentityServer can apply the correct branding
+        // Redirect to register-callback after successful registration
+        var callbackUrl = NavigationManager.ToAbsoluteUri("/register-callback").ToString();
         var identityServerUrl = "https://localhost:7062/account/register";
-        NavigationManager.NavigateTo($"{identityServerUrl}?returnUrl={Uri.EscapeDataString(returnUrl)}&client_id=beep_oilgas_web", forceLoad: true);
+        NavigationManager.NavigateTo($"{identityServerUrl}?returnUrl={Uri.EscapeDataString(callbackUrl)}&client_id=beep_oilgas_web", forceLoad: true);
     }
 }
 

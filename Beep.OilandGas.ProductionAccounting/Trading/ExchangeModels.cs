@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Beep.OilandGas.ProductionAccounting.Trading
 {
     /// <summary>
@@ -294,4 +291,3 @@ namespace Beep.OilandGas.ProductionAccounting.Trading
         Cancelled
     }
 }
-

@@ -131,5 +131,51 @@ namespace Beep.OilandGas.Models.DTOs.ProductionAccounting
         /// </summary>
         public DateTime ProvedDate { get; set; }
     }
+
+    /// <summary>
+    /// Result of impairment testing for an unproved property.
+    /// </summary>
+    public class ImpairmentResult
+    {
+        /// <summary>
+        /// Gets or sets the property identifier.
+        /// </summary>
+        public string PropertyId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the property name.
+        /// </summary>
+        public string PropertyName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the acquisition cost.
+        /// </summary>
+        public decimal AcquisitionCost { get; set; }
+
+        /// <summary>
+        /// Gets or sets the current accumulated impairment.
+        /// </summary>
+        public decimal AccumulatedImpairment { get; set; }
+
+        /// <summary>
+        /// Gets or sets the calculated impairment amount.
+        /// </summary>
+        public decimal CalculatedImpairment { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether impairment is required.
+        /// </summary>
+        public bool ImpairmentRequired { get; set; }
+
+        /// <summary>
+        /// Gets or sets the impairment reason.
+        /// </summary>
+        public string ImpairmentReason { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the test date.
+        /// </summary>
+        public DateTime TestDate { get; set; } = DateTime.UtcNow;
+    }
 }
 

@@ -939,6 +939,46 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         }
 
         /// <summary>
+        /// Seed full demo dataset (reference data + sample entities + production data)
+        /// </summary>
+        [HttpPost("seed/demo-full")]
+        public async Task<ActionResult<SeedDataResponse>> SeedFullDemoDataset([FromBody] SeedDataRequest request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return BadRequest(new { error = "Request is required" });
+                }
+
+                var connectionName = request.ConnectionName ?? "PPDM39";
+                var demoSeeder = new Beep.OilandGas.PPDM39.DataManagement.SeedData.DemoDataSeeder(
+                    _editor, _commonColumnHandler, _defaults, _metadata, 
+                    _referenceDataSeeder ?? throw new InvalidOperationException("ReferenceDataSeeder is required"),
+                    connectionName, _logger);
+
+                var result = await demoSeeder.SeedFullDemoDatasetAsync(request.UserId ?? "SYSTEM");
+
+                return Ok(new SeedDataResponse
+                {
+                    Success = result.Success,
+                    Message = result.Message,
+                    TablesSeeded = result.TablesSeeded,
+                    RecordsInserted = result.RecordsInserted
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error seeding full demo dataset");
+                return StatusCode(500, new SeedDataResponse
+                {
+                    Success = false,
+                    Message = $"Failed to seed full demo dataset: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
         /// Seed data by category
         /// </summary>
         [HttpPost("seed/category/{category}")]

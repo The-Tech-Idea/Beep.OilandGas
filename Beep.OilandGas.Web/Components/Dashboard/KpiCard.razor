@@ -1,0 +1,81 @@
+@using MudBlazor
+
+<MudCard Elevation="@Elevation" Class="@($"kpi-card {Class}")" Style="@Style">
+    <MudCardContent>
+        <MudStack Spacing="2">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@Title</MudText>
+                @if (!string.IsNullOrEmpty(Icon))
+                {
+                    <MudIcon Icon="@Icon" Size="Size.Medium" Color="@IconColor" Style="opacity: 0.7;" />
+                }
+            </MudStack>
+            <MudText Typo="Typo.h4" Class="kpi-value">@Value</MudText>
+            @if (ShowChange && ChangeValue.HasValue)
+            {
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <MudIcon Icon="@(ChangeValue.Value >= 0 ? Icons.Material.Filled.TrendingUp : Icons.Material.Filled.TrendingDown)" 
+                             Size="Size.Small" 
+                             Color="@(ChangeValue.Value >= 0 ? Color.Success : Color.Error)" />
+                    <MudText Typo="Typo.body2" 
+                            Color="@(ChangeValue.Value >= 0 ? Color.Success : Color.Error)">
+                        @(ChangeValue.Value >= 0 ? "+" : "")@($"{ChangeValue.Value:P2}")
+                    </MudText>
+                    @if (!string.IsNullOrEmpty(ChangePeriod))
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@ChangePeriod</MudText>
+                    }
+                </MudStack>
+            }
+            @if (!string.IsNullOrEmpty(Subtitle))
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@Subtitle</MudText>
+            }
+        </MudStack>
+    </MudCardContent>
+    @if (OnClick.HasDelegate)
+    {
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" 
+                      Size="Size.Small" 
+                      Color="Color.Primary"
+                      OnClick="@OnClick">
+                @ActionText
+            </MudButton>
+        </MudCardActions>
+    }
+</MudCard>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public Color IconColor { get; set; } = Color.Primary;
+    [Parameter] public bool ShowChange { get; set; } = false;
+    [Parameter] public double? ChangeValue { get; set; }
+    [Parameter] public string? ChangePeriod { get; set; }
+    [Parameter] public int Elevation { get; set; } = 2;
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public string ActionText { get; set; } = "View Details";
+    [Parameter] public EventCallback OnClick { get; set; }
+}
+
+<style>
+    .kpi-card {
+        height: 100%;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+    }
+
+    .kpi-value {
+        font-weight: 600;
+        margin: 8px 0;
+    }
+</style>
+

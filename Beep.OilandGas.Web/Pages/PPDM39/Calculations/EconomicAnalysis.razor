@@ -1,0 +1,172 @@
+@page "/ppdm39/calculations/economicanalysis"
+@using Beep.OilandGas.Models.EconomicAnalysis
+@using Beep.OilandGas.Web.Services
+@inject ICalculationServiceClient CalculationService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Economic Analysis</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Economic Analysis</MudText>
+
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-4">NPV Calculation</MudText>
+                <MudStack Spacing="3">
+                    <MudNumericField @bind-Value="@_discountRate" Label="Discount Rate (%)" Variant="Variant.Outlined" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CalculateNPV" Disabled="@_isCalculating">
+                        Calculate NPV
+                    </MudButton>
+                    @if (_npv.HasValue)
+                    {
+                        <MudAlert Severity="Severity.Success">NPV: $@_npv.Value.ToString("N2")</MudAlert>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-4">IRR Calculation</MudText>
+                <MudStack Spacing="3">
+                    <MudNumericField @bind-Value="@_initialGuess" Label="Initial Guess (%)" Variant="Variant.Outlined" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="CalculateIRR" Disabled="@_isCalculating">
+                        Calculate IRR
+                    </MudButton>
+                    @if (_irr.HasValue)
+                    {
+                        <MudAlert Severity="Severity.Success">IRR: @(_irr.Value * 100).ToString("F2")%</MudAlert>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Class="pa-4 mt-4">
+        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudText Typo="Typo.h6">Comprehensive Economic Analysis</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="PerformComprehensiveAnalysis" Disabled="@_isCalculating">
+                Perform Analysis
+            </MudButton>
+        </MudStack>
+
+        @if (_economicResult != null)
+        {
+            <MudStack Spacing="2">
+                <MudText>NPV: $@_economicResult.NPV.ToString("N2")</MudText>
+                <MudText>IRR: @(_economicResult.IRR * 100).ToString("F2")%</MudText>
+                <MudText>Payback Period: @_economicResult.PaybackPeriod.ToString("F2") years</MudText>
+            </MudStack>
+        }
+    </MudPaper>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-4" />
+    }
+</MudContainer>
+
+@code {
+    private double _discountRate = 10.0;
+    private double _initialGuess = 10.0;
+    private bool _isCalculating = false;
+    private bool _isLoading = false;
+    private double? _npv;
+    private double? _irr;
+    private EconomicResult? _economicResult;
+    private CashFlow[] _cashFlows = Array.Empty<CashFlow>();
+    private string? _currentUserId = "system";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize with sample cash flows or load from API
+        _cashFlows = new CashFlow[]
+        {
+            new CashFlow { Period = 0, Amount = -1000000 }, // Initial investment
+            new CashFlow { Period = 1, Amount = 300000 },
+            new CashFlow { Period = 2, Amount = 400000 },
+            new CashFlow { Period = 3, Amount = 500000 },
+            new CashFlow { Period = 4, Amount = 400000 },
+            new CashFlow { Period = 5, Amount = 300000 }
+        };
+    }
+
+    private async Task CalculateNPV()
+    {
+        if (_cashFlows == null || _cashFlows.Length == 0)
+        {
+            Snackbar.Add("Please provide cash flows", Severity.Warning);
+            return;
+        }
+
+        _isCalculating = true;
+        try
+        {
+            _npv = await CalculationService.CalculateNPVAsync(_cashFlows, _discountRate / 100.0);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error calculating NPV: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isCalculating = false;
+        }
+    }
+
+    private async Task CalculateIRR()
+    {
+        if (_cashFlows == null || _cashFlows.Length == 0)
+        {
+            Snackbar.Add("Please provide cash flows", Severity.Warning);
+            return;
+        }
+
+        _isCalculating = true;
+        try
+        {
+            _irr = await CalculationService.CalculateIRRAsync(_cashFlows, _initialGuess / 100.0);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error calculating IRR: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isCalculating = false;
+        }
+    }
+
+    private async Task PerformComprehensiveAnalysis()
+    {
+        if (_cashFlows == null || _cashFlows.Length == 0)
+        {
+            Snackbar.Add("Please provide cash flows", Severity.Warning);
+            return;
+        }
+
+        _isCalculating = true;
+        try
+        {
+            _economicResult = await CalculationService.AnalyzeEconomicAsync(
+                _cashFlows, _discountRate / 100.0, 0.1, 0.1);
+            
+            // Save the result
+            var analysisId = Guid.NewGuid().ToString();
+            await CalculationService.SaveEconomicAnalysisResultAsync(analysisId, _economicResult, _currentUserId);
+            
+            Snackbar.Add("Economic analysis completed and saved", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error performing economic analysis: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isCalculating = false;
+        }
+    }
+}
+

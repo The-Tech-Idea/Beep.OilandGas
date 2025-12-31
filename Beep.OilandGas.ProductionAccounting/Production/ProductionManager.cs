@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Beep.OilandGas.ProductionAccounting.Exceptions;
+
 using Beep.OilandGas.ProductionAccounting.Storage;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
@@ -35,14 +31,14 @@ namespace Beep.OilandGas.ProductionAccounting.Production
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILoggerFactory loggerFactory,
+            ILogger<ProductionManager>? logger = null,
             string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _logger = loggerFactory?.CreateLogger<ProductionManager>();
+            _logger = logger;
             _connectionName = connectionName ?? "PPDM39";
         }
 
@@ -459,4 +455,3 @@ namespace Beep.OilandGas.ProductionAccounting.Production
         #endregion
     }
 }
-

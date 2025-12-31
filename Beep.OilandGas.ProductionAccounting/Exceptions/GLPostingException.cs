@@ -1,5 +1,3 @@
-using System;
-
 namespace Beep.OilandGas.ProductionAccounting.Exceptions
 {
     /// <summary>
@@ -36,4 +34,3 @@ namespace Beep.OilandGas.ProductionAccounting.Exceptions
         }
     }
 }
-

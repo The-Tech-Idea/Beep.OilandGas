@@ -1,62 +1,71 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Models;
-using Beep.OilandGas.Models.DTOs;
-using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.DTOs.Accounting;
+using AccountingReceivable = Beep.OilandGas.Models.Data.Accounting.RECEIVABLE;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
     /// <summary>
-    /// Interface for Production Accounting operations
-    /// All data is stored in PPDM database using PPDMGenericRepository
+    /// Service interface for sales accounting operations.
     /// </summary>
     public interface IAccountingService
     {
         /// <summary>
-        /// Reconcile production volumes between different sources
+        /// Creates a sales transaction.
         /// </summary>
-        Task<VolumeReconciliationResult> ReconcileVolumesAsync(string fieldId, DateTime startDate, DateTime endDate, List<AppFilter>? additionalFilters = null);
-
+        Task<SALES_TRANSACTION> CreateSalesTransactionAsync(CreateSalesTransactionRequest request, string userId, string? connectionName = null);
+        
         /// <summary>
-        /// Calculate royalties for production
+        /// Gets a sales transaction by ID.
         /// </summary>
-        Task<RoyaltyCalculationResult> CalculateRoyaltiesAsync(string fieldId, DateTime startDate, DateTime endDate, string? poolId = null, List<AppFilter>? additionalFilters = null);
-
+        Task<SALES_TRANSACTION?> GetSalesTransactionAsync(string transactionId, string? connectionName = null);
+        
         /// <summary>
-        /// Allocate costs to production entities (wells, pools, facilities)
+        /// Gets sales transactions by date range.
         /// </summary>
-        Task<CostAllocationResult> AllocateCostsAsync(string fieldId, DateTime startDate, DateTime endDate, CostAllocationMethod method, List<AppFilter>? additionalFilters = null);
-
+        Task<List<SALES_TRANSACTION>> GetSalesTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, string? connectionName = null);
+        
         /// <summary>
-        /// Get accounting allocation records
+        /// Gets sales transactions by customer.
         /// </summary>
-        Task<List<ACCOUNTING_ALLOCATION>> GetAccountingAllocationsAsync(string? fieldId = null, string? poolId = null, string? wellId = null, DateTime? startDate = null, DateTime? endDate = null, List<AppFilter>? additionalFilters = null);
-
+        Task<List<SALES_TRANSACTION>> GetSalesTransactionsByCustomerAsync(string customerBaId, DateTime? startDate, DateTime? endDate, string? connectionName = null);
+        
         /// <summary>
-        /// Get royalty calculation records
+        /// Creates a receivable.
         /// </summary>
-        Task<List<DTOs.ROYALTY_CALCULATION>> GetRoyaltyCalculationsAsync(string? fieldId = null, string? poolId = null, DateTime? startDate = null, DateTime? endDate = null, List<AppFilter>? additionalFilters = null);
-
+        Task<AccountingReceivable> CreateReceivableAsync(CreateReceivableRequest request, string userId, string? connectionName = null);
+        
         /// <summary>
-        /// Get cost allocation records
+        /// Gets receivables by customer.
         /// </summary>
-        Task<List<COST_ALLOCATION>> GetCostAllocationsAsync(string? fieldId = null, DateTime? startDate = null, DateTime? endDate = null, List<AppFilter>? additionalFilters = null);
-
+        Task<List<AccountingReceivable>> GetReceivablesByCustomerAsync(string customerBaId, string? connectionName = null);
+        
         /// <summary>
-        /// Create or update accounting allocation record
+        /// Gets all receivables.
         /// </summary>
-        Task<object> SaveAccountingAllocationAsync(object allocationData, string userId);
-
+        Task<List<AccountingReceivable>> GetAllReceivablesAsync(string? connectionName = null);
+        
         /// <summary>
-        /// Create or update royalty calculation record
+        /// Creates a sales journal entry.
         /// </summary>
-        Task<object> SaveRoyaltyCalculationAsync(object royaltyData, string userId);
-
+        Task<JOURNAL_ENTRY> CreateSalesJournalEntryAsync(string salesTransactionId, string userId, string? connectionName = null);
+        
         /// <summary>
-        /// Create or update cost allocation record
+        /// Approves a sales transaction.
         /// </summary>
-        Task<object> SaveCostAllocationAsync(object costAllocationData, string userId);
+        Task<SalesApprovalResult> ApproveSalesTransactionAsync(string transactionId, string approverId, string? connectionName = null);
+        
+        /// <summary>
+        /// Reconciles sales transactions.
+        /// </summary>
+        Task<SalesReconciliationResult> ReconcileSalesAsync(SalesReconciliationRequest request, string userId, string? connectionName = null);
+        
+        /// <summary>
+        /// Generates a sales statement.
+        /// </summary>
+        Task<SalesStatement> GenerateSalesStatementAsync(string customerBaId, DateTime statementDate, string? connectionName = null);
     }
 }
-

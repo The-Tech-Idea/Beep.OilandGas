@@ -1,5 +1,3 @@
-using System;
-
 namespace Beep.OilandGas.ProductionAccounting.Models
 {
     /// <summary>
@@ -279,4 +277,3 @@ namespace Beep.OilandGas.ProductionAccounting.Models
         public decimal? ReservedCapacity { get; set; }
     }
 }
-

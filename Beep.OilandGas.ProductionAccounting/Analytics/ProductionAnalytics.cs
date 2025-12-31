@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using Beep.OilandGas.ProductionAccounting.Production;
 using Beep.OilandGas.ProductionAccounting.Accounting;
 using Beep.OilandGas.ProductionAccounting.Calculations;
@@ -165,4 +163,3 @@ namespace Beep.OilandGas.ProductionAccounting.Analytics
         public decimal EfficiencyScore { get; set; }
     }
 }
-

@@ -1,0 +1,77 @@
+@using MudBlazor
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.h6" Class="mb-3">Select Seed Data Options</MudText>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+        Choose which data to seed into your database. This will populate reference tables and optionally add sample data for testing.
+    </MudText>
+
+    <MudRadioGroup @bind-SelectedOption="@SelectedOption">
+        <MudRadio Option="@SeedDataOption.None" Color="Color.Primary" Class="mb-3">
+            <MudStack>
+                <MudText Typo="Typo.body1" Style="font-weight: 600;">Skip Seeding</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Create an empty database without any seed data
+                </MudText>
+            </MudStack>
+        </MudRadio>
+
+        <MudRadio Option="@SeedDataOption.ReferenceOnly" Color="Color.Primary" Class="mb-3">
+            <MudStack>
+                <MudText Typo="Typo.body1" Style="font-weight: 600;">Reference Data Only</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Seed only reference tables (R_* tables) with standard PPDM39 values
+                </MudText>
+            </MudStack>
+        </MudRadio>
+
+        <MudRadio Option="@SeedDataOption.ReferenceAndSample" Color="Color.Primary" Class="mb-3">
+            <MudStack>
+                <MudText Typo="Typo.body1" Style="font-weight: 600;">Reference Data + Sample Entities</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Seed reference tables plus sample wells, fields, and basic entities for testing
+                </MudText>
+            </MudStack>
+        </MudRadio>
+
+        <MudRadio Option="@SeedDataOption.FullDemo" Color="Color.Primary" Class="mb-3">
+            <MudStack>
+                <MudText Typo="Typo.body1" Style="font-weight: 600;">Full Demo Dataset</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Complete demo dataset with reference data, sample entities, production data, and relationships
+                </MudText>
+            </MudStack>
+        </MudRadio>
+    </MudRadioGroup>
+
+    @if (SelectedOption != SeedDataOption.None)
+    {
+        <MudAlert Severity="Severity.Info" Class="mt-4">
+            <MudText Typo="Typo.body2">
+                Seeding data may take several minutes depending on the selected option. Please be patient during the process.
+            </MudText>
+        </MudAlert>
+    }
+</MudStack>
+
+@code {
+    [Parameter] public SeedDataOption SelectedOption { get; set; } = SeedDataOption.None;
+    [Parameter] public EventCallback<SeedDataOption> SelectedOptionChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (SelectedOptionChanged.HasDelegate)
+        {
+            SelectedOptionChanged.InvokeAsync(SelectedOption);
+        }
+    }
+}
+
+public enum SeedDataOption
+{
+    None,
+    ReferenceOnly,
+    ReferenceAndSample,
+    FullDemo
+}
+

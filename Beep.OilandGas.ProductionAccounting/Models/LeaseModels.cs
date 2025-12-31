@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Beep.OilandGas.ProductionAccounting.Models
 {
     /// <summary>
@@ -331,4 +328,3 @@ namespace Beep.OilandGas.ProductionAccounting.Models
         public bool IsOperator { get; set; }
     }
 }
-

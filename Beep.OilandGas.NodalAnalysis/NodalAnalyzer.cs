@@ -1,5 +1,5 @@
 using Beep.OilandGas.NodalAnalysis.Calculations;
-using Beep.OilandGas.NodalAnalysis.Models;
+using Beep.OilandGas.Models.NodalAnalysis;
 
 namespace Beep.OilandGas.NodalAnalysis
 {

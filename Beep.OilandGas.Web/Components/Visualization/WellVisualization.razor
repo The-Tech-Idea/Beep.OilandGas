@@ -1,0 +1,130 @@
+@using MudBlazor
+
+<MudCard Elevation="@Elevation" Class="@($"well-visualization {Class}")">
+    <MudCardContent>
+        <MudStack Spacing="3">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.h6">@Title</MudText>
+                @if (ShowControls)
+                {
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                        <MudSelect T="string" 
+                                  @bind-Value="@_viewMode" 
+                                  Variant="Variant.Outlined"
+                                  Dense="true"
+                                  Style="min-width: 150px;">
+                            <MudSelectItem Value="diagram">Wellbore Diagram</MudSelectItem>
+                            <MudSelectItem Value="completion">Completion Diagram</MudSelectItem>
+                            <MudSelectItem Value="details">Details View</MudSelectItem>
+                        </MudSelect>
+                        <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" 
+                                      Size="Size.Small"
+                                      OnClick="@ZoomIn" />
+                        <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" 
+                                      Size="Size.Small"
+                                      OnClick="@ZoomOut" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Fullscreen" 
+                                      Size="Size.Small"
+                                      OnClick="@ToggleFullscreen" />
+                    </MudStack>
+                }
+            </MudStack>
+
+            @if (_isLoading)
+            {
+                <MudProgressLinear Indeterminate="true" />
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">
+                    Loading well data...
+                </MudText>
+            }
+            else if (WellData != null)
+            {
+                <MudPaper Elevation="1" Class="pa-4" Style="min-height: 400px; background: var(--mud-palette-background);">
+                    @if (_viewMode == "diagram")
+                    {
+                        <WellboreDiagram WellData="@WellData" />
+                    }
+                    else if (_viewMode == "completion")
+                    {
+                        <CompletionDiagram WellData="@WellData" />
+                    }
+                    else
+                    {
+                        <WellDetailsView WellData="@WellData" />
+                    }
+                </MudPaper>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center">
+                    No well data available
+                </MudText>
+            }
+        </MudStack>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Well Visualization";
+    [Parameter] public object? WellData { get; set; }
+    [Parameter] public bool ShowControls { get; set; } = true;
+    [Parameter] public int Elevation { get; set; } = 2;
+    [Parameter] public string? Class { get; set; }
+
+    private string _viewMode = "diagram";
+    private bool _isLoading = false;
+    private double _zoomLevel = 1.0;
+    private bool _isFullscreen = false;
+
+    private void ZoomIn()
+    {
+        _zoomLevel = Math.Min(_zoomLevel + 0.1, 2.0);
+        StateHasChanged();
+    }
+
+    private void ZoomOut()
+    {
+        _zoomLevel = Math.Max(_zoomLevel - 0.1, 0.5);
+        StateHasChanged();
+    }
+
+    private void ToggleFullscreen()
+    {
+        _isFullscreen = !_isFullscreen;
+        StateHasChanged();
+    }
+}
+
+@* Placeholder components - would be implemented with actual visualization logic *@
+@code {
+    private RenderFragment WellboreDiagram(object wellData) => builder =>
+    {
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "wellbore-diagram");
+        builder.AddContent(2, "Wellbore Diagram - Implementation needed");
+        builder.CloseElement();
+    };
+
+    private RenderFragment CompletionDiagram(object wellData) => builder =>
+    {
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "completion-diagram");
+        builder.AddContent(2, "Completion Diagram - Implementation needed");
+        builder.CloseElement();
+    };
+
+    private RenderFragment WellDetailsView(object wellData) => builder =>
+    {
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "well-details");
+        builder.AddContent(2, "Well Details - Implementation needed");
+        builder.CloseElement();
+    };
+}
+
+<style>
+    .well-visualization {
+        height: 100%;
+    }
+</style>
+

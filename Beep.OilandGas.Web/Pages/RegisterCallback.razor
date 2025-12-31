@@ -1,0 +1,139 @@
+@page "/register-callback"
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.Demo
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IDemoDatabaseService DemoDatabaseService
+@inject IConnectionService ConnectionService
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+
+<PageTitle>Registration Complete - Setup Demo Database</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    <MudPaper Elevation="3" Class="pa-6">
+        <MudStack AlignItems="AlignItems.Center" Spacing="4">
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" 
+                    Size="Size.Large" 
+                    Color="Color.Success" 
+                    Style="font-size: 64px;" />
+            
+            <MudText Typo="Typo.h4" Align="Align.Center">
+                Registration Successful!
+            </MudText>
+            
+            <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
+                Welcome to Beep Oil & Gas. Would you like to create a demo database to get started?
+            </MudText>
+
+            <MudStack Spacing="3" Class="mt-4" Style="width: 100%;">
+                <MudButton Variant="Variant.Filled" 
+                          Color="Color.Primary" 
+                          Size="Size.Large"
+                          FullWidth="true"
+                          StartIcon="@Icons.Material.Filled.PlayCircle"
+                          OnClick="@ShowDemoDatabaseWizard">
+                    Create Demo Database
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                          Color="Color.Primary" 
+                          Size="Size.Large"
+                          FullWidth="true"
+                          StartIcon="@Icons.Material.Filled.Settings"
+                          OnClick="@ShowConnectionWizard">
+                    Set Up Existing Database
+                </MudButton>
+                
+                <MudButton Variant="Variant.Text" 
+                          Color="Color.Primary" 
+                          Size="Size.Medium"
+                          FullWidth="true"
+                          OnClick="@SkipToDashboard">
+                    Skip for Now
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string? _userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetCurrentUserId();
+    }
+
+    private async Task GetCurrentUserId()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            _userId = authState.User?.FindFirst("sub")?.Value 
+                   ?? authState.User?.Identity?.Name 
+                   ?? "system";
+        }
+        catch
+        {
+            _userId = "system";
+        }
+    }
+
+    private async Task ShowDemoDatabaseWizard()
+    {
+        var parameters = new DialogParameters();
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = false,
+            DisableBackdropClick = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<DemoDatabaseWizard>(
+            "Create Demo Database", 
+            parameters, 
+            options);
+
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            // Demo database created, navigate to dashboard
+            NavigationManager.NavigateTo("/dashboard");
+        }
+    }
+
+    private async Task ShowConnectionWizard()
+    {
+        var parameters = new DialogParameters();
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = false,
+            DisableBackdropClick = true,
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<FirstLoginConnectionWizard>(
+            "Database Connection Setup", 
+            parameters, 
+            options);
+
+        var result = await dialog.Result;
+        
+        if (!result.Canceled)
+        {
+            // Connection setup completed, navigate to dashboard
+            NavigationManager.NavigateTo("/dashboard");
+        }
+    }
+
+    private void SkipToDashboard()
+    {
+        NavigationManager.NavigateTo("/dashboard");
+    }
+}
+

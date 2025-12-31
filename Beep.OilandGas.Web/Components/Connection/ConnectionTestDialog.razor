@@ -1,0 +1,147 @@
+@using Beep.OilandGas.Web.Services
+@inject IConnectionService ConnectionService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudContainer Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="mr-2" />
+                Test Database Connection
+            </MudText>
+            
+            @if (!string.IsNullOrEmpty(ConnectionName))
+            {
+                <MudText Typo="Typo.body1" Class="mb-4">
+                    Testing connection: <strong>@ConnectionName</strong>
+                </MudText>
+            }
+
+            @if (_isTesting)
+            {
+                <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                    <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+                    <MudText Typo="Typo.body1">Testing connection...</MudText>
+                </MudStack>
+            }
+            else if (_testResult != null)
+            {
+                @if (_testResult.Success)
+                {
+                    <MudAlert Severity="Severity.Success" Class="mb-4">
+                        <MudStack>
+                            <MudText Typo="Typo.h6">Connection Test Successful</MudText>
+                            <MudText Typo="Typo.body1">@_testResult.Message</MudText>
+                        </MudStack>
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Error" Class="mb-4">
+                        <MudStack>
+                            <MudText Typo="Typo.h6">Connection Test Failed</MudText>
+                            <MudText Typo="Typo.body1">@_testResult.Message</MudText>
+                            @if (!string.IsNullOrEmpty(_testResult.ErrorDetails))
+                            {
+                                <MudExpansionPanels>
+                                    <MudExpansionPanel Text="Error Details">
+                                        <MudText Typo="Typo.body2" Class="pa-2">
+                                            @_testResult.ErrorDetails
+                                        </MudText>
+                                    </MudExpansionPanel>
+                                </MudExpansionPanels>
+                            }
+                        </MudStack>
+                    </MudAlert>
+                }
+            }
+            else
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                    Click "Test Connection" to verify the database connection is working.
+                </MudText>
+            }
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+        <MudButton Color="Color.Primary" 
+                  Variant="Variant.Filled"
+                  StartIcon="@Icons.Material.Filled.CheckCircle"
+                  OnClick="@TestConnection"
+                  Disabled="@(_isTesting || string.IsNullOrEmpty(ConnectionName))">
+            @if (_isTesting)
+            {
+                <text>Testing...</text>
+            }
+            else
+            {
+                <text>Test Connection</text>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance? MudDialog { get; set; }
+    [Parameter] public string? ConnectionName { get; set; }
+
+    private bool _isTesting = false;
+    private ConnectionTestResult? _testResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(ConnectionName))
+        {
+            // Auto-test on open if connection name is provided
+            await TestConnection();
+        }
+    }
+
+    private async Task TestConnection()
+    {
+        if (string.IsNullOrEmpty(ConnectionName))
+        {
+            Snackbar.Add("Connection name is required", Severity.Warning);
+            return;
+        }
+
+        _isTesting = true;
+        _testResult = null;
+        StateHasChanged();
+
+        try
+        {
+            _testResult = await ConnectionService.TestConnectionAsync(ConnectionName);
+            if (_testResult.Success)
+            {
+                Snackbar.Add("Connection test successful", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"Connection test failed: {_testResult.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _testResult = new ConnectionTestResult
+            {
+                Success = false,
+                Message = "Connection test failed",
+                ErrorDetails = ex.Message
+            };
+            Snackbar.Add($"Error testing connection: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isTesting = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+}
+

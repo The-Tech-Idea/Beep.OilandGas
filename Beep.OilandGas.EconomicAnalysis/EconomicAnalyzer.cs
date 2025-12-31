@@ -1,5 +1,5 @@
 using Beep.OilandGas.EconomicAnalysis.Calculations;
-using Beep.OilandGas.EconomicAnalysis.Models;
+using Beep.OilandGas.Models.EconomicAnalysis;
 
 namespace Beep.OilandGas.EconomicAnalysis
 {

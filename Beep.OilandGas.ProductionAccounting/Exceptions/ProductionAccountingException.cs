@@ -1,5 +1,3 @@
-using System;
-
 namespace Beep.OilandGas.ProductionAccounting.Exceptions
 {
     /// <summary>
@@ -95,4 +93,3 @@ namespace Beep.OilandGas.ProductionAccounting.Exceptions
         public InsufficientReservesException(string message) : base($"Insufficient reserves: {message}") { }
     }
 }
-

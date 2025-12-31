@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
-using Beep.OilandGas.ProductionAccounting.Models;
+using System.Linq;
 
 namespace Beep.OilandGas.ProductionAccounting.Allocation
 {
     /// <summary>
-    /// Allocation method enumeration.
+    /// Allocation method enumeration for internal calculation use.
     /// </summary>
     public enum AllocationMethod
     {
@@ -36,7 +36,8 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
     }
 
     /// <summary>
-    /// Represents an allocation result.
+    /// Represents an allocation result for internal calculations.
+    /// This is the computational model used by AllocationEngine, distinct from the PPDM entity ALLOCATION_RESULT.
     /// </summary>
     public class AllocationResult
     {
@@ -108,7 +109,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
     }
 
     /// <summary>
-    /// Represents well allocation data.
+    /// Represents well allocation data for calculation.
     /// </summary>
     public class WellAllocationData
     {
@@ -144,7 +145,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
     }
 
     /// <summary>
-    /// Represents lease allocation data.
+    /// Represents lease allocation data for calculation.
     /// </summary>
     public class LeaseAllocationData
     {
@@ -170,7 +171,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
     }
 
     /// <summary>
-    /// Represents tract allocation data.
+    /// Represents tract allocation data for calculation.
     /// </summary>
     public class TractAllocationData
     {

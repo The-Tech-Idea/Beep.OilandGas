@@ -1,4 +1,4 @@
-using System;
+
 using Beep.OilandGas.ProductionAccounting.Models;
 using Beep.OilandGas.ProductionAccounting.Production;
 
@@ -278,4 +278,3 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
         public Dictionary<string, decimal> AdjustmentFactors { get; set; } = new();
     }
 }
-

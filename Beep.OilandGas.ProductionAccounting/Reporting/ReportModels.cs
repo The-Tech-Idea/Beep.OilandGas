@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Beep.OilandGas.ProductionAccounting.Reporting
 {
     /// <summary>
@@ -295,4 +292,3 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
         public string Category { get; set; } = string.Empty;
     }
 }
-

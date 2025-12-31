@@ -1,0 +1,205 @@
+@using MudBlazor
+@using System.Linq.Expressions
+
+<MudCard Elevation="@Elevation" Class="@($"enhanced-data-grid {Class}")">
+    <MudCardContent>
+        <MudStack Spacing="3">
+            <!-- Header -->
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.h6">@Title</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    @if (ShowSearch)
+                    {
+                        <MudTextField @bind-Value="@_searchText" 
+                                     Placeholder="Search..." 
+                                     Variant="Variant.Outlined"
+                                     Adornment="Adornment.Start"
+                                     AdornmentIcon="@Icons.Material.Filled.Search"
+                                     Immediate="true"
+                                     OnInput="@OnSearchChanged"
+                                     Style="max-width: 300px;" />
+                    }
+                    @if (ShowExport)
+                    {
+                        <MudButton Variant="Variant.Outlined" 
+                                  Size="Size.Small"
+                                  StartIcon="@Icons.Material.Filled.FileDownload"
+                                  OnClick="@ExportData">
+                            Export
+                        </MudButton>
+                    }
+                    @if (ShowRefresh)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
+                                      Size="Size.Small"
+                                      OnClick="@RefreshData" />
+                    }
+                </MudStack>
+            </MudStack>
+
+            <!-- Filters -->
+            @if (ShowFilters && _filters.Any())
+            {
+                <MudExpansionPanels>
+                    <MudExpansionPanel Text="Filters" IsExpanded="@_filtersExpanded">
+                        <MudGrid Spacing="2">
+                            @foreach (var filter in _filters)
+                            {
+                                <MudItem xs="12" sm="6" md="4">
+                                    <MudTextField @bind-Value="@filter.Value" 
+                                                 Label="@filter.Label" 
+                                                 Variant="Variant.Outlined"
+                                                 Clearable="true" />
+                                </MudItem>
+                            }
+                            <MudItem xs="12">
+                                <MudStack Row="true" Spacing="2">
+                                    <MudButton Variant="Variant.Filled" 
+                                              Color="Color.Primary"
+                                              Size="Size.Small"
+                                              OnClick="@ApplyFilters">
+                                        Apply Filters
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Text" 
+                                              Size="Size.Small"
+                                              OnClick="@ClearFilters">
+                                        Clear
+                                    </MudButton>
+                                </MudStack>
+                            </MudItem>
+                        </MudGrid>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
+            }
+
+            <!-- Data Grid -->
+            @if (_isLoading)
+            {
+                <MudProgressLinear Indeterminate="true" />
+            }
+            else
+            {
+                <MudDataGrid T="@TItem" 
+                           Items="@_filteredItems"
+                           Hover="true"
+                           Striped="true"
+                           Dense="true"
+                           SortMode="SortMode.Multiple"
+                           FilterMode="FilterMode.Simple"
+                           QuickFilter="@_quickFilter">
+                    @if (Columns != null)
+                    {
+                        @Columns
+                    }
+                    <PagerContent>
+                        <MudDataGridPager T="@TItem" />
+                    </PagerContent>
+                </MudDataGrid>
+            }
+        </MudStack>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Data Grid";
+    [Parameter] public RenderFragment? Columns { get; set; }
+    [Parameter] public List<TItem> Items { get; set; } = new();
+    [Parameter] public bool ShowSearch { get; set; } = true;
+    [Parameter] public bool ShowFilters { get; set; } = true;
+    [Parameter] public bool ShowExport { get; set; } = true;
+    [Parameter] public bool ShowRefresh { get; set; } = true;
+    [Parameter] public int Elevation { get; set; } = 2;
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public EventCallback OnRefresh { get; set; }
+    [Parameter] public EventCallback OnExport { get; set; }
+    [Parameter] public List<FilterDefinition> Filters { get; set; } = new();
+
+    private List<TItem> _filteredItems = new();
+    private List<FilterDefinition> _filters = new();
+    private string _searchText = string.Empty;
+    private MudDataGrid<TItem>? _dataGrid;
+    private Func<TItem, bool>? _quickFilter;
+    private bool _isLoading = false;
+    private bool _filtersExpanded = false;
+
+    protected override void OnParametersSet()
+    {
+        _filters = Filters;
+        _filteredItems = Items;
+        UpdateQuickFilter();
+    }
+
+    private void UpdateQuickFilter()
+    {
+        if (string.IsNullOrWhiteSpace(_searchText))
+        {
+            _quickFilter = null;
+        }
+        else
+        {
+            _quickFilter = item => 
+            {
+                // Simple search - check if any property contains the search text
+                var properties = typeof(TItem).GetProperties();
+                return properties.Any(p =>
+                {
+                    var value = p.GetValue(item);
+                    return value?.ToString()?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) == true;
+                });
+            };
+        }
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        _searchText = e.Value?.ToString() ?? string.Empty;
+        UpdateQuickFilter();
+        StateHasChanged();
+    }
+
+    private void ApplyFilters()
+    {
+        // Filter logic would be applied here
+        // For now, just refresh the grid
+        StateHasChanged();
+    }
+
+    private void ClearFilters()
+    {
+        foreach (var filter in _filters)
+        {
+            filter.Value = string.Empty;
+        }
+        StateHasChanged();
+    }
+
+    private async Task RefreshData()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        
+        await OnRefresh.InvokeAsync();
+        
+        _isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task ExportData()
+    {
+        await OnExport.InvokeAsync();
+    }
+
+    public class FilterDefinition
+    {
+        public string Label { get; set; } = string.Empty;
+        public string? Value { get; set; }
+        public string Field { get; set; } = string.Empty;
+    }
+}
+
+<style>
+    .enhanced-data-grid {
+        height: 100%;
+    }
+</style>
+

@@ -1,0 +1,156 @@
+@page "/ppdm39/calculations/gaslift"
+@using Beep.OilandGas.Models.DTOs
+@using Beep.OilandGas.Models.GasLift
+@using Beep.OilandGas.Web.Services
+@inject ICalculationServiceClient CalculationService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Gas Lift Analysis</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Gas Lift Analysis</MudText>
+
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-4">Analyze Gas Lift Potential</MudText>
+                <MudStack Spacing="3">
+                    <MudTextField @bind-Value="@_wellUWI" Label="Well UWI" Variant="Variant.Outlined" />
+                    <MudNumericField @bind-Value="@_minGasInjectionRate" Label="Min Gas Injection Rate (MCF/D)" Variant="Variant.Outlined" />
+                    <MudNumericField @bind-Value="@_maxGasInjectionRate" Label="Max Gas Injection Rate (MCF/D)" Variant="Variant.Outlined" />
+                    <MudNumericField @bind-Value="@_numberOfPoints" Label="Number of Points" Variant="Variant.Outlined" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AnalyzePotential" Disabled="@_isAnalyzing">
+                        Analyze Potential
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4">
+                <MudText Typo="Typo.h6" Class="mb-4">Design Gas Lift Valves</MudText>
+                <MudStack Spacing="3">
+                    <MudTextField @bind-Value="@_designWellUWI" Label="Well UWI" Variant="Variant.Outlined" />
+                    <MudNumericField @bind-Value="@_gasInjectionPressure" Label="Gas Injection Pressure (PSI)" Variant="Variant.Outlined" />
+                    <MudNumericField @bind-Value="@_numberOfValves" Label="Number of Valves" Variant="Variant.Outlined" />
+                    <MudCheckBox @bind-Value="@_useSIUnits" Label="Use SI Units" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="DesignValves" Disabled="@_isDesigning">
+                        Design Valves
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mt-4" />
+    }
+
+    @if (_performanceData != null)
+    {
+        <MudPaper Class="pa-4 mt-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Gas Lift Performance</MudText>
+            <MudStack Spacing="2">
+                <MudText>Well UWI: @_performanceData.WellUWI</MudText>
+                <MudText>Production Rate: @_performanceData.ProductionRate.ToString("F2") BBL/D</MudText>
+                <MudText>Gas Injection Rate: @_performanceData.GasInjectionRate.ToString("F2") MCF/D</MudText>
+                <MudText>Efficiency: @_performanceData.Efficiency.ToString("F2")%</MudText>
+            </MudStack>
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    private string _wellUWI = string.Empty;
+    private decimal _minGasInjectionRate = 100;
+    private decimal _maxGasInjectionRate = 1000;
+    private int _numberOfPoints = 50;
+    private string _designWellUWI = string.Empty;
+    private decimal _gasInjectionPressure = 1000;
+    private int _numberOfValves = 5;
+    private bool _useSIUnits = false;
+    private bool _isAnalyzing = false;
+    private bool _isDesigning = false;
+    private bool _isLoading = false;
+    private GasLiftPerformanceDto? _performanceData;
+    private string? _currentUserId = "system";
+
+    private async Task AnalyzePotential()
+    {
+        if (string.IsNullOrEmpty(_wellUWI))
+        {
+            Snackbar.Add("Please enter a Well UWI", Severity.Warning);
+            return;
+        }
+
+        _isAnalyzing = true;
+        try
+        {
+            // Create well properties (simplified - would need actual well data)
+            var wellProperties = new GasLiftWellProperties
+            {
+                WellDepth = 5000,
+                TubingDiameter = 2.5m,
+                WellheadPressure = 100,
+                BottomHolePressure = 2000,
+                GasOilRatio = 500
+            };
+
+            var result = await CalculationService.AnalyzeGasLiftPotentialAsync(
+                wellProperties, _minGasInjectionRate, _maxGasInjectionRate, _numberOfPoints);
+            
+            Snackbar.Add("Gas lift potential analysis completed", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error analyzing gas lift potential: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isAnalyzing = false;
+        }
+    }
+
+    private async Task DesignValves()
+    {
+        if (string.IsNullOrEmpty(_designWellUWI))
+        {
+            Snackbar.Add("Please enter a Well UWI", Severity.Warning);
+            return;
+        }
+
+        _isDesigning = true;
+        try
+        {
+            var wellProperties = new GasLiftWellProperties
+            {
+                WellDepth = 5000,
+                TubingDiameter = 2.5m,
+                WellheadPressure = 100,
+                BottomHolePressure = 2000,
+                GasOilRatio = 500
+            };
+
+            var result = await CalculationService.DesignGasLiftValvesAsync(
+                wellProperties, _gasInjectionPressure, _numberOfValves, _useSIUnits);
+            
+            Snackbar.Add("Gas lift valve design completed", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error designing gas lift valves: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isDesigning = false;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Optionally load performance data for a well
+    }
+}
+

@@ -1,5 +1,8 @@
 @page "/ppdm39/exploration/prospects"
 @using Beep.OilandGas.PPDM39.Models
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.Web.Services
+@inject IOperationsServiceClient OperationsService
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
@@ -38,7 +41,7 @@
                     <MudTd DataLabel="Actions">
                         <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
                             <MudButton StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditDialog(context))">
-                                Edit
+                                Evaluate
                             </MudButton>
                             <MudButton StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteProspect(context))">
                                 Delete
@@ -56,7 +59,7 @@
 </MudContainer>
 
 @code {
-    private List<WELL>? _prospects;
+    private List<ProspectDto>? _prospects;
     private bool _isLoading = false;
     private string? _currentUserId = "system"; // TODO: Get from authentication context
 
@@ -70,12 +73,12 @@
         _isLoading = true;
         try
         {
-            _prospects = await ApiClient.GetAsync<List<WELL>>("/api/field/current/exploration/prospects");
+            _prospects = await OperationsService.GetProspectsAsync();
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Error loading prospects: {ex.Message}", Severity.Error);
-            _prospects = new List<WELL>();
+            _prospects = new List<ProspectDto>();
         }
         finally
         {
@@ -93,11 +96,17 @@
         {
             try
             {
-                var created = await ApiClient.PostAsync<object, Dictionary<string, object>>(
-                    "/api/field/current/exploration/prospects",
-                    prospectData,
-                    new { userId = _currentUserId });
-                
+                // Convert dictionary to ProspectDto
+                var prospect = new ProspectDto
+                {
+                    ProspectName = prospectData.ContainsKey("PROSPECT_NAME") ? prospectData["PROSPECT_NAME"]?.ToString() ?? string.Empty : string.Empty,
+                    FieldId = prospectData.ContainsKey("FIELD_ID") ? prospectData["FIELD_ID"]?.ToString() : null,
+                    Description = prospectData.ContainsKey("DESCRIPTION") ? prospectData["DESCRIPTION"]?.ToString() : null,
+                    Status = prospectData.ContainsKey("PROSPECT_STATUS") ? prospectData["PROSPECT_STATUS"]?.ToString() : null,
+                    EvaluationDate = prospectData.ContainsKey("EVALUATION_DATE") && DateTime.TryParse(prospectData["EVALUATION_DATE"]?.ToString(), out var evalDate) ? evalDate : DateTime.UtcNow
+                };
+
+                var prospectId = await OperationsService.CreateProspectAsync(prospect, _currentUserId);
                 Snackbar.Add("Prospect created successfully", Severity.Success);
                 await LoadProspects();
             }
@@ -108,12 +117,8 @@
         }
     }
 
-    private async Task OpenEditDialog(object prospect)
+    private async Task OpenEditDialog(ProspectDto prospect)
     {
-        var prospectId = GetPropertyValue(prospect, "PROSPECT_ID");
-        if (string.IsNullOrEmpty(prospectId))
-            return;
-
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var parameters = new DialogParameters { ["Prospect"] = prospect };
         var dialog = await DialogService.ShowAsync<ProspectEditDialog>("Edit Prospect", parameters, options);
@@ -123,12 +128,9 @@
         {
             try
             {
-                var updated = await ApiClient.PutAsync<object, Dictionary<string, object>>(
-                    $"/api/field/current/exploration/prospects/{prospectId}",
-                    prospectData,
-                    new { userId = _currentUserId });
-                
-                Snackbar.Add("Prospect updated successfully", Severity.Success);
+                // Evaluate prospect to get updated evaluation
+                var evaluation = await OperationsService.EvaluateProspectAsync(prospect.ProspectId);
+                Snackbar.Add("Prospect evaluation updated successfully", Severity.Success);
                 await LoadProspects();
             }
             catch (Exception ex)
@@ -138,22 +140,19 @@
         }
     }
 
-    private async Task DeleteProspect(object prospect)
+    private async Task DeleteProspect(ProspectDto prospect)
     {
-        var prospectId = GetPropertyValue(prospect, "PROSPECT_ID");
-        if (string.IsNullOrEmpty(prospectId))
-            return;
-
         var result = await DialogService.ShowMessageBox(
             "Delete Prospect",
-            $"Are you sure you want to delete prospect {GetPropertyValue(prospect, "PROSPECT_NAME")}?",
+            $"Are you sure you want to delete prospect {prospect.ProspectName}?",
             yesText: "Delete", cancelText: "Cancel");
 
         if (result == true)
         {
             try
             {
-                await ApiClient.DeleteAsync($"/api/field/current/exploration/prospects/{prospectId}?userId={_currentUserId}");
+                // Delete via API server
+                await ApiClient.DeleteAsync($"/api/prospectidentification/{prospect.ProspectId}?userId={_currentUserId}");
                 Snackbar.Add("Prospect deleted successfully", Severity.Success);
                 await LoadProspects();
             }
@@ -164,12 +163,14 @@
         }
     }
 
-    private string GetPropertyValue(object obj, string propertyName)
+    private string GetPropertyValue(ProspectDto prospect, string propertyName)
     {
-        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
+        return propertyName switch
         {
-            return dict[propertyName]?.ToString() ?? "N/A";
-        }
-        return "N/A";
+            "PROSPECT_ID" => prospect.ProspectId,
+            "PROSPECT_NAME" => prospect.ProspectName,
+            "PROSPECT_STATUS" => prospect.Status ?? "Unknown",
+            _ => "N/A"
+        };
     }
 }

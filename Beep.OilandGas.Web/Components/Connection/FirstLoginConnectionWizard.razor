@@ -1,0 +1,389 @@
+@using Beep.OilandGas.Web.Services
+@inject IConnectionService ConnectionService
+@inject IDataManagementService DataManagementService
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+<MudDialog>
+    <DialogContent>
+        <MudStepper @bind-ActiveStep="@_activeStep" Color="Color.Primary" Variant="Variant.Filled">
+            <!-- Step 1: Welcome -->
+            <MudStep Title="Welcome">
+                <MudContainer Class="pa-4">
+                    <MudText Typo="Typo.h5" Class="mb-4">Welcome to Beep Oil & Gas</MudText>
+                    <MudText Typo="Typo.body1" Class="mb-4">
+                        Before you can start using the application, you need to connect to a database.
+                    </MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        You can either select an existing database connection or create a new one.
+                    </MudText>
+                </MudContainer>
+            </MudStep>
+
+            <!-- Step 2: Connection Selection -->
+            <MudStep Title="Select Connection">
+                <MudContainer Class="pa-4">
+                    @if (_isLoadingConnections)
+                    {
+                        <MudProgressLinear Indeterminate="true" />
+                        <MudText Class="mt-2">Loading available connections...</MudText>
+                    }
+                    else if (_connections.Any())
+                    {
+                        <MudText Typo="Typo.h6" Class="mb-4">Available Database Connections</MudText>
+                        <MudRadioGroup @bind-SelectedOption="@_selectedConnectionName">
+                            @foreach (var connection in _connections)
+                            {
+                                <MudRadio Option="@connection.ConnectionName" Color="Color.Primary">
+                                    <div class="d-flex align-center">
+                                        <MudIcon Icon="@Icons.Material.Filled.Storage" Class="mr-2" />
+                                        <div>
+                                            <MudText Typo="Typo.body1">@connection.ConnectionName</MudText>
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                @connection.DatabaseType - @connection.Server
+                                                @if (!string.IsNullOrEmpty(connection.Database))
+                                                {
+                                                    <text> / @connection.Database</text>
+                                                }
+                                            </MudText>
+                                        </div>
+                                        @if (connection.IsActive)
+                                        {
+                                            <MudChip Size="Size.Small" Color="Color.Success" Class="ml-auto">Active</MudChip>
+                                        }
+                                    </div>
+                                </MudRadio>
+                            }
+                        </MudRadioGroup>
+                        <MudDivider Class="my-4" />
+                        <MudButton Variant="Variant.Text" 
+                                  Color="Color.Primary" 
+                                  StartIcon="@Icons.Material.Filled.Add"
+                                  OnClick="@ShowCreateDatabase">
+                            Create New Database
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Info" Class="mb-4">
+                            No database connections found. You'll need to create a new database connection.
+                        </MudAlert>
+                        <MudButton Variant="Variant.Filled" 
+                                  Color="Color.Primary" 
+                                  StartIcon="@Icons.Material.Filled.Add"
+                                  OnClick="@ShowCreateDatabase">
+                            Create New Database
+                        </MudButton>
+                    }
+                </MudContainer>
+            </MudStep>
+
+            <!-- Step 3: Test Connection -->
+            <MudStep Title="Test Connection">
+                <MudContainer Class="pa-4">
+                    @if (!string.IsNullOrEmpty(_selectedConnectionName))
+                    {
+                        <MudText Typo="Typo.h6" Class="mb-4">Testing Connection: @_selectedConnectionName</MudText>
+                        @if (_isTestingConnection)
+                        {
+                            <MudProgressLinear Indeterminate="true" />
+                            <MudText Class="mt-2">Testing connection...</MudText>
+                        }
+                        else if (_testResult != null)
+                        {
+                            @if (_testResult.Success)
+                            {
+                                <MudAlert Severity="Severity.Success" Class="mb-4">
+                                    <MudText Typo="Typo.body1">@_testResult.Message</MudText>
+                                </MudAlert>
+                            }
+                            else
+                            {
+                                <MudAlert Severity="Severity.Error" Class="mb-4">
+                                    <MudText Typo="Typo.body1">@_testResult.Message</MudText>
+                                    @if (!string.IsNullOrEmpty(_testResult.ErrorDetails))
+                                    {
+                                        <MudText Typo="Typo.body2" Class="mt-2">@_testResult.ErrorDetails</MudText>
+                                    }
+                                </MudAlert>
+                                <MudButton Variant="Variant.Outlined" 
+                                          Color="Color.Primary" 
+                                          OnClick="@TestConnection">
+                                    Retry Test
+                                </MudButton>
+                            }
+                        }
+                        else
+                        {
+                            <MudButton Variant="Variant.Filled" 
+                                      Color="Color.Primary" 
+                                      StartIcon="@Icons.Material.Filled.CheckCircle"
+                                      OnClick="@TestConnection">
+                                Test Connection
+                            </MudButton>
+                        }
+                    }
+                    else
+                    {
+                        <MudAlert Severity="Severity.Warning">
+                            Please select a connection first.
+                        </MudAlert>
+                    }
+                </MudContainer>
+            </MudStep>
+
+            <!-- Step 4: Complete -->
+            <MudStep Title="Complete">
+                <MudContainer Class="pa-4">
+                    @if (_isSettingConnection)
+                    {
+                        <MudProgressLinear Indeterminate="true" />
+                        <MudText Class="mt-2">Setting up connection...</MudText>
+                    }
+                    else if (_setupComplete)
+                    {
+                        <MudAlert Severity="Severity.Success" Class="mb-4">
+                            <MudText Typo="Typo.h6">Connection Setup Complete!</MudText>
+                            <MudText Typo="Typo.body1" Class="mt-2">
+                                You're all set. You can now start using the application.
+                            </MudText>
+                        </MudAlert>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.h6" Class="mb-4">Ready to Complete</MudText>
+                        <MudText Typo="Typo.body1" Class="mb-4">
+                            Click "Complete Setup" to finish the connection setup process.
+                        </MudText>
+                    }
+                </MudContainer>
+            </MudStep>
+        </MudStepper>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@Cancel">Cancel</MudButton>
+        @if (_activeStep > 0)
+        {
+            <MudButton Color="Color.Secondary" OnClick="@PreviousStep">Previous</MudButton>
+        }
+        @if (_activeStep < 3)
+        {
+            <MudButton Color="Color.Primary" 
+                      Variant="Variant.Filled" 
+                      OnClick="@NextStep"
+                      Disabled="@(!CanProceedToNextStep())">
+                Next
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Color="Color.Primary" 
+                      Variant="Variant.Filled" 
+                      OnClick="@CompleteSetup"
+                      Disabled="@(_isSettingConnection || !_testResult?.Success == true)">
+                Complete Setup
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance? MudDialog { get; set; }
+    [Parameter] public EventCallback OnComplete { get; set; }
+
+    private int _activeStep = 0;
+    private List<ConnectionInfo> _connections = new();
+    private string? _selectedConnectionName;
+    private bool _isLoadingConnections = true;
+    private bool _isTestingConnection = false;
+    private ConnectionTestResult? _testResult;
+    private bool _isSettingConnection = false;
+    private bool _setupComplete = false;
+    private string? _userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadConnections();
+        await GetCurrentUserId();
+    }
+
+    private async Task GetCurrentUserId()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            _userId = authState.User?.FindFirst("sub")?.Value 
+                   ?? authState.User?.Identity?.Name 
+                   ?? "system";
+        }
+        catch
+        {
+            _userId = "system";
+        }
+    }
+
+    private async Task LoadConnections()
+    {
+        _isLoadingConnections = true;
+        try
+        {
+            _connections = await ConnectionService.GetAllConnectionsAsync();
+            
+            // If there's an active connection, select it by default
+            var activeConnection = _connections.FirstOrDefault(c => c.IsActive);
+            if (activeConnection != null)
+            {
+                _selectedConnectionName = activeConnection.ConnectionName;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading connections: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoadingConnections = false;
+        }
+    }
+
+    private void NextStep()
+    {
+        if (_activeStep == 1 && string.IsNullOrEmpty(_selectedConnectionName))
+        {
+            Snackbar.Add("Please select a connection", Severity.Warning);
+            return;
+        }
+
+        if (_activeStep == 2 && _testResult == null)
+        {
+            Snackbar.Add("Please test the connection first", Severity.Warning);
+            return;
+        }
+
+        if (_activeStep < 3)
+        {
+            _activeStep++;
+        }
+    }
+
+    private void PreviousStep()
+    {
+        if (_activeStep > 0)
+        {
+            _activeStep--;
+        }
+    }
+
+    private bool CanProceedToNextStep()
+    {
+        return _activeStep switch
+        {
+            0 => true, // Welcome step
+            1 => !string.IsNullOrEmpty(_selectedConnectionName), // Connection selection
+            2 => _testResult?.Success == true, // Connection test
+            _ => false
+        };
+    }
+
+    private async Task TestConnection()
+    {
+        if (string.IsNullOrEmpty(_selectedConnectionName))
+        {
+            Snackbar.Add("Please select a connection first", Severity.Warning);
+            return;
+        }
+
+        _isTestingConnection = true;
+        _testResult = null;
+        StateHasChanged();
+
+        try
+        {
+            _testResult = await ConnectionService.TestConnectionAsync(_selectedConnectionName);
+            if (_testResult.Success)
+            {
+                Snackbar.Add("Connection test successful", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add($"Connection test failed: {_testResult.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _testResult = new ConnectionTestResult
+            {
+                Success = false,
+                Message = "Connection test failed",
+                ErrorDetails = ex.Message
+            };
+            Snackbar.Add($"Error testing connection: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isTestingConnection = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CompleteSetup()
+    {
+        if (string.IsNullOrEmpty(_selectedConnectionName))
+        {
+            Snackbar.Add("Please select a connection", Severity.Warning);
+            return;
+        }
+
+        if (_testResult?.Success != true)
+        {
+            Snackbar.Add("Please test the connection first", Severity.Warning);
+            return;
+        }
+
+        _isSettingConnection = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await ConnectionService.SetCurrentConnectionAsync(_selectedConnectionName, _userId);
+            if (result.Success)
+            {
+                _setupComplete = true;
+                Snackbar.Add("Connection setup completed successfully", Severity.Success);
+                
+                // Wait a moment before closing
+                await Task.Delay(1000);
+                
+                await OnComplete.InvokeAsync();
+                MudDialog?.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add($"Failed to set connection: {result.Message}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error completing setup: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSettingConnection = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowCreateDatabase()
+    {
+        // Navigate to database creation wizard
+        NavigationManager.NavigateTo("/ppdm39/create-database-wizard");
+        MudDialog?.Close();
+    }
+
+    private void Cancel()
+    {
+        MudDialog?.Cancel();
+    }
+}
+

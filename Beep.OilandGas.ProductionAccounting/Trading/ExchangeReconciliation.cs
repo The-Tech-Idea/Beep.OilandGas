@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace Beep.OilandGas.ProductionAccounting.Trading
 {
     /// <summary>
@@ -203,4 +199,3 @@ namespace Beep.OilandGas.ProductionAccounting.Trading
         }
     }
 }
-

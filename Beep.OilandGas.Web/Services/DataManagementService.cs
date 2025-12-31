@@ -216,6 +216,10 @@ namespace Beep.OilandGas.Web.Services
         private readonly SemaphoreSlim _refreshLock = new(1, 1);
         private DateTime _lastRefreshTime = DateTime.MinValue;
         private readonly TimeSpan _cacheTimeout = TimeSpan.FromMinutes(5);
+        
+        // Retry configuration
+        private readonly int _maxRetries = 3;
+        private readonly TimeSpan _retryDelay = TimeSpan.FromSeconds(1);
 
         public DataManagementService(
             ApiClient apiClient,
@@ -355,18 +359,58 @@ namespace Beep.OilandGas.Web.Services
         // Entity Operations Implementation
         // ============================================
 
+        /// <summary>
+        /// Retry helper method with exponential backoff
+        /// </summary>
+        private async Task<T> ExecuteWithRetryAsync<T>(
+            Func<Task<T>> operation,
+            string operationName,
+            int maxRetries = 3)
+        {
+            int attempt = 0;
+            Exception? lastException = null;
+
+            while (attempt < maxRetries)
+            {
+                try
+                {
+                    return await operation();
+                }
+                catch (HttpRequestException ex) when (attempt < maxRetries - 1)
+                {
+                    lastException = ex;
+                    attempt++;
+                    var delay = TimeSpan.FromMilliseconds(_retryDelay.TotalMilliseconds * Math.Pow(2, attempt - 1));
+                    _logger.LogWarning(ex, "Attempt {Attempt} failed for {OperationName}, retrying in {Delay}ms", 
+                        attempt, operationName, delay.TotalMilliseconds);
+                    await Task.Delay(delay);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Non-retryable error in {OperationName}", operationName);
+                    throw;
+                }
+            }
+
+            _logger.LogError(lastException, "All retry attempts failed for {OperationName}", operationName);
+            throw lastException ?? new InvalidOperationException($"Operation {operationName} failed after {maxRetries} attempts");
+        }
+
         public async Task<GetEntitiesResponse> GetEntitiesAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null)
         {
             try
             {
-                var request = new GetEntitiesRequest
+                return await ExecuteWithRetryAsync(async () =>
                 {
-                    TableName = tableName,
-                    Filters = filters ?? new List<AppFilter>(),
-                    ConnectionName = connectionName
-                };
-                return await _apiClient.PostAsync<GetEntitiesRequest, GetEntitiesResponse>(
-                    $"/api/ppdm39/data/{tableName}", request) ?? new GetEntitiesResponse { Success = false };
+                    var request = new GetEntitiesRequest
+                    {
+                        TableName = tableName,
+                        Filters = filters ?? new List<AppFilter>(),
+                        ConnectionName = connectionName
+                    };
+                    return await _apiClient.PostAsync<GetEntitiesRequest, GetEntitiesResponse>(
+                        $"/api/ppdm39/data/{tableName}", request) ?? new GetEntitiesResponse { Success = false };
+                }, $"GetEntitiesAsync({tableName})");
             }
             catch (Exception ex)
             {
@@ -396,15 +440,18 @@ namespace Beep.OilandGas.Web.Services
         {
             try
             {
-                var request = new GenericEntityRequest
+                return await ExecuteWithRetryAsync(async () =>
                 {
-                    TableName = tableName,
-                    EntityData = entityData,
-                    ConnectionName = connectionName
-                };
-                var url = $"/api/ppdm39/data/{tableName}/insert?userId={Uri.EscapeDataString(userId)}";
-                return await _apiClient.PostAsync<GenericEntityRequest, GenericEntityResponse>(url, request) 
-                    ?? new GenericEntityResponse { Success = false };
+                    var request = new GenericEntityRequest
+                    {
+                        TableName = tableName,
+                        EntityData = entityData,
+                        ConnectionName = connectionName
+                    };
+                    var url = $"/api/ppdm39/data/{tableName}/insert?userId={Uri.EscapeDataString(userId)}";
+                    return await _apiClient.PostAsync<GenericEntityRequest, GenericEntityResponse>(url, request) 
+                        ?? new GenericEntityResponse { Success = false };
+                }, $"InsertEntityAsync({tableName})");
             }
             catch (Exception ex)
             {
@@ -417,15 +464,18 @@ namespace Beep.OilandGas.Web.Services
         {
             try
             {
-                var request = new GenericEntityRequest
+                return await ExecuteWithRetryAsync(async () =>
                 {
-                    TableName = tableName,
-                    EntityData = entityData,
-                    ConnectionName = connectionName
-                };
-                var url = $"/api/ppdm39/data/{tableName}/{entityId}?userId={Uri.EscapeDataString(userId)}";
-                return await _apiClient.PutAsync<GenericEntityRequest, GenericEntityResponse>(url, request) 
-                    ?? new GenericEntityResponse { Success = false };
+                    var request = new GenericEntityRequest
+                    {
+                        TableName = tableName,
+                        EntityData = entityData,
+                        ConnectionName = connectionName
+                    };
+                    var url = $"/api/ppdm39/data/{tableName}/{entityId}?userId={Uri.EscapeDataString(userId)}";
+                    return await _apiClient.PutAsync<GenericEntityRequest, GenericEntityResponse>(url, request) 
+                        ?? new GenericEntityResponse { Success = false };
+                }, $"UpdateEntityAsync({tableName}, {entityId})");
             }
             catch (Exception ex)
             {

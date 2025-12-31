@@ -1,11 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Beep.OilandGas.PPDM39.Core.Metadata;
-using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
-using Microsoft.Extensions.Logging;
-using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Data.Accounting;
 
 namespace Beep.OilandGas.ProductionAccounting.Reporting
 {
@@ -28,14 +21,14 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILoggerFactory loggerFactory,
+            ILogger<ReportManager>? logger = null,
             string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _logger = loggerFactory?.CreateLogger<ReportManager>();
+            _logger = logger;
             _connectionName = connectionName ?? "PPDM39";
         }
 
@@ -49,7 +42,7 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             List<Inventory.CrudeOilInventory> inventories,
             List<Allocation.AllocationResult> allocations,
             List<Measurement.MeasurementRecord> measurements,
-            List<Accounting.SalesTransaction> transactions)
+            List<SalesTransaction> transactions)
         {
             var report = ReportGenerator.GenerateOperationalReport(
                 periodStart,
@@ -81,7 +74,7 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             DateTime periodStart,
             DateTime periodEnd,
             List<Production.RunTicket> runTickets,
-            List<Accounting.SalesTransaction> transactions,
+            List<SalesTransaction> transactions,
             string? connectionName = null)
         {
             var report = ReportGenerator.GenerateLeaseReport(
@@ -112,7 +105,7 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             DateTime periodStart,
             DateTime periodEnd,
             List<Production.RunTicket> runTickets,
-            List<Accounting.SalesTransaction> transactions)
+            List<SalesTransaction> transactions)
         {
             return GenerateLeaseReportAsync(leaseId, periodStart, periodEnd, runTickets, transactions).GetAwaiter().GetResult();
         }
@@ -126,7 +119,7 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             DateTime periodStart,
             DateTime periodEnd,
             List<Production.RunTicket> runTickets,
-            List<Accounting.SalesTransaction> transactions,
+            List<SalesTransaction> transactions,
             List<Royalty.RoyaltyPayment> royaltyPayments,
             string? connectionName = null)
         {
@@ -161,7 +154,7 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             DateTime periodStart,
             DateTime periodEnd,
             List<Production.RunTicket> runTickets,
-            List<Accounting.SalesTransaction> transactions,
+            List<SalesTransaction> transactions,
             List<Royalty.RoyaltyPayment> royaltyPayments)
         {
             return GenerateGovernmentalReportAsync(reportingAgency, reportFormat, periodStart, periodEnd, runTickets, transactions, royaltyPayments).GetAwaiter().GetResult();
@@ -333,4 +326,3 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
         #endregion
     }
 }
-

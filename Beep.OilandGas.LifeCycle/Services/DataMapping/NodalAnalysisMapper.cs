@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.NodalAnalysis.Models;
+using Beep.OilandGas.Models.NodalAnalysis;
 using Beep.OilandGas.PPDM39.Models;
 
 namespace Beep.OilandGas.LifeCycle.Services.DataMapping

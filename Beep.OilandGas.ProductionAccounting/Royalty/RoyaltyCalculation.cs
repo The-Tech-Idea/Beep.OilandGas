@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using Beep.OilandGas.ProductionAccounting.Accounting;
 
 namespace Beep.OilandGas.ProductionAccounting.Royalty
@@ -130,4 +128,3 @@ namespace Beep.OilandGas.ProductionAccounting.Royalty
         }
     }
 }
-
