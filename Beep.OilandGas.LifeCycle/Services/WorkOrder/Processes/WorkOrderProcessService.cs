@@ -8,6 +8,7 @@ using Beep.OilandGas.LifeCycle.Services.WorkOrder;
 using Beep.OilandGas.LifeCycle.Services.Accounting;
 using Beep.OilandGas.Models.DTOs.LifeCycle;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
 namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
 {

@@ -1,0 +1,1 @@
+-- R_LEAD_STATUS table has no foreign key constraints

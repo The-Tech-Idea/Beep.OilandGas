@@ -1,0 +1,1 @@
+-- EXPORT_HISTORY table has no foreign key constraints

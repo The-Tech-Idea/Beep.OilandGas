@@ -8,6 +8,7 @@ using TheTechIdea.Beep.Report;
 using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
 namespace Beep.OilandGas.ProductionAccounting.Production
 {

@@ -56,3 +56,4 @@ global using ImbalanceSummary = Beep.OilandGas.Models.DTOs.Imbalance.ImbalanceSu
 // Resolve DTO type ambiguities for interface implementations
 global using ProvedPropertyDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.ProvedPropertyDto;
 global using ProvedReservesDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.ProvedReservesDto;
+using Beep.OilandGas.Models.Data.ProductionAccounting;

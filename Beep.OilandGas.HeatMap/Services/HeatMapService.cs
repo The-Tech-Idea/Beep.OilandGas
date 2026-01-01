@@ -15,6 +15,7 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using SkiaSharp;
+using Beep.OilandGas.Models.Data.HeatMap;
 
 namespace Beep.OilandGas.HeatMap.Services
 {

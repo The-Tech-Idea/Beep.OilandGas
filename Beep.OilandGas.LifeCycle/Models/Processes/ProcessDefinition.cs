@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
 
 namespace Beep.OilandGas.LifeCycle.Models.Processes
 {

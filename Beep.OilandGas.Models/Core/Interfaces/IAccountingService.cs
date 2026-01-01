@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.DTOs.Accounting;
 using AccountingReceivable = Beep.OilandGas.Models.Data.Accounting.RECEIVABLE;
 

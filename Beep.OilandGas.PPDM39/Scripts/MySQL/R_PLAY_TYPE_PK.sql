@@ -1,9 +1,0 @@
--- PPDM39 MARIADB DDL Script
--- Converted from SQL Server script: R_PLAY_TYPE_PK.sql
--- This script is for the PPDM39 model
-
--- CREATING PRIMARY KEY R_PLAY_TYPE_PK
-ALTER TABLE R_PLAY_TYPE ADD CONSTRAINT R_PLAY_TYPE_PK PRIMARY KEY
-(
-	PLAY_TYPE
-);

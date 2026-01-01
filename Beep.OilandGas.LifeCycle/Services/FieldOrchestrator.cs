@@ -1378,6 +1378,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             
             // Try Entity object first (using reflection)
             var prop = obj.GetType().GetProperty(propertyName);
+using Beep.OilandGas.Models.Data.ProspectIdentification;
             if (prop != null)
             {
                 var value = prop.GetValue(obj);

@@ -1,1 +1,0 @@
--- R_PIPELINE_TYPE has no foreign keys

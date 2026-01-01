@@ -1,1 +1,0 @@
--- R_DISCOVERY_TYPE has no foreign keys

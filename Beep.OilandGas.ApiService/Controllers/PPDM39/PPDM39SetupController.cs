@@ -25,6 +25,9 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.ApiService.Models;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData.Services;
+using Beep.OilandGas.DataManager.Core.Interfaces;
+using Beep.OilandGas.DataManager.Core.Models;
+using Beep.OilandGas.DataManager.Core.Registry;
 
 namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 {
@@ -40,6 +43,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         private readonly ILogger<PPDM39SetupController> _logger;
         private readonly IProgressTrackingService? _progressTracking;
         private readonly IPPDMDatabaseCreatorService? _databaseCreatorService;
+        private readonly IDataManager? _dataManager;
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
@@ -57,6 +61,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             ILogger<PPDM39SetupController> logger,
             IProgressTrackingService? progressTracking = null,
             IPPDMDatabaseCreatorService? databaseCreatorService = null,
+            IDataManager? dataManager = null,
             ICommonColumnHandler? commonColumnHandler = null,
             IPPDM39DefaultsRepository? defaults = null,
             IPPDMMetadataRepository? metadata = null,
@@ -72,6 +77,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _progressTracking = progressTracking;
             _databaseCreatorService = databaseCreatorService;
+            _dataManager = dataManager;
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
@@ -126,11 +132,28 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
         }
 
+        // Helper: map ConnectionProperties (incoming) to ApiService ConnectionConfig used by services
+        private Beep.OilandGas.ApiService.Models.ConnectionConfig MapToConnectionConfig(ConnectionProperties cp)
+        {
+            if (cp == null) return new Beep.OilandGas.ApiService.Models.ConnectionConfig();
+            return new Beep.OilandGas.ApiService.Models.ConnectionConfig
+            {
+                ConnectionName = cp.ConnectionName ?? string.Empty,
+                DatabaseType = cp.DatabaseType.ToString(),
+                Host = cp.Host ?? string.Empty,
+                Port = cp.Port,
+                Database = cp.Database ?? string.Empty,
+                Username = cp.UserID,
+                Password = cp.Password,
+                ConnectionString = cp.ConnectionString
+            };
+        }
+
         /// <summary>
-        /// Test database connection
+        /// Test database connection (accepts ConnectionProperties from client)
         /// </summary>
         [HttpPost("test-connection")]
-        public async Task<ActionResult<ConnectionTestResult>> TestConnection([FromBody] ConnectionConfig config)
+        public async Task<ActionResult<ConnectionTestResult>> TestConnection([FromBody] ConnectionProperties config)
         {
             try
             {
@@ -139,7 +162,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return BadRequest(new { error = "Connection configuration is required" });
                 }
 
-                var result = await _setupService.TestConnectionAsync(config);
+                var mapped = MapToConnectionConfig(config);
+
+                var result = await _setupService.TestConnectionAsync(mapped);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -196,27 +221,29 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         }
 
         /// <summary>
-        /// Execute a single SQL script
+        /// Execute a single SQL script (accepts ConnectionProperties payload)
         /// </summary>
         [HttpPost("execute-script")]
-        public async Task<ActionResult<ScriptExecutionResult>> ExecuteScript([FromBody] ExecuteScriptRequest request)
+        public async Task<ActionResult<ScriptExecutionResult>> ExecuteScript([FromBody] ScriptExecPayload payload)
         {
             try
             {
-                if (request == null || request.Connection == null || string.IsNullOrEmpty(request.ScriptName))
+                if (payload == null || payload.Connection == null || string.IsNullOrEmpty(payload.ScriptName))
                 {
                     return BadRequest(new { error = "Connection and script name are required" });
                 }
 
-                var result = await _setupService.ExecuteScriptAsync(request.Connection, request.ScriptName);
+                var mapped = MapToConnectionConfig(payload.Connection);
+
+                var result = await _setupService.ExecuteScriptAsync(mapped, payload.ScriptName);
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing script {ScriptName}", request?.ScriptName);
+                _logger.LogError(ex, "Error executing script {ScriptName}", payload?.ScriptName);
                 return StatusCode(500, new ScriptExecutionResult
                 {
-                    ScriptName = request?.ScriptName ?? "Unknown",
+                    ScriptName = payload?.ScriptName ?? "Unknown",
                     Success = false,
                     Message = "Script execution failed",
                     Exception = ex
@@ -225,10 +252,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         }
 
         /// <summary>
-        /// Execute all scripts in order
+        /// Execute all scripts in order (accepts ConnectionProperties payload)
         /// </summary>
         [HttpPost("execute-all-scripts")]
-        public async Task<ActionResult<AllScriptsExecutionResult>> ExecuteAllScripts([FromBody] ScriptExecutionRequest request)
+        public async Task<ActionResult<AllScriptsExecutionResult>> ExecuteAllScripts([FromBody] AllScriptsExecPayload request)
         {
             try
             {
@@ -237,10 +264,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return BadRequest(new { error = "Connection configuration is required" });
                 }
 
+                var mapped = MapToConnectionConfig(request.Connection);
+
                 if (request.ExecuteAll)
                 {
                     // Get all available scripts
-                    var scripts = _setupService.GetAvailableScripts(request.Connection.DatabaseType);
+                    var scripts = _setupService.GetAvailableScripts(mapped.DatabaseType);
                     request.ScriptNames = scripts.OrderBy(s => s.ExecutionOrder).Select(s => s.Name).ToList();
                 }
 
@@ -249,7 +278,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return BadRequest(new { error = "No scripts to execute" });
                 }
 
-                var result = await _setupService.ExecuteAllScriptsAsync(request.Connection, request.ScriptNames);
+                var result = await _setupService.ExecuteAllScriptsAsync(mapped, request.ScriptNames);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -747,7 +776,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         }
 
         /// <summary>
-        /// Create database by executing scripts
+        /// Create database by executing scripts using DataManager
         /// </summary>
         [HttpPost("create-database")]
         public async Task<ActionResult<DatabaseCreationResultDto>> CreateDatabase([FromBody] CreateDatabaseRequest request)
@@ -759,25 +788,78 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return BadRequest(new { error = "Connection and options are required" });
                 }
 
-                if (_databaseCreatorService == null)
+                if (_dataManager == null)
                 {
-                    return StatusCode(500, new { error = "Database creator service not available" });
+                    // Fallback to old service if DataManager not available
+                    if (_databaseCreatorService == null)
+                    {
+                        return StatusCode(500, new { error = "DataManager and DatabaseCreatorService not available" });
+                    }
+                    return await CreateDatabaseLegacy(request);
                 }
 
-                // Map DatabaseType string to enum
-                if (!Enum.TryParse<DatabaseType>(request.Options.DatabaseType, true, out var databaseType))
+                // Map ConnectionProperties to ConnectionConfig
+                var connectionConfig = MapToConnectionConfig(request.Connection);
+
+                // Get data source
+                var dataSource = _setupService.GetDataSourceFromConnectionConfig(connectionConfig);
+                if (dataSource.Openconnection() != System.Data.ConnectionState.Open)
                 {
-                    return BadRequest(new { error = $"Invalid database type: {request.Options.DatabaseType}" });
+                    return StatusCode(500, new DatabaseCreationResultDto
+                    {
+                        Success = false,
+                        ErrorMessage = "Failed to open database connection"
+                    });
                 }
 
-                // Build connection string from ConnectionConfig
-                var connectionString = BuildConnectionString(request.Connection);
+                // Determine which modules to execute
+                var modulesToExecute = new List<IModuleData>();
+                
+                if (request.Options.Categories != null && request.Options.Categories.Any())
+                {
+                    // Execute specific modules by category
+                    var allModules = ModuleDataRegistry.GetAllModules();
+                    foreach (var category in request.Options.Categories)
+                    {
+                        var module = ModuleDataRegistry.GetModule(category);
+                        if (module != null)
+                        {
+                            modulesToExecute.Add(module);
+                        }
+                    }
+                }
+                else
+                {
+                    // Execute all required modules
+                    modulesToExecute = ModuleDataRegistry.GetRequiredModules().ToList();
+                }
 
-                // Map ScriptTypes
-                List<ScriptType>? scriptTypes = null;
+                if (!modulesToExecute.Any())
+                {
+                    return BadRequest(new { error = "No modules selected for execution" });
+                }
+
+                // Create execution options
+                var executionOptions = new ScriptExecutionOptions
+                {
+                    ContinueOnError = request.Options.ContinueOnError,
+                    EnableRollback = request.Options.EnableRollback,
+                    ExecuteOptionalScripts = request.Options.ExecuteOptionalScripts,
+                    ValidateDependencies = request.Options.ValidateDependencies,
+                    EnableParallelExecution = request.Options.EnableParallelExecution,
+                    MaxParallelTasks = request.Options.MaxParallelTasks,
+                    EnableCheckpointing = !string.IsNullOrEmpty(request.Options.ExecutionId),
+                    ExecutionId = request.Options.ExecutionId ?? Guid.NewGuid().ToString(),
+                    ValidateBeforeExecution = true,
+                    CheckErrorsAfterExecution = true,
+                    VerifyObjectsCreated = true,
+                    Logger = _logger
+                };
+
+                // Filter script types if specified
                 if (request.Options.ScriptTypes != null && request.Options.ScriptTypes.Any())
                 {
-                    scriptTypes = new List<ScriptType>();
+                    var scriptTypes = new List<ScriptType>();
                     foreach (var st in request.Options.ScriptTypes)
                     {
                         if (Enum.TryParse<ScriptType>(st, true, out var scriptType))
@@ -785,60 +867,38 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                             scriptTypes.Add(scriptType);
                         }
                     }
+                    executionOptions.IncludedScriptTypes = scriptTypes;
                 }
 
-                // Construct scripts path
-                var basePath = AppContext.BaseDirectory;
-                var solutionRoot = Path.GetFullPath(Path.Combine(basePath, "..", "..", "..", "..", ".."));
-                var scriptsBasePath = Path.Combine(solutionRoot, "Beep.OilandGas.PPDM39", "Scripts");
-                
-                // Fallback: try alternative paths
-                if (!Directory.Exists(scriptsBasePath))
-                {
-                    scriptsBasePath = Path.Combine(basePath, "..", "..", "..", "..", "Beep.OilandGas.PPDM39", "Scripts");
-                }
+                // Execute modules
+                var moduleResults = await _dataManager.ExecuteModulesAsync(modulesToExecute, dataSource, executionOptions);
 
-                // Create options
-                var options = new DatabaseCreationOptions
-                {
-                    DatabaseType = databaseType,
-                    ConnectionString = connectionString,
-                    DatabaseName = request.Connection.Database,
-                    ScriptsPath = scriptsBasePath,
-                    Categories = request.Options.Categories,
-                    ScriptTypes = scriptTypes,
-                    EnableLogging = request.Options.EnableLogging,
-                    LogFilePath = request.Options.LogFilePath,
-                    ContinueOnError = request.Options.ContinueOnError,
-                    EnableRollback = request.Options.EnableRollback,
-                    ExecuteConsolidatedScripts = request.Options.ExecuteConsolidatedScripts,
-                    ExecuteIndividualScripts = request.Options.ExecuteIndividualScripts,
-                    ExecuteOptionalScripts = request.Options.ExecuteOptionalScripts,
-                    ValidateDependencies = request.Options.ValidateDependencies,
-                    EnableParallelExecution = request.Options.EnableParallelExecution,
-                    MaxParallelTasks = request.Options.MaxParallelTasks,
-                    ExecutionId = request.Options.ExecutionId
-                };
+                // Aggregate results
+                var totalScripts = moduleResults.Values.Sum(r => r.TotalScripts);
+                var successfulScripts = moduleResults.Values.Sum(r => r.SuccessfulScripts);
+                var failedScripts = moduleResults.Values.Sum(r => r.FailedScripts);
+                var allScriptResults = moduleResults.Values.SelectMany(r => r.ScriptResults).ToList();
 
-                // Execute database creation
-                var result = await _databaseCreatorService.CreateDatabaseAsync(options);
+                var overallSuccess = moduleResults.Values.All(r => r.Success);
+                var startTime = moduleResults.Values.Min(r => r.StartTime);
+                var endTime = moduleResults.Values.Max(r => r.EndTime);
 
-                // Map result to DTO
+                // Map to DTO
                 var resultDto = new DatabaseCreationResultDto
                 {
-                    ExecutionId = result.ExecutionId,
-                    Success = result.Success,
-                    ErrorMessage = result.ErrorMessage,
-                    StartTime = result.StartTime,
-                    EndTime = result.EndTime,
-                    TotalDuration = result.TotalDuration,
-                    TotalScripts = result.TotalScripts,
-                    SuccessfulScripts = result.SuccessfulScripts,
-                    FailedScripts = result.FailedScripts,
-                    SkippedScripts = result.SkippedScripts,
-                    ScriptResults = result.ScriptResults.Select(sr => new ScriptExecutionResultDto
+                    ExecutionId = executionOptions.ExecutionId ?? Guid.NewGuid().ToString(),
+                    Success = overallSuccess,
+                    ErrorMessage = overallSuccess ? null : $"Failed scripts: {failedScripts}",
+                    StartTime = startTime,
+                    EndTime = endTime,
+                    TotalDuration = endTime - startTime,
+                    TotalScripts = totalScripts,
+                    SuccessfulScripts = successfulScripts,
+                    FailedScripts = failedScripts,
+                    SkippedScripts = totalScripts - successfulScripts - failedScripts,
+                    ScriptResults = allScriptResults.Select(sr => new ScriptExecutionResultDto
                     {
-                        ScriptFileName = sr.ScriptFileName,
+                        ScriptFileName = sr.ScriptFileName ?? string.Empty,
                         Success = sr.Success,
                         ErrorMessage = sr.ErrorMessage,
                         StartTime = sr.StartTime,
@@ -846,10 +906,16 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         Duration = sr.Duration,
                         RowsAffected = sr.RowsAffected,
                         ExecutionLog = sr.ExecutionLog,
-                        Metadata = sr.Metadata
+                        Metadata = sr.Metadata ?? new Dictionary<string, object>()
                     }).ToList(),
-                    Summary = result.Summary,
-                    LogFilePath = result.LogFilePath
+                    Summary = new Dictionary<string, object>
+                    {
+                        { "ModulesExecuted", modulesToExecute.Select(m => m.ModuleName).ToList() },
+                        { "TotalModules", modulesToExecute.Count },
+                        { "SuccessfulModules", moduleResults.Values.Count(r => r.Success) },
+                        { "FailedModules", moduleResults.Values.Count(r => !r.Success) }
+                    },
+                    LogFilePath = request.Options.LogFilePath
                 };
 
                 return Ok(resultDto);
@@ -863,6 +929,107 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     ErrorMessage = $"Database creation failed: {ex.Message}"
                 });
             }
+        }
+
+        /// <summary>
+        /// Legacy CreateDatabase implementation using IPPDMDatabaseCreatorService (fallback)
+        /// </summary>
+        private async Task<ActionResult<DatabaseCreationResultDto>> CreateDatabaseLegacy(CreateDatabaseRequest request)
+        {
+            if (_databaseCreatorService == null)
+            {
+                return StatusCode(500, new { error = "Database creator service not available" });
+            }
+
+            // Map DatabaseType string to enum
+            if (!Enum.TryParse<DatabaseType>(request.Options.DatabaseType, true, out var databaseType))
+            {
+                return BadRequest(new { error = $"Invalid database type: {request.Options.DatabaseType}" });
+            }
+
+            // Build connection string from ConnectionConfig
+            var connectionString = BuildConnectionString(request.Connection);
+
+            // Map ScriptTypes
+            List<ScriptType>? scriptTypes = null;
+            if (request.Options.ScriptTypes != null && request.Options.ScriptTypes.Any())
+            {
+                scriptTypes = new List<ScriptType>();
+                foreach (var st in request.Options.ScriptTypes)
+                {
+                    if (Enum.TryParse<ScriptType>(st, true, out var scriptType))
+                    {
+                        scriptTypes.Add(scriptType);
+                    }
+                }
+            }
+
+            // Construct scripts path
+            var basePath = AppContext.BaseDirectory;
+            var solutionRoot = Path.GetFullPath(Path.Combine(basePath, "..", "..", "..", "..", ".."));
+            var scriptsBasePath = Path.Combine(solutionRoot, "Beep.OilandGas.PPDM39", "Scripts");
+            
+            // Fallback: try alternative paths
+            if (!Directory.Exists(scriptsBasePath))
+            {
+                scriptsBasePath = Path.Combine(basePath, "..", "..", "..", "..", "Beep.OilandGas.PPDM39", "Scripts");
+            }
+
+            // Create options
+            var options = new DatabaseCreationOptions
+            {
+                DatabaseType = databaseType,
+                ConnectionString = connectionString,
+                DatabaseName = request.Connection.Database,
+                ScriptsPath = scriptsBasePath,
+                Categories = request.Options.Categories,
+                ScriptTypes = scriptTypes,
+                EnableLogging = request.Options.EnableLogging,
+                LogFilePath = request.Options.LogFilePath,
+                ContinueOnError = request.Options.ContinueOnError,
+                EnableRollback = request.Options.EnableRollback,
+                ExecuteConsolidatedScripts = request.Options.ExecuteConsolidatedScripts,
+                ExecuteIndividualScripts = request.Options.ExecuteIndividualScripts,
+                ExecuteOptionalScripts = request.Options.ExecuteOptionalScripts,
+                ValidateDependencies = request.Options.ValidateDependencies,
+                EnableParallelExecution = request.Options.EnableParallelExecution,
+                MaxParallelTasks = request.Options.MaxParallelTasks,
+                ExecutionId = request.Options.ExecutionId
+            };
+
+            // Execute database creation
+            var result = await _databaseCreatorService.CreateDatabaseAsync(options);
+
+            // Map result to DTO
+            var resultDto = new DatabaseCreationResultDto
+            {
+                ExecutionId = result.ExecutionId,
+                Success = result.Success,
+                ErrorMessage = result.ErrorMessage,
+                StartTime = result.StartTime,
+                EndTime = result.EndTime,
+                TotalDuration = result.TotalDuration,
+                TotalScripts = result.TotalScripts,
+                SuccessfulScripts = result.SuccessfulScripts,
+                FailedScripts = result.FailedScripts,
+                SkippedScripts = result.SkippedScripts,
+                ScriptResults = result.ScriptResults.Select(sr => new ScriptExecutionResultDto
+                {
+                    ScriptFileName = sr.ScriptFileName,
+                    Success = sr.Success,
+                    ErrorMessage = sr.ErrorMessage,
+                    StartTime = sr.StartTime,
+                    EndTime = sr.EndTime,
+                    Duration = sr.Duration,
+                    RowsAffected = sr.RowsAffected,
+                    ExecutionLog = sr.ExecutionLog,
+                    Metadata = sr.Metadata
+                }).ToList(),
+                Summary = result.Summary,
+                LogFilePath = result.LogFilePath
+            };
+
+            return Ok(resultDto);
         }
 
         /// <summary>
@@ -1969,6 +2136,81 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     ExtractionDate = DateTime.UtcNow
                 });
             }
+        }
+
+        /// <summary>
+        /// Gets or creates IDataSource from ConnectionConfig (helper method)
+        /// </summary>
+        private IDataSource GetDataSourceFromConnectionConfig(Beep.OilandGas.ApiService.Models.ConnectionConfig config)
+        {
+            var driverInfo = _setupService.GetDriverInfo(config.DatabaseType);
+            if (driverInfo == null)
+            {
+                throw new InvalidOperationException($"Unknown database type: {config.DatabaseType}");
+            }
+
+            // Check if connection already exists
+            if (_editor.ConfigEditor.DataConnectionExist(config.ConnectionName))
+            {
+                var dataSource = _editor.GetDataSource(config.ConnectionName);
+                if (dataSource != null)
+                {
+                    return dataSource;
+                }
+            }
+
+            // Create new connection
+            var connectionProperties = new ConnectionProperties
+            {
+                ConnectionName = config.ConnectionName,
+                DatabaseType = ParseDataSourceType(driverInfo.DataSourceType),
+                DriverName = driverInfo.NuGetPackage,
+                Host = config.Host,
+                Port = config.Port > 0 ? config.Port : driverInfo.DefaultPort,
+                Database = config.Database,
+                UserID = config.Username ?? string.Empty,
+                Password = config.Password ?? string.Empty,
+                ConnectionString = config.ConnectionString ?? string.Empty,
+                GuidID = Guid.NewGuid().ToString()
+            };
+
+            if (!_editor.ConfigEditor.DataConnectionExist(config.ConnectionName))
+            {
+                _editor.ConfigEditor.AddDataConnection(connectionProperties);
+                _editor.ConfigEditor.SaveDataconnectionsValues();
+            }
+
+            var newDataSource = _editor.GetDataSource(config.ConnectionName);
+            if (newDataSource == null)
+            {
+                throw new InvalidOperationException($"Failed to create data source for connection: {config.ConnectionName}");
+            }
+
+            return newDataSource;
+        }
+
+        /// <summary>
+        /// Helper method to convert string to DataSourceType enum
+        /// </summary>
+        private static DataSourceType ParseDataSourceType(string dataSourceTypeString)
+        {
+            if (string.IsNullOrEmpty(dataSourceTypeString))
+                return DataSourceType.SqlServer; // Default
+
+            // Try parsing the enum directly
+            if (Enum.TryParse<DataSourceType>(dataSourceTypeString, true, out var result))
+                return result;
+
+            // Map string values to enum values (case-insensitive)
+            return dataSourceTypeString.ToLowerInvariant() switch
+            {
+                "sqlserver" => DataSourceType.SqlServer,
+                "postgre" or "postgresql" => DataSourceType.Postgre,
+                "mysql" or "mariadb" => DataSourceType.Mysql,
+                "oracle" => DataSourceType.Oracle,
+                "sqlite" => DataSourceType.SqlServer, // Sqlite may not be in enum, use SqlServer as fallback
+                _ => DataSourceType.SqlServer // Default fallback
+            };
         }
     }
     // Request DTOs for LOV import

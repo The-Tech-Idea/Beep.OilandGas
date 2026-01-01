@@ -88,6 +88,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
 
             // Calculate valuation using existing engine
             RunTicketValuation valuation;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
             PricingMethod method = Enum.TryParse<PricingMethod>(request.PricingMethod, out var parsedMethod) ? parsedMethod : PricingMethod.Fixed;
 
             switch (method)

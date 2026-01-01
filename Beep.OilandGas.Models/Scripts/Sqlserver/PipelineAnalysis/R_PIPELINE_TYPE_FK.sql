@@ -1,0 +1,1 @@
+-- R_PIPELINE_TYPE table has no foreign key constraints

@@ -1,0 +1,1 @@
+-- R_DISCOVERY_TYPE table has no foreign key constraints

@@ -1,0 +1,1 @@
+-- R_PIPELINE_STATUS table has no foreign key constraints

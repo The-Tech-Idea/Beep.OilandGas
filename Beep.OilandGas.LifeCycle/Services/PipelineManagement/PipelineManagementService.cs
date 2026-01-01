@@ -540,6 +540,7 @@ namespace Beep.OilandGas.LifeCycle.Services.PipelineManagement
             if (_dataFlowService == null)
             {
                 throw new InvalidOperationException("DataFlowService is not available. Inject DataFlowService in constructor to use analysis features.");
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
             }
 
             try

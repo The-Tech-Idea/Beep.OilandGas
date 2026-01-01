@@ -1,0 +1,3 @@
+-- SQLite doesn't support ALTER TABLE ADD CONSTRAINT for primary keys
+-- Primary key is defined in CREATE TABLE statement
+-- This file is kept for consistency with other database types

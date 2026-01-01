@@ -1,0 +1,3 @@
+-- SQLite foreign keys are enabled via PRAGMA foreign_keys = ON
+-- Foreign key constraints are defined in CREATE TABLE statement
+-- This file is kept for consistency with other database types

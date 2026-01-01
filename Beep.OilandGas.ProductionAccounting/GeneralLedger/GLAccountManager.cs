@@ -67,6 +67,7 @@ namespace Beep.OilandGas.ProductionAccounting.GeneralLedger
 
             // Save to database using IDataSource
             var connName = connectionName ?? _connectionName;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
             var dataSource = _editor.GetDataSource(connName);
             if (dataSource == null)
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");

@@ -17,6 +17,12 @@ using TheTechIdea.Beep.Utilities;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation;
 using Beep.OilandGas.ApiService.Models;
+using Beep.OilandGas.DataManager.Core.Interfaces;
+using Beep.OilandGas.DataManager.Core.Models;
+using Beep.OilandGas.DataManager.Core.Registry;
+using Beep.OilandGas.DataManager.Core.Utilities;
+using Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation;
+using ScriptInfo = Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation.ScriptInfo;
 
 namespace Beep.OilandGas.ApiService.Services
 {
@@ -27,13 +33,18 @@ namespace Beep.OilandGas.ApiService.Services
     {
         private readonly IDMEEditor _editor;
         private readonly ILogger<PPDM39SetupService> _logger;
+        private readonly IDataManager _dataManager;
         private IProgressTrackingService? _progressTracking;
         private static string? _currentConnectionName; // In-memory storage for current connection name
 
-        public PPDM39SetupService(IDMEEditor editor, ILogger<PPDM39SetupService> logger)
+        public PPDM39SetupService(
+            IDMEEditor editor, 
+            ILogger<PPDM39SetupService> logger,
+            IDataManager dataManager)
         {
             _editor = editor;
             _logger = logger;
+            _dataManager = dataManager ?? throw new ArgumentNullException(nameof(dataManager));
         }
 
         /// <summary>
@@ -901,46 +912,172 @@ namespace Beep.OilandGas.ApiService.Services
         }
 
         /// <summary>
-        /// Get available scripts for database type
+        /// Get available scripts for database type using DataManager
         /// </summary>
-        public List<ScriptInfo> GetAvailableScripts(string databaseType)
+        public async Task<List<ScriptInfo>> GetAvailableScriptsAsync(string databaseType)
         {
-            var driverInfo = GetDriverInfo(databaseType);
-            if (driverInfo == null)
+            try
             {
-                return new List<ScriptInfo>();
-            }
+                var allModules = ModuleDataRegistry.GetAllModules();
+                var normalizedDbType = DatabaseTypeNormalizer.Normalize(databaseType);
+                var allScripts = new List<ScriptInfo>();
 
-            var scriptsPath = GetScriptsPath(driverInfo.ScriptPath);
-            if (!Directory.Exists(scriptsPath))
-            {
-                return new List<ScriptInfo>();
-            }
-
-            var scripts = new List<ScriptInfo>();
-            foreach (var scriptMeta in ScriptMetadata.Values.OrderBy(s => s.ExecutionOrder))
-            {
-                var scriptPath = Path.Combine(scriptsPath, scriptMeta.Name);
-                if (File.Exists(scriptPath))
+                foreach (var module in allModules.OrderBy(m => m.ExecutionOrder))
                 {
-                    scripts.Add(new ScriptInfo
+                    try
                     {
-                        Name = scriptMeta.Name,
-                        Description = scriptMeta.Description,
-                        IsMandatory = scriptMeta.IsMandatory,
-                        ExecutionOrder = scriptMeta.ExecutionOrder,
-                        IsSelected = scriptMeta.IsMandatory // Auto-select mandatory scripts
-                    });
+                        var moduleScripts = await module.GetScriptsAsync(normalizedDbType);
+                        foreach (var moduleScript in moduleScripts)
+                        {
+                            allScripts.Add(MapModuleScriptInfoToScriptInfo(moduleScript));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Error getting scripts for module {ModuleName}", module.ModuleName);
+                    }
                 }
-            }
 
-            return scripts;
+                return allScripts.OrderBy(s => s.ExecutionOrder).ThenBy(s => s.Name).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting available scripts for {DatabaseType}", databaseType);
+                return new List<ScriptInfo>();
+            }
         }
 
         /// <summary>
-        /// Execute a single SQL script
+        /// Get available scripts for database type (synchronous wrapper for backward compatibility)
+        /// </summary>
+        public List<ScriptInfo> GetAvailableScripts(string databaseType)
+        {
+            try
+            {
+                return GetAvailableScriptsAsync(databaseType).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting available scripts for {DatabaseType}", databaseType);
+                return new List<ScriptInfo>();
+            }
+        }
+
+        /// <summary>
+        /// Execute a single SQL script using DataManager
         /// </summary>
         public async Task<ScriptExecutionResult> ExecuteScriptAsync(ConnectionConfig config, string scriptName, string? operationId = null)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            try
+            {
+                // Get data source from connection config
+                var dataSource = GetDataSourceFromConnectionConfig(config);
+
+                // Ensure connection is open
+                if (dataSource.Openconnection() != ConnectionState.Open)
+                {
+                    return new ScriptExecutionResult
+                    {
+                        ScriptName = scriptName,
+                        Success = false,
+                        Message = "Failed to open connection",
+                        ExecutionTime = stopwatch.Elapsed
+                    };
+                }
+
+                // Find module that contains this script
+                var module = await FindModuleByScriptNameAsync(scriptName, config.DatabaseType);
+                if (module == null)
+                {
+                    return new ScriptExecutionResult
+                    {
+                        ScriptName = scriptName,
+                        Success = false,
+                        Message = $"Script '{scriptName}' not found in any module",
+                        ExecutionTime = stopwatch.Elapsed
+                    };
+                }
+
+                // Get scripts from module
+                var normalizedDbType = DatabaseTypeNormalizer.Normalize(config.DatabaseType);
+                var moduleScripts = await module.GetScriptsAsync(normalizedDbType);
+                var scriptInfo = moduleScripts.FirstOrDefault(s => s.FileName.Equals(scriptName, StringComparison.OrdinalIgnoreCase));
+
+                if (scriptInfo == null)
+                {
+                    return new ScriptExecutionResult
+                    {
+                        ScriptName = scriptName,
+                        Success = false,
+                        Message = $"Script '{scriptName}' not found in module '{module.ModuleName}'",
+                        ExecutionTime = stopwatch.Elapsed
+                    };
+                }
+
+                // Update progress
+                if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
+                {
+                    _progressTracking.UpdateProgress(operationId, 0, $"Executing {scriptName}");
+                }
+
+                // Execute script using DataManager
+                var options = new ScriptExecutionOptions
+                {
+                    ContinueOnError = false,
+                    ValidateBeforeExecution = false, // Skip validation for individual script execution
+                    CheckErrorsAfterExecution = false,
+                    Logger = _logger
+                };
+
+                var dataManagerResult = await _dataManager.ExecuteScriptAsync(scriptInfo, dataSource, options);
+
+                // Update progress
+                if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
+                {
+                    var progress = dataManagerResult.Success ? 100 : 50;
+                    _progressTracking.UpdateProgress(operationId, progress,
+                        dataManagerResult.Success ? $"Completed {scriptName}" : $"Failed {scriptName}: {dataManagerResult.ErrorMessage}");
+                }
+
+                stopwatch.Stop();
+
+                // Map result to DTO
+                return new ScriptExecutionResult
+                {
+                    ScriptName = scriptName,
+                    Success = dataManagerResult.Success,
+                    Message = dataManagerResult.Message ?? (dataManagerResult.Success ? "Script executed successfully" : dataManagerResult.ErrorMessage),
+                    ErrorDetails = dataManagerResult.ErrorMessage,
+                    ExecutionTime = stopwatch.Elapsed,
+                    RowsAffected = dataManagerResult.RowsAffected,
+                    Exception = dataManagerResult.Exception
+                };
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                _logger.LogError(ex, "Error executing script {ScriptName}", scriptName);
+
+                if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
+                {
+                    _progressTracking.CompleteOperation(operationId, false, $"Script execution failed: {ex.Message}", ex.ToString());
+                }
+
+                return new ScriptExecutionResult
+                {
+                    ScriptName = scriptName,
+                    Success = false,
+                    Message = $"Script execution failed: {ex.Message}",
+                    ErrorDetails = ex.ToString(),
+                    ExecutionTime = stopwatch.Elapsed,
+                    Exception = ex
+                };
+            }
+        }
+
+        // Legacy method - kept for reference but not used
+        private async Task<ScriptExecutionResult> ExecuteScriptAsyncLegacy(ConnectionConfig config, string scriptName, string? operationId = null)
         {
             var stopwatch = Stopwatch.StartNew();
             try
@@ -1094,68 +1231,158 @@ namespace Beep.OilandGas.ApiService.Services
         }
 
         /// <summary>
-        /// Execute all scripts in order
+        /// Execute all scripts in order using DataManager
         /// </summary>
         public async Task<AllScriptsExecutionResult> ExecuteAllScriptsAsync(ConnectionConfig config, List<string> scriptNames, string? operationId = null)
         {
             var overallStopwatch = Stopwatch.StartNew();
-            var results = new List<ScriptExecutionResult>();
-            var totalScripts = scriptNames.Count;
-            var completedScripts = 0;
-
-            // Start progress tracking if operation ID provided
-            if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
+            try
             {
-                _progressTracking.UpdateProgress(operationId, 0, $"Starting execution of {totalScripts} script(s)");
-            }
+                // Get data source from connection config
+                var dataSource = GetDataSourceFromConnectionConfig(config);
 
-            foreach (var scriptName in scriptNames)
-            {
-                // Update progress
-                if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
+                // Ensure connection is open
+                if (dataSource.Openconnection() != ConnectionState.Open)
                 {
-                    var percentage = (int)((completedScripts / (double)totalScripts) * 100);
-                    _progressTracking.UpdateProgress(operationId, percentage, 
-                        $"Executing script {completedScripts + 1}/{totalScripts}: {scriptName}");
-                }
-
-                var result = await ExecuteScriptAsync(config, scriptName, operationId);
-                results.Add(result);
-                completedScripts++;
-
-                // Update progress after script completion
-                if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
-                {
-                    var percentage = (int)((completedScripts / (double)totalScripts) * 100);
-                    _progressTracking.UpdateProgress(operationId, percentage, 
-                        $"Completed script {completedScripts}/{totalScripts}: {scriptName} - {(result.Success ? "Success" : "Failed")}");
-                }
-
-                // Stop on first failure of mandatory script
-                var scriptMeta = ScriptMetadata.GetValueOrDefault(scriptName);
-                if (!result.Success && scriptMeta?.IsMandatory == true)
-                {
-                    _logger.LogWarning("Mandatory script {ScriptName} failed, stopping execution", scriptName);
-                    if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
+                    return new AllScriptsExecutionResult
                     {
-                        _progressTracking.CompleteOperation(operationId, false, 
-                            "Execution stopped due to mandatory script failure", result.ErrorDetails);
-                    }
-                    break;
+                        Results = new List<ScriptExecutionResult>(),
+                        TotalScripts = scriptNames.Count,
+                        SuccessfulScripts = 0,
+                        FailedScripts = scriptNames.Count,
+                        AllSucceeded = false,
+                        TotalExecutionTime = overallStopwatch.Elapsed
+                    };
                 }
+
+                // Group scripts by module
+                var normalizedDbType = DatabaseTypeNormalizer.Normalize(config.DatabaseType);
+                var modulesToExecute = new Dictionary<IModuleData, List<ModuleScriptInfo>>();
+
+                foreach (var scriptName in scriptNames)
+                {
+                    var module = await FindModuleByScriptNameAsync(scriptName, normalizedDbType);
+                    if (module != null)
+                    {
+                        if (!modulesToExecute.ContainsKey(module))
+                        {
+                            modulesToExecute[module] = new List<ModuleScriptInfo>();
+                        }
+
+                        var moduleScripts = await module.GetScriptsAsync(normalizedDbType);
+                        var scriptInfo = moduleScripts.FirstOrDefault(s => s.FileName.Equals(scriptName, StringComparison.OrdinalIgnoreCase));
+                        if (scriptInfo != null)
+                        {
+                            modulesToExecute[module].Add(scriptInfo);
+                        }
+                    }
+                }
+
+                // Start progress tracking
+                if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
+                {
+                    _progressTracking.UpdateProgress(operationId, 0, $"Starting execution of {scriptNames.Count} script(s) across {modulesToExecute.Count} module(s)");
+                }
+
+                var allResults = new List<ScriptExecutionResult>();
+                var totalScripts = scriptNames.Count;
+                var completedScripts = 0;
+
+                // Execute modules in dependency order
+                var sortedModules = ModuleDataRegistry.GetModulesWithDependenciesResolved()
+                    .Where(m => modulesToExecute.ContainsKey(m))
+                    .ToList();
+
+                foreach (var module in sortedModules)
+                {
+                    var moduleScripts = modulesToExecute[module];
+
+                    foreach (var scriptInfo in moduleScripts.OrderBy(s => s.ExecutionOrder))
+                    {
+                        // Update progress
+                        if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
+                        {
+                            var percentage = (int)((completedScripts / (double)totalScripts) * 100);
+                            _progressTracking.UpdateProgress(operationId, percentage,
+                                $"Executing {scriptInfo.FileName} ({module.ModuleName})");
+                        }
+
+                        // Execute script
+                        var options = new ScriptExecutionOptions
+                        {
+                            ContinueOnError = false,
+                            ValidateBeforeExecution = false,
+                            CheckErrorsAfterExecution = false,
+                            Logger = _logger
+                        };
+
+                        var dataManagerResult = await _dataManager.ExecuteScriptAsync(scriptInfo, dataSource, options);
+                        var result = MapScriptExecutionResultToDto(dataManagerResult);
+                        allResults.Add(result);
+                        completedScripts++;
+
+                        // Update progress
+                        if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
+                        {
+                            var percentage = (int)((completedScripts / (double)totalScripts) * 100);
+                            _progressTracking.UpdateProgress(operationId, percentage,
+                                $"Completed {scriptInfo.FileName} - {(result.Success ? "Success" : "Failed")}");
+                        }
+
+                        // Stop on first failure if script is mandatory
+                        if (!result.Success && scriptInfo.IsRequired)
+                        {
+                            _logger.LogWarning("Required script {ScriptName} failed, stopping execution", scriptInfo.FileName);
+                            if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
+                            {
+                                _progressTracking.CompleteOperation(operationId, false,
+                                    "Execution stopped due to required script failure", result.ErrorDetails);
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                overallStopwatch.Stop();
+
+                if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
+                {
+                    var allSucceeded = allResults.All(r => r.Success);
+                    _progressTracking.CompleteOperation(operationId, allSucceeded,
+                        allSucceeded ? "All scripts executed successfully" : "Some scripts failed",
+                        allSucceeded ? null : $"Failed: {allResults.Count(r => !r.Success)}/{allResults.Count}");
+                }
+
+                return new AllScriptsExecutionResult
+                {
+                    Results = allResults,
+                    TotalScripts = scriptNames.Count,
+                    SuccessfulScripts = allResults.Count(r => r.Success),
+                    FailedScripts = allResults.Count(r => !r.Success),
+                    AllSucceeded = allResults.All(r => r.Success),
+                    TotalExecutionTime = overallStopwatch.Elapsed
+                };
             }
-
-            overallStopwatch.Stop();
-
-            return new AllScriptsExecutionResult
+            catch (Exception ex)
             {
-                Results = results,
-                TotalScripts = scriptNames.Count,
-                SuccessfulScripts = results.Count(r => r.Success),
-                FailedScripts = results.Count(r => !r.Success),
-                AllSucceeded = results.All(r => r.Success),
-                TotalExecutionTime = overallStopwatch.Elapsed
-            };
+                overallStopwatch.Stop();
+                _logger.LogError(ex, "Error executing all scripts");
+
+                if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
+                {
+                    _progressTracking.CompleteOperation(operationId, false, "Execution failed", ex.Message);
+                }
+
+                return new AllScriptsExecutionResult
+                {
+                    Results = new List<ScriptExecutionResult>(),
+                    TotalScripts = scriptNames.Count,
+                    SuccessfulScripts = 0,
+                    FailedScripts = scriptNames.Count,
+                    AllSucceeded = false,
+                    TotalExecutionTime = overallStopwatch.Elapsed
+                };
+            }
         }
 
         /// <summary>
@@ -1761,5 +1988,191 @@ namespace Beep.OilandGas.ApiService.Services
                 };
             }
         }
+
+        #region DataManager Helper Methods
+
+        /// <summary>
+        /// Gets or creates IDataSource from ConnectionConfig
+        /// </summary>
+        private IDataSource GetDataSourceFromConnectionConfig(ConnectionConfig config)
+        {
+            var driverInfo = GetDriverInfo(config.DatabaseType);
+            if (driverInfo == null)
+            {
+                throw new InvalidOperationException($"Unknown database type: {config.DatabaseType}");
+            }
+
+            // Check if connection already exists
+            if (_editor.ConfigEditor.DataConnectionExist(config.ConnectionName))
+            {
+                var dataSource = _editor.GetDataSource(config.ConnectionName);
+                if (dataSource != null)
+                {
+                    return dataSource;
+                }
+            }
+
+            // Create new connection
+            var connectionProperties = new ConnectionProperties
+            {
+                ConnectionName = config.ConnectionName,
+                DatabaseType = ParseDataSourceType(driverInfo.DataSourceType),
+                DriverName = driverInfo.NuGetPackage,
+                Host = config.Host,
+                Port = config.Port > 0 ? config.Port : driverInfo.DefaultPort,
+                Database = config.Database,
+                UserID = config.Username ?? string.Empty,
+                Password = config.Password ?? string.Empty,
+                ConnectionString = config.ConnectionString ?? string.Empty,
+                GuidID = Guid.NewGuid().ToString()
+            };
+
+            if (!_editor.ConfigEditor.DataConnectionExist(config.ConnectionName))
+            {
+                _editor.ConfigEditor.AddDataConnection(connectionProperties);
+                _editor.ConfigEditor.SaveDataconnectionsValues();
+            }
+
+            var newDataSource = _editor.GetDataSource(config.ConnectionName);
+            if (newDataSource == null)
+            {
+                throw new InvalidOperationException($"Failed to create data source for connection: {config.ConnectionName}");
+            }
+
+            return newDataSource;
+        }
+
+        /// <summary>
+        /// Maps ModuleScriptInfo to ScriptInfo DTO
+        /// </summary>
+        private ScriptInfo MapModuleScriptInfoToScriptInfo(ModuleScriptInfo moduleScript)
+        {
+            return new ScriptInfo
+            {
+                FileName = moduleScript.FileName,
+                Name = moduleScript.FileName, // Alias property
+                Description = GetScriptDescription(moduleScript.FileName, moduleScript.ScriptType),
+                IsMandatory = moduleScript.IsRequired,
+                ExecutionOrder = moduleScript.ExecutionOrder,
+                IsSelected = moduleScript.IsRequired,
+                ScriptType = moduleScript.ScriptType,
+                FullPath = moduleScript.FullPath,
+                RelativePath = moduleScript.RelativePath,
+                IsConsolidated = moduleScript.IsConsolidated,
+                IsOptional = !moduleScript.IsRequired,
+                FileSize = moduleScript.FileSize,
+                LastModified = moduleScript.LastModified,
+                Dependencies = moduleScript.Dependencies?.ToList() ?? new List<string>()
+            };
+        }
+
+        /// <summary>
+        /// Gets script description based on file name and script type
+        /// </summary>
+        private string GetScriptDescription(string fileName, ScriptType scriptType)
+        {
+            // Try to get from existing ScriptMetadata first
+            if (ScriptMetadata.TryGetValue(fileName, out var existing))
+            {
+                return existing.Description;
+            }
+
+            // Generate description based on script type
+            return scriptType switch
+            {
+                ScriptType.TAB => "Create Tables and Columns",
+                ScriptType.PK => "Create Primary Keys",
+                ScriptType.FK => "Create Foreign Key Constraints",
+                ScriptType.IX => "Create Indexes",
+                ScriptType.CK => "Create Check Constraints",
+                ScriptType.OUOM => "Create Original Units of Measure Foreign Keys",
+                ScriptType.UOM => "Create Units of Measure Foreign Keys",
+                ScriptType.RQUAL => "Create ROW_QUALITY Foreign Keys",
+                ScriptType.RSRC => "Create SOURCE Foreign Keys",
+                ScriptType.TCM => "Create Table Comments",
+                ScriptType.CCM => "Create Column Comments",
+                ScriptType.SYN => "Create Synonyms",
+                ScriptType.GUID => "Create GUID Constraints",
+                _ => $"Execute {fileName}"
+            };
+        }
+
+        /// <summary>
+        /// Maps ModuleExecutionResult to AllScriptsExecutionResult
+        /// </summary>
+        private AllScriptsExecutionResult MapModuleExecutionResultToAllScriptsExecutionResult(ModuleExecutionResult moduleResult)
+        {
+            var results = moduleResult.ScriptResults.Select(sr => MapScriptExecutionResultToDto(sr)).ToList();
+
+            return new AllScriptsExecutionResult
+            {
+                Results = results,
+                TotalScripts = moduleResult.TotalScripts,
+                SuccessfulScripts = moduleResult.SuccessfulScripts,
+                FailedScripts = moduleResult.FailedScripts,
+                AllSucceeded = moduleResult.Success,
+                TotalExecutionTime = moduleResult.Duration
+            };
+        }
+
+        /// <summary>
+        /// Maps ScriptExecutionResult from DataManager to ScriptExecutionResult DTO
+        /// DataManager returns ScriptExecutionResult from PPDM39.DataManagement namespace
+        /// </summary>
+        private ScriptExecutionResult MapScriptExecutionResultToDto(Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation.ScriptExecutionResult dataManagerResult)
+        {
+            return new ScriptExecutionResult
+            {
+                ScriptName = dataManagerResult.ScriptFileName,
+                Success = dataManagerResult.Success,
+                Message = dataManagerResult.Message ?? (dataManagerResult.Success ? "Script executed successfully" : dataManagerResult.ErrorMessage),
+                ErrorDetails = dataManagerResult.ErrorMessage,
+                ExecutionTime = dataManagerResult.Duration,
+                RowsAffected = dataManagerResult.RowsAffected,
+                Exception = dataManagerResult.Exception
+            };
+        }
+
+        /// <summary>
+        /// Finds module that contains a specific script file
+        /// </summary>
+        private async Task<IModuleData?> FindModuleByScriptNameAsync(string scriptName, string databaseType)
+        {
+            var allModules = ModuleDataRegistry.GetAllModules();
+            var normalizedDbType = DatabaseTypeNormalizer.Normalize(databaseType);
+
+            foreach (var module in allModules)
+            {
+                var scripts = await module.GetScriptsAsync(normalizedDbType);
+                if (scripts.Any(s => s.FileName.Equals(scriptName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return module;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Determines module name from script name (for backward compatibility)
+        /// </summary>
+        private string? DetermineModuleFromScriptName(string scriptName)
+        {
+            // Consolidated PPDM39 scripts (TAB.sql, PK.sql, etc.)
+            var consolidatedScripts = new[] { "TAB.sql", "PK.sql", "FK.sql", "CK.sql", "IX.sql", 
+                "OUOM.sql", "UOM.sql", "RQUAL.sql", "RSRC.sql", "TCM.sql", "CCM.sql", "SYN.sql", "GUID.sql" };
+            
+            if (consolidatedScripts.Any(s => s.Equals(scriptName, StringComparison.OrdinalIgnoreCase)))
+            {
+                return "PPDM39";
+            }
+
+            // Individual table scripts (TABLE_TAB.sql, TABLE_PK.sql, etc.)
+            // Extract table name and try to find module
+            // This is a simplified approach - in practice, we'd scan all modules
+            return null; // Will be resolved by FindModuleByScriptNameAsync
+        }
+
+        #endregion
     }
 }

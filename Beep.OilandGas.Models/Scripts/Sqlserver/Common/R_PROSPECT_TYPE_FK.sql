@@ -1,0 +1,1 @@
+-- R_PROSPECT_TYPE table has no foreign key constraints

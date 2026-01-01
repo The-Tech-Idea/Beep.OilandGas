@@ -59,6 +59,10 @@ namespace Beep.OilandGas.Models.DTOs
         public string? Status { get; set; } // SUCCESS, FAILED, PARTIAL
         public string? ErrorMessage { get; set; }
         public string? UserId { get; set; }
+        public DateTime AnalysisDate { get; set; }
+        public string DeclineType { get; set; }
+        public List<decimal> ForecastedProduction { get; set; }
+        public bool IsSuccessful { get; set; }
     }
 
     /// <summary>
@@ -165,6 +169,11 @@ namespace Beep.OilandGas.Models.DTOs
         public string? Status { get; set; } // SUCCESS, FAILED, PARTIAL
         public string? ErrorMessage { get; set; }
         public string? UserId { get; set; }
+        public string AnalysisId { get; set; }
+        public DateTime AnalysisDate { get; set; }
+        public decimal NPV { get; set; }
+        public decimal IRR { get; set; }
+        public bool IsSuccessful { get; set; }
     }
 
     /// <summary>
@@ -287,6 +296,8 @@ namespace Beep.OilandGas.Models.DTOs
         public string? Status { get; set; } // SUCCESS, FAILED, PARTIAL
         public string? ErrorMessage { get; set; }
         public string? UserId { get; set; }
+        public bool IsSuccessful { get; set; }
+        public DateTime AnalysisDate { get; set; }
     }
 
     /// <summary>
@@ -381,6 +392,9 @@ namespace Beep.OilandGas.Models.DTOs
         public string? Status { get; set; } // SUCCESS, FAILED, PARTIAL
         public string? ErrorMessage { get; set; }
         public string? UserId { get; set; }
+        public DateTime AnalysisDate { get; set; }
+        public decimal Skin { get; set; }
+        public bool IsSuccessful { get; set; }
     }
 
     #endregion
@@ -456,6 +470,7 @@ namespace Beep.OilandGas.Models.DTOs
         public string? Status { get; set; } // SUCCESS, FAILED, PARTIAL
         public string? ErrorMessage { get; set; }
         public string? UserId { get; set; }
+        public bool IsSuccessful { get; set; }
     }
 
     /// <summary>

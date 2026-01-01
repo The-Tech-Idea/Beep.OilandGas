@@ -1,4 +1,0 @@
-raiserror ('CREATING PRIMARY KEY FOR JIB_COST_ALLOCATION', 10,1) with nowait
-ALTER TABLE jib_cost_allocation
-ADD CONSTRAINT jib_cost_allocation_PK PRIMARY KEY (JIB_COST_ALLOCATION_ID)
-

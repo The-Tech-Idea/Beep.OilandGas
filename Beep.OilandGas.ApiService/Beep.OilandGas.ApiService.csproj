@@ -58,6 +58,7 @@
     <ProjectReference Include="..\Beep.OilandGas.PipelineAnalysis\Beep.OilandGas.PipelineAnalysis.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM39\Beep.OilandGas.PPDM39.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
+    <ProjectReference Include="..\Beep.OilandGas.DataManager\Beep.OilandGas.DataManager.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.LifeCycle\Beep.OilandGas.LifeCycle.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.ProductionAccounting\Beep.OilandGas.ProductionAccounting.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.ProductionForecasting\Beep.OilandGas.ProductionForecasting.csproj" />

@@ -1,0 +1,1 @@
+-- R_ANOMALY_TYPE table has no foreign key constraints

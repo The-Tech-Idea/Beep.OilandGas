@@ -52,7 +52,7 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             var connName = connectionName ?? _connectionName;
 
             // Query data using PPDMGenericRepository
-            // In a full implementation, would query RUN_TICKET, INVENTORY, ALLOCATION_RESULT, MEASUREMENT_RECORD, etc.
+            // In a full implementation, would query RUN_TICKET, INVENTORY, AllocationRequest, MEASUREMENT_RECORD, etc.
             // For now, use ReportGenerator with empty data (would be populated from database queries)
             var runTickets = new List<RunTicket>();
             var inventories = new List<CrudeOilInventory>();
@@ -69,6 +69,7 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
                 allocations,
                 measurements,
                 transactions);
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
             report.GeneratedBy = userId;
             report.GenerationDate = DateTime.UtcNow;

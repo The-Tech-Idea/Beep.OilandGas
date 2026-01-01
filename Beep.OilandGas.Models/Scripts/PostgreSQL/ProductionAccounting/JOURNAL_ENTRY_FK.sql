@@ -1,0 +1,1 @@
+-- JOURNAL_ENTRY table has no foreign key constraints

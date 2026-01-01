@@ -21,6 +21,14 @@ namespace Beep.OilandGas.Models.DTOs.ProductionAccounting
         public decimal TotalVolume { get; set; }
         [Required]
         public List<AllocationEntityRequest> Entities { get; set; } = new();
+        public string AllocationRequest_ID { get; set; }
+        public string RUN_TICKET_ID { get; set; }
+        public DateTime ALLOCATION_DATE { get; set; }
+        public string ALLOCATION_METHOD { get; set; }
+        public decimal TOTAL_VOLUME { get; set; }
+        public decimal ALLOCATED_VOLUME { get; set; }
+        public decimal ALLOCATION_VARIANCE { get; set; }
+        public string ACTIVE_IND { get; set; }
     }
 
     /// <summary>

@@ -1,0 +1,1 @@
+-- INVENTORY_ITEM table has no foreign key constraints

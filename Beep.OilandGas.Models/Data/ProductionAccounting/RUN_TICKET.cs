@@ -1,0 +1,235 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using TheTechIdea.Beep.Editor;
+
+namespace Beep.OilandGas.Models.Data.ProductionAccounting
+{
+    public partial class RUN_TICKET : Entity
+    {
+        private System.String RUN_TICKET_IDValue;
+        public System.String RUN_TICKET_ID
+        {
+            get { return this.RUN_TICKET_IDValue; }
+            set { SetProperty(ref RUN_TICKET_IDValue, value); }
+        }
+
+        private System.String RUN_TICKET_NUMBERValue;
+        public System.String RUN_TICKET_NUMBER
+        {
+            get { return this.RUN_TICKET_NUMBERValue; }
+            set { SetProperty(ref RUN_TICKET_NUMBERValue, value); }
+        }
+
+        private System.DateTime? TICKET_DATE_TIMEValue;
+        public System.DateTime? TICKET_DATE_TIME
+        {
+            get { return this.TICKET_DATE_TIMEValue; }
+            set { SetProperty(ref TICKET_DATE_TIMEValue, value); }
+        }
+
+        private System.String LEASE_IDValue;
+        public System.String LEASE_ID
+        {
+            get { return this.LEASE_IDValue; }
+            set { SetProperty(ref LEASE_IDValue, value); }
+        }
+
+        private System.String WELL_IDValue;
+        public System.String WELL_ID
+        {
+            get { return this.WELL_IDValue; }
+            set { SetProperty(ref WELL_IDValue, value); }
+        }
+
+        private System.String TANK_BATTERY_IDValue;
+        public System.String TANK_BATTERY_ID
+        {
+            get { return this.TANK_BATTERY_IDValue; }
+            set { SetProperty(ref TANK_BATTERY_IDValue, value); }
+        }
+
+        private System.Decimal? GROSS_VOLUMEValue;
+        public System.Decimal? GROSS_VOLUME
+        {
+            get { return this.GROSS_VOLUMEValue; }
+            set { SetProperty(ref GROSS_VOLUMEValue, value); }
+        }
+
+        private System.Decimal? BSW_VOLUMEValue;
+        public System.Decimal? BSW_VOLUME
+        {
+            get { return this.BSW_VOLUMEValue; }
+            set { SetProperty(ref BSW_VOLUMEValue, value); }
+        }
+
+        private System.Decimal? BSW_PERCENTAGEValue;
+        public System.Decimal? BSW_PERCENTAGE
+        {
+            get { return this.BSW_PERCENTAGEValue; }
+            set { SetProperty(ref BSW_PERCENTAGEValue, value); }
+        }
+
+        private System.Decimal? NET_VOLUMEValue;
+        public System.Decimal? NET_VOLUME
+        {
+            get { return this.NET_VOLUMEValue; }
+            set { SetProperty(ref NET_VOLUMEValue, value); }
+        }
+
+        private System.Decimal? TEMPERATUREValue;
+        public System.Decimal? TEMPERATURE
+        {
+            get { return this.TEMPERATUREValue; }
+            set { SetProperty(ref TEMPERATUREValue, value); }
+        }
+
+        private System.Decimal? API_GRAVITYValue;
+        public System.Decimal? API_GRAVITY
+        {
+            get { return this.API_GRAVITYValue; }
+            set { SetProperty(ref API_GRAVITYValue, value); }
+        }
+
+        private System.String DISPOSITION_TYPEValue;
+        public System.String DISPOSITION_TYPE
+        {
+            get { return this.DISPOSITION_TYPEValue; }
+            set { SetProperty(ref DISPOSITION_TYPEValue, value); }
+        }
+
+        private System.String PURCHASERValue;
+        public System.String PURCHASER
+        {
+            get { return this.PURCHASERValue; }
+            set { SetProperty(ref PURCHASERValue, value); }
+        }
+
+        private System.Decimal? PRICE_PER_BARRELValue;
+        public System.Decimal? PRICE_PER_BARREL
+        {
+            get { return this.PRICE_PER_BARRELValue; }
+            set { SetProperty(ref PRICE_PER_BARRELValue, value); }
+        }
+
+        private System.String MEASUREMENT_METHODValue;
+        public System.String MEASUREMENT_METHOD
+        {
+            get { return this.MEASUREMENT_METHODValue; }
+            set { SetProperty(ref MEASUREMENT_METHODValue, value); }
+        }
+
+        private System.String MEASUREMENT_RECORD_IDValue;
+        public System.String MEASUREMENT_RECORD_ID
+        {
+            get { return this.MEASUREMENT_RECORD_IDValue; }
+            set { SetProperty(ref MEASUREMENT_RECORD_IDValue, value); }
+        }
+
+        private System.String NOTESValue;
+        public System.String NOTES
+        {
+            get { return this.NOTESValue; }
+            set { SetProperty(ref NOTESValue, value); }
+        }
+
+        private System.String IS_PROCESSEDValue;
+        public System.String IS_PROCESSED
+        {
+            get { return this.IS_PROCESSEDValue; }
+            set { SetProperty(ref IS_PROCESSEDValue, value); }
+        }
+
+        private System.DateTime? PROCESSED_DATEValue;
+        public System.DateTime? PROCESSED_DATE
+        {
+            get { return this.PROCESSED_DATEValue; }
+            set { SetProperty(ref PROCESSED_DATEValue, value); }
+        }
+
+        // Standard PPDM columns
+        private System.String ACTIVE_INDValue;
+        public System.String ACTIVE_IND
+        {
+            get { return this.ACTIVE_INDValue; }
+            set { SetProperty(ref ACTIVE_INDValue, value); }
+        }
+
+        private System.String PPDM_GUIDValue;
+        public System.String PPDM_GUID
+        {
+            get { return this.PPDM_GUIDValue; }
+            set { SetProperty(ref PPDM_GUIDValue, value); }
+        }
+
+        private System.String REMARKValue;
+        public System.String REMARK
+        {
+            get { return this.REMARKValue; }
+            set { SetProperty(ref REMARKValue, value); }
+        }
+
+        private System.String SOURCEValue;
+        public System.String SOURCE
+        {
+            get { return this.SOURCEValue; }
+            set { SetProperty(ref SOURCEValue, value); }
+        }
+
+        private System.String ROW_QUALITYValue;
+        public System.String ROW_QUALITY
+        {
+            get { return this.ROW_QUALITYValue; }
+            set { SetProperty(ref ROW_QUALITYValue, value); }
+        }
+
+        private System.String ROW_CREATED_BYValue;
+        public System.String ROW_CREATED_BY
+        {
+            get { return this.ROW_CREATED_BYValue; }
+            set { SetProperty(ref ROW_CREATED_BYValue, value); }
+        }
+
+        private System.DateTime? ROW_CREATED_DATEValue;
+        public System.DateTime? ROW_CREATED_DATE
+        {
+            get { return this.ROW_CREATED_DATEValue; }
+            set { SetProperty(ref ROW_CREATED_DATEValue, value); }
+        }
+
+        private System.String ROW_CHANGED_BYValue;
+        public System.String ROW_CHANGED_BY
+        {
+            get { return this.ROW_CHANGED_BYValue; }
+            set { SetProperty(ref ROW_CHANGED_BYValue, value); }
+        }
+
+        private System.DateTime? ROW_CHANGED_DATEValue;
+        public System.DateTime? ROW_CHANGED_DATE
+        {
+            get { return this.ROW_CHANGED_DATEValue; }
+            set { SetProperty(ref ROW_CHANGED_DATEValue, value); }
+        }
+
+        private System.DateTime? ROW_EFFECTIVE_DATEValue;
+        public System.DateTime? ROW_EFFECTIVE_DATE
+        {
+            get { return this.ROW_EFFECTIVE_DATEValue; }
+            set { SetProperty(ref ROW_EFFECTIVE_DATEValue, value); }
+        }
+
+        private System.DateTime? ROW_EXPIRY_DATEValue;
+        public System.DateTime? ROW_EXPIRY_DATE
+        {
+            get { return this.ROW_EXPIRY_DATEValue; }
+            set { SetProperty(ref ROW_EXPIRY_DATEValue, value); }
+        }
+
+        private System.String ROW_IDValue;
+        public System.String ROW_ID
+        {
+            get { return this.ROW_IDValue; }
+            set { SetProperty(ref ROW_IDValue, value); }
+        }
+    }
+}
+

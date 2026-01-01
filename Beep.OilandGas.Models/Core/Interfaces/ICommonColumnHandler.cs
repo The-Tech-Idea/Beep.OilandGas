@@ -78,7 +78,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="entity">The PPDM entity</param>
         /// <param name="expiryDate">Expiry date (defaults to current date if null)</param>
         void SetExpired(IPPDMEntity entity, DateTime? expiryDate = null);
-        void SetCommonColumns(RECEIVABLE entity,  string connName);
+        void SetCommonColumns(Beep.OilandGas.Models.Data.ProductionAccounting.RECEIVABLE entity,  string connName);
     }
 }
 

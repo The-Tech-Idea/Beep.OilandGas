@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.GasLift;
+using Beep.OilandGas.GasLift.Models;
+
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

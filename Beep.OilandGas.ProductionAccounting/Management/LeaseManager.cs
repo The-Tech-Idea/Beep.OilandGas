@@ -93,6 +93,7 @@ namespace Beep.OilandGas.ProductionAccounting.Management
             {
                 new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId }
             };
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
             var results = await dataSource.GetEntityAsync(LEASE_TABLE, filters);
             var leaseData = results?.FirstOrDefault();

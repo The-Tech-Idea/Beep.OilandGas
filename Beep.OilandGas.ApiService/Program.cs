@@ -26,6 +26,12 @@ using Microsoft.OpenApi;
 using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ProductionAccounting.GeneralLedger;
+using Beep.OilandGas.UserManagement.DependencyInjection;
+using Beep.OilandGas.UserManagement.AspNetCore.DependencyInjection;
+using Beep.OilandGas.UserManagement.Services;
+using Beep.OilandGas.UserManagement.Core.Authorization;
+using Beep.OilandGas.Models.Core.Interfaces.Security;
+using Beep.OilandGas.DataManager.DependencyInjection;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -520,6 +526,31 @@ builder.Services.AddScoped<IUserProfileService>(sp =>
     var accessControlService = sp.GetRequiredService<IAccessControlService>();
     return new Beep.OilandGas.LifeCycle.Services.AccessControl.UserProfileService(
         editor, commonColumnHandler, defaults, metadata, mappingService, accessControlService, connectionName);
+});
+
+// ============================================
+// REGISTER USER MANAGEMENT SERVICES
+// ============================================
+var securityConnectionName = builder.Configuration["ConnectionStrings:Security"] ?? connectionName;
+
+// Register UserManagement with connection name - automatically registers all services
+builder.Services.AddUserManagement(securityConnectionName);
+builder.Services.AddUserManagementAspNetCore();
+
+builder.Services.AddPermissionPolicy("ProductionAccounting:Read", "Module:ProductionAccounting:Read");
+builder.Services.AddPermissionPolicy("ProductionAccounting:Write", "Module:ProductionAccounting:Write");
+builder.Services.AddPermissionPolicy("NodalAnalysis:Execute", "Module:NodalAnalysis:Execute");
+builder.Services.AddPermissionPolicy("DataManagement:Read", "Module:DataManagement:Read");
+builder.Services.AddPermissionPolicy("DataManagement:Write", "Module:DataManagement:Write");
+
+// ============================================
+// REGISTER DATA MANAGER SERVICES
+// ============================================
+// Register DataManager services for centralized script execution
+builder.Services.AddDataManager(options =>
+{
+    options.StateStoreType = StateStoreType.File;
+    options.StateDirectory = Path.Combine(AppContext.BaseDirectory, "ExecutionStates");
 });
 
 // PPDM39 Setup Service

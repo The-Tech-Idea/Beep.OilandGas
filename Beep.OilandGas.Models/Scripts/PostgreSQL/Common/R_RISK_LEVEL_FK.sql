@@ -1,0 +1,1 @@
+-- R_RISK_LEVEL table has no foreign key constraints

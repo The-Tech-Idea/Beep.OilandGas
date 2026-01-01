@@ -139,6 +139,13 @@ namespace Beep.OilandGas.Models.Data.Royalty
             get { return this.ROW_EXPIRY_DATEValue; }
             set { SetProperty(ref ROW_EXPIRY_DATEValue, value); }
         }
+
+        private System.String ROW_QUALITYValue;
+        public System.String ROW_QUALITY
+        {
+            get { return this.ROW_QUALITYValue; }
+            set { SetProperty(ref ROW_QUALITYValue, value); }
+        }
     }
 }
 

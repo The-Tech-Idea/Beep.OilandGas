@@ -14,6 +14,7 @@ using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
 using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data.LifeCycle;
 
 namespace Beep.OilandGas.LifeCycle.Services.FieldLifecycle
 {

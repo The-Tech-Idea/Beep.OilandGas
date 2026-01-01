@@ -7,6 +7,7 @@ using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.LifeCycle.Services.Exploration;
 
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
 
 namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
 {

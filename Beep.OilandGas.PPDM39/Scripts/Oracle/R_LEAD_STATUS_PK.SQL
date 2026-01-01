@@ -1,9 +1,0 @@
--- PPDM39 Oracle DDL Script
--- Converted from SQL Server script: R_LEAD_STATUS_PK.sql
--- This script is for the PPDM39 model
-
-PROMPT CREATING PRIMARY KEY R_LEAD_STATUS_PK with nowait
-ALTER TABLE R_LEAD_STATUS ADD CONSTRAINT R_LEAD_STATUS_PK PRIMARY KEY
-(
-	LEAD_STATUS
-);

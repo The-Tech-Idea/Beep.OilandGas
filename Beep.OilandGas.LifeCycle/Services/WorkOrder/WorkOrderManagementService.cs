@@ -118,6 +118,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder
             try
             {
                 var metadata = await _metadata.GetTableMetadataAsync("WORK_ORDER_XREF");
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
                 if (metadata == null)
                 {
                     throw new InvalidOperationException("WORK_ORDER_XREF table metadata not found");

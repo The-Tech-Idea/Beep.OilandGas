@@ -1,0 +1,1 @@
+-- R_INSPECTION_TYPE table has no foreign key constraints

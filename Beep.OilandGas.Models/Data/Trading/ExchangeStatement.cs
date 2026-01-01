@@ -1,176 +1,196 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Trading
 {
     /// <summary>
     /// Represents an exchange statement.
     /// </summary>
-    public class ExchangeStatement
+    public partial class ExchangeStatement : Entity
     {
-        /// <summary>
-        /// Gets or sets the statement identifier.
-        /// </summary>
-        public string StatementId { get; set; } = string.Empty;
+        private System.String StatementIdValue;
+        public System.String StatementId
+        {
+            get { return this.StatementIdValue; }
+            set { SetProperty(ref StatementIdValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the statement period start date.
-        /// </summary>
-        public DateTime StatementPeriodStart { get; set; }
+        private System.DateTime StatementPeriodStartValue;
+        public System.DateTime StatementPeriodStart
+        {
+            get { return this.StatementPeriodStartValue; }
+            set { SetProperty(ref StatementPeriodStartValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the statement period end date.
-        /// </summary>
-        public DateTime StatementPeriodEnd { get; set; }
+        private System.DateTime StatementPeriodEndValue;
+        public System.DateTime StatementPeriodEnd
+        {
+            get { return this.StatementPeriodEndValue; }
+            set { SetProperty(ref StatementPeriodEndValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the contract identifier.
-        /// </summary>
-        public string ContractId { get; set; } = string.Empty;
+        private System.String ContractIdValue;
+        public System.String ContractId
+        {
+            get { return this.ContractIdValue; }
+            set { SetProperty(ref ContractIdValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the receipts summary.
-        /// </summary>
-        public ExchangeSummary Receipts { get; set; } = new();
+        private List<ExchangeTransaction> TransactionsValue = new List<ExchangeTransaction>();
+        public List<ExchangeTransaction> Transactions
+        {
+            get { return this.TransactionsValue; }
+            set { SetProperty(ref TransactionsValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the deliveries summary.
-        /// </summary>
-        public ExchangeSummary Deliveries { get; set; } = new();
+        private ExchangeSummary ReceiptsValue = new ExchangeSummary();
+        public ExchangeSummary Receipts
+        {
+            get { return this.ReceiptsValue; }
+            set { SetProperty(ref ReceiptsValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the net position.
-        /// </summary>
-        public ExchangeNetPosition NetPosition { get; set; } = new();
+        private ExchangeSummary DeliveriesValue = new ExchangeSummary();
+        public ExchangeSummary Deliveries
+        {
+            get { return this.DeliveriesValue; }
+            set { SetProperty(ref DeliveriesValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the transactions.
-        /// </summary>
-        public List<ExchangeTransaction> Transactions { get; set; } = new();
+        private ExchangeNetPosition NetPositionValue = new ExchangeNetPosition();
+        public ExchangeNetPosition NetPosition
+        {
+            get { return this.NetPositionValue; }
+            set { SetProperty(ref NetPositionValue, value); }
+        }
     }
 
     /// <summary>
     /// Represents an exchange summary.
     /// </summary>
-    public class ExchangeSummary
+    public partial class ExchangeSummary : Entity
     {
-        /// <summary>
-        /// Gets or sets the total volume in barrels.
-        /// </summary>
-        public decimal TotalVolume { get; set; }
+        private System.Decimal TotalVolumeValue;
+        public System.Decimal TotalVolume
+        {
+            get { return this.TotalVolumeValue; }
+            set { SetProperty(ref TotalVolumeValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the average price per barrel.
-        /// </summary>
-        public decimal AveragePrice { get; set; }
+        private System.Decimal AveragePriceValue;
+        public System.Decimal AveragePrice
+        {
+            get { return this.AveragePriceValue; }
+            set { SetProperty(ref AveragePriceValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the total value.
-        /// </summary>
-        public decimal TotalValue => TotalVolume * AveragePrice;
+        public System.Decimal TotalValue => TotalVolume * AveragePrice;
 
-        /// <summary>
-        /// Gets or sets the number of transactions.
-        /// </summary>
-        public int TransactionCount { get; set; }
+        private System.Int32 TransactionCountValue;
+        public System.Int32 TransactionCount
+        {
+            get { return this.TransactionCountValue; }
+            set { SetProperty(ref TransactionCountValue, value); }
+        }
     }
 
     /// <summary>
     /// Represents exchange net position.
     /// </summary>
-    public class ExchangeNetPosition
+    public partial class ExchangeNetPosition : Entity
     {
-        /// <summary>
-        /// Gets or sets the net volume (receipts - deliveries) in barrels.
-        /// </summary>
-        public decimal NetVolume { get; set; }
+        private System.Decimal NetVolumeValue;
+        public System.Decimal NetVolume
+        {
+            get { return this.NetVolumeValue; }
+            set { SetProperty(ref NetVolumeValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the net value (receipts - deliveries).
-        /// </summary>
-        public decimal NetValue { get; set; }
+        private System.Decimal NetValueValue;
+        public System.Decimal NetValue
+        {
+            get { return this.NetValueValue; }
+            set { SetProperty(ref NetValueValue, value); }
+        }
 
-        /// <summary>
-        /// Gets whether the position is long (positive net volume).
-        /// </summary>
         public bool IsLong => NetVolume > 0;
-
-        /// <summary>
-        /// Gets whether the position is short (negative net volume).
-        /// </summary>
         public bool IsShort => NetVolume < 0;
-
-        /// <summary>
-        /// Gets whether the position is flat (zero net volume).
-        /// </summary>
         public bool IsFlat => NetVolume == 0;
     }
 
     /// <summary>
     /// Represents an exchange transaction.
     /// </summary>
-    public class ExchangeTransaction
+    public partial class ExchangeTransaction : Entity
     {
-        /// <summary>
-        /// Gets or sets the transaction identifier.
-        /// </summary>
-        public string TransactionId { get; set; } = string.Empty;
+        private System.String TransactionIdValue;
+        public System.String TransactionId
+        {
+            get { return this.TransactionIdValue; }
+            set { SetProperty(ref TransactionIdValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the contract identifier.
-        /// </summary>
-        public string ContractId { get; set; } = string.Empty;
+        private System.String ContractIdValue;
+        public System.String ContractId
+        {
+            get { return this.ContractIdValue; }
+            set { SetProperty(ref ContractIdValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the transaction date.
-        /// </summary>
-        public DateTime TransactionDate { get; set; }
+        private System.DateTime TransactionDateValue;
+        public System.DateTime TransactionDate
+        {
+            get { return this.TransactionDateValue; }
+            set { SetProperty(ref TransactionDateValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the receipt volume in barrels.
-        /// </summary>
-        public decimal ReceiptVolume { get; set; }
+        private System.Decimal ReceiptVolumeValue;
+        public System.Decimal ReceiptVolume
+        {
+            get { return this.ReceiptVolumeValue; }
+            set { SetProperty(ref ReceiptVolumeValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the receipt price per barrel.
-        /// </summary>
-        public decimal ReceiptPrice { get; set; }
+        private System.Decimal ReceiptPriceValue;
+        public System.Decimal ReceiptPrice
+        {
+            get { return this.ReceiptPriceValue; }
+            set { SetProperty(ref ReceiptPriceValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the receipt location.
-        /// </summary>
-        public string ReceiptLocation { get; set; } = string.Empty;
+        private System.String ReceiptLocationValue;
+        public System.String ReceiptLocation
+        {
+            get { return this.ReceiptLocationValue; }
+            set { SetProperty(ref ReceiptLocationValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the delivery volume in barrels.
-        /// </summary>
-        public decimal DeliveryVolume { get; set; }
+        private System.Decimal DeliveryVolumeValue;
+        public System.Decimal DeliveryVolume
+        {
+            get { return this.DeliveryVolumeValue; }
+            set { SetProperty(ref DeliveryVolumeValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the delivery price per barrel.
-        /// </summary>
-        public decimal DeliveryPrice { get; set; }
+        private System.Decimal DeliveryPriceValue;
+        public System.Decimal DeliveryPrice
+        {
+            get { return this.DeliveryPriceValue; }
+            set { SetProperty(ref DeliveryPriceValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the delivery location.
-        /// </summary>
-        public string DeliveryLocation { get; set; } = string.Empty;
+        private System.String DeliveryLocationValue;
+        public System.String DeliveryLocation
+        {
+            get { return this.DeliveryLocationValue; }
+            set { SetProperty(ref DeliveryLocationValue, value); }
+        }
 
-        /// <summary>
-        /// Gets the receipt value.
-        /// </summary>
-        public decimal ReceiptValue => ReceiptVolume * ReceiptPrice;
-
-        /// <summary>
-        /// Gets the delivery value.
-        /// </summary>
-        public decimal DeliveryValue => DeliveryVolume * DeliveryPrice;
-
-        /// <summary>
-        /// Gets the net value (receipt - delivery).
-        /// </summary>
-        public decimal NetValue => ReceiptValue - DeliveryValue;
+        public System.Decimal ReceiptValue => ReceiptVolume * ReceiptPrice;
+        public System.Decimal DeliveryValue => DeliveryVolume * DeliveryPrice;
+        public System.Decimal NetValue => ReceiptValue - DeliveryValue;
     }
 
     /// <summary>

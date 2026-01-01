@@ -526,6 +526,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
             try
             {
                 _logger?.LogInformation("Managing lease: {LeaseId} for field: {FieldId}", leaseId, fieldId);
+using Beep.OilandGas.Models.Data.ProspectIdentification;
 
                 var metadata = await _metadata.GetTableMetadataAsync("LEASE");
                 if (metadata == null)

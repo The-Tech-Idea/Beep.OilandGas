@@ -133,6 +133,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 new AppFilter { FieldName = "ANALYSIS_ID", Operator = "=", FilterValue = analysisId },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
+using Beep.OilandGas.Models.Data.EconomicAnalysis;
             var entities = await repo.GetAsync(filters);
             var entity = entities.Cast<ECONOMIC_ANALYSIS_RESULT>().FirstOrDefault();
 

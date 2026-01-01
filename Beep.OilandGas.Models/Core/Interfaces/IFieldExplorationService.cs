@@ -4,6 +4,7 @@ using TheTechIdea.Beep.Report;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.DTOs;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

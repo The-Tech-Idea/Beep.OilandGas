@@ -160,6 +160,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
 
             _logger?.LogInformation("Ranking {Count} prospects using {CriteriaCount} criteria",
                 prospectIds.Count, rankingCriteria.Count);
+using Beep.OilandGas.Models.Data.ProspectIdentification;
 
             // TODO: Implement prospect ranking logic
             var rankings = new List<ProspectRankingDto>();

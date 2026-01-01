@@ -1,0 +1,1 @@
+-- CHART_CONFIGURATION table has no foreign key constraints

@@ -1,0 +1,1 @@
+-- TAX_RETURN table has no foreign key constraints

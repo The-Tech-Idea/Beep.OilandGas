@@ -1,33 +1,56 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Ownership
 {
     /// <summary>
     /// Represents an ownership tree node.
     /// </summary>
-    public class OwnershipTreeNode
+    public partial class OwnershipTreeNode : Entity
     {
+        private System.String OwnerIdValue = string.Empty;
         /// <summary>
         /// Gets or sets the owner identifier.
         /// </summary>
-        public string OwnerId { get; set; } = string.Empty;
+        public System.String OwnerId
+        {
+            get => this.OwnerIdValue;
+            set => SetProperty(ref OwnerIdValue, value);
+        }
 
+        private System.String OwnerNameValue = string.Empty;
         /// <summary>
         /// Gets or sets the owner name.
         /// </summary>
-        public string OwnerName { get; set; } = string.Empty;
+        public System.String OwnerName
+        {
+            get => this.OwnerNameValue;
+            set => SetProperty(ref OwnerNameValue, value);
+        }
 
+        private System.Decimal InterestPercentageValue;
         /// <summary>
         /// Gets or sets the interest percentage (0-100).
         /// </summary>
-        public decimal InterestPercentage { get; set; }
+        public System.Decimal InterestPercentage
+        {
+            get => this.InterestPercentageValue;
+            set => SetProperty(ref InterestPercentageValue, value);
+        }
 
+        private List<OwnershipTreeNode> ChildrenValue = new List<OwnershipTreeNode>();
         /// <summary>
         /// Gets or sets the child nodes (sub-owners).
         /// </summary>
-        public List<OwnershipTreeNode> Children { get; set; } = new();
+        public List<OwnershipTreeNode> Children
+        {
+            get => this.ChildrenValue;
+            set => SetProperty(ref ChildrenValue, value);
+        }
 
         /// <summary>
         /// Gets the total interest of all children.

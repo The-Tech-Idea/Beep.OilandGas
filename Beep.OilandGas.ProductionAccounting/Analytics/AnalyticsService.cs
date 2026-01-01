@@ -112,6 +112,7 @@ namespace Beep.OilandGas.ProductionAccounting.Analytics
                 transactions,
                 request.StartDate,
                 request.EndDate);
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
             var result = new AnalyticsResult
             {

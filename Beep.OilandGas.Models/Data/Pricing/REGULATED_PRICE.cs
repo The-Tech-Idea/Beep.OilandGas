@@ -133,10 +133,42 @@ namespace Beep.OilandGas.Models.Data.Pricing
             set { SetProperty(ref ROW_EXPIRY_DATEValue, value); }
         }
 
-        public DateTime EFFECTIVE_START_DATE { get; set; }
-        public DateTime? EFFECTIVE_END_DATE { get; set; }
-        public decimal BASE_PRICE { get; set; }
-        public string ADJUSTMENT_FACTORS { get; set; }
+        // Implement ROW_QUALITY required by IPPDMEntity
+        private System.String ROW_QUALITYValue;
+        public System.String ROW_QUALITY
+        {
+            get { return this.ROW_QUALITYValue; }
+            set { SetProperty(ref ROW_QUALITYValue, value); }
+        }
+
+        // Converted auto-properties to Entity pattern
+        private System.DateTime EFFECTIVE_START_DATEValue;
+        public System.DateTime EFFECTIVE_START_DATE
+        {
+            get { return this.EFFECTIVE_START_DATEValue; }
+            set { SetProperty(ref EFFECTIVE_START_DATEValue, value); }
+        }
+
+        private System.DateTime? EFFECTIVE_END_DATEValue;
+        public System.DateTime? EFFECTIVE_END_DATE
+        {
+            get { return this.EFFECTIVE_END_DATEValue; }
+            set { SetProperty(ref EFFECTIVE_END_DATEValue, value); }
+        }
+
+        private System.Decimal BASE_PRICEValue;
+        public System.Decimal BASE_PRICE
+        {
+            get { return this.BASE_PRICEValue; }
+            set { SetProperty(ref BASE_PRICEValue, value); }
+        }
+
+        private System.String ADJUSTMENT_FACTORSValue = string.Empty;
+        public System.String ADJUSTMENT_FACTORS
+        {
+            get { return this.ADJUSTMENT_FACTORSValue; }
+            set { SetProperty(ref ADJUSTMENT_FACTORSValue, value); }
+        }
     }
 }
 

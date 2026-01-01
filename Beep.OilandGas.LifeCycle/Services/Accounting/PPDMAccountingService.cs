@@ -1493,6 +1493,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             
             // Try Entity object first (using reflection)
             var prop = obj.GetType().GetProperty(propertyName);
+using Beep.OilandGas.Models.Data.ProductionAccounting;
             if (prop != null)
             {
                 return prop.GetValue(obj)?.ToString();

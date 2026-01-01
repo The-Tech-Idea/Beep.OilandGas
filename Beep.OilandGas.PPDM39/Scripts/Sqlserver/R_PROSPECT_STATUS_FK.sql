@@ -1,1 +1,0 @@
--- R_PROSPECT_STATUS has no foreign keys

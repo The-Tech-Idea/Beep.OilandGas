@@ -1,1 +1,0 @@
--- R_RISK_LEVEL has no foreign keys

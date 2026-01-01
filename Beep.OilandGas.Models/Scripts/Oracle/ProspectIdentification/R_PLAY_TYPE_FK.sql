@@ -1,0 +1,1 @@
+-- R_PLAY_TYPE table has no foreign key constraints

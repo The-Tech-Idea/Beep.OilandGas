@@ -1,0 +1,1 @@
+-- ANALYTICS_RESULT table has no foreign key constraints

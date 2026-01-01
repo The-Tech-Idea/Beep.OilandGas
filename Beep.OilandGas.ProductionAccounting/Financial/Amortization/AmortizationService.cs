@@ -64,6 +64,7 @@ namespace Beep.OilandGas.ProductionAccounting.Financial.Amortization
                 request.NetCapitalizedCosts,
                 request.TotalProvedReservesBOE,
                 request.ProductionBOE);
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
             decimal amortizationRate = request.TotalProvedReservesBOE > 0
                 ? request.ProductionBOE / request.TotalProvedReservesBOE

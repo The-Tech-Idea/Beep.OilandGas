@@ -1,1 +1,0 @@
--- R_ECONOMIC_METRIC has no foreign keys

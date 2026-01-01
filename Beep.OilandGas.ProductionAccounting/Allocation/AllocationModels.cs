@@ -37,7 +37,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
 
     /// <summary>
     /// Represents an allocation result for internal calculations.
-    /// This is the computational model used by AllocationEngine, distinct from the PPDM entity ALLOCATION_RESULT.
+    /// This is the computational model used by AllocationEngine, distinct from the PPDM entity AllocationRequest.
     /// </summary>
     public class AllocationResult
     {

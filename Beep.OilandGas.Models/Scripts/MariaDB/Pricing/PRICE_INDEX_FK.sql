@@ -1,0 +1,1 @@
+-- PRICE_INDEX table has no foreign key constraints

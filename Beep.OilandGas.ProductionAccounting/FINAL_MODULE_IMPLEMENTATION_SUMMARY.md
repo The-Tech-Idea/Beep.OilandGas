@@ -49,7 +49,7 @@ All modules have been implemented with:
 
 6. **Allocation** ✅
    - Service: `AllocationService`
-   - Entities: `ALLOCATION_RESULT`, `ALLOCATION_DETAIL`
+   - Entities: `AllocationRequest`, `ALLOCATION_DETAIL`
    - Status: Complete
 
 ### Phase 2: Traditional Accounting

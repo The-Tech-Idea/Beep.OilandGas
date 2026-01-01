@@ -1,0 +1,1 @@
+-- R_TRAP_TYPE table has no foreign key constraints

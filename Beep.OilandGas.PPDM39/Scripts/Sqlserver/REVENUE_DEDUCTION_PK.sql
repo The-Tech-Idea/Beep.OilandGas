@@ -1,4 +1,0 @@
-raiserror ('CREATING PRIMARY KEY FOR REVENUE_DEDUCTION', 10,1) with nowait
-ALTER TABLE revenue_deduction
-ADD CONSTRAINT revenue_deduction_PK PRIMARY KEY (REVENUE_DEDUCTION_ID)
-

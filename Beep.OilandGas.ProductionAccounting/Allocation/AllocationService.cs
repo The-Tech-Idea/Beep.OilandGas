@@ -7,6 +7,7 @@ using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
 namespace Beep.OilandGas.ProductionAccounting.Allocation
 {
@@ -22,7 +23,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
         private readonly IPPDMMetadataRepository _metadata;
         private readonly ILogger<AllocationService>? _logger;
         private readonly string _connectionName;
-        private const string ALLOCATION_RESULT_TABLE = "ALLOCATION_RESULT";
+        private const string AllocationRequest_TABLE = "AllocationRequest";
         private const string ALLOCATION_DETAIL_TABLE = "ALLOCATION_DETAIL";
 
         public AllocationService(
@@ -44,7 +45,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
         /// <summary>
         /// Allocates production to wells.
         /// </summary>
-        public async Task<ALLOCATION_RESULT> AllocateProductionAsync(
+        public async Task<AllocationResult> AllocateProductionAsync(
             string runTicketId,
             Beep.OilandGas.Models.DTOs.ProductionAccounting.AllocationMethod method,
             List<WellAllocationDataDto> wells,
@@ -98,7 +99,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
         /// <summary>
         /// Allocates production to leases.
         /// </summary>
-        public async Task<ALLOCATION_RESULT> AllocateToLeasesAsync(
+        public async Task<AllocationRequest> AllocateToLeasesAsync(
             string runTicketId,
             Beep.OilandGas.Models.DTOs.ProductionAccounting.AllocationMethod method,
             List<LeaseAllocationDataDto> leases,
@@ -150,7 +151,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
         /// <summary>
         /// Allocates production to tracts.
         /// </summary>
-        public async Task<ALLOCATION_RESULT> AllocateToTractsAsync(
+        public async Task<AllocationRequest> AllocateToTractsAsync(
             string runTicketId,
             Beep.OilandGas.Models.DTOs.ProductionAccounting.AllocationMethod method,
             List<TractAllocationDataDto> tracts,
@@ -203,36 +204,36 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
         /// <summary>
         /// Gets an allocation result by ID.
         /// </summary>
-        public async Task<ALLOCATION_RESULT?> GetAllocationResultAsync(string allocationId, string? connectionName = null)
+        public async Task<AllocationRequest?> GetAllocationResultAsync(string allocationId, string? connectionName = null)
         {
             if (string.IsNullOrEmpty(allocationId))
                 return null;
 
             var connName = connectionName ?? _connectionName;
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(ALLOCATION_RESULT), connName, ALLOCATION_RESULT_TABLE,
+                typeof(AllocationRequest), connName, AllocationRequest_TABLE,
                 null);
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ALLOCATION_RESULT_ID", Operator = "=", FilterValue = allocationId }
+                new AppFilter { FieldName = "AllocationRequest_ID", Operator = "=", FilterValue = allocationId }
             };
 
             var results = await repo.GetAsync(filters);
-            return results.Cast<ALLOCATION_RESULT>().FirstOrDefault();
+            return results.Cast<AllocationRequest>().FirstOrDefault();
         }
 
         /// <summary>
         /// Gets allocation history for a run ticket.
         /// </summary>
-        public async Task<List<ALLOCATION_RESULT>> GetAllocationHistoryAsync(string runTicketId, string? connectionName = null)
+        public async Task<List<AllocationRequest>> GetAllocationHistoryAsync(string runTicketId, string? connectionName = null)
         {
             if (string.IsNullOrEmpty(runTicketId))
-                return new List<ALLOCATION_RESULT>();
+                return new List<AllocationRequest>();
 
             var connName = connectionName ?? _connectionName;
             var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(ALLOCATION_RESULT), connName, ALLOCATION_RESULT_TABLE,
+                typeof(AllocationRequest), connName, AllocationRequest_TABLE,
                 null);
 
             var filters = new List<AppFilter>
@@ -241,7 +242,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
             };
 
             var results = await repo.GetAsync(filters);
-            return results.Cast<ALLOCATION_RESULT>().OrderByDescending(a => a.ALLOCATION_DATE).ToList();
+            return results.Cast<AllocationRequest>().OrderByDescending(a => a.ALLOCATION_DATE).ToList();
         }
 
         /// <summary>
@@ -259,7 +260,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ALLOCATION_RESULT_ID", Operator = "=", FilterValue = allocationId }
+                new AppFilter { FieldName = "AllocationRequest_ID", Operator = "=", FilterValue = allocationId }
             };
 
             var results = await repo.GetAsync(filters);
@@ -269,7 +270,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
         /// <summary>
         /// Saves an allocation result and its details to the database.
         /// </summary>
-        private async Task<ALLOCATION_RESULT> SaveAllocationResultAsync(
+        private async Task<AllocationRequest> SaveAllocationResultAsync(
             AllocationResult allocationResult,
             string runTicketId,
             string userId,
@@ -277,10 +278,10 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
         {
             var connName = connectionName ?? _connectionName;
 
-            // Create ALLOCATION_RESULT entity
-            var allocationResultEntity = new ALLOCATION_RESULT
+            // Create AllocationRequest entity
+            var allocationResultEntity = new AllocationRequest
             {
-                ALLOCATION_RESULT_ID = _defaults.FormatIdForTable(ALLOCATION_RESULT_TABLE, Guid.NewGuid().ToString()),
+                AllocationRequest_ID = _defaults.FormatIdForTable(AllocationRequest_TABLE, Guid.NewGuid().ToString()),
                 RUN_TICKET_ID = runTicketId,
                 ALLOCATION_DATE = allocationResult.AllocationDate,
                 ALLOCATION_METHOD = allocationResult.Method.ToString(),
@@ -296,7 +297,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
 
             // Save allocation result
             var resultRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(ALLOCATION_RESULT), connName, ALLOCATION_RESULT_TABLE,
+                typeof(AllocationRequest), connName, AllocationRequest_TABLE,
                 null);
 
             await resultRepo.InsertAsync(allocationResultEntity, userId);
@@ -311,7 +312,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
                 var detailEntity = new ALLOCATION_DETAIL
                 {
                     ALLOCATION_DETAIL_ID = _defaults.FormatIdForTable(ALLOCATION_DETAIL_TABLE, Guid.NewGuid().ToString()),
-                    ALLOCATION_RESULT_ID = allocationResultEntity.ALLOCATION_RESULT_ID,
+                    AllocationRequest_ID = allocationResultEntity.AllocationRequest_ID,
                     ENTITY_ID = detail.EntityId,
                     ENTITY_NAME = detail.EntityName,
                     ENTITY_TYPE = "WELL",
@@ -328,7 +329,7 @@ namespace Beep.OilandGas.ProductionAccounting.Allocation
             }
 
             _logger?.LogDebug("Saved allocation result {AllocationId} with {DetailCount} details",
-                allocationResultEntity.ALLOCATION_RESULT_ID, allocationResult.Details.Count);
+                allocationResultEntity.AllocationRequest_ID, allocationResult.Details.Count);
 
             return allocationResultEntity;
         }

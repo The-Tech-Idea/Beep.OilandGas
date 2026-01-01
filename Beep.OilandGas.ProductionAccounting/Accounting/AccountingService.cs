@@ -286,6 +286,7 @@ namespace Beep.OilandGas.ProductionAccounting.Accounting
 
             // Generate journal entries using static helper
             var journalEntries = SalesJournalEntryGenerator.CreateEntries(salesTransactionModel);
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
             // Convert to journal entry lines
             var lines = journalEntries.Select(e => new JournalEntryLineData

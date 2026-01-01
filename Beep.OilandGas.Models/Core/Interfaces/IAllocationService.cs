@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
@@ -13,7 +14,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Allocates production to wells.
         /// </summary>
-        Task<ALLOCATION_RESULT> AllocateProductionAsync(
+        Task<AllocationRequest> AllocateProductionAsync(
             string runTicketId,
             AllocationMethod method,
             List<WellAllocationDataDto> wells,
@@ -23,7 +24,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Allocates production to leases.
         /// </summary>
-        Task<ALLOCATION_RESULT> AllocateToLeasesAsync(
+        Task<AllocationRequest> AllocateToLeasesAsync(
             string runTicketId,
             AllocationMethod method,
             List<LeaseAllocationDataDto> leases,
@@ -33,7 +34,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Allocates production to tracts.
         /// </summary>
-        Task<ALLOCATION_RESULT> AllocateToTractsAsync(
+        Task<AllocationRequest> AllocateToTractsAsync(
             string runTicketId,
             AllocationMethod method,
             List<TractAllocationDataDto> tracts,
@@ -43,12 +44,12 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Gets an allocation result by ID.
         /// </summary>
-        Task<ALLOCATION_RESULT?> GetAllocationResultAsync(string allocationId, string? connectionName = null);
+        Task<AllocationRequest?> GetAllocationResultAsync(string allocationId, string? connectionName = null);
         
         /// <summary>
         /// Gets allocation history for a run ticket.
         /// </summary>
-        Task<List<ALLOCATION_RESULT>> GetAllocationHistoryAsync(string runTicketId, string? connectionName = null);
+        Task<List<AllocationRequest>> GetAllocationHistoryAsync(string runTicketId, string? connectionName = null);
         
         /// <summary>
         /// Gets allocation details for an allocation result.

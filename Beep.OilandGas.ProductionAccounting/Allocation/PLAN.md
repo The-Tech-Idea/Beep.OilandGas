@@ -19,7 +19,7 @@
 ### Classes to Move to Beep.OilandGas.Models
 
 **Move to `Beep.OilandGas.Models/Data/Allocation/`:**
-- `AllocationResult` → `ALLOCATION_RESULT` (entity class with PPDM audit columns)
+- `AllocationResult` → `AllocationRequest` (entity class with PPDM audit columns)
 - `AllocationDetail` → `ALLOCATION_DETAIL` (entity class)
 - `WellAllocationData` → Keep as DTO in `Beep.OilandGas.Models/DTOs/Allocation/`
 - `LeaseAllocationData` → Keep as DTO in `Beep.OilandGas.Models/DTOs/Allocation/`
@@ -40,36 +40,36 @@
 ```csharp
 public interface IAllocationService
 {
-    Task<ALLOCATION_RESULT> AllocateProductionAsync(
+    Task<AllocationRequest> AllocateProductionAsync(
         string runTicketId,
         AllocationMethod method,
         List<WellAllocationData> wells,
         string userId,
         string? connectionName = null);
     
-    Task<ALLOCATION_RESULT> AllocateToLeasesAsync(
+    Task<AllocationRequest> AllocateToLeasesAsync(
         string runTicketId,
         AllocationMethod method,
         List<LeaseAllocationData> leases,
         string userId,
         string? connectionName = null);
     
-    Task<ALLOCATION_RESULT> AllocateToTractsAsync(
+    Task<AllocationRequest> AllocateToTractsAsync(
         string runTicketId,
         AllocationMethod method,
         List<TractAllocationData> tracts,
         string userId,
         string? connectionName = null);
     
-    Task<ALLOCATION_RESULT?> GetAllocationResultAsync(string allocationId, string? connectionName = null);
-    Task<List<ALLOCATION_RESULT>> GetAllocationHistoryAsync(string runTicketId, string? connectionName = null);
+    Task<AllocationRequest?> GetAllocationResultAsync(string allocationId, string? connectionName = null);
+    Task<List<AllocationRequest>> GetAllocationHistoryAsync(string runTicketId, string? connectionName = null);
     Task<List<ALLOCATION_DETAIL>> GetAllocationDetailsAsync(string allocationId, string? connectionName = null);
 }
 ```
 
 **Implementation**:
 - Constructor takes: IDMEEditor, ICommonColumnHandler, IPPDM39DefaultsRepository, IPPDMMetadataRepository, ILoggerFactory, connectionName
-- Uses PPDMGenericRepository for ALLOCATION_RESULT and ALLOCATION_DETAIL tables
+- Uses PPDMGenericRepository for AllocationRequest and ALLOCATION_DETAIL tables
 - Calls AllocationEngine static methods for calculations
 - Saves results to database
 
@@ -77,8 +77,8 @@ public interface IAllocationService
 
 ### New Tables Required
 
-**ALLOCATION_RESULT**:
-- ALLOCATION_RESULT_ID (PK)
+**AllocationRequest**:
+- AllocationRequest_ID (PK)
 - RUN_TICKET_ID (FK to RUN_TICKET)
 - ALLOCATION_DATE
 - ALLOCATION_METHOD
@@ -89,7 +89,7 @@ public interface IAllocationService
 
 **ALLOCATION_DETAIL**:
 - ALLOCATION_DETAIL_ID (PK)
-- ALLOCATION_RESULT_ID (FK)
+- AllocationRequest_ID (FK)
 - ENTITY_ID (well, lease, tract)
 - ENTITY_TYPE
 - ALLOCATED_VOLUME
@@ -100,10 +100,10 @@ public interface IAllocationService
 ### PPDMGenericRepository Usage
 
 ```csharp
-var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
+var metadata = await _metadata.GetTableMetadataAsync("AllocationRequest");
 var entityType = Type.GetType($"Beep.OilandGas.Models.Data.Allocation.{metadata.EntityTypeName}");
 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-    entityType, _connectionName, "ALLOCATION_RESULT");
+    entityType, _connectionName, "AllocationRequest");
 ```
 
 ## Missing Workflows
@@ -148,20 +148,20 @@ var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _
 
 ### Scripts to Create
 
-**For ALLOCATION_RESULT**:
-- `ALLOCATION_RESULT_TAB.sql` (6 database types)
-- `ALLOCATION_RESULT_PK.sql`
-- `ALLOCATION_RESULT_FK.sql` (FK to RUN_TICKET)
+**For AllocationRequest**:
+- `AllocationRequest_TAB.sql` (6 database types)
+- `AllocationRequest_PK.sql`
+- `AllocationRequest_FK.sql` (FK to RUN_TICKET)
 
 **For ALLOCATION_DETAIL**:
 - `ALLOCATION_DETAIL_TAB.sql` (6 database types)
 - `ALLOCATION_DETAIL_PK.sql`
-- `ALLOCATION_DETAIL_FK.sql` (FK to ALLOCATION_RESULT)
+- `ALLOCATION_DETAIL_FK.sql` (FK to AllocationRequest)
 
 ## Implementation Steps
 
 ### Step 1: Create Entity Classes
-1. Create `ALLOCATION_RESULT` entity in `Beep.OilandGas.Models/Data/Allocation/`
+1. Create `AllocationRequest` entity in `Beep.OilandGas.Models/Data/Allocation/`
 2. Create `ALLOCATION_DETAIL` entity in `Beep.OilandGas.Models/Data/Allocation/`
 3. Add standard PPDM audit columns
 
@@ -181,7 +181,7 @@ var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _
 5. Save results to database
 
 ### Step 5: Create Database Scripts
-1. Generate TAB/PK/FK scripts for ALLOCATION_RESULT (6 database types)
+1. Generate TAB/PK/FK scripts for AllocationRequest (6 database types)
 2. Generate TAB/PK/FK scripts for ALLOCATION_DETAIL (6 database types)
 3. Place scripts in appropriate directories
 

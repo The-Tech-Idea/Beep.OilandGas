@@ -14,6 +14,7 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.GasLift;
 
 namespace Beep.OilandGas.GasLift.Services
 {

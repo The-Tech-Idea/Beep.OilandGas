@@ -1,141 +1,181 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
     /// Represents a sales statement.
     /// </summary>
-    public class SalesStatement
+    public partial class SalesStatement : Entity
     {
-        /// <summary>
-        /// Gets or sets the statement identifier.
-        /// </summary>
-        public string StatementId { get; set; } = string.Empty;
+        private System.String StatementIdValue;
+        public System.String StatementId
+        {
+            get { return this.StatementIdValue; }
+            set { SetProperty(ref StatementIdValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the statement period start date.
-        /// </summary>
-        public DateTime StatementPeriodStart { get; set; }
+        private System.DateTime StatementPeriodStartValue;
+        public System.DateTime StatementPeriodStart
+        {
+            get { return this.StatementPeriodStartValue; }
+            set { SetProperty(ref StatementPeriodStartValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the statement period end date.
-        /// </summary>
-        public DateTime StatementPeriodEnd { get; set; }
+        private System.DateTime StatementPeriodEndValue;
+        public System.DateTime StatementPeriodEnd
+        {
+            get { return this.StatementPeriodEndValue; }
+            set { SetProperty(ref StatementPeriodEndValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the property or lease identifier.
-        /// </summary>
-        public string? PropertyOrLeaseId { get; set; }
+        private System.String? PropertyOrLeaseIdValue;
+        public System.String? PropertyOrLeaseId
+        {
+            get { return this.PropertyOrLeaseIdValue; }
+            set { SetProperty(ref PropertyOrLeaseIdValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the sales summary.
-        /// </summary>
-        public SalesSummary Summary { get; set; } = new();
+        private SalesSummary SummaryValue = new SalesSummary();
+        public SalesSummary Summary
+        {
+            get { return this.SummaryValue; }
+            set { SetProperty(ref SummaryValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the volume details.
-        /// </summary>
-        public List<VolumeDetail> VolumeDetails { get; set; } = new();
+        private List<VolumeDetail> VolumeDetailsValue = new List<VolumeDetail>();
+        public List<VolumeDetail> VolumeDetails
+        {
+            get { return this.VolumeDetailsValue; }
+            set { SetProperty(ref VolumeDetailsValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the pricing details.
-        /// </summary>
-        public List<PricingDetail> PricingDetails { get; set; } = new();
+        private List<PricingDetail> PricingDetailsValue = new List<PricingDetail>();
+        public List<PricingDetail> PricingDetails
+        {
+            get { return this.PricingDetailsValue; }
+            set { SetProperty(ref PricingDetailsValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the transactions.
-        /// </summary>
-        public List<SalesTransaction> Transactions { get; set; } = new();
+        private List<SalesTransaction> TransactionsValue = new List<SalesTransaction>();
+        public List<SalesTransaction> Transactions
+        {
+            get { return this.TransactionsValue; }
+            set { SetProperty(ref TransactionsValue, value); }
+        }
     }
 
     /// <summary>
     /// Represents a sales summary.
     /// </summary>
-    public class SalesSummary
+    public partial class SalesSummary : Entity
     {
-        /// <summary>
-        /// Gets or sets the total net volume in barrels.
-        /// </summary>
-        public decimal TotalNetVolume { get; set; }
+        private System.Decimal TotalNetVolumeValue;
+        public System.Decimal TotalNetVolume
+        {
+            get { return this.TotalNetVolumeValue; }
+            set { SetProperty(ref TotalNetVolumeValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the average price per barrel.
-        /// </summary>
-        public decimal AveragePricePerBarrel { get; set; }
+        private System.Decimal AveragePricePerBarrelValue;
+        public System.Decimal AveragePricePerBarrel
+        {
+            get { return this.AveragePricePerBarrelValue; }
+            set { SetProperty(ref AveragePricePerBarrelValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the total gross revenue.
-        /// </summary>
-        public decimal TotalGrossRevenue { get; set; }
+        private System.Decimal TotalGrossRevenueValue;
+        public System.Decimal TotalGrossRevenue
+        {
+            get { return this.TotalGrossRevenueValue; }
+            set { SetProperty(ref TotalGrossRevenueValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the total costs.
-        /// </summary>
-        public decimal TotalCosts { get; set; }
+        private System.Decimal TotalCostsValue;
+        public System.Decimal TotalCosts
+        {
+            get { return this.TotalCostsValue; }
+            set { SetProperty(ref TotalCostsValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the total taxes.
-        /// </summary>
-        public decimal TotalTaxes { get; set; }
+        private System.Decimal TotalTaxesValue;
+        public System.Decimal TotalTaxes
+        {
+            get { return this.TotalTaxesValue; }
+            set { SetProperty(ref TotalTaxesValue, value); }
+        }
 
-        /// <summary>
-        /// Gets the total net revenue.
-        /// </summary>
-        public decimal TotalNetRevenue => TotalGrossRevenue - TotalCosts - TotalTaxes;
+        public System.Decimal TotalNetRevenue => TotalGrossRevenue - TotalCosts - TotalTaxes;
 
-        /// <summary>
-        /// Gets or sets the number of transactions.
-        /// </summary>
-        public int TransactionCount { get; set; }
+        private System.Int32 TransactionCountValue;
+        public System.Int32 TransactionCount
+        {
+            get { return this.TransactionCountValue; }
+            set { SetProperty(ref TransactionCountValue, value); }
+        }
     }
 
     /// <summary>
     /// Represents volume details.
     /// </summary>
-    public class VolumeDetail
+    public partial class VolumeDetail : Entity
     {
-        /// <summary>
-        /// Gets or sets the date.
-        /// </summary>
-        public DateTime Date { get; set; }
+        private System.DateTime DateValue;
+        public System.DateTime Date
+        {
+            get { return this.DateValue; }
+            set { SetProperty(ref DateValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the net volume in barrels.
-        /// </summary>
-        public decimal NetVolume { get; set; }
+        private System.Decimal NetVolumeValue;
+        public System.Decimal NetVolume
+        {
+            get { return this.NetVolumeValue; }
+            set { SetProperty(ref NetVolumeValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the run ticket number.
-        /// </summary>
-        public string? RunTicketNumber { get; set; }
+        private System.String? RunTicketNumberValue;
+        public System.String? RunTicketNumber
+        {
+            get { return this.RunTicketNumberValue; }
+            set { SetProperty(ref RunTicketNumberValue, value); }
+        }
     }
 
     /// <summary>
     /// Represents pricing details.
     /// </summary>
-    public class PricingDetail
+    public partial class PricingDetail : Entity
     {
-        /// <summary>
-        /// Gets or sets the date.
-        /// </summary>
-        public DateTime Date { get; set; }
+        private System.DateTime DateValue;
+        public System.DateTime Date
+        {
+            get { return this.DateValue; }
+            set { SetProperty(ref DateValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the price per barrel.
-        /// </summary>
-        public decimal PricePerBarrel { get; set; }
+        private System.Decimal PricePerBarrelValue;
+        public System.Decimal PricePerBarrel
+        {
+            get { return this.PricePerBarrelValue; }
+            set { SetProperty(ref PricePerBarrelValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the pricing method.
-        /// </summary>
-        public string PricingMethod { get; set; } = string.Empty;
+        private System.String PricingMethodValue = string.Empty;
+        public System.String PricingMethod
+        {
+            get { return this.PricingMethodValue; }
+            set { SetProperty(ref PricingMethodValue, value); }
+        }
 
-        /// <summary>
-        /// Gets or sets the price index (if applicable).
-        /// </summary>
-        public string? PriceIndex { get; set; }
+        private System.String? PriceIndexValue;
+        public System.String? PriceIndex
+        {
+            get { return this.PriceIndexValue; }
+            set { SetProperty(ref PriceIndexValue, value); }
+        }
     }
 }
 

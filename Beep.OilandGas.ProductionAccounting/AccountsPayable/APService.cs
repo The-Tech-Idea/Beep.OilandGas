@@ -9,6 +9,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
 namespace Beep.OilandGas.ProductionAccounting.AccountsPayable
 {
@@ -339,7 +340,7 @@ namespace Beep.OilandGas.ProductionAccounting.AccountsPayable
                 throw new InvalidOperationException($"Payment {paymentId} not found.");
 
             // Update payment status to processed
-            payment.STATUS = "Processed";
+            payment.PAYMENT_STATUS= "Processed";
 
             if (payment is IPPDMEntity ppdmEntity)
             {

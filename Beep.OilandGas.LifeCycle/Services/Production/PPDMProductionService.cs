@@ -1179,6 +1179,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             try
             {
                 _logger?.LogInformation("Executing enhanced recovery operation: {OperationId} for field: {FieldId}", operationId, fieldId);
+using Beep.OilandGas.Models.Data.ProductionForecasting;
 
                 // Update EOR operation status to EXECUTING
                 // In full implementation, would use EnhancedRecoveryService

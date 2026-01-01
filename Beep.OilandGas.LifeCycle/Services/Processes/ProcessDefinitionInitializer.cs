@@ -4,6 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Models.Processes;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
+using Beep.OilandGas.Models.Data.ProductionForecasting;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes
 {

@@ -1,1 +1,0 @@
--- PROSPECT_PORTFOLIO has no foreign keys

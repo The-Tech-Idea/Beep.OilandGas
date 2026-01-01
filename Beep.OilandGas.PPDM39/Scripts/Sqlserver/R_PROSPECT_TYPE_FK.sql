@@ -1,1 +1,0 @@
--- R_PROSPECT_TYPE has no foreign keys

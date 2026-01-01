@@ -1,0 +1,1 @@
+-- R_ECONOMIC_METRIC table has no foreign key constraints

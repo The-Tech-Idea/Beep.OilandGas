@@ -1,0 +1,1 @@
+-- STORAGE_FACILITY table has no foreign key constraints

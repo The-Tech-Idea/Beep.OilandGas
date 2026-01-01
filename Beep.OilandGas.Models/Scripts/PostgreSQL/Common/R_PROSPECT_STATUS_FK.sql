@@ -1,0 +1,1 @@
+-- R_PROSPECT_STATUS table has no foreign key constraints

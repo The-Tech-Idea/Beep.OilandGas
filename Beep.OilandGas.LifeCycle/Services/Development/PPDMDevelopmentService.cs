@@ -1660,6 +1660,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             try
             {
                 _logger?.LogInformation("Constructing facility: {FacilityId} in field: {FieldId}", facilityId, fieldId);
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
 
                 // Use existing CreateFacilityForFieldAsync method
                 return await CreateFacilityForFieldAsync(fieldId, facilityData, userId);

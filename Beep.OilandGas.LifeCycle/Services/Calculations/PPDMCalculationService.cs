@@ -6441,6 +6441,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         public async Task<decimal?> GetCustomFieldValueAsync(string mappingKey, string entityId)
         {
             var mapping = await _defaults.GetFieldMappingAsync(mappingKey);
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
             if (mapping == null || !mapping.IsActive || string.IsNullOrEmpty(mapping.TableName))
                 return null;
 

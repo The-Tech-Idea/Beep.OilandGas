@@ -1,4 +1,0 @@
-raiserror ('CREATING PRIMARY KEY FOR PRODUCTION_ALLOCATION', 10,1) with nowait
-ALTER TABLE production_allocation
-ADD CONSTRAINT production_allocation_PK PRIMARY KEY (PRODUCTION_ALLOCATION_ID)
-

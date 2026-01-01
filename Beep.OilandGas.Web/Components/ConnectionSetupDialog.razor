@@ -1,6 +1,7 @@
 @using Beep.OilandGas.ApiService.Models
 @using Beep.OilandGas.Models.DTOs
 @using System.Net.Http.Json
+@using TheTechIdea.Beep.ConfigUtil
 
 <MudDialog>
     <DialogContent>
@@ -318,8 +319,9 @@
         try
         {
             var config = BuildConnectionConfig();
-            _connectionTestResult = await ApiClient.PostAsync<ConnectionConfig, ConnectionTestResult>(
-                "/api/ppdm39/setup/test-connection", config);
+            // Post ConnectionProperties instead of ConnectionConfig
+            _connectionTestResult = await ApiClient.PostAsync<ConnectionProperties, ConnectionTestResult>(
+                "/api/ppdm39/setup/test-connection", config.ToConnectionProperties());
 
             if (_connectionTestResult?.Success == true)
             {

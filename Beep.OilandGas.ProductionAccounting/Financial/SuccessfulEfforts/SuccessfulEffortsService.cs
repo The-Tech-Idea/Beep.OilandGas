@@ -529,6 +529,10 @@ namespace Beep.OilandGas.ProductionAccounting.Financial.SuccessfulEfforts
         {
             if (property == null)
                 throw new ArgumentNullException(nameof(property));
+using Beep.OilandGas.Models.Data.Common;
+using Beep.OilandGas.Models.Data.DevelopmentPlanning;
+using Beep.OilandGas.Models.Data.ProductionOperations;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
             if (reserves == null)
                 throw new ArgumentNullException(nameof(reserves));
             if (production == null)

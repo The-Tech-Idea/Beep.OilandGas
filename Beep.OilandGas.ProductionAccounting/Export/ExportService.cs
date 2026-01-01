@@ -405,6 +405,7 @@ namespace Beep.OilandGas.ProductionAccounting.Export
             // In a full implementation, would query ROYALTY_PAYMENT table using IDataSource
             // For now, return empty list
             return new List<RoyaltyPayment>();
+using Beep.OilandGas.Models.Data.ProductionAccounting;
         }
 
         // Save export history

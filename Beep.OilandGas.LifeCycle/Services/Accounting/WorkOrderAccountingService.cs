@@ -14,6 +14,8 @@ using Beep.OilandGas.ProductionAccounting.Services;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.ProductionOperations;
 
 namespace Beep.OilandGas.LifeCycle.Services.Accounting
 {
