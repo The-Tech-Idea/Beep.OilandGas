@@ -6,6 +6,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
 using Beep.OilandGas.Models.Data.DevelopmentPlanning;
 using Beep.OilandGas.Models.Data.Common;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

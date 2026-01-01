@@ -12,8 +12,6 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
     public class GasLiftMapper
     {
         private readonly Func<WELL, WELL_TUBULAR?, decimal>? _getWellDepth;
-        private readonly Func<WELL, WELL_TUBULAR?, decimal>? _getTubingDiameter;
-        private readonly Func<WELL, WELL_TUBULAR?, decimal>? _getCasingDiameter;
         private readonly Func<WELL, WELL_PRESSURE?, decimal>? _getWellheadPressure;
         private readonly Func<WELL, WELL_PRESSURE?, decimal>? _getBottomHolePressure;
         private readonly Func<WELL, WELL_PRESSURE?, decimal>? _getWellheadTemperature;
@@ -36,8 +34,6 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         /// </summary>
         public GasLiftMapper(
             Func<WELL, WELL_TUBULAR?, decimal>? getWellDepth = null,
-            Func<WELL, WELL_TUBULAR?, decimal>? getTubingDiameter = null,
-            Func<WELL, WELL_TUBULAR?, decimal>? getCasingDiameter = null,
             Func<WELL, WELL_PRESSURE?, decimal>? getWellheadPressure = null,
             Func<WELL, WELL_PRESSURE?, decimal>? getBottomHolePressure = null,
             Func<WELL, WELL_PRESSURE?, decimal>? getWellheadTemperature = null,
@@ -49,8 +45,6 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             Func<WELL, decimal>? getDesiredProductionRate = null)
         {
             _getWellDepth = getWellDepth;
-            _getTubingDiameter = getTubingDiameter;
-            _getCasingDiameter = getCasingDiameter;
             _getWellheadPressure = getWellheadPressure;
             _getBottomHolePressure = getBottomHolePressure;
             _getWellheadTemperature = getWellheadTemperature;
@@ -78,8 +72,6 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
                 throw new ArgumentNullException(nameof(well));
 
             var getWellDepth = _getWellDepth ?? ValueRetrievers.GetWellDepth;
-            var getTubingDiameter = _getTubingDiameter ?? ValueRetrievers.GetTubingDiameterDecimal;
-            var getCasingDiameter = _getCasingDiameter ?? ValueRetrievers.GetCasingDiameter;
             var getWellheadPressure = _getWellheadPressure ?? ValueRetrievers.GetWellheadPressureDecimal;
             var getBottomHolePressure = _getBottomHolePressure ?? ValueRetrievers.GetReservoirPressureDecimal;
             var getWellheadTemperature = _getWellheadTemperature ?? ValueRetrievers.GetWellheadTemperatureInRankine;
@@ -93,8 +85,6 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             return new GasLiftWellProperties
             {
                 WellDepth = getWellDepth(well, tubular),
-                TubingDiameter = getTubingDiameter(well, tubular),
-                CasingDiameter = getCasingDiameter(well, tubular),
                 WellheadPressure = getWellheadPressure(well, wellPressure),
                 BottomHolePressure = getBottomHolePressure(well, wellPressure),
                 WellheadTemperature = getWellheadTemperature(well, wellPressure),
