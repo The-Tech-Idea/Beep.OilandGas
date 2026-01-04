@@ -17,13 +17,16 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
     public class PPDM39DefaultsController : ControllerBase
     {
         private readonly IPPDM39DefaultsRepository _defaultsRepository;
+        private readonly Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL.WellServices _wellServices;
         private readonly ILogger<PPDM39DefaultsController> _logger;
 
         public PPDM39DefaultsController(
             IPPDM39DefaultsRepository defaultsRepository,
+            Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL.WellServices wellServices,
             ILogger<PPDM39DefaultsController> logger)
         {
             _defaultsRepository = defaultsRepository ?? throw new ArgumentNullException(nameof(defaultsRepository));
+            _wellServices = wellServices ?? throw new ArgumentNullException(nameof(wellServices));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -63,7 +66,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             try
             {
                 _logger.LogInformation("Getting well status facets for status {StatusId}", statusId);
-                var facets = await _defaultsRepository.GetWellStatusFacetsAsync(statusId);
+                var facets = await _wellServices.GetWellStatusFacetsAsync(statusId);
                 
                 return Ok(facets ?? new Dictionary<string, object>());
             }

@@ -1,0 +1,1 @@
+-- IMBALANCE_RECONCILIATION table has no foreign key constraints

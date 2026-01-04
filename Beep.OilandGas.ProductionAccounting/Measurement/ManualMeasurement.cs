@@ -1,5 +1,6 @@
 
-using Beep.OilandGas.ProductionAccounting.Models;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using CrudeOilPropertiesDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.CrudeOilPropertiesDto;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 
 namespace Beep.OilandGas.ProductionAccounting.Measurement
@@ -67,13 +68,13 @@ namespace Beep.OilandGas.ProductionAccounting.Measurement
         /// <summary>
         /// Performs manual sampling for quality measurement.
         /// </summary>
-        public static CrudeOilProperties PerformManualSampling(
+        public static CrudeOilPropertiesDto PerformManualSampling(
             decimal apiGravity,
             decimal sulfurContent,
             decimal bsw,
             decimal temperature)
         {
-            return new CrudeOilProperties
+            return new CrudeOilPropertiesDto
             {
                 ApiGravity = apiGravity,
                 SulfurContent = sulfurContent,

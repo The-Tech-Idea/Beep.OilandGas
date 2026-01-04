@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.Models.DTOs.Accounting.Revenue;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -95,20 +96,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
         }
     }
 
-    public class RevenueAllocationRequest
-    {
-        public string PropertyId { get; set; } = string.Empty;
-        public decimal TotalRevenue { get; set; }
-        public DateTime AllocationDate { get; set; }
-        public string? RevenueTransactionId { get; set; }
-        public string? AllocationMethod { get; set; }
-        public List<WorkingInterestRequest>? WorkingInterests { get; set; }
-    }
-
-    public class WorkingInterestRequest
-    {
-        public string OwnerId { get; set; } = string.Empty;
-        public decimal InterestPercentage { get; set; }
-    }
 }
 

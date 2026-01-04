@@ -5,6 +5,7 @@ using System.Linq;
 using Beep.OilandGas.ProductionAccounting.Ownership;
 using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Services;
+using Beep.OilandGas.Models.DTOs.Accounting.Ownership;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
@@ -112,19 +113,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
         }
     }
 
-    public class RegisterOwnershipInterestRequest
-    {
-        public string PropertyOrLeaseId { get; set; } = string.Empty;
-        public OwnerRequest Owner { get; set; } = new();
-        public decimal WorkingInterest { get; set; }
-        public decimal NetRevenueInterest { get; set; }
-        public DateTime EffectiveDate { get; set; }
-    }
-
-    public class OwnerRequest
-    {
-        public string OwnerName { get; set; } = string.Empty;
-        public string? TaxId { get; set; }
-    }
 }
 

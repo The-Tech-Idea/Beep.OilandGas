@@ -9,6 +9,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
     /// <summary>
     /// Helper class to load PPDM metadata from SQL scripts
     /// </summary>
+    /// <remarks>
+    /// [Obsolete] This static helper class is deprecated. Use PPDMMetadataService instead which provides better DI support and caching.
+    /// </remarks>
+    [Obsolete("Use PPDMMetadataService instead. This class will be removed in a future version.")]
     public static class PPDMMetadataLoader
     {
         /// <summary>

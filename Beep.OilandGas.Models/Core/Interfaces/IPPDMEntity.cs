@@ -23,7 +23,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Date and time when the row was created
         /// </summary>
-        DateTime ROW_CREATED_DATE { get; set; }
+        DateTime? ROW_CREATED_DATE { get; set; }
 
         /// <summary>
         /// User who last changed the row
@@ -33,17 +33,17 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Date and time when the row was last changed
         /// </summary>
-        DateTime ROW_CHANGED_DATE { get; set; }
+        DateTime? ROW_CHANGED_DATE { get; set; }
 
         /// <summary>
         /// Effective date for the row
         /// </summary>
-        DateTime ROW_EFFECTIVE_DATE { get; set; }
+        DateTime? ROW_EFFECTIVE_DATE { get; set; }
 
         /// <summary>
         /// Expiry date for the row
         /// </summary>
-        DateTime ROW_EXPIRY_DATE { get; set; }
+        DateTime? ROW_EXPIRY_DATE { get; set; }
 
         /// <summary>
         /// Data quality indicator
@@ -76,12 +76,12 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Effective date for business purposes (optional)
         /// </summary>
-        DateTime EFFECTIVE_DATE { get; set; }
+        DateTime? EFFECTIVE_DATE { get; set; }
 
         /// <summary>
         /// Expiry date for business purposes (optional)
         /// </summary>
-        DateTime EXPIRY_DATE { get; set; }
+        DateTime? EXPIRY_DATE { get; set; }
 
         /// <summary>
         /// Data source (optional)

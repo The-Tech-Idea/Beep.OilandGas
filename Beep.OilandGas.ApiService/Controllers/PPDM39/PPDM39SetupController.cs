@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.ApiService.Services;
 using Beep.OilandGas.Models.DTOs.DataManagement;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation;
@@ -14,7 +13,6 @@ using Beep.OilandGas.PPDM39.DataManagement.SeedData;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.DataManagement.Tools;
-using Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.Models.Data;
 using System.Reflection;
@@ -23,7 +21,6 @@ using Beep.OilandGas.PPDM39.DataManagement.Services;
 using TheTechIdea.Beep.ConfigUtil;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
-using Beep.OilandGas.ApiService.Models;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData.Services;
 using Beep.OilandGas.DataManager.Core.Interfaces;
 using Beep.OilandGas.DataManager.Core.Models;
@@ -42,12 +39,11 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         private readonly IDMEEditor _editor;
         private readonly ILogger<PPDM39SetupController> _logger;
         private readonly IProgressTrackingService? _progressTracking;
-        private readonly IPPDMDatabaseCreatorService? _databaseCreatorService;
         private readonly IDataManager? _dataManager;
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
-        private readonly PPDMSeedDataCatalog _seedDataCatalog;
+        private readonly PPDMDemoDataSeeder? _demoDataSeeder;
         private readonly LOVManagementService? _lovManagementService;
         private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.CSVLOVImporter? _csvLovImporter;
         private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.PPDMStandardValueImporter? _ppdmStandardValueImporter;
@@ -70,13 +66,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             PPDMStandardValueImporter? ppdmStandardValueImporter = null,
             IHSStandardValueImporter? ihsStandardValueImporter = null,
            StandardValueMapper? standardValueMapper = null,
-            PPDMReferenceDataSeeder? referenceDataSeeder = null)
+            PPDMReferenceDataSeeder? referenceDataSeeder = null,
+            PPDMDemoDataSeeder? demoDataSeeder = null)
         {
             _setupService = setupService ?? throw new ArgumentNullException(nameof(setupService));
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _progressTracking = progressTracking;
-            _databaseCreatorService = databaseCreatorService;
             _dataManager = dataManager;
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
@@ -132,11 +128,11 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
         }
 
-        // Helper: map ConnectionProperties (incoming) to ApiService ConnectionConfig used by services
-        private Beep.OilandGas.ApiService.Models.ConnectionConfig MapToConnectionConfig(ConnectionProperties cp)
+        // Helper: map ConnectionProperties (incoming) to ConnectionConfig used by services
+        private ConnectionConfig MapToConnectionConfig(ConnectionProperties cp)
         {
-            if (cp == null) return new Beep.OilandGas.ApiService.Models.ConnectionConfig();
-            return new Beep.OilandGas.ApiService.Models.ConnectionConfig
+            if (cp == null) return new ConnectionConfig();
+            return new ConnectionConfig
             {
                 ConnectionName = cp.ConnectionName ?? string.Empty,
                 DatabaseType = cp.DatabaseType.ToString(),
@@ -206,7 +202,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get available scripts for a database type
         /// </summary>
         [HttpGet("scripts/{databaseType}")]
-        public ActionResult<List<ScriptInfo>> GetAvailableScripts(string databaseType)
+        public ActionResult<List<ModuleScriptInfo>> GetAvailableScripts(string databaseType)
         {
             try
             {
@@ -270,7 +266,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     // Get all available scripts
                     var scripts = _setupService.GetAvailableScripts(mapped.DatabaseType);
-                    request.ScriptNames = scripts.OrderBy(s => s.ExecutionOrder).Select(s => s.Name).ToList();
+                    request.ScriptNames = scripts.OrderBy(s => s.ExecutionOrder).Select(s => s.FileName).ToList();
                 }
 
                 if (request.ScriptNames == null || !request.ScriptNames.Any())
@@ -722,48 +718,35 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                if (_databaseCreatorService == null)
+                // Get all modules from registry
+                var allModules = ModuleDataRegistry.GetAllModules();
+                var allScripts = new List<ModuleScriptInfo>();
+
+                // Get scripts from each module
+                foreach (var module in allModules.Values)
                 {
-                    return StatusCode(500, new { error = "Database creator service not available" });
+                    var moduleScripts = await module.GetScriptsAsync(databaseType);
+                    allScripts.AddRange(moduleScripts);
                 }
 
-                // Get scripts path from setup service
-                var driverInfo = _setupService.GetDriverInfo(databaseType);
-                if (driverInfo == null)
-                {
-                    return BadRequest(new { error = $"Unknown database type: {databaseType}" });
-                }
-
-                // Construct scripts path - relative to PPDM39 project
-                var basePath = AppContext.BaseDirectory;
-                var solutionRoot = Path.GetFullPath(Path.Combine(basePath, "..", "..", "..", "..", ".."));
-                var scriptsBasePath = Path.Combine(solutionRoot, "Beep.OilandGas.PPDM39", "Scripts");
-                
-                // Fallback: try alternative paths
-                if (!Directory.Exists(scriptsBasePath))
-                {
-                    scriptsBasePath = Path.Combine(basePath, "..", "..", "..", "..", "Beep.OilandGas.PPDM39", "Scripts");
-                }
-
-                var scripts = await _databaseCreatorService.DiscoverScriptsAsync(databaseType, scriptsBasePath);
-
-                var result = scripts.Select(s => new ScriptInfoDto
+                // Map to DTO
+                var result = allScripts.Select(s => new ScriptInfoDto
                 {
                     FileName = s.FileName,
                     FullPath = s.FullPath,
-                    RelativePath = s.RelativePath,
+                    RelativePath = s.RelativePath ?? string.Empty,
                     ScriptType = s.ScriptType.ToString(),
                     TableName = s.TableName,
-                    Module = s.Module,
-                    SubjectArea = s.SubjectArea,
+                    Module = s.ModuleName ?? string.Empty,
+                    SubjectArea = null, // Not available in ModuleScriptInfo
                     IsConsolidated = s.IsConsolidated,
-                    IsMandatory = s.IsMandatory,
-                    IsOptional = s.IsOptional,
+                    IsMandatory = s.IsRequired,
+                    IsOptional = !s.IsRequired,
                     FileSize = s.FileSize,
                     LastModified = s.LastModified,
                     ExecutionOrder = s.ExecutionOrder,
-                    Dependencies = s.Dependencies,
-                    Category = s.Category
+                    Dependencies = s.Dependencies?.ToList() ?? new List<string>(),
+                    Category = s.ModuleName
                 }).ToList();
 
                 return Ok(result);
@@ -931,106 +914,6 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
         }
 
-        /// <summary>
-        /// Legacy CreateDatabase implementation using IPPDMDatabaseCreatorService (fallback)
-        /// </summary>
-        private async Task<ActionResult<DatabaseCreationResultDto>> CreateDatabaseLegacy(CreateDatabaseRequest request)
-        {
-            if (_databaseCreatorService == null)
-            {
-                return StatusCode(500, new { error = "Database creator service not available" });
-            }
-
-            // Map DatabaseType string to enum
-            if (!Enum.TryParse<DatabaseType>(request.Options.DatabaseType, true, out var databaseType))
-            {
-                return BadRequest(new { error = $"Invalid database type: {request.Options.DatabaseType}" });
-            }
-
-            // Build connection string from ConnectionConfig
-            var connectionString = BuildConnectionString(request.Connection);
-
-            // Map ScriptTypes
-            List<ScriptType>? scriptTypes = null;
-            if (request.Options.ScriptTypes != null && request.Options.ScriptTypes.Any())
-            {
-                scriptTypes = new List<ScriptType>();
-                foreach (var st in request.Options.ScriptTypes)
-                {
-                    if (Enum.TryParse<ScriptType>(st, true, out var scriptType))
-                    {
-                        scriptTypes.Add(scriptType);
-                    }
-                }
-            }
-
-            // Construct scripts path
-            var basePath = AppContext.BaseDirectory;
-            var solutionRoot = Path.GetFullPath(Path.Combine(basePath, "..", "..", "..", "..", ".."));
-            var scriptsBasePath = Path.Combine(solutionRoot, "Beep.OilandGas.PPDM39", "Scripts");
-            
-            // Fallback: try alternative paths
-            if (!Directory.Exists(scriptsBasePath))
-            {
-                scriptsBasePath = Path.Combine(basePath, "..", "..", "..", "..", "Beep.OilandGas.PPDM39", "Scripts");
-            }
-
-            // Create options
-            var options = new DatabaseCreationOptions
-            {
-                DatabaseType = databaseType,
-                ConnectionString = connectionString,
-                DatabaseName = request.Connection.Database,
-                ScriptsPath = scriptsBasePath,
-                Categories = request.Options.Categories,
-                ScriptTypes = scriptTypes,
-                EnableLogging = request.Options.EnableLogging,
-                LogFilePath = request.Options.LogFilePath,
-                ContinueOnError = request.Options.ContinueOnError,
-                EnableRollback = request.Options.EnableRollback,
-                ExecuteConsolidatedScripts = request.Options.ExecuteConsolidatedScripts,
-                ExecuteIndividualScripts = request.Options.ExecuteIndividualScripts,
-                ExecuteOptionalScripts = request.Options.ExecuteOptionalScripts,
-                ValidateDependencies = request.Options.ValidateDependencies,
-                EnableParallelExecution = request.Options.EnableParallelExecution,
-                MaxParallelTasks = request.Options.MaxParallelTasks,
-                ExecutionId = request.Options.ExecutionId
-            };
-
-            // Execute database creation
-            var result = await _databaseCreatorService.CreateDatabaseAsync(options);
-
-            // Map result to DTO
-            var resultDto = new DatabaseCreationResultDto
-            {
-                ExecutionId = result.ExecutionId,
-                Success = result.Success,
-                ErrorMessage = result.ErrorMessage,
-                StartTime = result.StartTime,
-                EndTime = result.EndTime,
-                TotalDuration = result.TotalDuration,
-                TotalScripts = result.TotalScripts,
-                SuccessfulScripts = result.SuccessfulScripts,
-                FailedScripts = result.FailedScripts,
-                SkippedScripts = result.SkippedScripts,
-                ScriptResults = result.ScriptResults.Select(sr => new ScriptExecutionResultDto
-                {
-                    ScriptFileName = sr.ScriptFileName,
-                    Success = sr.Success,
-                    ErrorMessage = sr.ErrorMessage,
-                    StartTime = sr.StartTime,
-                    EndTime = sr.EndTime,
-                    Duration = sr.Duration,
-                    RowsAffected = sr.RowsAffected,
-                    ExecutionLog = sr.ExecutionLog,
-                    Metadata = sr.Metadata
-                }).ToList(),
-                Summary = result.Summary,
-                LogFilePath = result.LogFilePath
-            };
-
-            return Ok(resultDto);
-        }
 
         /// <summary>
         /// Get creation progress
@@ -1040,25 +923,36 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                if (_databaseCreatorService == null)
+                if (_dataManager == null)
                 {
-                    return StatusCode(500, new { error = "Database creator service not available" });
+                    return StatusCode(500, new { error = "DataManager is not available" });
                 }
 
-                var progress = await _databaseCreatorService.GetProgressAsync(executionId);
+                var executionState = await _dataManager.GetExecutionStateAsync(executionId);
+                if (executionState == null)
+                {
+                    return NotFound(new { error = $"Execution state not found for {executionId}" });
+                }
+
+                var totalScripts = executionState.CompletedScripts.Count + executionState.FailedScripts.Count + executionState.PendingScripts.Count;
+                var completedScripts = executionState.CompletedScripts.Count;
+                var failedScripts = executionState.FailedScripts.Count;
+                var skippedScripts = 0; // Not tracked in ExecutionState
+                var progressPercentage = totalScripts > 0 ? (decimal)completedScripts * 100 / totalScripts : 0;
+                var currentScript = executionState.PendingScripts.FirstOrDefault() ?? string.Empty;
 
                 var progressDto = new ScriptExecutionProgressDto
                 {
-                    ExecutionId = progress.ExecutionId,
-                    TotalScripts = progress.TotalScripts,
-                    CompletedScripts = progress.CompletedScripts,
-                    FailedScripts = progress.FailedScripts,
-                    SkippedScripts = progress.SkippedScripts,
-                    ProgressPercentage = progress.ProgressPercentage,
-                    CurrentScript = progress.CurrentScript,
-                    StartTime = progress.StartTime,
-                    EstimatedCompletionTime = progress.EstimatedCompletionTime,
-                    Status = progress.Status
+                    ExecutionId = executionState.ExecutionId,
+                    TotalScripts = totalScripts,
+                    CompletedScripts = completedScripts,
+                    FailedScripts = failedScripts,
+                    SkippedScripts = skippedScripts,
+                    ProgressPercentage = progressPercentage,
+                    CurrentScript = currentScript,
+                    StartTime = executionState.StartTime,
+                    EstimatedCompletionTime = null, // Not available in ExecutionState
+                    Status = executionState.IsCompleted ? "Completed" : "In Progress"
                 };
 
                 return Ok(progressDto);
@@ -1119,12 +1013,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 }
 
                 var connectionName = request.ConnectionName ?? "PPDM39";
-                var demoSeeder = new Beep.OilandGas.PPDM39.DataManagement.SeedData.DemoDataSeeder(
-                    _editor, _commonColumnHandler, _defaults, _metadata, 
-                    _referenceDataSeeder ?? throw new InvalidOperationException("ReferenceDataSeeder is required"),
-                    connectionName, _logger);
+                
+                if (_demoDataSeeder == null)
+                {
+                    return BadRequest(new { error = "DemoDataSeeder is not available. Please ensure it is registered in dependency injection." });
+                }
 
-                var result = await demoSeeder.SeedFullDemoDatasetAsync(request.UserId ?? "SYSTEM");
+                var result = await _demoDataSeeder.SeedFullDemoDatasetAsync(request.UserId ?? "SYSTEM");
 
                 return Ok(new SeedDataResponse
                 {
@@ -1257,7 +1152,11 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return BadRequest(new { error = "Request is required" });
                 }
 
-                var workflowRequirement = _seedDataCatalog.GetSeedDataForWorkflow(workflowName);
+                if (_demoDataSeeder == null)
+                {
+                    return StatusCode(500, new { error = "DemoDataSeeder is not available" });
+                }
+                var workflowRequirement = _demoDataSeeder.GetSeedDataForWorkflow(workflowName);
                 if (workflowRequirement == null)
                 {
                     return NotFound(new { error = $"Workflow '{workflowName}' not found" });
@@ -2141,7 +2040,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// <summary>
         /// Gets or creates IDataSource from ConnectionConfig (helper method)
         /// </summary>
-        private IDataSource GetDataSourceFromConnectionConfig(Beep.OilandGas.ApiService.Models.ConnectionConfig config)
+        private IDataSource GetDataSourceFromConnectionConfig(ConnectionConfig config)
         {
             var driverInfo = _setupService.GetDriverInfo(config.DatabaseType);
             if (driverInfo == null)
@@ -2212,27 +2111,5 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 _ => DataSourceType.SqlServer // Default fallback
             };
         }
-    }
-    // Request DTOs for LOV import
-    public class LOVImportRequest
-    {
-        public string FilePath { get; set; } = string.Empty;
-        public string? TargetTable { get; set; }
-        public Dictionary<string, string>? ColumnMapping { get; set; }
-        public bool? SkipExisting { get; set; }
-        public string? UserId { get; set; }
-        public string? ConnectionName { get; set; }
-    }
-
-    // Request DTOs for controller
-    public class CheckDriverRequest
-    {
-        public string DatabaseType { get; set; } = string.Empty;
-    }
-
-    public class ExecuteScriptRequest
-    {
-        public ConnectionProperties Connection { get; set; } = null!;
-        public string ScriptName { get; set; } = string.Empty;
     }
 }

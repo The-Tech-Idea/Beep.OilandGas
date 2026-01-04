@@ -148,28 +148,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
             };
         }
     }
-
-    public class AllocationRequest
-    {
-        public decimal TotalVolume { get; set; }
-        public AllocationMethod Method { get; set; }
-        public List<AllocationEntityRequest> Entities { get; set; } = new();
-    }
-
-    public class AllocationEntityRequest
-    {
-        public string EntityId { get; set; } = string.Empty;
-        public string? EntityName { get; set; }
-        public decimal? WorkingInterest { get; set; }
-        public decimal? NetRevenueInterest { get; set; }
-        public decimal? ProductionHistory { get; set; }
-    }
-
-    public class VolumeReconciliationRequest
-    {
-        public string? FieldId { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-    }
 }
 

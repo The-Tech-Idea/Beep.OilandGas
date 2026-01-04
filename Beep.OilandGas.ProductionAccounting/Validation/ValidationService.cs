@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Validation;
 using Beep.OilandGas.Models.DTOs.Validation;
-using Beep.OilandGas.ProductionAccounting.Models;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using CrudeOilPropertiesDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.CrudeOilPropertiesDto;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -82,7 +83,7 @@ namespace Beep.OilandGas.ProductionAccounting.Validation
 
                 case "crudeoil":
                 case "crudeoilproperties":
-                    if (entity is CrudeOilProperties properties)
+                    if (entity is CrudeOilPropertiesDto properties)
                     {
                         try
                         {
@@ -152,7 +153,7 @@ namespace Beep.OilandGas.ProductionAccounting.Validation
                 return await ValidateEntityAsync(crudeOilProperties, "CrudeOilProperties", userId, connectionName);
             }
 
-            throw new ArgumentException("Properties must be of type CrudeOilProperties.", nameof(properties));
+            throw new ArgumentException("Properties must be of type CrudeOilPropertiesDto.", nameof(properties));
         }
 
         /// <summary>
@@ -163,12 +164,12 @@ namespace Beep.OilandGas.ProductionAccounting.Validation
             if (lease == null)
                 throw new ArgumentNullException(nameof(lease));
 
-            if (lease is LeaseAgreement leaseAgreement)
+            if (lease is object leaseAgreement) // Accept any object for lease validation
             {
                 return await ValidateEntityAsync(leaseAgreement, "LeaseAgreement", userId, connectionName);
             }
 
-            throw new ArgumentException("Lease must be of type LeaseAgreement.", nameof(lease));
+            throw new ArgumentException("Lease must be a valid lease object.", nameof(lease));
         }
 
         /// <summary>

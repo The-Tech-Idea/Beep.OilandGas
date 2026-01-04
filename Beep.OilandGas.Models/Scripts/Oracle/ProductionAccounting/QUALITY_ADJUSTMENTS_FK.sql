@@ -1,0 +1,1 @@
+-- QUALITY_ADJUSTMENTS table has no foreign key constraints

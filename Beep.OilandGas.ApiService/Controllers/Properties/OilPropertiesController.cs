@@ -150,37 +150,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
-
-    public class CalculateFVFRequest
-    {
-        public decimal Pressure { get; set; }
-        public decimal Temperature { get; set; }
-        public decimal GasOilRatio { get; set; }
-        public decimal OilGravity { get; set; }
-        public string Correlation { get; set; } = "Standing";
-    }
-
-    public class CalculateDensityRequest
-    {
-        public decimal Pressure { get; set; }
-        public decimal Temperature { get; set; }
-        public decimal OilGravity { get; set; }
-        public decimal GasOilRatio { get; set; }
-    }
-
-    public class CalculateViscosityRequest
-    {
-        public decimal Pressure { get; set; }
-        public decimal Temperature { get; set; }
-        public decimal OilGravity { get; set; }
-        public decimal GasOilRatio { get; set; }
-    }
-
-    public class CalculateOilPropertiesRequest
-    {
-        public OilCompositionDto Composition { get; set; } = null!;
-        public decimal Pressure { get; set; }
-        public decimal Temperature { get; set; }
-    }
 }
 

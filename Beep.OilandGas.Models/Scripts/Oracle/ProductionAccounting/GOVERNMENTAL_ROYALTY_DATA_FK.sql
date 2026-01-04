@@ -1,0 +1,1 @@
+-- GOVERNMENTAL_ROYALTY_DATA table has no foreign key constraints

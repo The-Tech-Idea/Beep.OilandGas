@@ -340,4 +340,39 @@ namespace Beep.OilandGas.Models.DTOs
         public string Message { get; set; } = string.Empty;
         public string? ErrorDetails { get; set; }
     }
+
+    /// <summary>
+    /// Request to import LOV (List of Values) data
+    /// </summary>
+    public class LOVImportRequest
+    {
+        [Required(ErrorMessage = "FilePath is required")]
+        public string FilePath { get; set; } = string.Empty;
+        public string? TargetTable { get; set; }
+        public Dictionary<string, string>? ColumnMapping { get; set; }
+        public bool? SkipExisting { get; set; }
+        public string? UserId { get; set; }
+        public string? ConnectionName { get; set; }
+    }
+
+    /// <summary>
+    /// Request to check if a database driver is available
+    /// </summary>
+    public class CheckDriverRequest
+    {
+        [Required(ErrorMessage = "DatabaseType is required")]
+        public string DatabaseType { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Request to execute a database script
+    /// </summary>
+    public class ExecuteScriptRequest
+    {
+        [Required(ErrorMessage = "Connection is required")]
+        public ConnectionProperties Connection { get; set; } = null!;
+
+        [Required(ErrorMessage = "ScriptName is required")]
+        public string ScriptName { get; set; } = string.Empty;
+    }
 }

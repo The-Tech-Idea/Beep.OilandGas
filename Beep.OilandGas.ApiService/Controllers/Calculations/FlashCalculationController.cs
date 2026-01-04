@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.FlashCalculations;
+using Beep.OilandGas.Models.DTOs.Calculations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -84,12 +85,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-    }
-
-    public class MultiStageFlashRequest
-    {
-        public FlashConditions Conditions { get; set; } = null!;
-        public int Stages { get; set; }
     }
 }
 

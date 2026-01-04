@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using SkiaSharp;
-using Beep.OilandGas.WellTestAnalysis.Models;
+using Beep.OilandGas.Models.WellTestAnalysis;
 using Beep.OilandGas.WellTestAnalysis.Calculations;
 
 namespace Beep.OilandGas.WellTestAnalysis.Rendering

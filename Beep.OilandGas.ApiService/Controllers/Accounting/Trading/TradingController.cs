@@ -2,10 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.ProductionAccounting.Trading;
-using Beep.OilandGas.ProductionAccounting.Models;
-using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Services;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using Beep.OilandGas.Models.DTOs.Accounting.Trading;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
@@ -32,7 +31,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
         /// Get exchange contract by ID.
         /// </summary>
         [HttpGet("exchanges")]
-        public ActionResult<List<ExchangeContractDto>> GetExchanges(
+        public async Task<ActionResult<List<ExchangeContractDto>>> GetExchanges(
             [FromQuery] string? contractId = null,
             [FromQuery] string? connectionName = null)
         {
@@ -41,7 +40,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
                 if (string.IsNullOrEmpty(contractId))
                     return BadRequest(new { error = "contractId parameter is required" });
 
-                var contract = _service.TradingManager.GetContract(contractId);
+                var contract = await _service.TradingService.GetContractAsync(contractId, connectionName);
                 if (contract == null)
                     return NotFound(new { error = $"Exchange contract {contractId} not found" });
                 
@@ -58,8 +57,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
         /// Create exchange contract.
         /// </summary>
         [HttpPost("exchanges")]
-        public ActionResult<ExchangeContractDto> CreateExchangeContract(
+        public async Task<ActionResult<ExchangeContractDto>> CreateExchangeContract(
             [FromBody] CreateExchangeContractRequest request,
+            [FromQuery] string? userId = null,
             [FromQuery] string? connectionName = null)
         {
             try
@@ -67,8 +67,17 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var contract = MapToExchangeContract(request);
-                _service.TradingManager.RegisterContract(contract);
+                // Convert DTO to request for TradingService
+                var tradingRequest = new Beep.OilandGas.Models.DTOs.ProductionAccounting.CreateExchangeContractRequest
+                {
+                    ContractId = request.ContractId,
+                    ContractName = request.ContractName,
+                    ContractType = request.ContractType,
+                    EffectiveDate = request.EffectiveDate,
+                    ExpirationDate = request.ExpirationDate
+                };
+
+                var contract = await _service.TradingService.RegisterContractAsync(tradingRequest, userId ?? "system", connectionName);
                 return Ok(MapToExchangeContractDto(contract));
             }
             catch (Exception ex)
@@ -78,38 +87,25 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
             }
         }
 
-        private ExchangeContractDto MapToExchangeContractDto(ExchangeContract contract)
+        private ExchangeContractDto MapToExchangeContractDto(Beep.OilandGas.Models.Data.ProductionAccounting.EXCHANGE_CONTRACT contract)
         {
+            // Parse ContractType from string to enum
+            ExchangeContractType contractType = ExchangeContractType.PhysicalExchange;
+            if (!string.IsNullOrEmpty(contract.CONTRACT_TYPE))
+            {
+                Enum.TryParse<ExchangeContractType>(contract.CONTRACT_TYPE, true, out contractType);
+            }
+
             return new ExchangeContractDto
             {
-                ContractId = contract.ContractId,
-                ContractName = contract.ContractName,
-                ContractType = contract.ContractType.ToString(),
-                EffectiveDate = contract.EffectiveDate,
-                ExpirationDate = contract.ExpirationDate
-            };
-        }
-
-        private ExchangeContract MapToExchangeContract(CreateExchangeContractRequest request)
-        {
-            return new ExchangeContract
-            {
-                ContractId = request.ContractId,
-                ContractName = request.ContractName,
-                ContractType = request.ContractType,
-                EffectiveDate = request.EffectiveDate,
-                ExpirationDate = request.ExpirationDate
+                ContractId = contract.CONTRACT_ID ?? string.Empty,
+                ContractName = contract.CONTRACT_NAME ?? string.Empty,
+                ContractType = contractType,
+                EffectiveDate = contract.EFFECTIVE_DATE ?? DateTime.UtcNow,
+                ExpirationDate = contract.EXPIRY_DATE
             };
         }
     }
 
-    public class CreateExchangeContractRequest
-    {
-        public string ContractId { get; set; } = string.Empty;
-        public string ContractName { get; set; } = string.Empty;
-        public ExchangeContractType ContractType { get; set; }
-        public DateTime EffectiveDate { get; set; }
-        public DateTime? ExpirationDate { get; set; }
-    }
 }
 

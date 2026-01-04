@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
+using Beep.OilandGas.Models.DTOs.Accounting.Revenue;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
@@ -83,12 +84,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
         }
     }
 
-    public class CreateRevenueTransactionRequest
-    {
-        public decimal RevenueAmount { get; set; }
-        public DateTime? TransactionDate { get; set; }
-        public string? RunTicketNumber { get; set; }
-        public string? PropertyId { get; set; }
-    }
 }
 

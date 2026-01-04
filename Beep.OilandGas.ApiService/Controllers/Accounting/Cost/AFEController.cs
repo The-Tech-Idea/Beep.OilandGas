@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
 
@@ -101,15 +102,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-    }
-
-    public class CreateAFERequest
-    {
-        public string AfeNumber { get; set; } = string.Empty;
-        public string? AfeName { get; set; }
-        public string PropertyId { get; set; } = string.Empty;
-        public decimal BudgetAmount { get; set; }
-        public DateTime? EffectiveDate { get; set; }
     }
 }
 

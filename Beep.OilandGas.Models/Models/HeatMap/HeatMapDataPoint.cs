@@ -2,6 +2,7 @@ namespace Beep.OilandGas.Models.HeatMap
 {
     /// <summary>
     /// Data point for heat map visualization
+    /// DTO for calculations - Entity class: HEAT_MAP_DATA_POINT
     /// </summary>
     public class HeatMapDataPoint
     {

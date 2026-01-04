@@ -14,6 +14,5 @@ namespace Beep.OilandGas.Models.Core.Interfaces.Security
         Task<bool> DeleteAsync(string id);
         Task<bool> AddPermissionToRoleAsync(string roleId, string permissionCode);
         Task<bool> RemovePermissionFromRoleAsync(string roleId, string permissionCode);
-        Task<IEnumerable<string>> GetRolePermissionsAsync(string roleId);
     }
 }

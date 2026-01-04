@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.NodalAnalysis;
+using Beep.OilandGas.Models.NodalAnalysis;
 
 namespace Beep.OilandGas.Models.DTOs
 {

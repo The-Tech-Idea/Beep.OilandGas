@@ -1,0 +1,1 @@
+-- GOVERNMENTAL_TAX_DATA table has no foreign key constraints

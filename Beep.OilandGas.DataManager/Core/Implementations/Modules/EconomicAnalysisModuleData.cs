@@ -1,4 +1,4 @@
-namespace Beep.OilandGas.DataManager.Core.Implementations
+namespace Beep.OilandGas.DataManager.Core.Implementations.Modules
 {
     /// <summary>
     /// Module data for Economic analysis and cash flow modeling
@@ -12,5 +12,8 @@ namespace Beep.OilandGas.DataManager.Core.Implementations
         public override bool IsRequired => false;
 
         public EconomicAnalysisModuleData(string? scriptsBasePath = null) : base(scriptsBasePath) { }
+
+        public override IEnumerable<string> GetDependencies() => 
+            new[] { "PPDM39", "Common", "Security" };
     }
 }

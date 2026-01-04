@@ -5,12 +5,13 @@ using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
 namespace Beep.OilandGas.ProductionAccounting.GeneralLedger
 {
     /// <summary>
     /// Manages General Ledger accounts (Chart of Accounts).
-    /// Uses database access via IDataSource instead of in-memory dictionaries.
+    /// Uses Entity classes directly with IDataSource - no dictionary conversions.
     /// </summary>
     public class GLAccountManager
     {
@@ -59,19 +60,16 @@ namespace Beep.OilandGas.ProductionAccounting.GeneralLedger
                 NORMAL_BALANCE = request.NormalBalance,
                 OPENING_BALANCE = request.OpeningBalance,
                 CURRENT_BALANCE = request.OpeningBalance ?? 0m,
-                DESCRIPTION = request.Description,
-                ACTIVE_IND = "Y",
-                ROW_CREATED_BY = userId,
-                ROW_CREATED_DATE = DateTime.UtcNow
+                DESCRIPTION = request.Description
             };
 
-            // Save to database using IDataSource
+            // Prepare for insert and save to database
             var connName = connectionName ?? _connectionName;
-using Beep.OilandGas.Models.Data.ProductionAccounting;
             var dataSource = _editor.GetDataSource(connName);
             if (dataSource == null)
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");
 
+            _commonColumnHandler.PrepareForInsert(account, userId);
             var result = dataSource.InsertEntity(GL_ACCOUNT_TABLE, account);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
@@ -152,52 +150,6 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
                 return Enumerable.Empty<GL_ACCOUNT>();
 
             return results.Cast<GL_ACCOUNT>().Where(a => a != null)!;
-        }
-
-        /// <summary>
-        /// Converts GL_ACCOUNT entity to dictionary for database storage.
-        /// </summary>
-        private Dictionary<string, object> ConvertGLAccountToDictionary(GL_ACCOUNT account)
-        {
-            var dict = new Dictionary<string, object>();
-            if (!string.IsNullOrEmpty(account.GL_ACCOUNT_ID)) dict["GL_ACCOUNT_ID"] = account.GL_ACCOUNT_ID;
-            if (!string.IsNullOrEmpty(account.ACCOUNT_NUMBER)) dict["ACCOUNT_NUMBER"] = account.ACCOUNT_NUMBER;
-            if (!string.IsNullOrEmpty(account.ACCOUNT_NAME)) dict["ACCOUNT_NAME"] = account.ACCOUNT_NAME;
-            if (!string.IsNullOrEmpty(account.ACCOUNT_TYPE)) dict["ACCOUNT_TYPE"] = account.ACCOUNT_TYPE;
-            if (!string.IsNullOrEmpty(account.PARENT_ACCOUNT_ID)) dict["PARENT_ACCOUNT_ID"] = account.PARENT_ACCOUNT_ID;
-            if (!string.IsNullOrEmpty(account.NORMAL_BALANCE)) dict["NORMAL_BALANCE"] = account.NORMAL_BALANCE;
-            if (account.OPENING_BALANCE.HasValue) dict["OPENING_BALANCE"] = account.OPENING_BALANCE.Value;
-            if (account.CURRENT_BALANCE.HasValue) dict["CURRENT_BALANCE"] = account.CURRENT_BALANCE.Value;
-            if (!string.IsNullOrEmpty(account.DESCRIPTION)) dict["DESCRIPTION"] = account.DESCRIPTION;
-            if (!string.IsNullOrEmpty(account.ACTIVE_IND)) dict["ACTIVE_IND"] = account.ACTIVE_IND;
-            if (!string.IsNullOrEmpty(account.ROW_CREATED_BY)) dict["ROW_CREATED_BY"] = account.ROW_CREATED_BY;
-            if (account.ROW_CREATED_DATE.HasValue) dict["ROW_CREATED_DATE"] = account.ROW_CREATED_DATE.Value;
-            if (!string.IsNullOrEmpty(account.ROW_CHANGED_BY)) dict["ROW_CHANGED_BY"] = account.ROW_CHANGED_BY;
-            if (account.ROW_CHANGED_DATE.HasValue) dict["ROW_CHANGED_DATE"] = account.ROW_CHANGED_DATE.Value;
-            return dict;
-        }
-
-        /// <summary>
-        /// Converts dictionary to GL_ACCOUNT entity.
-        /// </summary>
-        private GL_ACCOUNT ConvertDictionaryToGLAccount(Dictionary<string, object> dict)
-        {
-            var account = new GL_ACCOUNT();
-            if (dict.TryGetValue("GL_ACCOUNT_ID", out var accountId)) account.GL_ACCOUNT_ID = accountId?.ToString();
-            if (dict.TryGetValue("ACCOUNT_NUMBER", out var accountNumber)) account.ACCOUNT_NUMBER = accountNumber?.ToString();
-            if (dict.TryGetValue("ACCOUNT_NAME", out var accountName)) account.ACCOUNT_NAME = accountName?.ToString();
-            if (dict.TryGetValue("ACCOUNT_TYPE", out var accountType)) account.ACCOUNT_TYPE = accountType?.ToString();
-            if (dict.TryGetValue("PARENT_ACCOUNT_ID", out var parentId)) account.PARENT_ACCOUNT_ID = parentId?.ToString();
-            if (dict.TryGetValue("NORMAL_BALANCE", out var normalBalance)) account.NORMAL_BALANCE = normalBalance?.ToString();
-            if (dict.TryGetValue("OPENING_BALANCE", out var openingBalance)) account.OPENING_BALANCE = openingBalance != null ? Convert.ToDecimal(openingBalance) : (decimal?)null;
-            if (dict.TryGetValue("CURRENT_BALANCE", out var currentBalance)) account.CURRENT_BALANCE = currentBalance != null ? Convert.ToDecimal(currentBalance) : (decimal?)null;
-            if (dict.TryGetValue("DESCRIPTION", out var description)) account.DESCRIPTION = description?.ToString();
-            if (dict.TryGetValue("ACTIVE_IND", out var activeInd)) account.ACTIVE_IND = activeInd?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_BY", out var createdBy)) account.ROW_CREATED_BY = createdBy?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_DATE", out var createdDate)) account.ROW_CREATED_DATE = createdDate != null ? Convert.ToDateTime(createdDate) : (DateTime?)null;
-            if (dict.TryGetValue("ROW_CHANGED_BY", out var changedBy)) account.ROW_CHANGED_BY = changedBy?.ToString();
-            if (dict.TryGetValue("ROW_CHANGED_DATE", out var changedDate)) account.ROW_CHANGED_DATE = changedDate != null ? Convert.ToDateTime(changedDate) : (DateTime?)null;
-            return account;
         }
     }
 }

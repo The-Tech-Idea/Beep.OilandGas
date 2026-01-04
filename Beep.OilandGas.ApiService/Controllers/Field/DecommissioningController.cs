@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.DTOs.LifeCycle;
 using Beep.OilandGas.PPDM39.Models;
 using Microsoft.Extensions.Logging;
 
@@ -758,87 +759,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         }
 
         #endregion
-    }
-
-    // ============================================
-    // REQUEST DTOs
-    // ============================================
-
-    public class StartWellAbandonmentRequest
-    {
-        public string WellId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class PlanAbandonmentRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public Dictionary<string, object>? PlanData { get; set; }
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class ObtainRegulatoryApprovalRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class PlugWellRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public Dictionary<string, object>? PluggingData { get; set; }
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class RestoreSiteRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public Dictionary<string, object>? RestorationData { get; set; }
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class CompleteAbandonmentRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class StartFacilityDecommissioningRequest
-    {
-        public string FacilityId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class PlanDecommissioningRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public Dictionary<string, object>? PlanData { get; set; }
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class RemoveEquipmentRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public Dictionary<string, object>? RemovalData { get; set; }
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class CleanupSiteRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public Dictionary<string, object>? CleanupData { get; set; }
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class ObtainRegulatoryClosureRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class CompleteDecommissioningRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
     }
 }

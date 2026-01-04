@@ -2,6 +2,7 @@ namespace Beep.OilandGas.Models.GasLift
 {
     /// <summary>
     /// Well properties for gas lift analysis and design
+    /// DTO for calculations - Entity class: GAS_LIFT_WELL_PROPERTIES
     /// </summary>
     public class GasLiftWellProperties
     {

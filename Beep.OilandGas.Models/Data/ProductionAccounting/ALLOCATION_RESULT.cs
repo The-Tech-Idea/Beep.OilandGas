@@ -1,58 +1,60 @@
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Core.Interfaces;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class ROYALTY_PAYMENT : Entity,IPPDMEntity
+    public partial class ALLOCATION_RESULT : Entity, IPPDMEntity
     {
-        private System.String ROYALTY_PAYMENT_IDValue;
-        public System.String ROYALTY_PAYMENT_ID
+        private System.String ALLOCATION_RESULT_IDValue;
+        public System.String ALLOCATION_RESULT_ID
         {
-            get { return this.ROYALTY_PAYMENT_IDValue; }
-            set { SetProperty(ref ROYALTY_PAYMENT_IDValue, value); }
+            get { return this.ALLOCATION_RESULT_IDValue; }
+            set { SetProperty(ref ALLOCATION_RESULT_IDValue, value); }
         }
 
-        private System.String ROYALTY_INTEREST_IDValue;
-        public System.String ROYALTY_INTEREST_ID
+        private System.String ALLOCATION_REQUEST_IDValue;
+        public System.String ALLOCATION_REQUEST_ID
         {
-            get { return this.ROYALTY_INTEREST_IDValue; }
-            set { SetProperty(ref ROYALTY_INTEREST_IDValue, value); }
+            get { return this.ALLOCATION_REQUEST_IDValue; }
+            set { SetProperty(ref ALLOCATION_REQUEST_IDValue, value); }
         }
 
-        private System.DateTime? PAYMENT_DATEValue;
-        public System.DateTime? PAYMENT_DATE
+        private System.DateTime? ALLOCATION_DATEValue;
+        public System.DateTime? ALLOCATION_DATE
         {
-            get { return this.PAYMENT_DATEValue; }
-            set { SetProperty(ref PAYMENT_DATEValue, value); }
+            get { return this.ALLOCATION_DATEValue; }
+            set { SetProperty(ref ALLOCATION_DATEValue, value); }
         }
 
-        private System.Decimal? PAYMENT_AMOUNTValue;
-        public System.Decimal? PAYMENT_AMOUNT
+        private System.String ALLOCATION_METHODValue;
+        public System.String ALLOCATION_METHOD
         {
-            get { return this.PAYMENT_AMOUNTValue; }
-            set { SetProperty(ref PAYMENT_AMOUNTValue, value); }
+            get { return this.ALLOCATION_METHODValue; }
+            set { SetProperty(ref ALLOCATION_METHODValue, value); }
         }
 
-        private System.String PAYMENT_METHODValue;
-        public System.String PAYMENT_METHOD
+        private System.Decimal? TOTAL_VOLUMEValue;
+        public System.Decimal? TOTAL_VOLUME
         {
-            get { return this.PAYMENT_METHODValue; }
-            set { SetProperty(ref PAYMENT_METHODValue, value); }
+            get { return this.TOTAL_VOLUMEValue; }
+            set { SetProperty(ref TOTAL_VOLUMEValue, value); }
         }
 
-        private System.String REFERENCE_NUMBERValue;
-        public System.String REFERENCE_NUMBER
+        private System.Decimal? ALLOCATED_VOLUMEValue;
+        public System.Decimal? ALLOCATED_VOLUME
         {
-            get { return this.REFERENCE_NUMBERValue; }
-            set { SetProperty(ref REFERENCE_NUMBERValue, value); }
+            get { return this.ALLOCATED_VOLUMEValue; }
+            set { SetProperty(ref ALLOCATED_VOLUMEValue, value); }
         }
 
-        private System.String STATUSValue;
-        public System.String STATUS
+        private System.Decimal? ALLOCATION_VARIANCEValue;
+        public System.Decimal? ALLOCATION_VARIANCE
         {
-            get { return this.STATUSValue; }
-            set { SetProperty(ref STATUSValue, value); }
+            get { return this.ALLOCATION_VARIANCEValue; }
+            set { SetProperty(ref ALLOCATION_VARIANCEValue, value); }
         }
 
         private System.String DESCRIPTIONValue;
@@ -148,4 +150,3 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
-

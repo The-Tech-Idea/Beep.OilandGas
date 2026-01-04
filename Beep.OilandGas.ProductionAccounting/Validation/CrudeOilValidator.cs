@@ -1,5 +1,6 @@
 
-using Beep.OilandGas.ProductionAccounting.Models;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using CrudeOilPropertiesDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.CrudeOilPropertiesDto;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 
 namespace Beep.OilandGas.ProductionAccounting.Validation
@@ -27,7 +28,7 @@ namespace Beep.OilandGas.ProductionAccounting.Validation
         /// <summary>
         /// Validates crude oil properties.
         /// </summary>
-        public static void Validate(CrudeOilProperties properties)
+        public static void Validate(CrudeOilPropertiesDto properties)
         {
             if (properties == null)
                 throw new ArgumentNullException(nameof(properties));

@@ -7,6 +7,7 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.ProductionAccounting.GeneralLedger;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
+using Beep.OilandGas.Models.DTOs.Accounting.Traditional;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
@@ -158,14 +159,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         }
     }
 
-    public class CreateInventoryTransactionRequest
-    {
-        public string InventoryItemId { get; set; } = string.Empty;
-        public string TransactionType { get; set; } = string.Empty; // Receipt, Issue, Adjustment
-        public DateTime? TransactionDate { get; set; }
-        public decimal Quantity { get; set; }
-        public decimal? UnitCost { get; set; }
-        public string? Description { get; set; }
-    }
 }
 

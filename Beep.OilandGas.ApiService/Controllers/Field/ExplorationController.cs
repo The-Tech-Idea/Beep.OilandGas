@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs.LifeCycle;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
@@ -222,40 +223,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
         }
 
-    }
-
-    // ============================================
-    // REQUEST DTOs
-    // ============================================
-
-    public class StartLeadToProspectRequest
-    {
-        public string LeadId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class EvaluateLeadRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public Dictionary<string, object>? EvaluationData { get; set; }
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class ApproveLeadRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class StartProspectToDiscoveryRequest
-    {
-        public string ProspectId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class StartDiscoveryToDevelopmentRequest
-    {
-        public string DiscoveryId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
     }
 }

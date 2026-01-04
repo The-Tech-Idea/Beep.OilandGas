@@ -1,5 +1,9 @@
 
-using Beep.OilandGas.ProductionAccounting.Models;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using OilSalesAgreementDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.OilSalesAgreementDto;
+using TransportationAgreementDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.TransportationAgreementDto;
+using PricingTermsDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.PricingTermsDto;
+using DeliveryTermsDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.DeliveryTermsDto;
 using Beep.OilandGas.ProductionAccounting.Validation;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -8,6 +12,7 @@ using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Data.Agreement;
 
 namespace Beep.OilandGas.ProductionAccounting.Management
 {
@@ -213,7 +218,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
         /// <summary>
         /// Registers a sales agreement.
         /// </summary>
-        public async Task RegisterSalesAgreementAsync(OilSalesAgreement agreement, string userId = "system", string? connectionName = null)
+        public async Task RegisterSalesAgreementAsync(OilSalesAgreementDto agreement, string userId = "system", string? connectionName = null)
         {
             if (agreement == null)
                 throw new ArgumentNullException(nameof(agreement));
@@ -249,7 +254,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
         /// <summary>
         /// Gets a sales agreement by ID.
         /// </summary>
-        public async Task<OilSalesAgreement?> GetSalesAgreementAsync(string agreementId, string? connectionName = null)
+        public async Task<OilSalesAgreementDto?> GetSalesAgreementAsync(string agreementId, string? connectionName = null)
         {
             if (string.IsNullOrEmpty(agreementId))
                 return null;
@@ -265,18 +270,13 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
             };
 
             var results = await dataSource.GetEntityAsync(SALES_AGREEMENT_TABLE, filters);
-            var agreementData = results?.FirstOrDefault();
-            
-            if (agreementData == null)
-                return null;
-
-            return agreementData as OilSalesAgreement;
+            return results?.FirstOrDefault() as SALES_AGREEMENT;
         }
 
         /// <summary>
         /// Gets a sales agreement by ID (synchronous wrapper).
         /// </summary>
-        public OilSalesAgreement? GetSalesAgreement(string agreementId)
+        public SALES_AGREEMENT? GetSalesAgreement(string agreementId)
         {
             return GetSalesAgreementAsync(agreementId).GetAwaiter().GetResult();
         }
@@ -312,7 +312,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
         /// <summary>
         /// Registers a transportation agreement (synchronous wrapper).
         /// </summary>
-        public void RegisterTransportationAgreement(TransportationAgreement agreement)
+        public void RegisterTransportationAgreement(TransportationAgreementDto agreement)
         {
             RegisterTransportationAgreementAsync(agreement).GetAwaiter().GetResult();
         }
@@ -336,18 +336,13 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
             };
 
             var results = await dataSource.GetEntityAsync(TRANSPORTATION_AGREEMENT_TABLE, filters);
-            var agreementData = results?.FirstOrDefault();
-            
-            if (agreementData == null)
-                return null;
-
-            return agreementData as TransportationAgreement;
+            return results?.FirstOrDefault() as TRANSPORTATION_AGREEMENT;
         }
 
         /// <summary>
         /// Gets a transportation agreement by ID (synchronous wrapper).
         /// </summary>
-        public TransportationAgreement? GetTransportationAgreement(string agreementId)
+        public TRANSPORTATION_AGREEMENT? GetTransportationAgreement(string agreementId)
         {
             return GetTransportationAgreementAsync(agreementId).GetAwaiter().GetResult();
         }
@@ -386,231 +381,5 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
             return lease.NetRevenueInterest;
         }
 
-        #region Helper Methods - Model to Dictionary Conversion
-
-        /// <summary>
-        /// Converts LeaseAgreement to dictionary for database storage.
-        /// </summary>
-        private Dictionary<string, object> ConvertLeaseToDictionary(LeaseAgreement lease)
-        {
-            var dict = new Dictionary<string, object>
-            {
-                { "LEASE_ID", lease.LeaseId },
-                { "LEASE_NAME", lease.LeaseName ?? string.Empty },
-                { "LEASE_TYPE", lease.LeaseType.ToString() },
-                { "EFFECTIVE_DATE", lease.EffectiveDate },
-                { "EXPIRATION_DATE", lease.ExpirationDate ?? (object)DBNull.Value },
-                { "PRIMARY_TERM_MONTHS", lease.PrimaryTermMonths },
-                { "WORKING_INTEREST", lease.WorkingInterest },
-                { "NET_REVENUE_INTEREST", lease.NetRevenueInterest },
-                { "ROYALTY_RATE", lease.RoyaltyRate },
-                { "IS_HELD_BY_PRODUCTION", lease.Provisions?.IsHeldByProduction ?? false },
-                { "SHUT_IN_ROYALTY_IND", lease.Provisions?.IsShutInRoyalty ?? false },
-                { "SHUT_IN_ROYALTY_RATE", lease.Provisions?.ShutInRoyaltyRate ?? (object)DBNull.Value },
-                { "STATE", lease.Location?.State ?? string.Empty },
-                { "COUNTY", lease.Location?.County ?? string.Empty },
-                { "TOWNSHIP", lease.Location?.Township ?? string.Empty },
-                { "RANGE", lease.Location?.Range ?? string.Empty },
-                { "SECTION", lease.Location?.Section ?? string.Empty }
-            };
-
-            // Handle lease type-specific properties
-            if (lease is JointInterestLease jointLease)
-            {
-                // Store participants as JSON or in separate table (simplified here)
-                dict["IS_JOINT_INTEREST"] = true;
-            }
-            else if (lease is FeeMineralLease feeLease)
-            {
-                dict["MINERAL_OWNER"] = feeLease.MineralOwner ?? string.Empty;
-            }
-            else if (lease is GovernmentLease govLease)
-            {
-                dict["GOVERNMENT_AGENCY"] = govLease.GovernmentAgency ?? string.Empty;
-                dict["LEASE_NUMBER"] = govLease.LeaseNumber ?? string.Empty;
-            }
-
-            return dict;
-        }
-
-        /// <summary>
-        /// Converts dictionary to LeaseAgreement.
-        /// </summary>
-        private LeaseAgreement? ConvertDictionaryToLease(Dictionary<string, object> dict)
-        {
-            if (dict == null || !dict.ContainsKey("LEASE_ID"))
-                return null;
-
-            var leaseTypeStr = dict.ContainsKey("LEASE_TYPE") ? dict["LEASE_TYPE"]?.ToString() : "Fee";
-            if (!Enum.TryParse<LeaseType>(leaseTypeStr, out var leaseType))
-                leaseType = LeaseType.Fee;
-
-            LeaseAgreement lease = leaseType switch
-            {
-                LeaseType.JointInterest => new JointInterestLease(),
-                LeaseType.Government => new GovernmentLease
-                {
-                    GovernmentAgency = dict.ContainsKey("GOVERNMENT_AGENCY") ? dict["GOVERNMENT_AGENCY"]?.ToString() : string.Empty,
-                    LeaseNumber = dict.ContainsKey("LEASE_NUMBER") ? dict["LEASE_NUMBER"]?.ToString() : string.Empty
-                },
-                LeaseType.NetProfit => new NetProfitLease(),
-                _ => new FeeMineralLease
-                {
-                    MineralOwner = dict.ContainsKey("MINERAL_OWNER") ? dict["MINERAL_OWNER"]?.ToString() : string.Empty
-                }
-            };
-
-            lease.LeaseId = dict["LEASE_ID"]?.ToString() ?? string.Empty;
-            lease.LeaseName = dict.ContainsKey("LEASE_NAME") ? dict["LEASE_NAME"]?.ToString() ?? string.Empty : string.Empty;
-            lease.LeaseType = leaseType;
-            lease.EffectiveDate = dict.ContainsKey("EFFECTIVE_DATE") && dict["EFFECTIVE_DATE"] != DBNull.Value 
-                ? Convert.ToDateTime(dict["EFFECTIVE_DATE"]) 
-                : DateTime.MinValue;
-            lease.ExpirationDate = dict.ContainsKey("EXPIRATION_DATE") && dict["EXPIRATION_DATE"] != DBNull.Value
-                ? Convert.ToDateTime(dict["EXPIRATION_DATE"])
-                : null;
-            lease.PrimaryTermMonths = dict.ContainsKey("PRIMARY_TERM_MONTHS") ? Convert.ToInt32(dict["PRIMARY_TERM_MONTHS"]) : 0;
-            lease.WorkingInterest = dict.ContainsKey("WORKING_INTEREST") ? Convert.ToDecimal(dict["WORKING_INTEREST"]) : 0m;
-            lease.NetRevenueInterest = dict.ContainsKey("NET_REVENUE_INTEREST") ? Convert.ToDecimal(dict["NET_REVENUE_INTEREST"]) : 0m;
-            lease.RoyaltyRate = dict.ContainsKey("ROYALTY_RATE") ? Convert.ToDecimal(dict["ROYALTY_RATE"]) : 0m;
-
-            lease.Provisions = new LeaseProvisions
-            {
-                IsHeldByProduction = dict.ContainsKey("IS_HELD_BY_PRODUCTION") && Convert.ToBoolean(dict["IS_HELD_BY_PRODUCTION"]),
-                IsShutInRoyalty = dict.ContainsKey("SHUT_IN_ROYALTY_IND") && Convert.ToBoolean(dict["SHUT_IN_ROYALTY_IND"]),
-                ShutInRoyaltyRate = dict.ContainsKey("SHUT_IN_ROYALTY_RATE") && dict["SHUT_IN_ROYALTY_RATE"] != DBNull.Value
-                    ? Convert.ToDecimal(dict["SHUT_IN_ROYALTY_RATE"])
-                    : null
-            };
-
-            lease.Location = new LeaseLocation
-            {
-                State = dict.ContainsKey("STATE") ? dict["STATE"]?.ToString() ?? string.Empty : string.Empty,
-                County = dict.ContainsKey("COUNTY") ? dict["COUNTY"]?.ToString() ?? string.Empty : string.Empty,
-                Township = dict.ContainsKey("TOWNSHIP") ? dict["TOWNSHIP"]?.ToString() ?? string.Empty : string.Empty,
-                Range = dict.ContainsKey("RANGE") ? dict["RANGE"]?.ToString() ?? string.Empty : string.Empty,
-                Section = dict.ContainsKey("SECTION") ? dict["SECTION"]?.ToString() ?? string.Empty : string.Empty
-            };
-
-            return lease;
-        }
-
-        /// <summary>
-        /// Converts OilSalesAgreement to dictionary.
-        /// </summary>
-        private Dictionary<string, object> ConvertSalesAgreementToDictionary(OilSalesAgreement agreement)
-        {
-            return new Dictionary<string, object>
-            {
-                { "AGREEMENT_ID", agreement.AgreementId },
-                { "AGREEMENT_NAME", agreement.AgreementName ?? string.Empty },
-                { "SELLER", agreement.Seller ?? string.Empty },
-                { "PURCHASER", agreement.Purchaser ?? string.Empty },
-                { "EFFECTIVE_DATE", agreement.EffectiveDate },
-                { "EXPIRATION_DATE", agreement.ExpirationDate ?? (object)DBNull.Value },
-                { "PRICING_METHOD", agreement.PricingTerms?.PricingMethod.ToString() ?? string.Empty },
-                { "BASE_PRICE", agreement.PricingTerms?.BasePrice ?? (object)DBNull.Value },
-                { "PRICE_INDEX", agreement.PricingTerms?.PriceIndex ?? string.Empty },
-                { "DIFFERENTIAL", agreement.PricingTerms?.Differential ?? 0m },
-                { "DELIVERY_POINT", agreement.DeliveryTerms?.DeliveryPoint ?? string.Empty },
-                { "DELIVERY_METHOD", agreement.DeliveryTerms?.DeliveryMethod ?? string.Empty },
-                { "MINIMUM_VOLUME_COMMITMENT", agreement.MinimumVolumeCommitment ?? (object)DBNull.Value },
-                { "MAXIMUM_VOLUME_COMMITMENT", agreement.MaximumVolumeCommitment ?? (object)DBNull.Value },
-                { "PAYMENT_TERMS_DAYS", agreement.PaymentTermsDays }
-            };
-        }
-
-        /// <summary>
-        /// Converts dictionary to OilSalesAgreement.
-        /// </summary>
-        private OilSalesAgreement ConvertDictionaryToSalesAgreement(Dictionary<string, object> dict)
-        {
-            var agreement = new OilSalesAgreement
-            {
-                AgreementId = dict["AGREEMENT_ID"]?.ToString() ?? string.Empty,
-                AgreementName = dict.ContainsKey("AGREEMENT_NAME") ? dict["AGREEMENT_NAME"]?.ToString() ?? string.Empty : string.Empty,
-                Seller = dict.ContainsKey("SELLER") ? dict["SELLER"]?.ToString() ?? string.Empty : string.Empty,
-                Purchaser = dict.ContainsKey("PURCHASER") ? dict["PURCHASER"]?.ToString() ?? string.Empty : string.Empty,
-                EffectiveDate = dict.ContainsKey("EFFECTIVE_DATE") && dict["EFFECTIVE_DATE"] != DBNull.Value
-                    ? Convert.ToDateTime(dict["EFFECTIVE_DATE"])
-                    : DateTime.MinValue,
-                ExpirationDate = dict.ContainsKey("EXPIRATION_DATE") && dict["EXPIRATION_DATE"] != DBNull.Value
-                    ? Convert.ToDateTime(dict["EXPIRATION_DATE"])
-                    : null,
-                PaymentTermsDays = dict.ContainsKey("PAYMENT_TERMS_DAYS") ? Convert.ToInt32(dict["PAYMENT_TERMS_DAYS"]) : 30
-            };
-
-            if (dict.ContainsKey("MINIMUM_VOLUME_COMMITMENT") && dict["MINIMUM_VOLUME_COMMITMENT"] != DBNull.Value)
-                agreement.MinimumVolumeCommitment = Convert.ToDecimal(dict["MINIMUM_VOLUME_COMMITMENT"]);
-            if (dict.ContainsKey("MAXIMUM_VOLUME_COMMITMENT") && dict["MAXIMUM_VOLUME_COMMITMENT"] != DBNull.Value)
-                agreement.MaximumVolumeCommitment = Convert.ToDecimal(dict["MAXIMUM_VOLUME_COMMITMENT"]);
-
-            agreement.PricingTerms = new PricingTerms();
-            if (dict.ContainsKey("PRICING_METHOD") && Enum.TryParse<PricingMethod>(dict["PRICING_METHOD"]?.ToString(), out var method))
-                agreement.PricingTerms.PricingMethod = method;
-            if (dict.ContainsKey("BASE_PRICE") && dict["BASE_PRICE"] != DBNull.Value)
-                agreement.PricingTerms.BasePrice = Convert.ToDecimal(dict["BASE_PRICE"]);
-            if (dict.ContainsKey("PRICE_INDEX"))
-                agreement.PricingTerms.PriceIndex = dict["PRICE_INDEX"]?.ToString();
-            if (dict.ContainsKey("DIFFERENTIAL"))
-                agreement.PricingTerms.Differential = Convert.ToDecimal(dict["DIFFERENTIAL"]);
-
-            agreement.DeliveryTerms = new DeliveryTerms
-            {
-                DeliveryPoint = dict.ContainsKey("DELIVERY_POINT") ? dict["DELIVERY_POINT"]?.ToString() ?? string.Empty : string.Empty,
-                DeliveryMethod = dict.ContainsKey("DELIVERY_METHOD") ? dict["DELIVERY_METHOD"]?.ToString() ?? string.Empty : string.Empty
-            };
-
-            return agreement;
-        }
-
-        /// <summary>
-        /// Converts TransportationAgreement to dictionary.
-        /// </summary>
-        private Dictionary<string, object> ConvertTransportationAgreementToDictionary(TransportationAgreement agreement)
-        {
-            return new Dictionary<string, object>
-            {
-                { "AGREEMENT_ID", agreement.AgreementId },
-                { "CARRIER", agreement.Carrier ?? string.Empty },
-                { "ORIGIN_POINT", agreement.OriginPoint ?? string.Empty },
-                { "DESTINATION_POINT", agreement.DestinationPoint ?? string.Empty },
-                { "EFFECTIVE_DATE", agreement.EffectiveDate },
-                { "EXPIRATION_DATE", agreement.ExpirationDate ?? (object)DBNull.Value },
-                { "TARIFF_RATE", agreement.TariffRate },
-                { "MINIMUM_VOLUME_COMMITMENT", agreement.MinimumVolumeCommitment ?? (object)DBNull.Value },
-                { "MAXIMUM_CAPACITY", agreement.MaximumCapacity ?? (object)DBNull.Value }
-            };
-        }
-
-        /// <summary>
-        /// Converts dictionary to TransportationAgreement.
-        /// </summary>
-        private TransportationAgreement ConvertDictionaryToTransportationAgreement(Dictionary<string, object> dict)
-        {
-            var agreement = new TransportationAgreement
-            {
-                AgreementId = dict["AGREEMENT_ID"]?.ToString() ?? string.Empty,
-                Carrier = dict.ContainsKey("CARRIER") ? dict["CARRIER"]?.ToString() ?? string.Empty : string.Empty,
-                OriginPoint = dict.ContainsKey("ORIGIN_POINT") ? dict["ORIGIN_POINT"]?.ToString() ?? string.Empty : string.Empty,
-                DestinationPoint = dict.ContainsKey("DESTINATION_POINT") ? dict["DESTINATION_POINT"]?.ToString() ?? string.Empty : string.Empty,
-                EffectiveDate = dict.ContainsKey("EFFECTIVE_DATE") && dict["EFFECTIVE_DATE"] != DBNull.Value
-                    ? Convert.ToDateTime(dict["EFFECTIVE_DATE"])
-                    : DateTime.MinValue,
-                ExpirationDate = dict.ContainsKey("EXPIRATION_DATE") && dict["EXPIRATION_DATE"] != DBNull.Value
-                    ? Convert.ToDateTime(dict["EXPIRATION_DATE"])
-                    : null,
-                TariffRate = dict.ContainsKey("TARIFF_RATE") ? Convert.ToDecimal(dict["TARIFF_RATE"]) : 0m
-            };
-
-            if (dict.ContainsKey("MINIMUM_VOLUME_COMMITMENT") && dict["MINIMUM_VOLUME_COMMITMENT"] != DBNull.Value)
-                agreement.MinimumVolumeCommitment = Convert.ToDecimal(dict["MINIMUM_VOLUME_COMMITMENT"]);
-            if (dict.ContainsKey("MAXIMUM_CAPACITY") && dict["MAXIMUM_CAPACITY"] != DBNull.Value)
-                agreement.MaximumCapacity = Convert.ToDecimal(dict["MAXIMUM_CAPACITY"]);
-
-            return agreement;
-        }
-
-        #endregion
     }
 }

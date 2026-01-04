@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs.Pumps;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -68,17 +69,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-    }
-
-    public class DesignPlungerLiftSystemRequest
-    {
-        public string WellUWI { get; set; } = string.Empty;
-        public PlungerLiftWellPropertiesDto WellProperties { get; set; } = null!;
-    }
-
-    public class AnalyzePerformanceRequest
-    {
-        public string WellUWI { get; set; } = string.Empty;
     }
 }
 

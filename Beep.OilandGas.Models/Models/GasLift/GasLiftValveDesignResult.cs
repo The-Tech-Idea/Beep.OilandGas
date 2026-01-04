@@ -3,23 +3,35 @@ using System.Collections.Generic;
 namespace Beep.OilandGas.Models.GasLift
 {
     /// <summary>
-    /// Result of gas lift valve design
+    /// Result of gas lift valve design calculation
+    /// DTO for calculations - Entity class: GAS_LIFT_VALVE_DESIGN_RESULT
     /// </summary>
     public class GasLiftValveDesignResult
     {
         /// <summary>
-        /// Designed valves
+        /// List of designed valves
         /// </summary>
         public List<GasLiftValve> Valves { get; set; } = new List<GasLiftValve>();
 
         /// <summary>
-        /// Total gas injection rate (Mscf/day or m³/day)
+        /// Total gas injection rate for all valves
         /// </summary>
         public decimal TotalGasInjectionRate { get; set; }
+
+        /// <summary>
+        /// Expected production rate
+        /// </summary>
+        public decimal ExpectedProductionRate { get; set; }
+
+        /// <summary>
+        /// System efficiency
+        /// </summary>
+        public decimal SystemEfficiency { get; set; }
     }
 
     /// <summary>
-    /// Gas lift valve design
+    /// Represents a gas lift valve
+    /// DTO for calculations - Entity class: GAS_LIFT_VALVE
     /// </summary>
     public class GasLiftValve
     {
@@ -57,15 +69,5 @@ namespace Beep.OilandGas.Models.GasLift
         /// Gas injection rate through this valve (Mscf/day or m³/day)
         /// </summary>
         public decimal GasInjectionRate { get; set; }
-    }
-
-    /// <summary>
-    /// Gas lift valve type
-    /// </summary>
-    public enum GasLiftValveType
-    {
-        InjectionPressureOperated,
-        ProductionPressureOperated,
-        CombinationOperated
     }
 }

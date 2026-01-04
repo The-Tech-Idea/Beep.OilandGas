@@ -1,0 +1,1 @@
+-- NOMINATION table has no foreign key constraints

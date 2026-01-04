@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.ProductionAccounting.Storage;
 using Beep.OilandGas.ProductionAccounting.Services;
+using Beep.OilandGas.Models.DTOs.Accounting.Storage;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
@@ -91,11 +92,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
         }
     }
 
-    public class CreateStorageFacilityRequest
-    {
-        public string? FacilityId { get; set; }
-        public string FacilityName { get; set; } = string.Empty;
-        public string? Location { get; set; }
-    }
 }
 

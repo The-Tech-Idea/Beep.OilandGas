@@ -5,6 +5,7 @@ using Beep.OilandGas.ProductionAccounting.Financial.FullCost;
 using Beep.OilandGas.ProductionAccounting.Models;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
+using Beep.OilandGas.Models.DTOs.Accounting.Financial;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
@@ -197,29 +198,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         }
     }
 
-    public class FullCostExplorationRequest
-    {
-        public string CostCenterId { get; set; } = string.Empty;
-        public ExplorationCosts Costs { get; set; } = new();
-    }
-
-    public class FullCostDevelopmentRequest
-    {
-        public string CostCenterId { get; set; } = string.Empty;
-        public DevelopmentCosts Costs { get; set; } = new();
-    }
-
-    public class FullCostAcquisitionRequest
-    {
-        public string CostCenterId { get; set; } = string.Empty;
-        public UnprovedProperty Property { get; set; } = new();
-    }
-
-    public class CeilingTestRequest
-    {
-        public string CostCenterId { get; set; } = string.Empty;
-        public ProvedReserves Reserves { get; set; } = new();
-        public ProductionData Production { get; set; } = new();
-    }
 }
 

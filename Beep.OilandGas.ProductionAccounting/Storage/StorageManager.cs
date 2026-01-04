@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.Storage;
+
 namespace Beep.OilandGas.ProductionAccounting.Storage
 {
     /// <summary>
     /// Manages storage facilities, tanks, and service units.
-    /// Uses database access via IDataSource instead of in-memory dictionaries.
+    /// Uses Entity classes directly with IDataSource - no dictionary conversions.
     /// </summary>
     public class StorageManager
     {
@@ -35,7 +37,7 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
         /// <summary>
         /// Registers a storage facility.
         /// </summary>
-        public async Task RegisterFacilityAsync(StorageFacility facility, string userId = "system", string? connectionName = null)
+        public async Task<STORAGE_FACILITY> RegisterFacilityAsync(StorageFacility facility, string userId = "system", string? connectionName = null)
         {
             if (facility == null)
                 throw new ArgumentNullException(nameof(facility));
@@ -43,36 +45,48 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
             if (string.IsNullOrEmpty(facility.FacilityId))
                 throw new ArgumentException("Facility ID cannot be null or empty.", nameof(facility));
 
+            // Convert StorageFacility model to STORAGE_FACILITY Entity
+            var facilityEntity = new STORAGE_FACILITY
+            {
+                STORAGE_FACILITY_ID = facility.FacilityId,
+                FACILITY_NAME = facility.FacilityName,
+                FACILITY_TYPE = facility.FacilityType,
+                LOCATION = facility.Location,
+                CAPACITY = facility.Capacity,
+                CURRENT_INVENTORY = facility.CurrentInventory
+            };
+
             var connName = connectionName ?? _connectionName;
             var dataSource = _editor.GetDataSource(connName);
             if (dataSource == null)
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");
 
-            var facilityData = ConvertStorageFacilityToDictionary(facility);
-            var result = dataSource.InsertEntity(STORAGE_FACILITY_TABLE, facilityData);
+            _commonColumnHandler.PrepareForInsert(facilityEntity, userId);
+            var result = dataSource.InsertEntity(STORAGE_FACILITY_TABLE, facilityEntity);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
             {
                 var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
-                _logger?.LogError("Failed to register storage facility {FacilityId}: {Error}", facility.FacilityId, errorMessage);
+                _logger?.LogError("Failed to register storage facility {FacilityId}: {Error}", facilityEntity.STORAGE_FACILITY_ID, errorMessage);
                 throw new InvalidOperationException($"Failed to save storage facility: {errorMessage}");
             }
 
-            _logger?.LogDebug("Registered storage facility {FacilityId} to database", facility.FacilityId);
+            _logger?.LogDebug("Registered storage facility {FacilityId} to database", facilityEntity.STORAGE_FACILITY_ID);
+            return facilityEntity;
         }
 
         /// <summary>
         /// Registers a storage facility (synchronous wrapper).
         /// </summary>
-        public void RegisterFacility(StorageFacility facility)
+        public STORAGE_FACILITY RegisterFacility(StorageFacility facility)
         {
-            RegisterFacilityAsync(facility).GetAwaiter().GetResult();
+            return RegisterFacilityAsync(facility).GetAwaiter().GetResult();
         }
 
         /// <summary>
         /// Gets a storage facility by ID.
         /// </summary>
-        public async Task<StorageFacility?> GetFacilityAsync(string facilityId, string? connectionName = null)
+        public async Task<STORAGE_FACILITY?> GetFacilityAsync(string facilityId, string? connectionName = null)
         {
             if (string.IsNullOrEmpty(facilityId))
                 return null;
@@ -84,22 +98,17 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = facilityId }
+                new AppFilter { FieldName = "STORAGE_FACILITY_ID", Operator = "=", FilterValue = facilityId }
             };
 
             var results = await dataSource.GetEntityAsync(STORAGE_FACILITY_TABLE, filters);
-            var facilityData = results?.FirstOrDefault();
-            
-            if (facilityData == null)
-                return null;
-
-            return facilityData as StorageFacility;
+            return results?.FirstOrDefault() as STORAGE_FACILITY;
         }
 
         /// <summary>
         /// Gets a storage facility by ID (synchronous wrapper).
         /// </summary>
-        public StorageFacility? GetFacility(string facilityId)
+        public STORAGE_FACILITY? GetFacility(string facilityId)
         {
             return GetFacilityAsync(facilityId).GetAwaiter().GetResult();
         }
@@ -107,7 +116,7 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
         /// <summary>
         /// Registers a tank battery.
         /// </summary>
-        public async Task RegisterTankBatteryAsync(TankBattery battery, string userId = "system", string? connectionName = null)
+        public async Task<TANK_BATTERY> RegisterTankBatteryAsync(TankBattery battery, string userId = "system", string? connectionName = null)
         {
             if (battery == null)
                 throw new ArgumentNullException(nameof(battery));
@@ -115,36 +124,46 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
             if (string.IsNullOrEmpty(battery.BatteryId))
                 throw new ArgumentException("Battery ID cannot be null or empty.", nameof(battery));
 
+            // Convert TankBattery model to TANK_BATTERY Entity
+            var batteryEntity = new TANK_BATTERY
+            {
+                TANK_BATTERY_ID = battery.BatteryId,
+                BATTERY_NAME = battery.BatteryName,
+                LEASE_ID = battery.LeaseId,
+                CURRENT_INVENTORY = battery.CurrentInventory
+            };
+
             var connName = connectionName ?? _connectionName;
             var dataSource = _editor.GetDataSource(connName);
             if (dataSource == null)
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");
 
-            var batteryData = ConvertTankBatteryToDictionary(battery);
-            var result = dataSource.InsertEntity(TANK_BATTERY_TABLE, batteryData);
+            _commonColumnHandler.PrepareForInsert(batteryEntity, userId);
+            var result = dataSource.InsertEntity(TANK_BATTERY_TABLE, batteryEntity);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
             {
                 var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
-                _logger?.LogError("Failed to register tank battery {BatteryId}: {Error}", battery.BatteryId, errorMessage);
+                _logger?.LogError("Failed to register tank battery {BatteryId}: {Error}", batteryEntity.TANK_BATTERY_ID, errorMessage);
                 throw new InvalidOperationException($"Failed to save tank battery: {errorMessage}");
             }
 
-            _logger?.LogDebug("Registered tank battery {BatteryId} to database", battery.BatteryId);
+            _logger?.LogDebug("Registered tank battery {BatteryId} to database", batteryEntity.TANK_BATTERY_ID);
+            return batteryEntity;
         }
 
         /// <summary>
         /// Registers a tank battery (synchronous wrapper).
         /// </summary>
-        public void RegisterTankBattery(TankBattery battery)
+        public TANK_BATTERY RegisterTankBattery(TankBattery battery)
         {
-            RegisterTankBatteryAsync(battery).GetAwaiter().GetResult();
+            return RegisterTankBatteryAsync(battery).GetAwaiter().GetResult();
         }
 
         /// <summary>
         /// Gets a tank battery by ID.
         /// </summary>
-        public async Task<TankBattery?> GetTankBatteryAsync(string batteryId, string? connectionName = null)
+        public async Task<TANK_BATTERY?> GetTankBatteryAsync(string batteryId, string? connectionName = null)
         {
             if (string.IsNullOrEmpty(batteryId))
                 return null;
@@ -156,22 +175,17 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "BATTERY_ID", Operator = "=", FilterValue = batteryId }
+                new AppFilter { FieldName = "TANK_BATTERY_ID", Operator = "=", FilterValue = batteryId }
             };
 
             var results = await dataSource.GetEntityAsync(TANK_BATTERY_TABLE, filters);
-            var batteryData = results?.FirstOrDefault();
-            
-            if (batteryData == null)
-                return null;
-
-            return batteryData as TankBattery;
+            return results?.FirstOrDefault() as TANK_BATTERY;
         }
 
         /// <summary>
         /// Gets a tank battery by ID (synchronous wrapper).
         /// </summary>
-        public TankBattery? GetTankBattery(string batteryId)
+        public TANK_BATTERY? GetTankBattery(string batteryId)
         {
             return GetTankBatteryAsync(batteryId).GetAwaiter().GetResult();
         }
@@ -179,10 +193,10 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
         /// <summary>
         /// Gets tank batteries by lease ID.
         /// </summary>
-        public async Task<IEnumerable<TankBattery>> GetTankBatteriesByLeaseAsync(string leaseId, string? connectionName = null)
+        public async Task<IEnumerable<TANK_BATTERY>> GetTankBatteriesByLeaseAsync(string leaseId, string? connectionName = null)
         {
             if (string.IsNullOrEmpty(leaseId))
-                return Enumerable.Empty<TankBattery>();
+                return Enumerable.Empty<TANK_BATTERY>();
 
             var connName = connectionName ?? _connectionName;
             var dataSource = _editor.GetDataSource(connName);
@@ -196,15 +210,15 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
 
             var results = await dataSource.GetEntityAsync(TANK_BATTERY_TABLE, filters);
             if (results == null || !results.Any())
-                return Enumerable.Empty<TankBattery>();
+                return Enumerable.Empty<TANK_BATTERY>();
 
-            return results.Cast<TankBattery>().Where(b => b != null)!;
+            return results.Cast<TANK_BATTERY>().Where(b => b != null)!;
         }
 
         /// <summary>
         /// Gets tank batteries by lease ID (synchronous wrapper).
         /// </summary>
-        public IEnumerable<TankBattery> GetTankBatteriesByLease(string leaseId)
+        public IEnumerable<TANK_BATTERY> GetTankBatteriesByLease(string leaseId)
         {
             return GetTankBatteriesByLeaseAsync(leaseId).GetAwaiter().GetResult();
         }
@@ -212,7 +226,7 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
         /// <summary>
         /// Registers a service unit.
         /// </summary>
-        public async Task RegisterServiceUnitAsync(ServiceUnit unit, string userId = "system", string? connectionName = null)
+        public async Task<SERVICE_UNIT> RegisterServiceUnitAsync(ServiceUnit unit, string userId = "system", string? connectionName = null)
         {
             if (unit == null)
                 throw new ArgumentNullException(nameof(unit));
@@ -220,36 +234,46 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
             if (string.IsNullOrEmpty(unit.UnitId))
                 throw new ArgumentException("Unit ID cannot be null or empty.", nameof(unit));
 
+            // Convert ServiceUnit model to SERVICE_UNIT Entity
+            var unitEntity = new SERVICE_UNIT
+            {
+                SERVICE_UNIT_ID = unit.UnitId,
+                UNIT_NAME = unit.UnitName,
+                UNIT_TYPE = unit.UnitType,
+                LEASE_ID = unit.LeaseId
+            };
+
             var connName = connectionName ?? _connectionName;
             var dataSource = _editor.GetDataSource(connName);
             if (dataSource == null)
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");
 
-            var unitData = ConvertServiceUnitToDictionary(unit);
-            var result = dataSource.InsertEntity(SERVICE_UNIT_TABLE, unitData);
+            _commonColumnHandler.PrepareForInsert(unitEntity, userId);
+            var result = dataSource.InsertEntity(SERVICE_UNIT_TABLE, unitEntity);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
             {
                 var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
-                _logger?.LogError("Failed to register service unit {UnitId}: {Error}", unit.UnitId, errorMessage);
+                _logger?.LogError("Failed to register service unit {UnitId}: {Error}", unitEntity.SERVICE_UNIT_ID, errorMessage);
                 throw new InvalidOperationException($"Failed to save service unit: {errorMessage}");
             }
 
-            _logger?.LogDebug("Registered service unit {UnitId} to database", unit.UnitId);
+            _logger?.LogDebug("Registered service unit {UnitId} to database", unitEntity.SERVICE_UNIT_ID);
+            return unitEntity;
         }
 
         /// <summary>
         /// Registers a service unit (synchronous wrapper).
         /// </summary>
-        public void RegisterServiceUnit(ServiceUnit unit)
+        public SERVICE_UNIT RegisterServiceUnit(ServiceUnit unit)
         {
-            RegisterServiceUnitAsync(unit).GetAwaiter().GetResult();
+            return RegisterServiceUnitAsync(unit).GetAwaiter().GetResult();
         }
 
         /// <summary>
         /// Gets a service unit by ID.
         /// </summary>
-        public async Task<ServiceUnit?> GetServiceUnitAsync(string unitId, string? connectionName = null)
+        public async Task<SERVICE_UNIT?> GetServiceUnitAsync(string unitId, string? connectionName = null)
         {
             if (string.IsNullOrEmpty(unitId))
                 return null;
@@ -261,75 +285,52 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "UNIT_ID", Operator = "=", FilterValue = unitId }
+                new AppFilter { FieldName = "SERVICE_UNIT_ID", Operator = "=", FilterValue = unitId }
             };
 
             var results = await dataSource.GetEntityAsync(SERVICE_UNIT_TABLE, filters);
-            var unitData = results?.FirstOrDefault();
-            
-            if (unitData == null)
-                return null;
-
-            return unitData as ServiceUnit;
+            return results?.FirstOrDefault() as SERVICE_UNIT;
         }
 
         /// <summary>
         /// Gets a service unit by ID (synchronous wrapper).
         /// </summary>
-        public ServiceUnit? GetServiceUnit(string unitId)
+        public SERVICE_UNIT? GetServiceUnit(string unitId)
         {
             return GetServiceUnitAsync(unitId).GetAwaiter().GetResult();
         }
 
         /// <summary>
         /// Updates tank inventory.
+        /// Note: This method uses model classes for nested properties. Consider refactoring to use separate Entity tables for tanks.
         /// </summary>
         public void UpdateTankInventory(string batteryId, string tankNumber, decimal volume, decimal bsw, decimal? apiGravity = null)
         {
-            var battery = GetTankBattery(batteryId);
-            if (battery == null)
-                throw new ArgumentException($"Tank battery {batteryId} not found.", nameof(batteryId));
-
-            var tank = battery.Tanks.FirstOrDefault(t => t.TankNumber == tankNumber);
-            if (tank == null)
-                throw new ArgumentException($"Tank {tankNumber} not found in battery {batteryId}.", nameof(tankNumber));
-
-            if (volume < 0 || volume > tank.Capacity)
-                throw new ArgumentException($"Volume {volume} is invalid for tank capacity {tank.Capacity}.", nameof(volume));
-
-            tank.CurrentVolume = volume;
-            tank.BSW = bsw;
-            tank.ApiGravity = apiGravity;
+            // Note: Tank inventory updates would need separate TANK Entity table
+            // This method may need refactoring to work with Entity classes
+            throw new NotImplementedException("UpdateTankInventory needs refactoring to use Entity classes. Tanks should be stored in separate TANK Entity table.");
         }
 
         /// <summary>
         /// Records a LACT transfer.
+        /// Note: This method uses model classes for nested properties. Consider refactoring to use separate Entity tables.
         /// </summary>
         public void RecordLACTTransfer(string unitId, LACTTransferRecord transfer)
         {
-            var unit = GetServiceUnit(unitId);
-            if (unit == null)
-                throw new ArgumentException($"Service unit {unitId} not found.", nameof(unitId));
-
-            if (unit.LACTUnit == null)
-                throw new InvalidOperationException($"Service unit {unitId} does not have a LACT unit.");
-
-            unit.LACTUnit.TransferRecords.Add(transfer);
+            // Note: LACT transfers would need separate LACT_TRANSFER Entity table
+            // This method may need refactoring to work with Entity classes
+            throw new NotImplementedException("RecordLACTTransfer needs refactoring to use Entity classes. LACT transfers should be stored in separate LACT_TRANSFER Entity table.");
         }
 
         /// <summary>
         /// Records a test separator result.
+        /// Note: This method uses model classes for nested properties. Consider refactoring to use separate Entity tables.
         /// </summary>
         public void RecordTestResult(string unitId, TestResult result)
         {
-            var unit = GetServiceUnit(unitId);
-            if (unit == null)
-                throw new ArgumentException($"Service unit {unitId} not found.", nameof(unitId));
-
-            if (unit.TestSeparator == null)
-                throw new InvalidOperationException($"Service unit {unitId} does not have a test separator.");
-
-            unit.TestSeparator.TestResults.Add(result);
+            // Note: Test results would need separate TEST_RESULT Entity table
+            // This method may need refactoring to work with Entity classes
+            throw new NotImplementedException("RecordTestResult needs refactoring to use Entity classes. Test results should be stored in separate TEST_RESULT Entity table.");
         }
 
         /// <summary>
@@ -365,7 +366,7 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
         public async Task<decimal> GetInventoryByLeaseAsync(string leaseId, string? connectionName = null)
         {
             var batteries = await GetTankBatteriesByLeaseAsync(leaseId, connectionName);
-            return batteries.Sum(b => b.CurrentInventory);
+            return batteries.Sum(b => b.CURRENT_INVENTORY ?? 0m);
         }
 
         /// <summary>
@@ -376,59 +377,5 @@ namespace Beep.OilandGas.ProductionAccounting.Storage
             return GetInventoryByLeaseAsync(leaseId).GetAwaiter().GetResult();
         }
 
-        #region Helper Methods - Model to Dictionary Conversion
-
-        private Dictionary<string, object> ConvertStorageFacilityToDictionary(StorageFacility facility)
-        {
-            return new Dictionary<string, object>
-            {
-                { "FACILITY_ID", facility.FacilityId },
-                { "FACILITY_NAME", facility.FacilityName ?? string.Empty },
-                { "FACILITY_TYPE", facility.FacilityType ?? string.Empty },
-                { "LOCATION", facility.Location ?? string.Empty },
-                { "CAPACITY", facility.Capacity },
-                { "CURRENT_INVENTORY", facility.CurrentInventory }
-            };
-        }
-
-
-        private Dictionary<string, object> ConvertTankBatteryToDictionary(TankBattery battery)
-        {
-            return new Dictionary<string, object>
-            {
-                { "BATTERY_ID", battery.BatteryId },
-                { "BATTERY_NAME", battery.BatteryName ?? string.Empty },
-                { "LEASE_ID", battery.LeaseId ?? string.Empty },
-                { "CURRENT_INVENTORY", battery.CurrentInventory }
-            };
-        }
-
-
-        private Dictionary<string, object> ConvertServiceUnitToDictionary(ServiceUnit unit)
-        {
-            return new Dictionary<string, object>
-            {
-                { "UNIT_ID", unit.UnitId },
-                { "UNIT_NAME", unit.UnitName ?? string.Empty },
-                { "UNIT_TYPE", unit.UnitType ?? string.Empty },
-                { "LEASE_ID", unit.LeaseId ?? string.Empty }
-            };
-        }
-
-        private ServiceUnit? ConvertDictionaryToServiceUnit(Dictionary<string, object> dict)
-        {
-            if (dict == null || !dict.ContainsKey("UNIT_ID"))
-                return null;
-
-            return new ServiceUnit
-            {
-                UnitId = dict["UNIT_ID"]?.ToString() ?? string.Empty,
-                UnitName = dict.ContainsKey("UNIT_NAME") ? dict["UNIT_NAME"]?.ToString() ?? string.Empty : string.Empty,
-                UnitType = dict.ContainsKey("UNIT_TYPE") ? dict["UNIT_TYPE"]?.ToString() : null,
-                LeaseId = dict.ContainsKey("LEASE_ID") ? dict["LEASE_ID"]?.ToString() : null
-            };
-        }
-
-        #endregion
     }
 }

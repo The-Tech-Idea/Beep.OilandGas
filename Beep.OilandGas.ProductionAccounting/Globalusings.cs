@@ -1,4 +1,4 @@
-﻿global using System;
+global using System;
 global using System.Collections.Generic;
 global using System.Linq;
 global using System.Threading.Tasks;
@@ -24,7 +24,7 @@ global using Beep.OilandGas.Models.DTOs.Pricing;
 // Local ProductionAccounting namespaces
 global using Beep.OilandGas.ProductionAccounting.Production;
 global using Beep.OilandGas.ProductionAccounting.Trading;
-global using Beep.OilandGas.ProductionAccounting.Models;
+// Removed: global using Beep.OilandGas.ProductionAccounting.Models; - Use Entity classes or DTOs instead
 global using Beep.OilandGas.ProductionAccounting.Allocation;
 
 // Resolve ambiguous references with aliases

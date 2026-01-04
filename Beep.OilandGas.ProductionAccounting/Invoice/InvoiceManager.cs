@@ -11,7 +11,7 @@ namespace Beep.OilandGas.ProductionAccounting.Invoice
 {
     /// <summary>
     /// Manages customer invoices.
-    /// Uses database access via IDataSource instead of in-memory dictionaries.
+    /// Uses Entity classes directly with IDataSource - no dictionary conversions.
     /// </summary>
     public class InvoiceManager
     {
@@ -60,10 +60,7 @@ namespace Beep.OilandGas.ProductionAccounting.Invoice
                 BALANCE_DUE = request.Subtotal + (request.TaxAmount ?? 0m),
                 STATUS = "Draft",
                 CURRENCY_CODE = request.CurrencyCode,
-                DESCRIPTION = request.Description,
-                ACTIVE_IND = "Y",
-                ROW_CREATED_BY = userId,
-                ROW_CREATED_DATE = DateTime.UtcNow
+                DESCRIPTION = request.Description
             };
 
             var connName = connectionName ?? _connectionName;
@@ -71,6 +68,7 @@ namespace Beep.OilandGas.ProductionAccounting.Invoice
             if (dataSource == null)
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");
 
+            _commonColumnHandler.PrepareForInsert(invoice, userId);
             var result = dataSource.InsertEntity(INVOICE_TABLE, invoice);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
@@ -109,54 +107,6 @@ namespace Beep.OilandGas.ProductionAccounting.Invoice
                 return null;
 
             return invoiceData as INVOICE;
-        }
-
-        private Dictionary<string, object> ConvertInvoiceToDictionary(INVOICE invoice)
-        {
-            var dict = new Dictionary<string, object>();
-            if (!string.IsNullOrEmpty(invoice.INVOICE_ID)) dict["INVOICE_ID"] = invoice.INVOICE_ID;
-            if (!string.IsNullOrEmpty(invoice.INVOICE_NUMBER)) dict["INVOICE_NUMBER"] = invoice.INVOICE_NUMBER;
-            if (!string.IsNullOrEmpty(invoice.CUSTOMER_BA_ID)) dict["CUSTOMER_BA_ID"] = invoice.CUSTOMER_BA_ID;
-            if (invoice.INVOICE_DATE.HasValue) dict["INVOICE_DATE"] = invoice.INVOICE_DATE.Value;
-            if (invoice.DUE_DATE.HasValue) dict["DUE_DATE"] = invoice.DUE_DATE.Value;
-            if (invoice.SUBTOTAL.HasValue) dict["SUBTOTAL"] = invoice.SUBTOTAL.Value;
-            if (invoice.TAX_AMOUNT.HasValue) dict["TAX_AMOUNT"] = invoice.TAX_AMOUNT.Value;
-            if (invoice.TOTAL_AMOUNT.HasValue) dict["TOTAL_AMOUNT"] = invoice.TOTAL_AMOUNT.Value;
-            if (invoice.PAID_AMOUNT.HasValue) dict["PAID_AMOUNT"] = invoice.PAID_AMOUNT.Value;
-            if (invoice.BALANCE_DUE.HasValue) dict["BALANCE_DUE"] = invoice.BALANCE_DUE.Value;
-            if (!string.IsNullOrEmpty(invoice.STATUS)) dict["STATUS"] = invoice.STATUS;
-            if (!string.IsNullOrEmpty(invoice.CURRENCY_CODE)) dict["CURRENCY_CODE"] = invoice.CURRENCY_CODE;
-            if (!string.IsNullOrEmpty(invoice.DESCRIPTION)) dict["DESCRIPTION"] = invoice.DESCRIPTION;
-            if (!string.IsNullOrEmpty(invoice.ACTIVE_IND)) dict["ACTIVE_IND"] = invoice.ACTIVE_IND;
-            if (!string.IsNullOrEmpty(invoice.ROW_CREATED_BY)) dict["ROW_CREATED_BY"] = invoice.ROW_CREATED_BY;
-            if (invoice.ROW_CREATED_DATE.HasValue) dict["ROW_CREATED_DATE"] = invoice.ROW_CREATED_DATE.Value;
-            if (!string.IsNullOrEmpty(invoice.ROW_CHANGED_BY)) dict["ROW_CHANGED_BY"] = invoice.ROW_CHANGED_BY;
-            if (invoice.ROW_CHANGED_DATE.HasValue) dict["ROW_CHANGED_DATE"] = invoice.ROW_CHANGED_DATE.Value;
-            return dict;
-        }
-
-        private INVOICE ConvertDictionaryToInvoice(Dictionary<string, object> dict)
-        {
-            var invoice = new INVOICE();
-            if (dict.TryGetValue("INVOICE_ID", out var invoiceId)) invoice.INVOICE_ID = invoiceId?.ToString();
-            if (dict.TryGetValue("INVOICE_NUMBER", out var invoiceNumber)) invoice.INVOICE_NUMBER = invoiceNumber?.ToString();
-            if (dict.TryGetValue("CUSTOMER_BA_ID", out var customerBaId)) invoice.CUSTOMER_BA_ID = customerBaId?.ToString();
-            if (dict.TryGetValue("INVOICE_DATE", out var invoiceDate)) invoice.INVOICE_DATE = invoiceDate != null ? Convert.ToDateTime(invoiceDate) : (DateTime?)null;
-            if (dict.TryGetValue("DUE_DATE", out var dueDate)) invoice.DUE_DATE = dueDate != null ? Convert.ToDateTime(dueDate) : (DateTime?)null;
-            if (dict.TryGetValue("SUBTOTAL", out var subtotal)) invoice.SUBTOTAL = subtotal != null ? Convert.ToDecimal(subtotal) : (decimal?)null;
-            if (dict.TryGetValue("TAX_AMOUNT", out var taxAmount)) invoice.TAX_AMOUNT = taxAmount != null ? Convert.ToDecimal(taxAmount) : (decimal?)null;
-            if (dict.TryGetValue("TOTAL_AMOUNT", out var totalAmount)) invoice.TOTAL_AMOUNT = totalAmount != null ? Convert.ToDecimal(totalAmount) : (decimal?)null;
-            if (dict.TryGetValue("PAID_AMOUNT", out var paidAmount)) invoice.PAID_AMOUNT = paidAmount != null ? Convert.ToDecimal(paidAmount) : (decimal?)null;
-            if (dict.TryGetValue("BALANCE_DUE", out var balanceDue)) invoice.BALANCE_DUE = balanceDue != null ? Convert.ToDecimal(balanceDue) : (decimal?)null;
-            if (dict.TryGetValue("STATUS", out var status)) invoice.STATUS = status?.ToString();
-            if (dict.TryGetValue("CURRENCY_CODE", out var currencyCode)) invoice.CURRENCY_CODE = currencyCode?.ToString();
-            if (dict.TryGetValue("DESCRIPTION", out var description)) invoice.DESCRIPTION = description?.ToString();
-            if (dict.TryGetValue("ACTIVE_IND", out var activeInd)) invoice.ACTIVE_IND = activeInd?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_BY", out var createdBy)) invoice.ROW_CREATED_BY = createdBy?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_DATE", out var createdDate)) invoice.ROW_CREATED_DATE = createdDate != null ? Convert.ToDateTime(createdDate) : (DateTime?)null;
-            if (dict.TryGetValue("ROW_CHANGED_BY", out var changedBy)) invoice.ROW_CHANGED_BY = changedBy?.ToString();
-            if (dict.TryGetValue("ROW_CHANGED_DATE", out var changedDate)) invoice.ROW_CHANGED_DATE = changedDate != null ? Convert.ToDateTime(changedDate) : (DateTime?)null;
-            return invoice;
         }
     }
 }

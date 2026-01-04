@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs.Calculations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -73,19 +74,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-    }
-
-    public class AnalyzePipelineFlowRequest
-    {
-        public string PipelineId { get; set; } = string.Empty;
-        public decimal FlowRate { get; set; }
-        public decimal InletPressure { get; set; }
-    }
-
-    public class CalculatePressureDropRequest
-    {
-        public string PipelineId { get; set; } = string.Empty;
-        public decimal FlowRate { get; set; }
     }
 }
 

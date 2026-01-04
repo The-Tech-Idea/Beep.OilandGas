@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.DTOs.AccessControl;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -147,21 +148,5 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-    }
-
-    // Request DTOs for controller actions
-    public class UpdatePreferencesRequest
-    {
-        public string PreferencesJson { get; set; } = string.Empty;
-    }
-
-    public class UpdatePrimaryRoleRequest
-    {
-        public string PrimaryRole { get; set; } = string.Empty;
-    }
-
-    public class UpdatePreferredLayoutRequest
-    {
-        public string PreferredLayout { get; set; } = string.Empty;
     }
 }

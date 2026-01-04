@@ -2,6 +2,7 @@ namespace Beep.OilandGas.Models.NodalAnalysis
 {
     /// <summary>
     /// Point on VLP (Vertical Lift Performance) curve
+    /// DTO for calculations - Entity class: NODAL_VLP_POINT
     /// </summary>
     public class VLPPoint
     {

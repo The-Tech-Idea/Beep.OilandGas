@@ -5,6 +5,7 @@ using Beep.OilandGas.ProductionAccounting.Financial.SuccessfulEfforts;
 using Beep.OilandGas.ProductionAccounting.Models;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
+using Beep.OilandGas.Models.DTOs.Accounting.Financial;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
@@ -272,10 +273,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
         }
     }
 
-    public class ImpairmentRequest
-    {
-        public string PropertyId { get; set; } = string.Empty;
-        public decimal ImpairmentAmount { get; set; }
-    }
 }
 

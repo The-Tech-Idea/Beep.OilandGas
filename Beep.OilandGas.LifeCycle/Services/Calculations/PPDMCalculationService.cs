@@ -66,6 +66,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
+        private readonly IFieldMappingService _fieldMappingService;
         private readonly string _connectionName;
         private readonly ILogger<PPDMCalculationService>? _logger;
 
@@ -81,6 +82,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            IFieldMappingService fieldMappingService,
             string connectionName = "PPDM39",
             ILogger<PPDMCalculationService>? logger = null)
         {
@@ -88,6 +90,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+            _fieldMappingService = fieldMappingService ?? throw new ArgumentNullException(nameof(fieldMappingService));
             _connectionName = connectionName ?? throw new ArgumentNullException(nameof(connectionName));
             _logger = logger;
         }
@@ -1479,7 +1482,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         private async Task<double?> GetBubblePointPressureForWellAsync(string wellId)
         {
             // Try to get from well test or reservoir data
-            var mapping = await _defaults.GetFieldMappingAsync("Reservoir.BubblePointPressure");
+            var mapping = await _fieldMappingService.GetFieldMappingAsync("Reservoir.BubblePointPressure");
             if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
             {
                 var entity = await GetEntityAsync(mapping.TableName, wellId, "WELL_ID");
@@ -1575,7 +1578,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         private async Task<double?> GetOilGravityForWellAsync(string wellId)
         {
             // Try to get from well test or fluid properties
-            var mapping = await _defaults.GetFieldMappingAsync("Fluid.OilGravity");
+            var mapping = await _fieldMappingService.GetFieldMappingAsync("Fluid.OilGravity");
             if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
             {
                 var entity = await GetEntityAsync(mapping.TableName, wellId, "WELL_ID");
@@ -1654,7 +1657,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         private async Task<decimal?> GetWellheadPressureForWellAsync(string wellId)
         {
             // Try to get from well test
-            var mapping = await _defaults.GetFieldMappingAsync("WellTest.WellheadPressure");
+            var mapping = await _fieldMappingService.GetFieldMappingAsync("WellTest.WellheadPressure");
             if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
             {
                 var entity = await GetLatestEntityForWellAsync(mapping.TableName, wellId, "EFFECTIVE_DATE", null);
@@ -1672,7 +1675,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         private async Task<double?> GetGasSpecificGravityForWellAsync(string wellId)
         {
-            var mapping = await _defaults.GetFieldMappingAsync("Fluid.GasSpecificGravity");
+            var mapping = await _fieldMappingService.GetFieldMappingAsync("Fluid.GasSpecificGravity");
             if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
             {
                 var entity = await GetEntityAsync(mapping.TableName, wellId, "WELL_ID");
@@ -1690,7 +1693,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         private async Task<double?> GetWellheadTemperatureForWellAsync(string wellId)
         {
-            var mapping = await _defaults.GetFieldMappingAsync("WellTest.WellheadTemperature");
+            var mapping = await _fieldMappingService.GetFieldMappingAsync("WellTest.WellheadTemperature");
             if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
             {
                 var entity = await GetLatestEntityForWellAsync(mapping.TableName, wellId, "EFFECTIVE_DATE", null);
@@ -1708,7 +1711,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         private async Task<double?> GetBottomholeTemperatureForWellAsync(string wellId)
         {
-            var mapping = await _defaults.GetFieldMappingAsync("WellTest.BottomholeTemperature");
+            var mapping = await _fieldMappingService.GetFieldMappingAsync("WellTest.BottomholeTemperature");
             if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
             {
                 var entity = await GetLatestEntityForWellAsync(mapping.TableName, wellId, "EFFECTIVE_DATE", null);
@@ -5111,7 +5114,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         public async Task<decimal> GetWellboreRadiusAsync(string wellId, decimal defaultValue = 0.25m)
         {
-            var mapping = await _defaults.GetFieldMappingAsync("Custom.WellboreRadius");
+            var mapping = await _fieldMappingService.GetFieldMappingAsync("Custom.WellboreRadius");
             if (mapping != null && mapping.IsActive && !string.IsNullOrEmpty(mapping.TableName))
             {
                 var entity = await GetEntityAsync(mapping.TableName, wellId, "WELL_ID");
@@ -6440,7 +6443,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         public async Task<decimal?> GetCustomFieldValueAsync(string mappingKey, string entityId)
         {
-            var mapping = await _defaults.GetFieldMappingAsync(mappingKey);
+            var mapping = await _fieldMappingService.GetFieldMappingAsync(mappingKey);
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
             if (mapping == null || !mapping.IsActive || string.IsNullOrEmpty(mapping.TableName))
                 return null;

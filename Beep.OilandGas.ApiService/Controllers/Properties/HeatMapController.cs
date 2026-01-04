@@ -89,18 +89,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
-
-    public class GenerateHeatMapRequest
-    {
-        public List<HeatMapDataPoint> DataPoints { get; set; } = new();
-        public HeatMapConfiguration Configuration { get; set; } = null!;
-    }
-
-    public class GenerateProductionHeatMapRequest
-    {
-        public string FieldId { get; set; } = string.Empty;
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-    }
 }
 

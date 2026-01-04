@@ -10,6 +10,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
     /// Implementation of PPDM metadata repository
     /// Loads metadata from SQL scripts or seeded data
     /// </summary>
+    /// <remarks>
+    /// [Obsolete] This class is deprecated. Use PPDMMetadataService instead for better performance, caching, and extended functionality.
+    /// </remarks>
+    [Obsolete("Use PPDMMetadataService instead. This class will be removed in a future version.")]
     public class PPDMMetadataRepository : IPPDMMetadataRepository
     {
         private readonly Dictionary<string, PPDMTableMetadata> _metadata;

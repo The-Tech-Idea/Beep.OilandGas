@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Models;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
@@ -144,14 +145,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-    }
-
-    public class AmortizationCalculationRequest
-    {
-        public string? PropertyId { get; set; }
-        public decimal NetCapitalizedCosts { get; set; }
-        public decimal TotalProvedReservesBOE { get; set; }
-        public decimal ProductionBOE { get; set; }
     }
 }
 

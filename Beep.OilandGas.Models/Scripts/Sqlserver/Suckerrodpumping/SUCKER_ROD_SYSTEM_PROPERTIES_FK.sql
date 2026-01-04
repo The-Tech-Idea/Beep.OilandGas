@@ -1,0 +1,1 @@
+-- SUCKER_ROD_SYSTEM_PROPERTIES table has no foreign key constraints

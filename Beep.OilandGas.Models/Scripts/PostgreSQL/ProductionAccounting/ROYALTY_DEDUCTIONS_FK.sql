@@ -1,0 +1,1 @@
+-- ROYALTY_DEDUCTIONS table has no foreign key constraints

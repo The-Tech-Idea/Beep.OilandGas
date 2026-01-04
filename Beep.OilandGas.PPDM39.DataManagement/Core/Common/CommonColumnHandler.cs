@@ -1,6 +1,7 @@
 using System;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Core.Common
 {

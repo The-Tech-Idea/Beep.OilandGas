@@ -1,0 +1,1 @@
+-- SUCKER_ROD_STRING table has no foreign key constraints

@@ -2,6 +2,7 @@ namespace Beep.OilandGas.Models.NodalAnalysis
 {
     /// <summary>
     /// Point on IPR (Inflow Performance Relationship) curve
+    /// DTO for calculations - Entity class: NODAL_IPR_POINT
     /// </summary>
     public class IPRPoint
     {

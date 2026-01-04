@@ -105,28 +105,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
     }
-
-    public class CalculateZFactorRequest
-    {
-        public decimal Pressure { get; set; }
-        public decimal Temperature { get; set; }
-        public decimal SpecificGravity { get; set; }
-        public string Correlation { get; set; } = "Standing-Katz";
-    }
-
-    public class CalculateGasDensityRequest
-    {
-        public decimal Pressure { get; set; }
-        public decimal Temperature { get; set; }
-        public decimal ZFactor { get; set; }
-        public decimal MolecularWeight { get; set; }
-    }
-
-    public class CalculateGasFVFRequest
-    {
-        public decimal Pressure { get; set; }
-        public decimal Temperature { get; set; }
-        public decimal ZFactor { get; set; }
-    }
 }
 

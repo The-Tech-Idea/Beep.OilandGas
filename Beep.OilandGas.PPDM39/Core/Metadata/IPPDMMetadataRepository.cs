@@ -49,6 +49,36 @@ namespace Beep.OilandGas.PPDM39.Core.Metadata
         /// Gets all modules
         /// </summary>
         Task<IEnumerable<string>> GetModulesAsync();
+
+        /// <summary>
+        /// Gets all primary key columns for a table (supports composite keys)
+        /// </summary>
+        Task<IEnumerable<string>> GetPrimaryKeyColumnsAsync(string tableName);
+
+        /// <summary>
+        /// Gets all tables in a subject area
+        /// </summary>
+        Task<IEnumerable<PPDMTableMetadata>> GetTablesBySubjectAreaAsync(string subjectArea);
+
+        /// <summary>
+        /// Gets all tables matching a pattern (supports wildcards * and ?)
+        /// </summary>
+        Task<IEnumerable<PPDMTableMetadata>> GetTablesByPatternAsync(string pattern);
+
+        /// <summary>
+        /// Checks if a table has a composite primary key
+        /// </summary>
+        Task<bool> IsCompositeKeyAsync(string tableName);
+
+        /// <summary>
+        /// Refreshes the metadata cache by reloading from source
+        /// </summary>
+        Task RefreshMetadataAsync();
+
+        /// <summary>
+        /// Gets all metadata for all tables
+        /// </summary>
+        Task<Dictionary<string, PPDMTableMetadata>> GetAllMetadataAsync();
     }
 }
 

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.EconomicAnalysis;
+using Beep.OilandGas.Models.DTOs.Calculations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -124,40 +125,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-    }
-
-    public class CalculateNPVRequest
-    {
-        public CashFlow[] CashFlows { get; set; } = Array.Empty<CashFlow>();
-        public double DiscountRate { get; set; }
-    }
-
-    public class CalculateIRRRequest
-    {
-        public CashFlow[] CashFlows { get; set; } = Array.Empty<CashFlow>();
-        public double InitialGuess { get; set; } = 0.1;
-    }
-
-    public class AnalyzeRequest
-    {
-        public CashFlow[] CashFlows { get; set; } = Array.Empty<CashFlow>();
-        public double DiscountRate { get; set; }
-        public double FinanceRate { get; set; } = 0.1;
-        public double ReinvestRate { get; set; } = 0.1;
-    }
-
-    public class GenerateNPVProfileRequest
-    {
-        public CashFlow[] CashFlows { get; set; } = Array.Empty<CashFlow>();
-        public double MinRate { get; set; } = 0.0;
-        public double MaxRate { get; set; } = 1.0;
-        public int Points { get; set; } = 50;
-    }
-
-    public class SaveAnalysisResultRequest
-    {
-        public string AnalysisId { get; set; } = string.Empty;
-        public EconomicResult Result { get; set; } = null!;
     }
 }
 

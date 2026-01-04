@@ -2,6 +2,7 @@ namespace Beep.OilandGas.Models.EconomicAnalysis
 {
     /// <summary>
     /// Result of comprehensive economic analysis
+    /// DTO for calculations - Entity class: ECONOMIC_ANALYSIS_RESULT
     /// </summary>
     public class EconomicResult
     {

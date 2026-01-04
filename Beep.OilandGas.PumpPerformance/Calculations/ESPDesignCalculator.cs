@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.PumpPerformance.Models;
+using Beep.OilandGas.Models.PumpPerformance;
 using Beep.OilandGas.GasProperties.Calculations;
 
 namespace Beep.OilandGas.PumpPerformance.Calculations

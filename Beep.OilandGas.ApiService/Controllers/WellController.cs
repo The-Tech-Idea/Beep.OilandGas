@@ -94,21 +94,6 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
     }
 
-    // ============================================
-    // REQUEST DTOs
-    // ============================================
-
-    public class CompareWellsRequest
-    {
-        public List<string> WellIdentifiers { get; set; } = new List<string>();
-        public List<string>? FieldNames { get; set; }
-    }
-
-    public class CompareWellsMultiSourceRequest
-    {
-        public List<WellSourceMapping> WellComparisons { get; set; } = new List<WellSourceMapping>();
-        public List<string>? FieldNames { get; set; }
-    }
 }
 
 

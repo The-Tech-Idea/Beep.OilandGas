@@ -1,9 +1,19 @@
 # PowerShell script to consolidate PPDM seed data
+# Note: PPDMCSVData.json has been removed from Core/SeedData and consolidated into PPDMReferenceData.json
+# This script can be used to update PPDMReferenceData.json from CSV files if needed
 $ErrorActionPreference = "Stop"
 
 $baseDir = Split-Path -Parent $PSScriptRoot
-$csvDataPath =  "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM39.DataManagement\Core\SeedData\PPDMCSVData.json"
+# Note: PPDMCSVData.json has been removed - set csvDataPath to a CSV data JSON file if available
+$csvDataPath = $null  # Set to CSV data JSON path if consolidating from CSV files
 $referenceDataPath = "C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM39.DataManagement\SeedData\Templates\PPDMReferenceData.json"
+
+if ($null -eq $csvDataPath -or -not (Test-Path $csvDataPath)) {
+    Write-Host "Note: PPDMCSVData.json has been removed and consolidated into PPDMReferenceData.json" -ForegroundColor Yellow
+    Write-Host "PPDMReferenceData.json is located at: $referenceDataPath" -ForegroundColor Yellow
+    Write-Host "If you need to update from CSV files, provide a CSV data JSON file path." -ForegroundColor Yellow
+    exit 0
+}
 
 Write-Host "Loading CSV data from: $csvDataPath"
 $csvData = Get-Content $csvDataPath -Raw | ConvertFrom-Json
@@ -237,7 +247,7 @@ foreach ($tableName in $csvTables.Keys) {
 }
 
 # Update description
-$referenceData.description = "PPDM standard reference tables (RA_* tables) with comprehensive standard values. This file contains consolidated seed data from PPDMCSVData.json and additional priority tables."
+$referenceData.description = "PPDM standard reference tables (RA_* tables) with comprehensive standard values. This file contains consolidated seed data from CSV files and additional priority tables."
 
 Write-Host "`nSummary:"
 Write-Host "  New tables added: $($newTables.Count)"

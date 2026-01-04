@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.DTOs;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -23,10 +24,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
-
-        // In-memory version storage (in production, use database table)
-        private readonly Dictionary<string, List<VersionSnapshot>> _versionStore = new Dictionary<string, List<VersionSnapshot>>();
-        private readonly object _versionLock = new object();
+        private readonly PPDMGenericRepository _versionSnapshotRepository;
+        private readonly PPDMGenericRepository _versionComparisonRepository;
 
         public PPDMDataVersioningService(
             IDMEEditor editor,
@@ -40,6 +39,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName;
+
+            // Create repositories for version entities
+            _versionSnapshotRepository = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(DATA_VERSION_SNAPSHOT), _connectionName, "DATA_VERSION_SNAPSHOT");
+            
+            _versionComparisonRepository = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(DATA_VERSION_COMPARISON), _connectionName, "DATA_VERSION_COMPARISON");
         }
 
         /// <summary>
@@ -74,7 +82,32 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             var versions = await GetVersionsAsync(tableName, entityId);
             var nextVersion = versions.Count > 0 ? versions.Max(v => v.VersionNumber) + 1 : 1;
 
-            var snapshot = new VersionSnapshot
+            // Serialize entity data to JSON
+            var entityJson = System.Text.Json.JsonSerializer.Serialize(entityCopy);
+
+            // Create version snapshot entity
+            var snapshotEntity = new DATA_VERSION_SNAPSHOT
+            {
+                VERSION_SNAPSHOT_ID = Guid.NewGuid().ToString(),
+                TABLE_NAME = tableName,
+                ENTITY_ID = entityId?.ToString() ?? string.Empty,
+                VERSION_NUMBER = nextVersion,
+                VERSION_LABEL = versionLabel ?? $"Version {nextVersion}",
+                ENTITY_DATA_JSON = entityJson,
+                CHANGE_DESCRIPTION = $"Version {nextVersion} created",
+                CREATED_DATE = DateTime.UtcNow,
+                CREATED_BY = userId,
+                ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                ROW_CREATED_DATE = DateTime.UtcNow,
+                ROW_CREATED_BY = userId
+            };
+
+            // Persist to database
+            await _versionSnapshotRepository.InsertAsync(snapshotEntity, userId);
+
+            // Return DTO
+            return new VersionSnapshot
             {
                 VersionNumber = nextVersion,
                 TableName = tableName,
@@ -85,19 +118,6 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 CreatedBy = userId,
                 ChangeDescription = $"Version {nextVersion} created"
             };
-
-            // Store version
-            var key = $"{tableName}_{entityId}";
-            lock (_versionLock)
-            {
-                if (!_versionStore.ContainsKey(key))
-                {
-                    _versionStore[key] = new List<VersionSnapshot>();
-                }
-                _versionStore[key].Add(snapshot);
-            }
-
-            return snapshot;
         }
 
         /// <summary>
@@ -110,15 +130,55 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (entityId == null)
                 throw new ArgumentNullException(nameof(entityId));
 
-            var key = $"{tableName}_{entityId}";
-            lock (_versionLock)
+            // Query database for versions
+            var filters = new List<TheTechIdea.Beep.Report.AppFilter>
             {
-                if (_versionStore.ContainsKey(key))
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "TABLE_NAME", Operator = "=", FilterValue = tableName },
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "ENTITY_ID", Operator = "=", FilterValue = entityId.ToString() },
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults?.GetActiveIndicatorYes() ?? "Y" }
+            };
+
+            var snapshotEntities = await _versionSnapshotRepository.GetAsync(filters);
+            
+            return snapshotEntities
+                .Cast<DATA_VERSION_SNAPSHOT>()
+                .OrderByDescending(v => v.VERSION_NUMBER)
+                .Select(MapToVersionSnapshot)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Maps DATA_VERSION_SNAPSHOT entity to VersionSnapshot DTO
+        /// </summary>
+        private VersionSnapshot MapToVersionSnapshot(DATA_VERSION_SNAPSHOT entity)
+        {
+            // Deserialize entity data from JSON
+            object? entityData = null;
+            if (!string.IsNullOrWhiteSpace(entity.ENTITY_DATA_JSON))
+            {
+                try
                 {
-                    return Task.FromResult(_versionStore[key].OrderByDescending(v => v.VersionNumber).ToList()).Result;
+                    // Note: This requires knowing the entity type, which we'd need to get from metadata
+                    // For now, we'll return a dictionary representation
+                    entityData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(entity.ENTITY_DATA_JSON);
                 }
-                return Task.FromResult(new List<VersionSnapshot>()).Result;
+                catch
+                {
+                    entityData = null;
+                }
             }
+
+            return new VersionSnapshot
+            {
+                VersionNumber = entity.VERSION_NUMBER ?? 0,
+                TableName = entity.TABLE_NAME,
+                EntityId = entity.ENTITY_ID,
+                EntityData = entityData,
+                VersionLabel = entity.VERSION_LABEL,
+                CreatedDate = entity.CREATED_DATE ?? DateTime.UtcNow,
+                CreatedBy = entity.CREATED_BY,
+                ChangeDescription = entity.CHANGE_DESCRIPTION
+            };
         }
 
         /// <summary>
@@ -142,27 +202,55 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 throw new InvalidOperationException("One or both versions not found");
 
             var differences = new List<FieldDifference>();
-            var entityType = v1.EntityData.GetType();
-            var properties = entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            foreach (var property in properties)
+            
+            // Compare JSON dictionaries if entity data is dictionary
+            if (v1.EntityData is Dictionary<string, object> dict1 && v2.EntityData is Dictionary<string, object> dict2)
             {
-                var value1 = property.GetValue(v1.EntityData);
-                var value2 = property.GetValue(v2.EntityData);
-
-                if (!Equals(value1, value2))
+                var allKeys = dict1.Keys.Union(dict2.Keys).Distinct();
+                foreach (var key in allKeys)
                 {
-                    differences.Add(new FieldDifference
+                    var value1 = dict1.ContainsKey(key) ? dict1[key] : null;
+                    var value2 = dict2.ContainsKey(key) ? dict2[key] : null;
+
+                    if (!Equals(value1, value2))
                     {
-                        FieldName = property.Name,
-                        Source1Value = value1,
-                        Source2Value = value2,
-                        DifferenceType = "Different"
-                    });
+                        differences.Add(new FieldDifference
+                        {
+                            FieldName = key,
+                            Source1Value = value1,
+                            Source2Value = value2,
+                            DifferenceType = "Different"
+                        });
+                    }
+                }
+            }
+            else
+            {
+                // Use reflection for typed entities
+                var entityType = v1.EntityData?.GetType();
+                if (entityType != null)
+                {
+                    var properties = entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                    foreach (var property in properties)
+                    {
+                        var value1 = property.GetValue(v1.EntityData);
+                        var value2 = property.GetValue(v2.EntityData);
+
+                        if (!Equals(value1, value2))
+                        {
+                            differences.Add(new FieldDifference
+                            {
+                                FieldName = property.Name,
+                                Source1Value = value1,
+                                Source2Value = value2,
+                                DifferenceType = "Different"
+                            });
+                        }
+                    }
                 }
             }
 
-            return new VersionComparison
+            var comparison = new VersionComparison
             {
                 TableName = tableName,
                 EntityId = entityId,
@@ -171,6 +259,35 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 Differences = differences,
                 HasDifferences = differences.Count > 0
             };
+
+            // Persist comparison to database
+            await SaveVersionComparisonAsync(comparison);
+
+            return comparison;
+        }
+
+        /// <summary>
+        /// Saves version comparison to database
+        /// </summary>
+        private async Task SaveVersionComparisonAsync(VersionComparison comparison)
+        {
+            var comparisonEntity = new DATA_VERSION_COMPARISON
+            {
+                COMPARISON_ID = Guid.NewGuid().ToString(),
+                TABLE_NAME = comparison.TableName,
+                ENTITY_ID = comparison.EntityId?.ToString() ?? string.Empty,
+                VERSION_1_NUMBER = comparison.Version1,
+                VERSION_2_NUMBER = comparison.Version2,
+                DIFFERENCES_JSON = System.Text.Json.JsonSerializer.Serialize(comparison.Differences),
+                HAS_DIFFERENCES_IND = comparison.HasDifferences ? (_defaults?.GetActiveIndicatorYes() ?? "Y") : (_defaults?.GetActiveIndicatorNo() ?? "N"),
+                COMPARISON_DATE = DateTime.UtcNow,
+                ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                ROW_CREATED_DATE = DateTime.UtcNow,
+                ROW_CREATED_BY = "SYSTEM"
+            };
+
+            await _versionComparisonRepository.InsertAsync(comparisonEntity, "SYSTEM");
         }
 
         /// <summary>

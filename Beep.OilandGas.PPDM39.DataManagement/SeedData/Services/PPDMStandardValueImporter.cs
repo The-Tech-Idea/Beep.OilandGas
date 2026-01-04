@@ -14,7 +14,7 @@ using TheTechIdea.Beep.Editor;
 namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
 {
     /// <summary>
-    /// Imports PPDM standard values from PPDM Reference Lists and PPDMCSVData.json
+    /// Imports PPDM standard values from PPDM Reference Lists and PPDMReferenceData.json (consolidated from PPDMCSVData.json)
     /// </summary>
     public class PPDMStandardValueImporter
     {
@@ -42,7 +42,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
         }
 
         /// <summary>
-        /// Imports PPDM standard values from PPDMCSVData.json
+        /// Imports PPDM standard values from PPDMReferenceData.json (consolidated from PPDMCSVData.json)
         /// </summary>
         public async Task<ImportResult> ImportFromPPDMCSVDataAsync(string? tableName = null, bool skipExisting = true, string userId = "SYSTEM")
         {
@@ -57,23 +57,32 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
 
             try
             {
-                var csvDataPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Core", "SeedData", "PPDMCSVData.json");
-                if (!File.Exists(csvDataPath))
+                // Use PPDMReferenceData.json from Templates folder (consolidated data)
+                var referenceDataPath = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "SeedData", "Templates", "PPDMReferenceData.json");
+                if (!File.Exists(referenceDataPath))
                 {
                     result.Success = false;
-                    result.Errors.Add($"PPDMCSVData.json not found at: {csvDataPath}");
+                    result.Errors.Add($"PPDMReferenceData.json not found at: {referenceDataPath}");
                     return result;
                 }
 
-                var jsonContent = await File.ReadAllTextAsync(csvDataPath);
+                var jsonContent = await File.ReadAllTextAsync(referenceDataPath);
                 var jsonDoc = JsonDocument.Parse(jsonContent);
                 var root = jsonDoc.RootElement;
 
-                if (root.ValueKind == JsonValueKind.Object)
+                // PPDMReferenceData.json has structure: { "category": "...", "tables": [ { "tableName": "...", "data": [...] } ] }
+                if (root.TryGetProperty("tables", out var tablesElement) && tablesElement.ValueKind == JsonValueKind.Array)
                 {
-                    foreach (var tableProp in root.EnumerateObject())
+                    foreach (var tableElement in tablesElement.EnumerateArray())
                     {
-                        var currentTableName = tableProp.Name;
+                        if (!tableElement.TryGetProperty("tableName", out var tableNameElement))
+                            continue;
+
+                        var currentTableName = tableNameElement.GetString();
+                        if (string.IsNullOrEmpty(currentTableName))
+                            continue;
+
+                        // Filter by tableName if specified
                         if (!string.IsNullOrEmpty(tableName) && !currentTableName.Equals(tableName, StringComparison.OrdinalIgnoreCase))
                         {
                             continue;
@@ -87,11 +96,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
 
                         try
                         {
-                            var tableData = tableProp.Value;
-                            if (tableData.ValueKind == JsonValueKind.Array)
+                            if (tableElement.TryGetProperty("data", out var dataElement) && dataElement.ValueKind == JsonValueKind.Array)
                             {
                                 var records = new List<Dictionary<string, object>>();
-                                foreach (var record in tableData.EnumerateArray())
+                                foreach (var record in dataElement.EnumerateArray())
                                 {
                                     var recordDict = new Dictionary<string, object>();
                                     foreach (var prop in record.EnumerateObject())

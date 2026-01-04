@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.ProductionAccounting.Production;
 using Beep.OilandGas.ProductionAccounting.Services;
+using Beep.OilandGas.Models.DTOs.Accounting.Production;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
@@ -89,14 +90,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         }
     }
 
-    public class CreateTankInventoryRequest
-    {
-        public string TankBatteryId { get; set; } = string.Empty;
-        public DateTime? InventoryDate { get; set; }
-        public decimal OpeningInventory { get; set; }
-        public decimal Receipts { get; set; }
-        public decimal Deliveries { get; set; }
-        public decimal? ActualClosingInventory { get; set; }
-    }
 }
 

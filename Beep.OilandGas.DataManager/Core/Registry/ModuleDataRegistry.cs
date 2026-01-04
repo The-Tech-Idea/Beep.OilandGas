@@ -233,6 +233,7 @@ namespace Beep.OilandGas.DataManager.Core.Registry
             modules["Ownership"] = new OwnershipModuleData();
             modules["Unitization"] = new UnitizationModuleData();
             modules["Lease"] = new LeaseModuleData();
+            modules["PermitsAndApplications"] = new PermitsAndApplicationsModuleData();
             modules["ProspectIdentification"] = new ProspectIdentificationModuleData();
             modules["DevelopmentPlanning"] = new DevelopmentPlanningModuleData();
             modules["Decommissioning"] = new DecommissioningModuleData();
@@ -244,6 +245,19 @@ namespace Beep.OilandGas.DataManager.Core.Registry
             modules["Export"] = new ExportModuleData();
             modules["LifeCycle"] = new LifeCycleModuleData();
             modules["Validation"] = new ValidationModuleData();
+            modules["DataManagement"] = new DataManagementModuleData();
+            modules["ChokeAnalysis"] = new ChokeAnalysisModuleData();
+            modules["CompressorAnalysis"] = new CompressorAnalysisModuleData();
+            modules["PipelineAnalysis"] = new PipelineAnalysisModuleData();
+            modules["PlungerLift"] = new PlungerLiftModuleData();
+            modules["SuckerRodPumping"] = new SuckerRodPumpingModuleData();
+            modules["HydraulicPumps"] = new HydraulicPumpsModuleData();
+            modules["WellTestAnalysis"] = new WellTestAnalysisModuleData();
+            modules["GasProperties"] = new GasPropertiesModuleData();
+            modules["OilProperties"] = new OilPropertiesModuleData();
+            modules["DCA"] = new DCAModuleData();
+            modules["PumpPerformance"] = new PumpPerformanceModuleData();
+            modules["ProductionForecasting"] = new ProductionForecastingModuleData();
 
             return modules;
         }

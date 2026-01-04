@@ -7,14 +7,14 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
 {
     /// <summary>
-    /// Loads PPDM table metadata from SQL scripts
+    /// Internal helper class for loading PPDM table metadata from SQL scripts
     /// Parses CREATE TABLE, ALTER TABLE, and other DDL statements to extract:
     /// - Table names
-    /// - Primary keys
+    /// - Primary keys (including composite keys)
     /// - Foreign keys
     /// - Relationships
     /// </summary>
-    public class PPDMSqlMetadataLoader
+    internal class PPDMSqlMetadataLoader
     {
         /// <summary>
         /// Loads metadata from PPDM SQL script files (TAB.sql, PK.sql, FK.sql)
@@ -218,36 +218,52 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
         /// </summary>
         private PPDMTableMetadata ParseCreateTable(string statement)
         {
-            // Extract table name
-            var tableMatch = Regex.Match(statement, @"CREATE\s+TABLE\s+(?:\[?(\w+)\]?\.)?\[?(\w+)\]?", RegexOptions.IgnoreCase);
-            if (!tableMatch.Success)
-                return null;
-
-            var tableName = tableMatch.Groups[2].Value;
-            var metadata = new PPDMTableMetadata
+            try
             {
-                TableName = tableName,
-                EntityTypeName = tableName,
-                PrimaryKeyColumn = null, // Will be set from constraints
-                Module = InferModuleFromTableName(tableName),
-                CommonColumns = new List<string>()
-            };
+                // Extract table name
+                var tableMatch = Regex.Match(statement, @"CREATE\s+TABLE\s+(?:\[?(\w+)\]?\.)?\[?(\w+)\]?", RegexOptions.IgnoreCase);
+                if (!tableMatch.Success)
+                    return null;
 
-            // Check for common columns
-            if (Regex.IsMatch(statement, @"ACTIVE_IND", RegexOptions.IgnoreCase))
-                metadata.CommonColumns.Add("ACTIVE_IND");
-            if (Regex.IsMatch(statement, @"ROW_CREATED_BY", RegexOptions.IgnoreCase))
-                metadata.CommonColumns.Add("ROW_CREATED_BY");
-            if (Regex.IsMatch(statement, @"ROW_CREATED_DATE", RegexOptions.IgnoreCase))
-                metadata.CommonColumns.Add("ROW_CREATED_DATE");
-            if (Regex.IsMatch(statement, @"ROW_CHANGED_BY", RegexOptions.IgnoreCase))
-                metadata.CommonColumns.Add("ROW_CHANGED_BY");
-            if (Regex.IsMatch(statement, @"ROW_CHANGED_DATE", RegexOptions.IgnoreCase))
-                metadata.CommonColumns.Add("ROW_CHANGED_DATE");
-            if (Regex.IsMatch(statement, @"PPDM_GUID", RegexOptions.IgnoreCase))
-                metadata.CommonColumns.Add("PPDM_GUID");
+                var tableName = tableMatch.Groups[2].Value;
+                var metadata = new PPDMTableMetadata
+                {
+                    TableName = tableName,
+                    EntityTypeName = tableName,
+                    PrimaryKeyColumn = null, // Will be set from constraints
+                    Module = InferModuleFromTableName(tableName),
+                    CommonColumns = new List<string>(),
+                    ForeignKeys = new List<PPDMForeignKey>()
+                };
 
-            return metadata;
+                // Check for common columns
+                if (Regex.IsMatch(statement, @"\bACTIVE_IND\b", RegexOptions.IgnoreCase))
+                    metadata.CommonColumns.Add("ACTIVE_IND");
+                if (Regex.IsMatch(statement, @"\bROW_CREATED_BY\b", RegexOptions.IgnoreCase))
+                    metadata.CommonColumns.Add("ROW_CREATED_BY");
+                if (Regex.IsMatch(statement, @"\bROW_CREATED_DATE\b", RegexOptions.IgnoreCase))
+                    metadata.CommonColumns.Add("ROW_CREATED_DATE");
+                if (Regex.IsMatch(statement, @"\bROW_CHANGED_BY\b", RegexOptions.IgnoreCase))
+                    metadata.CommonColumns.Add("ROW_CHANGED_BY");
+                if (Regex.IsMatch(statement, @"\bROW_CHANGED_DATE\b", RegexOptions.IgnoreCase))
+                    metadata.CommonColumns.Add("ROW_CHANGED_DATE");
+                if (Regex.IsMatch(statement, @"\bPPDM_GUID\b", RegexOptions.IgnoreCase))
+                    metadata.CommonColumns.Add("PPDM_GUID");
+                if (Regex.IsMatch(statement, @"\bROW_EFFECTIVE_DATE\b", RegexOptions.IgnoreCase))
+                    metadata.CommonColumns.Add("ROW_EFFECTIVE_DATE");
+                if (Regex.IsMatch(statement, @"\bROW_EXPIRY_DATE\b", RegexOptions.IgnoreCase))
+                    metadata.CommonColumns.Add("ROW_EXPIRY_DATE");
+                if (Regex.IsMatch(statement, @"\bROW_QUALITY\b", RegexOptions.IgnoreCase))
+                    metadata.CommonColumns.Add("ROW_QUALITY");
+
+                return metadata;
+            }
+            catch (Exception ex)
+            {
+                // Log error but continue parsing other statements
+                System.Diagnostics.Debug.WriteLine($"Error parsing CREATE TABLE statement: {ex.Message}");
+                return null;
+            }
         }
 
         /// <summary>
@@ -255,43 +271,57 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
         /// </summary>
         private void ParseAlterTable(string statement, Dictionary<string, PPDMTableMetadata> metadata)
         {
-            // Pattern: ALTER TABLE [schema.]table ADD CONSTRAINT ... FOREIGN KEY (column) REFERENCES referenced_table (referenced_column)
-            var fkPattern = @"ALTER\s+TABLE\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?\s+ADD\s+(?:CONSTRAINT\s+\w+\s+)?FOREIGN\s+KEY\s*\(\[?(\w+)\]?\)\s+REFERENCES\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?\s*\(\[?(\w+)\]?\)";
-            var match = Regex.Match(statement, fkPattern, RegexOptions.IgnoreCase);
-
-            if (match.Success)
+            try
             {
-                var tableName = match.Groups[1].Value.ToUpper();
-                var fkColumn = match.Groups[2].Value;
-                var referencedTable = match.Groups[3].Value.ToUpper();
-                var referencedColumn = match.Groups[4].Value;
+                // Pattern: ALTER TABLE [schema.]table ADD CONSTRAINT ... FOREIGN KEY (column) REFERENCES referenced_table (referenced_column)
+                var fkPattern = @"ALTER\s+TABLE\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?\s+ADD\s+(?:CONSTRAINT\s+\w+\s+)?FOREIGN\s+KEY\s*\(\[?(\w+)\]?\)\s+REFERENCES\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?\s*\(\[?(\w+)\]?\)";
+                var match = Regex.Match(statement, fkPattern, RegexOptions.IgnoreCase);
 
-                if (metadata.ContainsKey(tableName))
+                if (match.Success)
                 {
-                    var fk = new PPDMForeignKey
-                    {
-                        ForeignKeyColumn = fkColumn,
-                        ReferencedTable = referencedTable,
-                        ReferencedPrimaryKey = referencedColumn,
-                        RelationshipType = "OneToMany"
-                    };
+                    var tableName = match.Groups[1].Value.ToUpper();
+                    var fkColumn = match.Groups[2].Value;
+                    var referencedTable = match.Groups[3].Value.ToUpper();
+                    var referencedColumn = match.Groups[4].Value;
 
-                    metadata[tableName].ForeignKeys.Add(fk);
+                    if (metadata.ContainsKey(tableName))
+                    {
+                        // Ensure ForeignKeys list is initialized
+                        if (metadata[tableName].ForeignKeys == null)
+                        {
+                            metadata[tableName].ForeignKeys = new List<PPDMForeignKey>();
+                        }
+
+                        var fk = new PPDMForeignKey
+                        {
+                            ForeignKeyColumn = fkColumn,
+                            ReferencedTable = referencedTable,
+                            ReferencedPrimaryKey = referencedColumn,
+                            RelationshipType = "OneToMany"
+                        };
+
+                        metadata[tableName].ForeignKeys.Add(fk);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                // Log error but continue parsing other statements
+                System.Diagnostics.Debug.WriteLine($"Error parsing ALTER TABLE statement: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// Parses primary key constraint
+        /// Parses primary key constraint (supports composite keys)
         /// </summary>
         private void ParsePrimaryKeyConstraint(string statement, Dictionary<string, PPDMTableMetadata> metadata)
         {
-            // Pattern 1: PRIMARY KEY (column) in CREATE TABLE
-            var pkPattern1 = @"PRIMARY\s+KEY\s*\(\[?(\w+)\]?\)";
+            // Pattern 1: PRIMARY KEY (column1, column2, ...) in CREATE TABLE - supports composite keys
+            var pkPattern1 = @"PRIMARY\s+KEY\s*\(([^)]+)\)";
             var match1 = Regex.Match(statement, pkPattern1, RegexOptions.IgnoreCase);
             if (match1.Success)
             {
-                var pkColumn = match1.Groups[1].Value;
+                var pkColumns = match1.Groups[1].Value;
                 // Find which table this belongs to
                 var tableMatch = Regex.Match(statement, @"CREATE\s+TABLE\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?", RegexOptions.IgnoreCase);
                 if (tableMatch.Success)
@@ -299,21 +329,35 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Metadata
                     var tableName = tableMatch.Groups[1].Value.ToUpper();
                     if (metadata.ContainsKey(tableName))
                     {
-                        metadata[tableName].PrimaryKeyColumn = pkColumn;
+                        // Parse comma-separated columns and clean up brackets/spaces
+                        var columns = pkColumns
+                            .Split(',')
+                            .Select(c => Regex.Replace(c, @"[\[\]\s]", ""))
+                            .Where(c => !string.IsNullOrWhiteSpace(c))
+                            .ToList();
+                        
+                        metadata[tableName].PrimaryKeyColumn = string.Join(",", columns);
                     }
                 }
             }
 
-            // Pattern 2: ALTER TABLE ... ADD PRIMARY KEY (column)
-            var pkPattern2 = @"ALTER\s+TABLE\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?\s+ADD\s+(?:CONSTRAINT\s+\w+\s+)?PRIMARY\s+KEY\s*\(\[?(\w+)\]?\)";
+            // Pattern 2: ALTER TABLE ... ADD PRIMARY KEY (column1, column2, ...) - supports composite keys
+            var pkPattern2 = @"ALTER\s+TABLE\s+(?:\[?\w+\]?\.)?\[?(\w+)\]?\s+ADD\s+(?:CONSTRAINT\s+\w+\s+)?PRIMARY\s+KEY\s*\(([^)]+)\)";
             var match2 = Regex.Match(statement, pkPattern2, RegexOptions.IgnoreCase);
             if (match2.Success)
             {
                 var tableName = match2.Groups[1].Value.ToUpper();
-                var pkColumn = match2.Groups[2].Value;
+                var pkColumns = match2.Groups[2].Value;
                 if (metadata.ContainsKey(tableName))
                 {
-                    metadata[tableName].PrimaryKeyColumn = pkColumn;
+                    // Parse comma-separated columns and clean up brackets/spaces
+                    var columns = pkColumns
+                        .Split(',')
+                        .Select(c => Regex.Replace(c, @"[\[\]\s]", ""))
+                        .Where(c => !string.IsNullOrWhiteSpace(c))
+                        .ToList();
+                    
+                    metadata[tableName].PrimaryKeyColumn = string.Join(",", columns);
                 }
             }
         }

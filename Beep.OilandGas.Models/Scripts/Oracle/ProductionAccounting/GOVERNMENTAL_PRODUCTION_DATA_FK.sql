@@ -1,0 +1,1 @@
+-- GOVERNMENTAL_PRODUCTION_DATA table has no foreign key constraints

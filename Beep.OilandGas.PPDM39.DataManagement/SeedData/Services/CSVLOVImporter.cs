@@ -6,8 +6,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Common;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 
@@ -23,6 +25,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
+        private readonly LOVManagementService _lovService;
         private readonly string _connectionName;
 
         public CSVLOVImporter(
@@ -30,12 +33,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            LOVManagementService lovService,
             string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+            _lovService = lovService ?? throw new ArgumentNullException(nameof(lovService));
             _connectionName = connectionName;
         }
 
@@ -87,10 +92,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
                 }
 
                 var resolvedConnectionName = connectionName ?? _connectionName;
-                var repository = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(LIST_OF_VALUE), resolvedConnectionName, "LIST_OF_VALUE");
+                var lovsToImport = new List<LIST_OF_VALUE>();
 
-                // Process data rows
+                // Process data rows and build LOV list
                 for (int i = 1; i < lines.Length; i++)
                 {
                     try
@@ -130,31 +134,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
                             lov.ACTIVE_IND = "Y";
                         }
 
-                        // Check if exists
-                        if (skipExisting)
-                        {
-                            var existingFilters = new List<TheTechIdea.Beep.Report.AppFilter>
-                            {
-                                new TheTechIdea.Beep.Report.AppFilter { FieldName = "VALUE_TYPE", Operator = "=", FilterValue = lov.VALUE_TYPE },
-                                new TheTechIdea.Beep.Report.AppFilter { FieldName = "VALUE_CODE", Operator = "=", FilterValue = lov.VALUE_CODE }
-                            };
-                            var existing = await repository.GetAsync(existingFilters);
-                            if (existing.Any())
-                            {
-                                result.RecordsSkipped++;
-                                result.RecordsProcessed++;
-                                continue;
-                            }
-                        }
-
-                        // Insert
-                        if (lov is IPPDMEntity lovEntity)
-                            _commonColumnHandler.PrepareForInsert(lovEntity, userId);
-                        var inserted = await repository.InsertAsync(lov, userId);
-                        if (inserted != null)
-                        {
-                            result.RecordsInserted++;
-                        }
+                        lovsToImport.Add(lov);
                         result.RecordsProcessed++;
                     }
                     catch (Exception ex)
@@ -162,6 +142,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
                         result.Errors.Add($"Row {i + 1}: {ex.Message}");
                     }
                 }
+
+                // Bulk import using LOVManagementService
+                var bulkResult = await _lovService.BulkAddLOVsAsync(lovsToImport, userId, skipExisting, resolvedConnectionName);
+                result.RecordsInserted = bulkResult.TotalInserted;
+                result.RecordsSkipped = bulkResult.TotalSkipped;
+                result.Errors.AddRange(bulkResult.Errors);
 
                 if (result.Errors.Any())
                 {

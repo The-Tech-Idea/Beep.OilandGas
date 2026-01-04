@@ -1,0 +1,1 @@
+-- CHOKE_PROPERTIES table has no foreign key constraints

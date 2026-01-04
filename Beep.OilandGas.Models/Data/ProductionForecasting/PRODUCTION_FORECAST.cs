@@ -1,72 +1,88 @@
 using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionForecasting
 {
-    public partial class PRODUCTION_FORECAST : Entity
+    public partial class PRODUCTION_FORECAST : Entity, Core.Interfaces.IPPDMEntity
     {
-        private string FORECAST_IDValue;
-        public string FORECAST_ID
+        private String PRODUCTION_FORECAST_IDValue;
+        public String PRODUCTION_FORECAST_ID
         {
-            get { return this.FORECAST_IDValue; }
-            set { SetProperty(ref FORECAST_IDValue, value); }
+            get { return this.PRODUCTION_FORECAST_IDValue; }
+            set { SetProperty(ref PRODUCTION_FORECAST_IDValue, value); }
         }
 
-        private string WELL_UWIValue;
-        public string WELL_UWI
+        private String RESERVOIR_FORECAST_PROPERTIES_IDValue;
+        public String RESERVOIR_FORECAST_PROPERTIES_ID
         {
-            get { return this.WELL_UWIValue; }
-            set { SetProperty(ref WELL_UWIValue, value); }
+            get { return this.RESERVOIR_FORECAST_PROPERTIES_IDValue; }
+            set { SetProperty(ref RESERVOIR_FORECAST_PROPERTIES_IDValue, value); }
         }
 
-        private string FIELD_IDValue;
-        public string FIELD_ID
-        {
-            get { return this.FIELD_IDValue; }
-            set { SetProperty(ref FIELD_IDValue, value); }
-        }
-
-        private string FORECAST_NAMEValue;
-        public string FORECAST_NAME
-        {
-            get { return this.FORECAST_NAMEValue; }
-            set { SetProperty(ref FORECAST_NAMEValue, value); }
-        }
-
-        private string FORECAST_TYPEValue;
-        public string FORECAST_TYPE
+        private String FORECAST_TYPEValue;
+        public String FORECAST_TYPE
         {
             get { return this.FORECAST_TYPEValue; }
             set { SetProperty(ref FORECAST_TYPEValue, value); }
         }
 
-        private DateTime? FORECAST_START_DATEValue;
-        public DateTime? FORECAST_START_DATE
+        private Decimal? FORECAST_DURATIONValue;
+        public Decimal? FORECAST_DURATION
         {
-            get { return this.FORECAST_START_DATEValue; }
-            set { SetProperty(ref FORECAST_START_DATEValue, value); }
+            get { return this.FORECAST_DURATIONValue; }
+            set { SetProperty(ref FORECAST_DURATIONValue, value); }
         }
 
-        private DateTime? FORECAST_END_DATEValue;
-        public DateTime? FORECAST_END_DATE
+        private Decimal? INITIAL_PRODUCTION_RATEValue;
+        public Decimal? INITIAL_PRODUCTION_RATE
         {
-            get { return this.FORECAST_END_DATEValue; }
-            set { SetProperty(ref FORECAST_END_DATEValue, value); }
+            get { return this.INITIAL_PRODUCTION_RATEValue; }
+            set { SetProperty(ref INITIAL_PRODUCTION_RATEValue, value); }
+        }
+
+        private Decimal? FINAL_PRODUCTION_RATEValue;
+        public Decimal? FINAL_PRODUCTION_RATE
+        {
+            get { return this.FINAL_PRODUCTION_RATEValue; }
+            set { SetProperty(ref FINAL_PRODUCTION_RATEValue, value); }
+        }
+
+        private Decimal? TOTAL_CUMULATIVE_PRODUCTIONValue;
+        public Decimal? TOTAL_CUMULATIVE_PRODUCTION
+        {
+            get { return this.TOTAL_CUMULATIVE_PRODUCTIONValue; }
+            set { SetProperty(ref TOTAL_CUMULATIVE_PRODUCTIONValue, value); }
         }
 
         // Standard PPDM columns
-        private string ACTIVE_INDValue;
-        public string ACTIVE_IND
+        private String ACTIVE_INDValue;
+        public String ACTIVE_IND
         {
             get { return this.ACTIVE_INDValue; }
             set { SetProperty(ref ACTIVE_INDValue, value); }
         }
 
-        private string PPDM_GUIDValue;
-        public string PPDM_GUID
+        private String PPDM_GUIDValue;
+        public String PPDM_GUID
         {
             get { return this.PPDM_GUIDValue; }
             set { SetProperty(ref PPDM_GUIDValue, value); }
+        }
+
+        private String REMARKValue;
+        public String REMARK
+        {
+            get { return this.REMARKValue; }
+            set { SetProperty(ref REMARKValue, value); }
+        }
+
+        private String SOURCEValue;
+        public String SOURCE
+        {
+            get { return this.SOURCEValue; }
+            set { SetProperty(ref SOURCEValue, value); }
         }
 
         private DateTime? ROW_CREATED_DATEValue;
@@ -76,8 +92,8 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
             set { SetProperty(ref ROW_CREATED_DATEValue, value); }
         }
 
-        private string ROW_CREATED_BYValue;
-        public string ROW_CREATED_BY
+        private String ROW_CREATED_BYValue;
+        public String ROW_CREATED_BY
         {
             get { return this.ROW_CREATED_BYValue; }
             set { SetProperty(ref ROW_CREATED_BYValue, value); }
@@ -90,12 +106,68 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
             set { SetProperty(ref ROW_CHANGED_DATEValue, value); }
         }
 
-        private string ROW_CHANGED_BYValue;
-        public string ROW_CHANGED_BY
+        private String ROW_CHANGED_BYValue;
+        public String ROW_CHANGED_BY
         {
             get { return this.ROW_CHANGED_BYValue; }
             set { SetProperty(ref ROW_CHANGED_BYValue, value); }
         }
+
+        private DateTime? ROW_EFFECTIVE_DATEValue;
+        public DateTime? ROW_EFFECTIVE_DATE
+        {
+            get { return this.ROW_EFFECTIVE_DATEValue; }
+            set { SetProperty(ref ROW_EFFECTIVE_DATEValue, value); }
+        }
+
+        private DateTime? ROW_EXPIRY_DATEValue;
+        public DateTime? ROW_EXPIRY_DATE
+        {
+            get { return this.ROW_EXPIRY_DATEValue; }
+            set { SetProperty(ref ROW_EXPIRY_DATEValue, value); }
+        }
+
+        private String ROW_QUALITYValue;
+        public String ROW_QUALITY
+        {
+            get { return this.ROW_QUALITYValue; }
+            set { SetProperty(ref ROW_QUALITYValue, value); }
+        }
+
+        // Optional PPDM properties
+        private String AREA_IDValue;
+        public String AREA_ID
+        {
+            get { return this.AREA_IDValue; }
+            set { SetProperty(ref AREA_IDValue, value); }
+        }
+
+        private String AREA_TYPEValue;
+        public String AREA_TYPE
+        {
+            get { return this.AREA_TYPEValue; }
+            set { SetProperty(ref AREA_TYPEValue, value); }
+        }
+
+        private String BUSINESS_ASSOCIATE_IDValue;
+        public String BUSINESS_ASSOCIATE_ID
+        {
+            get { return this.BUSINESS_ASSOCIATE_IDValue; }
+            set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
+        }
+
+        private DateTime? EFFECTIVE_DATEValue;
+        public DateTime? EFFECTIVE_DATE
+        {
+            get { return this.EFFECTIVE_DATEValue; }
+            set { SetProperty(ref EFFECTIVE_DATEValue, value); }
+        }
+
+        private DateTime? EXPIRY_DATEValue;
+        public DateTime? EXPIRY_DATE
+        {
+            get { return this.EXPIRY_DATEValue; }
+            set { SetProperty(ref EXPIRY_DATEValue, value); }
+        }
     }
 }
-

@@ -4,6 +4,7 @@ namespace Beep.OilandGas.Models.FlashCalculations
 {
     /// <summary>
     /// Result of flash calculation
+    /// DTO for calculations - Entity class: FLASH_CALCULATION_RESULT
     /// </summary>
     public class FlashResult
     {

@@ -1,0 +1,1 @@
+-- PRODUCTION_AVAILS table has no foreign key constraints

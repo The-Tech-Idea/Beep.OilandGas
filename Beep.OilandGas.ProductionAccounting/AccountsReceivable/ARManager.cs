@@ -15,7 +15,7 @@ namespace Beep.OilandGas.ProductionAccounting.AccountsReceivable
 {
     /// <summary>
     /// Manages accounts receivable invoices.
-    /// Uses database access via IDataSource instead of in-memory dictionaries.
+    /// Uses Entity classes directly with IDataSource - no dictionary conversions.
     /// </summary>
     public class ARManager
     {
@@ -55,10 +55,7 @@ namespace Beep.OilandGas.ProductionAccounting.AccountsReceivable
                 TOTAL_AMOUNT = request.TotalAmount,
                 PAID_AMOUNT = 0m,
                 BALANCE_DUE = request.TotalAmount,
-                STATUS = ReceivableStatus.Open.ToString(),
-                ACTIVE_IND = "Y",
-                ROW_CREATED_BY = userId,
-                ROW_CREATED_DATE = DateTime.UtcNow
+                STATUS = ReceivableStatus.Open.ToString()
             };
 
             var connName = connectionName ?? _connectionName;
@@ -66,8 +63,8 @@ namespace Beep.OilandGas.ProductionAccounting.AccountsReceivable
             if (dataSource == null)
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");
 
-            var invoiceData = ConvertARInvoiceToDictionary(invoice);
-            var result = dataSource.InsertEntity(AR_INVOICE_TABLE, invoiceData);
+            _commonColumnHandler.PrepareForInsert(invoice, userId);
+            var result = dataSource.InsertEntity(AR_INVOICE_TABLE, invoice);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
             {
@@ -99,12 +96,7 @@ namespace Beep.OilandGas.ProductionAccounting.AccountsReceivable
             };
 
             var results = dataSource.GetEntityAsync(AR_INVOICE_TABLE, filters).GetAwaiter().GetResult();
-            var invoiceData = results?.OfType<Dictionary<string, object>>().FirstOrDefault();
-            
-            if (invoiceData == null)
-                return null;
-
-            return ConvertDictionaryToARInvoice(invoiceData);
+            return results?.FirstOrDefault() as AR_INVOICE;
         }
 
         /// <summary>
@@ -158,15 +150,12 @@ namespace Beep.OilandGas.ProductionAccounting.AccountsReceivable
             if (invoice.DUE_DATE.HasValue && DateTime.Now > invoice.DUE_DATE.Value && newBalanceDue > 0)
                 invoice.STATUS = ReceivableStatus.Overdue.ToString();
 
-            invoice.ROW_CHANGED_BY = userId;
-            invoice.ROW_CHANGED_DATE = DateTime.UtcNow;
-
             var dataSource = _editor.GetDataSource(connName);
             if (dataSource == null)
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");
 
-            var invoiceData = ConvertARInvoiceToDictionary(invoice);
-            var result = dataSource.UpdateEntity(AR_INVOICE_TABLE, invoiceData);
+            _commonColumnHandler.PrepareForUpdate(invoice, userId);
+            var result = dataSource.UpdateEntity(AR_INVOICE_TABLE, invoice);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
             {
@@ -224,8 +213,8 @@ namespace Beep.OilandGas.ProductionAccounting.AccountsReceivable
             if (results == null || !results.Any())
                 return Enumerable.Empty<AR_INVOICE>();
 
-            return results.OfType<Dictionary<string, object>>().Select(ConvertDictionaryToARInvoice)
-                .Where(inv => inv != null && inv.BALANCE_DUE > 0 && inv.DUE_DATE.HasValue && DateTime.Now > inv.DUE_DATE.Value)!;
+            return results.Cast<AR_INVOICE>()
+                .Where(inv => inv != null && (inv.BALANCE_DUE ?? 0m) > 0 && inv.DUE_DATE.HasValue && DateTime.Now > inv.DUE_DATE.Value)!;
         }
 
         /// <summary>
@@ -247,49 +236,9 @@ namespace Beep.OilandGas.ProductionAccounting.AccountsReceivable
             if (results == null || !results.Any())
                 return 0m;
 
-            return results.OfType<Dictionary<string, object>>().Select(ConvertDictionaryToARInvoice)
+            return results.Cast<AR_INVOICE>()
                 .Where(inv => inv != null)
                 .Sum(inv => inv.BALANCE_DUE ?? 0m);
-        }
-
-        private Dictionary<string, object> ConvertARInvoiceToDictionary(AR_INVOICE invoice)
-        {
-            var dict = new Dictionary<string, object>();
-            if (!string.IsNullOrEmpty(invoice.AR_INVOICE_ID)) dict["AR_INVOICE_ID"] = invoice.AR_INVOICE_ID;
-            if (!string.IsNullOrEmpty(invoice.INVOICE_NUMBER)) dict["INVOICE_NUMBER"] = invoice.INVOICE_NUMBER;
-            if (!string.IsNullOrEmpty(invoice.CUSTOMER_BA_ID)) dict["CUSTOMER_BA_ID"] = invoice.CUSTOMER_BA_ID;
-            if (invoice.INVOICE_DATE.HasValue) dict["INVOICE_DATE"] = invoice.INVOICE_DATE.Value;
-            if (invoice.DUE_DATE.HasValue) dict["DUE_DATE"] = invoice.DUE_DATE.Value;
-            if (invoice.TOTAL_AMOUNT.HasValue) dict["TOTAL_AMOUNT"] = invoice.TOTAL_AMOUNT.Value;
-            if (invoice.PAID_AMOUNT.HasValue) dict["PAID_AMOUNT"] = invoice.PAID_AMOUNT.Value;
-            if (invoice.BALANCE_DUE.HasValue) dict["BALANCE_DUE"] = invoice.BALANCE_DUE.Value;
-            if (!string.IsNullOrEmpty(invoice.STATUS)) dict["STATUS"] = invoice.STATUS;
-            if (!string.IsNullOrEmpty(invoice.ACTIVE_IND)) dict["ACTIVE_IND"] = invoice.ACTIVE_IND;
-            if (!string.IsNullOrEmpty(invoice.ROW_CREATED_BY)) dict["ROW_CREATED_BY"] = invoice.ROW_CREATED_BY;
-            if (invoice.ROW_CREATED_DATE.HasValue) dict["ROW_CREATED_DATE"] = invoice.ROW_CREATED_DATE.Value;
-            if (!string.IsNullOrEmpty(invoice.ROW_CHANGED_BY)) dict["ROW_CHANGED_BY"] = invoice.ROW_CHANGED_BY;
-            if (invoice.ROW_CHANGED_DATE.HasValue) dict["ROW_CHANGED_DATE"] = invoice.ROW_CHANGED_DATE.Value;
-            return dict;
-        }
-
-        private AR_INVOICE ConvertDictionaryToARInvoice(Dictionary<string, object> dict)
-        {
-            var invoice = new AR_INVOICE();
-            if (dict.TryGetValue("AR_INVOICE_ID", out var invoiceId)) invoice.AR_INVOICE_ID = invoiceId?.ToString();
-            if (dict.TryGetValue("INVOICE_NUMBER", out var invoiceNumber)) invoice.INVOICE_NUMBER = invoiceNumber?.ToString();
-            if (dict.TryGetValue("CUSTOMER_BA_ID", out var customerBaId)) invoice.CUSTOMER_BA_ID = customerBaId?.ToString();
-            if (dict.TryGetValue("INVOICE_DATE", out var invoiceDate)) invoice.INVOICE_DATE = invoiceDate != null ? Convert.ToDateTime(invoiceDate) : (DateTime?)null;
-            if (dict.TryGetValue("DUE_DATE", out var dueDate)) invoice.DUE_DATE = dueDate != null ? Convert.ToDateTime(dueDate) : (DateTime?)null;
-            if (dict.TryGetValue("TOTAL_AMOUNT", out var totalAmount)) invoice.TOTAL_AMOUNT = totalAmount != null ? Convert.ToDecimal(totalAmount) : (decimal?)null;
-            if (dict.TryGetValue("PAID_AMOUNT", out var paidAmount)) invoice.PAID_AMOUNT = paidAmount != null ? Convert.ToDecimal(paidAmount) : (decimal?)null;
-            if (dict.TryGetValue("BALANCE_DUE", out var balanceDue)) invoice.BALANCE_DUE = balanceDue != null ? Convert.ToDecimal(balanceDue) : (decimal?)null;
-            if (dict.TryGetValue("STATUS", out var status)) invoice.STATUS = status?.ToString();
-            if (dict.TryGetValue("ACTIVE_IND", out var activeInd)) invoice.ACTIVE_IND = activeInd?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_BY", out var createdBy)) invoice.ROW_CREATED_BY = createdBy?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_DATE", out var createdDate)) invoice.ROW_CREATED_DATE = createdDate != null ? Convert.ToDateTime(createdDate) : (DateTime?)null;
-            if (dict.TryGetValue("ROW_CHANGED_BY", out var changedBy)) invoice.ROW_CHANGED_BY = changedBy?.ToString();
-            if (dict.TryGetValue("ROW_CHANGED_DATE", out var changedDate)) invoice.ROW_CHANGED_DATE = changedDate != null ? Convert.ToDateTime(changedDate) : (DateTime?)null;
-            return invoice;
         }
     }
 }

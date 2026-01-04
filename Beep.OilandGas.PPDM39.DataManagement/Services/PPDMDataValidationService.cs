@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.DTOs;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -23,6 +24,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
+        private readonly PPDMGenericRepository _validationRuleRepository;
 
         public PPDMDataValidationService(
             IDMEEditor editor,
@@ -36,6 +38,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName;
+
+            // Create repository for validation rules
+            _validationRuleRepository = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(DATA_VALIDATION_RULE), _connectionName, "DATA_VALIDATION_RULE");
         }
 
         /// <summary>
@@ -111,11 +118,32 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
         /// <summary>
         /// Gets validation rules for a table
-        /// Uses metadata and defaults to build common validation rules
+        /// Loads from database first, then generates default rules if none exist
         /// </summary>
         public async Task<List<ValidationRule>> GetValidationRulesAsync(string tableName)
         {
             var rules = new List<ValidationRule>();
+
+            // First, try to load rules from database
+            var filters = new List<TheTechIdea.Beep.Report.AppFilter>
+            {
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "TABLE_NAME", Operator = "=", FilterValue = tableName },
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults?.GetActiveIndicatorYes() ?? "Y" }
+            };
+
+            var ruleEntities = await _validationRuleRepository.GetAsync(filters);
+            var dbRules = ruleEntities
+                .Cast<DATA_VALIDATION_RULE>()
+                .Where(r => r.ACTIVE_IND == (_defaults?.GetActiveIndicatorYes() ?? "Y"))
+                .Select(MapToValidationRule)
+                .ToList();
+
+            if (dbRules.Any())
+            {
+                return dbRules;
+            }
+
+            // If no rules in database, generate default rules from metadata
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
             if (metadata == null)
                 return rules;
@@ -126,11 +154,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 return rules;
 
             // Build rules from metadata
-            // Note: PPDMTableMetadata may not have Columns property, so we'll use reflection
-            // For now, we'll create rules based on common PPDM patterns
             var properties = entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            
-            // Check if property is primary key
             var pkColumns = metadata.PrimaryKeyColumn.Split(',').Select(c => c.Trim()).ToList();
             
             foreach (var property in properties)
@@ -141,7 +165,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 // Required field rule for primary keys
                 if (isPrimaryKey)
                 {
-                    rules.Add(new ValidationRule
+                    var rule = new ValidationRule
                     {
                         RuleName = $"{columnName}_Required",
                         FieldName = columnName,
@@ -149,13 +173,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         ErrorMessage = $"{columnName} is required (primary key)",
                         Severity = ValidationSeverity.Error,
                         IsActive = true
-                    });
+                    };
+                    rules.Add(rule);
+                    await SaveValidationRuleAsync(rule, tableName);
                 }
 
                 // UWI format validation (common in oil and gas)
                 if (columnName.Equals("UWI", StringComparison.OrdinalIgnoreCase))
                 {
-                    rules.Add(new ValidationRule
+                    var rule = new ValidationRule
                     {
                         RuleName = "UWI_Format",
                         FieldName = "UWI",
@@ -164,13 +190,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         ErrorMessage = "UWI must contain only alphanumeric characters and hyphens",
                         Severity = ValidationSeverity.Error,
                         IsActive = true
-                    });
+                    };
+                    rules.Add(rule);
+                    await SaveValidationRuleAsync(rule, tableName);
                 }
 
                 // ACTIVE_IND validation
                 if (columnName.Equals("ACTIVE_IND", StringComparison.OrdinalIgnoreCase))
                 {
-                    rules.Add(new ValidationRule
+                    var rule = new ValidationRule
                     {
                         RuleName = "ACTIVE_IND_Values",
                         FieldName = "ACTIVE_IND",
@@ -179,11 +207,55 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         ErrorMessage = $"ACTIVE_IND must be '{_defaults.GetActiveIndicatorYes()}' or '{_defaults.GetActiveIndicatorNo()}'",
                         Severity = ValidationSeverity.Error,
                         IsActive = true
-                    });
+                    };
+                    rules.Add(rule);
+                    await SaveValidationRuleAsync(rule, tableName);
                 }
             }
 
             return rules;
+        }
+
+        /// <summary>
+        /// Saves validation rule to database
+        /// </summary>
+        private async Task SaveValidationRuleAsync(ValidationRule rule, string tableName)
+        {
+            var ruleEntity = new DATA_VALIDATION_RULE
+            {
+                VALIDATION_RULE_ID = Guid.NewGuid().ToString(),
+                TABLE_NAME = tableName,
+                FIELD_NAME = rule.FieldName,
+                RULE_NAME = rule.RuleName,
+                RULE_TYPE = rule.RuleType.ToString(),
+                RULE_VALUE = rule.RuleValue,
+                ERROR_MESSAGE = rule.ErrorMessage,
+                SEVERITY = rule.Severity.ToString(),
+                ACTIVE_IND = rule.IsActive ? (_defaults?.GetActiveIndicatorYes() ?? "Y") : (_defaults?.GetActiveIndicatorNo() ?? "N"),
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                ROW_CREATED_DATE = DateTime.UtcNow,
+                ROW_CREATED_BY = "SYSTEM"
+            };
+
+            await _validationRuleRepository.InsertAsync(ruleEntity, "SYSTEM");
+        }
+
+        /// <summary>
+        /// Maps DATA_VALIDATION_RULE entity to ValidationRule DTO
+        /// </summary>
+        private ValidationRule MapToValidationRule(DATA_VALIDATION_RULE entity)
+        {
+            return new ValidationRule
+            {
+                RuleId = entity.VALIDATION_RULE_ID,
+                RuleName = entity.RULE_NAME,
+                FieldName = entity.FIELD_NAME,
+                RuleType = Enum.TryParse<ValidationRuleType>(entity.RULE_TYPE, out var ruleType) ? ruleType : ValidationRuleType.Custom,
+                RuleValue = entity.RULE_VALUE,
+                ErrorMessage = entity.ERROR_MESSAGE,
+                Severity = Enum.TryParse<ValidationSeverity>(entity.SEVERITY, out var severity) ? severity : ValidationSeverity.Error,
+                IsActive = entity.ACTIVE_IND == (_defaults?.GetActiveIndicatorYes() ?? "Y")
+            };
         }
 
         /// <summary>

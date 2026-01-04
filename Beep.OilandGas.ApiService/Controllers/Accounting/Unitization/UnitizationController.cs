@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.ProductionAccounting.Unitization;
 using Beep.OilandGas.ProductionAccounting.Services;
+using Beep.OilandGas.Models.DTOs.Accounting.Unitization;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
@@ -82,11 +83,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
         }
     }
 
-    public class CreateUnitAgreementRequest
-    {
-        public string UnitName { get; set; } = string.Empty;
-        public DateTime EffectiveDate { get; set; }
-        public string UnitOperator { get; set; } = string.Empty;
-    }
 }
 

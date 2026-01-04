@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs.LifeCycle;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
@@ -339,59 +340,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
         #endregion
 
-    }
-
-    // ============================================
-    // REQUEST DTOs
-    // ============================================
-
-    public class StartPoolDefinitionRequest
-    {
-        public string PoolId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class DelineatePoolRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public Dictionary<string, object>? DelineationData { get; set; }
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class AssignReservesRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public Dictionary<string, object>? ReserveData { get; set; }
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class ApprovePoolRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class ActivatePoolRequest
-    {
-        public string InstanceId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class StartFacilityDevelopmentRequest
-    {
-        public string FacilityId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class StartWellDevelopmentRequest
-    {
-        public string WellId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
-    }
-
-    public class StartPipelineDevelopmentRequest
-    {
-        public string PipelineId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
     }
 }

@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+
 namespace Beep.OilandGas.ProductionAccounting.GeneralLedger
 {
     /// <summary>
     /// Manages journal entries and ensures double-entry bookkeeping.
-    /// Uses database access via IDataSource instead of in-memory dictionaries.
+    /// Uses Entity classes directly with IDataSource - no dictionary conversions.
     /// </summary>
     public class JournalEntryManager
     {
@@ -67,13 +69,11 @@ namespace Beep.OilandGas.ProductionAccounting.GeneralLedger
                 STATUS = "Draft",
                 DESCRIPTION = description,
                 TOTAL_DEBIT = totalDebits,
-                TOTAL_CREDIT = totalCredits,
-                ACTIVE_IND = "Y",
-                ROW_CREATED_BY = userId,
-                ROW_CREATED_DATE = DateTime.UtcNow
+                TOTAL_CREDIT = totalCredits
             };
 
-            // Save journal entry to database
+            // Prepare for insert and save journal entry to database
+            _commonColumnHandler.PrepareForInsert(entry, userId);
             var result = dataSource.InsertEntity(JOURNAL_ENTRY_TABLE, entry);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
@@ -95,12 +95,10 @@ namespace Beep.OilandGas.ProductionAccounting.GeneralLedger
                     LINE_NUMBER = i + 1,
                     DEBIT_AMOUNT = lineData.DebitAmount,
                     CREDIT_AMOUNT = lineData.CreditAmount,
-                    DESCRIPTION = lineData.Description,
-                    ACTIVE_IND = "Y",
-                    ROW_CREATED_BY = userId,
-                    ROW_CREATED_DATE = DateTime.UtcNow
+                    DESCRIPTION = lineData.Description
                 };
 
+                _commonColumnHandler.PrepareForInsert(line, userId);
                 var lineResult = dataSource.InsertEntity(JOURNAL_ENTRY_LINE_TABLE, line);
                 
                 if (lineResult != null && lineResult.Errors != null && lineResult.Errors.Count > 0)
@@ -132,10 +130,9 @@ namespace Beep.OilandGas.ProductionAccounting.GeneralLedger
 
             // Update status
             entry.STATUS = "Posted";
-            entry.ROW_CHANGED_BY = userId;
-            entry.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-            // Save to database
+            // Prepare for update and save to database
+            _commonColumnHandler.PrepareForUpdate(entry, userId);
             var result = dataSource.UpdateEntity(JOURNAL_ENTRY_TABLE, entry);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
@@ -198,96 +195,6 @@ namespace Beep.OilandGas.ProductionAccounting.GeneralLedger
                 return Enumerable.Empty<JOURNAL_ENTRY_LINE>();
 
             return results.Cast<JOURNAL_ENTRY_LINE>().Where(l => l != null)!;
-        }
-
-        /// <summary>
-        /// Converts JOURNAL_ENTRY entity to dictionary for database storage.
-        /// </summary>
-        private Dictionary<string, object> ConvertJournalEntryToDictionary(JOURNAL_ENTRY entry)
-        {
-            var dict = new Dictionary<string, object>();
-            if (!string.IsNullOrEmpty(entry.JOURNAL_ENTRY_ID)) dict["JOURNAL_ENTRY_ID"] = entry.JOURNAL_ENTRY_ID;
-            if (!string.IsNullOrEmpty(entry.ENTRY_NUMBER)) dict["ENTRY_NUMBER"] = entry.ENTRY_NUMBER;
-            if (entry.ENTRY_DATE.HasValue) dict["ENTRY_DATE"] = entry.ENTRY_DATE.Value;
-            if (!string.IsNullOrEmpty(entry.ENTRY_TYPE)) dict["ENTRY_TYPE"] = entry.ENTRY_TYPE;
-            if (!string.IsNullOrEmpty(entry.STATUS)) dict["STATUS"] = entry.STATUS;
-            if (!string.IsNullOrEmpty(entry.DESCRIPTION)) dict["DESCRIPTION"] = entry.DESCRIPTION;
-            if (!string.IsNullOrEmpty(entry.REFERENCE_NUMBER)) dict["REFERENCE_NUMBER"] = entry.REFERENCE_NUMBER;
-            if (!string.IsNullOrEmpty(entry.SOURCE_MODULE)) dict["SOURCE_MODULE"] = entry.SOURCE_MODULE;
-            if (entry.TOTAL_DEBIT.HasValue) dict["TOTAL_DEBIT"] = entry.TOTAL_DEBIT.Value;
-            if (entry.TOTAL_CREDIT.HasValue) dict["TOTAL_CREDIT"] = entry.TOTAL_CREDIT.Value;
-            if (!string.IsNullOrEmpty(entry.ACTIVE_IND)) dict["ACTIVE_IND"] = entry.ACTIVE_IND;
-            if (!string.IsNullOrEmpty(entry.ROW_CREATED_BY)) dict["ROW_CREATED_BY"] = entry.ROW_CREATED_BY;
-            if (entry.ROW_CREATED_DATE.HasValue) dict["ROW_CREATED_DATE"] = entry.ROW_CREATED_DATE.Value;
-            if (!string.IsNullOrEmpty(entry.ROW_CHANGED_BY)) dict["ROW_CHANGED_BY"] = entry.ROW_CHANGED_BY;
-            if (entry.ROW_CHANGED_DATE.HasValue) dict["ROW_CHANGED_DATE"] = entry.ROW_CHANGED_DATE.Value;
-            return dict;
-        }
-
-        /// <summary>
-        /// Converts dictionary to JOURNAL_ENTRY entity.
-        /// </summary>
-        private JOURNAL_ENTRY ConvertDictionaryToJournalEntry(Dictionary<string, object> dict)
-        {
-            var entry = new JOURNAL_ENTRY();
-            if (dict.TryGetValue("JOURNAL_ENTRY_ID", out var entryId)) entry.JOURNAL_ENTRY_ID = entryId?.ToString();
-            if (dict.TryGetValue("ENTRY_NUMBER", out var entryNumber)) entry.ENTRY_NUMBER = entryNumber?.ToString();
-            if (dict.TryGetValue("ENTRY_DATE", out var entryDate)) entry.ENTRY_DATE = entryDate != null ? Convert.ToDateTime(entryDate) : (DateTime?)null;
-            if (dict.TryGetValue("ENTRY_TYPE", out var entryType)) entry.ENTRY_TYPE = entryType?.ToString();
-            if (dict.TryGetValue("STATUS", out var status)) entry.STATUS = status?.ToString();
-            if (dict.TryGetValue("DESCRIPTION", out var description)) entry.DESCRIPTION = description?.ToString();
-            if (dict.TryGetValue("REFERENCE_NUMBER", out var refNumber)) entry.REFERENCE_NUMBER = refNumber?.ToString();
-            if (dict.TryGetValue("SOURCE_MODULE", out var sourceModule)) entry.SOURCE_MODULE = sourceModule?.ToString();
-            if (dict.TryGetValue("TOTAL_DEBIT", out var totalDebit)) entry.TOTAL_DEBIT = totalDebit != null ? Convert.ToDecimal(totalDebit) : (decimal?)null;
-            if (dict.TryGetValue("TOTAL_CREDIT", out var totalCredit)) entry.TOTAL_CREDIT = totalCredit != null ? Convert.ToDecimal(totalCredit) : (decimal?)null;
-            if (dict.TryGetValue("ACTIVE_IND", out var activeInd)) entry.ACTIVE_IND = activeInd?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_BY", out var createdBy)) entry.ROW_CREATED_BY = createdBy?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_DATE", out var createdDate)) entry.ROW_CREATED_DATE = createdDate != null ? Convert.ToDateTime(createdDate) : (DateTime?)null;
-            if (dict.TryGetValue("ROW_CHANGED_BY", out var changedBy)) entry.ROW_CHANGED_BY = changedBy?.ToString();
-            if (dict.TryGetValue("ROW_CHANGED_DATE", out var changedDate)) entry.ROW_CHANGED_DATE = changedDate != null ? Convert.ToDateTime(changedDate) : (DateTime?)null;
-            return entry;
-        }
-
-        /// <summary>
-        /// Converts JOURNAL_ENTRY_LINE entity to dictionary for database storage.
-        /// </summary>
-        private Dictionary<string, object> ConvertJournalEntryLineToDictionary(JOURNAL_ENTRY_LINE line)
-        {
-            var dict = new Dictionary<string, object>();
-            if (!string.IsNullOrEmpty(line.JOURNAL_ENTRY_LINE_ID)) dict["JOURNAL_ENTRY_LINE_ID"] = line.JOURNAL_ENTRY_LINE_ID;
-            if (!string.IsNullOrEmpty(line.JOURNAL_ENTRY_ID)) dict["JOURNAL_ENTRY_ID"] = line.JOURNAL_ENTRY_ID;
-            if (!string.IsNullOrEmpty(line.GL_ACCOUNT_ID)) dict["GL_ACCOUNT_ID"] = line.GL_ACCOUNT_ID;
-            if (line.LINE_NUMBER.HasValue) dict["LINE_NUMBER"] = line.LINE_NUMBER.Value;
-            if (line.DEBIT_AMOUNT.HasValue) dict["DEBIT_AMOUNT"] = line.DEBIT_AMOUNT.Value;
-            if (line.CREDIT_AMOUNT.HasValue) dict["CREDIT_AMOUNT"] = line.CREDIT_AMOUNT.Value;
-            if (!string.IsNullOrEmpty(line.DESCRIPTION)) dict["DESCRIPTION"] = line.DESCRIPTION;
-            if (!string.IsNullOrEmpty(line.ACTIVE_IND)) dict["ACTIVE_IND"] = line.ACTIVE_IND;
-            if (!string.IsNullOrEmpty(line.ROW_CREATED_BY)) dict["ROW_CREATED_BY"] = line.ROW_CREATED_BY;
-            if (line.ROW_CREATED_DATE.HasValue) dict["ROW_CREATED_DATE"] = line.ROW_CREATED_DATE.Value;
-            if (!string.IsNullOrEmpty(line.ROW_CHANGED_BY)) dict["ROW_CHANGED_BY"] = line.ROW_CHANGED_BY;
-            if (line.ROW_CHANGED_DATE.HasValue) dict["ROW_CHANGED_DATE"] = line.ROW_CHANGED_DATE.Value;
-            return dict;
-        }
-
-        /// <summary>
-        /// Converts dictionary to JOURNAL_ENTRY_LINE entity.
-        /// </summary>
-        private JOURNAL_ENTRY_LINE ConvertDictionaryToJournalEntryLine(Dictionary<string, object> dict)
-        {
-            var line = new JOURNAL_ENTRY_LINE();
-            if (dict.TryGetValue("JOURNAL_ENTRY_LINE_ID", out var lineId)) line.JOURNAL_ENTRY_LINE_ID = lineId?.ToString();
-            if (dict.TryGetValue("JOURNAL_ENTRY_ID", out var entryId)) line.JOURNAL_ENTRY_ID = entryId?.ToString();
-            if (dict.TryGetValue("GL_ACCOUNT_ID", out var glAccountId)) line.GL_ACCOUNT_ID = glAccountId?.ToString();
-            if (dict.TryGetValue("LINE_NUMBER", out var lineNumber)) line.LINE_NUMBER = lineNumber != null ? Convert.ToInt32(lineNumber) : (int?)null;
-            if (dict.TryGetValue("DEBIT_AMOUNT", out var debitAmount)) line.DEBIT_AMOUNT = debitAmount != null ? Convert.ToDecimal(debitAmount) : (decimal?)null;
-            if (dict.TryGetValue("CREDIT_AMOUNT", out var creditAmount)) line.CREDIT_AMOUNT = creditAmount != null ? Convert.ToDecimal(creditAmount) : (decimal?)null;
-            if (dict.TryGetValue("DESCRIPTION", out var description)) line.DESCRIPTION = description?.ToString();
-            if (dict.TryGetValue("ACTIVE_IND", out var activeInd)) line.ACTIVE_IND = activeInd?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_BY", out var createdBy)) line.ROW_CREATED_BY = createdBy?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_DATE", out var createdDate)) line.ROW_CREATED_DATE = createdDate != null ? Convert.ToDateTime(createdDate) : (DateTime?)null;
-            if (dict.TryGetValue("ROW_CHANGED_BY", out var changedBy)) line.ROW_CHANGED_BY = changedBy?.ToString();
-            if (dict.TryGetValue("ROW_CHANGED_DATE", out var changedDate)) line.ROW_CHANGED_DATE = changedDate != null ? Convert.ToDateTime(changedDate) : (DateTime?)null;
-            return line;
         }
     }
 

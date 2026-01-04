@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+
 namespace Beep.OilandGas.ProductionAccounting.Inventory
 {
     /// <summary>
     /// Manages inventory transactions (movements, adjustments).
-    /// Uses database access via IDataSource instead of in-memory dictionaries.
+    /// Uses Entity classes directly with IDataSource - no dictionary conversions.
     /// </summary>
     public class InventoryTransactionManager
     {
@@ -52,10 +54,7 @@ namespace Beep.OilandGas.ProductionAccounting.Inventory
                 QUANTITY = quantity,
                 UNIT_COST = unitCost,
                 TOTAL_COST = quantity * (unitCost ?? 0m),
-                DESCRIPTION = description,
-                ACTIVE_IND = "Y",
-                ROW_CREATED_BY = userId,
-                ROW_CREATED_DATE = DateTime.UtcNow
+                DESCRIPTION = description
             };
 
             var connName = connectionName ?? _connectionName;
@@ -63,8 +62,8 @@ namespace Beep.OilandGas.ProductionAccounting.Inventory
             if (dataSource == null)
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");
 
-            var transactionData = ConvertInventoryTransactionToDictionary(transaction);
-            var result = dataSource.InsertEntity(INVENTORY_TRANSACTION_TABLE, transactionData);
+            _commonColumnHandler.PrepareForInsert(transaction, userId);
+            var result = dataSource.InsertEntity(INVENTORY_TRANSACTION_TABLE, transaction);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
             {
@@ -102,44 +101,6 @@ namespace Beep.OilandGas.ProductionAccounting.Inventory
                 return null;
 
             return transactionData as INVENTORY_TRANSACTION;
-        }
-
-        private Dictionary<string, object> ConvertInventoryTransactionToDictionary(INVENTORY_TRANSACTION transaction)
-        {
-            var dict = new Dictionary<string, object>();
-            if (!string.IsNullOrEmpty(transaction.INVENTORY_TRANSACTION_ID)) dict["INVENTORY_TRANSACTION_ID"] = transaction.INVENTORY_TRANSACTION_ID;
-            if (!string.IsNullOrEmpty(transaction.INVENTORY_ITEM_ID)) dict["INVENTORY_ITEM_ID"] = transaction.INVENTORY_ITEM_ID;
-            if (!string.IsNullOrEmpty(transaction.TRANSACTION_TYPE)) dict["TRANSACTION_TYPE"] = transaction.TRANSACTION_TYPE;
-            if (transaction.TRANSACTION_DATE.HasValue) dict["TRANSACTION_DATE"] = transaction.TRANSACTION_DATE.Value;
-            if (transaction.QUANTITY.HasValue) dict["QUANTITY"] = transaction.QUANTITY.Value;
-            if (transaction.UNIT_COST.HasValue) dict["UNIT_COST"] = transaction.UNIT_COST.Value;
-            if (transaction.TOTAL_COST.HasValue) dict["TOTAL_COST"] = transaction.TOTAL_COST.Value;
-            if (!string.IsNullOrEmpty(transaction.DESCRIPTION)) dict["DESCRIPTION"] = transaction.DESCRIPTION;
-            if (!string.IsNullOrEmpty(transaction.ACTIVE_IND)) dict["ACTIVE_IND"] = transaction.ACTIVE_IND;
-            if (!string.IsNullOrEmpty(transaction.ROW_CREATED_BY)) dict["ROW_CREATED_BY"] = transaction.ROW_CREATED_BY;
-            if (transaction.ROW_CREATED_DATE.HasValue) dict["ROW_CREATED_DATE"] = transaction.ROW_CREATED_DATE.Value;
-            if (!string.IsNullOrEmpty(transaction.ROW_CHANGED_BY)) dict["ROW_CHANGED_BY"] = transaction.ROW_CHANGED_BY;
-            if (transaction.ROW_CHANGED_DATE.HasValue) dict["ROW_CHANGED_DATE"] = transaction.ROW_CHANGED_DATE.Value;
-            return dict;
-        }
-
-        private INVENTORY_TRANSACTION ConvertDictionaryToInventoryTransaction(Dictionary<string, object> dict)
-        {
-            var transaction = new INVENTORY_TRANSACTION();
-            if (dict.TryGetValue("INVENTORY_TRANSACTION_ID", out var transactionId)) transaction.INVENTORY_TRANSACTION_ID = transactionId?.ToString();
-            if (dict.TryGetValue("INVENTORY_ITEM_ID", out var itemId)) transaction.INVENTORY_ITEM_ID = itemId?.ToString();
-            if (dict.TryGetValue("TRANSACTION_TYPE", out var transactionType)) transaction.TRANSACTION_TYPE = transactionType?.ToString();
-            if (dict.TryGetValue("TRANSACTION_DATE", out var transactionDate)) transaction.TRANSACTION_DATE = transactionDate != null ? Convert.ToDateTime(transactionDate) : (DateTime?)null;
-            if (dict.TryGetValue("QUANTITY", out var quantity)) transaction.QUANTITY = quantity != null ? Convert.ToDecimal(quantity) : (decimal?)null;
-            if (dict.TryGetValue("UNIT_COST", out var unitCost)) transaction.UNIT_COST = unitCost != null ? Convert.ToDecimal(unitCost) : (decimal?)null;
-            if (dict.TryGetValue("TOTAL_COST", out var totalCost)) transaction.TOTAL_COST = totalCost != null ? Convert.ToDecimal(totalCost) : (decimal?)null;
-            if (dict.TryGetValue("DESCRIPTION", out var description)) transaction.DESCRIPTION = description?.ToString();
-            if (dict.TryGetValue("ACTIVE_IND", out var activeInd)) transaction.ACTIVE_IND = activeInd?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_BY", out var createdBy)) transaction.ROW_CREATED_BY = createdBy?.ToString();
-            if (dict.TryGetValue("ROW_CREATED_DATE", out var createdDate)) transaction.ROW_CREATED_DATE = createdDate != null ? Convert.ToDateTime(createdDate) : (DateTime?)null;
-            if (dict.TryGetValue("ROW_CHANGED_BY", out var changedBy)) transaction.ROW_CHANGED_BY = changedBy?.ToString();
-            if (dict.TryGetValue("ROW_CHANGED_DATE", out var changedDate)) transaction.ROW_CHANGED_DATE = changedDate != null ? Convert.ToDateTime(changedDate) : (DateTime?)null;
-            return transaction;
         }
     }
 }

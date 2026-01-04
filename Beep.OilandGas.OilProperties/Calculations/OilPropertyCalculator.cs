@@ -1,5 +1,5 @@
 using System;
-using Beep.OilandGas.OilProperties.Models;
+using Beep.OilandGas.Models.OilProperties;
 
 namespace Beep.OilandGas.OilProperties.Calculations
 {

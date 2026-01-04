@@ -1,0 +1,1 @@
+-- TIME_ADJUSTMENTS table has no foreign key constraints

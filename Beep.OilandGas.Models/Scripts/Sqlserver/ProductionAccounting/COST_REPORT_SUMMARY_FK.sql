@@ -1,0 +1,1 @@
+-- COST_REPORT_SUMMARY table has no foreign key constraints

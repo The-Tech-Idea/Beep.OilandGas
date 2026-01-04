@@ -4,6 +4,7 @@ namespace Beep.OilandGas.Models.FlashCalculations
 {
     /// <summary>
     /// Conditions for flash calculation
+    /// DTO for calculations - Entity class: FLASH_CONDITIONS
     /// </summary>
     public class FlashConditions
     {
@@ -25,6 +26,7 @@ namespace Beep.OilandGas.Models.FlashCalculations
 
     /// <summary>
     /// Component in flash calculation
+    /// DTO for calculations - Entity class: FLASH_COMPONENT
     /// </summary>
     public class FlashComponent
     {

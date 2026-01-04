@@ -152,63 +152,6 @@ namespace Beep.OilandGas.PPDM39.Repositories
         /// </summary>
         System.Collections.Generic.Dictionary<string, string> GetAllWellStructureXrefTypes();
 
-        // Well Status Facets (default values for well status decomposition)
-
-        /// <summary>
-        /// Gets well status facets for a given STATUS_ID
-        /// Uses R_WELL_STATUS_XREF to decompose complex status values into atomic facets
-        /// </summary>
-        System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, object>> GetWellStatusFacetsAsync(string statusId);
-
-        /// <summary>
-        /// Gets well status facets for a given STATUS_TYPE and STATUS
-        /// </summary>
-        System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, object>> GetWellStatusFacetsByTypeAndStatusAsync(string statusType, string status);
-
-        /// <summary>
-        /// Gets all well status facets grouped by STATUS_ID
-        /// </summary>
-        System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, object>>> GetAllWellStatusFacetsAsync();
-
-        /// <summary>
-        /// Gets the well status XREF table name
-        /// </summary>
-        string GetWellStatusXrefTableName();
-
-        // Well Status TYPE defaults (from R_WELL_STATUS table)
-
-        /// <summary>
-        /// Gets all STATUS_TYPE values from R_WELL_STATUS table
-        /// These are the default status types available for wells (e.g., Role, Business Life Cycle Phase, etc.)
-        /// </summary>
-        System.Threading.Tasks.Task<System.Collections.Generic.List<string>> GetAllWellStatusTypesAsync();
-
-        /// <summary>
-        /// Gets all STATUS_TYPE values grouped by their purpose/category
-        /// </summary>
-        System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>>> GetWellStatusTypesGroupedAsync();
-
-        /// <summary>
-        /// Gets the list of default STATUS_TYPEs that should be initialized for every new well or wellbore
-        /// These are the standard well facets from PPDM 3.9
-        /// </summary>
-        System.Collections.Generic.List<string> GetDefaultWellStatusTypes();
-
-        /// <summary>
-        /// Gets the default STATUS_TYPEs that should be initialized for wells (not wellbores)
-        /// </summary>
-        System.Collections.Generic.List<string> GetDefaultWellStatusTypesForWell();
-
-        /// <summary>
-        /// Gets the default STATUS_TYPEs that should be initialized for wellbores
-        /// </summary>
-        System.Collections.Generic.List<string> GetDefaultWellStatusTypesForWellbore();
-
-        /// <summary>
-        /// Gets the default STATUS_TYPEs that should be initialized for wellhead streams
-        /// </summary>
-        System.Collections.Generic.List<string> GetDefaultWellStatusTypesForWellheadStream();
-
         // ID Type Configuration for PPDM Tables
 
         /// <summary>
@@ -231,134 +174,47 @@ namespace Beep.OilandGas.PPDM39.Repositories
         /// <returns>Formatted ID value (as string for PPDM tables)</returns>
         string FormatIdForTable(string tableName, object id);
 
-        #region Jurisdiction-Specific Support
+
+        #region Database-Backed Default Values
 
         /// <summary>
-        /// Gets the default currency code for a jurisdiction
+        /// Gets a default value from database (user-specific if userId provided, otherwise system default)
+        /// Falls back to hardcoded constant if not found in database
         /// </summary>
-        /// <param name="jurisdictionId">Jurisdiction identifier (e.g., country code, state/province code)</param>
-        /// <returns>Currency code (e.g., "USD", "CAD", "GBP")</returns>
-        string GetCurrencyForJurisdiction(string jurisdictionId);
+        /// <param name="key">Default value key (e.g., "ACTIVE_IND_YES", "JURISDICTION.US.CURRENCY")</param>
+        /// <param name="databaseId">Database identifier (GUID)</param>
+        /// <param name="userId">Optional user identifier for user-specific overrides</param>
+        /// <returns>Default value from database, or null if not found (will use hardcoded fallback)</returns>
+        Task<string?> GetDefaultValueAsync(string key, string databaseId, string? userId = null);
 
         /// <summary>
-        /// Gets the default currency symbol for a jurisdiction
+        /// Sets or updates a default value in the database
         /// </summary>
-        /// <param name="jurisdictionId">Jurisdiction identifier</param>
-        /// <returns>Currency symbol (e.g., "$", "£", "€")</returns>
-        string GetCurrencySymbolForJurisdiction(string jurisdictionId);
+        /// <param name="key">Default value key</param>
+        /// <param name="value">Default value</param>
+        /// <param name="databaseId">Database identifier (GUID)</param>
+        /// <param name="userId">Optional user identifier for user-specific overrides (null = system default)</param>
+        /// <param name="category">Category grouping (e.g., "System", "Jurisdiction", "FieldMapping")</param>
+        /// <param name="valueType">Data type hint (e.g., "String", "Decimal", "Boolean", "JSON")</param>
+        /// <param name="description">Optional description</param>
+        Task SetDefaultValueAsync(string key, string value, string databaseId, string? userId = null, string category = "System", string valueType = "String", string description = null);
 
         /// <summary>
-        /// Gets the default volume units for a jurisdiction (for production volumes)
+        /// Gets all default values for a category
         /// </summary>
-        /// <param name="jurisdictionId">Jurisdiction identifier</param>
-        /// <returns>Dictionary with unit types and their default values (e.g., {"OIL": "BBL", "GAS": "MSCF", "WATER": "BBL"})</returns>
-        Dictionary<string, string> GetVolumeUnitsForJurisdiction(string jurisdictionId);
+        /// <param name="category">Category name</param>
+        /// <param name="databaseId">Database identifier (GUID)</param>
+        /// <param name="userId">Optional user identifier</param>
+        /// <returns>Dictionary of default keys to values</returns>
+        Task<Dictionary<string, string>> GetDefaultsByCategoryAsync(string category, string databaseId, string? userId = null);
 
         /// <summary>
-        /// Gets the default depth/distance units for a jurisdiction
+        /// Initializes system defaults for a database
+        /// Seeds all hardcoded constants into the database
         /// </summary>
-        /// <param name="jurisdictionId">Jurisdiction identifier</param>
-        /// <returns>Default depth/distance unit (e.g., "FT", "M")</returns>
-        string GetDepthUnitForJurisdiction(string jurisdictionId);
-
-        /// <summary>
-        /// Gets the default temperature unit for a jurisdiction
-        /// </summary>
-        /// <param name="jurisdictionId">Jurisdiction identifier</param>
-        /// <returns>Default temperature unit (e.g., "F", "C")</returns>
-        string GetTemperatureUnitForJurisdiction(string jurisdictionId);
-
-        /// <summary>
-        /// Gets the default pressure unit for a jurisdiction
-        /// </summary>
-        /// <param name="jurisdictionId">Jurisdiction identifier</param>
-        /// <returns>Default pressure unit (e.g., "PSI", "KPA", "BAR")</returns>
-        string GetPressureUnitForJurisdiction(string jurisdictionId);
-
-        /// <summary>
-        /// Gets all default units for a jurisdiction
-        /// </summary>
-        /// <param name="jurisdictionId">Jurisdiction identifier</param>
-        /// <returns>Dictionary mapping unit types to their default values</returns>
-        Dictionary<string, string> GetAllUnitsForJurisdiction(string jurisdictionId);
-
-        /// <summary>
-        /// Gets validation rules for a specific jurisdiction
-        /// </summary>
-        /// <param name="jurisdictionId">Jurisdiction identifier</param>
-        /// <param name="entityType">Entity type or table name to get validation rules for (optional)</param>
-        /// <returns>List of validation rules specific to the jurisdiction</returns>
-        Task<List<JurisdictionValidationRule>> GetValidationRulesForJurisdictionAsync(string jurisdictionId, string? entityType = null);
-
-        /// <summary>
-        /// Validates a value against jurisdiction-specific validation rules
-        /// </summary>
-        /// <param name="jurisdictionId">Jurisdiction identifier</param>
-        /// <param name="fieldName">Field name to validate</param>
-        /// <param name="value">Value to validate</param>
-        /// <param name="entityType">Entity type or table name (optional)</param>
-        /// <returns>Validation result with success status and any error messages</returns>
-        Task<JurisdictionValidationResult> ValidateValueForJurisdictionAsync(string jurisdictionId, string fieldName, object value, string? entityType = null);
-
-        /// <summary>
-        /// Gets jurisdiction-specific default values for a table/entity type
-        /// </summary>
-        /// <param name="jurisdictionId">Jurisdiction identifier</param>
-        /// <param name="tableName">Table name</param>
-        /// <returns>Dictionary of field names to default values</returns>
-        Task<Dictionary<string, object>> GetJurisdictionDefaultsForTableAsync(string jurisdictionId, string tableName);
-
-        /// <summary>
-        /// Sets the current jurisdiction context (affects all subsequent default value calls)
-        /// </summary>
-        /// <param name="jurisdictionId">Jurisdiction identifier</param>
-        void SetCurrentJurisdiction(string jurisdictionId);
-
-        /// <summary>
-        /// Gets the current jurisdiction context
-        /// </summary>
-        /// <returns>Current jurisdiction identifier, or null if not set</returns>
-        string? GetCurrentJurisdiction();
-
-        /// <summary>
-        /// Gets all available jurisdictions
-        /// </summary>
-        /// <returns>List of jurisdiction identifiers</returns>
-        Task<List<string>> GetAvailableJurisdictionsAsync();
-
-        /// <summary>
-        /// Loads jurisdictions from BUSINESS_ASSOCIATE table based on JURISDICTION, COUNTRY_CODE, or COUNTRY fields
-        /// Merges with existing default jurisdictions, with database values taking precedence
-        /// This allows jurisdictions to be dynamically loaded from your PPDM database
-        /// </summary>
-        /// <returns>Task representing the asynchronous operation</returns>
-        Task LoadJurisdictionsFromBusinessAssociateAsync();
-
-        #endregion
-
-        #region Field Mapping Configuration
-
-        /// <summary>
-        /// Gets field mapping configuration for a specific property mapping key
-        /// Used to configure which table and field to use for retrieving values (e.g., reservoir properties for forecasting)
-        /// </summary>
-        /// <param name="mappingKey">Mapping key (e.g., "ReservoirForecast.InitialPressure", "ReservoirForecast.Permeability")</param>
-        /// <returns>Field mapping configuration, or null if not configured</returns>
-        Task<FieldMappingConfig?> GetFieldMappingAsync(string mappingKey);
-
-        /// <summary>
-        /// Gets all field mappings for a specific mapping category
-        /// </summary>
-        /// <param name="category">Mapping category (e.g., "ReservoirForecast", "WellProperties")</param>
-        /// <returns>Dictionary of mapping keys to field mapping configurations</returns>
-        Task<Dictionary<string, FieldMappingConfig>> GetFieldMappingsByCategoryAsync(string category);
-
-        /// <summary>
-        /// Sets or updates a field mapping configuration
-        /// </summary>
-        /// <param name="mappingKey">Mapping key</param>
-        /// <param name="config">Field mapping configuration</param>
-        Task SetFieldMappingAsync(string mappingKey, FieldMappingConfig config);
+        /// <param name="databaseId">Database identifier (GUID)</param>
+        /// <param name="userId">User identifier for audit trail (defaults to "SYSTEM")</param>
+        Task InitializeSystemDefaultsAsync(string databaseId, string userId = "SYSTEM");
 
         #endregion
     }

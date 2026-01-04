@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.DTOs.Pumps;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -88,19 +89,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-    }
-
-    public class DesignPumpSystemRequest
-    {
-        public string WellUWI { get; set; } = string.Empty;
-        public string PumpType { get; set; } = string.Empty;
-        public decimal WellDepth { get; set; }
-        public decimal DesiredFlowRate { get; set; }
-    }
-
-    public class AnalyzePerformanceRequest
-    {
-        public string PumpId { get; set; } = string.Empty;
     }
 }
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.DTOs;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -24,6 +25,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
         private readonly IPPDMDataQualityService _qualityService;
+        private readonly PPDMGenericRepository _dashboardRepository;
+        private readonly PPDMGenericRepository _trendRepository;
+        private readonly PPDMGenericRepository _alertRepository;
 
         public PPDMDataQualityDashboardService(
             IDMEEditor editor,
@@ -39,6 +43,19 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _qualityService = qualityService ?? throw new ArgumentNullException(nameof(qualityService));
             _connectionName = connectionName;
+
+            // Create repositories for dashboard entities
+            _dashboardRepository = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(DATA_QUALITY_DASHBOARD), _connectionName, "DATA_QUALITY_DASHBOARD");
+            
+            _trendRepository = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(DATA_QUALITY_TREND), _connectionName, "DATA_QUALITY_TREND");
+            
+            _alertRepository = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(DATA_QUALITY_ALERT), _connectionName, "DATA_QUALITY_ALERT");
         }
 
         /// <summary>
@@ -67,7 +84,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 fieldScores[fieldMetric.Key] = fieldMetric.Value.Completeness;
             }
 
-            return new QualityDashboardData
+            var dashboardData = new QualityDashboardData
             {
                 TableName = tableName,
                 LastUpdated = DateTime.UtcNow,
@@ -77,6 +94,49 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 ActiveAlerts = alerts.Where(a => !a.IsResolved).ToList(),
                 FieldQualityScores = fieldScores
             };
+
+            // Persist dashboard snapshot to database
+            await SaveDashboardSnapshotAsync(dashboardData, metrics);
+
+            return dashboardData;
+        }
+
+        /// <summary>
+        /// Saves dashboard snapshot to database
+        /// </summary>
+        private async Task SaveDashboardSnapshotAsync(QualityDashboardData dashboardData, DataQualityMetrics metrics)
+        {
+            // Get latest metrics ID
+            var metricsFilters = new List<TheTechIdea.Beep.Report.AppFilter>
+            {
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "TABLE_NAME", Operator = "=", FilterValue = dashboardData.TableName },
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults?.GetActiveIndicatorYes() ?? "Y" }
+            };
+
+            var metricsRepo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(DATA_QUALITY_METRICS), _connectionName, "DATA_QUALITY_METRICS");
+
+            var existingMetrics = await metricsRepo.GetAsync(metricsFilters);
+            var latestMetrics = existingMetrics.Cast<DATA_QUALITY_METRICS>()
+                .OrderByDescending(m => m.METRICS_DATE)
+                .FirstOrDefault();
+
+            var dashboardEntity = new DATA_QUALITY_DASHBOARD
+            {
+                DASHBOARD_ID = Guid.NewGuid().ToString(),
+                TABLE_NAME = dashboardData.TableName,
+                LAST_UPDATED = dashboardData.LastUpdated,
+                OVERALL_QUALITY_SCORE = (decimal)dashboardData.OverallQualityScore,
+                CURRENT_METRICS_ID = latestMetrics?.METRICS_ID,
+                FIELD_SCORES_JSON = System.Text.Json.JsonSerializer.Serialize(dashboardData.FieldQualityScores),
+                ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                ROW_CREATED_DATE = DateTime.UtcNow,
+                ROW_CREATED_BY = "SYSTEM"
+            };
+
+            await _dashboardRepository.InsertAsync(dashboardEntity, "SYSTEM");
         }
 
         /// <summary>
@@ -87,31 +147,51 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
 
-            // In a real implementation, this would query historical quality data
-            // For now, we'll generate sample trends based on current metrics
-            var trends = new List<QualityTrend>();
-            var metrics = await _qualityService.CalculateTableQualityMetricsAsync(tableName);
-
-            // Generate daily trends for the date range
-            var currentDate = fromDate.Date;
-            var random = new Random();
-
-            while (currentDate <= toDate.Date)
+            // Query historical quality trends from database
+            var filters = new List<TheTechIdea.Beep.Report.AppFilter>
             {
-                // Simulate quality score variation (in real implementation, use historical data)
-                var baseScore = metrics.OverallQualityScore;
-                var variation = (random.NextDouble() - 0.5) * 10; // ±5% variation
-                var qualityScore = Math.Max(0, Math.Min(100, baseScore + variation));
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "TABLE_NAME", Operator = "=", FilterValue = tableName },
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "TREND_DATE", Operator = ">=", FilterValue = fromDate.ToString() },
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "TREND_DATE", Operator = "<=", FilterValue = toDate.ToString() },
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults?.GetActiveIndicatorYes() ?? "Y" }
+            };
 
-                trends.Add(new QualityTrend
+            var trendEntities = await _trendRepository.GetAsync(filters);
+            var trends = trendEntities
+                .Cast<DATA_QUALITY_TREND>()
+                .OrderBy(t => t.TREND_DATE)
+                .Select(t => new QualityTrend
                 {
-                    Date = currentDate,
-                    QualityScore = qualityScore,
-                    RecordCount = metrics.TotalRecords + random.Next(-10, 10),
-                    IssueCount = metrics.IncompleteRecords + random.Next(-5, 5)
-                });
+                    Date = t.TREND_DATE ?? DateTime.UtcNow,
+                    QualityScore = (double)(t.QUALITY_SCORE ?? 0),
+                    RecordCount = t.RECORD_COUNT ?? 0,
+                    IssueCount = t.ISSUE_COUNT ?? 0
+                })
+                .ToList();
 
-                currentDate = currentDate.AddDays(1);
+            // If no trends found, generate from current metrics
+            if (!trends.Any())
+            {
+                var metrics = await _qualityService.CalculateTableQualityMetricsAsync(tableName);
+                var currentDate = fromDate.Date;
+                var random = new Random();
+
+                while (currentDate <= toDate.Date)
+                {
+                    var baseScore = metrics.OverallQualityScore;
+                    var variation = (random.NextDouble() - 0.5) * 10;
+                    var qualityScore = Math.Max(0, Math.Min(100, baseScore + variation));
+
+                    trends.Add(new QualityTrend
+                    {
+                        Date = currentDate,
+                        QualityScore = qualityScore,
+                        RecordCount = metrics.TotalRecords + random.Next(-10, 10),
+                        IssueCount = metrics.IncompleteRecords + random.Next(-5, 5)
+                    });
+
+                    currentDate = currentDate.AddDays(1);
+                }
             }
 
             return trends.OrderBy(t => t.Date).ToList();
@@ -137,28 +217,61 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     
                     if (!severity.HasValue || alertSeverity == severity.Value)
                     {
-                        alerts.Add(new QualityAlert
-                        {
-                            AlertId = Guid.NewGuid().ToString(),
-                            TableName = tableName,
-                            FieldName = issue.FieldName,
-                            Severity = alertSeverity,
-                            AlertMessage = issue.IssueDescription,
-                            CreatedDate = DateTime.UtcNow,
-                            IsResolved = false
-                        });
-                    }
+                    var alertEntity = new DATA_QUALITY_ALERT
+                    {
+                        ALERT_ID = Guid.NewGuid().ToString(),
+                        TABLE_NAME = tableName,
+                        FIELD_NAME = issue.FieldName,
+                        SEVERITY = alertSeverity.ToString(),
+                        ALERT_MESSAGE = issue.IssueDescription,
+                        CREATED_DATE = DateTime.UtcNow,
+                        RESOLVED_IND = _defaults?.GetActiveIndicatorNo() ?? "N",
+                        ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString(),
+                        ROW_CREATED_DATE = DateTime.UtcNow,
+                        ROW_CREATED_BY = "SYSTEM"
+                    };
+
+                    await _alertRepository.InsertAsync(alertEntity, "SYSTEM");
+
+                    alerts.Add(new QualityAlert
+                    {
+                        AlertId = alertEntity.ALERT_ID,
+                        TableName = tableName,
+                        FieldName = issue.FieldName,
+                        Severity = alertSeverity,
+                        AlertMessage = issue.IssueDescription,
+                        CreatedDate = DateTime.UtcNow,
+                        IsResolved = false
+                    });
+                }
                 }
 
                 // Add overall quality alerts
                 if (metrics.OverallQualityScore < 70)
                 {
+                    var alertEntity = new DATA_QUALITY_ALERT
+                    {
+                        ALERT_ID = Guid.NewGuid().ToString(),
+                        TABLE_NAME = tableName,
+                        SEVERITY = QualityAlertSeverity.High.ToString(),
+                        ALERT_MESSAGE = $"Overall quality score is below threshold: {metrics.OverallQualityScore:F2}%",
+                        CREATED_DATE = DateTime.UtcNow,
+                        RESOLVED_IND = _defaults?.GetActiveIndicatorNo() ?? "N",
+                        ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString(),
+                        ROW_CREATED_DATE = DateTime.UtcNow,
+                        ROW_CREATED_BY = "SYSTEM"
+                    };
+
+                    await _alertRepository.InsertAsync(alertEntity, "SYSTEM");
+
                     alerts.Add(new QualityAlert
                     {
-                        AlertId = Guid.NewGuid().ToString(),
+                        AlertId = alertEntity.ALERT_ID,
                         TableName = tableName,
                         Severity = QualityAlertSeverity.High,
-                        AlertMessage = $"Overall quality score is below threshold: {metrics.OverallQualityScore:F2}%",
+                        AlertMessage = alertEntity.ALERT_MESSAGE,
                         CreatedDate = DateTime.UtcNow,
                         IsResolved = false
                     });
@@ -168,6 +281,36 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             {
                 // Get alerts for all tables (would need to iterate through all tables)
                 // For now, return empty list
+            }
+
+            // If no table specified, query all active alerts from database
+            if (string.IsNullOrWhiteSpace(tableName))
+            {
+                var filters = new List<TheTechIdea.Beep.Report.AppFilter>
+                {
+                    new TheTechIdea.Beep.Report.AppFilter { FieldName = "RESOLVED_IND", Operator = "=", FilterValue = _defaults?.GetActiveIndicatorNo() ?? "N" },
+                    new TheTechIdea.Beep.Report.AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults?.GetActiveIndicatorYes() ?? "Y" }
+                };
+
+                if (severity.HasValue)
+                {
+                    filters.Add(new TheTechIdea.Beep.Report.AppFilter { FieldName = "SEVERITY", Operator = "=", FilterValue = severity.Value.ToString() });
+                }
+
+                var alertEntities = await _alertRepository.GetAsync(filters);
+                alerts = alertEntities
+                    .Cast<DATA_QUALITY_ALERT>()
+                    .Select(a => new QualityAlert
+                    {
+                        AlertId = a.ALERT_ID,
+                        TableName = a.TABLE_NAME,
+                        FieldName = a.FIELD_NAME,
+                        Severity = Enum.TryParse<QualityAlertSeverity>(a.SEVERITY, out var sev) ? sev : QualityAlertSeverity.Low,
+                        AlertMessage = a.ALERT_MESSAGE,
+                        CreatedDate = a.CREATED_DATE ?? DateTime.UtcNow,
+                        IsResolved = a.RESOLVED_IND == (_defaults?.GetActiveIndicatorYes() ?? "Y")
+                    })
+                    .ToList();
             }
 
             return alerts.OrderByDescending(a => a.Severity).ThenByDescending(a => a.CreatedDate).ToList();

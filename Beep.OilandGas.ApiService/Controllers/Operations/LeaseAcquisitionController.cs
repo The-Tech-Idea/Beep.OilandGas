@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.DTOs.Lease;
+using Beep.OilandGas.Models.DTOs.Operations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -84,11 +85,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-    }
-
-    public class UpdateLeaseStatusRequest
-    {
-        public string Status { get; set; } = string.Empty;
     }
 }
 

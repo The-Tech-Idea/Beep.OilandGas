@@ -23,15 +23,10 @@ using TheTechIdea.Beep.Container;
 using TheTechIdea.Beep.Container.Services;
 using TheTechIdea.Beep.Addin;
 using Microsoft.OpenApi;
-using Beep.OilandGas.ApiService.Services;
+using Beep.OilandGas.PPDM39.DataManagement.Services;
+using Beep.OilandGas.PPDM39.DataManagement.Data;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ProductionAccounting.GeneralLedger;
-using Beep.OilandGas.UserManagement.DependencyInjection;
-using Beep.OilandGas.UserManagement.AspNetCore.DependencyInjection;
-using Beep.OilandGas.UserManagement.Services;
-using Beep.OilandGas.UserManagement.Core.Authorization;
-using Beep.OilandGas.Models.Core.Interfaces.Security;
-using Beep.OilandGas.DataManager.DependencyInjection;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -528,42 +523,17 @@ builder.Services.AddScoped<IUserProfileService>(sp =>
         editor, commonColumnHandler, defaults, metadata, mappingService, accessControlService, connectionName);
 });
 
-// ============================================
-// REGISTER USER MANAGEMENT SERVICES
-// ============================================
-var securityConnectionName = builder.Configuration["ConnectionStrings:Security"] ?? connectionName;
-
-// Register UserManagement with connection name - automatically registers all services
-builder.Services.AddUserManagement(securityConnectionName);
-builder.Services.AddUserManagementAspNetCore();
-
-builder.Services.AddPermissionPolicy("ProductionAccounting:Read", "Module:ProductionAccounting:Read");
-builder.Services.AddPermissionPolicy("ProductionAccounting:Write", "Module:ProductionAccounting:Write");
-builder.Services.AddPermissionPolicy("NodalAnalysis:Execute", "Module:NodalAnalysis:Execute");
-builder.Services.AddPermissionPolicy("DataManagement:Read", "Module:DataManagement:Read");
-builder.Services.AddPermissionPolicy("DataManagement:Write", "Module:DataManagement:Write");
-
-// ============================================
-// REGISTER DATA MANAGER SERVICES
-// ============================================
-// Register DataManager services for centralized script execution
-builder.Services.AddDataManager(options =>
-{
-    options.StateStoreType = StateStoreType.File;
-    options.StateDirectory = Path.Combine(AppContext.BaseDirectory, "ExecutionStates");
-});
-
 // PPDM39 Setup Service
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PPDM39SetupService>();
+builder.Services.AddScoped<PPDM39SetupService>();
 
 // Connection Service (for exposing IDMEEditor connections)
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.ConnectionService>(sp =>
+builder.Services.AddScoped<ConnectionService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
-    var setupService = sp.GetRequiredService<Beep.OilandGas.ApiService.Services.PPDM39SetupService>();
+    var setupService = sp.GetRequiredService<PPDM39SetupService>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-    var logger = loggerFactory.CreateLogger<Beep.OilandGas.ApiService.Services.ConnectionService>();
-    return new Beep.OilandGas.ApiService.Services.ConnectionService(editor, setupService, logger);
+    var logger = loggerFactory.CreateLogger<ConnectionService>();
+    return new ConnectionService(editor, setupService, logger);
 });
 
 // PPDM Database Creator Service
@@ -648,30 +618,30 @@ builder.Services.AddScoped<Beep.OilandGas.PPDM39.DataManagement.SeedData.Service
 });
 
 // PPDM39 Data Service
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PPDM39DataService>(sp =>
+builder.Services.AddScoped<PPDM39DataService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
     var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-    var logger = loggerFactory.CreateLogger<Beep.OilandGas.ApiService.Services.PPDM39DataService>();
+    var logger = loggerFactory.CreateLogger<PPDM39DataService>();
     var progressTracking = sp.GetService<IProgressTrackingService>();
-    return new Beep.OilandGas.ApiService.Services.PPDM39DataService(
+    return new PPDM39DataService(
         editor, commonColumnHandler, defaults, metadata, logger, loggerFactory, progressTracking);
 });
 
 // PPDM39 Workflow Service
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.PPDM39WorkflowService>(sp =>
+builder.Services.AddScoped<PPDM39WorkflowService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
     var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-    var logger = loggerFactory.CreateLogger<Beep.OilandGas.ApiService.Services.PPDM39WorkflowService>();
+    var logger = loggerFactory.CreateLogger<PPDM39WorkflowService>();
     var progressTracking = sp.GetService<IProgressTrackingService>();
-    return new Beep.OilandGas.ApiService.Services.PPDM39WorkflowService(
+    return new PPDM39WorkflowService(
         editor, commonColumnHandler, defaults, metadata, logger, progressTracking);
 });
 
@@ -682,37 +652,37 @@ builder.Services.AddHttpContextAccessor();
 // DEMO DATABASE SERVICES
 // ============================================
 // Configure DemoDatabase settings
-builder.Services.Configure<Beep.OilandGas.ApiService.Models.DemoDatabaseConfig>(
+builder.Services.Configure<Beep.OilandGas.Models.DTOs.DataManagement.DemoDatabaseConfig>(
     builder.Configuration.GetSection("DemoDatabase"));
 
 // Demo Database Repository
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Data.DemoDatabaseRepository>(sp =>
+builder.Services.AddScoped<DemoDatabaseRepository>(sp =>
 {
-    var config = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Beep.OilandGas.ApiService.Models.DemoDatabaseConfig>>().Value;
+    var config = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Beep.OilandGas.Models.DTOs.DataManagement.DemoDatabaseConfig>>().Value;
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-    var logger = loggerFactory.CreateLogger<Beep.OilandGas.ApiService.Data.DemoDatabaseRepository>();
-    return new Beep.OilandGas.ApiService.Data.DemoDatabaseRepository(config.StoragePath, logger);
+    var logger = loggerFactory.CreateLogger<DemoDatabaseRepository>();
+    return new DemoDatabaseRepository(config.StoragePath, logger);
 });
 
 // Demo Database Service
-builder.Services.AddScoped<Beep.OilandGas.ApiService.Services.DemoDatabaseService>(sp =>
+builder.Services.AddScoped<DemoDatabaseService>(sp =>
 {
-    var config = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Beep.OilandGas.ApiService.Models.DemoDatabaseConfig>>();
-    var repository = sp.GetRequiredService<Beep.OilandGas.ApiService.Data.DemoDatabaseRepository>();
+    var config = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Beep.OilandGas.Models.DTOs.DataManagement.DemoDatabaseConfig>>();
+    var repository = sp.GetRequiredService<DemoDatabaseRepository>();
     var editor = sp.GetRequiredService<IDMEEditor>();
     var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-    var setupService = sp.GetRequiredService<Beep.OilandGas.ApiService.Services.PPDM39SetupService>();
+    var setupService = sp.GetRequiredService<PPDM39SetupService>();
     var referenceDataSeeder = sp.GetService<Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMReferenceDataSeeder>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-    var logger = loggerFactory.CreateLogger<Beep.OilandGas.ApiService.Services.DemoDatabaseService>();
-    return new Beep.OilandGas.ApiService.Services.DemoDatabaseService(
+    var logger = loggerFactory.CreateLogger<DemoDatabaseService>();
+    return new DemoDatabaseService(
         config, repository, editor, commonColumnHandler, defaults, metadata, setupService, referenceDataSeeder, logger);
 });
 
 // Demo Database Cleanup Service (Background Service)
-builder.Services.AddHostedService<Beep.OilandGas.ApiService.Services.DemoDatabaseCleanupService>();
+builder.Services.AddHostedService<DemoDatabaseCleanupService>();
 
 // ============================================
 // REGISTER OIL & GAS CALCULATION SERVICES

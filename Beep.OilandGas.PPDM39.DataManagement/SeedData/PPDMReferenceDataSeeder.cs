@@ -6,9 +6,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Common;
 using Beep.OilandGas.Models.DTOs;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 
@@ -23,6 +25,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
+        private readonly LOVManagementService _lovService;
         private readonly string _connectionName;
 
         public PPDMReferenceDataSeeder(
@@ -30,12 +33,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
+            LOVManagementService lovService,
             string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+            _lovService = lovService ?? throw new ArgumentNullException(nameof(lovService));
             _connectionName = connectionName;
         }
 
@@ -46,22 +51,152 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
         {
             try
             {
+                var tableType = LOVManagementService.GetTableType(tableName);
+                
+                // Use LOVManagementService for LIST_OF_VALUE, R_*, and RA_* tables
+                if (tableType == Beep.OilandGas.PPDM39.DataManagement.Services.ReferenceTableType.ListOfValue || 
+                    tableType == Beep.OilandGas.PPDM39.DataManagement.Services.ReferenceTableType.RTable || 
+                    tableType == Beep.OilandGas.PPDM39.DataManagement.Services.ReferenceTableType.RATable)
+                {
+                    // Get entity type
+                    var entityType = await _lovService.GetEntityTypeAsync(tableName);
+                    if (entityType == null)
+                    {
+                        throw new InvalidOperationException($"Entity type not found for table: {tableName}");
+                    }
+
+                    // Check if it's LIST_OF_VALUE for direct handling
+                    if (tableType == Beep.OilandGas.PPDM39.DataManagement.Services.ReferenceTableType.ListOfValue && entityType == typeof(LIST_OF_VALUE))
+                    {
+                        var lovsToImport = new List<LIST_OF_VALUE>();
+                        
+                        foreach (var dataRow in seedData)
+                        {
+                            try
+                            {
+                                var lov = new LIST_OF_VALUE();
+                                
+                                // Set properties from seed data
+                                foreach (var kvp in dataRow)
+                                {
+                                    var prop = typeof(LIST_OF_VALUE).GetProperty(kvp.Key, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                                    if (prop != null && prop.CanWrite)
+                                    {
+                                        var value = ConvertValue(kvp.Value, prop.PropertyType);
+                                        prop.SetValue(lov, value);
+                                    }
+                                }
+
+                                // Set defaults if not provided
+                                if (string.IsNullOrEmpty(lov.LIST_OF_VALUE_ID))
+                                {
+                                    lov.LIST_OF_VALUE_ID = Guid.NewGuid().ToString();
+                                }
+                                if (string.IsNullOrEmpty(lov.ACTIVE_IND))
+                                {
+                                    lov.ACTIVE_IND = "Y";
+                                }
+
+                                lovsToImport.Add(lov);
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log error but continue with next row
+                                Console.WriteLine($"Error preparing LOV row: {ex.Message}");
+                            }
+                        }
+
+                        // Bulk import using LOVManagementService
+                        if (lovsToImport.Any())
+                        {
+                            var bulkResult = await _lovService.BulkAddLOVsAsync(lovsToImport, userId, true, _connectionName);
+                            return bulkResult.TotalInserted;
+                        }
+
+                        return 0;
+                    }
+                    else
+                    {
+                        // Use generic method for R_* and RA_* tables
+                        var entitiesToImport = new List<object>();
+                        
+                        foreach (var dataRow in seedData)
+                        {
+                            try
+                            {
+                                var entity = Activator.CreateInstance(entityType);
+                                if (entity == null)
+                                {
+                                    continue;
+                                }
+
+                                // Set properties from seed data
+                                foreach (var kvp in dataRow)
+                                {
+                                    var prop = entityType.GetProperty(kvp.Key, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                                    if (prop != null && prop.CanWrite)
+                                    {
+                                        var value = ConvertValue(kvp.Value, prop.PropertyType);
+                                        prop.SetValue(entity, value);
+                                    }
+                                }
+
+                                // Set defaults if needed
+                                if (entity is IPPDMEntity ppdmEntity)
+                                {
+                                    var activeIndProp = entityType.GetProperty("ACTIVE_IND", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+                                    if (activeIndProp != null && activeIndProp.GetValue(entity) == null)
+                                    {
+                                        activeIndProp.SetValue(entity, "Y");
+                                    }
+                                }
+
+                                entitiesToImport.Add(entity);
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log error but continue with next row
+                                Console.WriteLine($"Error preparing {tableName} row: {ex.Message}");
+                            }
+                        }
+
+                        // Use reflection to call generic BulkAddReferenceValuesAsync
+                        if (entitiesToImport.Any())
+                        {
+                            var method = typeof(LOVManagementService).GetMethod("BulkAddReferenceValuesAsync", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                            if (method != null)
+                            {
+                                var genericMethod = method.MakeGenericMethod(entityType);
+                                var task = genericMethod.Invoke(_lovService, new object[] { entitiesToImport, userId, true, _connectionName }) as Task<BulkReferenceResult>;
+                                if (task != null)
+                                {
+                                    var bulkResult = await task;
+                                    return bulkResult.TotalInserted;
+                                }
+                            }
+                        }
+
+                        return 0;
+                    }
+                }
+
+                // Fallback: Generic handling for other tables (non-reference tables)
                 var metadata = await _metadata.GetTableMetadataAsync(tableName);
                 if (metadata == null)
                 {
                     throw new InvalidOperationException($"Table metadata not found for: {tableName}");
                 }
 
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}") ??
+                var fallbackEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}") ??
                                 Type.GetType($"Beep.OilandGas.Models.Data.{metadata.EntityTypeName}");
 
-                if (entityType == null)
+                if (fallbackEntityType == null)
                 {
                     throw new InvalidOperationException($"Entity type not found for table: {tableName}");
                 }
 
                 var repository = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, tableName);
+                    fallbackEntityType, _connectionName, tableName);
 
                 int seeded = 0;
 
@@ -69,8 +204,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                 {
                     try
                     {
-                        var entity = Activator.CreateInstance(entityType);
-                        var entityTypeInfo = entityType;
+                        var entity = Activator.CreateInstance(fallbackEntityType);
+                        var entityTypeInfo = fallbackEntityType;
 
                         // Set properties from seed data
                         foreach (var kvp in dataRow)
@@ -318,9 +453,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
 
                 if (root.TryGetProperty("standards", out var standards))
                 {
-                    // Import API, ISO, and Regulatory standards to LIST_OF_VALUE
-                    var lovRepository = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                        typeof(Beep.OilandGas.Models.Data.LIST_OF_VALUE), connectionName, "LIST_OF_VALUE");
+                    // Import API, ISO, and Regulatory standards to LIST_OF_VALUE using LOVManagementService
+                    var lovsToImport = new List<LIST_OF_VALUE>();
 
                     foreach (var standardType in standards.EnumerateObject())
                     {
@@ -341,7 +475,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
 
                                     if (storeInLOV)
                                     {
-                                        var lov = new Beep.OilandGas.Models.Data.LIST_OF_VALUE
+                                        var lov = new LIST_OF_VALUE
                                         {
                                             LIST_OF_VALUE_ID = Guid.NewGuid().ToString(),
                                             VALUE_TYPE = valueType ?? standardName,
@@ -353,28 +487,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                                             ACTIVE_IND = "Y"
                                         };
 
-                                        if (skipExisting)
-                                        {
-                                            var filters = new List<TheTechIdea.Beep.Report.AppFilter>
-                                            {
-                                                new TheTechIdea.Beep.Report.AppFilter { FieldName = "VALUE_TYPE", Operator = "=", FilterValue = valueType },
-                                                new TheTechIdea.Beep.Report.AppFilter { FieldName = "VALUE_CODE", Operator = "=", FilterValue = code }
-                                            };
-                                            var existing = await lovRepository.GetAsync(filters);
-                                            if (existing.Any())
-                                            {
-                                                response.RecordsSkipped++;
-                                                continue;
-                                            }
-                                        }
-
-                                        if (lov is IPPDMEntity lovEntity)
-                                            _commonColumnHandler.PrepareForInsert(lovEntity, userId);
-                                        var inserted = await lovRepository.InsertAsync(lov, userId);
-                                        if (inserted != null)
-                                        {
-                                            response.RecordsInserted++;
-                                        }
+                                        lovsToImport.Add(lov);
                                     }
                                 }
                                 catch (Exception ex)
@@ -383,6 +496,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
                                 }
                             }
                         }
+                    }
+
+                    // Bulk import using LOVManagementService
+                    if (lovsToImport.Any())
+                    {
+                        var bulkResult = await _lovService.BulkAddLOVsAsync(lovsToImport, userId, skipExisting, connectionName);
+                        response.RecordsInserted += bulkResult.TotalInserted;
+                        response.RecordsSkipped += bulkResult.TotalSkipped;
+                        response.Errors.AddRange(bulkResult.Errors);
                     }
                 }
             }

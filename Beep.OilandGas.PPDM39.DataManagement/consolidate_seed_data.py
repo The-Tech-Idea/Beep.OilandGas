@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
-Script to consolidate PPDM seed data from PPDMCSVData.json into PPDMReferenceData.json
+Script to consolidate PPDM seed data from CSV files into PPDMReferenceData.json
+Note: PPDMCSVData.json has been removed and consolidated into PPDMReferenceData.json
+This script can be used to update PPDMReferenceData.json from CSV files if needed
 """
 import json
 import os
@@ -197,7 +199,13 @@ def convert_csv_row_to_json(row: List[str], headers: List[str], table_name: str,
     return None
 
 def process_csv_data(csv_data_path: str) -> Dict[str, List[Dict]]:
-    """Process PPDMCSVData.json and convert to structured format"""
+    """Process CSV data JSON file and convert to structured format
+    Note: PPDMCSVData.json has been removed - this function can process CSV data from other sources if needed"""
+    if not os.path.exists(csv_data_path):
+        print(f"Warning: CSV data file not found: {csv_data_path}")
+        print("Note: PPDMCSVData.json has been removed and consolidated into PPDMReferenceData.json")
+        return {}
+    
     csv_data = load_json(csv_data_path)
     
     # Group by mapped table name
@@ -305,7 +313,7 @@ def consolidate_data(csv_data_path: str, reference_data_path: str, output_path: 
             print(f"  Added new table {table_name} with {len(csv_items)} items")
     
     # Update description
-    reference_data['description'] = "PPDM standard reference tables (RA_* tables) with comprehensive standard values. This file contains consolidated seed data from PPDMCSVData.json and additional priority tables."
+    reference_data['description'] = "PPDM standard reference tables (RA_* tables) with comprehensive standard values. This file contains consolidated seed data from CSV files and additional priority tables."
     
     print(f"\nSummary:")
     print(f"  New tables added: {len(new_tables)}")
@@ -317,9 +325,17 @@ def consolidate_data(csv_data_path: str, reference_data_path: str, output_path: 
 
 if __name__ == '__main__':
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    csv_data_path = os.path.join(base_dir, 'Core', 'SeedData', 'PPDMCSVData.json')
+    # Note: PPDMCSVData.json has been removed from Core/SeedData
+    # If you need to consolidate from CSV files, provide the path to a CSV data JSON file
+    # Otherwise, this script can be used to update existing PPDMReferenceData.json
+    csv_data_path = None  # Set to CSV data JSON path if available
     reference_data_path = os.path.join(base_dir, 'SeedData', 'Templates', 'PPDMReferenceData.json')
     output_path = reference_data_path  # Overwrite the original
     
-    consolidate_data(csv_data_path, reference_data_path, output_path)
+    if csv_data_path and os.path.exists(csv_data_path):
+        consolidate_data(csv_data_path, reference_data_path, output_path)
+    else:
+        print("Note: PPDMCSVData.json has been removed and consolidated into PPDMReferenceData.json")
+        print(f"PPDMReferenceData.json is located at: {reference_data_path}")
+        print("If you need to update from CSV files, provide a CSV data JSON file path.")
 

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.DTOs.Calculations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -84,18 +85,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-    }
-
-    public class PerformNodalAnalysisRequest
-    {
-        public string WellUWI { get; set; } = string.Empty;
-        public NodalAnalysisParametersDto AnalysisParameters { get; set; } = null!;
-    }
-
-    public class OptimizeSystemRequest
-    {
-        public string WellUWI { get; set; } = string.Empty;
-        public OptimizationGoalsDto OptimizationGoals { get; set; } = null!;
     }
 }
 

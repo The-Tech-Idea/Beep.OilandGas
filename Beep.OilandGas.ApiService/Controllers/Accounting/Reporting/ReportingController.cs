@@ -11,6 +11,7 @@ using Beep.OilandGas.ProductionAccounting.Inventory;
 using Beep.OilandGas.ProductionAccounting.Models;
 using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Services;
+using Beep.OilandGas.Models.DTOs.Accounting.Reporting;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
@@ -135,17 +136,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         }
     }
 
-    public class GenerateOperationalReportRequest
-    {
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-    }
-
-    public class GenerateLeaseReportRequest
-    {
-        public string LeaseId { get; set; } = string.Empty;
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-    }
 }
 

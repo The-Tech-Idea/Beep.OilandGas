@@ -42,13 +42,6 @@ namespace Beep.OilandGas.Models.Data.Security
             set => SetProperty(ref IS_ACTIVEValue, value);
         }
 
-        // ACTIVE_IND for IPPDMEntity (maps to IS_ACTIVE)
-        public string ACTIVE_IND
-        {
-            get => IS_ACTIVE ? "Y" : "N";
-            set => IS_ACTIVE = value == "Y";
-        }
-
         private string TENANT_IDValue;
         public string TENANT_ID
         {
@@ -97,70 +90,6 @@ namespace Beep.OilandGas.Models.Data.Security
         {
             get => ROW_CHANGED_BYValue;
             set => SetProperty(ref ROW_CHANGED_BYValue, value);
-        }
-
-        private DateTime? ROW_EFFECTIVE_DATEValue;
-        public DateTime? ROW_EFFECTIVE_DATE
-        {
-            get => ROW_EFFECTIVE_DATEValue;
-            set => SetProperty(ref ROW_EFFECTIVE_DATEValue, value);
-        }
-
-        private DateTime? ROW_EXPIRY_DATEValue;
-        public DateTime? ROW_EXPIRY_DATE
-        {
-            get => ROW_EXPIRY_DATEValue;
-            set => SetProperty(ref ROW_EXPIRY_DATEValue, value);
-        }
-
-        // Optional IPPDMEntity properties
-        private string AREA_IDValue;
-        public string AREA_ID
-        {
-            get => AREA_IDValue;
-            set => SetProperty(ref AREA_IDValue, value);
-        }
-
-        private string AREA_TYPEValue;
-        public string AREA_TYPE
-        {
-            get => AREA_TYPEValue;
-            set => SetProperty(ref AREA_TYPEValue, value);
-        }
-
-        private string BUSINESS_ASSOCIATE_IDValue;
-        public string BUSINESS_ASSOCIATE_ID
-        {
-            get => BUSINESS_ASSOCIATE_IDValue;
-            set => SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value);
-        }
-
-        private DateTime? EFFECTIVE_DATEValue;
-        public DateTime? EFFECTIVE_DATE
-        {
-            get => EFFECTIVE_DATEValue;
-            set => SetProperty(ref EFFECTIVE_DATEValue, value);
-        }
-
-        private DateTime? EXPIRY_DATEValue;
-        public DateTime? EXPIRY_DATE
-        {
-            get => EXPIRY_DATEValue;
-            set => SetProperty(ref EXPIRY_DATEValue, value);
-        }
-
-        private string SOURCEValue;
-        public string SOURCE
-        {
-            get => SOURCEValue;
-            set => SetProperty(ref SOURCEValue, value);
-        }
-
-        private string REMARKValue;
-        public string REMARK
-        {
-            get => REMARKValue;
-            set => SetProperty(ref REMARKValue, value);
         }
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.GasLift;
 using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.DTOs.Calculations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -93,22 +94,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-    }
-
-    public class AnalyzeGasLiftPotentialRequest
-    {
-        public GasLiftWellProperties WellProperties { get; set; } = null!;
-        public decimal MinGasInjectionRate { get; set; }
-        public decimal MaxGasInjectionRate { get; set; }
-        public int NumberOfPoints { get; set; } = 50;
-    }
-
-    public class DesignValvesRequest
-    {
-        public GasLiftWellProperties WellProperties { get; set; } = null!;
-        public decimal GasInjectionPressure { get; set; }
-        public int NumberOfValves { get; set; }
-        public bool UseSIUnits { get; set; } = false;
     }
 }
 

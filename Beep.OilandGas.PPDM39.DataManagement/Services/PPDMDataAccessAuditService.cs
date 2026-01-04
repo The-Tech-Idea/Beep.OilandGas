@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.DTOs;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -24,10 +25,6 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         private readonly string _connectionName;
         private readonly PPDMGenericRepository _auditRepository;
 
-        // In-memory cache for audit events (can be persisted to database)
-        private readonly List<DataAccessEvent> _auditCache = new List<DataAccessEvent>();
-        private readonly object _auditLock = new object();
-
         public PPDMDataAccessAuditService(
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
@@ -41,8 +38,15 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName;
 
-            // Create repository for audit table (could use a dedicated AUDIT_LOG table)
-            // For now, using in-memory storage
+            // Create repository for audit table
+            _auditRepository = new PPDMGenericRepository(
+                _editor,
+                _commonColumnHandler,
+                _defaults,
+                _metadata,
+                typeof(DATA_ACCESS_AUDIT),
+                _connectionName,
+                "DATA_ACCESS_AUDIT");
         }
 
         /// <summary>
@@ -53,28 +57,28 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (accessEvent == null)
                 throw new ArgumentNullException(nameof(accessEvent));
 
-            // Generate event ID if not provided
-            if (string.IsNullOrWhiteSpace(accessEvent.EventId))
+            // Convert DTO to entity
+            var auditEntity = new DATA_ACCESS_AUDIT
             {
-                accessEvent.EventId = Guid.NewGuid().ToString();
-            }
+                ACCESS_AUDIT_ID = string.IsNullOrWhiteSpace(accessEvent.EventId) ? Guid.NewGuid().ToString() : accessEvent.EventId,
+                USER_ID = accessEvent.UserId,
+                TABLE_NAME = accessEvent.TableName,
+                ENTITY_ID = accessEvent.EntityId?.ToString() ?? string.Empty,
+                ACCESS_TYPE = accessEvent.AccessType,
+                ACCESS_DATE = accessEvent.AccessDate == default(DateTime) ? DateTime.UtcNow : accessEvent.AccessDate,
+                IP_ADDRESS = accessEvent.IpAddress,
+                SESSION_ID = accessEvent.ApplicationName, // Map ApplicationName to SESSION_ID
+                REMARK = accessEvent.Metadata != null && accessEvent.Metadata.Any() 
+                    ? System.Text.Json.JsonSerializer.Serialize(accessEvent.Metadata) 
+                    : null,
+                ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                ROW_CREATED_DATE = DateTime.UtcNow,
+                ROW_CREATED_BY = accessEvent.UserId
+            };
 
-            // Set access date if not provided
-            if (accessEvent.AccessDate == default(DateTime))
-            {
-                accessEvent.AccessDate = DateTime.UtcNow;
-            }
-
-            // Store in cache (in production, persist to database)
-            lock (_auditLock)
-            {
-                _auditCache.Add(accessEvent);
-            }
-
-            // Optionally persist to database here
-            // await PersistAuditEventAsync(accessEvent);
-
-            await Task.CompletedTask;
+            // Persist to database
+            await _auditRepository.InsertAsync(auditEntity, accessEvent.UserId);
         }
 
         /// <summary>
@@ -87,16 +91,21 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (entityId == null)
                 throw new ArgumentNullException(nameof(entityId));
 
-            lock (_auditLock)
+            // Query database for access history
+            var filters = new List<TheTechIdea.Beep.Report.AppFilter>
             {
-                var history = _auditCache
-                    .Where(e => e.TableName.Equals(tableName, StringComparison.OrdinalIgnoreCase) &&
-                                e.EntityId?.ToString() == entityId.ToString())
-                    .OrderByDescending(e => e.AccessDate)
-                    .ToList();
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "TABLE_NAME", Operator = "=", FilterValue = tableName },
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "ENTITY_ID", Operator = "=", FilterValue = entityId.ToString() },
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults?.GetActiveIndicatorYes() ?? "Y" }
+            };
 
-                return Task.FromResult(history).Result;
-            }
+            var auditEntities = await _auditRepository.GetAsync(filters);
+            
+            return auditEntities
+                .Cast<DATA_ACCESS_AUDIT>()
+                .OrderByDescending(e => e.ACCESS_DATE)
+                .Select(MapToDataAccessEvent)
+                .ToList();
         }
 
         /// <summary>
@@ -107,27 +116,30 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
-            lock (_auditLock)
+            // Query database for user access history
+            var filters = new List<TheTechIdea.Beep.Report.AppFilter>
             {
-                var query = _auditCache
-                    .Where(e => e.UserId.Equals(userId, StringComparison.OrdinalIgnoreCase));
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "USER_ID", Operator = "=", FilterValue = userId },
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults?.GetActiveIndicatorYes() ?? "Y" }
+            };
 
-                if (fromDate.HasValue)
-                {
-                    query = query.Where(e => e.AccessDate >= fromDate.Value);
-                }
-
-                if (toDate.HasValue)
-                {
-                    query = query.Where(e => e.AccessDate <= toDate.Value);
-                }
-
-                var history = query
-                    .OrderByDescending(e => e.AccessDate)
-                    .ToList();
-
-                return Task.FromResult(history).Result;
+            if (fromDate.HasValue)
+            {
+                filters.Add(new TheTechIdea.Beep.Report.AppFilter { FieldName = "ACCESS_DATE", Operator = ">=", FilterValue = fromDate.Value.ToString() });
             }
+
+            if (toDate.HasValue)
+            {
+                filters.Add(new TheTechIdea.Beep.Report.AppFilter { FieldName = "ACCESS_DATE", Operator = "<=", FilterValue = toDate.Value.ToString() });
+            }
+
+            var auditEntities = await _auditRepository.GetAsync(filters);
+            
+            return auditEntities
+                .Cast<DATA_ACCESS_AUDIT>()
+                .OrderByDescending(e => e.ACCESS_DATE)
+                .Select(MapToDataAccessEvent)
+                .ToList();
         }
 
         /// <summary>
@@ -135,47 +147,83 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// </summary>
         public async Task<AccessStatistics> GetAccessStatisticsAsync(string tableName = null, DateTime? fromDate = null, DateTime? toDate = null)
         {
-            lock (_auditLock)
+            // Query database for access events
+            var filters = new List<TheTechIdea.Beep.Report.AppFilter>
             {
-                var query = _auditCache.AsQueryable();
+                new TheTechIdea.Beep.Report.AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults?.GetActiveIndicatorYes() ?? "Y" }
+            };
 
-                if (!string.IsNullOrWhiteSpace(tableName))
-                {
-                    query = query.Where(e => e.TableName.Equals(tableName, StringComparison.OrdinalIgnoreCase));
-                }
-
-                if (fromDate.HasValue)
-                {
-                    query = query.Where(e => e.AccessDate >= fromDate.Value);
-                }
-
-                if (toDate.HasValue)
-                {
-                    query = query.Where(e => e.AccessDate <= toDate.Value);
-                }
-
-                var events = query.ToList();
-
-                var stats = new AccessStatistics
-                {
-                    TableName = tableName,
-                    FromDate = fromDate ?? DateTime.MinValue,
-                    ToDate = toDate ?? DateTime.MaxValue,
-                    TotalAccessEvents = events.Count,
-                    UniqueUsers = events.Select(e => e.UserId).Distinct().Count(),
-                    ReadOperations = events.Count(e => e.AccessType == "Read"),
-                    WriteOperations = events.Count(e => e.AccessType == "Write"),
-                    DeleteOperations = events.Count(e => e.AccessType == "Delete"),
-                    AccessByUser = events
-                        .GroupBy(e => e.UserId)
-                        .ToDictionary(g => g.Key, g => g.Count()),
-                    AccessByType = events
-                        .GroupBy(e => e.AccessType)
-                        .ToDictionary(g => g.Key, g => g.Count())
-                };
-
-                return Task.FromResult(stats).Result;
+            if (!string.IsNullOrWhiteSpace(tableName))
+            {
+                filters.Add(new TheTechIdea.Beep.Report.AppFilter { FieldName = "TABLE_NAME", Operator = "=", FilterValue = tableName });
             }
+
+            if (fromDate.HasValue)
+            {
+                filters.Add(new TheTechIdea.Beep.Report.AppFilter { FieldName = "ACCESS_DATE", Operator = ">=", FilterValue = fromDate.Value.ToString() });
+            }
+
+            if (toDate.HasValue)
+            {
+                filters.Add(new TheTechIdea.Beep.Report.AppFilter { FieldName = "ACCESS_DATE", Operator = "<=", FilterValue = toDate.Value.ToString() });
+            }
+
+            var auditEntities = await _auditRepository.GetAsync(filters);
+            var events = auditEntities.Cast<DATA_ACCESS_AUDIT>().ToList();
+
+            var stats = new AccessStatistics
+            {
+                TableName = tableName,
+                FromDate = fromDate ?? DateTime.MinValue,
+                ToDate = toDate ?? DateTime.MaxValue,
+                TotalAccessEvents = events.Count,
+                UniqueUsers = events.Select(e => e.USER_ID).Distinct().Count(),
+                ReadOperations = events.Count(e => e.ACCESS_TYPE == "Read"),
+                WriteOperations = events.Count(e => e.ACCESS_TYPE == "Write"),
+                DeleteOperations = events.Count(e => e.ACCESS_TYPE == "Delete"),
+                AccessByUser = events
+                    .GroupBy(e => e.USER_ID)
+                    .ToDictionary(g => g.Key, g => g.Count()),
+                AccessByType = events
+                    .GroupBy(e => e.ACCESS_TYPE)
+                    .ToDictionary(g => g.Key, g => g.Count())
+            };
+
+            return stats;
+        }
+
+        /// <summary>
+        /// Maps DATA_ACCESS_AUDIT entity to DataAccessEvent DTO
+        /// </summary>
+        private DataAccessEvent MapToDataAccessEvent(DATA_ACCESS_AUDIT entity)
+        {
+            var dto = new DataAccessEvent
+            {
+                EventId = entity.ACCESS_AUDIT_ID,
+                UserId = entity.USER_ID,
+                TableName = entity.TABLE_NAME,
+                EntityId = entity.ENTITY_ID,
+                AccessType = entity.ACCESS_TYPE,
+                AccessDate = entity.ACCESS_DATE ?? DateTime.UtcNow,
+                IpAddress = entity.IP_ADDRESS,
+                ApplicationName = entity.SESSION_ID
+            };
+
+            // Deserialize metadata from REMARK if it's JSON
+            if (!string.IsNullOrWhiteSpace(entity.REMARK))
+            {
+                try
+                {
+                    dto.Metadata = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(entity.REMARK) 
+                        ?? new Dictionary<string, object>();
+                }
+                catch
+                {
+                    dto.Metadata = new Dictionary<string, object>();
+                }
+            }
+
+            return dto;
         }
     }
 }

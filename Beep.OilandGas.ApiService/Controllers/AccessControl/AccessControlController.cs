@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.DTOs.AccessControl;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using TheTechIdea.Beep.Report;
 using System.Collections.Generic;
@@ -201,23 +202,5 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-    }
-
-    // Request DTOs for controller actions
-    public class GrantAccessRequest
-    {
-        public string UserId { get; set; } = string.Empty;
-        public string AssetId { get; set; } = string.Empty;
-        public string AssetType { get; set; } = string.Empty;
-        public string AccessLevel { get; set; } = "READ";
-        public bool Inherit { get; set; } = true;
-        public string? OrganizationId { get; set; }
-    }
-
-    public class RevokeAccessRequest
-    {
-        public string UserId { get; set; } = string.Empty;
-        public string AssetId { get; set; } = string.Empty;
-        public string AssetType { get; set; } = string.Empty;
     }
 }

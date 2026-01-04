@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.DTOs;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.ApiService.Services;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
 

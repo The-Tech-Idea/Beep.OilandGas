@@ -1,0 +1,19 @@
+-- Unique index on DEFAULT_KEY, DATABASE_ID, and USER_ID (allows one system default and one per user per database)
+-- Oracle doesn't support filtered indexes, so we create composite unique index that includes USER_ID
+-- For system defaults, USER_ID will be NULL, which Oracle treats as distinct values
+CREATE UNIQUE INDEX "IX_PPDM_DEFAULT_VALUE_KEY_DB_USER" ON "PPDM_DEFAULT_VALUE" ("DEFAULT_KEY", "DATABASE_ID", "USER_ID");
+
+-- Index on DATABASE_ID for filtering by database
+CREATE INDEX "IX_PPDM_DEFAULT_VALUE_DATABASE" ON "PPDM_DEFAULT_VALUE" ("DATABASE_ID");
+
+-- Index on USER_ID for user-specific queries
+CREATE INDEX "IX_PPDM_DEFAULT_VALUE_USER" ON "PPDM_DEFAULT_VALUE" ("USER_ID");
+
+-- Index on DEFAULT_CATEGORY for category filtering
+CREATE INDEX "IX_PPDM_DEFAULT_VALUE_CATEGORY" ON "PPDM_DEFAULT_VALUE" ("DEFAULT_CATEGORY");
+
+-- Index on ACTIVE_IND for active/inactive filtering
+CREATE INDEX "IX_PPDM_DEFAULT_VALUE_ACTIVE" ON "PPDM_DEFAULT_VALUE" ("ACTIVE_IND");
+
+-- Composite index for common query pattern: database + category + active
+CREATE INDEX "IX_PPDM_DEFAULT_VALUE_DB_CAT_ACTIVE" ON "PPDM_DEFAULT_VALUE" ("DATABASE_ID", "DEFAULT_CATEGORY", "ACTIVE_IND");

@@ -6,9 +6,11 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Common;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData.Services;
+using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
 
@@ -25,6 +27,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
         private readonly IPPDMMetadataRepository _metadata;
         private readonly CSVLOVImporter _csvImporter;
         private readonly StandardValueMapper _valueMapper;
+        private readonly LOVManagementService _lovService;
         private readonly string _connectionName;
 
         public IHSStandardValueImporter(
@@ -34,6 +37,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
             IPPDMMetadataRepository metadata,
             CSVLOVImporter csvImporter,
             StandardValueMapper valueMapper,
+            LOVManagementService lovService,
             string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -42,6 +46,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _csvImporter = csvImporter ?? throw new ArgumentNullException(nameof(csvImporter));
             _valueMapper = valueMapper ?? throw new ArgumentNullException(nameof(valueMapper));
+            _lovService = lovService ?? throw new ArgumentNullException(nameof(lovService));
             _connectionName = connectionName;
         }
 
@@ -101,7 +106,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
                                     }
                                     else
                                     {
-                                        // Store in LIST_OF_VALUE
+                                        // Store in LIST_OF_VALUE using LOVManagementService
                                         var lov = new LIST_OF_VALUE
                                         {
                                             LIST_OF_VALUE_ID = Guid.NewGuid().ToString(),
@@ -114,29 +119,13 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData.Services
                                             ACTIVE_IND = "Y"
                                         };
 
-                                        var repository = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                                            typeof(LIST_OF_VALUE), _connectionName, "LIST_OF_VALUE");
-
-                                        if (skipExisting)
+                                        var (inserted, wasInserted, wasSkipped) = await _lovService.AddOrUpdateLOVAsync(lov, userId, skipExisting, _connectionName);
+                                        
+                                        if (wasSkipped)
                                         {
-                                            var filters = new List<TheTechIdea.Beep.Report.AppFilter>
-                                            {
-                                                new TheTechIdea.Beep.Report.AppFilter { FieldName = "VALUE_TYPE", Operator = "=", FilterValue = categoryName },
-                                                new TheTechIdea.Beep.Report.AppFilter { FieldName = "VALUE_CODE", Operator = "=", FilterValue = ihsCode }
-                                            };
-                                            var existing = await repository.GetAsync(filters);
-                                            if (existing.Any())
-                                            {
-                                                result.RecordsSkipped++;
-                                                result.RecordsProcessed++;
-                                                continue;
-                                            }
+                                            result.RecordsSkipped++;
                                         }
-
-                                        if (lov is IPPDMEntity lovEntity)
-                                            _commonColumnHandler.PrepareForInsert(lovEntity, userId);
-                                        var inserted = await repository.InsertAsync(lov, userId);
-                                        if (inserted != null)
+                                        else if (wasInserted && inserted != null)
                                         {
                                             result.RecordsInserted++;
                                         }

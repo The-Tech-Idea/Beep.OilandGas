@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.DTOs.Accounting;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.GeneralLedger;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
@@ -245,23 +246,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         {
             return $"JE-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 6).ToUpper()}";
         }
-    }
-
-    public class CreateJournalEntryRequest
-    {
-        public string? EntryNumber { get; set; }
-        public DateTime? EntryDate { get; set; }
-        public string? EntryType { get; set; }
-        public string? Description { get; set; }
-        public List<JournalEntryLineRequest> Lines { get; set; } = new();
-    }
-
-    public class JournalEntryLineRequest
-    {
-        public string GlAccountId { get; set; } = string.Empty;
-        public decimal? DebitAmount { get; set; }
-        public decimal? CreditAmount { get; set; }
-        public string? Description { get; set; }
     }
 }
 

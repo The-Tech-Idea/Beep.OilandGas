@@ -6,6 +6,7 @@ using Beep.OilandGas.ProductionAccounting.Pricing;
 using Beep.OilandGas.ProductionAccounting.Models;
 using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Services;
+using Beep.OilandGas.Models.DTOs.Accounting.Pricing;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
@@ -166,21 +167,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
         }
     }
 
-    public class PriceIndexRequest
-    {
-        public string IndexName { get; set; } = string.Empty;
-        public DateTime IndexDate { get; set; }
-        public decimal Price { get; set; }
-        public string? Currency { get; set; }
-    }
-
-    public class ValueRunTicketRequest
-    {
-        public string RunTicketNumber { get; set; } = string.Empty;
-        public string PricingMethod { get; set; } = string.Empty;
-        public decimal? FixedPrice { get; set; }
-        public string? IndexName { get; set; }
-        public decimal? Differential { get; set; }
-    }
 }
 

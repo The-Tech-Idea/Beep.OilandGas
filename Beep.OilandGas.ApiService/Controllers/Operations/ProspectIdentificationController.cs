@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs.Operations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -83,12 +84,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-    }
-
-    public class RankProspectsRequest
-    {
-        public List<string> ProspectIds { get; set; } = new();
-        public Dictionary<string, decimal> RankingCriteria { get; set; } = new();
     }
 }
 

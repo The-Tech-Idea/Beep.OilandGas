@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.DTOs;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -24,6 +25,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
+        private readonly PPDMGenericRepository _qualityScoreRepository;
+        private readonly PPDMGenericRepository _qualityMetricsRepository;
+        private readonly PPDMGenericRepository _qualityIssueRepository;
 
         public PPDMDataQualityService(
             IDMEEditor editor,
@@ -37,6 +41,19 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName;
+
+            // Create repositories for quality entities
+            _qualityScoreRepository = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(DATA_QUALITY_SCORE), _connectionName, "DATA_QUALITY_SCORE");
+            
+            _qualityMetricsRepository = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(DATA_QUALITY_METRICS), _connectionName, "DATA_QUALITY_METRICS");
+            
+            _qualityIssueRepository = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(DATA_QUALITY_ISSUE), _connectionName, "DATA_QUALITY_ISSUE");
         }
 
         /// <summary>
@@ -71,7 +88,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
             var overallScore = fieldCount > 0 ? totalScore / fieldCount : 0;
 
-            return new DataQualityScore
+            var qualityScore = new DataQualityScore
             {
                 Entity = entity,
                 TableName = tableName,
@@ -79,6 +96,75 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 FieldScores = fieldScores,
                 Issues = issues
             };
+
+            // Persist quality score to database
+            await SaveQualityScoreAsync(qualityScore, entity, tableName);
+
+            return qualityScore;
+        }
+
+        /// <summary>
+        /// Saves quality score to database
+        /// </summary>
+        private async Task SaveQualityScoreAsync(DataQualityScore score, object entity, string tableName)
+        {
+            // Get entity ID
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            if (metadata == null) return;
+
+            var entityType = entity.GetType();
+            var pkColumn = metadata.PrimaryKeyColumn.Split(',').FirstOrDefault()?.Trim();
+            var pkProperty = entityType.GetProperty(pkColumn, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            if (pkProperty == null) return;
+
+            var entityId = pkProperty.GetValue(entity)?.ToString() ?? string.Empty;
+
+            var qualityScoreEntity = new DATA_QUALITY_SCORE
+            {
+                QUALITY_SCORE_ID = Guid.NewGuid().ToString(),
+                TABLE_NAME = tableName,
+                ENTITY_ID = entityId,
+                OVERALL_SCORE = (decimal)score.OverallScore,
+                SCORE_DATE = DateTime.UtcNow,
+                FIELD_SCORES_JSON = System.Text.Json.JsonSerializer.Serialize(score.FieldScores),
+                ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                ROW_CREATED_DATE = DateTime.UtcNow,
+                ROW_CREATED_BY = "SYSTEM"
+            };
+
+            await _qualityScoreRepository.InsertAsync(qualityScoreEntity, "SYSTEM");
+
+            // Save quality issues
+            foreach (var issue in score.Issues)
+            {
+                await SaveQualityIssueAsync(issue, entityId);
+            }
+        }
+
+        /// <summary>
+        /// Saves quality issue to database
+        /// </summary>
+        private async Task SaveQualityIssueAsync(DataQualityIssue issue, string entityId)
+        {
+            var issueEntity = new DATA_QUALITY_ISSUE
+            {
+                QUALITY_ISSUE_ID = Guid.NewGuid().ToString(),
+                TABLE_NAME = issue.TableName,
+                FIELD_NAME = issue.FieldName,
+                ENTITY_ID = entityId,
+                ISSUE_TYPE = issue.IssueType,
+                ISSUE_DESCRIPTION = issue.IssueDescription,
+                SEVERITY = issue.Severity,
+                ISSUE_DATE = DateTime.UtcNow,
+                RESOLVED_IND = _defaults?.GetActiveIndicatorNo() ?? "N",
+                ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                ROW_CREATED_DATE = DateTime.UtcNow,
+                ROW_CREATED_BY = "SYSTEM"
+            };
+
+            await _qualityIssueRepository.InsertAsync(issueEntity, "SYSTEM");
         }
 
         /// <summary>
@@ -182,7 +268,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             var consistencyScore = 100.0; // Would need cross-field validation
             var overallScore = (completenessScore + accuracyScore + consistencyScore) / 3;
 
-            return new DataQualityMetrics
+            var metrics = new DataQualityMetrics
             {
                 TableName = tableName,
                 TotalRecords = totalRecords,
@@ -194,6 +280,38 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 OverallQualityScore = overallScore,
                 FieldMetrics = fieldMetrics
             };
+
+            // Persist metrics to database
+            await SaveQualityMetricsAsync(metrics);
+
+            return metrics;
+        }
+
+        /// <summary>
+        /// Saves quality metrics to database
+        /// </summary>
+        private async Task SaveQualityMetricsAsync(DataQualityMetrics metrics)
+        {
+            var metricsEntity = new DATA_QUALITY_METRICS
+            {
+                METRICS_ID = Guid.NewGuid().ToString(),
+                TABLE_NAME = metrics.TableName,
+                TOTAL_RECORDS = metrics.TotalRecords,
+                COMPLETE_RECORDS = metrics.CompleteRecords,
+                INCOMPLETE_RECORDS = metrics.IncompleteRecords,
+                COMPLETENESS_SCORE = (decimal)metrics.CompletenessScore,
+                ACCURACY_SCORE = (decimal)metrics.AccuracyScore,
+                CONSISTENCY_SCORE = (decimal)metrics.ConsistencyScore,
+                OVERALL_QUALITY_SCORE = (decimal)metrics.OverallQualityScore,
+                METRICS_DATE = DateTime.UtcNow,
+                FIELD_METRICS_JSON = System.Text.Json.JsonSerializer.Serialize(metrics.FieldMetrics),
+                ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                ROW_CREATED_DATE = DateTime.UtcNow,
+                ROW_CREATED_BY = "SYSTEM"
+            };
+
+            await _qualityMetricsRepository.InsertAsync(metricsEntity, "SYSTEM");
         }
 
         /// <summary>

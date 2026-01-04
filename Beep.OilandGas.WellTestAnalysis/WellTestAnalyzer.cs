@@ -1,5 +1,5 @@
 using Beep.OilandGas.WellTestAnalysis.Calculations;
-using Beep.OilandGas.WellTestAnalysis.Models;
+using Beep.OilandGas.Models.WellTestAnalysis;
 using Beep.OilandGas.WellTestAnalysis.Validation;
 
 namespace Beep.OilandGas.WellTestAnalysis

@@ -1,0 +1,1 @@
+-- MEASUREMENT_ACCURACY table has no foreign key constraints

@@ -1,5 +1,5 @@
 using System;
-using Beep.OilandGas.SuckerRodPumping.Models;
+using Beep.OilandGas.Models.SuckerRodPumping;
 using Beep.OilandGas.GasProperties.Calculations;
 
 namespace Beep.OilandGas.SuckerRodPumping.Calculations

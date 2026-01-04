@@ -11,6 +11,7 @@ using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
+using Beep.OilandGas.Models.DTOs.Accounting.Royalty;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
@@ -228,23 +229,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         }
     }
 
-    public class CreateRoyaltyPaymentRequest
-    {
-        public string RoyaltyOwnerId { get; set; } = string.Empty;
-        public decimal RoyaltyAmount { get; set; }
-        public decimal? RoyaltyInterest { get; set; }
-        public DateTime? PaymentDate { get; set; }
-    }
-
-    public class CalculateRoyaltyRequest
-    {
-        public string? FieldId { get; set; }
-        public string? PoolId { get; set; }
-        public DateTime CalculationDate { get; set; }
-        public decimal? OilRoyaltyRate { get; set; }
-        public decimal? GasRoyaltyRate { get; set; }
-        public decimal? OilPrice { get; set; }
-        public decimal? GasPrice { get; set; }
-    }
 }
 

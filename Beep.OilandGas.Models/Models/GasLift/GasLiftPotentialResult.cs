@@ -4,6 +4,7 @@ namespace Beep.OilandGas.Models.GasLift
 {
     /// <summary>
     /// Result of gas lift potential analysis
+    /// DTO for calculations - Entity classes: GAS_LIFT_POTENTIAL_RESULT, GAS_LIFT_PERFORMANCE_POINT
     /// </summary>
     public class GasLiftPotentialResult
     {
@@ -30,6 +31,7 @@ namespace Beep.OilandGas.Models.GasLift
 
     /// <summary>
     /// Performance point for a specific gas injection rate
+    /// DTO for calculations - Entity class: GAS_LIFT_PERFORMANCE_POINT
     /// </summary>
     public class GasLiftPerformancePoint
     {

@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+
 namespace Beep.OilandGas.ProductionAccounting.Pricing
 {
     /// <summary>
     /// Manages price indexes.
-    /// Uses database access via IDataSource instead of in-memory dictionaries.
+    /// Uses Entity classes directly with IDataSource - no dictionary conversions.
     /// </summary>
     public class PriceIndexManager
     {
@@ -46,19 +48,34 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
             if (dataSource == null)
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");
 
+            // Convert PriceIndex model to PRICE_INDEX Entity
+            var indexEntity = new PRICE_INDEX
+            {
+                PRICE_INDEX_ID = index.IndexId ?? Guid.NewGuid().ToString(),
+                INDEX_NAME = index.IndexName,
+                PRICE_DATE = index.Date,
+                PRICE_VALUE = index.Price,
+                CURRENCY_CODE = index.Currency ?? "USD",
+                UNIT_OF_MEASURE = index.Unit ?? "BBL",
+                SOURCE = index.Source,
+                DESCRIPTION = index.PricingPoint
+            };
+
             // Check if index already exists for this date
             var existingFilters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "INDEX_NAME", Operator = "=", FilterValue = index.IndexName },
-                new AppFilter { FieldName = "INDEX_DATE", Operator = "=", FilterValue = index.Date.ToString("yyyy-MM-dd") }
+                new AppFilter { FieldName = "PRICE_DATE", Operator = "=", FilterValue = index.Date.ToString("yyyy-MM-dd") }
             };
 
             var existing = await dataSource.GetEntityAsync(PRICE_INDEX_TABLE, existingFilters);
-            if (existing != null && existing.Any())
+            var existingEntity = existing?.FirstOrDefault() as PRICE_INDEX;
+            if (existingEntity != null)
             {
                 // Update existing
-                var indexData = ConvertPriceIndexToDictionary(index);
-                var result = dataSource.UpdateEntity(PRICE_INDEX_TABLE, indexData);
+                indexEntity.PRICE_INDEX_ID = existingEntity.PRICE_INDEX_ID;
+                _commonColumnHandler.PrepareForUpdate(indexEntity, userId);
+                var result = dataSource.UpdateEntity(PRICE_INDEX_TABLE, indexEntity);
                 if (result != null && result.Errors != null && result.Errors.Count > 0)
                 {
                     var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
@@ -69,8 +86,8 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
             else
             {
                 // Insert new
-                var indexData = ConvertPriceIndexToDictionary(index);
-                var result = dataSource.InsertEntity(PRICE_INDEX_TABLE, indexData);
+                _commonColumnHandler.PrepareForInsert(indexEntity, userId);
+                var result = dataSource.InsertEntity(PRICE_INDEX_TABLE, indexEntity);
                 if (result != null && result.Errors != null && result.Errors.Count > 0)
                 {
                     var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
@@ -145,18 +162,20 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "INDEX_NAME", Operator = "=", FilterValue = indexName },
-                new AppFilter { FieldName = "INDEX_DATE", Operator = ">=", FilterValue = date.Date.ToString("yyyy-MM-dd") },
-                new AppFilter { FieldName = "INDEX_DATE", Operator = "<", FilterValue = date.Date.AddDays(1).ToString("yyyy-MM-dd") }
+                new AppFilter { FieldName = "PRICE_DATE", Operator = ">=", FilterValue = date.Date.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "PRICE_DATE", Operator = "<", FilterValue = date.Date.AddDays(1).ToString("yyyy-MM-dd") }
             };
 
             var results = await dataSource.GetEntityAsync(PRICE_INDEX_TABLE, filters);
             if (results == null || !results.Any())
                 return null;
 
-            return results.Cast<PriceIndex>()
-                .Where(p => p != null && p.Date.Date == date.Date)
-                .OrderByDescending(p => p!.Date)
+            var entity = results.Cast<PRICE_INDEX>()
+                .Where(p => p != null && p.PRICE_DATE?.Date == date.Date)
+                .OrderByDescending(p => p!.PRICE_DATE)
                 .FirstOrDefault();
+
+            return entity != null ? ConvertEntityToPriceIndex(entity) : null;
         }
 
         /// <summary>
@@ -213,7 +232,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
             if (prices.Count == 0)
                 return null;
 
-            return prices.Average(p => p.Price);
+            return prices.Average(p => p.Price ?? 0m);
         }
 
         /// <summary>
@@ -298,49 +317,22 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
             InitializeStandardIndexesAsync().GetAwaiter().GetResult();
         }
 
-        #region Helper Methods - Model to Dictionary Conversion
-
         /// <summary>
-        /// Converts PriceIndex to dictionary for database storage.
+        /// Converts PRICE_INDEX Entity to PriceIndex model (for compatibility with RunTicketValuationEngine).
         /// </summary>
-        private Dictionary<string, object> ConvertPriceIndexToDictionary(PriceIndex index)
+        private PriceIndex ConvertEntityToPriceIndex(PRICE_INDEX entity)
         {
-            return new Dictionary<string, object>
-            {
-                { "PRICE_INDEX_ID", index.IndexId },
-                { "INDEX_NAME", index.IndexName ?? string.Empty },
-                { "PRICING_POINT", index.PricingPoint ?? string.Empty },
-                { "INDEX_DATE", index.Date },
-                { "PRICE", index.Price },
-                { "SOURCE", index.Source ?? string.Empty },
-                { "CURRENCY", index.Currency ?? "USD" },
-                { "UNIT", index.Unit ?? "BBL" }
-            };
-        }
-
-        /// <summary>
-        /// Converts dictionary to PriceIndex.
-        /// </summary>
-        private PriceIndex? ConvertDictionaryToPriceIndex(Dictionary<string, object> dict)
-        {
-            if (dict == null || !dict.ContainsKey("PRICE_INDEX_ID"))
-                return null;
-
             return new PriceIndex
             {
-                IndexId = dict["PRICE_INDEX_ID"]?.ToString() ?? string.Empty,
-                IndexName = dict.ContainsKey("INDEX_NAME") ? dict["INDEX_NAME"]?.ToString() ?? string.Empty : string.Empty,
-                PricingPoint = dict.ContainsKey("PRICING_POINT") ? dict["PRICING_POINT"]?.ToString() ?? string.Empty : string.Empty,
-                Date = dict.ContainsKey("INDEX_DATE") && dict["INDEX_DATE"] != DBNull.Value
-                    ? Convert.ToDateTime(dict["INDEX_DATE"])
-                    : DateTime.MinValue,
-                Price = dict.ContainsKey("PRICE") ? Convert.ToDecimal(dict["PRICE"]) : 0m,
-                Source = dict.ContainsKey("SOURCE") ? dict["SOURCE"]?.ToString() ?? string.Empty : string.Empty,
-                Currency = dict.ContainsKey("CURRENCY") ? dict["CURRENCY"]?.ToString() ?? "USD" : "USD",
-                Unit = dict.ContainsKey("UNIT") ? dict["UNIT"]?.ToString() ?? "BBL" : "BBL"
+                IndexId = entity.PRICE_INDEX_ID,
+                IndexName = entity.INDEX_NAME,
+                PricingPoint = entity.DESCRIPTION,
+                Date = entity.PRICE_DATE ?? DateTime.MinValue,
+                Price = entity.PRICE_VALUE ?? 0m,
+                Source = entity.SOURCE,
+                Currency = entity.CURRENCY_CODE ?? "USD",
+                Unit = entity.UNIT_OF_MEASURE ?? "BBL"
             };
         }
-
-        #endregion
     }
 }

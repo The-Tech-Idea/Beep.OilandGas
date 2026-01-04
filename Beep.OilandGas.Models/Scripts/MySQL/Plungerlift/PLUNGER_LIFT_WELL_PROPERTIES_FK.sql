@@ -1,0 +1,1 @@
+-- PLUNGER_LIFT_WELL_PROPERTIES table has no foreign key constraints

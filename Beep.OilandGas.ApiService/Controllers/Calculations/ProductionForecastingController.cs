@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.DTOs.Calculations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -75,21 +76,6 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
-    }
-
-    public class GenerateForecastRequest
-    {
-        public string? WellUWI { get; set; }
-        public string? FieldId { get; set; }
-        public string ForecastMethod { get; set; } = string.Empty;
-        public int ForecastPeriod { get; set; }
-    }
-
-    public class DeclineCurveAnalysisRequest
-    {
-        public string WellUWI { get; set; } = string.Empty;
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
     }
 }
 

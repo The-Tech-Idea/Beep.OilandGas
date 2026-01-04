@@ -1,0 +1,1 @@
+-- REGULATED_PRICE table has no foreign key constraints

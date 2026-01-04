@@ -2,6 +2,7 @@ namespace Beep.OilandGas.Models.NodalAnalysis
 {
     /// <summary>
     /// Operating point (intersection of IPR and VLP curves)
+    /// DTO for calculations - Entity class: NODAL_OPERATING_POINT
     /// </summary>
     public class OperatingPoint
     {

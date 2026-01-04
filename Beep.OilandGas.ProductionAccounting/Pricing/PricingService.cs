@@ -7,7 +7,8 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Pricing;
 using Beep.OilandGas.Models.DTOs.Pricing;
 using Beep.OilandGas.Models.DTOs.ProductionAccounting;
-using Beep.OilandGas.ProductionAccounting.Models;
+using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using CrudeOilPropertiesDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.CrudeOilPropertiesDto;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
@@ -406,7 +407,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
                 Temperature = entity.TEMPERATURE ?? 60m,
                 ApiGravity = entity.API_GRAVITY,
                 // Properties would be populated from related tables in full implementation
-                Properties = new CrudeOilProperties()
+                Properties = new CrudeOilPropertiesDto()
             };
         }
 

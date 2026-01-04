@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace Beep.OilandGas.Models.DTOs
 {
@@ -126,6 +127,42 @@ namespace Beep.OilandGas.Models.DTOs
         /// Additional comparison options/settings
         /// </summary>
         public Dictionary<string, object> Options { get; set; } = new Dictionary<string, object>();
+    }
+
+    /// <summary>
+    /// Request for comparing wells
+    /// </summary>
+    public class CompareWellsRequest
+    {
+        /// <summary>
+        /// List of well identifiers to compare
+        /// </summary>
+        [Required(ErrorMessage = "WellIdentifiers are required")]
+        [MinLength(2, ErrorMessage = "At least two wells are required for comparison")]
+        public List<string> WellIdentifiers { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Optional list of field names to include in comparison
+        /// </summary>
+        public List<string>? FieldNames { get; set; }
+    }
+
+    /// <summary>
+    /// Request for comparing wells from multiple sources
+    /// </summary>
+    public class CompareWellsMultiSourceRequest
+    {
+        /// <summary>
+        /// List of well comparisons with source mappings
+        /// </summary>
+        [Required(ErrorMessage = "WellComparisons are required")]
+        [MinLength(1, ErrorMessage = "At least one well comparison is required")]
+        public List<WellSourceMapping> WellComparisons { get; set; } = new List<WellSourceMapping>();
+
+        /// <summary>
+        /// Optional list of field names to include in comparison
+        /// </summary>
+        public List<string>? FieldNames { get; set; }
     }
 }
 

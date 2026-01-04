@@ -1,0 +1,1 @@
+-- COMPRESSOR_OPERATING_CONDITIONS table has no foreign key constraints

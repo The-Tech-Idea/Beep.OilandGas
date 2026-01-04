@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.Models.DTOs.Accounting.Cost;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -107,13 +108,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         }
     }
 
-    public class CostAllocationRequest
-    {
-        public string? FieldId { get; set; }
-        public DateTime AllocationDate { get; set; }
-        public string AllocationMethod { get; set; } = string.Empty;
-        public decimal? TotalOperatingCosts { get; set; }
-        public decimal? TotalCapitalCosts { get; set; }
-    }
 }
 

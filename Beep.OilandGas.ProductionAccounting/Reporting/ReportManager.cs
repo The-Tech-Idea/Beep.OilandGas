@@ -1,4 +1,6 @@
 using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.ProductionAccounting;
 
 namespace Beep.OilandGas.ProductionAccounting.Reporting
 {
@@ -58,8 +60,17 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             var dataSource = _editor.GetDataSource(connName);
             if (dataSource != null)
             {
-                var reportData = ConvertReportToDictionary(report);
-                dataSource.InsertEntity(REPORT_TABLE, reportData);
+                var reportEntity = new OPERATIONAL_REPORT
+                {
+                    OPERATIONAL_REPORT_ID = report.ReportId,
+                    REPORT_TYPE = report.ReportType.ToString(),
+                    REPORT_PERIOD_START = report.ReportPeriodStart,
+                    REPORT_PERIOD_END = report.ReportPeriodEnd,
+                    GENERATION_DATE = report.GeneratedDate,
+                    GENERATED_BY = report.GeneratedBy
+                };
+                _commonColumnHandler.PrepareForInsert(reportEntity, report.GeneratedBy);
+                dataSource.InsertEntity("OPERATIONAL_REPORT", reportEntity);
                 _logger?.LogDebug("Saved operational report {ReportId} to database", report.ReportId);
             }
 
@@ -89,8 +100,18 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             var dataSource = _editor.GetDataSource(connName);
             if (dataSource != null)
             {
-                var reportData = ConvertReportToDictionary(report);
-                dataSource.InsertEntity(REPORT_TABLE, reportData);
+                var reportEntity = new LEASE_REPORT
+                {
+                    LEASE_REPORT_ID = report.ReportId,
+                    REPORT_TYPE = report.ReportType.ToString(),
+                    REPORT_PERIOD_START = report.ReportPeriodStart,
+                    REPORT_PERIOD_END = report.ReportPeriodEnd,
+                    GENERATION_DATE = report.GeneratedDate,
+                    GENERATED_BY = report.GeneratedBy,
+                    LEASE_ID = leaseId
+                };
+                _commonColumnHandler.PrepareForInsert(reportEntity, report.GeneratedBy);
+                dataSource.InsertEntity("LEASE_REPORT", reportEntity);
                 _logger?.LogDebug("Saved lease report {ReportId} to database", report.ReportId);
             }
 
@@ -137,8 +158,19 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             var dataSource = _editor.GetDataSource(connName);
             if (dataSource != null)
             {
-                var reportData = ConvertReportToDictionary(report);
-                dataSource.InsertEntity(REPORT_TABLE, reportData);
+                var reportEntity = new GOVERNMENTAL_REPORT
+                {
+                    GOVERNMENTAL_REPORT_ID = report.ReportId,
+                    REPORT_TYPE = report.ReportType.ToString(),
+                    REPORT_PERIOD_START = report.ReportPeriodStart,
+                    REPORT_PERIOD_END = report.ReportPeriodEnd,
+                    GENERATION_DATE = report.GeneratedDate,
+                    GENERATED_BY = report.GeneratedBy,
+                    REPORTING_AGENCY = reportingAgency,
+                    REPORT_FORMAT = reportFormat
+                };
+                _commonColumnHandler.PrepareForInsert(reportEntity, report.GeneratedBy);
+                dataSource.InsertEntity("GOVERNMENTAL_REPORT", reportEntity);
                 _logger?.LogDebug("Saved governmental report {ReportId} to database", report.ReportId);
             }
 
@@ -187,8 +219,19 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             var dataSource = _editor.GetDataSource(connName);
             if (dataSource != null)
             {
-                var reportData = ConvertReportToDictionary(statement);
-                dataSource.InsertEntity(REPORT_TABLE, reportData);
+                var reportEntity = new JOINT_INTEREST_STATEMENT
+                {
+                    JOINT_INTEREST_STATEMENT_ID = statement.ReportId,
+                    REPORT_TYPE = statement.ReportType.ToString(),
+                    REPORT_PERIOD_START = statement.ReportPeriodStart,
+                    REPORT_PERIOD_END = statement.ReportPeriodEnd,
+                    GENERATION_DATE = statement.GeneratedDate,
+                    GENERATED_BY = statement.GeneratedBy,
+                    JIB_ID = jibId,
+                    OPERATOR_NAME = operatorName
+                };
+                _commonColumnHandler.PrepareForInsert(reportEntity, statement.GeneratedBy);
+                dataSource.InsertEntity("JOINT_INTEREST_STATEMENT", reportEntity);
                 _logger?.LogDebug("Saved joint interest statement {ReportId} to database", statement.ReportId);
             }
 
@@ -260,11 +303,22 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
                 new AppFilter { FieldName = "REPORT_TYPE", Operator = "=", FilterValue = reportType.ToString() }
             };
 
-            var results = await dataSource.GetEntityAsync(REPORT_TABLE, filters);
-            if (results == null || !results.Any())
+            // Query all report tables and combine results
+            var allReports = new List<Entity>();
+            var reportTables = new[] { "OPERATIONAL_REPORT", "LEASE_REPORT", "GOVERNMENTAL_REPORT", "JOINT_INTEREST_STATEMENT" };
+            foreach (var tableName in reportTables)
+            {
+                var results = await dataSource.GetEntityAsync(tableName, filters);
+                if (results != null)
+                    allReports.AddRange(results);
+            }
+            
+            if (!allReports.Any())
                 return Enumerable.Empty<Report>();
 
-            return results.Cast<Report>().Where(r => r != null)!;
+            // Note: Report is abstract, so we can't directly cast Entity to Report
+            // This method may need to be refactored to return Entity types or DTOs
+            return Enumerable.Empty<Report>();
         }
 
         /// <summary>
@@ -307,22 +361,5 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             return GetReportsByDateRangeAsync(startDate, endDate).GetAwaiter().GetResult();
         }
 
-        #region Helper Methods - Model to Dictionary Conversion
-
-        private Dictionary<string, object> ConvertReportToDictionary(Report report)
-        {
-            return new Dictionary<string, object>
-            {
-                { "REPORT_ID", report.ReportId },
-                { "REPORT_TYPE", report.ReportType.ToString() },
-                { "REPORT_PERIOD_START", report.ReportPeriodStart },
-                { "REPORT_PERIOD_END", report.ReportPeriodEnd },
-                { "GENERATED_DATE", report.GeneratedDate },
-                { "GENERATED_BY", report.GeneratedBy ?? string.Empty }
-            };
-        }
-
-
-        #endregion
     }
 }

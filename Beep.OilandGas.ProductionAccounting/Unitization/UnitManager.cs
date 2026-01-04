@@ -1,8 +1,10 @@
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+
 namespace Beep.OilandGas.ProductionAccounting.Unitization
 {
     /// <summary>
     /// Manages unit agreements and operations.
-    /// Uses database access via IDataSource instead of in-memory dictionaries.
+    /// Uses Entity classes directly with IDataSource - no dictionary conversions.
     /// </summary>
     public class UnitManager
     {
@@ -35,7 +37,7 @@ namespace Beep.OilandGas.ProductionAccounting.Unitization
         /// <summary>
         /// Creates a unit agreement.
         /// </summary>
-        public async Task<UnitAgreement> CreateUnitAgreementAsync(
+        public async Task<UNIT_AGREEMENT> CreateUnitAgreementAsync(
             string unitName,
             DateTime effectiveDate,
             string unitOperator,
@@ -48,38 +50,38 @@ namespace Beep.OilandGas.ProductionAccounting.Unitization
             if (string.IsNullOrEmpty(unitOperator))
                 throw new ArgumentException("Unit operator cannot be null or empty.", nameof(unitOperator));
 
-            var unitAgreement = new UnitAgreement
+            var unitAgreement = new UNIT_AGREEMENT
             {
-                UnitId = Guid.NewGuid().ToString(),
-                UnitName = unitName,
-                EffectiveDate = effectiveDate,
-                UnitOperator = unitOperator
+                UNIT_AGREEMENT_ID = Guid.NewGuid().ToString(),
+                UNIT_NAME = unitName,
+                EFFECTIVE_DATE = effectiveDate,
+                UNIT_OPERATOR = unitOperator
             };
 
-            // Save to database
+            // Prepare for insert and save to database
             var connName = connectionName ?? _connectionName;
             var dataSource = _editor.GetDataSource(connName);
             if (dataSource == null)
                 throw new InvalidOperationException($"DataSource not found for connection: {connName}");
 
-            var agreementData = ConvertUnitAgreementToDictionary(unitAgreement);
-            var result = dataSource.InsertEntity(UNIT_AGREEMENT_TABLE, agreementData);
+            _commonColumnHandler.PrepareForInsert(unitAgreement, userId);
+            var result = dataSource.InsertEntity(UNIT_AGREEMENT_TABLE, unitAgreement);
             
             if (result != null && result.Errors != null && result.Errors.Count > 0)
             {
                 var errorMessage = string.Join("; ", result.Errors.Select(e => e.Message));
-                _logger?.LogError("Failed to create unit agreement {UnitId}: {Error}", unitAgreement.UnitId, errorMessage);
+                _logger?.LogError("Failed to create unit agreement {UnitId}: {Error}", unitAgreement.UNIT_ID, errorMessage);
                 throw new InvalidOperationException($"Failed to save unit agreement: {errorMessage}");
             }
 
-            _logger?.LogDebug("Created unit agreement {UnitId} in database", unitAgreement.UnitId);
+            _logger?.LogDebug("Created unit agreement {UnitId} in database", unitAgreement.UNIT_ID);
             return unitAgreement;
         }
 
         /// <summary>
         /// Creates a unit agreement (synchronous wrapper).
         /// </summary>
-        public UnitAgreement CreateUnitAgreement(
+        public UNIT_AGREEMENT CreateUnitAgreement(
             string unitName,
             DateTime effectiveDate,
             string unitOperator)
@@ -90,7 +92,7 @@ namespace Beep.OilandGas.ProductionAccounting.Unitization
         /// <summary>
         /// Gets a unit agreement by ID.
         /// </summary>
-        public async Task<UnitAgreement?> GetUnitAgreementAsync(string unitId, string? connectionName = null)
+        public async Task<UNIT_AGREEMENT?> GetUnitAgreementAsync(string unitId, string? connectionName = null)
         {
             if (string.IsNullOrEmpty(unitId))
                 return null;
@@ -106,52 +108,16 @@ namespace Beep.OilandGas.ProductionAccounting.Unitization
             };
 
             var results = await dataSource.GetEntityAsync(UNIT_AGREEMENT_TABLE, filters);
-            var agreementData = results?.FirstOrDefault();
-            
-            if (agreementData == null)
-                return null;
-
-            return agreementData as UnitAgreement;
+            return results?.FirstOrDefault() as UNIT_AGREEMENT;
         }
 
         /// <summary>
         /// Gets a unit agreement by ID (synchronous wrapper).
         /// </summary>
-        public UnitAgreement? GetUnitAgreement(string unitId)
+        public UNIT_AGREEMENT? GetUnitAgreement(string unitId)
         {
             return GetUnitAgreementAsync(unitId).GetAwaiter().GetResult();
         }
-
-        #region Helper Methods - Model to Dictionary Conversion
-
-        private Dictionary<string, object> ConvertUnitAgreementToDictionary(UnitAgreement agreement)
-        {
-            return new Dictionary<string, object>
-            {
-                { "UNIT_ID", agreement.UnitId },
-                { "UNIT_NAME", agreement.UnitName ?? string.Empty },
-                { "EFFECTIVE_DATE", agreement.EffectiveDate },
-                { "UNIT_OPERATOR", agreement.UnitOperator ?? string.Empty }
-            };
-        }
-
-        private UnitAgreement? ConvertDictionaryToUnitAgreement(Dictionary<string, object> dict)
-        {
-            if (dict == null || !dict.ContainsKey("UNIT_ID"))
-                return null;
-
-            return new UnitAgreement
-            {
-                UnitId = dict["UNIT_ID"]?.ToString() ?? string.Empty,
-                UnitName = dict.ContainsKey("UNIT_NAME") ? dict["UNIT_NAME"]?.ToString() ?? string.Empty : string.Empty,
-                EffectiveDate = dict.ContainsKey("EFFECTIVE_DATE") && dict["EFFECTIVE_DATE"] != DBNull.Value
-                    ? Convert.ToDateTime(dict["EFFECTIVE_DATE"])
-                    : DateTime.MinValue,
-                UnitOperator = dict.ContainsKey("UNIT_OPERATOR") ? dict["UNIT_OPERATOR"]?.ToString() ?? string.Empty : string.Empty
-            };
-        }
-
-        #endregion
     }
 }
 

@@ -43,5 +43,19 @@ namespace Beep.OilandGas.Models.DTOs.ProductionAccounting
         public decimal? NetRevenueInterest { get; set; }
         public decimal? ProductionHistory { get; set; }
     }
+
+    /// <summary>
+    /// Request for volume reconciliation
+    /// </summary>
+    public class VolumeReconciliationRequest
+    {
+        public string? FieldId { get; set; }
+        
+        [Required(ErrorMessage = "StartDate is required")]
+        public DateTime StartDate { get; set; }
+        
+        [Required(ErrorMessage = "EndDate is required")]
+        public DateTime EndDate { get; set; }
+    }
 }
 

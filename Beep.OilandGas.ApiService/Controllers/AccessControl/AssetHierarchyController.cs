@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.DTOs.AccessControl;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -160,12 +161,5 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-    }
-
-    // Request DTO for controller actions
-    public class ValidateAccessRequest
-    {
-        public string UserId { get; set; } = string.Empty;
-        public List<AssetHierarchyNode> AssetPath { get; set; } = new List<AssetHierarchyNode>();
     }
 }

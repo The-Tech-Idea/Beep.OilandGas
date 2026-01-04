@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
+using Beep.OilandGas.Models.DTOs.Accounting.Cost;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
@@ -90,14 +91,5 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         }
     }
 
-    public class CreateCostTransactionRequest
-    {
-        public decimal CostAmount { get; set; }
-        public bool IsCapitalized { get; set; }
-        public bool IsCash { get; set; }
-        public DateTime? TransactionDate { get; set; }
-        public string? PropertyId { get; set; }
-        public string? Description { get; set; }
-    }
 }
 

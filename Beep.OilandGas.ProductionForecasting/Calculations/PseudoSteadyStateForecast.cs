@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Beep.OilandGas.ProductionForecasting.Models;
+using Beep.OilandGas.Models.ProductionForecasting;
 
 namespace Beep.OilandGas.ProductionForecasting.Calculations
 {
