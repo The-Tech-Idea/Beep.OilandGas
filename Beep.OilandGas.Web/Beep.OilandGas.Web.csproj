@@ -57,6 +57,7 @@
     <ProjectReference Include="..\Beep.OilandGas.PumpPerformance\Beep.OilandGas.PumpPerformance.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.SuckerRodPumping\Beep.OilandGas.SuckerRodPumping.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.WellTestAnalysis\Beep.OilandGas.WellTestAnalysis.csproj" />
+    <ProjectReference Include="..\..\..\..\fahadTheTechIdea\MyWebSite\TheTechIdeaWeb\Beep.Foundation.IdentityServer.Shared\Beep.Foundation.IdentityServer.Shared.csproj" />
   </ItemGroup>
 
 </Project>

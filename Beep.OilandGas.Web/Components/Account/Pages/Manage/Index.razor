@@ -1,0 +1,253 @@
+@page "/Account/Manage"
+
+@inject IAccountManagementService AccountService
+@inject ISnackbar Snackbar
+
+<PageTitle>Profile - Beep Oil & Gas</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-2" Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-text-primary);">
+    <span style="color: var(--mud-palette-success);">$</span> user.profile()
+</MudText>
+<MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+    Manage your account profile and preferences
+</MudText>
+
+@if (isLoading)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+        <MudProgressCircular Color="Color.Success" Indeterminate="true" />
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); font-family: 'JetBrains Mono', monospace;" Class="mt-4">
+            Loading profile...
+        </MudText>
+    </MudStack>
+}
+else if (authProfile == null)
+{
+    <MudPaper Elevation="0" Class="pa-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-error); border-radius: 8px;">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
+            <div>
+                <MudText Typo="Typo.h6" Style="color: var(--mud-palette-error); font-family: 'JetBrains Mono', monospace;">
+                    // Error: PROFILE_LOAD_FAILED
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                    Failed to load profile. Please try again.
+                </MudText>
+            </div>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" Class="mt-4" OnClick="LoadProfileAsync"
+                   Style="font-family: 'JetBrains Mono', monospace;">
+            retry()
+        </MudButton>
+    </MudPaper>
+}
+else
+{
+    <MudTabs Elevation="0" ApplyEffectsToContainer="true" Rounded="true" PanelClass="pa-4"
+             Style="background: transparent;">
+        <!-- Personal Information Tab -->
+        <MudTabPanel Text="Personal Info" Icon="@Icons.Material.Filled.Person">
+            <MudGrid>
+                <!-- Account Credentials Card (from IdentityServer) -->
+                <MudItem xs="12">
+                    <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+                        <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Class="mr-2" Style="vertical-align: middle;" />
+                            Account Credentials
+                        </MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField Value="@authProfile.UserName" 
+                                              Label="Username" 
+                                              Variant="Variant.Outlined"
+                                              Disabled="true"
+                                              Style="background: var(--mud-palette-dark);"
+                                              Class="mb-4"
+                                              Adornment="Adornment.Start"
+                                              AdornmentIcon="@Icons.Material.Filled.AlternateEmail" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" md="6">
+                                <MudTextField Value="@authProfile.Email" 
+                                              Label="Email" 
+                                              Variant="Variant.Outlined"
+                                              Disabled="true"
+                                              Style="background: var(--mud-palette-dark);"
+                                              Class="mb-4"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@(authProfile.EmailConfirmed ? Icons.Material.Filled.Verified : Icons.Material.Filled.Warning)"
+                                              AdornmentColor="@(authProfile.EmailConfirmed ? Color.Success : Color.Warning)" />
+                            </MudItem>
+                        </MudGrid>
+                        
+                        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-1" Style="vertical-align: middle;" />
+                            Email and password are managed in <MudLink Href="/Account/Manage/Email" Style="color: var(--mud-palette-primary);">Email Settings</MudLink>
+                        </MudText>
+                    </MudPaper>
+                </MudItem>
+                
+                <!-- Personal Info Card -->
+                <MudItem xs="12">
+                    <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+                        <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
+                            <MudIcon Icon="@Icons.Material.Filled.Badge" Class="mr-2" Style="vertical-align: middle;" />
+                            Personal Information
+                        </MudText>
+                        
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="phoneNumber"
+                                              Label="Phone Number" 
+                                              Variant="Variant.Outlined"
+                                              Style="background: var(--mud-palette-dark);"
+                                              Class="mb-4"
+                                              Adornment="Adornment.End"
+                                              AdornmentIcon="@(authProfile.PhoneNumberConfirmed ? Icons.Material.Filled.Verified : Icons.Material.Filled.Phone)"
+                                              AdornmentColor="@(authProfile.PhoneNumberConfirmed ? Color.Success : Color.Default)" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+                </MudItem>
+                
+                <!-- Security Status Cards -->
+                <MudItem xs="12" md="6">
+                    <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px; height: 100%;">
+                        <MudText Typo="Typo.subtitle1" Class="mb-3" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
+                            <MudIcon Icon="@Icons.Material.Filled.Security" Class="mr-2" Style="vertical-align: middle;" />
+                            Two-Factor Authentication
+                        </MudText>
+                        
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-2">
+                            @if (authProfile.TwoFactorEnabled)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
+                                <MudText Style="color: var(--mud-palette-success); font-family: 'JetBrains Mono', monospace;">
+                                    Enabled
+                                </MudText>
+                            }
+                            else
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" />
+                                <MudText Style="color: var(--mud-palette-warning); font-family: 'JetBrains Mono', monospace;">
+                                    Not Enabled
+                                </MudText>
+                            }
+                            <MudSpacer />
+                            <MudButton Variant="Variant.Text" Color="Color.Info" Href="/Account/Manage/TwoFactorAuthentication"
+                                       Style="font-family: 'JetBrains Mono', monospace;">
+                                manage()
+                            </MudButton>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                
+                <MudItem xs="12" md="6">
+                    <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px; height: 100%;">
+                        <MudText Typo="Typo.subtitle1" Class="mb-3" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
+                            <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Class="mr-2" Style="vertical-align: middle;" />
+                            Account Status
+                        </MudText>
+                        
+                        <MudStack Spacing="1" Class="mt-2">
+                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                                Email: <span style="color: var(--mud-palette-text-primary);">@(authProfile.EmailConfirmed ? "Verified" : "Unverified")</span>
+                            </MudText>
+                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                                Phone: <span style="color: var(--mud-palette-text-primary);">@(authProfile.PhoneNumberConfirmed ? "Verified" : "Unverified")</span>
+                            </MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                
+                <!-- Save Button -->
+                <MudItem xs="12">
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               OnClick="SaveProfileAsync"
+                               Disabled="@isSaving"
+                               StartIcon="@Icons.Material.Filled.Save"
+                               Style="font-family: 'JetBrains Mono', monospace;">
+                        @if (isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        save_profile()
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudTabPanel>
+    </MudTabs>
+}
+
+@code {
+    // Auth profile from IdentityServer
+    private UserProfile? authProfile;
+    
+    // Form fields
+    private string? phoneNumber;
+    
+    // UI state
+    private bool isLoading = true;
+    private bool isSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfileAsync();
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        // Load auth profile from IdentityServer
+        authProfile = await AccountService.GetProfileAsync();
+        
+        if (authProfile != null)
+        {
+            phoneNumber = authProfile.PhoneNumber;
+        }
+        
+        isLoading = false;
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        if (authProfile == null) return;
+        
+        isSaving = true;
+        StateHasChanged();
+        
+        // Update auth profile (phone number)
+        if (authProfile.PhoneNumber != phoneNumber)
+        {
+            var authResult = await AccountService.UpdateProfileAsync(new UpdateProfileRequest
+            {
+                Email = authProfile.Email,
+                PhoneNumber = phoneNumber
+            });
+            
+            if (!authResult.IsSuccess)
+            {
+                foreach (var error in authResult.Errors)
+                {
+                    Snackbar.Add(error, Severity.Error);
+                }
+            }
+            else
+            {
+                Snackbar.Add("Profile updated successfully!", Severity.Success);
+                await LoadProfileAsync(); // Reload to get updated data
+            }
+        }
+        else
+        {
+            Snackbar.Add("No changes to save.", Severity.Info);
+        }
+        
+        isSaving = false;
+    }
+}
+

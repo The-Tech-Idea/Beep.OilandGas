@@ -1,0 +1,95 @@
+@page "/Account/Login"
+@page "/login"
+
+@inject NavigationManager NavigationManager
+@inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
+@using Beep.OilandGas.Web.Theme
+
+<PageTitle>Sign In - Beep Oil & Gas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="d-flex align-center justify-center" Style="background: var(--mud-palette-background); min-height: 100vh;">
+    <MudPaper Elevation="0" Class="pa-0" Style="width: 100%; max-width: 500px; background: transparent;">
+        
+        <!-- Terminal Header -->
+        <MudPaper Class="pa-4 mb-0" Elevation="0" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-bottom: none; border-radius: 8px 8px 0 0;">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudStack Row="true" Spacing="1">
+                    <div style="width: 12px; height: 12px; background: #ff5f56; border-radius: 50%;"></div>
+                    <div style="width: 12px; height: 12px; background: #ffbd2e; border-radius: 50%;"></div>
+                    <div style="width: 12px; height: 12px; background: #27c93f; border-radius: 50%;"></div>
+                </MudStack>
+                <MudText Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-text-secondary); font-size: 0.875rem; margin-left: 16px;">
+                    ~/account <span style="color: var(--mud-palette-success);">$</span> ./login.sh
+                </MudText>
+            </MudStack>
+        </MudPaper>
+
+        <MudPaper Elevation="0" Class="pa-8" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 0 0 8px 8px;">
+            
+            <MudStack Spacing="4" AlignItems="AlignItems.Center" Class="mb-6">
+                @if (!string.IsNullOrEmpty(_branding.LogoUrl))
+                {
+                    <img src="@_branding.LogoUrl" alt="@(_branding.AppName ?? "Beep Oil & Gas")" style="height: 60px; width: auto;" />
+                }
+                else
+                {
+                    <img src="/imgs/BeepOGDM.png" alt="Beep Oil & Gas" style="height: 60px; width: auto;" />
+                }
+            </MudStack>
+
+            <MudText Typo="Typo.h4" Class="mb-2" Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-text-primary);">
+                <span style="color: var(--mud-palette-success);">sudo</span> login
+            </MudText>
+            <MudText Typo="Typo.body1" Class="mb-6" Style="color: var(--mud-palette-text-secondary); font-family: 'JetBrains Mono', monospace;">
+                // @(_branding.LoginWelcomeMessage ?? "Authenticate securely with Identity Server")
+            </MudText>
+
+            @if (!string.IsNullOrEmpty(Error))
+            {
+                <MudPaper Elevation="0" Class="pa-4 mb-6" Style="background: var(--mud-palette-dark); border: 1px solid var(--mud-palette-error); border-radius: 4px;">
+                    <MudText Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-error);">
+                        Error: @Error
+                    </MudText>
+                </MudPaper>
+            }
+
+            <div class="d-flex flex-column gap-4">
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-4">
+                    You will be redirected to our secure Identity Server to log in.
+                </MudAlert>
+
+                <MudButton Variant="Variant.Filled" 
+                           Size="Size.Large"
+                           FullWidth="true"
+                           Href="@($"/authentication/login?returnUrl={Uri.EscapeDataString(ReturnUrl ?? "/")}")"
+                           StartIcon="@Icons.Material.Filled.Security"
+                           Style="font-family: 'JetBrains Mono', monospace;">
+                    login_securely()
+                </MudButton>
+            </div>
+
+            <div class="d-flex justify-center mt-4">
+                <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary); font-family: 'JetBrains Mono', monospace;">
+                    // Redirects to Beep.Foundation.IdentityServer
+                </MudText>
+            </div>
+
+        </MudPaper>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? Error { get; set; }
+
+    private BrandingConfig _branding = new();
+
+    protected override void OnInitialized()
+    {
+        _branding = ThemeProvider.GetBranding();
+    }
+}
+

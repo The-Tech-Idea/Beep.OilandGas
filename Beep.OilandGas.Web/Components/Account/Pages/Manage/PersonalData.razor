@@ -1,0 +1,232 @@
+@page "/Account/Manage/PersonalData"
+
+@inject IAccountManagementService AccountService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+
+<PageTitle>Personal Data - Beep Oil & Gas</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-2" Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-text-primary);">
+    <span style="color: var(--mud-palette-success);">$</span> data --personal
+</MudText>
+<MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+    Download or delete your personal data (GDPR compliance)
+</MudText>
+
+<MudGrid>
+    <!-- Download Data -->
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="0" Class="pa-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px; height: 100%;">
+            <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                <MudIcon Icon="@Icons.Material.Filled.Download" Size="Size.Large" Color="Color.Info" />
+                <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-primary);">
+                    Download Your Data
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); text-align: center;">
+                    Download a copy of all the personal data we have stored about your account.
+                </MudText>
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Info" 
+                           OnClick="DownloadDataAsync"
+                           Disabled="@isDownloading"
+                           StartIcon="@Icons.Material.Filled.FileDownload"
+                           Style="font-family: 'JetBrains Mono', monospace;">
+                    @if (isDownloading)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    }
+                    download_data()
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+    
+    <!-- Delete Account -->
+    <MudItem xs="12" md="6">
+        <MudPaper Elevation="0" Class="pa-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-error); border-radius: 8px; height: 100%;">
+            <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                <MudIcon Icon="@Icons.Material.Filled.DeleteForever" Size="Size.Large" Color="Color.Error" />
+                <MudText Typo="Typo.h6" Style="color: var(--mud-palette-error);">
+                    Delete Your Account
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); text-align: center;">
+                    Permanently delete your account and all associated data. This action cannot be undone.
+                </MudText>
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Error" 
+                           OnClick="@(() => showDeleteDialog = true)"
+                           StartIcon="@Icons.Material.Filled.Warning"
+                           Style="font-family: 'JetBrains Mono', monospace;">
+                    delete_account()
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<!-- Data Preview (after download) -->
+@if (personalData != null)
+{
+    <MudPaper Elevation="0" Class="pa-4 mt-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+        <MudText Typo="Typo.h6" Class="mb-4" Style="color: var(--mud-palette-text-primary);">
+            <MudIcon Icon="@Icons.Material.Filled.Description" Class="mr-2" />
+            Your Personal Data
+        </MudText>
+        
+        <MudSimpleTable Dense="true" Hover="true" Style="background: transparent;">
+            <thead>
+                <tr>
+                    <th style="color: var(--mud-palette-text-secondary);">Field</th>
+                    <th style="color: var(--mud-palette-text-secondary);">Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in personalData)
+                {
+                    <tr>
+                        <td style="color: var(--mud-palette-primary); font-family: 'JetBrains Mono', monospace;">@item.Key</td>
+                        <td style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">@item.Value</td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+        
+        <MudButton Variant="Variant.Outlined" 
+                   Color="Color.Info" 
+                   OnClick="SaveAsJsonAsync"
+                   StartIcon="@Icons.Material.Filled.SaveAlt"
+                   Class="mt-4"
+                   Style="font-family: 'JetBrains Mono', monospace;">
+            save_as_json()
+        </MudButton>
+    </MudPaper>
+}
+
+<!-- Delete Confirmation Dialog -->
+<MudDialog @bind-Visible="showDeleteDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6" Style="color: var(--mud-palette-error); font-family: 'JetBrains Mono', monospace;">
+            <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
+            Delete Account
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            <strong>Warning:</strong> This action is permanent and cannot be undone.
+        </MudAlert>
+        
+        <MudText Typo="Typo.body1" Class="mb-4" Style="color: var(--mud-palette-text-primary);">
+            Deleting your account will:
+        </MudText>
+        <MudList T="string" Dense="true">
+            <MudListItem Icon="@Icons.Material.Filled.RemoveCircle" IconColor="Color.Error">
+                Remove all your personal information
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.RemoveCircle" IconColor="Color.Error">
+                Delete your account data
+            </MudListItem>
+            <MudListItem Icon="@Icons.Material.Filled.RemoveCircle" IconColor="Color.Error">
+                Remove access to all services
+            </MudListItem>
+        </MudList>
+        
+        <MudTextField @bind-Value="deletePassword" 
+                      Label="Enter your password to confirm" 
+                      Variant="Variant.Outlined"
+                      InputType="InputType.Password"
+                      Required="true"
+                      Style="background: var(--mud-palette-dark);"
+                      Class="mt-4" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="@(() => showDeleteDialog = false)">
+            Cancel
+        </MudButton>
+        <MudButton Variant="Variant.Filled" 
+                   Color="Color.Error" 
+                   OnClick="DeleteAccountAsync"
+                   Disabled="@(isDeleting || string.IsNullOrWhiteSpace(deletePassword))"
+                   Style="font-family: 'JetBrains Mono', monospace;">
+            @if (isDeleting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            delete_permanently()
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private Dictionary<string, string>? personalData;
+    private bool isDownloading = false;
+    private bool isDeleting = false;
+    private bool showDeleteDialog = false;
+    private string deletePassword = string.Empty;
+
+    private async Task DownloadDataAsync()
+    {
+        isDownloading = true;
+        personalData = await AccountService.DownloadPersonalDataAsync();
+        isDownloading = false;
+
+        if (personalData == null)
+        {
+            Snackbar.Add("Failed to download personal data. Please try again.", Severity.Error);
+        }
+        else
+        {
+            Snackbar.Add("Personal data loaded successfully.", Severity.Success);
+        }
+    }
+
+    private async Task SaveAsJsonAsync()
+    {
+        if (personalData == null) return;
+
+        var json = System.Text.Json.JsonSerializer.Serialize(personalData, new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        // Create a blob and download
+        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+        var base64 = Convert.ToBase64String(bytes);
+        
+        await JS.InvokeVoidAsync("eval", $@"
+            var link = document.createElement('a');
+            link.download = 'PersonalData.json';
+            link.href = 'data:application/json;base64,{base64}';
+            link.click();
+        ");
+        
+        Snackbar.Add("Personal data saved as JSON.", Severity.Success);
+    }
+
+    private async Task DeleteAccountAsync()
+    {
+        if (string.IsNullOrWhiteSpace(deletePassword)) return;
+
+        isDeleting = true;
+        var result = await AccountService.DeleteAccountAsync(deletePassword);
+        isDeleting = false;
+
+        if (result.IsSuccess)
+        {
+            Snackbar.Add("Your account has been deleted.", Severity.Info);
+            showDeleteDialog = false;
+            
+            // Redirect to home after deletion
+            await Task.Delay(1500);
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+        else
+        {
+            foreach (var error in result.Errors)
+            {
+                Snackbar.Add(error, Severity.Error);
+            }
+        }
+    }
+}
+

@@ -1,0 +1,430 @@
+@page "/Account/Manage/TwoFactorAuthentication"
+
+@inject IAccountManagementService AccountService
+@inject ISnackbar Snackbar
+
+<PageTitle>Two-Factor Authentication - Beep Oil & Gas</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-2" Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-text-primary);">
+    <span style="color: var(--mud-palette-success);">$</span> security --2fa
+</MudText>
+<MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+    Add an extra layer of security to your account
+</MudText>
+
+@if (isLoading)
+{
+    <MudProgressCircular Color="Color.Success" Indeterminate="true" />
+}
+else if (status == null)
+{
+    <MudAlert Severity="Severity.Error">Failed to load 2FA status. Please try again.</MudAlert>
+}
+else
+{
+    <!-- Current Status -->
+    <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <MudIcon Icon="@Icons.Material.Filled.Security" 
+                         Size="Size.Large" 
+                         Color="@(status.Is2faEnabled ? Color.Success : Color.Warning)" />
+                <div>
+                    <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-primary);">
+                        Two-Factor Authentication
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                        @if (status.Is2faEnabled)
+                        {
+                            <span style="color: var(--mud-palette-success);">Enabled</span>
+                            <text> - Your account is protected</text>
+                        }
+                        else
+                        {
+                            <span style="color: var(--mud-palette-warning);">Disabled</span>
+                            <text> - Enable for better security</text>
+                        }
+                    </MudText>
+                </div>
+            </MudStack>
+            
+            @if (status.Is2faEnabled)
+            {
+                <MudChip T="string" Color="Color.Success" Variant="Variant.Filled">
+                    Active
+                </MudChip>
+            }
+        </MudStack>
+    </MudPaper>
+    
+    @if (status.Is2faEnabled)
+    {
+        <!-- Recovery Codes Warning -->
+        @if (status.RecoveryCodesLeft <= 3)
+        {
+            <MudAlert Severity="@(status.RecoveryCodesLeft == 0 ? Severity.Error : Severity.Warning)" Class="mb-4">
+                @if (status.RecoveryCodesLeft == 0)
+                {
+                    <strong>You have no recovery codes left.</strong>
+                    <text> Generate new codes to ensure you can access your account if you lose your authenticator.</text>
+                }
+                else
+                {
+                    <strong>You have only @status.RecoveryCodesLeft recovery code(s) left.</strong>
+                    <text> Consider generating new codes.</text>
+                }
+            </MudAlert>
+        }
+        
+        <!-- Management Options -->
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px; height: 100%;">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: var(--mud-palette-text-primary);">
+                        <MudIcon Icon="@Icons.Material.Filled.Key" Class="mr-2" />
+                        Recovery Codes
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+                        Recovery codes can be used to access your account if you lose your authenticator device.
+                        @status.RecoveryCodesLeft codes remaining.
+                    </MudText>
+                    <MudButton Variant="Variant.Outlined" 
+                               Color="Color.Info" 
+                               OnClick="GenerateRecoveryCodesAsync"
+                               Disabled="@isProcessing"
+                               FullWidth="true"
+                               Style="font-family: 'JetBrains Mono', monospace;">
+                        generate_codes()
+                    </MudButton>
+                </MudPaper>
+            </MudItem>
+            
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px; height: 100%;">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: var(--mud-palette-text-primary);">
+                        <MudIcon Icon="@Icons.Material.Filled.PhoneAndroid" Class="mr-2" />
+                        Authenticator App
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+                        Reset your authenticator app if you've switched devices or need to reconfigure.
+                    </MudText>
+                    <MudButton Variant="Variant.Outlined" 
+                               Color="Color.Warning" 
+                               OnClick="ResetAuthenticatorAsync"
+                               Disabled="@isProcessing"
+                               FullWidth="true"
+                               Style="font-family: 'JetBrains Mono', monospace;">
+                        reset_authenticator()
+                    </MudButton>
+                </MudPaper>
+            </MudItem>
+            
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px; height: 100%;">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: var(--mud-palette-text-primary);">
+                        <MudIcon Icon="@Icons.Material.Filled.Computer" Class="mr-2" />
+                        Trusted Browser
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+                        @if (status.IsMachineRemembered)
+                        {
+                            <text>This browser is remembered. You won't be asked for 2FA here.</text>
+                        }
+                        else
+                        {
+                            <text>This browser is not remembered. You'll be asked for 2FA on login.</text>
+                        }
+                    </MudText>
+                    <MudButton Variant="Variant.Outlined" 
+                               Color="Color.Default" 
+                               OnClick="ForgetBrowserAsync"
+                               Disabled="@isProcessing"
+                               FullWidth="true"
+                               Style="font-family: 'JetBrains Mono', monospace;">
+                        forget_browser()
+                    </MudButton>
+                </MudPaper>
+            </MudItem>
+            
+            <MudItem xs="12" md="6">
+                <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-error); border-radius: 8px; height: 100%;">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: var(--mud-palette-error);">
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
+                        Disable 2FA
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+                        This will make your account less secure. Only disable if absolutely necessary.
+                    </MudText>
+                    <MudButton Variant="Variant.Outlined" 
+                               Color="Color.Error" 
+                               OnClick="Disable2faAsync"
+                               Disabled="@isProcessing"
+                               FullWidth="true"
+                               Style="font-family: 'JetBrains Mono', monospace;">
+                        disable_2fa()
+                    </MudButton>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+    else
+    {
+        <!-- Enable 2FA -->
+        @if (showSetup && authenticatorSetup != null)
+        {
+            <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+                <MudText Typo="Typo.h6" Class="mb-4" Style="color: var(--mud-palette-text-primary);">
+                    Step 1: Scan QR Code
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+                    Scan this QR code with your authenticator app (Google Authenticator, Microsoft Authenticator, Authy, etc.)
+                </MudText>
+                
+                <!-- QR Code placeholder -->
+                <MudPaper Elevation="0" Class="pa-4 mb-4 d-flex justify-center" Style="background: white; border-radius: 8px;">
+                    <MudText Style="color: #0d1117; font-family: 'JetBrains Mono', monospace; word-break: break-all;">
+                        @authenticatorSetup.AuthenticatorUri
+                    </MudText>
+                </MudPaper>
+                
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-2">
+                    Or enter this key manually:
+                </MudText>
+                <MudPaper Elevation="0" Class="pa-3 mb-4" Style="background: var(--mud-palette-dark); border: 1px solid var(--mud-palette-divider); border-radius: 4px;">
+                    <MudText Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-success); letter-spacing: 2px;">
+                        @authenticatorSetup.SharedKey
+                    </MudText>
+                </MudPaper>
+                
+                <MudDivider Class="my-4" />
+                
+                <MudText Typo="Typo.h6" Class="mb-4" Style="color: var(--mud-palette-text-primary);">
+                    Step 2: Verify Code
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+                    Enter the 6-digit code from your authenticator app to complete setup.
+                </MudText>
+                
+                <MudTextField @bind-Value="verificationCode" 
+                              Label="Verification Code" 
+                              Variant="Variant.Outlined"
+                              Placeholder="000000"
+                              Style="background: var(--mud-palette-dark);"
+                              Class="mb-4"
+                              MaxLength="6" />
+                
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Success" 
+                           OnClick="Enable2faAsync"
+                           Disabled="@(isProcessing || string.IsNullOrWhiteSpace(verificationCode))"
+                           StartIcon="@Icons.Material.Filled.Security"
+                           Style="font-family: 'JetBrains Mono', monospace;">
+                    @if (isProcessing)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                    }
+                    enable_2fa()
+                </MudButton>
+            </MudPaper>
+        }
+        else
+        {
+            <MudPaper Elevation="0" Class="pa-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+                <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                    <MudIcon Icon="@Icons.Material.Filled.PhonelinkLock" Size="Size.Large" Color="Color.Info" />
+                    <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-primary);">
+                        Protect Your Account
+                    </MudText>
+                    <MudText Typo="Typo.body1" Style="color: var(--mud-palette-text-secondary); text-align: center; max-width: 500px;">
+                        Two-factor authentication adds an extra layer of security by requiring a code from your phone in addition to your password.
+                    </MudText>
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               OnClick="StartSetupAsync"
+                               Disabled="@isProcessing"
+                               Size="Size.Large"
+                               StartIcon="@Icons.Material.Filled.Security"
+                               Style="font-family: 'JetBrains Mono', monospace;">
+                        @if (isProcessing)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        setup_2fa()
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        }
+    }
+    
+    <!-- Recovery Codes Dialog -->
+    <MudDialog @bind-Visible="showRecoveryCodes">
+        <TitleContent>
+            <MudText Typo="Typo.h6" Style="font-family: 'JetBrains Mono', monospace;">
+                <MudIcon Icon="@Icons.Material.Filled.Key" Class="mr-2" />
+                Recovery Codes
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudAlert Severity="Severity.Warning" Class="mb-4">
+                <strong>Save these codes in a safe place!</strong> You can use them to access your account if you lose your authenticator device.
+                Each code can only be used once.
+            </MudAlert>
+            <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+                @if (recoveryCodes != null)
+                {
+                    <MudGrid>
+                        @foreach (var recoveryCode in recoveryCodes)
+                        {
+                            <MudItem xs="6">
+                                <MudText Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-success);">
+                                    @recoveryCode
+                                </MudText>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                }
+            </MudPaper>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="@(() => showRecoveryCodes = false)">
+                I've Saved These Codes
+            </MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+
+@code {
+    private TwoFactorStatus? status;
+    private AuthenticatorSetup? authenticatorSetup;
+    private List<string>? recoveryCodes;
+    
+    private bool isLoading = true;
+    private bool isProcessing = false;
+    private bool showSetup = false;
+    private bool showRecoveryCodes = false;
+    private string verificationCode = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        status = await AccountService.Get2faStatusAsync();
+        isLoading = false;
+    }
+
+    private async Task StartSetupAsync()
+    {
+        isProcessing = true;
+        authenticatorSetup = await AccountService.GetAuthenticatorSetupAsync();
+        isProcessing = false;
+        
+        if (authenticatorSetup != null)
+        {
+            showSetup = true;
+        }
+        else
+        {
+            Snackbar.Add("Failed to start 2FA setup. Please try again.", Severity.Error);
+        }
+    }
+
+    private async Task Enable2faAsync()
+    {
+        if (string.IsNullOrWhiteSpace(verificationCode)) return;
+        
+        isProcessing = true;
+        var result = await AccountService.Enable2faAsync(verificationCode);
+        isProcessing = false;
+
+        if (result != null)
+        {
+            Snackbar.Add("Two-factor authentication enabled!", Severity.Success);
+            recoveryCodes = result.RecoveryCodes;
+            showRecoveryCodes = true;
+            showSetup = false;
+            status = await AccountService.Get2faStatusAsync();
+        }
+        else
+        {
+            Snackbar.Add("Invalid verification code. Please try again.", Severity.Error);
+        }
+    }
+
+    private async Task Disable2faAsync()
+    {
+        isProcessing = true;
+        var result = await AccountService.Disable2faAsync();
+        isProcessing = false;
+
+        if (result.IsSuccess)
+        {
+            Snackbar.Add("Two-factor authentication disabled.", Severity.Warning);
+            status = await AccountService.Get2faStatusAsync();
+        }
+        else
+        {
+            foreach (var error in result.Errors)
+            {
+                Snackbar.Add(error, Severity.Error);
+            }
+        }
+    }
+
+    private async Task ResetAuthenticatorAsync()
+    {
+        isProcessing = true;
+        var result = await AccountService.ResetAuthenticatorAsync();
+        isProcessing = false;
+
+        if (result.IsSuccess)
+        {
+            Snackbar.Add("Authenticator reset. You'll need to set up 2FA again.", Severity.Info);
+            status = await AccountService.Get2faStatusAsync();
+            showSetup = false;
+            authenticatorSetup = null;
+        }
+        else
+        {
+            foreach (var error in result.Errors)
+            {
+                Snackbar.Add(error, Severity.Error);
+            }
+        }
+    }
+
+    private async Task GenerateRecoveryCodesAsync()
+    {
+        isProcessing = true;
+        recoveryCodes = await AccountService.GenerateRecoveryCodesAsync();
+        isProcessing = false;
+
+        if (recoveryCodes != null)
+        {
+            showRecoveryCodes = true;
+            status = await AccountService.Get2faStatusAsync();
+        }
+        else
+        {
+            Snackbar.Add("Failed to generate recovery codes.", Severity.Error);
+        }
+    }
+
+    private async Task ForgetBrowserAsync()
+    {
+        isProcessing = true;
+        var result = await AccountService.ForgetBrowserAsync();
+        isProcessing = false;
+
+        if (result.IsSuccess)
+        {
+            Snackbar.Add(result.Message ?? "Browser forgotten.", Severity.Info);
+            status = await AccountService.Get2faStatusAsync();
+        }
+        else
+        {
+            foreach (var error in result.Errors)
+            {
+                Snackbar.Add(error, Severity.Error);
+            }
+        }
+    }
+}
+

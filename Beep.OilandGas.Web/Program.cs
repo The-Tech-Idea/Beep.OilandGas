@@ -19,6 +19,8 @@ using Beep.OilandGas.PPDM39.DataManagement.Repositories;
 using Beep.OilandGas.Web.Theme;
 using Beep.OilandGas.Web.Services;
 using Microsoft.AspNetCore.Routing;
+using Beep.Foundation.IdentityServer.Shared.Authentication;
+using Beep.Foundation.IdentityServer.Shared.Services;
 
 // ============================================
 // OIDC AUTHENTICATION SCHEME
@@ -68,6 +70,22 @@ builder.Services.AddRazorComponents()
 builder.Services.AddHttpContextAccessor();
 
 // ============================================
+// TOKEN MANAGEMENT SERVICES
+// ============================================
+// TokenProvider is a SINGLETON that stores tokens per-user (using user ID as key)
+// This allows tokens to persist across SignalR reconnections for authenticated users
+builder.Services.AddSingleton<Beep.Foundation.IdentityServer.Shared.Authentication.TokenProvider>();
+
+// Register TokenHandler for attaching access tokens to outgoing requests
+// Microsoft's official pattern uses Scoped (see BlazorWebAppOidcServer sample)
+builder.Services.AddScoped<Beep.Foundation.IdentityServer.Shared.Authentication.TokenHandler>();
+
+// Register UserService and UserCircuitHandler for maintaining user state across SignalR connections
+builder.Services.AddScoped<Beep.Foundation.IdentityServer.Shared.Authentication.UserService>();
+builder.Services.TryAddEnumerable(
+    ServiceDescriptor.Scoped<CircuitHandler, Beep.Foundation.IdentityServer.Shared.Authentication.UserCircuitHandler>());
+
+// ============================================
 // API CLIENT SERVICES
 // ============================================
 // ApiClient: Generic HTTP client for calling the API service
@@ -76,7 +94,8 @@ builder.Services.AddHttpClient<ApiClient>(client =>
 {
     client.BaseAddress = new Uri(apiServiceUrl);
     client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-});
+})
+.AddHttpMessageHandler<Beep.Foundation.IdentityServer.Shared.Authentication.TokenHandler>();
 
 // ============================================
 // AUTHENTICATION CONFIGURATION
@@ -87,10 +106,13 @@ const string OIDC_SCHEME = "oidc";
 builder.Services.AddCascadingAuthenticationState();
 
 // Register the OIDC-compatible AuthenticationStateProvider
-builder.Services.AddScoped<AuthenticationStateProvider, Beep.OilandGas.Web.Components.Account.OidcAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider, Beep.Foundation.IdentityServer.Shared.Authentication.OidcAuthenticationStateProvider>();
 
 // Get IdentityServer URL for OIDC configuration
-var identityServerUrl = builder.Configuration["IdentityServer:BaseUrl"] ?? "https://localhost:7062/";
+// Try Aspire service discovery first, then fallback to config
+var identityServerUrl = builder.Configuration["services:identityserver:https:0"] 
+    ?? builder.Configuration["IdentityServer:BaseUrl"] 
+    ?? "https://localhost:7062/";
 
 // Configure Authentication: Cookie as DEFAULT scheme, OIDC for CHALLENGE
 builder.Services.AddAuthentication(options =>
@@ -157,7 +179,6 @@ builder.Services.AddAuthentication(options =>
     options.NonceCookie.SameSite = SameSiteMode.None;
     options.NonceCookie.SecurePolicy = CookieSecurePolicy.Always;
     
-    // Add client_id to the authorization request so IdentityServer can apply the correct branding
     options.Events = new OpenIdConnectEvents
     {
         OnRedirectToIdentityProvider = context =>
@@ -166,6 +187,103 @@ builder.Services.AddAuthentication(options =>
             // This allows IdentityServer to detect which client is requesting authentication
             // and apply the appropriate branding (BeepOilGasTheme)
             context.ProtocolMessage.SetParameter("client_id", "beep_oilgas_web");
+            return Task.CompletedTask;
+        },
+        
+        // Fired when token response is received from the authorization server
+        // This is the BEST place to capture the access token
+        OnTokenResponseReceived = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("OIDC.TokenResponse");
+            
+            var accessToken = context.TokenEndpointResponse?.AccessToken;
+            
+            logger.LogInformation("OIDC TokenResponseReceived - HasAccessToken: {HasToken}, TokenLength: {Length}", 
+                !string.IsNullOrEmpty(accessToken), accessToken?.Length ?? 0);
+            
+            // Store the raw access token in HttpContext.Items for later use
+            if (!string.IsNullOrEmpty(accessToken))
+            {
+                context.HttpContext.Items["RawAccessToken"] = accessToken;
+            }
+            
+            return Task.CompletedTask;
+        },
+        
+        OnTokenValidated = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("OIDC.TokenValidated");
+            
+            var userId = context.Principal?.FindFirst("sub")?.Value;
+            var email = context.Principal?.FindFirst("email")?.Value;
+            var name = context.Principal?.FindFirst("name")?.Value;
+            
+            logger.LogInformation("OIDC Token validated for user: {UserId}, Email: {Email}, Name: {Name}", 
+                userId, email, name);
+            
+            // Try to get access token from multiple sources
+            string? accessToken = null;
+            
+            // Source 1: TokenEndpointResponse (available in authorization code flow)
+            if (context.TokenEndpointResponse is not null)
+            {
+                accessToken = context.TokenEndpointResponse.AccessToken;
+                logger.LogDebug("OIDC: Got token from TokenEndpointResponse");
+            }
+            
+            // Source 2: HttpContext.Items (set in OnTokenResponseReceived)
+            if (string.IsNullOrEmpty(accessToken) && 
+                context.HttpContext.Items.TryGetValue("RawAccessToken", out var rawToken) &&
+                rawToken is string token)
+            {
+                accessToken = token;
+                logger.LogDebug("OIDC: Got token from HttpContext.Items[RawAccessToken]");
+            }
+            
+            // Source 3: ProtocolMessage (for implicit flow)
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                accessToken = context.ProtocolMessage?.AccessToken;
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    logger.LogDebug("OIDC: Got token from ProtocolMessage");
+                }
+            }
+            
+            // Store the token if we have one
+            if (!string.IsNullOrEmpty(accessToken) && !string.IsNullOrEmpty(userId))
+            {
+                var tokenProvider = context.HttpContext.RequestServices.GetRequiredService<Beep.Foundation.IdentityServer.Shared.Authentication.TokenProvider>();
+                tokenProvider.SetUserToken(userId, accessToken);
+                logger.LogInformation("OIDC: ✓ Stored access token for user {UserId} in TokenProvider (length: {Length})", 
+                    userId, accessToken.Length);
+            }
+            else
+            {
+                logger.LogWarning("OIDC: ✗ Could not capture access token. UserId: {UserId}, HasToken: {HasToken}", 
+                    userId, !string.IsNullOrEmpty(accessToken));
+            }
+            
+            return Task.CompletedTask;
+        },
+        
+        OnRemoteFailure = context =>
+        {
+            var logger = context.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("OIDC");
+            logger.LogError(context.Failure, "OIDC remote failure: {Message}", context.Failure?.Message);
+            
+            context.Response.Redirect($"/?error={Uri.EscapeDataString(context.Failure?.Message ?? "Authentication failed")}");
+            context.HandleResponse();
+            return Task.CompletedTask;
+        },
+        
+        OnAccessDenied = context =>
+        {
+            context.Response.Redirect("/access-denied");
+            context.HandleResponse();
             return Task.CompletedTask;
         }
     };
@@ -179,6 +297,10 @@ builder.Services.AddAuthorization();
 // HttpClient for communicating with Identity Server (for branding registration)
 builder.Services.AddHttpClient("IdentityServer", client =>
 {
+    // Use Aspire service discovery URL if available, otherwise use config
+    var identityServerUrl = builder.Configuration["services:identityserver:https:0"] 
+        ?? builder.Configuration["IdentityServer:BaseUrl"] 
+        ?? "https://localhost:7062/";
     client.BaseAddress = new Uri(identityServerUrl);
     client.Timeout = TimeSpan.FromSeconds(30); // Increase timeout to 30 seconds
 })
@@ -191,7 +313,8 @@ builder.Services.AddHttpClient("IdentityServer", client =>
         handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
     }
     return handler;
-});
+})
+.AddHttpMessageHandler<Beep.Foundation.IdentityServer.Shared.Authentication.TokenHandler>();
 
 // ============================================
 // THEME PROVIDER
@@ -269,6 +392,12 @@ builder.Services.AddScoped<IPPDMTreeBuilder>(sp =>
 // Theme provider - loads theme from Theme/OilGasTheme.json
 builder.Services.AddSingleton<IThemeProvider, Beep.OilandGas.Web.Theme.ThemeProvider>();
 
+// Register ICurrentUser service to get user info from OIDC claims
+builder.Services.AddScoped<Beep.Foundation.IdentityServer.Shared.Services.ICurrentUser, Beep.Foundation.IdentityServer.Shared.Services.CurrentUser>();
+
+// Register Account Management service for profile, password, 2FA management (IdentityServer)
+builder.Services.AddScoped<Beep.Foundation.IdentityServer.Shared.Services.IAccountManagementService, Beep.Foundation.IdentityServer.Shared.Services.AccountManagementService>();
+
 // Controllers support
 builder.Services.AddControllersWithViews();
 
@@ -307,6 +436,10 @@ app.UseHttpsRedirection();
 // IMPORTANT: Authentication must come before Authorization
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Capture access token for authenticated users during HTTP request
+// This ensures the token is available for API calls during SignalR sessions
+app.UseTokenCapture();
 
 app.UseCors();
 app.UseStaticFiles();

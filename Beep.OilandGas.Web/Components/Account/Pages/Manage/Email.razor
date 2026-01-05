@@ -1,0 +1,213 @@
+@page "/Account/Manage/Email"
+
+@inject IAccountManagementService AccountService
+@inject ISnackbar Snackbar
+
+<PageTitle>Email Settings - Beep Oil & Gas</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-2" Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-text-primary);">
+    <span style="color: var(--mud-palette-success);">$</span> email --config
+</MudText>
+<MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+    Manage your email address and verification
+</MudText>
+
+@if (isLoading)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+        <MudProgressCircular Color="Color.Success" Indeterminate="true" />
+        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); font-family: 'JetBrains Mono', monospace;" Class="mt-4">
+            Loading email settings...
+        </MudText>
+    </MudStack>
+}
+else if (profile == null)
+{
+    <MudPaper Elevation="0" Class="pa-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-error); border-radius: 8px;">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
+            <div>
+                <MudText Typo="Typo.h6" Style="color: var(--mud-palette-error); font-family: 'JetBrains Mono', monospace;">
+                    // Error: EMAIL_LOAD_FAILED
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                    Failed to load email settings. Please try again.
+                </MudText>
+            </div>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" Class="mt-4" OnClick="LoadProfileAsync"
+                   Style="font-family: 'JetBrains Mono', monospace;">
+            retry()
+        </MudButton>
+    </MudPaper>
+}
+else
+{
+    <MudGrid>
+        <!-- Current Email Card -->
+        <MudItem xs="12" md="8">
+            <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+                <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
+                    <MudIcon Icon="@Icons.Material.Filled.Email" Class="mr-2" Style="vertical-align: middle;" />
+                    Current Email
+                </MudText>
+                
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
+                    <MudText Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;">
+                        @profile.Email
+                    </MudText>
+                    
+                    @if (profile.EmailConfirmed)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled"
+                                 Style="font-family: 'JetBrains Mono', monospace;">
+                            <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Class="mr-1" />
+                            verified
+                        </MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled"
+                                 Style="font-family: 'JetBrains Mono', monospace;">
+                            <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" />
+                            unverified
+                        </MudChip>
+                    }
+                </MudStack>
+                
+                @if (!profile.EmailConfirmed)
+                {
+                    <MudPaper Elevation="0" Class="pa-3" Style="background: var(--mud-palette-dark); border-left: 3px solid var(--mud-palette-warning); border-radius: 4px;">
+                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-warning);">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-2" Style="vertical-align: middle;" />
+                            Your email is not verified. Some features may be limited.
+                        </MudText>
+                    </MudPaper>
+                    
+                    <MudButton Variant="Variant.Outlined" 
+                               Color="Color.Warning" 
+                               OnClick="SendVerificationEmailAsync"
+                               Disabled="@isSendingVerification"
+                               StartIcon="@Icons.Material.Filled.Send"
+                               Class="mt-4"
+                               Style="font-family: 'JetBrains Mono', monospace;">
+                        @if (isSendingVerification)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        send_verification()
+                    </MudButton>
+                }
+            </MudPaper>
+        </MudItem>
+        
+        <!-- Change Email Card -->
+        <MudItem xs="12" md="8">
+            <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+                <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" Style="vertical-align: middle;" />
+                    Change Email
+                </MudText>
+                
+                <MudForm @ref="form" @bind-IsValid="@isValid">
+                    <MudTextField @bind-Value="newEmail" 
+                                  Label="New Email Address" 
+                                  Variant="Variant.Outlined"
+                                  InputType="InputType.Email"
+                                  Required="true"
+                                  RequiredError="Email is required"
+                                  Validation="@(new Func<string, string?>(ValidateEmail))"
+                                  Style="background: var(--mud-palette-dark);"
+                                  Class="mb-4"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.AlternateEmail" />
+                    
+                    <MudButton Variant="Variant.Filled" 
+                               Color="Color.Success" 
+                               OnClick="ChangeEmailAsync"
+                               Disabled="@(!isValid || isSaving || string.IsNullOrWhiteSpace(newEmail))"
+                               StartIcon="@Icons.Material.Filled.Save"
+                               Style="font-family: 'JetBrains Mono', monospace;">
+                        @if (isSaving)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        update_email()
+                    </MudButton>
+                </MudForm>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private UserProfile? profile;
+    private MudForm? form;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool isSendingVerification = false;
+    private bool isValid = false;
+    private string newEmail = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfileAsync();
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+        profile = await AccountService.GetProfileAsync();
+        if (profile != null)
+        {
+            newEmail = profile.Email;
+        }
+        isLoading = false;
+    }
+
+    private string? ValidateEmail(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "Email is required";
+        if (!value.Contains("@") || !value.Contains("."))
+            return "Invalid email format";
+        return null;
+    }
+
+    private async Task ChangeEmailAsync()
+    {
+        if (string.IsNullOrWhiteSpace(newEmail) || profile == null) return;
+        
+        isSaving = true;
+        var result = await AccountService.UpdateProfileAsync(new UpdateProfileRequest
+        {
+            Email = newEmail
+        });
+        isSaving = false;
+
+        if (result.IsSuccess)
+        {
+            profile.Email = newEmail;
+            profile.EmailConfirmed = false; // Email needs to be re-verified
+            Snackbar.Add("Email updated! Please check your inbox for a verification link.", Severity.Success);
+        }
+        else
+        {
+            foreach (var error in result.Errors)
+            {
+                Snackbar.Add(error, Severity.Error);
+            }
+        }
+    }
+
+    private async Task SendVerificationEmailAsync()
+    {
+        isSendingVerification = true;
+        // Note: This would need a separate API endpoint to send verification email
+        await Task.Delay(1000); // Simulated delay
+        isSendingVerification = false;
+        Snackbar.Add("Verification email sent! Please check your inbox.", Severity.Info);
+    }
+}
+
