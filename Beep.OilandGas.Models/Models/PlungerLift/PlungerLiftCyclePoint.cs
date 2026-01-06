@@ -37,3 +37,6 @@ namespace Beep.OilandGas.Models.PlungerLift
         public decimal ProductionRate { get; set; }
     }
 }
+
+
+

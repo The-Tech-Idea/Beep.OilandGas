@@ -71,3 +71,6 @@ namespace Beep.OilandGas.Models.GasLift
         public decimal GasInjectionRate { get; set; }
     }
 }
+
+
+

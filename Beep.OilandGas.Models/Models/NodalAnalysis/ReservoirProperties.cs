@@ -47,3 +47,6 @@ namespace Beep.OilandGas.Models.NodalAnalysis
         public double OilViscosity { get; set; }
     }
 }
+
+
+

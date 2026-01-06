@@ -6,6 +6,7 @@ using Beep.OilandGas.Models.DTOs.DataManagement;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.ConfigUtil;
+using Beep.OilandGas.Models.Core.Interfaces;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services
 {
@@ -16,11 +17,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
     {
         private readonly IDMEEditor _editor;
         private readonly ILogger<ConnectionService> _logger;
-        private readonly PPDM39SetupService _setupService;
+        private readonly IPPDM39SetupService _setupService;
 
         public ConnectionService(
             IDMEEditor editor,
-            PPDM39SetupService setupService,
+            IPPDM39SetupService setupService,
             ILogger<ConnectionService> logger)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
@@ -40,12 +41,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 return connections.Select(c => new ConnectionInfo
                 {
                     ConnectionName = c.ConnectionName ?? string.Empty,
-                    DatabaseType = c.DatasourceType?.ToString() ?? "Unknown",
-                    Server = c.Server ?? string.Empty,
+                    DatabaseType = c.DatabaseType.ToString() ?? "Unknown",
+                    Server = c.Host ?? string.Empty,
                     Database = c.Database,
                     Port = c.Port,
-                    IsActive = c.ConnectionName == _setupService.GetCurrentConnectionName(),
-                    Description = c.Description
+                    IsActive = c.ConnectionName == _setupService.GetCurrentConnectionName()
+                    
                 }).ToList();
             }
             catch (Exception ex)
@@ -70,11 +71,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 {
                     ConnectionName = connectionConfig.ConnectionName ?? string.Empty,
                     DatabaseType = connectionConfig.DatabaseType ?? "Unknown",
-                    Server = connectionConfig.Server ?? string.Empty,
+                    Server = connectionConfig.Host ?? string.Empty,
                     Database = connectionConfig.Database,
                     Port = connectionConfig.Port,
-                    IsActive = connectionConfig.ConnectionName == _setupService.GetCurrentConnectionName(),
-                    Description = connectionConfig.Description
+                    IsActive = connectionConfig.ConnectionName == _setupService.GetCurrentConnectionName()
                 };
             }
             catch (Exception ex)

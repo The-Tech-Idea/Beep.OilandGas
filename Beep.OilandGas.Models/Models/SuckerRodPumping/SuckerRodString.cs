@@ -24,3 +24,6 @@ namespace Beep.OilandGas.Models.SuckerRodPumping
         public decimal TotalWeight { get; set; }
     }
 }
+
+
+

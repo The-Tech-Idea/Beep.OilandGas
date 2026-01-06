@@ -18,3 +18,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces.Security
         Task<IEnumerable<string>> GetRolesAsync(string userId);
     }
 }
+
+
+

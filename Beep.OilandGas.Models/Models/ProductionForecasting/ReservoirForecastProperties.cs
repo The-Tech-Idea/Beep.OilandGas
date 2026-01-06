@@ -67,3 +67,6 @@ namespace Beep.OilandGas.Models.ProductionForecasting
         public decimal Temperature { get; set; }
     }
 }
+
+
+

@@ -36,3 +36,6 @@ namespace Beep.OilandGas.Models.DTOs.Accounting.Revenue
         public decimal InterestPercentage { get; set; }
     }
 }
+
+
+

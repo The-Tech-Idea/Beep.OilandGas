@@ -37,3 +37,6 @@ namespace Beep.OilandGas.Models.OilProperties
         public decimal? BubblePointPressure { get; set; }
     }
 }
+
+
+

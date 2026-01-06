@@ -44,3 +44,6 @@ namespace Beep.OilandGas.Models.DTOs.Setup
         public string? PPDMGuid { get; set; }
     }
 }
+
+
+

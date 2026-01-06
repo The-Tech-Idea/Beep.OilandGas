@@ -63,3 +63,6 @@ namespace Beep.OilandGas.Models.DTOs.Setup
         public string OverallStatus { get; set; } = "IN_PROGRESS"; // IN_PROGRESS, COMPLETED, FAILED
     }
 }
+
+
+

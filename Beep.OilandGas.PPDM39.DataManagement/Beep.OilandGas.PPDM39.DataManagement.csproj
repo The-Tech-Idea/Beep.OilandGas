@@ -13,10 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- CSV seed data is now consolidated into SeedData/Templates/PPDMReferenceData.json -->
-  </ItemGroup>
-
-  <ItemGroup>
     <!-- Embed all JSON metadata files as resources -->
     <EmbeddedResource Include="Core\Metadata\PPDM39SubjectAreasAndModules.json" />
     <EmbeddedResource Include="Core\Metadata\PPDM39TableToModuleMapping.json" />
@@ -26,6 +22,11 @@
 
   <ItemGroup>
     <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.13" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Primitives" Version="10.0.1" />
     <PackageReference Include="TheTechIdea.Beep.AssemblyLoader" Version="2.0.15" />
     <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.55" />
     <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.108" />

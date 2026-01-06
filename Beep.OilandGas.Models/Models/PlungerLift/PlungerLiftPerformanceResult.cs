@@ -34,3 +34,6 @@ namespace Beep.OilandGas.Models.PlungerLift
         public List<string> FeasibilityReasons { get; set; } = new();
     }
 }
+
+
+

@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.PumpPerformance
 {
-    public partial class ESP_DESIGN_RESULT : Entity, Core.Interfaces.IPPDMEntity
+    public partial class ESP_DESIGN_RESULT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private String ESP_DESIGN_RESULT_IDValue;
         public String ESP_DESIGN_RESULT_ID
@@ -227,3 +227,6 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
         }
     }
 }
+
+
+

@@ -13,3 +13,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces.Security
         Task<bool> DeleteAsync(string id);
     }
 }
+
+
+

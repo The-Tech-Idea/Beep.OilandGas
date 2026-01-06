@@ -1,7 +1,7 @@
 @page "/ppdm39/calculations/economicanalysis"
 @using Beep.OilandGas.Models.EconomicAnalysis
-@using Beep.OilandGas.Web.Services
-@inject ICalculationServiceClient CalculationService
+@using Beep.OilandGas.Client.App
+@inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
@@ -104,7 +104,8 @@
         _isCalculating = true;
         try
         {
-            _npv = await CalculationService.CalculateNPVAsync(_cashFlows, _discountRate / 100.0);
+            var cashFlowList = _cashFlows.ToList();
+            _npv = (double)await BeepApp.Calculations.CalculateNPVAsync(cashFlowList);
         }
         catch (Exception ex)
         {
@@ -127,7 +128,8 @@
         _isCalculating = true;
         try
         {
-            _irr = await CalculationService.CalculateIRRAsync(_cashFlows, _initialGuess / 100.0);
+            var cashFlowList = _cashFlows.ToList();
+            _irr = (double)await BeepApp.Calculations.CalculateIRRAsync(cashFlowList);
         }
         catch (Exception ex)
         {
@@ -150,12 +152,19 @@
         _isCalculating = true;
         try
         {
-            _economicResult = await CalculationService.AnalyzeEconomicAsync(
-                _cashFlows, _discountRate / 100.0, 0.1, 0.1);
+            var cashFlowList = _cashFlows.ToList();
+            _economicResult = await BeepApp.Calculations.PerformEconomicAnalysisAsync(cashFlowList);
             
             // Save the result
             var analysisId = Guid.NewGuid().ToString();
-            await CalculationService.SaveEconomicAnalysisResultAsync(analysisId, _economicResult, _currentUserId);
+            var resultData = new Beep.OilandGas.Models.Data.EconomicAnalysis.ECONOMIC_ANALYSIS_RESULT
+            {
+                ResultId = analysisId,
+                NPV = (decimal)_economicResult.NPV,
+                IRR = (decimal)_economicResult.IRR,
+                PaybackPeriod = (decimal)_economicResult.PaybackPeriod
+            };
+            await BeepApp.Calculations.SaveEconomicResultAsync(resultData, _currentUserId);
             
             Snackbar.Add("Economic analysis completed and saved", Severity.Success);
         }

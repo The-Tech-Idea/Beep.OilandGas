@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.GasLift
 {
-    public partial class GAS_LIFT_PERFORMANCE_POINT : Entity, Core.Interfaces.IPPDMEntity
+    public partial class GAS_LIFT_PERFORMANCE_POINT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private String GAS_LIFT_PERFORMANCE_POINT_IDValue;
         public String GAS_LIFT_PERFORMANCE_POINT_ID
@@ -171,3 +171,6 @@ namespace Beep.OilandGas.Models.Data.GasLift
         }
     }
 }
+
+
+

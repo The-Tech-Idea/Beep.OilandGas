@@ -27,3 +27,6 @@ namespace Beep.OilandGas.Models.PumpPerformance
         public decimal Horsepower { get; set; }
     }
 }
+
+
+

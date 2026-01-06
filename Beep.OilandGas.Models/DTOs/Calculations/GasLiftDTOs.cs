@@ -65,3 +65,6 @@ namespace Beep.OilandGas.Models.DTOs.Calculations
         public bool UseSIUnits { get; set; } = false;
     }
 }
+
+
+

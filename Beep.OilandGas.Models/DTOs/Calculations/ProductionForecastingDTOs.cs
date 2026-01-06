@@ -55,3 +55,6 @@ namespace Beep.OilandGas.Models.DTOs.Calculations
         public DateTime EndDate { get; set; }
     }
 }
+
+
+

@@ -79,3 +79,6 @@ namespace Beep.OilandGas.Models.PumpPerformance
         public List<ESPPumpPoint> PerformancePoints { get; set; } = new();
     }
 }
+
+
+

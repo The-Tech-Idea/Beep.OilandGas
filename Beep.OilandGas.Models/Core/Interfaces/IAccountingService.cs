@@ -70,3 +70,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<SalesStatement> GenerateSalesStatementAsync(string customerBaId, DateTime statementDate, string? connectionName = null);
     }
 }
+
+
+

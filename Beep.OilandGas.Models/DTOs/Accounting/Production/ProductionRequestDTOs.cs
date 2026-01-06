@@ -15,3 +15,6 @@ namespace Beep.OilandGas.Models.DTOs.Accounting.Production
         public decimal? ActualClosingInventory { get; set; }
     }
 }
+
+
+

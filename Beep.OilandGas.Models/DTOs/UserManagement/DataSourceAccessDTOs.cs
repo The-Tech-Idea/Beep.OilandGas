@@ -26,3 +26,6 @@ namespace Beep.OilandGas.Models.DTOs.UserManagement
         public string DatabaseName { get; set; } = string.Empty;
     }
 }
+
+
+

@@ -32,3 +32,6 @@ namespace Beep.OilandGas.Models.CompressorAnalysis
         public bool IsFeasible { get; set; }
     }
 }
+
+
+

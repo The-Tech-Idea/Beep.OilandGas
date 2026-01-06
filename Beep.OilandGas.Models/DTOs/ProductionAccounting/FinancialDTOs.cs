@@ -106,3 +106,6 @@ namespace Beep.OilandGas.Models.DTOs.ProductionAccounting
         public decimal? GasPrice { get; set; }
     }
 }
+
+
+

@@ -29,3 +29,6 @@ namespace Beep.OilandGas.Models.DTOs.AccessControl
         public string PreferredLayout { get; set; } = string.Empty;
     }
 }
+
+
+

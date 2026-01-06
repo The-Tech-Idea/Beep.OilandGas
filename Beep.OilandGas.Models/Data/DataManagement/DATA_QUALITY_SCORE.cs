@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.DataManagement
@@ -9,7 +9,7 @@ namespace Beep.OilandGas.Models.Data.DataManagement
     /// <summary>
     /// Entity for storing individual entity quality scores
     /// </summary>
-    public partial class DATA_QUALITY_SCORE : Entity, Beep.OilandGas.Models.Core.Interfaces.IPPDMEntity
+    public partial class DATA_QUALITY_SCORE : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String QUALITY_SCORE_IDValue;
         public System.String QUALITY_SCORE_ID
@@ -168,3 +168,7 @@ namespace Beep.OilandGas.Models.Data.DataManagement
         }
     }
 }
+
+
+
+

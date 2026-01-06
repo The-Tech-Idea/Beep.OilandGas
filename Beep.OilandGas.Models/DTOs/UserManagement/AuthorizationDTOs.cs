@@ -51,3 +51,6 @@ namespace Beep.OilandGas.Models.DTOs.UserManagement
         public string Role { get; set; } = string.Empty;
     }
 }
+
+
+

@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.DataManagement
@@ -9,7 +9,7 @@ namespace Beep.OilandGas.Models.Data.DataManagement
     /// <summary>
     /// Entity for storing data quality issues found during quality assessment
     /// </summary>
-    public partial class DATA_QUALITY_ISSUE : Entity, Beep.OilandGas.Models.Core.Interfaces.IPPDMEntity
+    public partial class DATA_QUALITY_ISSUE : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String QUALITY_ISSUE_IDValue;
         public System.String QUALITY_ISSUE_ID
@@ -196,3 +196,7 @@ namespace Beep.OilandGas.Models.Data.DataManagement
         }
     }
 }
+
+
+
+

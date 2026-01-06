@@ -8,3 +8,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces.Security
         Task<bool> UserIsInRoleAsync(string userId, string roleName);
     }
 }
+
+
+

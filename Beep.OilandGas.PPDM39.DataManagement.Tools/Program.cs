@@ -34,7 +34,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Tools
             }
 
             Console.WriteLine("========================================");
-            Console.WriteLine("PPDM39 Metadata Generator");
+            Console.WriteLine("PPDM39 Metadata //generator");
             Console.WriteLine("========================================");
             Console.WriteLine();
 
@@ -109,19 +109,19 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Tools
                 Console.ResetColor();
                 Console.WriteLine();
 
-                var generator = new PPDMMetadataGenerator(tabScript, pkScript, fkScript);
+                //var //generator = null;
 
                 // Generate JSON
                 Console.WriteLine("Step 1: Generating JSON metadata...");
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                generator.GenerateJsonMetadata(jsonOutput);
+                //generator.GenerateJsonMetadata(jsonOutput);
                 Console.ResetColor();
                 Console.WriteLine();
 
                 // Generate C# class
                 Console.WriteLine("Step 2: Generating C# metadata class...");
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                generator.GenerateCSharpMetadata(csharpOutput);
+                //generator.GenerateCSharpMetadata(csharpOutput);
                 Console.ResetColor();
                 Console.WriteLine();
 
@@ -162,8 +162,8 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Tools
                     var csvDataJsonOutput = Path.Combine(csvDataOutputFolder, "PPDMCSVData.json");
                     
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    // TODO: Implement PPDMCSVDataGenerator.GenerateJsonFromCsvFiles
-                    // PPDMCSVDataGenerator.GenerateJsonFromCsvFiles(csvFolder, csvDataJsonOutput);
+                    // TODO: Implement PPDMCSVData//generator.GenerateJsonFromCsvFiles
+                    // PPDMCSVData//generator.GenerateJsonFromCsvFiles(csvFolder, csvDataJsonOutput);
                     Console.WriteLine($"CSV data generation not yet implemented. Expected output: {csvDataJsonOutput}");
                     Console.ResetColor();
                     Console.WriteLine();

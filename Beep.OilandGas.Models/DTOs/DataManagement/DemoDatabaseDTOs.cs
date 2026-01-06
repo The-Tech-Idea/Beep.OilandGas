@@ -76,3 +76,6 @@ namespace Beep.OilandGas.Models.DTOs.DataManagement
         public string? ErrorDetails { get; set; }
     }
 }
+
+
+

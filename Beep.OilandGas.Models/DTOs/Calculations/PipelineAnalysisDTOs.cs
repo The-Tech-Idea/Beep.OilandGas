@@ -47,3 +47,6 @@ namespace Beep.OilandGas.Models.DTOs.Calculations
         public decimal FlowRate { get; set; }
     }
 }
+
+
+

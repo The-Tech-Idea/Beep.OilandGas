@@ -62,3 +62,6 @@ namespace Beep.OilandGas.Models.WellTestAnalysis
         DualPermeability
     }
 }
+
+
+

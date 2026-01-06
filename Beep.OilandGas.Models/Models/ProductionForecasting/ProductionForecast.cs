@@ -39,3 +39,6 @@ namespace Beep.OilandGas.Models.ProductionForecasting
         public decimal TotalCumulativeProduction { get; set; }
     }
 }
+
+
+

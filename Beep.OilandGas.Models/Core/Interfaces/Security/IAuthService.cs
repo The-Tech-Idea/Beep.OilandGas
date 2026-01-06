@@ -10,3 +10,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces.Security
         Task<bool> SignOutAsync(string userId);
     }
 }
+
+
+

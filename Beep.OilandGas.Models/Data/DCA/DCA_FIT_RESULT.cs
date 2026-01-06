@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.DCA
 {
-    public partial class DCA_FIT_RESULT : Entity, Core.Interfaces.IPPDMEntity
+    public partial class DCA_FIT_RESULT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private String DCA_FIT_RESULT_IDValue;
         public String DCA_FIT_RESULT_ID
@@ -220,3 +220,6 @@ namespace Beep.OilandGas.Models.Data.DCA
         }
     }
 }
+
+
+

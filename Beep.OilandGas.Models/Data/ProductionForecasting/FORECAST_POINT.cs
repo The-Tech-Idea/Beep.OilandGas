@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionForecasting
 {
-    public partial class FORECAST_POINT : Entity, Core.Interfaces.IPPDMEntity
+    public partial class FORECAST_POINT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private String FORECAST_POINT_IDValue;
         public String FORECAST_POINT_ID
@@ -178,3 +178,6 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
         }
     }
 }
+
+
+

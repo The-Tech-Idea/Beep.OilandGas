@@ -1,8 +1,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
-@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Client.App
 @inject AuthenticationStateProvider AuthStateProvider
-@inject IDataManagementService DataManagementService
-@inject IConnectionService ConnectionService
+@inject IBeepOilandGasApp BeepApp
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject ILogger<ConnectionCheck> Logger

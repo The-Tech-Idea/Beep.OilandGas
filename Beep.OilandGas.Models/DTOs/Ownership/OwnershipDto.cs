@@ -81,3 +81,6 @@ namespace Beep.OilandGas.Models.DTOs.Ownership
     }
 }
 
+
+
+

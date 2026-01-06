@@ -42,3 +42,6 @@ namespace Beep.OilandGas.Models.PipelineAnalysis
         public decimal OutletPressure { get; set; }
     }
 }
+
+
+

@@ -23,3 +23,6 @@ namespace Beep.OilandGas.Models.DTOs.Accounting.Ownership
         public string? TaxId { get; set; }
     }
 }
+
+
+

@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Lease
 {
-    public partial class NET_PROFIT_LEASE : Entity, Beep.OilandGas.Models.Core.Interfaces.IPPDMEntity
+    public partial class NET_PROFIT_LEASE : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String LEASE_IDValue;
         public System.String LEASE_ID
@@ -206,3 +206,6 @@ namespace Beep.OilandGas.Models.Data.Lease
         }
     }
 }
+
+
+

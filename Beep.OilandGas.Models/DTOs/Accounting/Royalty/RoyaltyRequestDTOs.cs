@@ -27,3 +27,6 @@ namespace Beep.OilandGas.Models.DTOs.Accounting.Royalty
         public decimal? GasPrice { get; set; }
     }
 }
+
+
+

@@ -42,3 +42,6 @@ namespace Beep.OilandGas.Models.OilProperties
         public decimal Compressibility { get; set; }
     }
 }
+
+
+

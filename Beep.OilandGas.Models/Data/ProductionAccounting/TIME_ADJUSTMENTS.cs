@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
@@ -122,3 +122,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+
+
+
+

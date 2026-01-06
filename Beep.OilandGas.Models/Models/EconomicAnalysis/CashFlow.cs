@@ -22,3 +22,6 @@ namespace Beep.OilandGas.Models.EconomicAnalysis
         public string? Description { get; set; }
     }
 }
+
+
+

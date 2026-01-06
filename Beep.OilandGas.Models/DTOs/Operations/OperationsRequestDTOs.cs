@@ -46,3 +46,6 @@ namespace Beep.OilandGas.Models.DTOs.Operations
         public decimal InjectionRate { get; set; }
     }
 }
+
+
+

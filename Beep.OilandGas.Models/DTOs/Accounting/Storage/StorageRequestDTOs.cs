@@ -10,3 +10,6 @@ namespace Beep.OilandGas.Models.DTOs.Accounting.Storage
         public string? Location { get; set; }
     }
 }
+
+
+

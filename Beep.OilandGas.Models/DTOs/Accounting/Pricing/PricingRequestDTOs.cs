@@ -25,3 +25,6 @@ namespace Beep.OilandGas.Models.DTOs.Accounting.Pricing
         public decimal? Differential { get; set; }
     }
 }
+
+
+

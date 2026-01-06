@@ -17,3 +17,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         SetCurrentConnectionResult SetCurrentConnection(string connectionName, string? userId = null);
     }
 }
+
+
+

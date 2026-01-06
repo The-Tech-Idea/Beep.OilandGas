@@ -27,3 +27,6 @@ namespace Beep.OilandGas.Models.DTOs.Accounting.Cost
         public decimal? TotalCapitalCosts { get; set; }
     }
 }
+
+
+

@@ -1,10 +1,11 @@
 @page "/ppdm39/database-management"
 @page "/data/database-setup"
+@using Beep.OilandGas.Client.App
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
-@inject IDataManagementService DataManagementService
+@inject IBeepOilandGasApp BeepApp
 @inject IProgressTrackingClient ProgressClient
 @using System.Net.Http.Json
 @using System.Text.Json

@@ -16,3 +16,6 @@ namespace Beep.OilandGas.Models.DTOs.AccessControl
         public List<AssetHierarchyNode> AssetPath { get; set; } = new List<AssetHierarchyNode>();
     }
 }
+
+
+

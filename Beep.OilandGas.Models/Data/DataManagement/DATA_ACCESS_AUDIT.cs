@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.DataManagement
@@ -10,7 +10,7 @@ namespace Beep.OilandGas.Models.Data.DataManagement
     /// Entity for tracking data access events for compliance and auditing
     /// Records who accessed what data and when
     /// </summary>
-    public partial class DATA_ACCESS_AUDIT : Entity, Beep.OilandGas.Models.Core.Interfaces.IPPDMEntity
+    public partial class DATA_ACCESS_AUDIT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String ACCESS_AUDIT_IDValue;
         public System.String ACCESS_AUDIT_ID
@@ -183,3 +183,7 @@ namespace Beep.OilandGas.Models.Data.DataManagement
         }
     }
 }
+
+
+
+

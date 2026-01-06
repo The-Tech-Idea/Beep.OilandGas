@@ -32,3 +32,6 @@ namespace Beep.OilandGas.Models.DTOs.UserManagement
         public List<AppFilter>? ExistingFilters { get; set; }
     }
 }
+
+
+

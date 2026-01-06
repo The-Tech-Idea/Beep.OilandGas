@@ -32,3 +32,6 @@ namespace Beep.OilandGas.Models.PipelineAnalysis
         public decimal LiquidDensity { get; set; }
     }
 }
+
+
+

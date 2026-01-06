@@ -27,3 +27,6 @@ namespace Beep.OilandGas.Models.PumpPerformance
         public decimal PowerFactor { get; set; } = 0.85m;
     }
 }
+
+
+

@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.PermitsAndApplications
 {
-    public partial class REQUIRED_FORM : Entity, Core.Interfaces.IPPDMEntity
+    public partial class REQUIRED_FORM : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private String REQUIRED_FORM_IDValue;
         public String REQUIRED_FORM_ID
@@ -178,3 +178,6 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
         }
     }
 }
+
+
+

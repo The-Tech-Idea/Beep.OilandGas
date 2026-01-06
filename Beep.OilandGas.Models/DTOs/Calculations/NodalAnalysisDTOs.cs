@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using Beep.OilandGas.Models.DTOs.NodalAnalysis;
+using Beep.OilandGas.Models.DTOs;
 
 namespace Beep.OilandGas.Models.DTOs.Calculations
 {
@@ -39,3 +39,6 @@ namespace Beep.OilandGas.Models.DTOs.Calculations
         public OptimizationGoalsDto OptimizationGoals { get; set; } = null!;
     }
 }
+
+
+

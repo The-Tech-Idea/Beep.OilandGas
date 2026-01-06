@@ -83,4 +83,115 @@ namespace Beep.OilandGas.Models.DTOs.Pumps
         [Required(ErrorMessage = "PumpId or WellUWI is required")]
         public string PumpId { get; set; } = string.Empty;
     }
+
+    /// <summary>
+    /// DTO for plunger lift well properties
+    /// </summary>
+    public class PlungerLiftWellPropertiesDto
+    {
+        /// <summary>
+        /// Well depth in feet
+        /// </summary>
+        [Required]
+        [Range(0, double.MaxValue, ErrorMessage = "WellDepth must be greater than or equal to 0")]
+        public decimal WellDepth { get; set; }
+
+        /// <summary>
+        /// Tubing size in inches
+        /// </summary>
+        [Required]
+        [Range(0.5, 10, ErrorMessage = "TubingSize must be between 0.5 and 10 inches")]
+        public decimal TubingSize { get; set; }
+
+        /// <summary>
+        /// Casing size in inches
+        /// </summary>
+        [Required]
+        [Range(0.5, 20, ErrorMessage = "CasingSize must be between 0.5 and 20 inches")]
+        public decimal CasingSize { get; set; }
+
+        /// <summary>
+        /// Static fluid level in feet
+        /// </summary>
+        [Required]
+        [Range(0, double.MaxValue)]
+        public decimal StaticFluidLevel { get; set; }
+
+        /// <summary>
+        /// Reservoir pressure in psi
+        /// </summary>
+        [Required]
+        [Range(0, double.MaxValue)]
+        public decimal ReservoirPressure { get; set; }
+
+        /// <summary>
+        /// Desired production rate in bbl/day
+        /// </summary>
+        [Required]
+        [Range(0, double.MaxValue)]
+        public decimal DesiredProductionRate { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for sucker rod pump well properties
+    /// </summary>
+    public class SuckerRodPumpWellPropertiesDto
+    {
+        /// <summary>
+        /// Well depth in feet
+        /// </summary>
+        [Required]
+        [Range(0, double.MaxValue, ErrorMessage = "WellDepth must be greater than or equal to 0")]
+        public decimal WellDepth { get; set; }
+
+        /// <summary>
+        /// Tubing size in inches
+        /// </summary>
+        [Required]
+        [Range(0.5, 10, ErrorMessage = "TubingSize must be between 0.5 and 10 inches")]
+        public decimal TubingSize { get; set; }
+
+        /// <summary>
+        /// Casing size in inches
+        /// </summary>
+        [Required]
+        [Range(0.5, 20, ErrorMessage = "CasingSize must be between 0.5 and 20 inches")]
+        public decimal CasingSize { get; set; }
+
+        /// <summary>
+        /// Static fluid level in feet
+        /// </summary>
+        [Required]
+        [Range(0, double.MaxValue)]
+        public decimal StaticFluidLevel { get; set; }
+
+        /// <summary>
+        /// Producing fluid level in feet
+        /// </summary>
+        [Required]
+        [Range(0, double.MaxValue)]
+        public decimal ProducingFluidLevel { get; set; }
+
+        /// <summary>
+        /// API gravity of produced fluid
+        /// </summary>
+        [Required]
+        [Range(0, 60, ErrorMessage = "APIGravity must be between 0 and 60")]
+        public decimal APIGravity { get; set; }
+
+        /// <summary>
+        /// Desired production rate in bbl/day
+        /// </summary>
+        [Required]
+        [Range(0, double.MaxValue)]
+        public decimal DesiredProductionRate { get; set; }
+
+        /// <summary>
+        /// Pump type/size designation
+        /// </summary>
+        public string? PumpTypeDesignation { get; set; }
+    }
 }
+
+
+

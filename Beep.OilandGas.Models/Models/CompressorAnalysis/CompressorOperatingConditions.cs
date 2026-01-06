@@ -47,3 +47,6 @@ namespace Beep.OilandGas.Models.CompressorAnalysis
         public decimal MechanicalEfficiency { get; set; } = 0.95m;
     }
 }
+
+
+

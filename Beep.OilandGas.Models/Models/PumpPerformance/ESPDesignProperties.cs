@@ -67,3 +67,6 @@ namespace Beep.OilandGas.Models.PumpPerformance
         public decimal PumpSettingDepth { get; set; }
     }
 }
+
+
+

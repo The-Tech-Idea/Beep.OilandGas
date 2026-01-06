@@ -106,3 +106,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         public string? ErrorDetails { get; set; }
     }
 }
+
+
+

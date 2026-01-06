@@ -31,3 +31,6 @@ namespace Beep.OilandGas.Models.DTOs.DataManagement
         public string DefaultSeedOption { get; set; } = "reference-sample";
     }
 }
+
+
+

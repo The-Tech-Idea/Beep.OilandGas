@@ -49,3 +49,6 @@ namespace Beep.OilandGas.Models.FlashCalculations
         public Dictionary<string, decimal> LiquidComposition { get; set; } = new Dictionary<string, decimal>();
     }
 }
+
+
+

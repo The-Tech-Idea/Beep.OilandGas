@@ -76,3 +76,6 @@ namespace Beep.OilandGas.Models.DTOs.Analytics
     }
 }
 
+
+
+

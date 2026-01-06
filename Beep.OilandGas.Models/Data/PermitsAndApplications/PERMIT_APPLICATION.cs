@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.PermitsAndApplications
 {
-    public partial class PERMIT_APPLICATION : Entity, Core.Interfaces.IPPDMEntity
+    public partial class PERMIT_APPLICATION : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private String PERMIT_APPLICATION_IDValue;
         public String PERMIT_APPLICATION_ID
@@ -267,5 +267,10 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             get { return this.BUSINESS_ASSOCIATE_IDValue; }
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
+
+        public object Components { get; set; }
     }
 }
+
+
+

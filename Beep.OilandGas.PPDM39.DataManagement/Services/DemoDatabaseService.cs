@@ -13,6 +13,7 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Core.Interfaces;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Services
 {
@@ -27,7 +28,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
-        private readonly PPDM39SetupService _setupService;
+        private readonly IPPDM39SetupService _setupService;
         private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMReferenceDataSeeder? _referenceDataSeeder;
         private readonly ILogger<DemoDatabaseService> _logger;
 
@@ -38,7 +39,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            PPDM39SetupService setupService,
+            IPPDM39SetupService setupService,
             Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMReferenceDataSeeder? referenceDataSeeder = null,
             ILogger<DemoDatabaseService>? logger = null)
         {
@@ -113,10 +114,13 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
                 // Get all available scripts for SQLite
                 var availableScripts = _setupService.GetAvailableScripts("SQLite");
-                var scriptNames = availableScripts.OrderBy(s => s.ExecutionOrder).Select(s => s.Name).ToList();
-
+                var names = availableScripts
+                    .OrderBy(s => s.ExecutionOrder)
+                    .Select(s => s.Name?.ToString() ?? string.Empty)
+                    .ToList();
+                
                 // Create database schema using setup service
-                var scriptsResult = await _setupService.ExecuteAllScriptsAsync(connectionConfig, scriptNames);
+                var scriptsResult = await _setupService.ExecuteAllScriptsAsync(connectionConfig, names);
                 if (!scriptsResult.AllSucceeded)
                 {
                     // Clean up on failure
@@ -261,7 +265,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 // Remove connection from IDMEEditor
                 try
                 {
-                    _editor.RemoveConnection(connectionName);
+                    _editor.ConfigEditor.RemoveConnByName(connectionName);
                 }
                 catch (Exception ex)
                 {

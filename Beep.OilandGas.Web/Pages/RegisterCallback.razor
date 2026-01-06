@@ -1,9 +1,9 @@
 @page "/register-callback"
-@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Web.Components.Demo
 @using Microsoft.AspNetCore.Components.Authorization
 @inject IDemoDatabaseService DemoDatabaseService
-@inject IConnectionService ConnectionService
+@inject IBeepOilandGasApp BeepApp
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider

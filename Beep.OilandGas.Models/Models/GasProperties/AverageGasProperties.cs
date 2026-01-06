@@ -27,3 +27,6 @@ namespace Beep.OilandGas.Models.GasProperties
         public decimal AverageViscosity { get; set; }
     }
 }
+
+
+

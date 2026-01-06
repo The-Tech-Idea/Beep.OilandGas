@@ -18,6 +18,7 @@ using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories;
 using Beep.OilandGas.Web.Theme;
 using Beep.OilandGas.Web.Services;
+using Beep.OilandGas.Client.DependencyInjection;
 using Microsoft.AspNetCore.Routing;
 using Beep.Foundation.IdentityServer.Shared.Authentication;
 using Beep.Foundation.IdentityServer.Shared.Services;
@@ -330,36 +331,29 @@ builder.Services.AddHostedService<Beep.OilandGas.Web.Services.BrandingRegistrati
 // ============================================
 // APPLICATION SERVICES
 // ============================================
-        // Data Management Service - Centralized service for managing data sources and connections
-        // This service provides access to current data source, available connections, and connection management
+// Register the Beep.OilandGas client app (auto-detect local/remote)
+builder.Services.AddBeepOilandGasAppAuto(builder.Configuration);
+
+        // All services are accessed via IBeepOilandGasApp (registered above).
+        // Components should inject IBeepOilandGasApp and use its properties for calculations, data management, etc.
+        
+        // Legacy service clients kept for backward compatibility (deprecated)
         builder.Services.AddScoped<IDataManagementService, DataManagementService>();
+        builder.Services.AddScoped<IConnectionService, ConnectionService>();
+        builder.Services.AddScoped<IAccountingServiceClient, AccountingServiceClient>();
+        builder.Services.AddScoped<ICalculationServiceClient, CalculationServiceClient>();
+        builder.Services.AddScoped<IOperationsServiceClient, OperationsServiceClient>();
+        builder.Services.AddScoped<IPumpServiceClient, PumpServiceClient>();
+        builder.Services.AddScoped<IPropertiesServiceClient, PropertiesServiceClient>();
 
         // Progress Tracking Client - SignalR client for real-time progress updates
         builder.Services.AddScoped<IProgressTrackingClient, ProgressTrackingClient>();
 
-        // Connection Service - Client service for connection management operations
-        builder.Services.AddScoped<IConnectionService, ConnectionService>();
-
         // LifeCycle Service - Client service for lifecycle management operations
         builder.Services.AddScoped<ILifeCycleService, LifeCycleService>();
 
-        // Accounting Service Client - Client service for accounting operations
-        builder.Services.AddScoped<IAccountingServiceClient, AccountingServiceClient>();
-
         // Demo Database Service - Client service for demo database operations
         builder.Services.AddScoped<IDemoDatabaseService, DemoDatabaseService>();
-
-        // Calculation Service Client - Client service for calculation operations
-        builder.Services.AddScoped<ICalculationServiceClient, CalculationServiceClient>();
-
-        // Operations Service Client - Client service for operations
-        builder.Services.AddScoped<IOperationsServiceClient, OperationsServiceClient>();
-
-        // Pump Service Client - Client service for pump operations
-        builder.Services.AddScoped<IPumpServiceClient, PumpServiceClient>();
-
-        // Properties Service Client - Client service for properties operations
-        builder.Services.AddScoped<IPropertiesServiceClient, PropertiesServiceClient>();
 
 // PPDM39 Data Management Services
 

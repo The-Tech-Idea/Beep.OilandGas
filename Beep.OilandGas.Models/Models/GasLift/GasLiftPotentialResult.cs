@@ -56,3 +56,6 @@ namespace Beep.OilandGas.Models.GasLift
         public decimal BottomHolePressure { get; set; }
     }
 }
+
+
+

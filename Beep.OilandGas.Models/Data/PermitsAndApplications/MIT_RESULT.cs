@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.PermitsAndApplications
 {
-    public partial class MIT_RESULT : Entity, Core.Interfaces.IPPDMEntity
+    public partial class MIT_RESULT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private String MIT_RESULT_IDValue;
         public String MIT_RESULT_ID
@@ -178,3 +178,6 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
         }
     }
 }
+
+
+

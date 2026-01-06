@@ -22,3 +22,6 @@ namespace Beep.OilandGas.Models.CompressorAnalysis
         public decimal PolytropicEfficiency { get; set; } = 0.75m;
     }
 }
+
+
+

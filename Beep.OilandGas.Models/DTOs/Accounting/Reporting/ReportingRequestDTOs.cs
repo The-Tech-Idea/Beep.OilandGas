@@ -21,3 +21,6 @@ namespace Beep.OilandGas.Models.DTOs.Accounting.Reporting
         public DateTime EndDate { get; set; }
     }
 }
+
+
+

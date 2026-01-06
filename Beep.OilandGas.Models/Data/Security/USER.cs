@@ -50,6 +50,13 @@ namespace Beep.OilandGas.Models.Data.Security
         }
 
         // Standard PPDM columns
+        private string ACTIVE_INDValue = "Y";
+        public string ACTIVE_IND
+        {
+            get => ACTIVE_INDValue;
+            set => SetProperty(ref ACTIVE_INDValue, value);
+        }
+
         private string ROW_QUALITYValue;
         public string ROW_QUALITY
         {
@@ -91,5 +98,22 @@ namespace Beep.OilandGas.Models.Data.Security
             get => ROW_CHANGED_BYValue;
             set => SetProperty(ref ROW_CHANGED_BYValue, value);
         }
+
+        private DateTime? ROW_EFFECTIVE_DATEValue;
+        public DateTime? ROW_EFFECTIVE_DATE
+        {
+            get => ROW_EFFECTIVE_DATEValue;
+            set => SetProperty(ref ROW_EFFECTIVE_DATEValue, value);
+        }
+
+        private DateTime? ROW_EXPIRY_DATEValue;
+        public DateTime? ROW_EXPIRY_DATE
+        {
+            get => ROW_EXPIRY_DATEValue;
+            set => SetProperty(ref ROW_EXPIRY_DATEValue, value);
+        }
     }
 }
+
+
+

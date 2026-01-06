@@ -72,3 +72,6 @@ namespace Beep.OilandGas.Models.PlungerLift
         public decimal LiquidProductionRate { get; set; }
     }
 }
+
+
+

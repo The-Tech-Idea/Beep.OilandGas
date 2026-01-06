@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.OilProperties
 {
-    public partial class OIL_PROPERTY_CONDITIONS : Entity, Core.Interfaces.IPPDMEntity
+    public partial class OIL_PROPERTY_CONDITIONS : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private String OIL_PROPERTY_CONDITIONS_IDValue;
         public String OIL_PROPERTY_CONDITIONS_ID
@@ -171,3 +171,6 @@ namespace Beep.OilandGas.Models.Data.OilProperties
         }
     }
 }
+
+
+

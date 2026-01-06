@@ -52,3 +52,6 @@ namespace Beep.OilandGas.Models.CompressorAnalysis
         public decimal OverallEfficiency { get; set; }
     }
 }
+
+
+

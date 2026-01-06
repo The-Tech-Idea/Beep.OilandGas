@@ -17,3 +17,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         List<DemoDatabaseMetadata> GetAllDemoDatabases();
     }
 }
+
+
+

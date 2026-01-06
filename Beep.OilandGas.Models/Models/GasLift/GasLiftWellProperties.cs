@@ -57,3 +57,6 @@ namespace Beep.OilandGas.Models.GasLift
         public decimal GasSpecificGravity { get; set; }
     }
 }
+
+
+

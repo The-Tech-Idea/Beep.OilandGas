@@ -47,3 +47,6 @@ namespace Beep.OilandGas.Models.PipelineAnalysis
         public string FlowRegime { get; set; } = string.Empty;
     }
 }
+
+
+

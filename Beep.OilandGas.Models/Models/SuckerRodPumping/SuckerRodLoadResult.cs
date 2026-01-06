@@ -57,3 +57,6 @@ namespace Beep.OilandGas.Models.SuckerRodPumping
         public decimal LoadFactor { get; set; }
     }
 }
+
+
+

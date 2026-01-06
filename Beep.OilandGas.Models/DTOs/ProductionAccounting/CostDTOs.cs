@@ -72,3 +72,6 @@ namespace Beep.OilandGas.Models.DTOs.ProductionAccounting
         public string? InvoiceNumber { get; set; }
     }
 }
+
+
+

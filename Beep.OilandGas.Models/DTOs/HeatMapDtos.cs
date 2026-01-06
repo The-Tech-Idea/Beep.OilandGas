@@ -35,6 +35,20 @@ namespace Beep.OilandGas.Models.DTOs
     }
 
     /// <summary>
+    /// Configuration for generating a heat map
+    /// </summary>
+    public class HeatMapConfiguration
+    {
+        public string ConfigurationName { get; set; } = string.Empty;
+        public string ColorSchemeType { get; set; } = "Viridis";
+        public int ColorSteps { get; set; } = 256;
+        public bool ShowLegend { get; set; } = true;
+        public bool UseInterpolation { get; set; } = false;
+        public string InterpolationMethod { get; set; } = "InverseDistanceWeighting";
+        public double InterpolationCellSize { get; set; } = 10.0;
+    }
+
+    /// <summary>
     /// Request for generating a heat map
     /// </summary>
     public class GenerateHeatMapRequest
@@ -64,4 +78,7 @@ namespace Beep.OilandGas.Models.DTOs
         public string? ProductionType { get; set; } // OIL, GAS, WATER
     }
 }
+
+
+
 

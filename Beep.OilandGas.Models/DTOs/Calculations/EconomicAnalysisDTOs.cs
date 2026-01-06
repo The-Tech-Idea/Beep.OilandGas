@@ -125,3 +125,6 @@ namespace Beep.OilandGas.Models.DTOs.Calculations
         public EconomicResult Result { get; set; } = null!;
     }
 }
+
+
+

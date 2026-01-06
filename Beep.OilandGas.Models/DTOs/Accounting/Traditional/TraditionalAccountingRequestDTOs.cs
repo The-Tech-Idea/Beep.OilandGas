@@ -15,3 +15,6 @@ namespace Beep.OilandGas.Models.DTOs.Accounting.Traditional
         public string? Description { get; set; }
     }
 }
+
+
+

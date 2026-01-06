@@ -37,3 +37,6 @@ namespace Beep.OilandGas.Models.ChokeAnalysis
         public decimal CriticalPressureRatio { get; set; }
     }
 }
+
+
+

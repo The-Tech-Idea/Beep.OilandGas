@@ -30,3 +30,6 @@ namespace Beep.OilandGas.Models.ChokeAnalysis
         public decimal ChokeArea => (decimal)Math.PI * ChokeDiameter * ChokeDiameter / 4m;
     }
 }
+
+
+

@@ -49,3 +49,6 @@ namespace Beep.OilandGas.Models.DTOs.Accounting.Financial
         public ProductionDataDto Production { get; set; } = new();
     }
 }
+
+
+

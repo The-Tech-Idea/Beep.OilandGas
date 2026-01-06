@@ -12,3 +12,6 @@ namespace Beep.OilandGas.Models.DTOs.Accounting.Unitization
         public string UnitOperator { get; set; } = string.Empty;
     }
 }
+
+
+

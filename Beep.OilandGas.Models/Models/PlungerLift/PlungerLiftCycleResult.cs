@@ -57,3 +57,6 @@ namespace Beep.OilandGas.Models.PlungerLift
         public decimal CyclesPerDay { get; set; }
     }
 }
+
+
+

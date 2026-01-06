@@ -68,3 +68,6 @@ namespace Beep.OilandGas.Models.DTOs.Royalty
     }
 }
 
+
+
+

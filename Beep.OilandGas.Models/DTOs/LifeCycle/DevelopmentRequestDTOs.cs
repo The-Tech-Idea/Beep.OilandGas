@@ -77,3 +77,6 @@ namespace Beep.OilandGas.Models.DTOs.LifeCycle
         public string UserId { get; set; } = string.Empty;
     }
 }
+
+
+

@@ -11,6 +11,8 @@ using Beep.OilandGas.DataManager.Core.Exceptions;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using TheTechIdea.Beep;
+using TheTechIdea.Beep.ConfigUtil;
 
 namespace Beep.OilandGas.DataManager.Services
 {
@@ -554,6 +556,36 @@ namespace Beep.OilandGas.DataManager.Services
             }
 
             return sorted;
+        }
+
+        public Task<ModuleExecutionResult> ExecuteModuleAsync(IModuleData moduleData, IDataSource dataSource, ScriptExecutionOptions? options = null, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Dictionary<string, ModuleExecutionResult>> ExecuteModulesAsync(IEnumerable<IModuleData> modules, IDataSource dataSource, ScriptExecutionOptions? options = null, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ScriptExecutionResult> ExecuteScriptAsync(ModuleScriptInfo scriptInfo, IDataSource dataSource, ScriptExecutionOptions? options = null, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ModuleExecutionResult> ResumeModuleExecutionAsync(string executionId, IDataSource dataSource, ScriptExecutionOptions? options = null, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ValidationResult> ValidateScriptsAsync(IModuleData moduleData, string databaseType, IDataSource? dataSource = null)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<ErrorCheckResult> CheckForErrorsAsync(string executionId, IDataSource dataSource)
+        {
+            throw new NotImplementedException();
         }
     }
 }

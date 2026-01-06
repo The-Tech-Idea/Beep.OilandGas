@@ -115,6 +115,10 @@ namespace Beep.OilandGas.Models.DTOs.DataManagement
         public int ExecutionOrder { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();
         public string? Category { get; set; }
+        public object Name { get; set; }
     }
 }
+
+
+
 

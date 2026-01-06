@@ -36,3 +36,6 @@ namespace Beep.OilandGas.Models.DTOs.AccessControl
         public string AssetType { get; set; } = string.Empty;
     }
 }
+
+
+

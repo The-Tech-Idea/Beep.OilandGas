@@ -32,3 +32,6 @@ namespace Beep.OilandGas.Models.ProductionForecasting
         public decimal BottomHolePressure { get; set; }
     }
 }
+
+
+

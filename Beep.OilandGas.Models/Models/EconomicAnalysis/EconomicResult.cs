@@ -57,3 +57,6 @@ namespace Beep.OilandGas.Models.EconomicAnalysis
         public double DiscountRate { get; set; }
     }
 }
+
+
+

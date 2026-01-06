@@ -57,3 +57,6 @@ namespace Beep.OilandGas.Models.WellTestAnalysis
         public string AnalysisMethod { get; set; } = string.Empty;
     }
 }
+
+
+

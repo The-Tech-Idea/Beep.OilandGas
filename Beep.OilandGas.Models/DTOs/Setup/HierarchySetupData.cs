@@ -57,3 +57,6 @@ namespace Beep.OilandGas.Models.DTOs.Setup
         public bool Active { get; set; } = true;
     }
 }
+
+
+

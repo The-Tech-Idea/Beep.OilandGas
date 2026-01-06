@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.PermitsAndApplications
 {
-    public partial class APPLICATION_ATTACHMENT : Entity, Core.Interfaces.IPPDMEntity
+    public partial class APPLICATION_ATTACHMENT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private String APPLICATION_ATTACHMENT_IDValue;
         public String APPLICATION_ATTACHMENT_ID
@@ -185,3 +185,6 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
         }
     }
 }
+
+
+

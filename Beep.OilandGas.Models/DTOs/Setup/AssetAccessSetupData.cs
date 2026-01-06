@@ -46,3 +46,6 @@ namespace Beep.OilandGas.Models.DTOs.Setup
         public List<AssetAccessSetupData> AssetAccesses { get; set; } = new List<AssetAccessSetupData>();
     }
 }
+
+
+

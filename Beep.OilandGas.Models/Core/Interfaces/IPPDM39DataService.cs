@@ -18,3 +18,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<GenericEntityResponse> DeleteEntityAsync(string tableName, object id, string userId, string? connectionName = null);
     }
 }
+
+
+

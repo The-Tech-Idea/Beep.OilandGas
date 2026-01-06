@@ -87,3 +87,6 @@ namespace Beep.OilandGas.Models.SuckerRodPumping
         public decimal FluidDensity { get; set; }
     }
 }
+
+
+

@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Agreement
 {
-    public partial class PROCESSING_AGREEMENT : Entity, Beep.OilandGas.Models.Core.Interfaces.IPPDMEntity
+    public partial class PROCESSING_AGREEMENT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String AGREEMENT_IDValue;
         public System.String AGREEMENT_ID
@@ -164,3 +164,6 @@ namespace Beep.OilandGas.Models.Data.Agreement
         }
     }
 }
+
+
+

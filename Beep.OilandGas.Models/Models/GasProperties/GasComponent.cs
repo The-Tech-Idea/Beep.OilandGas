@@ -32,3 +32,6 @@ namespace Beep.OilandGas.Models.GasProperties
         public decimal CriticalTemperature { get; set; }
     }
 }
+
+
+

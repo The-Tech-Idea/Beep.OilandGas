@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.DataManagement
@@ -9,7 +9,7 @@ namespace Beep.OilandGas.Models.Data.DataManagement
     /// <summary>
     /// Entity for storing validation rules configuration
     /// </summary>
-    public partial class DATA_VALIDATION_RULE : Entity, Beep.OilandGas.Models.Core.Interfaces.IPPDMEntity
+    public partial class DATA_VALIDATION_RULE : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String VALIDATION_RULE_IDValue;
         public System.String VALIDATION_RULE_ID
@@ -182,3 +182,7 @@ namespace Beep.OilandGas.Models.Data.DataManagement
         }
     }
 }
+
+
+
+

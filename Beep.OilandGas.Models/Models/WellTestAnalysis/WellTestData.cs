@@ -84,3 +84,6 @@ namespace Beep.OilandGas.Models.WellTestAnalysis
         public double InitialReservoirPressure { get; set; }
     }
 }
+
+
+

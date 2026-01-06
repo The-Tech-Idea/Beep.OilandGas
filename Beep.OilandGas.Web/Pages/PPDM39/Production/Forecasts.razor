@@ -1,8 +1,8 @@
 @page "/ppdm39/production/forecasts"
 @using Beep.OilandGas.Models.DTOs
 @using Beep.OilandGas.Models.Core.Interfaces
-@using Beep.OilandGas.Web.Services
-@inject ICalculationServiceClient CalculationService
+@using Beep.OilandGas.Client.App
+@inject IBeepOilandGasApp BeepApp
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService

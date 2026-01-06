@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.PermitsAndApplications
 {
-    public partial class JURISDICTION_REQUIREMENTS : Entity, Core.Interfaces.IPPDMEntity
+    public partial class JURISDICTION_REQUIREMENTS : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private String JURISDICTION_REQUIREMENTS_IDValue;
         public String JURISDICTION_REQUIREMENTS_ID
@@ -157,3 +157,6 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
         }
     }
 }
+
+
+

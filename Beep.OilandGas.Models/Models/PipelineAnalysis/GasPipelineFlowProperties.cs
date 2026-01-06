@@ -42,3 +42,6 @@ namespace Beep.OilandGas.Models.PipelineAnalysis
         public decimal ZFactor { get; set; }
     }
 }
+
+
+

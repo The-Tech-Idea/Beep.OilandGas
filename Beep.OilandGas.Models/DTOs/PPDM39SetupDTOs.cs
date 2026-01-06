@@ -376,3 +376,6 @@ namespace Beep.OilandGas.Models.DTOs
         public string ScriptName { get; set; } = string.Empty;
     }
 }
+
+
+

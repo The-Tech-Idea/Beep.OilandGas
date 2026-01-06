@@ -22,3 +22,6 @@ namespace Beep.OilandGas.Models.DTOs.Calculations
         public int Stages { get; set; }
     }
 }
+
+
+

@@ -28,3 +28,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         MultiOperationProgress? GetOperationGroupProgress(string groupId);
     }
 }
+
+
+

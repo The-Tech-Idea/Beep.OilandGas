@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.OilProperties
 {
-    public partial class BUBBLE_POINT_RESULT : Entity, Core.Interfaces.IPPDMEntity
+    public partial class BUBBLE_POINT_RESULT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private String BUBBLE_POINT_RESULT_IDValue;
         public String BUBBLE_POINT_RESULT_ID
@@ -150,3 +150,6 @@ namespace Beep.OilandGas.Models.Data.OilProperties
         }
     }
 }
+
+
+
