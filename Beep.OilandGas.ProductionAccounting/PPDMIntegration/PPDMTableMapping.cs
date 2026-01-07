@@ -28,7 +28,7 @@ public static class PPDMTableMapping
             connectionName,
             tableName,
             null);
-using Beep.OilandGas.Models.Data.ProductionAccounting;
+
     }
 
     /// <summary>

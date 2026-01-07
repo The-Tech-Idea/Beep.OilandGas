@@ -341,7 +341,7 @@ namespace Beep.OilandGas.ProductionAccounting.Inventory
             await valuationRepo.InsertAsync(valuation);
 
             _logger?.LogDebug("Calculated inventory valuation for item {ItemId} using {Method}", itemId, method);
-using Beep.OilandGas.Models.Data.ProductionAccounting;
+
             return valuation;
         }
 

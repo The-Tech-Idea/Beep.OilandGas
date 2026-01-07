@@ -98,7 +98,7 @@ namespace Beep.OilandGas.ProductionAccounting.Management
             {
                 new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId }
             };
-using Beep.OilandGas.Models.Data.ProductionAccounting;
+
 
             var results = await dataSource.GetEntityAsync(LEASE_TABLE, filters);
             var leaseData = results?.FirstOrDefault();
@@ -320,7 +320,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
         /// <summary>
         /// Gets a transportation agreement by ID.
         /// </summary>
-        public async Task<TransportationAgreement?> GetTransportationAgreementAsync(string agreementId, string? connectionName = null)
+        public async Task<TRANSPORTATION_AGREEMENT?> GetTransportationAgreementAsync(string agreementId, string? connectionName = null)
         {
             if (string.IsNullOrEmpty(agreementId))
                 return null;

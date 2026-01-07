@@ -9,6 +9,8 @@ using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Measurement;
 
 namespace Beep.OilandGas.ProductionAccounting.Reporting
 {
@@ -56,8 +58,8 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
             // For now, use ReportGenerator with empty data (would be populated from database queries)
             var runTickets = new List<RunTicket>();
             var inventories = new List<CrudeOilInventory>();
-            var allocations = new List<AllocationResult>();
-            var measurements = new List<MeasurementRecord>();
+            var allocations = new List<ALLOCATION_RESULT>();
+            var measurements = new List<MEASUREMENT_RECORD>();
             var transactions = new List<SalesTransaction>();
 
             // Generate report using static ReportGenerator
@@ -69,7 +71,7 @@ namespace Beep.OilandGas.ProductionAccounting.Reporting
                 allocations,
                 measurements,
                 transactions);
-using Beep.OilandGas.Models.Data.ProductionAccounting;
+
 
             report.GeneratedBy = userId;
             report.GenerationDate = DateTime.UtcNow;
