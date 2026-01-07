@@ -14,6 +14,7 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.FlashCalculations;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.FlashCalculations.Services
 {

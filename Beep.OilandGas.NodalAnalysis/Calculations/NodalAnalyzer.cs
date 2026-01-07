@@ -92,10 +92,10 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
         private static double InterpolateVLP(List<VLPPoint> vlp, double flowRate)
         {
             if (flowRate <= vlp[0].FlowRate)
-                return vlp[0].RequiredBottomholePressure;
+                return (double)vlp[0].RequiredBottomholePressure;
 
             if (flowRate >= vlp.Last().FlowRate)
-                return vlp.Last().RequiredBottomholePressure;
+                return (double)vlp.Last().RequiredBottomholePressure;
 
             for (int i = 0; i < vlp.Count - 1; i++)
             {

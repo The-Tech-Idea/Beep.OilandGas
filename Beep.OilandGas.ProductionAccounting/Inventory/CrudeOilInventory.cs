@@ -322,7 +322,6 @@ namespace Beep.OilandGas.ProductionAccounting.Inventory
             if (transaction.TransactionType == InventoryTransactionType.Receipt)
             {
                 decimal totalValue = inventory.TotalValue + transaction.TotalValue;
-using Beep.OilandGas.Models.Data.ProductionAccounting;
                 decimal totalVolume = inventory.Volume + transaction.Volume;
                 inventory.Volume = totalVolume;
                 inventory.UnitCost = totalVolume > 0 ? totalValue / totalVolume : 0;

@@ -13,6 +13,8 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.EconomicAnalysis;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.EconomicAnalysis.Services
 {
@@ -133,7 +135,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 new AppFilter { FieldName = "ANALYSIS_ID", Operator = "=", FilterValue = analysisId },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
-using Beep.OilandGas.Models.Data.EconomicAnalysis;
+
             var entities = await repo.GetAsync(filters);
             var entity = entities.Cast<ECONOMIC_ANALYSIS_RESULT>().FirstOrDefault();
 

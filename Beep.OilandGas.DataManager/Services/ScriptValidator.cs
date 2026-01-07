@@ -4,6 +4,7 @@ using Beep.OilandGas.DataManager.Core.Models;
 using Beep.OilandGas.DataManager.Core.Exceptions;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using TheTechIdea.Beep;
 
 namespace Beep.OilandGas.DataManager.Services
 {

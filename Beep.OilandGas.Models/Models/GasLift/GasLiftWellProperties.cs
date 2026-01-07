@@ -55,6 +55,7 @@ namespace Beep.OilandGas.Models.GasLift
         /// Gas specific gravity (relative to air)
         /// </summary>
         public decimal GasSpecificGravity { get; set; }
+        public int TubingDiameter { get; set; }
     }
 }
 

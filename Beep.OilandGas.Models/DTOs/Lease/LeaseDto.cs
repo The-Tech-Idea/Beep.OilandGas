@@ -64,7 +64,7 @@ namespace Beep.OilandGas.Models.DTOs.Lease
         public string LeaseNumber { get; set; }
         public string LeaseName { get; set; }
         public string LeaseType { get; set; }
-        public DateTime EffectiveDate { get; set; }
+        public DateTime? EffectiveDate { get; set; }
         public DateTime? ExpirationDate { get; set; }
         public bool IsActive { get; set; }
         public decimal WorkingInterest { get; set; }

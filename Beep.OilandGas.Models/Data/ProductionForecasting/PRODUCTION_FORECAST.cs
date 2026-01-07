@@ -169,6 +169,12 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
             get { return this.EXPIRY_DATEValue; }
             set { SetProperty(ref EXPIRY_DATEValue, value); }
         }
+
+        public string FORECAST_ID { get; set; }
+        public string WELL_UWI { get; set; }
+        public string FIELD_ID { get; set; }
+        public string FORECAST_NAME { get; set; }
+        public DateTime FORECAST_START_DATE { get; set; }
     }
 }
 

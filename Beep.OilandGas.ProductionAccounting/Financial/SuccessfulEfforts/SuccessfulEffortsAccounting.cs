@@ -7,6 +7,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Data.ProductionOperations;
 
 namespace Beep.OilandGas.ProductionAccounting.Financial.SuccessfulEfforts
 {
@@ -310,10 +311,7 @@ namespace Beep.OilandGas.ProductionAccounting.Financial.SuccessfulEfforts
         {
             if (property == null)
                 throw new ArgumentNullException(nameof(property));
-using Beep.OilandGas.Models.Data.Common;
-using Beep.OilandGas.Models.Data.DevelopmentPlanning;
-using Beep.OilandGas.Models.Data.ProductionOperations;
-using Beep.OilandGas.Models.Data.ProspectIdentification;
+
 
             if (reserves == null)
                 throw new ArgumentNullException(nameof(reserves));

@@ -8,7 +8,7 @@
 
 **Features Implemented:**
 - ✅ PricingMethod enum (Fixed, IndexBased, PostedPrice, SpotPrice, Regulated)
-- ✅ RunTicketValuation - Complete valuation model
+- ✅ RUN_TICKET_VALUATION - Complete valuation model
 - ✅ QualityAdjustments - API gravity, sulfur, BS&W adjustments
 - ✅ LocationAdjustments - Location and transportation adjustments
 - ✅ TimeAdjustments - Time differential and interest adjustments
@@ -17,7 +17,7 @@
 
 ### 5.2 Run Ticket Valuation ✅
 **Files Created:**
-- `Pricing/RunTicketValuation.cs` - Valuation engine
+- `Pricing/RUN_TICKET_VALUATION.cs` - Valuation engine
 
 **Features Implemented:**
 - ✅ ValueWithFixedPrice - Fixed price valuation

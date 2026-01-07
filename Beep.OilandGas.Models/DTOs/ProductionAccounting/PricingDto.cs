@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Beep.OilandGas.Models.DTOs.ProductionAccounting
 {
-    // NOTE: RunTicketValuationDto, QualityAdjustmentsDto, LocationAdjustmentsDto, TimeAdjustmentsDto, and PriceIndexDto 
+    // NOTE: RUN_TICKET_VALUATIONDto, QualityAdjustmentsDto, LocationAdjustmentsDto, TimeAdjustmentsDto, and PriceIndexDto 
     // are defined in PricingModelsDto.cs
     // This file contains request classes for pricing operations.
 

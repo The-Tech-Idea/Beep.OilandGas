@@ -15,6 +15,7 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.NodalAnalysis.Services
 {

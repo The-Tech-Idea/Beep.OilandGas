@@ -12,6 +12,8 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.Common;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.OilProperties.Services
 {

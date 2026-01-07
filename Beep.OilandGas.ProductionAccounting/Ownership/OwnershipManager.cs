@@ -406,6 +406,6 @@ namespace Beep.OilandGas.ProductionAccounting.Ownership
             return GetOwnershipInterestsAsync(propertyOrLeaseId, asOfDate).GetAwaiter().GetResult();
         }
 
-        #endregion
+        
     }
 }

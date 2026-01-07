@@ -8,6 +8,7 @@ global using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 global using Beep.OilandGas.PPDM39.DataManagement.Core;
 global using Beep.OilandGas.Models.Core.Interfaces;
 global using Beep.OilandGas.Models.DTOs;
+global using Beep.OilandGas.Models.HydraulicPumps;
 global using Microsoft.Extensions.Logging;
 global using TheTechIdea.Beep.Editor;
 

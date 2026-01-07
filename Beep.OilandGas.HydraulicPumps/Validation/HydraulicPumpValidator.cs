@@ -1,5 +1,5 @@
 using System;
-using Beep.OilandGas.HydraulicPumps.Models;
+
 using Beep.OilandGas.HydraulicPumps.Exceptions;
 
 namespace Beep.OilandGas.HydraulicPumps.Validation

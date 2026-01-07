@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.Data.Unitization;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+
 using Beep.OilandGas.Models.DTOs.Unitization;
 
 namespace Beep.OilandGas.Models.Core.Interfaces

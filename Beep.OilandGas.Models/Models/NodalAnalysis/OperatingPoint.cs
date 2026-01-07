@@ -15,6 +15,7 @@ namespace Beep.OilandGas.Models.NodalAnalysis
         /// Bottomhole pressure at operating point (psia or kPa)
         /// </summary>
         public double BottomholePressure { get; set; }
+        public double WellheadPressure { get; set; }
 
         /// <summary>
         /// Default constructor

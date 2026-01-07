@@ -20,6 +20,8 @@ namespace Beep.OilandGas.Models.CompressorAnalysis
         /// Polytropic efficiency (0-1)
         /// </summary>
         public decimal PolytropicEfficiency { get; set; } = 0.75m;
+        public int NumberOfStages { get; set; }
+        public int Speed { get; set; }
     }
 }
 

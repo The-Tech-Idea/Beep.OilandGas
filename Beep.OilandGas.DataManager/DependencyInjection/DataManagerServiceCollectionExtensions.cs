@@ -4,6 +4,7 @@ using Beep.OilandGas.DataManager.Core.State;
 using Beep.OilandGas.DataManager.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TheTechIdea.Beep;
 using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.DataManager.DependencyInjection

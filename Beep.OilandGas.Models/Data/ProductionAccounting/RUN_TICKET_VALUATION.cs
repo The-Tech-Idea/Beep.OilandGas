@@ -176,6 +176,15 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             get { return this.ROW_IDValue; }
             set { SetProperty(ref ROW_IDValue, value); }
         }
+
+        public decimal? API_GRAVITY_ADJUSTMENT { get; set; }
+        public decimal? SULFUR_ADJUSTMENT { get; set; }
+        public decimal? BSW_ADJUSTMENT { get; set; }
+        public decimal? LOCATION_DIFFERENTIAL { get; set; }
+        public decimal? OTHER_QUALITY_ADJUSTMENT { get; set; }
+        public decimal? TRANSPORTATION_ADJUSTMENT { get; set; }
+        public decimal? TIME_DIFFERENTIAL { get; set; }
+        public decimal? INTEREST_ADJUSTMENT { get; set; }
     }
 }
 

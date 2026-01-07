@@ -9,6 +9,8 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.PipelineAnalysis.Services
 {
@@ -84,7 +86,6 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             // TODO: Implement pressure drop calculation using Darcy-Weisbach or other methods
             var pressureDrop = flowRate * 0.1m;
-using Beep.OilandGas.Models.Data.PipelineAnalysis; // Simplified calculation
             var frictionFactor = 0.02m; // Default friction factor
             var reynoldsNumber = flowRate * 1000m; // Simplified Reynolds number
 

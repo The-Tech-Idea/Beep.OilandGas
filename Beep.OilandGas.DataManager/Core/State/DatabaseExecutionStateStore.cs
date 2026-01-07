@@ -2,6 +2,7 @@ using System.Data;
 using System.Text.Json;
 using Beep.OilandGas.DataManager.Core.Models;
 using Microsoft.Extensions.Logging;
+using TheTechIdea.Beep;
 using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.DataManager.Core.State

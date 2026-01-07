@@ -66,11 +66,10 @@ namespace Beep.OilandGas.Client.App.Services
         /// </summary>
         protected async Task<T> GetAsync<T>(
             string endpoint,
-            string? connectionName = null,
             CancellationToken cancellationToken = default)
         {
             EnsureRemoteMode();
-            var requestUri = BuildRequestUri(endpoint, ResolveConnectionName(connectionName));
+            var requestUri = BuildRequestUri(endpoint);
             var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
             await AddAuthHeaderAsync(request);
             return await SendRequestAsync<T>(request, cancellationToken);
@@ -82,11 +81,10 @@ namespace Beep.OilandGas.Client.App.Services
         protected async Task<TResponse> PostAsync<TRequest, TResponse>(
             string endpoint,
             TRequest content,
-            string? connectionName = null,
             CancellationToken cancellationToken = default)
         {
             EnsureRemoteMode();
-            var requestUri = BuildRequestUri(endpoint, ResolveConnectionName(connectionName));
+            var requestUri = BuildRequestUri(endpoint);
             var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
 
             if (content != null)
@@ -105,11 +103,10 @@ namespace Beep.OilandGas.Client.App.Services
         protected async Task<TResponse> PutAsync<TRequest, TResponse>(
             string endpoint,
             TRequest content,
-            string? connectionName = null,
             CancellationToken cancellationToken = default)
         {
             EnsureRemoteMode();
-            var requestUri = BuildRequestUri(endpoint, ResolveConnectionName(connectionName));
+            var requestUri = BuildRequestUri(endpoint);
             var request = new HttpRequestMessage(HttpMethod.Put, requestUri);
 
             if (content != null)
@@ -127,11 +124,10 @@ namespace Beep.OilandGas.Client.App.Services
         /// </summary>
         protected async Task<T> DeleteAsync<T>(
             string endpoint,
-            string? connectionName = null,
             CancellationToken cancellationToken = default)
         {
             EnsureRemoteMode();
-            var requestUri = BuildRequestUri(endpoint, ResolveConnectionName(connectionName));
+            var requestUri = BuildRequestUri(endpoint);
             var request = new HttpRequestMessage(HttpMethod.Delete, requestUri);
             await AddAuthHeaderAsync(request);
             return await SendRequestAsync<T>(request, cancellationToken);

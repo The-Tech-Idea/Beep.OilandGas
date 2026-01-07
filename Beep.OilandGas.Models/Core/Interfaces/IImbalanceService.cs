@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Imbalance;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.DTOs.Imbalance;
 
 namespace Beep.OilandGas.Models.Core.Interfaces

@@ -16,6 +16,7 @@ using Beep.OilandGas.Models.Data.Accounting;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
 namespace Beep.OilandGas.ProductionAccounting.Export
 {
@@ -310,7 +311,7 @@ namespace Beep.OilandGas.ProductionAccounting.Export
 
         // Export helper methods
 
-        private void ExportRunTicketsToCsv(List<RunTicket> tickets, string filePath)
+        private void ExportRunTicketsToCsv(List<RUN_TICKET> tickets, string filePath)
         {
             if (tickets == null || tickets.Count == 0)
                 throw new ArgumentException("Tickets list cannot be null or empty.", nameof(tickets));
@@ -320,17 +321,17 @@ namespace Beep.OilandGas.ProductionAccounting.Export
 
             foreach (var ticket in tickets)
             {
-                csv.AppendLine($"{ticket.RunTicketNumber}," +
-                    $"{ticket.TicketDateTime:yyyy-MM-dd}," +
-                    $"{ticket.LeaseId}," +
-                    $"{ticket.WellId ?? ""}," +
-                    $"{ticket.GrossVolume}," +
-                    $"{ticket.BSWVolume}," +
-                    $"{ticket.NetVolume}," +
-                    $"{ticket.BSWPercentage}," +
-                    $"{ticket.PricePerBarrel?.ToString() ?? ""}," +
-                    $"{ticket.TotalValue?.ToString() ?? ""}," +
-                    $"{ticket.Purchaser}");
+                csv.AppendLine($"{ticket.RUN_TICKET_NUMBER}," +
+                    $"{ticket.TICKET_DATE_TIME:yyyy-MM-dd}," +
+                    $"{ticket.LEASE_ID}," +
+                    $"{ticket.WELL_ID ?? ""}," +
+                    $"{ticket.GROSS_VOLUME}," +
+                    $"{ticket.BSW_VOLUME}," +
+                    $"{ticket.NET_VOLUME}," +
+                    $"{ticket.BSW_PERCENTAGE}," +
+                    $"{ticket.PRICE_PER_BARREL?.ToString() ?? ""}," +
+                 
+                    $"{ticket.PURCHASER}");
             }
 
             File.WriteAllText(filePath, csv.ToString());
@@ -360,7 +361,7 @@ namespace Beep.OilandGas.ProductionAccounting.Export
             File.WriteAllText(filePath, csv.ToString());
         }
 
-        private void ExportRoyaltyPaymentsToCsv(List<RoyaltyPayment> payments, string filePath)
+        private void ExportRoyaltyPaymentsToCsv(List<ROYALTY_PAYMENT> payments, string filePath)
         {
             if (payments == null || payments.Count == 0)
                 throw new ArgumentException("Payments list cannot be null or empty.", nameof(payments));
@@ -386,11 +387,11 @@ namespace Beep.OilandGas.ProductionAccounting.Export
 
         // Helper methods to query data
 
-        private async Task<List<RunTicket>> GetRunTicketsAsync(ExportToCsvRequest request, string connectionName)
+        private async Task<List<RUN_TICKET>> GetRunTicketsAsync(ExportToCsvRequest request, string connectionName)
         {
             // In a full implementation, would query RUN_TICKET table using IDataSource
             // For now, return empty list
-            return new List<RunTicket>();
+            return new List<RUN_TICKET>();
         }
 
         private async Task<List<SalesTransaction>> GetSalesTransactionsAsync(ExportToCsvRequest request, string connectionName)
@@ -400,12 +401,12 @@ namespace Beep.OilandGas.ProductionAccounting.Export
             return new List<SalesTransaction>();
         }
 
-        private async Task<List<RoyaltyPayment>> GetRoyaltyPaymentsAsync(ExportToCsvRequest request, string connectionName)
+        private async Task<List<ROYALTY_PAYMENT>> GetRoyaltyPaymentsAsync(ExportToCsvRequest request, string connectionName)
         {
             // In a full implementation, would query ROYALTY_PAYMENT table using IDataSource
             // For now, return empty list
-            return new List<RoyaltyPayment>();
-using Beep.OilandGas.Models.Data.ProductionAccounting;
+            return new List<ROYALTY_PAYMENT>();
+
         }
 
         // Save export history

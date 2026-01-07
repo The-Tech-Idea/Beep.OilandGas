@@ -85,7 +85,7 @@ namespace Beep.OilandGas.DataManager.Services
                     ExecutionId = result.ExecutionId,
                     ModuleName = moduleData.ModuleName,
                     DatabaseType = GetDatabaseType(dataSource),
-                    ConnectionName = dataSource.DatasourceEntity?.ConnectionName ?? "Unknown",
+                    ConnectionName = dataSource.DatasourceName ?? "Unknown",
                     StartTime = result.StartTime,
                     PendingScripts = scripts.Select(s => s.FileName).ToList()
                 };
@@ -484,7 +484,7 @@ namespace Beep.OilandGas.DataManager.Services
 
         private string GetDatabaseType(IDataSource dataSource)
         {
-            return dataSource.DatasourceEntity?.DatabaseType ?? "sqlserver";
+            return dataSource.DatasourceType.ToString() ?? "sqlserver";
         }
 
         private IEnumerable<ModuleScriptInfo> FilterScripts(

@@ -9,13 +9,13 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
     /// <summary>
     /// Provides run ticket valuation functionality.
     /// </summary>
-    public static class RunTicketValuationEngine
+    public static class RUN_TICKET_VALUATIONEngine
     {
         /// <summary>
         /// Values a run ticket using fixed price.
         /// </summary>
-        public static RunTicketValuation ValueWithFixedPrice(
-            RunTicket runTicket,
+        public static RUN_TICKET_VALUATION ValueWithFixedPrice(
+            RUN_TICKET runTicket,
             decimal fixedPrice)
         {
             if (runTicket == null)
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
             if (fixedPrice < 0)
                 throw new ArgumentException("Fixed price cannot be negative.", nameof(fixedPrice));
 
-            var valuation = new RunTicketValuation
+            var valuation = new RUN_TICKET_VALUATION
             {
                 ValuationId = Guid.NewGuid().ToString(),
                 RunTicketNumber = runTicket.RunTicketNumber,
@@ -46,9 +46,9 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
         /// <summary>
         /// Values a run ticket using index-based pricing.
         /// </summary>
-        public static RunTicketValuation ValueWithIndex(
-            RunTicket runTicket,
-            PriceIndex priceIndex,
+        public static RUN_TICKET_VALUATION ValueWithIndex(
+            RUN_TICKET runTicket,
+            PRICE_INDEX priceIndex,
             decimal differential = 0m,
             decimal? apiGravityDifferential = null,
             decimal? sulfurDifferential = null)
@@ -59,7 +59,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
             if (priceIndex == null)
                 throw new ArgumentNullException(nameof(priceIndex));
 
-            var valuation = new RunTicketValuation
+            var valuation = new RUN_TICKET_VALUATION
             {
                 ValuationId = Guid.NewGuid().ToString(),
                 RunTicketNumber = runTicket.RunTicketNumber,
@@ -70,7 +70,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
             };
 
             // Apply location differential
-            valuation.LocationAdjustments.LocationDifferential = differential;
+            valuation..LocationDifferential = differential;
 
             // Apply quality adjustments
             if (runTicket.Properties != null && (apiGravityDifferential.HasValue || sulfurDifferential.HasValue))
@@ -102,22 +102,22 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
         /// <summary>
         /// Values a run ticket using posted price.
         /// </summary>
-        public static RunTicketValuation ValueWithPostedPrice(
-            RunTicket runTicket,
+        public static RUN_TICKET_VALUATION ValueWithPostedPrice(
+            RUN_TICKET runTicket,
             decimal postedPrice,
             decimal locationDifferential = 0m)
         {
             if (runTicket == null)
                 throw new ArgumentNullException(nameof(runTicket));
 
-            var valuation = new RunTicketValuation
+            var valuation = new RUN_TICKET_VALUATION
             {
-                ValuationId = Guid.NewGuid().ToString(),
-                RunTicketNumber = runTicket.RunTicketNumber,
-                ValuationDate = runTicket.TicketDateTime,
-                BasePrice = postedPrice,
-                NetVolume = runTicket.NetVolume,
-                PricingMethod = PricingMethod.PostedPrice
+                VALUATION_ID = Guid.NewGuid().ToString(),
+                RUN_TICKET_NUMBER = runTicket.RUN_TICKET_NUMBER,
+                VALUATION_DATE = runTicket.TICKET_DATE_TIME,
+                BASE_PRICE = postedPrice,
+                NET_VOLUME = runTicket.NET_VOLUME,
+                PRICING_METHOD = PricingMethod.PostedPrice.ToString()
             };
 
             valuation.LocationAdjustments.LocationDifferential = locationDifferential;
@@ -134,7 +134,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
         /// <summary>
         /// Values a run ticket using regulated pricing.
         /// </summary>
-        public static RunTicketValuation ValueWithRegulatedPrice(
+        public static RUN_TICKET_VALUATION ValueWithRegulatedPrice(
             RunTicket runTicket,
             RegulatedPrice regulatedPrice)
         {
@@ -161,7 +161,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
             if (regulatedPrice.PriceFloor.HasValue && calculatedPrice < regulatedPrice.PriceFloor.Value)
                 calculatedPrice = regulatedPrice.PriceFloor.Value;
 
-            var valuation = new RunTicketValuation
+            var valuation = new RUN_TICKET_VALUATION
             {
                 ValuationId = Guid.NewGuid().ToString(),
                 RunTicketNumber = runTicket.RunTicketNumber,

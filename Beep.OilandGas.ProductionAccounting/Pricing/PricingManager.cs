@@ -63,14 +63,14 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
             if (runTicket == null)
                 throw new ArgumentNullException(nameof(runTicket));
 
-            RunTicketValuation valuation;
+            RUN_TICKET_VALUATION valuation;
 
             switch (method)
             {
                 case PricingMethod.Fixed:
                     if (!fixedPrice.HasValue)
                         throw new ArgumentException("Fixed price is required for fixed pricing method.", nameof(fixedPrice));
-                    valuation = RunTicketValuationEngine.ValueWithFixedPrice(runTicket, fixedPrice.Value);
+                    valuation = RUN_TICKET_VALUATIONEngine.ValueWithFixedPrice(runTicket, fixedPrice.Value);
                     break;
 
                 case PricingMethod.IndexBased:
@@ -79,7 +79,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
                     var index = await _indexManager.GetLatestPriceAsync(indexName, connectionName);
                     if (index == null)
                         throw new InvalidOperationException($"Price index {indexName} not found.");
-                    valuation = RunTicketValuationEngine.ValueWithIndex(
+                    valuation = RUN_TICKET_VALUATIONEngine.ValueWithIndex(
                         runTicket, 
                         index, 
                         differential ?? 0m);
@@ -88,7 +88,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
                 case PricingMethod.PostedPrice:
                     if (!fixedPrice.HasValue)
                         throw new ArgumentException("Posted price is required for posted price method.", nameof(fixedPrice));
-                    valuation = RunTicketValuationEngine.ValueWithPostedPrice(
+                    valuation = RUN_TICKET_VALUATIONEngine.ValueWithPostedPrice(
                         runTicket, 
                         fixedPrice.Value, 
                         differential ?? 0m);
@@ -102,14 +102,14 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
                         runTicket.TicketDateTime);
                     if (regulatedPrice == null)
                         throw new InvalidOperationException($"No regulated price found for {regulatoryAuthority} on {runTicket.TicketDateTime}.");
-                    valuation = RunTicketValuationEngine.ValueWithRegulatedPrice(runTicket, regulatedPrice);
+                    valuation = RUN_TICKET_VALUATIONEngine.ValueWithRegulatedPrice(runTicket, regulatedPrice);
                     break;
 
                 default:
                     throw new ArgumentException($"Unsupported pricing method: {method}", nameof(method));
             }
 
-            // Convert RunTicketValuation model to RUN_TICKET_VALUATION Entity
+            // Convert RUN_TICKET_VALUATION model to RUN_TICKET_VALUATION Entity
             var valuationEntity = new RUN_TICKET_VALUATION
             {
                 VALUATION_ID = valuation.ValuationId,
@@ -149,7 +149,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
         /// <summary>
         /// Values a run ticket (synchronous wrapper).
         /// </summary>
-        public RunTicketValuation ValueRunTicket(
+        public RUN_TICKET_VALUATION ValueRunTicket(
             RunTicket runTicket,
             PricingMethod method,
             decimal? fixedPrice = null,

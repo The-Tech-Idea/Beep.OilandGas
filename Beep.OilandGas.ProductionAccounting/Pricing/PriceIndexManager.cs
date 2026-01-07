@@ -318,7 +318,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
         }
 
         /// <summary>
-        /// Converts PRICE_INDEX Entity to PriceIndex model (for compatibility with RunTicketValuationEngine).
+        /// Converts PRICE_INDEX Entity to PriceIndex model (for compatibility with RUN_TICKET_VALUATIONEngine).
         /// </summary>
         private PriceIndex ConvertEntityToPriceIndex(PRICE_INDEX entity)
         {

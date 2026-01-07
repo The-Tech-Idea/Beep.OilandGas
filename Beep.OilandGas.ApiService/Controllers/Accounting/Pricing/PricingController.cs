@@ -117,7 +117,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
         /// Value a run ticket.
         /// </summary>
         [HttpPost("valuateticket")]
-        public ActionResult<RunTicketValuationDto> ValueRunTicket(
+        public ActionResult<RUN_TICKET_VALUATIONDto> ValueRunTicket(
             [FromBody] ValueRunTicketRequest request,
             [FromQuery] string? connectionName = null)
         {
@@ -142,7 +142,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
                     request.Differential,
                     null);
 
-                return Ok(MapToRunTicketValuationDto(valuation));
+                return Ok(MapToRUN_TICKET_VALUATIONDto(valuation));
             }
             catch (Exception ex)
             {
@@ -151,9 +151,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
             }
         }
 
-        private RunTicketValuationDto MapToRunTicketValuationDto(RunTicketValuation valuation)
+        private RUN_TICKET_VALUATIONDto MapToRUN_TICKET_VALUATIONDto(RUN_TICKET_VALUATION valuation)
         {
-            return new RunTicketValuationDto
+            return new RUN_TICKET_VALUATIONDto
             {
                 ValuationId = valuation.ValuationId,
                 RunTicketNumber = valuation.RunTicketNumber,

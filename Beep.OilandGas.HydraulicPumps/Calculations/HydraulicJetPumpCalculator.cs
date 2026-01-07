@@ -1,5 +1,5 @@
 using System;
-using Beep.OilandGas.HydraulicPumps.Models;
+using Beep.OilandGas.Models.HydraulicPumps;
 using Beep.OilandGas.GasProperties.Calculations;
 
 namespace Beep.OilandGas.HydraulicPumps.Calculations

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.Data.Pricing;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.DTOs.Pricing;
 
 namespace Beep.OilandGas.Models.Core.Interfaces

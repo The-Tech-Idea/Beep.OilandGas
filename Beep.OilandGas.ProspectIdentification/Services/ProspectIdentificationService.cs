@@ -12,6 +12,8 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.ProspectIdentification.Services
 {
@@ -160,7 +162,6 @@ namespace Beep.OilandGas.ProspectIdentification.Services
 
             _logger?.LogInformation("Ranking {Count} prospects using {CriteriaCount} criteria",
                 prospectIds.Count, rankingCriteria.Count);
-using Beep.OilandGas.Models.Data.ProspectIdentification;
 
             // TODO: Implement prospect ranking logic
             var rankings = new List<ProspectRankingDto>();

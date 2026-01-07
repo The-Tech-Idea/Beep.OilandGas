@@ -1,7 +1,8 @@
 using System;
-using Beep.OilandGas.ChokeAnalysis.Models;
+
 using Beep.OilandGas.ChokeAnalysis.Constants;
 using Beep.OilandGas.ChokeAnalysis.Exceptions;
+using Beep.OilandGas.Models.ChokeAnalysis;
 
 namespace Beep.OilandGas.ChokeAnalysis.Validation
 {

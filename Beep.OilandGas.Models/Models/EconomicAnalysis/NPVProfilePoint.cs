@@ -15,6 +15,7 @@ namespace Beep.OilandGas.Models.EconomicAnalysis
         /// NPV at this discount rate
         /// </summary>
         public double NPV { get; set; }
+        public double DiscountRate { get; set; }
 
         /// <summary>
         /// Default constructor

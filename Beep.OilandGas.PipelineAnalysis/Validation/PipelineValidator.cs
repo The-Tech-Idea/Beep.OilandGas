@@ -1,5 +1,5 @@
 using System;
-using Beep.OilandGas.PipelineAnalysis.Models;
+using Beep.OilandGas.Models.PipelineAnalysis;
 using Beep.OilandGas.PipelineAnalysis.Exceptions;
 
 namespace Beep.OilandGas.PipelineAnalysis.Validation

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.FlashCalculations;
 using Beep.OilandGas.GasProperties.Calculations;
+using Beep.OilandGas.Models.DTOs;
 
 namespace Beep.OilandGas.FlashCalculations.Calculations
 {
@@ -217,11 +218,11 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// <summary>
         /// Calculates phase properties.
         /// </summary>
-        public static PhaseProperties CalculateVaporProperties(
+        public static PhasePropertiesData CalculateVaporProperties(
             FlashResult flashResult,
             FlashConditions conditions)
         {
-            var properties = new PhaseProperties();
+            var properties = new PhasePropertiesData();
 
             // Calculate molecular weight
             decimal molecularWeight = 0m;
@@ -250,11 +251,11 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// <summary>
         /// Calculates liquid phase properties.
         /// </summary>
-        public static PhaseProperties CalculateLiquidProperties(
+        public static PhasePropertiesData CalculateLiquidProperties(
             FlashResult flashResult,
             FlashConditions conditions)
         {
-            var properties = new PhaseProperties();
+            var properties = new PhasePropertiesData();
 
             // Calculate molecular weight
             decimal molecularWeight = 0m;

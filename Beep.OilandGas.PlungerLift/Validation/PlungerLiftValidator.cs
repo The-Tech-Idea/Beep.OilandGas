@@ -1,7 +1,8 @@
 using System;
-using Beep.OilandGas.PlungerLift.Models;
+
 using Beep.OilandGas.PlungerLift.Constants;
 using Beep.OilandGas.PlungerLift.Exceptions;
+using Beep.OilandGas.Models.PlungerLift;
 
 namespace Beep.OilandGas.PlungerLift.Validation
 {

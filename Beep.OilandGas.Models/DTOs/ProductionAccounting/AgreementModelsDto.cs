@@ -25,7 +25,8 @@ namespace Beep.OilandGas.Models.DTOs.ProductionAccounting
         /// <summary>
         /// Spot price.
         /// </summary>
-        SpotPrice
+        SpotPrice,
+        Regulated
     }
 
     /// <summary>

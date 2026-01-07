@@ -1,7 +1,8 @@
 using System;
-using Beep.OilandGas.SuckerRodPumping.Models;
+
 using Beep.OilandGas.SuckerRodPumping.Constants;
 using Beep.OilandGas.SuckerRodPumping.Exceptions;
+using Beep.OilandGas.Models.SuckerRodPumping;
 
 namespace Beep.OilandGas.SuckerRodPumping.Validation
 {

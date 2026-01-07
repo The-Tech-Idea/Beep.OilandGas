@@ -33,7 +33,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
     /// </summary>
     public class HeatMapRenderer
     {
-        private readonly HeatMapConfiguration configuration;
+        private readonly Configuration.HeatMapConfiguration configuration;
         private readonly List<HeatMapDataPoint> dataPoints;
         private SKColor[] colorScheme;
         private double minValue;
@@ -77,10 +77,10 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// </summary>
         /// <param name="dataPoints">The data points to render.</param>
         /// <param name="configuration">The heat map configuration.</param>
-        public HeatMapRenderer(List<HeatMapDataPoint> dataPoints, HeatMapConfiguration configuration = null)
+        public HeatMapRenderer(List<HeatMapDataPoint> dataPoints, Configuration.HeatMapConfiguration configuration = null)
         {
             this.dataPoints = dataPoints ?? throw new ArgumentNullException(nameof(dataPoints));
-            this.configuration = configuration ?? new HeatMapConfiguration();
+            this.configuration = configuration ?? new Configuration.HeatMapConfiguration();
             this.annotations = new HeatMapAnnotations();
             this.layers = new List<HeatMapLayer>();
             this.filters = new List<DataFilter>();
@@ -728,13 +728,13 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Updates the configuration and reinitializes the renderer.
         /// </summary>
-        public void UpdateConfiguration(HeatMapConfiguration newConfiguration)
+        public void UpdateConfiguration(Configuration.HeatMapConfiguration newConfiguration)
         {
             if (newConfiguration == null)
                 throw new ArgumentNullException(nameof(newConfiguration));
 
             // Update configuration properties
-            var configType = typeof(HeatMapConfiguration);
+            var configType = typeof(Configuration.HeatMapConfiguration);
             foreach (var prop in configType.GetProperties())
             {
                 if (prop.CanWrite)

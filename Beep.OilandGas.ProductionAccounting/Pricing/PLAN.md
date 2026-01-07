@@ -6,8 +6,8 @@
 - `PricingManager.cs` - Manager class with IDataSource integration, uses Dictionary conversions
 - `PriceIndexManager.cs` - Manager class with IDataSource integration
 - `RegulatedPricing.cs` - Regulated pricing manager
-- `RunTicketValuation.cs` - Static valuation engine
-- `PricingModels.cs` - Contains RunTicketValuation, QualityAdjustments, LocationAdjustments, TimeAdjustments
+- `RUN_TICKET_VALUATION.cs` - Static valuation engine
+- `PricingModels.cs` - Contains RUN_TICKET_VALUATION, QualityAdjustments, LocationAdjustments, TimeAdjustments
 
 ### Issues Identified
 1. **Dictionary Conversions**: PricingManager uses ConvertValuationToDictionary (should use entities directly)
@@ -20,7 +20,7 @@
 ### Classes to Move to Beep.OilandGas.Models
 
 **Move to `Beep.OilandGas.Models/Data/Pricing/`:**
-- `RunTicketValuation` → `RUN_TICKET_VALUATION` (entity class with PPDM audit columns)
+- `RUN_TICKET_VALUATION` → `RUN_TICKET_VALUATION` (entity class with PPDM audit columns)
 - `PriceIndex` → `PRICE_INDEX` (entity class)
 - `RegulatedPrice` → `REGULATED_PRICE` (entity class)
 
@@ -30,7 +30,7 @@
 - `TimeAdjustments` (value object)
 
 **Keep in ProductionAccounting:**
-- `RunTicketValuationEngine` static methods (calculation logic)
+- `RUN_TICKET_VALUATIONEngine` static methods (calculation logic)
 - `PricingMethod` enum (business logic)
 
 ## Service Class Creation

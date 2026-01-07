@@ -88,8 +88,7 @@ namespace Beep.OilandGas.ProductionAccounting.Pricing
             var runTicket = ConvertToRunTicketModel(runTicketEntity);
 
             // Calculate valuation using existing engine
-            RunTicketValuation valuation;
-using Beep.OilandGas.Models.Data.ProductionAccounting;
+            RUN_TICKET_VALUATION valuation;
             PricingMethod method = Enum.TryParse<PricingMethod>(request.PricingMethod, out var parsedMethod) ? parsedMethod : PricingMethod.Fixed;
 
             switch (method)
@@ -98,7 +97,7 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
                     if (!request.FixedPrice.HasValue)
                         throw new ArgumentException("Fixed price is required for fixed pricing method.", nameof(request));
 
-                    valuation = RunTicketValuationEngine.ValueWithFixedPrice(runTicket, request.FixedPrice.Value);
+                    valuation = RUN_TICKET_VALUATIONEngine.ValueWithFixedPrice(runTicket, request.FixedPrice.Value);
                     break;
 
                 case PricingMethod.IndexBased:
@@ -109,25 +108,25 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
                     if (indexModel == null)
                         throw new InvalidOperationException($"Price index {request.IndexName} not found.");
 
-                    valuation = RunTicketValuationEngine.ValueWithIndex(runTicket, indexModel, request.Differential ?? 0m);
+                    valuation = RUN_TICKET_VALUATIONEngine.ValueWithIndex(runTicket, indexModel, request.Differential ?? 0m);
                     break;
 
                 case PricingMethod.PostedPrice:
                     if (!request.FixedPrice.HasValue)
                         throw new ArgumentException("Posted price is required for posted price method.", nameof(request));
 
-                    valuation = RunTicketValuationEngine.ValueWithPostedPrice(runTicket, request.FixedPrice.Value, request.Differential ?? 0m);
+                    valuation = RUN_TICKET_VALUATIONEngine.ValueWithPostedPrice(runTicket, request.FixedPrice.Value, request.Differential ?? 0m);
                     break;
 
                 case PricingMethod.Regulated:
                     if (string.IsNullOrEmpty(request.RegulatoryAuthority))
                         throw new ArgumentException("Regulatory authority is required for regulated pricing.", nameof(request));
 
-                    var regulatedPrice = _regulatedPricingManager.GetApplicablePrice(request.RegulatoryAuthority, runTicket.TicketDateTime);
+                    var regulatedPrice = _regulatedPricingManager.GetApplicablePrice(request.RegulatoryAuthority, runTicket.TICKET_DATE_TIME);
                     if (regulatedPrice == null)
-                        throw new InvalidOperationException($"No regulated price found for {request.RegulatoryAuthority} on {runTicket.TicketDateTime}.");
+                        throw new InvalidOperationException($"No regulated price found for {request.RegulatoryAuthority} on {runTicket.TICKET_DATE_TIME}.");
 
-                    valuation = RunTicketValuationEngine.ValueWithRegulatedPrice(runTicket, regulatedPrice);
+                    valuation = RUN_TICKET_VALUATIONEngine.ValueWithRegulatedPrice(runTicket, regulatedPrice);
                     break;
 
                 default:
@@ -393,47 +392,8 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
         }
 
         // Helper methods for conversion
-        private RunTicket ConvertToRunTicketModel(RUN_TICKET entity)
-        {
-            // Convert RUN_TICKET entity to RunTicket model for valuation engine
-            // This is a simplified conversion - full implementation would map all properties
-            return new RunTicket
-            {
-                RunTicketNumber = entity.RUN_TICKET_NUMBER ?? string.Empty,
-                TicketDateTime = entity.TICKET_DATE_TIME ?? DateTime.MinValue,
-                GrossVolume = entity.GROSS_VOLUME ?? 0m,
-                BSWVolume = entity.BSW_VOLUME ?? 0m,
-                BSWPercentage = entity.BSW_PERCENTAGE ?? 0m,
-                Temperature = entity.TEMPERATURE ?? 60m,
-                ApiGravity = entity.API_GRAVITY,
-                // Properties would be populated from related tables in full implementation
-                Properties = new CrudeOilPropertiesDto()
-            };
-        }
+     
 
-        private RUN_TICKET_VALUATION ConvertToValuationEntity(RunTicketValuation valuation)
-        {
-            return new RUN_TICKET_VALUATION
-            {
-                VALUATION_ID = valuation.ValuationId,
-                RUN_TICKET_NUMBER = valuation.RunTicketNumber,
-                VALUATION_DATE = valuation.ValuationDate,
-                BASE_PRICE = valuation.BasePrice,
-                ADJUSTED_PRICE = valuation.AdjustedPrice,
-                NET_VOLUME = valuation.NetVolume,
-                TOTAL_VALUE = valuation.TotalValue,
-                PRICING_METHOD = valuation.PricingMethod.ToString(),
-                API_GRAVITY_ADJUSTMENT = valuation.QualityAdjustments?.ApiGravityAdjustment ?? 0m,
-                SULFUR_ADJUSTMENT = valuation.QualityAdjustments?.SulfurAdjustment ?? 0m,
-                BSW_ADJUSTMENT = valuation.QualityAdjustments?.BSWAdjustment ?? 0m,
-                OTHER_QUALITY_ADJUSTMENT = valuation.QualityAdjustments?.OtherAdjustments ?? 0m,
-                LOCATION_DIFFERENTIAL = valuation.LocationAdjustments?.LocationDifferential ?? 0m,
-                TRANSPORTATION_ADJUSTMENT = valuation.LocationAdjustments?.TransportationAdjustment ?? 0m,
-                TIME_DIFFERENTIAL = valuation.TimeAdjustments?.TimeDifferential ?? 0m,
-                INTEREST_ADJUSTMENT = valuation.TimeAdjustments?.InterestAdjustment ?? 0m,
-                TOTAL_ADJUSTMENTS = valuation.TotalAdjustments,
-                ACTIVE_IND = "Y"
-            };
-        }
+     
     }
 }

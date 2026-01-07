@@ -6,7 +6,7 @@ namespace Beep.OilandGas.Models.DTOs.ProductionAccounting
     /// <summary>
     /// Represents run ticket valuation (DTO for calculations/reporting).
     /// </summary>
-    public class RunTicketValuationDto
+    public class RUN_TICKET_VALUATIONDto
     {
         /// <summary>
         /// Gets or sets the valuation identifier.
