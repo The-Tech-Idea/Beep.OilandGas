@@ -15,6 +15,7 @@ using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.ProductionAccounting.Analytics
 {
@@ -112,7 +113,7 @@ namespace Beep.OilandGas.ProductionAccounting.Analytics
                 transactions,
                 request.StartDate,
                 request.EndDate);
-using Beep.OilandGas.Models.Data.ProductionAccounting;
+
 
             var result = new AnalyticsResult
             {

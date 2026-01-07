@@ -7,6 +7,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.Repositories;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.ProductionAccounting.Financial.FullCost
 {
@@ -260,10 +261,7 @@ namespace Beep.OilandGas.ProductionAccounting.Financial.FullCost
         {
             if (reserves == null)
                 throw new ArgumentNullException(nameof(reserves));
-using Beep.OilandGas.Models.Data.Common;
-using Beep.OilandGas.Models.Data.DevelopmentPlanning;
-using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.Models.Data.ProspectIdentification;
+
 
             if (production == null)
                 throw new ArgumentNullException(nameof(production));

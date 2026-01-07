@@ -9,6 +9,8 @@ using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.ProductionAccounting.Accounting
 {
@@ -286,7 +288,7 @@ namespace Beep.OilandGas.ProductionAccounting.Accounting
 
             // Generate journal entries using static helper
             var journalEntries = SalesJournalEntryGenerator.CreateEntries(salesTransactionModel);
-using Beep.OilandGas.Models.Data.ProductionAccounting;
+
 
             // Convert to journal entry lines
             var lines = journalEntries.Select(e => new JournalEntryLineData

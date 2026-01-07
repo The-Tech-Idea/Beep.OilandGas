@@ -11,12 +11,14 @@ global using TheTechIdea.Beep.Editor;
 global using Beep.OilandGas.PPDM39.Repositories;
 global using Beep.OilandGas.Models.Core.Interfaces;
 global using TheTechIdea.Beep.Report;
-
-// Data namespaces
+global using Beep.OilandGas.Models.Data.ProductionAccounting; // Data namespaces
 global using Beep.OilandGas.Models.Data;
 global using Beep.OilandGas.Models.Data.Accounting;
 global using Beep.OilandGas.Models.Data.Pricing;
-
+global using Beep.OilandGas.Models.Data.Common;
+global using Beep.OilandGas.Models.Data.DevelopmentPlanning;
+global using Beep.OilandGas.PPDM.Models; 
+global using Beep.OilandGas.Models.Data.ProspectIdentification;
 // DTO namespaces
 global using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 global using Beep.OilandGas.Models.DTOs.Pricing;
