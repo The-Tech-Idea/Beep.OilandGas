@@ -1,76 +1,64 @@
 using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using Beep.OilandGas.Models.ChokeAnalysis;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 
-namespace Beep.OilandGas.Models.ChokeAnalysis
+namespace Beep.OilandGas.Models.NodalAnalysis
 {
     /// <summary>
-    /// Represents gas properties for choke calculations
-    /// DTO for calculations - Entity class: GAS_CHOKE_PROPERTIES
+    /// Represents a production scenario (Best/Base/Worst case).
+    /// Used for scenario analysis of well performance.
+    /// DTO for calculations - Entity class: PRODUCTION_SCENARIO
     /// </summary>
-    public partial class GasChokeProperties : Entity, IPPDMEntity
+    public partial class ProductionScenario : Entity, IPPDMEntity
     {
         /// <summary>
-        /// Gas specific gravity (relative to air)
+        /// Scenario name (e.g., "Best Case", "Base Case", "Worst Case")
         /// </summary>
-        private decimal _gasSpecificGravityValue;
-        public decimal GasSpecificGravity
+        private string _scenarioNameValue;
+        public string ScenarioName
         {
-            get { return _gasSpecificGravityValue; }
-            set { SetProperty(ref _gasSpecificGravityValue, value); }
+            get { return _scenarioNameValue; }
+            set { SetProperty(ref _scenarioNameValue, value); }
         }
 
         /// <summary>
-        /// Upstream pressure in psia
+        /// Detailed description of scenario assumptions
         /// </summary>
-        private decimal _upstreamPressureValue;
-        public decimal UpstreamPressure
+        private string _descriptionValue;
+        public string Description
         {
-            get { return _upstreamPressureValue; }
-            set { SetProperty(ref _upstreamPressureValue, value); }
+            get { return _descriptionValue; }
+            set { SetProperty(ref _descriptionValue, value); }
         }
 
         /// <summary>
-        /// Downstream pressure in psia
+        /// Expected flow rate under this scenario (bbl/day or equivalent)
         /// </summary>
-        private decimal _downstreamPressureValue;
-        public decimal DownstreamPressure
-        {
-            get { return _downstreamPressureValue; }
-            set { SetProperty(ref _downstreamPressureValue, value); }
-        }
-
-        /// <summary>
-        /// Temperature in Rankine
-        /// </summary>
-        private decimal _temperatureValue;
-        public decimal Temperature
-        {
-            get { return _temperatureValue; }
-            set { SetProperty(ref _temperatureValue, value); }
-        }
-
-        /// <summary>
-        /// Z-factor (compressibility factor)
-        /// </summary>
-        private decimal _zFactorValue;
-        public decimal ZFactor
-        {
-            get { return _zFactorValue; }
-            set { SetProperty(ref _zFactorValue, value); }
-        }
-
-        /// <summary>
-        /// Gas flow rate in Mscf/day
-        /// </summary>
-        private decimal _flowRateValue;
-        public decimal FlowRate
+        private double _flowRateValue;
+        public double FlowRate
         {
             get { return _flowRateValue; }
             set { SetProperty(ref _flowRateValue, value); }
+        }
+
+        /// <summary>
+        /// Expected bottomhole pressure (psi or equivalent)
+        /// </summary>
+        private double _bottomholePressureValue;
+        public double BottomholePressure
+        {
+            get { return _bottomholePressureValue; }
+            set { SetProperty(ref _bottomholePressureValue, value); }
+        }
+
+        /// <summary>
+        /// Probability of this scenario occurring (0-1 fraction)
+        /// </summary>
+        private double? _probabilityValue;
+        public double? Probability
+        {
+            get { return _probabilityValue; }
+            set { SetProperty(ref _probabilityValue, value); }
         }
 
         // PPDM Entity Properties
@@ -137,8 +125,13 @@ namespace Beep.OilandGas.Models.ChokeAnalysis
             get { return _ppdmGuidValue; }
             set { SetProperty(ref _ppdmGuidValue, value); }
         }
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        public ProductionScenario()
+        {
+            PPDM_GUID = Guid.NewGuid().ToString();
+        }
     }
 }
-
-
-

@@ -75,7 +75,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
                     Pressure = currentFeed.Pressure,
                     Temperature = currentFeed.Temperature,
                     FeedComposition = firstStageResult.LiquidComposition.Select(kvp => 
-                        new Component
+                        new FlashComponent
                         {
                             Name = kvp.Key,
                             MoleFraction = kvp.Value

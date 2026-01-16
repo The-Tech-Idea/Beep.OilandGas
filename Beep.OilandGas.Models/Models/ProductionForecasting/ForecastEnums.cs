@@ -23,7 +23,12 @@ namespace Beep.OilandGas.Models.ProductionForecasting
         /// <summary>
         /// Gas well forecast.
         /// </summary>
-        GasWell
+        GasWell,
+
+        /// <summary>
+        /// Decline curve analysis (Arps decline methods).
+        /// </summary>
+        Decline
     }
 }
 

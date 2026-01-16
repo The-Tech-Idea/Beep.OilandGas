@@ -1,76 +1,65 @@
 using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using Beep.OilandGas.Models.ChokeAnalysis;
+using System.Collections.Generic;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 
-namespace Beep.OilandGas.Models.ChokeAnalysis
+namespace Beep.OilandGas.Models.NodalAnalysis
 {
     /// <summary>
-    /// Represents gas properties for choke calculations
-    /// DTO for calculations - Entity class: GAS_CHOKE_PROPERTIES
+    /// Represents year-by-year VLP degradation forecast.
+    /// Shows how well performance deteriorates over time due to erosion, scale, and other effects.
+    /// DTO for calculations - Entity class: TIME_STEP_VLP_FORECAST
     /// </summary>
-    public partial class GasChokeProperties : Entity, IPPDMEntity
+    public partial class TimeStepVLPForecast : Entity, IPPDMEntity
     {
         /// <summary>
-        /// Gas specific gravity (relative to air)
+        /// Total degradation from year 0 to final year as percentage increase in pressure drop
         /// </summary>
-        private decimal _gasSpecificGravityValue;
-        public decimal GasSpecificGravity
+        private double? _totalDegradationPercentageValue;
+        public double? TotalDegradationPercentage
         {
-            get { return _gasSpecificGravityValue; }
-            set { SetProperty(ref _gasSpecificGravityValue, value); }
+            get { return _totalDegradationPercentageValue; }
+            set { SetProperty(ref _totalDegradationPercentageValue, value); }
         }
 
         /// <summary>
-        /// Upstream pressure in psia
+        /// Number of years included in forecast
         /// </summary>
-        private decimal _upstreamPressureValue;
-        public decimal UpstreamPressure
+        private int? _yearsForecastedValue;
+        public int? YearsForecasted
         {
-            get { return _upstreamPressureValue; }
-            set { SetProperty(ref _upstreamPressureValue, value); }
+            get { return _yearsForecastedValue; }
+            set { SetProperty(ref _yearsForecastedValue, value); }
         }
 
         /// <summary>
-        /// Downstream pressure in psia
+        /// Annual sand production rate used in forecast (tons/year)
         /// </summary>
-        private decimal _downstreamPressureValue;
-        public decimal DownstreamPressure
+        private double? _annualSandProductionValue;
+        public double? AnnualSandProduction
         {
-            get { return _downstreamPressureValue; }
-            set { SetProperty(ref _downstreamPressureValue, value); }
+            get { return _annualSandProductionValue; }
+            set { SetProperty(ref _annualSandProductionValue, value); }
         }
 
         /// <summary>
-        /// Temperature in Rankine
+        /// Annual scale buildup rate used in forecast (fraction of diameter per year)
         /// </summary>
-        private decimal _temperatureValue;
-        public decimal Temperature
+        private double? _annualScaleRateValue;
+        public double? AnnualScaleRate
         {
-            get { return _temperatureValue; }
-            set { SetProperty(ref _temperatureValue, value); }
+            get { return _annualScaleRateValue; }
+            set { SetProperty(ref _annualScaleRateValue, value); }
         }
 
         /// <summary>
-        /// Z-factor (compressibility factor)
+        /// Collection of year-by-year forecast points
         /// </summary>
-        private decimal _zFactorValue;
-        public decimal ZFactor
+        private List<VLPForecastTimeStep> _forecastTimeStepsValue;
+        public List<VLPForecastTimeStep> ForecastTimeSteps
         {
-            get { return _zFactorValue; }
-            set { SetProperty(ref _zFactorValue, value); }
-        }
-
-        /// <summary>
-        /// Gas flow rate in Mscf/day
-        /// </summary>
-        private decimal _flowRateValue;
-        public decimal FlowRate
-        {
-            get { return _flowRateValue; }
-            set { SetProperty(ref _flowRateValue, value); }
+            get { return _forecastTimeStepsValue ??= new List<VLPForecastTimeStep>(); }
+            set { SetProperty(ref _forecastTimeStepsValue, value); }
         }
 
         // PPDM Entity Properties
@@ -137,8 +126,14 @@ namespace Beep.OilandGas.Models.ChokeAnalysis
             get { return _ppdmGuidValue; }
             set { SetProperty(ref _ppdmGuidValue, value); }
         }
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        public TimeStepVLPForecast()
+        {
+            ForecastTimeSteps = new List<VLPForecastTimeStep>();
+            PPDM_GUID = Guid.NewGuid().ToString();
+        }
     }
 }
-
-
-

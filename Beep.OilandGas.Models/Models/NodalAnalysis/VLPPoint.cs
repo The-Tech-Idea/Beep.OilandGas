@@ -14,8 +14,7 @@ namespace Beep.OilandGas.Models.NodalAnalysis
         /// <summary>
         /// Required bottomhole pressure (psia or kPa)
         /// </summary>
-        public double BottomholePressure { get; set; }
-        public object RequiredBottomholePressure { get; set; }
+        public double RequiredBottomholePressure { get; set; }
 
         /// <summary>
         /// Default constructor
@@ -27,13 +26,10 @@ namespace Beep.OilandGas.Models.NodalAnalysis
         /// <summary>
         /// Constructor with flow rate and pressure
         /// </summary>
-        public VLPPoint(double flowRate, double bottomholePressure)
+        public VLPPoint(double flowRate, double requiredBottomholePressure)
         {
             FlowRate = flowRate;
-            BottomholePressure = bottomholePressure;
+            RequiredBottomholePressure = requiredBottomholePressure;
         }
     }
 }
-
-
-

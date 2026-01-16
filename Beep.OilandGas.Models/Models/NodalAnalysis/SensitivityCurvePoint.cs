@@ -1,76 +1,54 @@
 using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using Beep.OilandGas.Models.ChokeAnalysis;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 
-namespace Beep.OilandGas.Models.ChokeAnalysis
+namespace Beep.OilandGas.Models.NodalAnalysis
 {
     /// <summary>
-    /// Represents gas properties for choke calculations
-    /// DTO for calculations - Entity class: GAS_CHOKE_PROPERTIES
+    /// Represents a single point on a one-way sensitivity curve.
+    /// Shows how operating point varies with a single parameter.
+    /// DTO for calculations - Entity class: SENSITIVITY_CURVE_POINT
     /// </summary>
-    public partial class GasChokeProperties : Entity, IPPDMEntity
+    public partial class SensitivityCurvePoint : Entity, IPPDMEntity
     {
         /// <summary>
-        /// Gas specific gravity (relative to air)
+        /// Parameter value at this point
         /// </summary>
-        private decimal _gasSpecificGravityValue;
-        public decimal GasSpecificGravity
+        private double _parameterValueValue;
+        public double ParameterValue
         {
-            get { return _gasSpecificGravityValue; }
-            set { SetProperty(ref _gasSpecificGravityValue, value); }
+            get { return _parameterValueValue; }
+            set { SetProperty(ref _parameterValueValue, value); }
         }
 
         /// <summary>
-        /// Upstream pressure in psia
+        /// Flow rate resulting from this parameter value (bbl/day or equivalent)
         /// </summary>
-        private decimal _upstreamPressureValue;
-        public decimal UpstreamPressure
-        {
-            get { return _upstreamPressureValue; }
-            set { SetProperty(ref _upstreamPressureValue, value); }
-        }
-
-        /// <summary>
-        /// Downstream pressure in psia
-        /// </summary>
-        private decimal _downstreamPressureValue;
-        public decimal DownstreamPressure
-        {
-            get { return _downstreamPressureValue; }
-            set { SetProperty(ref _downstreamPressureValue, value); }
-        }
-
-        /// <summary>
-        /// Temperature in Rankine
-        /// </summary>
-        private decimal _temperatureValue;
-        public decimal Temperature
-        {
-            get { return _temperatureValue; }
-            set { SetProperty(ref _temperatureValue, value); }
-        }
-
-        /// <summary>
-        /// Z-factor (compressibility factor)
-        /// </summary>
-        private decimal _zFactorValue;
-        public decimal ZFactor
-        {
-            get { return _zFactorValue; }
-            set { SetProperty(ref _zFactorValue, value); }
-        }
-
-        /// <summary>
-        /// Gas flow rate in Mscf/day
-        /// </summary>
-        private decimal _flowRateValue;
-        public decimal FlowRate
+        private double _flowRateValue;
+        public double FlowRate
         {
             get { return _flowRateValue; }
             set { SetProperty(ref _flowRateValue, value); }
+        }
+
+        /// <summary>
+        /// Percentage change from base case flow rate
+        /// </summary>
+        private double _percentageChangeValue;
+        public double PercentageChange
+        {
+            get { return _percentageChangeValue; }
+            set { SetProperty(ref _percentageChangeValue, value); }
+        }
+
+        /// <summary>
+        /// Sequence order on the sensitivity curve
+        /// </summary>
+        private int? _sequenceValue;
+        public int? Sequence
+        {
+            get { return _sequenceValue; }
+            set { SetProperty(ref _sequenceValue, value); }
         }
 
         // PPDM Entity Properties
@@ -137,8 +115,13 @@ namespace Beep.OilandGas.Models.ChokeAnalysis
             get { return _ppdmGuidValue; }
             set { SetProperty(ref _ppdmGuidValue, value); }
         }
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        public SensitivityCurvePoint()
+        {
+            PPDM_GUID = Guid.NewGuid().ToString();
+        }
     }
 }
-
-
-

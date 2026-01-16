@@ -1,76 +1,64 @@
 using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using Beep.OilandGas.Models.ChokeAnalysis;
+using System.Collections.Generic;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 
-namespace Beep.OilandGas.Models.ChokeAnalysis
+namespace Beep.OilandGas.Models.NodalAnalysis
 {
     /// <summary>
-    /// Represents gas properties for choke calculations
-    /// DTO for calculations - Entity class: GAS_CHOKE_PROPERTIES
+    /// Represents tornado sensitivity analysis results showing parameter rankings by impact.
+    /// DTO for calculations - Entity class: TORNADO_ANALYSIS_RESULT
     /// </summary>
-    public partial class GasChokeProperties : Entity, IPPDMEntity
+    public partial class TornadoAnalysisResult : Entity, IPPDMEntity
     {
         /// <summary>
-        /// Gas specific gravity (relative to air)
+        /// Base operating point used as reference
         /// </summary>
-        private decimal _gasSpecificGravityValue;
-        public decimal GasSpecificGravity
+        private double _baseFlowRateValue;
+        public double BaseFlowRate
         {
-            get { return _gasSpecificGravityValue; }
-            set { SetProperty(ref _gasSpecificGravityValue, value); }
+            get { return _baseFlowRateValue; }
+            set { SetProperty(ref _baseFlowRateValue, value); }
         }
 
         /// <summary>
-        /// Upstream pressure in psia
+        /// Base bottomhole pressure at reference case
         /// </summary>
-        private decimal _upstreamPressureValue;
-        public decimal UpstreamPressure
+        private double _basePressureValue;
+        public double BasePressure
         {
-            get { return _upstreamPressureValue; }
-            set { SetProperty(ref _upstreamPressureValue, value); }
+            get { return _basePressureValue; }
+            set { SetProperty(ref _basePressureValue, value); }
         }
 
         /// <summary>
-        /// Downstream pressure in psia
+        /// Most influential parameter name
         /// </summary>
-        private decimal _downstreamPressureValue;
-        public decimal DownstreamPressure
+        private string _mostInfluentialParameterValue;
+        public string MostInfluentialParameter
         {
-            get { return _downstreamPressureValue; }
-            set { SetProperty(ref _downstreamPressureValue, value); }
+            get { return _mostInfluentialParameterValue; }
+            set { SetProperty(ref _mostInfluentialParameterValue, value); }
         }
 
         /// <summary>
-        /// Temperature in Rankine
+        /// Least influential parameter name
         /// </summary>
-        private decimal _temperatureValue;
-        public decimal Temperature
+        private string _leastInfluentialParameterValue;
+        public string LeastInfluentialParameter
         {
-            get { return _temperatureValue; }
-            set { SetProperty(ref _temperatureValue, value); }
+            get { return _leastInfluentialParameterValue; }
+            set { SetProperty(ref _leastInfluentialParameterValue, value); }
         }
 
         /// <summary>
-        /// Z-factor (compressibility factor)
+        /// Collection of parameter rankings
         /// </summary>
-        private decimal _zFactorValue;
-        public decimal ZFactor
+        private List<ParameterRanking> _parameterRankingsValue;
+        public List<ParameterRanking> ParameterRankings
         {
-            get { return _zFactorValue; }
-            set { SetProperty(ref _zFactorValue, value); }
-        }
-
-        /// <summary>
-        /// Gas flow rate in Mscf/day
-        /// </summary>
-        private decimal _flowRateValue;
-        public decimal FlowRate
-        {
-            get { return _flowRateValue; }
-            set { SetProperty(ref _flowRateValue, value); }
+            get { return _parameterRankingsValue ??= new List<ParameterRanking>(); }
+            set { SetProperty(ref _parameterRankingsValue, value); }
         }
 
         // PPDM Entity Properties
@@ -137,8 +125,14 @@ namespace Beep.OilandGas.Models.ChokeAnalysis
             get { return _ppdmGuidValue; }
             set { SetProperty(ref _ppdmGuidValue, value); }
         }
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        public TornadoAnalysisResult()
+        {
+            ParameterRankings = new List<ParameterRanking>();
+            PPDM_GUID = Guid.NewGuid().ToString();
+        }
     }
 }
-
-
-

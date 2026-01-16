@@ -31,7 +31,7 @@ namespace Beep.OilandGas.FlashCalculations.Validation
             // Validate components
             foreach (var component in conditions.FeedComposition)
             {
-                ValidateComponent(component);
+                ValidateFlashComponent(component);
             }
 
             // Validate mole fractions sum to approximately 1.0
@@ -47,6 +47,30 @@ namespace Beep.OilandGas.FlashCalculations.Validation
         /// Validates component properties.
         /// </summary>
         public static void ValidateComponent(Component component)
+        {
+            if (component == null)
+                throw new ArgumentNullException(nameof(component));
+
+            if (string.IsNullOrWhiteSpace(component.Name))
+                throw new InvalidComponentException("Component name cannot be empty.");
+
+            if (component.MoleFraction < 0 || component.MoleFraction > 1)
+                throw new InvalidComponentException($"Component {component.Name}: Mole fraction must be between 0 and 1.");
+
+            if (component.CriticalTemperature <= 0)
+                throw new InvalidComponentException($"Component {component.Name}: Critical temperature must be greater than zero.");
+
+            if (component.CriticalPressure <= 0)
+                throw new InvalidComponentException($"Component {component.Name}: Critical pressure must be greater than zero.");
+
+            if (component.MolecularWeight <= 0)
+                throw new InvalidComponentException($"Component {component.Name}: Molecular weight must be greater than zero.");
+        }
+
+        /// <summary>
+        /// Validates flash component properties.
+        /// </summary>
+        public static void ValidateFlashComponent(FlashComponent component)
         {
             if (component == null)
                 throw new ArgumentNullException(nameof(component));

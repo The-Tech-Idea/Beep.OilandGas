@@ -1,76 +1,85 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Beep.OilandGas.Models.ChokeAnalysis;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 
-namespace Beep.OilandGas.Models.ChokeAnalysis
+namespace Beep.OilandGas.Models.DCA
 {
     /// <summary>
-    /// Represents gas properties for choke calculations
-    /// DTO for calculations - Entity class: GAS_CHOKE_PROPERTIES
+    /// Production data point for DCA analysis.
+    /// DTO for calculations - Entity class: DCA_PRODUCTION_DATA
     /// </summary>
-    public partial class GasChokeProperties : Entity, IPPDMEntity
+    public partial class DCAProductionDataPoint : Entity, IPPDMEntity
     {
         /// <summary>
-        /// Gas specific gravity (relative to air)
+        /// Production rate at this time point.
         /// </summary>
-        private decimal _gasSpecificGravityValue;
-        public decimal GasSpecificGravity
+        private decimal _productionRateValue;
+        public decimal ProductionRate
         {
-            get { return _gasSpecificGravityValue; }
-            set { SetProperty(ref _gasSpecificGravityValue, value); }
+            get { return _productionRateValue; }
+            set { SetProperty(ref _productionRateValue, value); }
         }
 
         /// <summary>
-        /// Upstream pressure in psia
+        /// Time since start of production.
         /// </summary>
-        private decimal _upstreamPressureValue;
-        public decimal UpstreamPressure
+        private decimal _timeSinceStartValue;
+        public decimal TimeSinceStart
         {
-            get { return _upstreamPressureValue; }
-            set { SetProperty(ref _upstreamPressureValue, value); }
+            get { return _timeSinceStartValue; }
+            set { SetProperty(ref _timeSinceStartValue, value); }
         }
 
         /// <summary>
-        /// Downstream pressure in psia
+        /// Date and time of the production data point.
         /// </summary>
-        private decimal _downstreamPressureValue;
-        public decimal DownstreamPressure
+        private DateTime? _productionDateTimeValue;
+        public DateTime? ProductionDateTime
         {
-            get { return _downstreamPressureValue; }
-            set { SetProperty(ref _downstreamPressureValue, value); }
+            get { return _productionDateTimeValue; }
+            set { SetProperty(ref _productionDateTimeValue, value); }
         }
 
         /// <summary>
-        /// Temperature in Rankine
+        /// Well identifier for this production data point.
         /// </summary>
-        private decimal _temperatureValue;
-        public decimal Temperature
+        private string _wellIdValue;
+        public string WellId
         {
-            get { return _temperatureValue; }
-            set { SetProperty(ref _temperatureValue, value); }
+            get { return _wellIdValue; }
+            set { SetProperty(ref _wellIdValue, value); }
         }
 
         /// <summary>
-        /// Z-factor (compressibility factor)
+        /// Field identifier for this production data point.
         /// </summary>
-        private decimal _zFactorValue;
-        public decimal ZFactor
+        private string _fieldIdValue;
+        public string FieldId
         {
-            get { return _zFactorValue; }
-            set { SetProperty(ref _zFactorValue, value); }
+            get { return _fieldIdValue; }
+            set { SetProperty(ref _fieldIdValue, value); }
         }
 
         /// <summary>
-        /// Gas flow rate in Mscf/day
+        /// Cumulative production at this time point.
         /// </summary>
-        private decimal _flowRateValue;
-        public decimal FlowRate
+        private decimal _cumulativeProductionValue;
+        public decimal CumulativeProduction
         {
-            get { return _flowRateValue; }
-            set { SetProperty(ref _flowRateValue, value); }
+            get { return _cumulativeProductionValue; }
+            set { SetProperty(ref _cumulativeProductionValue, value); }
+        }
+
+        /// <summary>
+        /// Production type (oil, gas, water, etc.).
+        /// </summary>
+        private string _productionTypeValue;
+        public string ProductionType
+        {
+            get { return _productionTypeValue; }
+            set { SetProperty(ref _productionTypeValue, value); }
         }
 
         // PPDM Entity Properties
@@ -137,8 +146,12 @@ namespace Beep.OilandGas.Models.ChokeAnalysis
             get { return _ppdmGuidValue; }
             set { SetProperty(ref _ppdmGuidValue, value); }
         }
+
+        private string _dcaProductionDataIdValue;
+        public string DCA_PRODUCTION_DATA_ID
+        {
+            get { return _dcaProductionDataIdValue; }
+            set { SetProperty(ref _dcaProductionDataIdValue, value); }
+        }
     }
 }
-
-
-

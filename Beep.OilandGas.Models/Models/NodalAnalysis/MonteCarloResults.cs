@@ -1,76 +1,94 @@
 using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using Beep.OilandGas.Models.ChokeAnalysis;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 
-namespace Beep.OilandGas.Models.ChokeAnalysis
+namespace Beep.OilandGas.Models.NodalAnalysis
 {
     /// <summary>
-    /// Represents gas properties for choke calculations
-    /// DTO for calculations - Entity class: GAS_CHOKE_PROPERTIES
+    /// Represents results from Monte Carlo uncertainty analysis.
+    /// Contains probability distribution statistics (P10, P50, P90).
+    /// DTO for calculations - Entity class: MONTE_CARLO_RESULTS
     /// </summary>
-    public partial class GasChokeProperties : Entity, IPPDMEntity
+    public partial class MonteCarloResults : Entity, IPPDMEntity
     {
         /// <summary>
-        /// Gas specific gravity (relative to air)
+        /// Mean production rate from simulation (bbl/day or equivalent)
         /// </summary>
-        private decimal _gasSpecificGravityValue;
-        public decimal GasSpecificGravity
+        private double _meanValue;
+        public double Mean
         {
-            get { return _gasSpecificGravityValue; }
-            set { SetProperty(ref _gasSpecificGravityValue, value); }
+            get { return _meanValue; }
+            set { SetProperty(ref _meanValue, value); }
         }
 
         /// <summary>
-        /// Upstream pressure in psia
+        /// Standard deviation of production rate
         /// </summary>
-        private decimal _upstreamPressureValue;
-        public decimal UpstreamPressure
+        private double _standardDeviationValue;
+        public double StandardDeviation
         {
-            get { return _upstreamPressureValue; }
-            set { SetProperty(ref _upstreamPressureValue, value); }
+            get { return _standardDeviationValue; }
+            set { SetProperty(ref _standardDeviationValue, value); }
         }
 
         /// <summary>
-        /// Downstream pressure in psia
+        /// 10th percentile production rate (P10 - optimistic case)
         /// </summary>
-        private decimal _downstreamPressureValue;
-        public decimal DownstreamPressure
+        private double _p10Value;
+        public double P10
         {
-            get { return _downstreamPressureValue; }
-            set { SetProperty(ref _downstreamPressureValue, value); }
+            get { return _p10Value; }
+            set { SetProperty(ref _p10Value, value); }
         }
 
         /// <summary>
-        /// Temperature in Rankine
+        /// 50th percentile production rate (P50 - median/expected case)
         /// </summary>
-        private decimal _temperatureValue;
-        public decimal Temperature
+        private double _p50Value;
+        public double P50
         {
-            get { return _temperatureValue; }
-            set { SetProperty(ref _temperatureValue, value); }
+            get { return _p50Value; }
+            set { SetProperty(ref _p50Value, value); }
         }
 
         /// <summary>
-        /// Z-factor (compressibility factor)
+        /// 90th percentile production rate (P90 - conservative case)
         /// </summary>
-        private decimal _zFactorValue;
-        public decimal ZFactor
+        private double _p90Value;
+        public double P90
         {
-            get { return _zFactorValue; }
-            set { SetProperty(ref _zFactorValue, value); }
+            get { return _p90Value; }
+            set { SetProperty(ref _p90Value, value); }
         }
 
         /// <summary>
-        /// Gas flow rate in Mscf/day
+        /// Minimum production rate from all iterations
         /// </summary>
-        private decimal _flowRateValue;
-        public decimal FlowRate
+        private double _minimumValue;
+        public double Minimum
         {
-            get { return _flowRateValue; }
-            set { SetProperty(ref _flowRateValue, value); }
+            get { return _minimumValue; }
+            set { SetProperty(ref _minimumValue, value); }
+        }
+
+        /// <summary>
+        /// Maximum production rate from all iterations
+        /// </summary>
+        private double _maximumValue;
+        public double Maximum
+        {
+            get { return _maximumValue; }
+            set { SetProperty(ref _maximumValue, value); }
+        }
+
+        /// <summary>
+        /// Number of Monte Carlo iterations performed
+        /// </summary>
+        private int? _iterationsValue;
+        public int? Iterations
+        {
+            get { return _iterationsValue; }
+            set { SetProperty(ref _iterationsValue, value); }
         }
 
         // PPDM Entity Properties
@@ -137,8 +155,13 @@ namespace Beep.OilandGas.Models.ChokeAnalysis
             get { return _ppdmGuidValue; }
             set { SetProperty(ref _ppdmGuidValue, value); }
         }
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        public MonteCarloResults()
+        {
+            PPDM_GUID = Guid.NewGuid().ToString();
+        }
     }
 }
-
-
-
