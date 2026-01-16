@@ -7,6 +7,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
@@ -73,7 +74,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
                     ProductionId = entity.PDEN_ID ?? string.Empty,
                     WellUWI = entity.PDEN_ID ?? string.Empty,
                     FieldId = fieldId,
-                    ProductionDate = entity.VOLUME_DATE,
+                    ProductionDate = entity.VOLUME_DATE ?? DateTime.Now,
                     OilVolume = entity.OIL_VOLUME,
                     GasVolume = entity.GAS_VOLUME,
                     WaterVolume = entity.WATER_VOLUME,
