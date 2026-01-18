@@ -12,7 +12,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
     /// Service implementation for choke flow analysis using industry-standard petroleum engineering methods.
     /// Provides comprehensive choke performance evaluation with engineering accuracy.
     /// </summary>
-    public class ChokeAnalysisService : IChokeAnalysisService
+    public partial class ChokeAnalysisService : IChokeAnalysisService
     {
         private readonly ILogger<ChokeAnalysisService> _logger;
 

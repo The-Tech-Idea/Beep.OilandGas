@@ -1,95 +1,13 @@
+using System;
+
 namespace Beep.OilandGas.ProductionAccounting.Exceptions
 {
     /// <summary>
-    /// Base exception class for production accounting errors.
+    /// Base exception for production accounting operations.
     /// </summary>
     public class ProductionAccountingException : Exception
     {
-        public ProductionAccountingException() : base() { }
         public ProductionAccountingException(string message) : base(message) { }
         public ProductionAccountingException(string message, Exception innerException) : base(message, innerException) { }
-    }
-
-    /// <summary>
-    /// Exception thrown when crude oil data is invalid.
-    /// </summary>
-    public class InvalidCrudeOilDataException : ProductionAccountingException
-    {
-        public string ParameterName { get; }
-
-        public InvalidCrudeOilDataException(string parameterName, string message)
-            : base($"Invalid {parameterName}: {message}")
-        {
-            ParameterName = parameterName;
-        }
-    }
-
-    /// <summary>
-    /// Exception thrown when lease data is invalid.
-    /// </summary>
-    public class InvalidLeaseDataException : ProductionAccountingException
-    {
-        public string ParameterName { get; }
-
-        public InvalidLeaseDataException(string parameterName, string message)
-            : base($"Invalid {parameterName}: {message}")
-        {
-            ParameterName = parameterName;
-        }
-    }
-
-    /// <summary>
-    /// Exception thrown when measurement data is invalid.
-    /// </summary>
-    public class InvalidMeasurementDataException : ProductionAccountingException
-    {
-        public string ParameterName { get; }
-
-        public InvalidMeasurementDataException(string parameterName, string message)
-            : base($"Invalid {parameterName}: {message}")
-        {
-            ParameterName = parameterName;
-        }
-    }
-
-    /// <summary>
-    /// Exception thrown when allocation cannot be performed.
-    /// </summary>
-    public class AllocationException : ProductionAccountingException
-    {
-        public AllocationException(string message) : base(message) { }
-    }
-
-    // Financial Accounting Exceptions
-    /// <summary>
-    /// Base exception class for accounting errors.
-    /// </summary>
-    public class AccountingException : ProductionAccountingException
-    {
-        public AccountingException() : base() { }
-        public AccountingException(string message) : base(message) { }
-        public AccountingException(string message, Exception innerException) : base(message, innerException) { }
-    }
-
-    /// <summary>
-    /// Exception thrown when accounting data is invalid.
-    /// </summary>
-    public class InvalidAccountingDataException : AccountingException
-    {
-        public string ParameterName { get; }
-
-        public InvalidAccountingDataException(string parameterName, string message)
-            : base($"Invalid {parameterName}: {message}")
-        {
-            ParameterName = parameterName;
-        }
-    }
-
-    /// <summary>
-    /// Exception thrown when reserves are insufficient for calculation.
-    /// </summary>
-    public class InsufficientReservesException : AccountingException
-    {
-        public InsufficientReservesException(string message) : base($"Insufficient reserves: {message}") { }
     }
 }

@@ -15,17 +15,17 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Validates an entity against business rules
         /// </summary>
-        Task<ValidationResult> ValidateAsync(object entity, string tableName);
+        Task<Beep.OilandGas.Models.DTOs.ValidationResult> ValidateAsync(object entity, string tableName);
 
         /// <summary>
         /// Validates multiple entities in batch
         /// </summary>
-        Task<List<ValidationResult>> ValidateBatchAsync(IEnumerable<object> entities, string tableName);
+        Task<List<Beep.OilandGas.Models.DTOs.ValidationResult>> ValidateBatchAsync(IEnumerable<object> entities, string tableName);
 
         /// <summary>
         /// Gets validation rules for a table
         /// </summary>
-        Task<List<ValidationRule>> GetValidationRulesAsync(string tableName);
+        Task<List<Beep.OilandGas.Models.DTOs.ValidationRule>> GetValidationRulesAsync(string tableName);
     }
 
     /// <summary>

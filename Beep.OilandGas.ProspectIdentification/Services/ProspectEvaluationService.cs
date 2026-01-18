@@ -37,7 +37,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return UnitOfWorkFactory.CreateUnitOfWork(typeof(SEIS_SET), _editor, _connectionName, "SEIS_SET", "SEIS_SET_ID");
         }
 
-        public async Task<ProspectEvaluationDto> EvaluateProspectAsync(string prospectId)
+        public async Task<ProspectEvaluationDto> EvaluateProspectAsync(string prospectId, ProspectEvaluationRequestDto request)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
                 throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
@@ -77,7 +77,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return evaluation;
         }
 
-        public async Task<List<ProspectDto>> GetProspectsAsync(string? fieldId = null)
+        public async Task<List<ProspectDto>> GetProspectsAsync(string? fieldId = null, string? basinId = null, ProspectStatus? status = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             var fieldUow = await GetFieldUnitOfWorkAsync();
             List<FIELD> fields;
@@ -135,7 +135,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return MapToProspectDto(field, seismicSurveys);
         }
 
-        public async Task<ProspectDto> CreateProspectAsync(CreateProspectDto createDto)
+        public async Task<ProspectDto> CreateProspectAsync(CreateProspectDto createDto, string userId)
         {
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return MapToProspectDto(field, new List<SEIS_SET>());
         }
 
-        public async Task<ProspectDto> UpdateProspectAsync(string prospectId, UpdateProspectDto updateDto)
+        public async Task<ProspectDto> UpdateProspectAsync(string prospectId, UpdateProspectDto updateDto, string userId)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
                 throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
@@ -205,7 +205,38 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return MapToProspectDto(field, seismicSurveys);
         }
 
-        public async Task DeleteProspectAsync(string prospectId)
+        public async Task<ProspectDto> ChangeProspectStatusAsync(string prospectId, ProspectStatus newStatus, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(prospectId))
+                throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
+
+            var fieldUow = await GetFieldUnitOfWorkAsync();
+            var field = fieldUow.Read(prospectId) as FIELD;
+            if (field == null)
+                throw new KeyNotFoundException($"Prospect with ID {prospectId} not found.");
+
+            // Map ProspectStatus to PPDM FIELD.ACTIVE_IND ('Y'/'N')
+            field.ACTIVE_IND = newStatus == ProspectStatus.Rejected ? "N" : "Y";
+            field.ROW_CHANGED_DATE = DateTime.UtcNow;
+            var result = await fieldUow.UpdateDoc(field);
+            if (result.Flag != Errors.Ok)
+                throw new InvalidOperationException($"Failed to change prospect status: {result.Message}");
+
+            await fieldUow.Commit();
+
+            var seismicUow = await GetSeismicSurveyUnitOfWorkAsync();
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "AREA_ID", FilterValue = prospectId, Operator = "=" },
+                new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
+            };
+            var seismicUnits = await seismicUow.Get(filters);
+            var seismicSurveys = ConvertToList<SEIS_SET>(seismicUnits);
+
+            return MapToProspectDto(field, seismicSurveys);
+        }
+
+        public async Task DeleteProspectAsync(string prospectId, string userId)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
                 throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
@@ -348,6 +379,92 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             // TODO: Add more risk factors based on field data
 
             return factors;
+        }
+
+        // --- Interface members not yet implemented in detail; provide simple stubs ---
+        public async Task<VolumetricAnalysisDto> PerformVolumetricAnalysisAsync(string prospectId, VolumetricAnalysisRequestDto request)
+        {
+            return new VolumetricAnalysisDto { ProspectId = prospectId, AnalysisDate = DateTime.UtcNow };
+        }
+
+        public async Task<RiskAssessmentDto> PerformRiskAssessmentAsync(string prospectId, RiskAssessmentRequestDto request)
+        {
+            return new RiskAssessmentDto { ProspectId = prospectId, AssessmentDate = DateTime.UtcNow };
+        }
+
+        public async Task<EconomicEvaluationDto> PerformEconomicEvaluationAsync(string prospectId, EconomicEvaluationRequestDto request)
+        {
+            return new EconomicEvaluationDto { ProspectId = prospectId, EvaluationDate = DateTime.UtcNow };
+        }
+
+        public async Task<List<ProspectRankingDto>> RankProspectsAsync(ProspectRankingRequestDto request)
+        {
+            return new List<ProspectRankingDto>();
+        }
+
+        public async Task<ProspectComparisonDto> CompareProspectsAsync(List<string> prospectIds, ProspectComparisonRequestDto request)
+        {
+            return new ProspectComparisonDto();
+        }
+
+        public async Task<SensitivityAnalysisDto> PerformSensitivityAnalysisAsync(string prospectId, SensitivityAnalysisRequestDto request)
+        {
+            return new SensitivityAnalysisDto();
+        }
+
+        public async Task<ResourceEstimateDto> EstimateResourcesAsync(string prospectId, ResourceEstimateRequestDto request)
+        {
+            return new ResourceEstimateDto();
+        }
+
+        public async Task<ProbabilisticAssessmentDto> PerformProbabilisticAssessmentAsync(string prospectId, ProbabilisticAssessmentRequestDto request)
+        {
+            return new ProbabilisticAssessmentDto();
+        }
+
+        public async Task<ResourceEstimateDto> UpdateResourceEstimatesAsync(string prospectId, string userId)
+        {
+            return new ResourceEstimateDto();
+        }
+
+        public async Task<PlayAnalysisDto> AnalyzePlayAsync(string playId, PlayAnalysisRequestDto request)
+        {
+            return new PlayAnalysisDto();
+        }
+
+        public async Task<PlayStatisticsDto> GetPlayStatisticsAsync(string playId)
+        {
+            return new PlayStatisticsDto();
+        }
+
+        public async Task<List<AnalogProspectDto>> FindAnalogProspectsAsync(string prospectId, AnalogSearchRequestDto request)
+        {
+            return new List<AnalogProspectDto>();
+        }
+
+        public async Task<ProspectReportDto> GenerateProspectReportAsync(string prospectId, ProspectReportRequestDto request)
+        {
+            return new ProspectReportDto();
+        }
+
+        public async Task<byte[]> ExportProspectDataAsync(string prospectId, string format = "PDF")
+        {
+            return Array.Empty<byte>();
+        }
+
+        public async Task<PortfolioReportDto> GeneratePortfolioReportAsync(PortfolioReportRequestDto request)
+        {
+            return new PortfolioReportDto();
+        }
+
+        public async Task<ProspectValidationDto> ValidateProspectDataAsync(string prospectId)
+        {
+            return new ProspectValidationDto();
+        }
+
+        public async Task<PeerReviewDto> PerformPeerReviewAsync(string prospectId, PeerReviewRequestDto request)
+        {
+            return new PeerReviewDto();
         }
     }
 }

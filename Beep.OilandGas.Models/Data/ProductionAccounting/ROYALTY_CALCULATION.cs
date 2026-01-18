@@ -57,14 +57,49 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref ROYALTY_INTERESTValue, value); }
         }
 
-        private System.Decimal? ROYALTY_AMOUNTValue;
-        public System.Decimal? ROYALTY_AMOUNT
-        {
-            get { return this.ROYALTY_AMOUNTValue; }
-            set { SetProperty(ref ROYALTY_AMOUNTValue, value); }
-        }
+         private System.Decimal? ROYALTY_AMOUNTValue;
+         public System.Decimal? ROYALTY_AMOUNT
+         {
+             get { return this.ROYALTY_AMOUNTValue; }
+             set { SetProperty(ref ROYALTY_AMOUNTValue, value); }
+         }
 
-        // Standard PPDM columns
+         private System.String ALLOCATION_DETAIL_IDValue;
+         public System.String ALLOCATION_DETAIL_ID
+         {
+             get { return this.ALLOCATION_DETAIL_IDValue; }
+             set { SetProperty(ref ALLOCATION_DETAIL_IDValue, value); }
+         }
+
+         private System.Decimal? TRANSPORTATION_COSTValue;
+         public System.Decimal? TRANSPORTATION_COST
+         {
+             get { return this.TRANSPORTATION_COSTValue; }
+             set { SetProperty(ref TRANSPORTATION_COSTValue, value); }
+         }
+
+         private System.Decimal? AD_VALOREM_TAXValue;
+         public System.Decimal? AD_VALOREM_TAX
+         {
+             get { return this.AD_VALOREM_TAXValue; }
+             set { SetProperty(ref AD_VALOREM_TAXValue, value); }
+         }
+
+         private System.Decimal? SEVERANCE_TAXValue;
+         public System.Decimal? SEVERANCE_TAX
+         {
+             get { return this.SEVERANCE_TAXValue; }
+             set { SetProperty(ref SEVERANCE_TAXValue, value); }
+         }
+
+         private System.String ROYALTY_STATUSValue;
+         public System.String ROYALTY_STATUS
+         {
+             get { return this.ROYALTY_STATUSValue; }
+             set { SetProperty(ref ROYALTY_STATUSValue, value); }
+         }
+
+         // Standard PPDM columns
         private System.String ACTIVE_INDValue;
         public System.String ACTIVE_IND
         {

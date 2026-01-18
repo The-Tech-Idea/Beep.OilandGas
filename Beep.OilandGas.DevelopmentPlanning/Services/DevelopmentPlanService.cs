@@ -16,7 +16,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
     /// Service for managing development plans.
     /// Uses UnitOfWork directly for data access.
     /// </summary>
-    public class DevelopmentPlanService : IDevelopmentPlanService
+    public partial class DevelopmentPlanService : IDevelopmentPlanService
     {
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;

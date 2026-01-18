@@ -2,60 +2,35 @@ global using System;
 global using System.Collections.Generic;
 global using System.Linq;
 global using System.Threading.Tasks;
-global using Beep.OilandGas.ProductionAccounting.Exceptions;
-global using Beep.OilandGas.PPDM39.Core.Metadata;
-global using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
-global using Beep.OilandGas.PPDM39.DataManagement.Core;
 global using Microsoft.Extensions.Logging;
 global using TheTechIdea.Beep.Editor;
-global using Beep.OilandGas.PPDM39.Repositories;
-global using Beep.OilandGas.Models.Core.Interfaces;
 global using TheTechIdea.Beep.Report;
-global using Beep.OilandGas.Models.Data.ProductionAccounting; // Data namespaces
-global using Beep.OilandGas.Models.Data;
+
+// Models - Data entities (PPDM39) - USE ONLY THESE
+global using Beep.OilandGas.Models.Data.ProductionAccounting;
 global using Beep.OilandGas.Models.Data.Accounting;
-global using Beep.OilandGas.Models.Data.Pricing;
 global using Beep.OilandGas.Models.Data.Common;
-global using Beep.OilandGas.Models.Data.DevelopmentPlanning;
-global using Beep.OilandGas.PPDM.Models; 
-global using Beep.OilandGas.Models.Data.ProspectIdentification;
-// DTO namespaces
-global using Beep.OilandGas.Models.DTOs.ProductionAccounting;
-global using Beep.OilandGas.Models.DTOs.Pricing;
+global using Beep.OilandGas.Models.Data.Royalty;
+global using Beep.OilandGas.Models.Data.Ownership;
+global using Beep.OilandGas.Models.Data.Imbalance;
+global using Beep.OilandGas.Models.Data.Trading;
 
-// Local ProductionAccounting namespaces
-global using Beep.OilandGas.ProductionAccounting.Production;
-global using Beep.OilandGas.ProductionAccounting.Trading;
-// Removed: global using Beep.OilandGas.ProductionAccounting.Models; - Use Entity classes or DTOs instead
-global using Beep.OilandGas.ProductionAccounting.Allocation;
+// Service interfaces
+global using Beep.OilandGas.Models.Core.Interfaces;
 
-// Resolve ambiguous references with aliases
-global using RECEIVABLE = Beep.OilandGas.Models.Data.Accounting.RECEIVABLE;
-global using PRICE_INDEX = Beep.OilandGas.Models.Data.Pricing.PRICE_INDEX;
-global using ProductionDataDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.ProductionDataDto;
-global using ValueRunTicketRequest = Beep.OilandGas.Models.DTOs.ProductionAccounting.ValueRunTicketRequest;
+// PPDM39 Infrastructure
+global using Beep.OilandGas.PPDM39.Repositories;
+global using Beep.OilandGas.PPDM39.Core.Metadata;
+global using Beep.OilandGas.PPDM39.DataManagement.Core;
 
-// Resolve DTO ambiguities - use types matching interface expectations
-global using CreateSalesTransactionRequest = Beep.OilandGas.Models.DTOs.Accounting.CreateSalesTransactionRequest;
-global using GenerateOperationalReportRequest = Beep.OilandGas.Models.DTOs.Reporting.GenerateOperationalReportRequest;
-global using GenerateJIBStatementRequest = Beep.OilandGas.Models.DTOs.Reporting.GenerateJIBStatementRequest;
-global using CreateExchangeContractRequest = Beep.OilandGas.Models.DTOs.Trading.CreateExchangeContractRequest;
-global using LeaseType = Beep.OilandGas.Models.DTOs.ProductionAccounting.LeaseType;
-global using MeasurementMethod = Beep.OilandGas.Models.DTOs.ProductionAccounting.MeasurementMethod;
+// ProductionAccounting Services
+global using Beep.OilandGas.ProductionAccounting.Services;
 
-// Resolve data model ambiguities - prefer organized subfolders
-global using ROYALTY_INTEREST = Beep.OilandGas.Models.Data.Royalty.ROYALTY_INTEREST;
-global using ROYALTY_PAYMENT = Beep.OilandGas.Models.Data.Royalty.ROYALTY_PAYMENT;
-global using REGULATED_PRICE = Beep.OilandGas.Models.Data.Pricing.REGULATED_PRICE;
+// ProductionAccounting Constants
+global using Beep.OilandGas.ProductionAccounting.Constants;
 
-// Ownership namespace
-global using OwnershipTree = Beep.OilandGas.Models.Data.Ownership.OwnershipTree;
-global using OwnershipTreeNode = Beep.OilandGas.Models.Data.Ownership.OwnershipTreeNode;
+// ProductionAccounting Exceptions
+global using Beep.OilandGas.ProductionAccounting.Exceptions;
 
-// Imbalance DTO alias
-global using ImbalanceSummary = Beep.OilandGas.Models.DTOs.Imbalance.ImbalanceSummary;
-
-// Resolve DTO type ambiguities for interface implementations
-global using ProvedPropertyDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.ProvedPropertyDto;
-global using ProvedReservesDto = Beep.OilandGas.Models.DTOs.ProductionAccounting.ProvedReservesDto;
-using Beep.OilandGas.Models.Data.ProductionAccounting;
+// Enums
+global using Beep.OilandGas.Models.Enums;

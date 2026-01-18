@@ -62,14 +62,21 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref TOTAL_VALUEValue, value); }
         }
 
-        private System.String VALUATION_METHODValue;
-        public System.String VALUATION_METHOD
-        {
-            get { return this.VALUATION_METHODValue; }
-            set { SetProperty(ref VALUATION_METHODValue, value); }
-        }
+         private System.String VALUATION_METHODValue;
+         public System.String VALUATION_METHOD
+         {
+             get { return this.VALUATION_METHODValue; }
+             set { SetProperty(ref VALUATION_METHODValue, value); }
+         }
 
-        // Standard PPDM columns
+         private System.String DESCRIPTIONValue;
+         public System.String DESCRIPTION
+         {
+             get { return this.DESCRIPTIONValue; }
+             set { SetProperty(ref DESCRIPTIONValue, value); }
+         }
+
+         // Standard PPDM columns
         private System.String ACTIVE_INDValue;
         public System.String ACTIVE_IND
         {

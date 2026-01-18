@@ -1,10 +1,11 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class TANK_INVENTORY : Entity
+    public partial class TANK_INVENTORY : Entity, IPPDMEntity
     {
         private System.String TANK_INVENTORY_IDValue;
         public System.String TANK_INVENTORY_ID

@@ -16,7 +16,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
     /// Service for managing enhanced recovery operations.
     /// Uses UnitOfWork directly for data access.
     /// </summary>
-    public class EnhancedRecoveryService : IEnhancedRecoveryService
+    public partial class EnhancedRecoveryService : IEnhancedRecoveryService
     {
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;

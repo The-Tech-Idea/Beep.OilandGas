@@ -17,7 +17,7 @@ namespace Beep.OilandGas.Decommissioning.Services
     /// Service for managing well plugging operations.
     /// Uses UnitOfWork directly for data access.
     /// </summary>
-    public class WellPluggingService : IWellPluggingService
+    public partial class WellPluggingService : IWellPluggingService
     {
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;

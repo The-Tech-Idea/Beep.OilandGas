@@ -161,6 +161,222 @@ namespace Beep.OilandGas.ProductionOperations.Services
             await Task.CompletedTask;
             return recommendations;
         }
+
+        public async Task RecordWellProductionAsync(WellProductionDataDto productionData, string userId)
+        {
+            if (productionData == null) throw new ArgumentNullException(nameof(productionData));
+            _logger?.LogInformation("Recording well production for {WellUWI}", productionData.WellUWI);
+            await Task.CompletedTask;
+        }
+
+        public async Task<List<WellProductionDataDto>> GetWellProductionAsync(string wellUWI, DateTime startDate, DateTime endDate)
+        {
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            _logger?.LogInformation("Getting well production for {WellUWI}", wellUWI);
+            return await Task.FromResult(new List<WellProductionDataDto>());
+        }
+
+        public async Task<WellUptimeDto> CalculateWellUptimeAsync(string wellUWI, DateTime startDate, DateTime endDate)
+        {
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            _logger?.LogInformation("Calculating well uptime for {WellUWI}", wellUWI);
+            return await Task.FromResult(new WellUptimeDto { UptimePercentage = 95.0m });
+        }
+
+        public async Task<WellStatusDto> GetWellStatusAsync(string wellUWI)
+        {
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            _logger?.LogInformation("Getting well status for {WellUWI}", wellUWI);
+            return await Task.FromResult(new WellStatusDto { Status = "Active" });
+        }
+
+        public async Task UpdateWellParametersAsync(string wellUWI, WellParametersDto parameters, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            _logger?.LogInformation("Updating well parameters for {WellUWI}", wellUWI);
+            await Task.CompletedTask;
+        }
+
+        public async Task RecordEquipmentMaintenanceAsync(EquipmentMaintenanceDto maintenance, string userId)
+        {
+            if (maintenance == null) throw new ArgumentNullException(nameof(maintenance));
+            _logger?.LogInformation("Recording equipment maintenance for {EquipmentId}", maintenance.EquipmentId);
+            await Task.CompletedTask;
+        }
+
+        public async Task<List<EquipmentMaintenanceDto>> GetEquipmentMaintenanceHistoryAsync(string equipmentId, DateTime startDate, DateTime endDate)
+        {
+            if (string.IsNullOrWhiteSpace(equipmentId)) throw new ArgumentException("Equipment ID required", nameof(equipmentId));
+            _logger?.LogInformation("Getting maintenance history for {EquipmentId}", equipmentId);
+            return await Task.FromResult(new List<EquipmentMaintenanceDto>());
+        }
+
+        public async Task ScheduleMaintenanceAsync(MaintenanceScheduleDto schedule, string userId)
+        {
+            if (schedule == null) throw new ArgumentNullException(nameof(schedule));
+            _logger?.LogInformation("Scheduling maintenance for {EquipmentId}", schedule.EquipmentId);
+            await Task.CompletedTask;
+        }
+
+        public async Task<List<MaintenanceScheduleDto>> GetUpcomingMaintenanceAsync(DateTime startDate, DateTime endDate)
+        {
+            _logger?.LogInformation("Getting upcoming maintenance schedules");
+            return await Task.FromResult(new List<MaintenanceScheduleDto>());
+        }
+
+        public async Task<EquipmentReliabilityDto> CalculateEquipmentReliabilityAsync(string equipmentId, DateTime startDate, DateTime endDate)
+        {
+            if (string.IsNullOrWhiteSpace(equipmentId)) throw new ArgumentException("Equipment ID required", nameof(equipmentId));
+            _logger?.LogInformation("Calculating reliability for {EquipmentId}", equipmentId);
+            return await Task.FromResult(new EquipmentReliabilityDto { ReliabilityScore = 90.0m });
+        }
+
+        public async Task RecordFacilityProductionAsync(FacilityProductionDto productionData, string userId)
+        {
+            if (productionData == null) throw new ArgumentNullException(nameof(productionData));
+            _logger?.LogInformation("Recording facility production for {FacilityId}", productionData.FacilityId);
+            await Task.CompletedTask;
+        }
+
+        public async Task<List<FacilityProductionDto>> GetFacilityProductionAsync(string facilityId, DateTime startDate, DateTime endDate)
+        {
+            if (string.IsNullOrWhiteSpace(facilityId)) throw new ArgumentException("Facility ID required", nameof(facilityId));
+            _logger?.LogInformation("Getting facility production for {FacilityId}", facilityId);
+            return await Task.FromResult(new List<FacilityProductionDto>());
+        }
+
+        public async Task UpdateFacilityStatusAsync(string facilityId, FacilityStatusDto status, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(facilityId)) throw new ArgumentException("Facility ID required", nameof(facilityId));
+            _logger?.LogInformation("Updating facility status for {FacilityId}", facilityId);
+            await Task.CompletedTask;
+        }
+
+        public async Task<FacilityStatusDto> GetFacilityStatusAsync(string facilityId)
+        {
+            if (string.IsNullOrWhiteSpace(facilityId)) throw new ArgumentException("Facility ID required", nameof(facilityId));
+            _logger?.LogInformation("Getting facility status for {FacilityId}", facilityId);
+            return await Task.FromResult(new FacilityStatusDto { Status = "Operational" });
+        }
+
+        public async Task RecordSafetyIncidentAsync(SafetyIncidentDto incident, string userId)
+        {
+            if (incident == null) throw new ArgumentNullException(nameof(incident));
+            _logger?.LogInformation("Recording safety incident");
+            await Task.CompletedTask;
+        }
+
+        public async Task<List<SafetyIncidentDto>> GetSafetyIncidentsAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null)
+        {
+            _logger?.LogInformation("Getting safety incidents");
+            return await Task.FromResult(new List<SafetyIncidentDto>());
+        }
+
+        public async Task UpdateSafetyIncidentAsync(string incidentId, SafetyIncidentDto incident, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(incidentId)) throw new ArgumentException("Incident ID required", nameof(incidentId));
+            _logger?.LogInformation("Updating safety incident {IncidentId}", incidentId);
+            await Task.CompletedTask;
+        }
+
+        public async Task<SafetyKPIsDto> CalculateSafetyKPIsAsync(DateTime startDate, DateTime endDate)
+        {
+            _logger?.LogInformation("Calculating safety KPIs");
+            return await Task.FromResult(new SafetyKPIsDto { TotalIncidents = 0 });
+        }
+
+        public async Task RecordEnvironmentalDataAsync(EnvironmentalDataDto data, string userId)
+        {
+            if (data == null) throw new ArgumentNullException(nameof(data));
+            _logger?.LogInformation("Recording environmental data");
+            await Task.CompletedTask;
+        }
+
+        public async Task<List<EnvironmentalDataDto>> GetEnvironmentalDataAsync(DateTime startDate, DateTime endDate, string? locationId = null)
+        {
+            _logger?.LogInformation("Getting environmental data");
+            return await Task.FromResult(new List<EnvironmentalDataDto>());
+        }
+
+        public async Task<ComplianceCheckDto> PerformEnvironmentalComplianceCheckAsync(string locationId, DateTime checkDate)
+        {
+            if (string.IsNullOrWhiteSpace(locationId)) throw new ArgumentException("Location ID required", nameof(locationId));
+            _logger?.LogInformation("Performing environmental compliance check for {LocationId}", locationId);
+            return await Task.FromResult(new ComplianceCheckDto { IsCompliant = true });
+        }
+
+        public async Task<List<ComplianceStatusDto>> GetEnvironmentalComplianceStatusAsync(DateTime startDate, DateTime endDate)
+        {
+            _logger?.LogInformation("Getting environmental compliance status");
+            return await Task.FromResult(new List<ComplianceStatusDto>());
+        }
+
+        public async Task RecordOperationalCostsAsync(OperationalCostsDto costs, string userId)
+        {
+            if (costs == null) throw new ArgumentNullException(nameof(costs));
+            _logger?.LogInformation("Recording operational costs");
+            await Task.CompletedTask;
+        }
+
+        public async Task<List<OperationalCostsDto>> GetOperationalCostsAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null)
+        {
+            _logger?.LogInformation("Getting operational costs");
+            return await Task.FromResult(new List<OperationalCostsDto>());
+        }
+
+        public async Task<CostAnalysisDto> CalculateCostAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate)
+        {
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            _logger?.LogInformation("Calculating cost analysis for {WellUWI}", wellUWI);
+            return await Task.FromResult(new CostAnalysisDto { TotalCost = 0 });
+        }
+
+        public async Task<byte[]> GenerateOperationsReportAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null)
+        {
+            _logger?.LogInformation("Generating operations report");
+            return await Task.FromResult(Array.Empty<byte>());
+        }
+
+        public async Task<List<OptimizationOpportunityDto>> IdentifyOptimizationOpportunitiesAsync(string wellUWI)
+        {
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            _logger?.LogInformation("Identifying optimization opportunities for {WellUWI}", wellUWI);
+            return await Task.FromResult(new List<OptimizationOpportunityDto>());
+        }
+
+        public async Task ImplementOptimizationAsync(string wellUWI, string optimizationId)
+        {
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            _logger?.LogInformation("Implementing optimization for {WellUWI}", wellUWI);
+            await Task.CompletedTask;
+        }
+
+        public async Task<OptimizationEffectivenessDto> MonitorOptimizationEffectivenessAsync(string wellUWI)
+        {
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            _logger?.LogInformation("Monitoring optimization effectiveness for {WellUWI}", wellUWI);
+            return await Task.FromResult(new OptimizationEffectivenessDto { EffectivenessScore = 85.0m });
+        }
+
+        public async Task<ProductionOperationsSummaryDto> GetProductionOperationsSummaryAsync(DateTime startDate, DateTime endDate)
+        {
+            _logger?.LogInformation("Getting production operations summary");
+            return await Task.FromResult(new ProductionOperationsSummaryDto { TotalWells = 0 });
+        }
+
+        public async Task<byte[]> ExportOperationsDataAsync(string wellUWI, DateTime startDate, DateTime endDate, string format)
+        {
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            _logger?.LogInformation("Exporting operations data for {WellUWI} in {Format}", wellUWI, format);
+            return await Task.FromResult(Array.Empty<byte>());
+        }
+
+        public async Task<DataValidationResultDto> ValidateOperationsDataAsync(string wellUWI, DateTime startDate, DateTime endDate)
+        {
+            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
+            _logger?.LogInformation("Validating operations data for {WellUWI}", wellUWI);
+            return await Task.FromResult(new DataValidationResultDto { IsValid = true });
+        }
     }
 }
 

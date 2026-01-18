@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.DTOs;
@@ -5,80 +6,154 @@ using Beep.OilandGas.Models.DTOs;
 namespace Beep.OilandGas.ProspectIdentification.Services
 {
     /// <summary>
-    /// Service for analyzing seismic data.
+    /// Comprehensive seismic analysis service interface
+    /// Provides seismic data interpretation, attribute analysis, AVO analysis, and prospect identification
     /// </summary>
     public interface ISeismicAnalysisService
     {
-        /// <summary>
-        /// Gets seismic surveys for a prospect.
-        /// </summary>
-        Task<List<SeismicSurveyDto>> GetSeismicSurveysAsync(string prospectId);
+        #region Seismic Data Management
 
         /// <summary>
-        /// Analyzes seismic data and returns interpretation results.
+        /// Gets seismic surveys for a prospect or field
         /// </summary>
-        Task<SeismicAnalysisResult> AnalyzeSeismicDataAsync(string surveyId);
+        Task<List<SeismicSurveyDto>> GetSeismicSurveysAsync(string? prospectId = null, string? fieldId = null, DateTime? startDate = null, DateTime? endDate = null);
 
         /// <summary>
-        /// Creates a new seismic survey.
+        /// Gets a specific seismic survey by ID
         /// </summary>
-        Task<SeismicSurveyDto> CreateSeismicSurveyAsync(string prospectId, CreateSeismicSurveyDto createDto);
+        Task<SeismicSurveyDto?> GetSeismicSurveyAsync(string surveyId);
+
+        /// <summary>
+        /// Creates a new seismic survey
+        /// </summary>
+        Task<SeismicSurveyDto> CreateSeismicSurveyAsync(CreateSeismicSurveyDto createDto, string userId);
+
+        /// <summary>
+        /// Updates an existing seismic survey
+        /// </summary>
+        Task<SeismicSurveyDto> UpdateSeismicSurveyAsync(string surveyId, UpdateSeismicSurveyDto updateDto, string userId);
+
+        /// <summary>
+        /// Deletes a seismic survey
+        /// </summary>
+        Task DeleteSeismicSurveyAsync(string surveyId, string userId);
+
+        #endregion
+
+        #region Seismic Interpretation
+
+        /// <summary>
+        /// Performs comprehensive seismic interpretation
+        /// </summary>
+        Task<SeismicInterpretationResultDto> PerformSeismicInterpretationAsync(string surveyId, SeismicInterpretationRequestDto request);
+
+        /// <summary>
+        /// Identifies structural features from seismic data
+        /// </summary>
+        Task<List<StructuralFeatureDto>> IdentifyStructuralFeaturesAsync(string surveyId, SeismicInterpretationRequestDto request);
+
+        /// <summary>
+        /// Performs stratigraphic interpretation
+        /// </summary>
+        Task<StratigraphicInterpretationDto> PerformStratigraphicInterpretationAsync(string surveyId, SeismicInterpretationRequestDto request);
+
+        /// <summary>
+        /// Identifies seismic anomalies and potential hydrocarbon indicators
+        /// </summary>
+        Task<List<SeismicAnomalyDto>> IdentifySeismicAnomaliesAsync(string surveyId, SeismicInterpretationRequestDto request);
+
+        #endregion
+
+        #region Seismic Attributes Analysis
+
+        /// <summary>
+        /// Calculates seismic attributes (amplitude, frequency, phase, etc.)
+        /// </summary>
+        Task<SeismicAttributesResultDto> CalculateSeismicAttributesAsync(string surveyId, SeismicAttributesRequestDto request);
+
+        /// <summary>
+        /// Performs spectral decomposition analysis
+        /// </summary>
+        Task<SpectralDecompositionResultDto> PerformSpectralDecompositionAsync(string surveyId, SpectralDecompositionRequestDto request);
+
+        /// <summary>
+        /// Generates seismic inversion results
+        /// </summary>
+        Task<SeismicInversionResultDto> PerformSeismicInversionAsync(string surveyId, SeismicInversionRequestDto request);
+
+        /// <summary>
+        /// Performs coherence analysis
+        /// </summary>
+        Task<CoherenceAnalysisResultDto> PerformCoherenceAnalysisAsync(string surveyId, CoherenceAnalysisRequestDto request);
+
+        #endregion
+
+        #region AVO Analysis
+
+        /// <summary>
+        /// Performs Amplitude Versus Offset (AVO) analysis
+        /// </summary>
+        Task<AVOAnalysisResultDto> PerformAVOAnalysisAsync(string surveyId, AVOAnalysisRequestDto request);
+
+        /// <summary>
+        /// Generates AVO crossplots and classification
+        /// </summary>
+        Task<AVOCrossplotResultDto> GenerateAVOCrossplotAsync(string surveyId, AVOCrossplotRequestDto request);
+
+        /// <summary>
+        /// Performs fluid substitution modeling
+        /// </summary>
+        Task<FluidSubstitutionResultDto> PerformFluidSubstitutionAsync(string surveyId, FluidSubstitutionRequestDto request);
+
+        #endregion
+
+        #region Prospect Identification
+
+        /// <summary>
+        /// Identifies drilling targets from seismic analysis
+        /// </summary>
+        Task<List<DrillingTargetDto>> IdentifyDrillingTargetsAsync(string surveyId, TargetIdentificationRequestDto request);
+
+        /// <summary>
+        /// Performs volumetric analysis for prospects
+        /// </summary>
+        Task<VolumetricAnalysisResultDto> PerformVolumetricAnalysisAsync(string prospectId, VolumetricAnalysisRequestDto request);
+
+        /// <summary>
+        /// Generates prospect risk assessment
+        /// </summary>
+        Task<ProspectRiskAssessmentDto> AssessProspectRiskAsync(string prospectId, RiskAssessmentRequestDto request);
+
+        #endregion
+
+        #region Quality Control & Validation
+
+        /// <summary>
+        /// Validates seismic data quality
+        /// </summary>
+        Task<SeismicDataQualityDto> ValidateSeismicDataQualityAsync(string surveyId);
+
+        /// <summary>
+        /// Performs seismic-well tie analysis
+        /// </summary>
+        Task<SeismicWellTieResultDto> PerformSeismicWellTieAsync(string surveyId, string wellUWI, SeismicWellTieRequestDto request);
+
+        #endregion
+
+        #region Reporting & Export
+
+        /// <summary>
+        /// Generates seismic interpretation report
+        /// </summary>
+        Task<SeismicReportDto> GenerateSeismicReportAsync(string surveyId, SeismicReportRequestDto request);
+
+        /// <summary>
+        /// Exports seismic data and results
+        /// </summary>
+        Task<byte[]> ExportSeismicDataAsync(string surveyId, string format = "SEG-Y");
+
+        #endregion
     }
 
-    /// <summary>
-    /// DTO for creating a seismic survey.
-    /// </summary>
-    public class CreateSeismicSurveyDto
-    {
-        public string SurveyName { get; set; } = string.Empty;
-        public string? SurveyType { get; set; }
-        public DateTime? SurveyDate { get; set; }
-        public string? Contractor { get; set; }
-        public decimal? AreaCovered { get; set; }
-        public string? AreaUnit { get; set; }
-    }
-
-    /// <summary>
-    /// Result of seismic analysis.
-    /// </summary>
-    public class SeismicAnalysisResult
-    {
-        public string SurveyId { get; set; } = string.Empty;
-        public string? Interpretation { get; set; }
-        public List<SeismicAnomaly> Anomalies { get; set; } = new();
-        public List<DrillingTarget> DrillingTargets { get; set; } = new();
-    }
-
-    /// <summary>
-    /// Seismic anomaly identified in analysis.
-    /// </summary>
-    public class SeismicAnomaly
-    {
-        public string AnomalyId { get; set; } = string.Empty;
-        public string AnomalyType { get; set; } = string.Empty;
-        public decimal? Latitude { get; set; }
-        public decimal? Longitude { get; set; }
-        public decimal? Depth { get; set; }
-        public string? Description { get; set; }
-    }
-
-    /// <summary>
-    /// Drilling target identified from seismic analysis.
-    /// </summary>
-    public class DrillingTarget
-    {
-        public string TargetId { get; set; } = string.Empty;
-        public string TargetName { get; set; } = string.Empty;
-        public decimal? Latitude { get; set; }
-        public decimal? Longitude { get; set; }
-        public decimal? TargetDepth { get; set; }
-        public string? TargetFormation { get; set; }
-        public decimal? Confidence { get; set; }
-    }
-
-    /// <summary>
-    /// DTO for creating a seismic survey.
-    /// </summary>
- 
 }
 

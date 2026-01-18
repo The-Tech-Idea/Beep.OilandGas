@@ -62,7 +62,7 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             {
                 application.Attachments = attachments.Select(a => new APPLICATION_ATTACHMENT
                 {
-                     = a.ATTACHMENT_ID ?? string.Empty,
+                    AttachmentId = a.ATTACHMENT_ID ?? string.Empty,
                     FileName = a.PHYSICAL_ITEM_ID ?? string.Empty, // Physical item ID may contain file reference
                     FileType = a.ATTACHMENT_TYPE,
                     FileSize = null, // Not available in APPLIC_ATTACH

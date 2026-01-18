@@ -1,63 +1,21 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.Models.DTOs.ProductionAccounting;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
     /// <summary>
-    /// Service interface for allocation operations.
+    /// Service for production allocation operations.
+    /// Allocates volumes to wells, leases, tracts, and working interests.
     /// </summary>
     public interface IAllocationService
     {
-        /// <summary>
-        /// Allocates production to wells.
-        /// </summary>
-        Task<AllocationRequest> AllocateProductionAsync(
-            string runTicketId,
-            AllocationMethod method,
-            List<WellAllocationDataDto> wells,
-            string userId,
-            string? connectionName = null);
-        
-        /// <summary>
-        /// Allocates production to leases.
-        /// </summary>
-        Task<AllocationRequest> AllocateToLeasesAsync(
-            string runTicketId,
-            AllocationMethod method,
-            List<LeaseAllocationDataDto> leases,
-            string userId,
-            string? connectionName = null);
-        
-        /// <summary>
-        /// Allocates production to tracts.
-        /// </summary>
-        Task<AllocationRequest> AllocateToTractsAsync(
-            string runTicketId,
-            AllocationMethod method,
-            List<TractAllocationDataDto> tracts,
-            string userId,
-            string? connectionName = null);
-        
-        /// <summary>
-        /// Gets an allocation result by ID.
-        /// </summary>
-        Task<AllocationRequest?> GetAllocationResultAsync(string allocationId, string? connectionName = null);
-        
-        /// <summary>
-        /// Gets allocation history for a run ticket.
-        /// </summary>
-        Task<List<AllocationRequest>> GetAllocationHistoryAsync(string runTicketId, string? connectionName = null);
-        
-        /// <summary>
-        /// Gets allocation details for an allocation result.
-        /// </summary>
-        Task<List<ALLOCATION_DETAIL>> GetAllocationDetailsAsync(string allocationId, string? connectionName = null);
+        Task<ALLOCATION_RESULT> AllocateAsync(RUN_TICKET runTicket, string method, string userId, string cn = "PPDM39");
+        Task<ALLOCATION_RESULT?> GetAsync(string allocationId, string cn = "PPDM39");
+        Task<List<ALLOCATION_DETAIL>> GetDetailsAsync(string allocationId, string cn = "PPDM39");
+        Task<List<ALLOCATION_RESULT>> GetHistoryAsync(string runTicketId, string cn = "PPDM39");
+        Task<bool> ValidateAsync(ALLOCATION_RESULT allocation, string cn = "PPDM39");
+        Task ReverseAsync(string allocationId, string userId, string cn = "PPDM39");
     }
 }
-
-
-
-

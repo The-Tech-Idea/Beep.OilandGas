@@ -48,14 +48,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Validates an entity against business rules
         /// </summary>
-        public async Task<ValidationResult> ValidateAsync(object entity, string tableName)
+        public async Task<Beep.OilandGas.Models.DTOs.ValidationResult> ValidateAsync(object entity, string tableName)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
 
-            var result = new ValidationResult
+            var result = new Beep.OilandGas.Models.DTOs.ValidationResult
             {
                 Entity = entity,
                 TableName = tableName,
@@ -83,7 +83,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     }
                     else
                     {
-                        result.Warnings.Add(new ValidationWarning
+                        result.Warnings.Add(new Beep.OilandGas.Models.DTOs.ValidationWarning
                         {
                             FieldName = rule.FieldName,
                             WarningMessage = validationError.ErrorMessage,
@@ -99,12 +99,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Validates multiple entities in batch
         /// </summary>
-        public async Task<List<ValidationResult>> ValidateBatchAsync(IEnumerable<object> entities, string tableName)
+        public async Task<List<Beep.OilandGas.Models.DTOs.ValidationResult>> ValidateBatchAsync(IEnumerable<object> entities, string tableName)
         {
             if (entities == null)
                 throw new ArgumentNullException(nameof(entities));
 
-            var results = new List<ValidationResult>();
+            var results = new List<Beep.OilandGas.Models.DTOs.ValidationResult>();
             var rules = await GetValidationRulesAsync(tableName);
 
             foreach (var entity in entities)
@@ -120,7 +120,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// Gets validation rules for a table
         /// Loads from database first, then generates default rules if none exist
         /// </summary>
-        public async Task<List<ValidationRule>> GetValidationRulesAsync(string tableName)
+        public async Task<List<Beep.OilandGas.Models.DTOs.ValidationRule>> GetValidationRulesAsync(string tableName)
         {
             var rules = new List<ValidationRule>();
 
@@ -219,7 +219,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Saves validation rule to database
         /// </summary>
-        private async Task SaveValidationRuleAsync(ValidationRule rule, string tableName)
+        private async Task SaveValidationRuleAsync(Beep.OilandGas.Models.DTOs.ValidationRule rule, string tableName)
         {
             var ruleEntity = new DATA_VALIDATION_RULE
             {
@@ -243,9 +243,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Maps DATA_VALIDATION_RULE entity to ValidationRule DTO
         /// </summary>
-        private ValidationRule MapToValidationRule(DATA_VALIDATION_RULE entity)
+        private Beep.OilandGas.Models.DTOs.ValidationRule MapToValidationRule(DATA_VALIDATION_RULE entity)
         {
-            return new ValidationRule
+            return new Beep.OilandGas.Models.DTOs.ValidationRule
             {
                 RuleId = entity.VALIDATION_RULE_ID,
                 RuleName = entity.RULE_NAME,
@@ -261,14 +261,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Validates a single rule
         /// </summary>
-        private ValidationError ValidateRule(ValidationRule rule, object value, object entity, string tableName)
+        private Beep.OilandGas.Models.DTOs.ValidationError ValidateRule(ValidationRule rule, object value, object entity, string tableName)
         {
             switch (rule.RuleType)
             {
                 case ValidationRuleType.Required:
                     if (value == null || (value is string str && string.IsNullOrWhiteSpace(str)))
                     {
-                        return new ValidationError
+                        return new Beep.OilandGas.Models.DTOs.ValidationError
                         {
                             FieldName = rule.FieldName,
                             ErrorMessage = rule.ErrorMessage,
@@ -283,7 +283,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     {
                         if (stringValue.Length > maxLength)
                         {
-                            return new ValidationError
+                            return new Beep.OilandGas.Models.DTOs.ValidationError
                             {
                                 FieldName = rule.FieldName,
                                 ErrorMessage = rule.ErrorMessage,
@@ -299,7 +299,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     {
                         if (!System.Text.RegularExpressions.Regex.IsMatch(patternValue, rule.RuleValue))
                         {
-                            return new ValidationError
+                            return new Beep.OilandGas.Models.DTOs.ValidationError
                             {
                                 FieldName = rule.FieldName,
                                 ErrorMessage = rule.ErrorMessage,
@@ -317,7 +317,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                         var allowedValues = rule.RuleValue.Split(',');
                         if (!allowedValues.Contains(customValue.Trim()))
                         {
-                            return new ValidationError
+                            return new Beep.OilandGas.Models.DTOs.ValidationError
                             {
                                 FieldName = rule.FieldName,
                                 ErrorMessage = rule.ErrorMessage,

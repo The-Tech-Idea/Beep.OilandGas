@@ -272,6 +272,311 @@ namespace Beep.OilandGas.GasProperties.Services
             
             return composition;
         }
+
+        /// <summary>
+        /// Analyzes gas viscosity using Lee-Gonzalez-Eakin correlation.
+        /// </summary>
+        public async Task<GasViscosityAnalysisDto> AnalyzeGasViscosityAsync(GasCompositionDto composition, decimal pressure, decimal temperature)
+        {
+            if (composition == null)
+                throw new ArgumentNullException(nameof(composition));
+
+            _logger?.LogInformation("Analyzing gas viscosity for composition {CompositionId} at P={Pressure}, T={Temperature}", composition.CompositionId, pressure, temperature);
+
+            var zFactor = CalculateZFactor(pressure, temperature, composition.SpecificGravity);
+            
+            // Lee-Gonzalez-Eakin correlation for gas viscosity
+            var molWeight = composition.MolecularWeight;
+            var reducedTemp = temperature / (9.67m + 23.8m * molWeight);
+            var viscosityAtSC = (0.0001m * (decimal)Math.Pow((double)molWeight, 0.5) * (decimal)Math.Pow(520.0, 1.67)) / (decimal)Math.Pow(38.4, 2.667);
+            
+            var viscosity = viscosityAtSC * (1m + 10.8m * (decimal)Math.Pow((double)(pressure / 1000m), 0.4));
+
+            var result = new GasViscosityAnalysisDto
+            {
+                AnalysisId = _defaults.FormatIdForTable("GAS_VISCOSITY", Guid.NewGuid().ToString()),
+                CompositionId = composition.CompositionId,
+                AnalysisDate = DateTime.UtcNow,
+                Pressure = pressure,
+                Temperature = temperature,
+                Viscosity = Math.Max(viscosity, 0.001m),
+                ViscosityAtSC = viscosityAtSC,
+                PressureCoefficient = 10.8m * (decimal)Math.Pow((double)(pressure / 1000m), 0.4),
+                TemperatureCoefficient = 0.5m,
+                CorrelationMethod = "Lee-Gonzalez-Eakin"
+            };
+
+            _logger?.LogInformation("Gas viscosity analysis complete: Viscosity={Viscosity}cp", result.Viscosity);
+            await Task.CompletedTask;
+            return result;
+        }
+
+        /// <summary>
+        /// Analyzes gas compressibility across pressure and temperature ranges.
+        /// </summary>
+        public async Task<GasCompressibilityAnalysisDto> AnalyzeCompressibilityAsync(GasCompositionDto composition, decimal pressure, decimal temperature)
+        {
+            if (composition == null)
+                throw new ArgumentNullException(nameof(composition));
+
+            _logger?.LogInformation("Analyzing gas compressibility for composition {CompositionId}", composition.CompositionId);
+
+            var zFactor = CalculateZFactor(pressure, temperature, composition.SpecificGravity);
+            
+            // Isothermal compressibility from Z-factor derivative
+            var dP = 10m;
+            var zFactorPlus = CalculateZFactor(pressure + dP, temperature, composition.SpecificGravity);
+            var isothermalCompressibility = -((zFactorPlus - zFactor) / (zFactor * dP / pressure)) / pressure;
+
+            // Adiabatic compressibility (approximately 1.4 * isothermal for ideal gas)
+            var adiabaticCompressibility = 1.4m * Math.Abs(isothermalCompressibility);
+            var compressibilityFactor = (pressure * composition.MolecularWeight) / (zFactor * 10.73m * temperature);
+
+            var result = new GasCompressibilityAnalysisDto
+            {
+                AnalysisId = _defaults.FormatIdForTable("GAS_COMPRESSIBILITY", Guid.NewGuid().ToString()),
+                CompositionId = composition.CompositionId,
+                AnalysisDate = DateTime.UtcNow,
+                Pressure = pressure,
+                Temperature = temperature,
+                IsothermalCompressibility = Math.Abs(isothermalCompressibility),
+                AdiabaticCompressibility = adiabaticCompressibility,
+                ZFactor = zFactor,
+                CompressibilityFactor = compressibilityFactor
+            };
+
+            _logger?.LogInformation("Compressibility analysis complete: Isothermal={Isothermal}, Adiabatic={Adiabatic}", result.IsothermalCompressibility, result.AdiabaticCompressibility);
+            await Task.CompletedTask;
+            return result;
+        }
+
+        /// <summary>
+        /// Calculates virial coefficients for the gas mixture.
+        /// </summary>
+        public async Task<VirialCoefficientAnalysisDto> CalculateVirialCoefficientsAsync(GasCompositionDto composition, decimal pressure, decimal temperature)
+        {
+            if (composition == null)
+                throw new ArgumentNullException(nameof(composition));
+
+            _logger?.LogInformation("Calculating virial coefficients for composition {CompositionId}", composition.CompositionId);
+
+            // Estimate pseudocritical properties
+            var pseudoCriticalTemp = 169.2m + (349.5m * composition.SpecificGravity) - (74m * (composition.SpecificGravity * composition.SpecificGravity));
+            var pseudoCriticalPress = 756.8m - (131m * composition.SpecificGravity) - (3.6m * (composition.SpecificGravity * composition.SpecificGravity));
+
+            var reducedTemp = temperature / pseudoCriticalTemp;
+            var reducedPress = pressure / pseudoCriticalPress;
+
+            // Second virial coefficient (dimensionless)
+            var secondVirial = 0.083m - (0.422m / (decimal)Math.Pow((double)reducedTemp, 1.6));
+            
+            // Third virial coefficient (dimensionless)
+            var thirdVirial = 0.139m - (0.172m / (decimal)Math.Pow((double)reducedTemp, 4.2));
+
+            var result = new VirialCoefficientAnalysisDto
+            {
+                AnalysisId = _defaults.FormatIdForTable("VIRIAL_COEFF", Guid.NewGuid().ToString()),
+                CompositionId = composition.CompositionId,
+                AnalysisDate = DateTime.UtcNow,
+                Pressure = pressure,
+                Temperature = temperature,
+                SecondVirialCoefficient = secondVirial,
+                ThirdVirialCoefficient = thirdVirial,
+                ReducedTemperature = reducedTemp,
+                ReducedPressure = reducedPress
+            };
+
+            _logger?.LogInformation("Virial coefficients calculated: B={B}, C={C}", secondVirial, thirdVirial);
+            await Task.CompletedTask;
+            return result;
+        }
+
+        /// <summary>
+        /// Analyzes gas mixture properties and pseudocritical conditions.
+        /// </summary>
+        public async Task<GasMixtureAnalysisDto> AnalyzeMixturePropertiesAsync(GasCompositionDto composition)
+        {
+            if (composition == null || composition.Components == null || composition.Components.Count == 0)
+                throw new ArgumentException("Composition must have components", nameof(composition));
+
+            _logger?.LogInformation("Analyzing mixture properties for composition {CompositionId}", composition.CompositionId);
+
+            var pseudoCriticalTemp = 0m;
+            var pseudoCriticalPress = 0m;
+
+            var result = new GasMixtureAnalysisDto
+            {
+                AnalysisId = _defaults.FormatIdForTable("MIXTURE_ANALYSIS", Guid.NewGuid().ToString()),
+                CompositionId = composition.CompositionId,
+                AnalysisDate = DateTime.UtcNow,
+                AverageMolecularWeight = composition.MolecularWeight,
+                ComponentAnalysis = new List<MixtureComponentAnalysisDto>()
+            };
+
+            // Analyze each component
+            foreach (var component in composition.Components)
+            {
+                var componentAnalysis = new MixtureComponentAnalysisDto
+                {
+                    ComponentName = component.ComponentName,
+                    MoleFraction = component.MoleFraction,
+                    CriticalTemperature = EstimateCriticalTemp(component.ComponentName),
+                    CriticalPressure = EstimateCriticalPress(component.ComponentName),
+                    AccentricityFactor = EstimateAccentricity(component.ComponentName)
+                };
+
+                pseudoCriticalTemp += component.MoleFraction * componentAnalysis.CriticalTemperature;
+                pseudoCriticalPress += component.MoleFraction * componentAnalysis.CriticalPressure;
+
+                result.ComponentAnalysis.Add(componentAnalysis);
+            }
+
+            result.PseudoCriticalTemperature = pseudoCriticalTemp;
+            result.PseudoCriticalPressure = pseudoCriticalPress;
+
+            _logger?.LogInformation("Mixture analysis complete: Pc={Pc}psia, Tc={Tc}°R", result.PseudoCriticalPressure, result.PseudoCriticalTemperature);
+            await Task.CompletedTask;
+            return result;
+        }
+
+        /// <summary>
+        /// Analyzes thermal conductivity of the gas.
+        /// </summary>
+        public async Task<ThermalConductivityAnalysisDto> AnalyzeThermalConductivityAsync(GasCompositionDto composition, decimal pressure, decimal temperature)
+        {
+            if (composition == null)
+                throw new ArgumentNullException(nameof(composition));
+
+            _logger?.LogInformation("Analyzing thermal conductivity for composition {CompositionId}", composition.CompositionId);
+
+            // Thermal conductivity correlation (simplified)
+            var thermalConductivityAtSC = 0.0015m + (0.00003m * composition.MolecularWeight);
+            var tempFactor = (decimal)Math.Sqrt((double)(temperature / 520m));
+            var pressureFactor = 1m + (0.000001m * pressure);
+            var thermalConductivity = thermalConductivityAtSC * tempFactor * pressureFactor;
+
+            var result = new ThermalConductivityAnalysisDto
+            {
+                AnalysisId = _defaults.FormatIdForTable("THERMAL_COND", Guid.NewGuid().ToString()),
+                CompositionId = composition.CompositionId,
+                AnalysisDate = DateTime.UtcNow,
+                Pressure = pressure,
+                Temperature = temperature,
+                ThermalConductivity = Math.Max(thermalConductivity, 0.001m),
+                TemperatureDependence = 0.5m,
+                PressureDependence = 0.000001m,
+                CorrelationMethod = "Simplified Correlation"
+            };
+
+            _logger?.LogInformation("Thermal conductivity analysis complete: κ={TC} BTU/(hr·ft·°R)", result.ThermalConductivity);
+            await Task.CompletedTask;
+            return result;
+        }
+
+        /// <summary>
+        /// Generates a property correlation matrix across pressure and temperature ranges.
+        /// </summary>
+        public async Task<GasPropertyMatrixDto> GeneratePropertyMatrixAsync(GasCompositionDto composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
+        {
+            if (composition == null)
+                throw new ArgumentNullException(nameof(composition));
+
+            _logger?.LogInformation("Generating property matrix for composition {CompositionId}", composition.CompositionId);
+
+            var result = new GasPropertyMatrixDto
+            {
+                MatrixId = _defaults.FormatIdForTable("GAS_PROPERTY_MATRIX", Guid.NewGuid().ToString()),
+                CompositionId = composition.CompositionId,
+                GenerationDate = DateTime.UtcNow,
+                MinPressure = minPressure,
+                MaxPressure = maxPressure,
+                MinTemperature = minTemperature,
+                MaxTemperature = maxTemperature,
+                PropertyValues = new List<PropertyValueDto>()
+            };
+
+            var pressureStep = (maxPressure - minPressure) / 10m;
+            var tempStep = (maxTemperature - minTemperature) / 10m;
+
+            for (decimal p = minPressure; p <= maxPressure; p += pressureStep)
+            {
+                for (decimal t = minTemperature; t <= maxTemperature; t += tempStep)
+                {
+                    var zFactor = CalculateZFactor(p, t, composition.SpecificGravity);
+                    var density = CalculateGasDensity(p, t, zFactor, composition.MolecularWeight);
+                    var fvf = CalculateFormationVolumeFactor(p, t, zFactor);
+                    
+                    var viscosityAnalysis = await AnalyzeGasViscosityAsync(composition, p, t);
+                    var conductivityAnalysis = await AnalyzeThermalConductivityAsync(composition, p, t);
+
+                    result.PropertyValues.Add(new PropertyValueDto
+                    {
+                        Pressure = p,
+                        Temperature = t,
+                        ZFactor = zFactor,
+                        Density = density,
+                        Viscosity = viscosityAnalysis.Viscosity,
+                        ThermalConductivity = conductivityAnalysis.ThermalConductivity,
+                        CompressibilityFactor = 1m / zFactor
+                    });
+                }
+            }
+
+            _logger?.LogInformation("Property matrix generated: {PointCount} property combinations", result.PropertyValues.Count);
+            await Task.CompletedTask;
+            return result;
+        }
+
+        /// <summary>
+        /// Helper method to estimate critical temperature by component name.
+        /// </summary>
+        private decimal EstimateCriticalTemp(string componentName)
+        {
+            return componentName.ToLower() switch
+            {
+                "ch4" or "methane" => 343.0m,
+                "c2h6" or "ethane" => 549.8m,
+                "c3h8" or "propane" => 369.8m,
+                "n2" or "nitrogen" => 126.2m,
+                "co2" or "carbon dioxide" => 304.1m,
+                "h2s" or "hydrogen sulfide" => 373.5m,
+                _ => 350m // Default estimate
+            };
+        }
+
+        /// <summary>
+        /// Helper method to estimate critical pressure by component name.
+        /// </summary>
+        private decimal EstimateCriticalPress(string componentName)
+        {
+            return componentName.ToLower() switch
+            {
+                "ch4" or "methane" => 667.8m,
+                "c2h6" or "ethane" => 708.3m,
+                "c3h8" or "propane" => 616.3m,
+                "n2" or "nitrogen" => 492.5m,
+                "co2" or "carbon dioxide" => 1070.6m,
+                "h2s" or "hydrogen sulfide" => 1306.0m,
+                _ => 700m // Default estimate
+            };
+        }
+
+        /// <summary>
+        /// Helper method to estimate accentricity factor by component name.
+        /// </summary>
+        private decimal EstimateAccentricity(string componentName)
+        {
+            return componentName.ToLower() switch
+            {
+                "ch4" or "methane" => 0.011m,
+                "c2h6" or "ethane" => 0.099m,
+                "c3h8" or "propane" => 0.152m,
+                "n2" or "nitrogen" => 0.040m,
+                "co2" or "carbon dioxide" => 0.225m,
+                "h2s" or "hydrogen sulfide" => 0.100m,
+                _ => 0.10m // Default estimate
+            };
+        }
     }
 }
 

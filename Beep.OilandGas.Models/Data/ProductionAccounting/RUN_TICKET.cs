@@ -1,10 +1,11 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class RUN_TICKET : Entity
+    public partial class RUN_TICKET : Entity, IPPDMEntity
     {
         private System.String RUN_TICKET_IDValue;
         public System.String RUN_TICKET_ID

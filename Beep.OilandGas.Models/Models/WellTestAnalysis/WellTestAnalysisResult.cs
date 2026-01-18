@@ -7,6 +7,26 @@ namespace Beep.OilandGas.Models.WellTestAnalysis
     public class WellTestAnalysisResult
     {
         /// <summary>
+        /// Gets or sets the unique analysis identifier
+        /// </summary>
+        public string AnalysisId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the well UWI (Unique Well Identifier)
+        /// </summary>
+        public string WellUWI { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the analysis date/time
+        /// </summary>
+        public DateTime AnalysisDate { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// Gets or sets the user who performed the analysis
+        /// </summary>
+        public string AnalysisByUser { get; set; } = string.Empty;
+
+        /// <summary>
         /// Gets or sets the calculated permeability in md
         /// </summary>
         public double Permeability { get; set; }

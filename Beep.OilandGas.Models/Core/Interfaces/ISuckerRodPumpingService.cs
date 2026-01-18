@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.DTOs.Pumps;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -31,46 +32,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="userId">User ID for audit</param>
         /// <returns>Task</returns>
         Task SavePumpDesignAsync(SuckerRodPumpDesignDto design, string userId);
-    }
-
-    /// <summary>
-    /// DTO for sucker rod pump design.
-    /// </summary>
-    public class SuckerRodPumpDesignDto
-    {
-        public string DesignId { get; set; } = string.Empty;
-        public string WellUWI { get; set; } = string.Empty;
-        public System.DateTime DesignDate { get; set; }
-        public decimal PumpDepth { get; set; }
-        public decimal PumpSize { get; set; }
-        public decimal StrokeLength { get; set; }
-        public decimal StrokesPerMinute { get; set; }
-        public string? Status { get; set; }
-    }
-
-    /// <summary>
-    /// DTO for sucker rod pump well properties.
-    /// </summary>
-    public class SuckerRodPumpWellPropertiesDto
-    {
-        public decimal WellDepth { get; set; }
-        public decimal TubingDiameter { get; set; }
-        public decimal WellheadPressure { get; set; }
-        public decimal BottomHolePressure { get; set; }
-        public decimal DesiredFlowRate { get; set; }
-    }
-
-    /// <summary>
-    /// DTO for sucker rod pump performance.
-    /// </summary>
-    public class SuckerRodPumpPerformanceDto
-    {
-        public string PumpId { get; set; } = string.Empty;
-        public System.DateTime PerformanceDate { get; set; }
-        public decimal FlowRate { get; set; }
-        public decimal Efficiency { get; set; }
-        public decimal PowerConsumption { get; set; }
-        public string? Status { get; set; }
     }
 }
 
