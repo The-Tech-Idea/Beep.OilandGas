@@ -13,6 +13,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -37,6 +38,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly IInventoryService _inventoryService;
         private readonly IPeriodClosingService _periodClosingService;
         private readonly IPPDMMetadataRepository _metadata;
+        private readonly IDMEEditor _editor;
+        private readonly ICommonColumnHandler _commonColumnHandler;
+        private readonly IPPDM39DefaultsRepository _defaults;
         private readonly ILogger<ProductionAccountingService> _logger;
         private const string ConnectionName = "PPDM39";
 
@@ -55,6 +59,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             IInventoryService inventoryService,
             IPeriodClosingService periodClosingService,
             IPPDMMetadataRepository metadata,
+            IDMEEditor editor,
+            ICommonColumnHandler commonColumnHandler,
+            IPPDM39DefaultsRepository defaults,
             ILogger<ProductionAccountingService> logger = null)
         {
             _allocationService = allocationService ?? throw new ArgumentNullException(nameof(allocationService));
@@ -71,6 +78,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _inventoryService = inventoryService ?? throw new ArgumentNullException(nameof(inventoryService));
             _periodClosingService = periodClosingService ?? throw new ArgumentNullException(nameof(periodClosingService));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+            _editor = editor ?? throw new ArgumentNullException(nameof(editor));
+            _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
+            _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _logger = logger;
         }
 
@@ -316,12 +326,30 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
                     ?? typeof(MEASUREMENT_RECORD);
 
-                // Would query database and sum GROSS_VOLUME where FIELD_ID = fieldId and MEASUREMENT_DATETIME <= asOfDate
-                // For now, return placeholder
-                return 0;
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "MEASUREMENT_RECORD");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+                    new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd HH:mm:ss") },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var measurements = await repo.GetAsync(filters);
+                var measurementList = measurements?.Cast<MEASUREMENT_RECORD>().ToList() ?? new List<MEASUREMENT_RECORD>();
+
+                var totalProduction = measurementList.Sum(m => m.GROSS_VOLUME ?? 0);
+                _logger?.LogInformation(
+                    "Calculated total production for field {FieldId}: {TotalProduction} from {Count} records",
+                    fieldId, totalProduction, measurementList.Count);
+
+                return totalProduction;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogWarning(ex, "Error calculating total production for field {FieldId}", fieldId);
                 return 0;
             }
         }

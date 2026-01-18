@@ -73,9 +73,28 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     return null;
                 }
 
-                // Calculate depletion for period
-                // In real implementation: would get production from RUN_TICKET and reserves from PROVED_RESERVES
-                decimal periodDepletion = capitalizedCosts * 0.06m;  // Placeholder: 6% per period
+                // Unit of Production Depletion Formula:
+                // Depletion = (Period Production × Capitalized Costs) / Total Proved Reserves
+
+                decimal periodProduction = await GetPeriodProductionAsync(assetId, cn);
+                decimal totalReserves = await GetProvedReservesAsync(assetId, cn);
+
+                decimal periodDepletion = 0;
+                if (totalReserves > 0)
+                {
+                    periodDepletion = (periodProduction * capitalizedCosts) / totalReserves;
+                    _logger?.LogDebug(
+                        "Depletion (UOP) for asset {AssetId}: ({Production} × ${Cost}) / {Reserves} = ${Amount}",
+                        assetId, periodProduction, capitalizedCosts, totalReserves, periodDepletion);
+                }
+                else
+                {
+                    // Fallback: Use simple percentage if reserves not available
+                    periodDepletion = capitalizedCosts * 0.06m;
+                    _logger?.LogWarning(
+                        "Total proved reserves for asset {AssetId} is zero or not found, using fallback 6% depletion: ${Amount}",
+                        assetId, periodDepletion);
+                }
 
                 // Create amortization record
                 var record = new AMORTIZATION_RECORD
@@ -234,6 +253,87 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var costs = await repo.GetAsync(filters);
             return costs?.Cast<ACCOUNTING_COST>().Sum(c => c.AMOUNT) ?? 0;
+        }
+
+        /// <summary>
+        /// Gets total production for an asset during current period from MEASUREMENT_RECORD.
+        /// </summary>
+        private async Task<decimal> GetPeriodProductionAsync(string assetId, string cn)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(MEASUREMENT_RECORD);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "MEASUREMENT_RECORD");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = assetId },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var measurements = await repo.GetAsync(filters);
+                var measurementList = measurements?.Cast<MEASUREMENT_RECORD>().ToList() ?? new List<MEASUREMENT_RECORD>();
+
+                decimal totalProduction = measurementList.Sum(m => m.GROSS_VOLUME ?? 0);
+                _logger?.LogDebug("Period production for asset {AssetId}: {Volume} BBL", assetId, totalProduction);
+
+                return totalProduction;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error retrieving period production for asset {AssetId}", assetId);
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Gets total proved reserves for an asset from PROVED_RESERVES table.
+        /// </summary>
+        private async Task<decimal> GetProvedReservesAsync(string assetId, string cn)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("PROVED_RESERVES");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(PROVED_RESERVES);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "PROVED_RESERVES");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = assetId },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var reserves = await repo.GetAsync(filters);
+                var reserveList = reserves?.Cast<PROVED_RESERVES>().ToList() ?? new List<PROVED_RESERVES>();
+
+                // Sum total proved reserves (developed + undeveloped oil)
+                if (reserveList.Any())
+                {
+                    var latestReserve = reserveList.OrderByDescending(r => r.RESERVE_DATE).FirstOrDefault();
+                    decimal totalReserves = (latestReserve?.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
+                                           (latestReserve?.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0);
+
+                    _logger?.LogDebug("Total proved reserves for asset {AssetId}: {Volume} BBL", assetId, totalReserves);
+                    return totalReserves;
+                }
+
+                _logger?.LogWarning("No proved reserves found for asset {AssetId}", assetId);
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error retrieving proved reserves for asset {AssetId}", assetId);
+                return 0;
+            }
         }
     }
 

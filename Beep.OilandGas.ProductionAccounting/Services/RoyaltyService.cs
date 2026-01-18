@@ -105,18 +105,35 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogDebug("Royalty rate: {Rate}%", royaltyRate * 100);
 
                 // STEP 3: Calculate gross revenue (Volume × Commodity Price)
-                // For now, use placeholder price of $75/BBL (in real implementation, fetch from PRICE_INDEX)
-                decimal commodityPrice = 75.00m;  // TODO: Fetch from PRICE_INDEX table
+                // Query PRICE_INDEX for commodity price at calculation date
+                decimal commodityPrice = await GetCommodityPriceAsync(
+                    detail.ALLOCATION_RESULT_ID ?? "OIL",  // Default to OIL if not specified
+                    DateTime.UtcNow,
+                    cn);
+                
+                if (commodityPrice <= 0)
+                {
+                    commodityPrice = 75.00m;  // Fallback to $75/BBL if lookup fails
+                    _logger?.LogWarning("Failed to retrieve commodity price from PRICE_INDEX, using fallback: ${Price}/BBL", commodityPrice);
+                }
+                
                 decimal grossRevenue = allocatedVolume * commodityPrice;
                 _logger?.LogDebug("Gross revenue: {Volume} BBL × ${Price}/BBL = ${GrossRevenue}", 
                     allocatedVolume, commodityPrice, grossRevenue);
 
-                // STEP 4: Calculate deductions (in real implementation, fetch from cost records)
-                // Typical deductions: 5-15% of gross revenue
-                decimal transportationCost = grossRevenue * 0.08m;  // 8% for transportation
-                decimal adValoremTax = grossRevenue * 0.02m;        // 2% ad valorem tax
-                decimal severanceTax = grossRevenue * 0.01m;        // 1% severance tax
+                // STEP 4: Calculate deductions from cost records
+                // Query ACCOUNTING_COST for lease-specific deductions
+                var (dbTransportation, dbAdValorem, dbSeverance) = await GetDeductionsAsync(
+                    detail.ENTITY_ID ?? "LEASE-001",  // Use entity ID as lease reference
+                    DateTime.UtcNow,
+                    cn);
+
+                // Use database values if found, otherwise fall back to percentage-based
+                decimal transportationCost = dbTransportation > 0 ? dbTransportation : (grossRevenue * 0.08m);
+                decimal adValoremTax = dbAdValorem > 0 ? dbAdValorem : (grossRevenue * 0.02m);
+                decimal severanceTax = dbSeverance > 0 ? dbSeverance : (grossRevenue * 0.01m);
                 decimal totalDeductions = transportationCost + adValoremTax + severanceTax;
+                
                 _logger?.LogDebug(
                     "Deductions: Transportation=${Transp} + Ad Valorem=${AdVal} + Severance=${Sev} = ${Total}",
                     transportationCost, adValoremTax, severanceTax, totalDeductions);
@@ -370,6 +387,106 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 _logger?.LogError(ex, "Royalty validation failed");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets commodity price from PRICE_INDEX table.
+        /// Falls back to $75/BBL if not found.
+        /// </summary>
+        private async Task<decimal> GetCommodityPriceAsync(string commodity, DateTime asOfDate, string cn)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("PRICE_INDEX");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(PRICE_INDEX);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "PRICE_INDEX");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = commodity },
+                    new AppFilter { FieldName = "PRICE_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var prices = await repo.GetAsync(filters);
+                var priceList = prices?.Cast<PRICE_INDEX>().OrderByDescending(p => p.PRICE_DATE).ToList() 
+                    ?? new List<PRICE_INDEX>();
+
+                if (priceList.Any())
+                {
+                    var latestPrice = priceList.First();
+                    _logger?.LogDebug(
+                        "Retrieved commodity price for {Commodity}: ${Price}/unit as of {Date}",
+                        commodity, latestPrice.PRICE_VALUE ?? 0, latestPrice.PRICE_DATE);
+                    return latestPrice.PRICE_VALUE ?? 75.00m;
+                }
+
+                _logger?.LogWarning(
+                    "No price index found for commodity {Commodity} as of {Date}",
+                    commodity, asOfDate.ToShortDateString());
+                return 0;  // Return 0 to signal fallback needed
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error retrieving commodity price for {Commodity}", commodity);
+                return 0;  // Return 0 to signal fallback needed
+            }
+        }
+
+        /// <summary>
+        /// Gets deductions (transportation, taxes) from cost records.
+        /// </summary>
+        private async Task<(decimal transportation, decimal adValorem, decimal severance)> GetDeductionsAsync(
+            string leaseId, DateTime periodDate, string cn)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("ACCOUNTING_COST");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(ACCOUNTING_COST);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "ACCOUNTING_COST");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId },
+                    new AppFilter { FieldName = "COST_DATE", Operator = "<=", FilterValue = periodDate.ToString("yyyy-MM-dd") },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var costs = await repo.GetAsync(filters);
+                var costList = costs?.Cast<ACCOUNTING_COST>().ToList() ?? new List<ACCOUNTING_COST>();
+
+                // Sum costs by type
+                decimal transportation = costList
+                    .Where(c => c.COST_TYPE == "TRANSPORTATION" || c.COST_TYPE?.Contains("TRANSPORT") == true)
+                    .Sum(c => c.AMOUNT);
+
+                decimal adValorem = costList
+                    .Where(c => c.COST_TYPE == "AD_VALOREM" || c.COST_TYPE?.Contains("VALOREM") == true)
+                    .Sum(c => c.AMOUNT);
+
+                decimal severance = costList
+                    .Where(c => c.COST_TYPE == "SEVERANCE" || c.COST_TYPE?.Contains("SEVERANCE") == true)
+                    .Sum(c => c.AMOUNT);
+
+                _logger?.LogDebug(
+                    "Retrieved deductions for lease {LeaseId}: Transportation=${Transp}, AdValorem=${AdVal}, Severance=${Sev}",
+                    leaseId, transportation, adValorem, severance);
+
+                return (transportation, adValorem, severance);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error retrieving deductions for lease {LeaseId}", leaseId);
+                return (0, 0, 0);  // Return zeros if lookup fails - will trigger fallback in main logic
             }
         }
     }

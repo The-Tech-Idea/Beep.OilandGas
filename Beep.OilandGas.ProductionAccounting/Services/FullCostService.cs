@@ -119,12 +119,17 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 decimal accumulatedDepletion = await GetAccumulatedDepletionAsync(costCenterId, cn);
                 decimal netBookValue = capitalizedCosts - accumulatedDepletion;
 
-                // In real implementation:
-                // 1. Calculate fair value = PV of proved reserves + other assets
-                // 2. Compare: if NBV > Fair Value, record impairment
-                // For now, use simplified approach: NBV shouldn't exceed reasonable limit (e.g., 150% of depletion base)
-
-                decimal fairValueEstimate = capitalizedCosts * 1.2m;  // Placeholder: allows 20% appreciation
+                // SEC Ceiling Test: Fair Value = PV of proved reserves
+                // Use proved reserves valuation at current commodity prices
+                decimal fairValueEstimate = await GetProvedReservesValueAsync(costCenterId, cn);
+                
+                if (fairValueEstimate <= 0)
+                {
+                    // Fallback: Use simplified approach if reserves valuation not available
+                    fairValueEstimate = capitalizedCosts * 1.2m;  // Allow 20% appreciation
+                    _logger?.LogWarning(
+                        "Could not calculate fair value from proved reserves, using fallback 1.2x capitalized costs");
+                }
 
                 if (netBookValue > fairValueEstimate)
                 {
@@ -171,15 +176,28 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     return 0;
                 }
 
-                // In real implementation:
-                // 1. Get total production during period
-                // 2. Get total proved reserves for cost center
-                // 3. Calculate: Depletion = (Period Production × Capitalized Costs) / Total Reserves
+                // Unit of Production Depletion Formula:
+                // Depletion = (Period Production × Capitalized Costs) / Total Proved Reserves
                 
-                decimal depletionAmount = capitalizedCosts * 0.08m;  // Placeholder: 8% per period
+                decimal periodProduction = await GetPeriodProductionAsync(costCenterId, cn);
+                decimal totalReserves = await GetTotalReservesAsync(costCenterId, cn);
 
-                _logger?.LogInformation("Depletion calculated for cost center {CostCenterId}: {Amount}",
-                    costCenterId, depletionAmount);
+                decimal depletionAmount = 0;
+                if (totalReserves > 0)
+                {
+                    depletionAmount = (periodProduction * capitalizedCosts) / totalReserves;
+                    _logger?.LogInformation(
+                        "Depletion (UOP) for cost center {CostCenterId}: ({Production} × ${Cost}) / {Reserves} = ${Amount}",
+                        costCenterId, periodProduction, capitalizedCosts, totalReserves, depletionAmount);
+                }
+                else
+                {
+                    // Fallback: Use simple percentage if reserves not available
+                    depletionAmount = capitalizedCosts * 0.08m;
+                    _logger?.LogWarning(
+                        "Total proved reserves for cost center {CostCenterId} is zero or not found, using fallback 8% depletion: ${Amount}",
+                        costCenterId, depletionAmount);
+                }
 
                 return depletionAmount;
             }
@@ -256,6 +274,146 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var records = await repo.GetAsync(filters);
             return records?.Cast<AMORTIZATION_RECORD>().Sum(r => r.AMORTIZATION_AMOUNT ?? 0) ?? 0;
+        }
+
+        /// <summary>
+        /// Gets total production for cost center during current period from MEASUREMENT_RECORD.
+        /// </summary>
+        private async Task<decimal> GetPeriodProductionAsync(string costCenterId, string cn)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(MEASUREMENT_RECORD);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "MEASUREMENT_RECORD");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "COST_CENTER_ID", Operator = "=", FilterValue = costCenterId },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var measurements = await repo.GetAsync(filters);
+                var measurementList = measurements?.Cast<MEASUREMENT_RECORD>().ToList() ?? new List<MEASUREMENT_RECORD>();
+
+                decimal totalProduction = measurementList.Sum(m => m.GROSS_VOLUME ?? 0);
+                _logger?.LogDebug("Period production for cost center {CostCenterId}: {Volume} BBL", costCenterId, totalProduction);
+
+                return totalProduction;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error retrieving period production for cost center {CostCenterId}", costCenterId);
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Gets total proved reserves for cost center from PROVED_RESERVES table.
+        /// </summary>
+        private async Task<decimal> GetTotalReservesAsync(string costCenterId, string cn)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("PROVED_RESERVES");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(PROVED_RESERVES);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "PROVED_RESERVES");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "COST_CENTER_ID", Operator = "LIKE", FilterValue = $"%{costCenterId}%" },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var reserves = await repo.GetAsync(filters);
+                var reserveList = reserves?.Cast<PROVED_RESERVES>().ToList() ?? new List<PROVED_RESERVES>();
+
+                // Sum total proved reserves (developed + undeveloped oil)
+                if (reserveList.Any())
+                {
+                    var latestReserve = reserveList.OrderByDescending(r => r.RESERVE_DATE).FirstOrDefault();
+                    decimal totalReserves = (latestReserve?.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
+                                           (latestReserve?.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0);
+
+                    _logger?.LogDebug("Total proved reserves for cost center {CostCenterId}: {Volume} BBL", costCenterId, totalReserves);
+                    return totalReserves;
+                }
+
+                _logger?.LogWarning("No proved reserves found for cost center {CostCenterId}", costCenterId);
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error retrieving proved reserves for cost center {CostCenterId}", costCenterId);
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Gets fair value of proved reserves using PV calculation.
+        /// Fair Value = Sum of (Reserve Volume × Commodity Price × Discount Factor)
+        /// </summary>
+        private async Task<decimal> GetProvedReservesValueAsync(string costCenterId, string cn)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("PROVED_RESERVES");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(PROVED_RESERVES);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "PROVED_RESERVES");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "COST_CENTER_ID", Operator = "LIKE", FilterValue = $"%{costCenterId}%" },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var reserves = await repo.GetAsync(filters);
+                var reserveList = reserves?.Cast<PROVED_RESERVES>().ToList() ?? new List<PROVED_RESERVES>();
+
+                // Calculate PV of proved reserves using current commodity prices
+                decimal fairValue = 0;
+                if (reserveList.Any())
+                {
+                    var latestReserve = reserveList.OrderByDescending(r => r.RESERVE_DATE).FirstOrDefault();
+                    
+                    // Calculate PV using reserves × price × discount factor
+                    // Oil value: reserves × oil price (using OIL_PRICE from PROVED_RESERVES)
+                    decimal oilVolume = (latestReserve?.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
+                                       (latestReserve?.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0);
+                    decimal oilPrice = latestReserve?.OIL_PRICE ?? 0;
+                    
+                    // Gas value: reserves × gas price (using GAS_PRICE from PROVED_RESERVES)
+                    decimal gasVolume = (latestReserve?.PROVED_DEVELOPED_GAS_RESERVES ?? 0) +
+                                       (latestReserve?.PROVED_UNDEVELOPED_GAS_RESERVES ?? 0);
+                    decimal gasPrice = latestReserve?.GAS_PRICE ?? 0;
+                    
+                    // Simple present value (would apply discount rate in real implementation)
+                    fairValue = (oilVolume * oilPrice) + (gasVolume * gasPrice);
+
+                    _logger?.LogDebug(
+                        "Fair value for cost center {CostCenterId}: Oil({OilVol}×${OilPrice}) + Gas({GasVol}×${GasPrice}) = ${FairValue}",
+                        costCenterId, oilVolume, oilPrice, gasVolume, gasPrice, fairValue);
+                }
+
+                return fairValue;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error retrieving proved reserves fair value for cost center {CostCenterId}", costCenterId);
+                return 0;
+            }
         }
     }
 }

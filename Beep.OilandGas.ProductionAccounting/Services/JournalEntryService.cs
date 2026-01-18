@@ -110,9 +110,35 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger?.LogInformation("Getting GL entries for account {Account} from {StartDate} to {EndDate}",
                 glAccount, start.ToShortDateString(), end.ToShortDateString());
 
-            // In real implementation, would query GL_ENTRY table
-            // For now, return empty list
-            return new List<GL_ENTRY>();
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("GL_ENTRY");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(GL_ENTRY);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "GL_ENTRY");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "GL_ACCOUNT_ID", Operator = "=", FilterValue = glAccount },
+                    new AppFilter { FieldName = "ENTRY_DATE", Operator = ">=", FilterValue = start.ToString("yyyy-MM-dd") },
+                    new AppFilter { FieldName = "ENTRY_DATE", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var entries = await repo.GetAsync(filters);
+                var entryList = entries?.Cast<GL_ENTRY>().ToList() ?? new List<GL_ENTRY>();
+
+                _logger?.LogDebug("Retrieved {Count} GL entries for account {Account}", entryList.Count, glAccount);
+                return entryList;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving GL entries for account {Account}", glAccount);
+                throw new ProductionAccountingException($"Failed to retrieve GL entries for account {glAccount}", ex);
+            }
         }
 
         /// <summary>

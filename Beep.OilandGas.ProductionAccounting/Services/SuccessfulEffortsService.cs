@@ -128,17 +128,32 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     return 0;
                 }
 
-                // In a real implementation, would:
-                // 1. Get total proved reserves for the well
-                // 2. Get production during period
-                // 3. Calculate: Depletion = (Period Production × Total Capitalized Cost) / Total Proved Reserves
+                // Unit of Production Depletion Formula:
+                // Depletion = (Period Production × Total Capitalized Cost) / Total Proved Reserves
 
-                // For now, return placeholder - would integrate with RUN_TICKET/production data
-                decimal depletionAmount = totalCapitalizedCosts * 0.05m;  // Example: 5% per period
+                // Get period production from MEASUREMENT_RECORD
+                decimal periodProduction = await GetPeriodProductionAsync(wellId, cn);
+                
+                // Get total proved reserves for the well
+                decimal totalReserves = await GetProvedReservesAsync(wellId, cn);
 
-                _logger?.LogInformation(
-                    "Depletion calculated for well {WellId}: {Amount}",
-                    wellId, depletionAmount);
+                // Calculate depletion using UOP method
+                decimal depletionAmount = 0;
+                if (totalReserves > 0)
+                {
+                    depletionAmount = (periodProduction * totalCapitalizedCosts) / totalReserves;
+                    _logger?.LogInformation(
+                        "Depletion (UOP) for well {WellId}: ({Production} × ${Cost}) / {Reserves} = ${Amount}",
+                        wellId, periodProduction, totalCapitalizedCosts, totalReserves, depletionAmount);
+                }
+                else
+                {
+                    // Fallback: Use simple percentage if reserves not available
+                    depletionAmount = totalCapitalizedCosts * 0.05m;
+                    _logger?.LogWarning(
+                        "Total proved reserves for well {WellId} is zero or not found, using fallback 5% depletion: ${Amount}",
+                        wellId, depletionAmount);
+                }
 
                 return depletionAmount;
             }
@@ -241,6 +256,88 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var costList = costs?.Cast<ACCOUNTING_COST>().ToList() ?? new List<ACCOUNTING_COST>();
 
             return costList.Sum(c => c.AMOUNT);
+        }
+
+        /// <summary>
+        /// Gets total production for a well during current period from MEASUREMENT_RECORD.
+        /// </summary>
+        private async Task<decimal> GetPeriodProductionAsync(string wellId, string cn)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(MEASUREMENT_RECORD);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "MEASUREMENT_RECORD");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = wellId },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var measurements = await repo.GetAsync(filters);
+                var measurementList = measurements?.Cast<MEASUREMENT_RECORD>().ToList() ?? new List<MEASUREMENT_RECORD>();
+
+                decimal totalProduction = measurementList.Sum(m => m.GROSS_VOLUME ?? 0);
+                _logger?.LogDebug("Period production for well {WellId}: {Volume} BBL", wellId, totalProduction);
+
+                return totalProduction;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error retrieving period production for well {WellId}", wellId);
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Gets total proved reserves for a well from PROVED_RESERVES table.
+        /// Sums developed and undeveloped oil reserves.
+        /// </summary>
+        private async Task<decimal> GetProvedReservesAsync(string wellId, string cn)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("PROVED_RESERVES");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(PROVED_RESERVES);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "PROVED_RESERVES");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "PROPERTY_ID", Operator = "LIKE", FilterValue = $"%{wellId}%" },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var reserves = await repo.GetAsync(filters);
+                var reserveList = reserves?.Cast<PROVED_RESERVES>().ToList() ?? new List<PROVED_RESERVES>();
+
+                // Use most recent reserve estimate and sum oil reserves (developed + undeveloped)
+                if (reserveList.Any())
+                {
+                    var latestReserve = reserveList.OrderByDescending(r => r.RESERVE_DATE).FirstOrDefault();
+                    decimal totalReserves = (latestReserve?.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
+                                           (latestReserve?.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0);
+
+                    _logger?.LogDebug("Total proved reserves for well {WellId}: {Volume} BBL", wellId, totalReserves);
+                    return totalReserves;
+                }
+
+                _logger?.LogWarning("No proved reserves found for well {WellId}", wellId);
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error retrieving proved reserves for well {WellId}", wellId);
+                return 0;
+            }
         }
     }
 
