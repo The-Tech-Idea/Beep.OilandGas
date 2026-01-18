@@ -328,8 +328,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return items;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogError(ex, "Error retrieving unreconciled allocations for field {FieldId}", fieldId);
                 return new List<string>();
             }
         }
@@ -369,8 +370,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return items;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogError(ex, "Error retrieving unreconciled royalties for field {FieldId}", fieldId);
                 return new List<string>();
             }
         }
@@ -410,8 +412,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return items;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogError(ex, "Error retrieving unreconciled revenue for field {FieldId}", fieldId);
                 return new List<string>();
             }
         }
@@ -458,8 +461,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 return items;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogError(ex, "Error retrieving unbalanced GL entries for field {FieldId}", fieldId);
                 return new List<string>();
             }
         }

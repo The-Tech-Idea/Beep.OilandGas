@@ -363,12 +363,30 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
                     ?? typeof(REVENUE_ALLOCATION);
 
-                // Would query database and sum REVENUE_AMOUNT where FIELD_ID = fieldId and REVENUE_DATE <= asOfDate
-                // For now, return placeholder
-                return 0;
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "REVENUE_ALLOCATION");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+                    new AppFilter { FieldName = "REVENUE_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var revenues = await repo.GetAsync(filters);
+                var revenueList = revenues?.Cast<REVENUE_ALLOCATION>().ToList() ?? new List<REVENUE_ALLOCATION>();
+
+                var totalRevenue = revenueList.Sum(r => r.ALLOCATED_AMOUNT ?? 0);
+                _logger?.LogInformation(
+                    "Calculated total revenue for field {FieldId}: ${Total} from {Count} allocations",
+                    fieldId, totalRevenue, revenueList.Count);
+
+                return totalRevenue;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogWarning(ex, "Error calculating total revenue for field {FieldId}", fieldId);
                 return 0;
             }
         }
@@ -377,17 +395,35 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             try
             {
-                // Query ROYALTY_PAYMENT for total royalties up to date
-                var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_PAYMENT");
+                // Query ROYALTY_CALCULATION for total royalties up to date
+                var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_CALCULATION");
                 var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(ROYALTY_PAYMENT);
+                    ?? typeof(ROYALTY_CALCULATION);
 
-                // Would query database and sum ROYALTY_AMOUNT where FIELD_ID = fieldId and PAYMENT_DATE <= asOfDate
-                // For now, return placeholder
-                return 0;
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "ROYALTY_CALCULATION");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+                    new AppFilter { FieldName = "CALCULATION_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var royalties = await repo.GetAsync(filters);
+                var royaltyList = royalties?.Cast<ROYALTY_CALCULATION>().ToList() ?? new List<ROYALTY_CALCULATION>();
+
+                var totalRoyalty = royaltyList.Sum(r => r.ROYALTY_AMOUNT ?? 0);
+                _logger?.LogInformation(
+                    "Calculated total royalty for field {FieldId}: ${Total} from {Count} calculations",
+                    fieldId, totalRoyalty, royaltyList.Count);
+
+                return totalRoyalty;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogWarning(ex, "Error calculating total royalty for field {FieldId}", fieldId);
                 return 0;
             }
         }
@@ -401,12 +437,30 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
                     ?? typeof(ACCOUNTING_COST);
 
-                // Would query database and sum AMOUNT where FIELD_ID = fieldId and COST_DATE <= asOfDate
-                // For now, return placeholder
-                return 0;
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "ACCOUNTING_COST");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+                    new AppFilter { FieldName = "COST_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var costs = await repo.GetAsync(filters);
+                var costList = costs?.Cast<ACCOUNTING_COST>().ToList() ?? new List<ACCOUNTING_COST>();
+
+                var totalCosts = costList.Sum(c => c.AMOUNT);
+                _logger?.LogInformation(
+                    "Calculated total costs for field {FieldId}: ${Total} from {Count} cost records",
+                    fieldId, totalCosts, costList.Count);
+
+                return totalCosts;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogWarning(ex, "Error calculating total costs for field {FieldId}", fieldId);
                 return 0;
             }
         }
@@ -415,13 +469,44 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             try
             {
-                // Query FIELD or accounting setup to determine SE vs FC
-                // For now, return default
-                return "SuccessfulEfforts";
+                // Check ACCOUNTING_POLICY or company default for method (SE vs FC)
+                // For now, default to Successful Efforts which is most common in upstream
+                // In future, store accounting method in FIELD or ACCOUNTING_POLICY table
+                var metadata = await _metadata.GetTableMetadataAsync("FIELD");
+                var fieldEntity = await GetFieldAsync(fieldId, cn);
+                
+                // TODO: Check FIELD.ACCOUNTING_METHOD or CONFIGURATION table once populated
+                string accountingMethod = "SuccessfulEfforts";  // Default: SE is standard
+                
+                _logger?.LogDebug("Retrieved accounting method for field {FieldId}: {Method}", 
+                    fieldId, accountingMethod);
+                return accountingMethod;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error retrieving accounting method for field {FieldId}", fieldId);
+                return "SuccessfulEfforts";  // Safe default
+            }
+        }
+
+        private async Task<FIELD> GetFieldAsync(string fieldId, string cn)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("FIELD");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(FIELD);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "FIELD");
+
+                var field = await repo.GetByIdAsync(fieldId);
+                return field as FIELD;
             }
             catch
             {
-                return "Unknown";
+                return null;
             }
         }
 
@@ -429,13 +514,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             try
             {
-                // Check if period is open or closed
-                // For now, return default
+                // Check if there are any unreconciled transactions for field
+                // TODO: Implement proper PERIOD_CLOSE tracking once table is added
+                // For now, default to "Open" - proper implementation would:
+                // 1. Query ALLOCATION_RESULT for unallocated production
+                // 2. Query REVENUE_ALLOCATION for unrecognized revenue
+                // 3. Query GL_ENTRY for unbalanced entries
+                // 4. Set status to "Closed" when all reconciled
+
+                _logger?.LogDebug("Period status for field {FieldId}: Open (default)", fieldId);
                 return "Open";
             }
-            catch
+            catch (Exception ex)
             {
-                return "Unknown";
+                _logger?.LogWarning(ex, "Error retrieving period status for field {FieldId}", fieldId);
+                return "Open";  // Safe default
             }
         }
     }

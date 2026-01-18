@@ -59,14 +59,26 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             try
             {
+                // Calculate revenue from volume × price × interest %
+                decimal allocatedVolume = allocation.ALLOCATED_VOLUME ?? 0;
+                decimal interestPercentage = (allocation.ALLOCATION_PERCENTAGE ?? 100) / 100;  // Convert to decimal
+                
+                // Get commodity price for calculation
+                decimal commodityPrice = await GetCommodityPriceAsync(cn);
+                decimal calculatedRevenue = allocatedVolume * commodityPrice * interestPercentage;
+
+                _logger?.LogDebug(
+                    "Revenue calculation for {Entity}: {Volume} × ${Price} × {Interest}% = ${Revenue}",
+                    allocation.ENTITY_NAME, allocatedVolume, commodityPrice, 
+                    allocation.ALLOCATION_PERCENTAGE ?? 100, calculatedRevenue);
+
                 // Create revenue allocation record
-                // In real implementation: would calculate revenue from volume × price
                 var revenueAllocation = new REVENUE_ALLOCATION
                 {
                     REVENUE_ALLOCATION_ID = Guid.NewGuid().ToString(),
                     INTEREST_OWNER_BA_ID = allocation.ENTITY_ID,
                     INTEREST_PERCENTAGE = allocation.ALLOCATION_PERCENTAGE ?? 100,
-                    ALLOCATED_AMOUNT = 0,  // Would calculate: Volume × Price × Interest %
+                    ALLOCATED_AMOUNT = calculatedRevenue,
                     ALLOCATION_METHOD = "PRO-RATA",
                     DESCRIPTION = $"Revenue allocation for {allocation.ENTITY_NAME}",
                     ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
@@ -151,6 +163,50 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 _logger?.LogError(ex, "Revenue allocation validation failed");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets current commodity price for revenue calculation from PRICE_INDEX.
+        /// </summary>
+        private async Task<decimal> GetCommodityPriceAsync(string cn)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("PRICE_INDEX");
+                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                    ?? typeof(PRICE_INDEX);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, cn, "PRICE_INDEX");
+
+                // Get latest oil price from PRICE_INDEX
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = "OIL" },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var prices = await repo.GetAsync(filters);
+                var priceList = prices?.Cast<PRICE_INDEX>().OrderByDescending(p => p.PRICE_DATE).ToList() 
+                    ?? new List<PRICE_INDEX>();
+
+                if (priceList.Any())
+                {
+                    decimal price = priceList.First().PRICE_VALUE ?? 75.00m;
+                    _logger?.LogDebug("Retrieved commodity price: ${Price}/BBL", price);
+                    return price;
+                }
+
+                // Fallback to $75/BBL if no price found
+                _logger?.LogWarning("No oil price found in PRICE_INDEX, using fallback: $75.00/BBL");
+                return 75.00m;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error retrieving commodity price, using fallback");
+                return 75.00m;
             }
         }
     }
