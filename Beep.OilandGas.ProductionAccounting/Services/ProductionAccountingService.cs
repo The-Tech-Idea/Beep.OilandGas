@@ -167,10 +167,17 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 // Step 5: Post GL entries
                 _logger?.LogInformation("Step 5: Posting GL entries for ticket {TicketId}", runTicket.RUN_TICKET_ID);
+                
+                // Get GL account from configuration or field settings
+                // TODO: Implement GL account lookup from CONFIGURATION table
+                // For now, use standard revenue account "4000" (Production Revenue)
+                string glAccountId = "4000";  // Standard revenue account
+                decimal glAmount = revenue.ALLOCATED_AMOUNT ?? 0;
+                
                 var glEntry = await _glService.CreateEntryAsync(
-                    "1000", // GL Account placeholder
-                    revenue.ALLOCATED_AMOUNT ?? 0,
-                    "Production Cycle Entry",
+                    glAccountId,
+                    glAmount,
+                    $"Production Cycle Entry - Ticket {runTicket.RUN_TICKET_ID}",
                     userId,
                     connectionName);
                 if (glEntry == null)

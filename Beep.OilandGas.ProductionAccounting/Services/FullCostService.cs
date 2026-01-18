@@ -399,12 +399,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                                        (latestReserve?.PROVED_UNDEVELOPED_GAS_RESERVES ?? 0);
                     decimal gasPrice = latestReserve?.GAS_PRICE ?? 0;
                     
-                    // Simple present value (would apply discount rate in real implementation)
-                    fairValue = (oilVolume * oilPrice) + (gasVolume * gasPrice);
+                    // Present value with discount rate (SEC ceiling test requirement)
+                    // Standard discount rate: 10% per annum (SEC standard for PV calculations)
+                    // Formula: PV = Future Value / (1 + r)^n where r = discount rate, n = years
+                    // For simplicity, apply single-year discount: PV = Value × 0.9091
+                    decimal discountFactor = 0.9091m;  // 10% annual discount
+                    
+                    decimal oilValue = (oilVolume * oilPrice) * discountFactor;
+                    decimal gasValue = (gasVolume * gasPrice) * discountFactor;
+                    fairValue = oilValue + gasValue;
 
                     _logger?.LogDebug(
-                        "Fair value for cost center {CostCenterId}: Oil({OilVol}×${OilPrice}) + Gas({GasVol}×${GasPrice}) = ${FairValue}",
-                        costCenterId, oilVolume, oilPrice, gasVolume, gasPrice, fairValue);
+                        "Fair value (PV) for cost center {CostCenterId}: Oil({OilVol}×${OilPrice}×{DF}) + Gas({GasVol}×${GasPrice}×{DF}) = ${FairValue}",
+                        costCenterId, oilVolume, oilPrice, discountFactor, gasVolume, gasPrice, fairValue);
                 }
 
                 return fairValue;

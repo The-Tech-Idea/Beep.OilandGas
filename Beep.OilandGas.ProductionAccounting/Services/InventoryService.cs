@@ -156,8 +156,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 if (inventory == null)
                 {
-                    _logger?.LogWarning("Tank inventory not found for tank {TankId}", tankId);
-                    return null;
+                    _logger?.LogError("Tank inventory not found for tank {TankId}", tankId);
+                    throw new ProductionAccountingException($"Tank inventory not found for tank {tankId}");
                 }
 
                 var tankInventory = inventory as TANK_INVENTORY;

@@ -106,16 +106,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 // STEP 3: Calculate gross revenue (Volume × Commodity Price)
                 // Query PRICE_INDEX for commodity price at calculation date
+                // GetCommodityPriceAsync returns fallback $75/BBL if lookup fails
                 decimal commodityPrice = await GetCommodityPriceAsync(
                     detail.ALLOCATION_RESULT_ID ?? "OIL",  // Default to OIL if not specified
                     DateTime.UtcNow,
                     cn);
-                
-                if (commodityPrice <= 0)
-                {
-                    commodityPrice = 75.00m;  // Fallback to $75/BBL if lookup fails
-                    _logger?.LogWarning("Failed to retrieve commodity price from PRICE_INDEX, using fallback: ${Price}/BBL", commodityPrice);
-                }
                 
                 decimal grossRevenue = allocatedVolume * commodityPrice;
                 _logger?.LogDebug("Gross revenue: {Volume} BBL × ${Price}/BBL = ${GrossRevenue}", 
@@ -240,15 +235,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 entityType, cn, "ROYALTY_CALCULATION");
 
-            // Query all active royalty calculations (typically linked via property/lease)
-            // For now, return all active ones - in practice, would join via allocation
+            // Query royalty calculations linked to this allocation
             var filters = new List<AppFilter>
             {
+                new AppFilter { FieldName = "ALLOCATION_RESULT_ID", Operator = "=", FilterValue = allocationId },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
 
             var results = await repo.GetAsync(filters);
-            return results?.Cast<ROYALTY_CALCULATION>().ToList() ?? new List<ROYALTY_CALCULATION>();
+            var royalties = results?.Cast<ROYALTY_CALCULATION>().ToList() ?? new List<ROYALTY_CALCULATION>();
+            
+            _logger?.LogInformation(
+                "Retrieved {Count} royalty calculations for allocation {AllocationId}",
+                royalties.Count, allocationId);
+            
+            return royalties;
         }
 
         /// <summary>
@@ -420,21 +421,23 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (priceList.Any())
                 {
                     var latestPrice = priceList.First();
+                    decimal price = latestPrice.PRICE_VALUE ?? 75.00m;
                     _logger?.LogDebug(
                         "Retrieved commodity price for {Commodity}: ${Price}/unit as of {Date}",
-                        commodity, latestPrice.PRICE_VALUE ?? 0, latestPrice.PRICE_DATE);
-                    return latestPrice.PRICE_VALUE ?? 75.00m;
+                        commodity, price, latestPrice.PRICE_DATE);
+                    return price;
                 }
 
+                // No price found - log warning and use fallback
                 _logger?.LogWarning(
-                    "No price index found for commodity {Commodity} as of {Date}",
+                    "No price index found for commodity {Commodity} as of {Date}, using fallback $75.00/unit",
                     commodity, asOfDate.ToShortDateString());
-                return 0;  // Return 0 to signal fallback needed
+                return 75.00m;  // Fallback directly instead of returning 0
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "Error retrieving commodity price for {Commodity}", commodity);
-                return 0;  // Return 0 to signal fallback needed
+                _logger?.LogWarning(ex, "Error retrieving commodity price for {Commodity}, using fallback $75.00/unit", commodity);
+                return 75.00m;  // Fallback directly instead of returning 0
             }
         }
 
