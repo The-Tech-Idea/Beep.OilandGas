@@ -10,7 +10,8 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.ProductionAccounting.Constants;
+using Beep.OilandGas.Accounting.Constants;
+using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Data;
@@ -20,7 +21,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
     /// <summary>
     /// Production Accounting Service - Orchestrator for all production accounting operations.
     /// Coordinates allocation, royalty, measurement, pricing, revenue, GL posting, and period closing.
-    /// Master workflow: RUN_TICKET → Measurement → Allocation → Royalty → Revenue → GL → Period Close
+    /// Master workflow: RUN_TICKET -> Measurement -> Allocation -> Royalty -> Revenue -> GL -> Period Close
     /// </summary>
     public partial class ProductionAccountingService : IProductionAccountingService
     {
@@ -32,11 +33,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly IFullCostService _fcService;
         private readonly IAmortizationService _amortizationService;
         private readonly IJournalEntryService _glService;
+        private readonly IAccountingService _accountingServices;
         private readonly IRevenueService _revenueService;
         private readonly IMeasurementService _measurementService;
         private readonly IPricingService _pricingService;
         private readonly IInventoryService _inventoryService;
         private readonly IPeriodClosingService _periodClosingService;
+        private readonly ITakeOrPayService _takeOrPayService;
+        private readonly IProductionTaxService _productionTaxService;
         private readonly IPPDMMetadataRepository _metadata;
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -62,7 +66,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             IDMEEditor editor,
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
-            ILogger<ProductionAccountingService> logger = null)
+            ILogger<ProductionAccountingService> logger = null,
+            IAccountingService accountingServices = null,
+            ITakeOrPayService takeOrPayService = null,
+            IProductionTaxService productionTaxService = null)
         {
             _allocationService = allocationService ?? throw new ArgumentNullException(nameof(allocationService));
             _royaltyService = royaltyService ?? throw new ArgumentNullException(nameof(royaltyService));
@@ -71,12 +78,15 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _seService = seService ?? throw new ArgumentNullException(nameof(seService));
             _fcService = fcService ?? throw new ArgumentNullException(nameof(fcService));
             _amortizationService = amortizationService ?? throw new ArgumentNullException(nameof(amortizationService));
-            _glService = glService ?? throw new ArgumentNullException(nameof(glService));
+            _accountingServices = accountingServices;
+            _glService = _accountingServices?.JournalEntries ?? glService ?? throw new ArgumentNullException(nameof(glService));
             _revenueService = revenueService ?? throw new ArgumentNullException(nameof(revenueService));
             _measurementService = measurementService ?? throw new ArgumentNullException(nameof(measurementService));
             _pricingService = pricingService ?? throw new ArgumentNullException(nameof(pricingService));
             _inventoryService = inventoryService ?? throw new ArgumentNullException(nameof(inventoryService));
             _periodClosingService = periodClosingService ?? throw new ArgumentNullException(nameof(periodClosingService));
+            _takeOrPayService = takeOrPayService;
+            _productionTaxService = productionTaxService;
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
@@ -143,26 +153,66 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 // Step 3: Calculate royalties for each allocation detail
                 _logger?.LogInformation("Step 3: Calculating royalties for ticket {TicketId}", runTicket.RUN_TICKET_ID);
-                var royalty = await _royaltyService.CalculateAsync(
-                    allocationDetails[0], // Use first detail as example
-                    userId,
-                    connectionName);
-                if (royalty == null)
+                var royaltyCalculations = new List<ROYALTY_CALCULATION>();
+                foreach (var detail in allocationDetails)
                 {
-                    _logger?.LogError("Failed to calculate royalties for ticket {TicketId}", runTicket.RUN_TICKET_ID);
-                    return false;
+                    var royalty = await _royaltyService.CalculateAsync(
+                        detail,
+                        userId,
+                        connectionName);
+                    if (royalty == null)
+                    {
+                        _logger?.LogError("Failed to calculate royalties for ticket {TicketId}", runTicket.RUN_TICKET_ID);
+                        return false;
+                    }
+                    royaltyCalculations.Add(royalty);
                 }
 
                 // Step 4: Recognize revenue
                 _logger?.LogInformation("Step 4: Recognizing revenue for ticket {TicketId}", runTicket.RUN_TICKET_ID);
-                var revenue = await _revenueService.RecognizeRevenueAsync(
-                    allocationDetails[0], // Use first detail as example
-                    userId,
-                    connectionName);
-                if (revenue == null)
+                var revenueAllocations = new List<REVENUE_ALLOCATION>();
+                foreach (var detail in allocationDetails)
                 {
-                    _logger?.LogError("Failed to recognize revenue for ticket {TicketId}", runTicket.RUN_TICKET_ID);
-                    return false;
+                    var revenue = await _revenueService.RecognizeRevenueAsync(
+                        detail,
+                        userId,
+                        connectionName);
+                    if (revenue == null)
+                    {
+                        _logger?.LogError("Failed to recognize revenue for ticket {TicketId}", runTicket.RUN_TICKET_ID);
+                        return false;
+                    }
+                    revenueAllocations.Add(revenue);
+                }
+
+                if (_takeOrPayService != null)
+                {
+                    var deliveredVolume = allocation.TOTAL_VOLUME ?? allocation.ALLOCATED_VOLUME ?? 0m;
+                    var topUpTransaction = await _takeOrPayService.ApplyTakeOrPayAsync(
+                        runTicket,
+                        allocation,
+                        deliveredVolume,
+                        userId,
+                        connectionName);
+
+                    if (topUpTransaction != null)
+                        await CreateTakeOrPayAllocationsAsync(topUpTransaction, allocationDetails, userId, connectionName);
+                }
+
+                if (_productionTaxService != null)
+                {
+                    var transactionIds = revenueAllocations
+                        .Select(r => r.REVENUE_TRANSACTION_ID)
+                        .Where(id => !string.IsNullOrWhiteSpace(id))
+                        .Distinct()
+                        .ToList();
+
+                    foreach (var transactionId in transactionIds)
+                    {
+                        var revenueTransaction = await GetRevenueTransactionAsync(transactionId, connectionName);
+                        if (revenueTransaction != null)
+                            await _productionTaxService.CalculateProductionTaxesAsync(revenueTransaction, userId, connectionName);
+                    }
                 }
 
                 // Step 5: Post GL entries
@@ -170,9 +220,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 
                 // Get GL account from configuration or field settings
                 // TODO: Implement GL account lookup from CONFIGURATION table
-                // For now, use standard revenue account "4000" (Production Revenue)
-                string glAccountId = "4000";  // Standard revenue account
-                decimal glAmount = revenue.ALLOCATED_AMOUNT ?? 0;
+                // For now, use standard revenue account (aligned with Beep.OilandGas.Accounting conventions)
+                string glAccountId = DefaultGlAccounts.Revenue;
+                decimal glAmount = revenueAllocations.Sum(r => r.ALLOCATED_AMOUNT ?? 0);
                 
                 var glEntry = await _glService.CreateEntryAsync(
                     glAccountId,
@@ -185,6 +235,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     _logger?.LogError("Failed to post GL entries for ticket {TicketId}", runTicket.RUN_TICKET_ID);
                     return false;
                 }
+
+                await MarkRunTicketProcessedAsync(runTicket, userId, connectionName);
 
                 _logger?.LogInformation(
                     "Production cycle completed successfully for ticket {TicketId}",
@@ -339,7 +391,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+                    new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
                     new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd HH:mm:ss") },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                 };
@@ -349,7 +401,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var totalProduction = measurementList.Sum(m => m.GROSS_VOLUME ?? 0);
                 _logger?.LogInformation(
-                    "Calculated total production for field {FieldId}: {TotalProduction} from {Count} records",
+                    "Calculated total production for property/lease {FieldId}: {TotalProduction} from {Count} records",
                     fieldId, totalProduction, measurementList.Count);
 
                 return totalProduction;
@@ -365,28 +417,28 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             try
             {
-                // Query REVENUE_ALLOCATION for total revenue up to date
-                var metadata = await _metadata.GetTableMetadataAsync("REVENUE_ALLOCATION");
+                // Query REVENUE_TRANSACTION for total revenue up to date
+                var metadata = await _metadata.GetTableMetadataAsync("REVENUE_TRANSACTION");
                 var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                    ?? typeof(REVENUE_ALLOCATION);
+                    ?? typeof(REVENUE_TRANSACTION);
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, cn, "REVENUE_ALLOCATION");
+                    entityType, cn, "REVENUE_TRANSACTION");
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
-                    new AppFilter { FieldName = "REVENUE_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
+                    new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
+                    new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                 };
 
                 var revenues = await repo.GetAsync(filters);
-                var revenueList = revenues?.Cast<REVENUE_ALLOCATION>().ToList() ?? new List<REVENUE_ALLOCATION>();
+                var revenueList = revenues?.Cast<REVENUE_TRANSACTION>().ToList() ?? new List<REVENUE_TRANSACTION>();
 
-                var totalRevenue = revenueList.Sum(r => r.ALLOCATED_AMOUNT ?? 0);
+                var totalRevenue = revenueList.Sum(r => r.NET_REVENUE ?? r.GROSS_REVENUE ?? 0);
                 _logger?.LogInformation(
-                    "Calculated total revenue for field {FieldId}: ${Total} from {Count} allocations",
+                    "Calculated total revenue for property/lease {FieldId}: ${Total} from {Count} transactions",
                     fieldId, totalRevenue, revenueList.Count);
 
                 return totalRevenue;
@@ -413,7 +465,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+                    new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = fieldId },
                     new AppFilter { FieldName = "CALCULATION_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                 };
@@ -423,7 +475,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var totalRoyalty = royaltyList.Sum(r => r.ROYALTY_AMOUNT ?? 0);
                 _logger?.LogInformation(
-                    "Calculated total royalty for field {FieldId}: ${Total} from {Count} calculations",
+                    "Calculated total royalty for property/lease {FieldId}: ${Total} from {Count} calculations",
                     fieldId, totalRoyalty, royaltyList.Count);
 
                 return totalRoyalty;
@@ -450,7 +502,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = fieldId },
+                    new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = fieldId },
                     new AppFilter { FieldName = "COST_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                 };
@@ -460,7 +512,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 var totalCosts = costList.Sum(c => c.AMOUNT);
                 _logger?.LogInformation(
-                    "Calculated total costs for field {FieldId}: ${Total} from {Count} cost records",
+                    "Calculated total costs for property/lease {FieldId}: ${Total} from {Count} cost records",
                     fieldId, totalCosts, costList.Count);
 
                 return totalCosts;
@@ -537,6 +589,92 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogWarning(ex, "Error retrieving period status for field {FieldId}", fieldId);
                 return "Open";  // Safe default
             }
+        }
+
+        private async Task MarkRunTicketProcessedAsync(RUN_TICKET runTicket, string userId, string cn)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync("RUN_TICKET");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(RUN_TICKET);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "RUN_TICKET");
+
+            runTicket.IS_PROCESSED = "Y";
+            runTicket.PROCESSED_DATE = DateTime.UtcNow;
+            runTicket.ROW_CHANGED_BY = userId;
+            runTicket.ROW_CHANGED_DATE = DateTime.UtcNow;
+
+            await repo.UpdateAsync(runTicket, userId);
+        }
+
+        private async Task CreateTakeOrPayAllocationsAsync(
+            REVENUE_TRANSACTION revenueTransaction,
+            List<ALLOCATION_DETAIL> allocationDetails,
+            string userId,
+            string cn)
+        {
+            if (revenueTransaction == null || allocationDetails == null || allocationDetails.Count == 0)
+                return;
+
+            var totalPercentage = allocationDetails.Sum(d => d.ALLOCATION_PERCENTAGE ?? 0m);
+            if (totalPercentage <= 0m)
+                totalPercentage = 100m;
+
+            var repo = await CreateRepoAsync<REVENUE_ALLOCATION>("REVENUE_ALLOCATION", cn);
+            foreach (var detail in allocationDetails)
+            {
+                var percentage = detail.ALLOCATION_PERCENTAGE ?? 0m;
+                var ratio = percentage / totalPercentage;
+                var amount = (revenueTransaction.NET_REVENUE ?? 0m) * ratio;
+
+                var allocation = new REVENUE_ALLOCATION
+                {
+                    REVENUE_ALLOCATION_ID = Guid.NewGuid().ToString(),
+                    REVENUE_TRANSACTION_ID = revenueTransaction.REVENUE_TRANSACTION_ID,
+                    AFE_ID = revenueTransaction.AFE_ID,
+                    INTEREST_OWNER_BA_ID = detail.ENTITY_ID,
+                    INTEREST_PERCENTAGE = percentage,
+                    ALLOCATED_AMOUNT = amount,
+                    ALLOCATION_METHOD = RevenueAllocationMethod.ProRata,
+                    DESCRIPTION = "Take-or-pay allocation",
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                    PPDM_GUID = Guid.NewGuid().ToString(),
+                    ROW_CREATED_BY = userId,
+                    ROW_CREATED_DATE = DateTime.UtcNow
+                };
+
+                await repo.InsertAsync(allocation, userId);
+            }
+        }
+
+        private async Task<REVENUE_TRANSACTION?> GetRevenueTransactionAsync(string revenueTransactionId, string cn)
+        {
+            if (string.IsNullOrWhiteSpace(revenueTransactionId))
+                return null;
+
+            var metadata = await _metadata.GetTableMetadataAsync("REVENUE_TRANSACTION");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(REVENUE_TRANSACTION);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "REVENUE_TRANSACTION");
+
+            var result = await repo.GetByIdAsync(revenueTransactionId);
+            return result as REVENUE_TRANSACTION;
+        }
+
+        private async Task<PPDMGenericRepository> CreateRepoAsync<T>(string tableName, string cn)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(T);
+
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, tableName);
         }
     }
 }

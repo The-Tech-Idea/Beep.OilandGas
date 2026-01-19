@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Security
 {
-    public partial class ROLE_PERMISSION : Entity
+    public partial class ROLE_PERMISSION : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private string ROLE_PERMISSION_IDValue = string.Empty;
         public string ROLE_PERMISSION_ID

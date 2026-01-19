@@ -13,6 +13,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     {
         Task<ACCOUNTING_COST> RecordCostAsync(string wellId, decimal cost, string userId, string cn = "PPDM39");
         Task<decimal> CalculateDepletionAsync(string wellId, DateTime startDate, DateTime endDate, string cn = "PPDM39");
+        Task<bool> ReclassifyPropertyAsync(string propertyId, string userId, string cn = "PPDM39");
         Task<bool> ValidateAsync(ACCOUNTING_COST cost, string cn = "PPDM39");
     }
 }

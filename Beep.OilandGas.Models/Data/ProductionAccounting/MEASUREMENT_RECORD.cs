@@ -50,11 +50,53 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref BSWValue, value); }
         }
 
+        private System.Decimal? BSW_PERCENTAGEValue;
+        public System.Decimal? BSW_PERCENTAGE
+        {
+            get { return this.BSW_PERCENTAGEValue; }
+            set { SetProperty(ref BSW_PERCENTAGEValue, value); }
+        }
+
         private System.Decimal? NET_VOLUMEValue;
         public System.Decimal? NET_VOLUME
         {
             get { return this.NET_VOLUMEValue; }
             set { SetProperty(ref NET_VOLUMEValue, value); }
+        }
+
+        private System.String WELL_IDValue;
+        public System.String WELL_ID
+        {
+            get { return this.WELL_IDValue; }
+            set { SetProperty(ref WELL_IDValue, value); }
+        }
+
+        private System.String LEASE_IDValue;
+        public System.String LEASE_ID
+        {
+            get { return this.LEASE_IDValue; }
+            set { SetProperty(ref LEASE_IDValue, value); }
+        }
+
+        private System.String PROPERTY_IDValue;
+        public System.String PROPERTY_ID
+        {
+            get { return this.PROPERTY_IDValue; }
+            set { SetProperty(ref PROPERTY_IDValue, value); }
+        }
+
+        private System.String RUN_TICKET_IDValue;
+        public System.String RUN_TICKET_ID
+        {
+            get { return this.RUN_TICKET_IDValue; }
+            set { SetProperty(ref RUN_TICKET_IDValue, value); }
+        }
+
+        private System.String TANK_BATTERY_IDValue;
+        public System.String TANK_BATTERY_ID
+        {
+            get { return this.TANK_BATTERY_IDValue; }
+            set { SetProperty(ref TANK_BATTERY_IDValue, value); }
         }
 
         private System.Decimal? TEMPERATUREValue;

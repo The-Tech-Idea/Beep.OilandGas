@@ -2,30 +2,46 @@
 
 ## Overview
 
-This document outlines best practices for oil and gas accounting following FASB, SEC, and industry standards. These practices are implemented throughout the `Beep.OilandGas.ProductionAccounting` system.
+This document outlines best practices for oil and gas accounting following FASB, SEC, and industry standards. These practices are implemented throughout the `Beep.OilandGas.ProductionAccounting` system and align to the accounting foundation in `Beep.OilandGas.Accounting` (GL, JE, period close, and reporting services).
 
 ## Table of Contents
 
 1. [Financial Accounting Standards](#financial-accounting-standards)
-2. [Revenue Recognition](#revenue-recognition)
-3. [Cost Management](#cost-management)
-4. [Production Accounting](#production-accounting)
-5. [Royalty Management](#royalty-management)
-6. [Joint Interest Billing](#joint-interest-billing)
-7. [Internal Controls](#internal-controls)
-8. [Data Integrity](#data-integrity)
-9. [Reporting and Compliance](#reporting-and-compliance)
-10. [System Integration](#system-integration)
+2. [Reserve Accounting and Depletion Inputs](#reserve-accounting-and-depletion-inputs)
+3. [DD&A Allocation and Split](#dd-a-allocation-and-split)
+4. [Revenue Recognition](#revenue-recognition)
+5. [Cost Management](#cost-management)
+6. [Unproved Property and Impairment](#unproved-property-and-impairment)
+7. [Drilling Scenario Accounting](#drilling-scenario-accounting)
+8. [Inventory Valuation and LCM](#inventory-valuation-and-lcm)
+9. [Take-or-Pay Contracts](#take-or-pay-contracts)
+10. [Production Taxes](#production-taxes)
+11. [Authorization and Approvals](#authorization-and-approvals)
+12. [Production Accounting](#production-accounting)
+13. [Royalty Management](#royalty-management)
+14. [Lease and Economic Interests](#lease-and-economic-interests)
+15. [Joint Interest Billing](#joint-interest-billing)
+16. [Internal Controls](#internal-controls)
+17. [Data Integrity](#data-integrity)
+18. [Reporting and Compliance](#reporting-and-compliance)
+19. [System Integration](#system-integration)
+20. [Accounting Foundation (GL)](#accounting-foundation-gl)
+21. [Period Close and Accruals](#period-close-and-accruals)
+22. [Adjustments and Corrections](#adjustments-and-corrections)
+23. [Partner and Joint Venture Accounting](#partner-and-joint-venture-accounting)
+24. [Tax and Regulatory Reporting](#tax-and-regulatory-reporting)
+25. [Data Governance and Master Data](#data-governance-and-master-data)
+26. [Monitoring and Exception Management](#monitoring-and-exception-management)
 
 ## Financial Accounting Standards
 
 ### Successful Efforts Method (FASB Statement No. 19)
 
 #### Property Acquisition
-- ✅ **Capitalize** all acquisition costs as unproved property
-- ✅ Track by property ID with acquisition date and cost
-- ✅ Reclassify to proved property when reserves are discovered
-- ✅ Test for impairment annually on unproved properties
+- **Capitalize** all acquisition costs as unproved property
+- Track by property ID with acquisition date and cost
+- Reclassify to proved property when reserves are discovered
+- Test for impairment annually on unproved properties
 
 **Implementation**:
 ```csharp
@@ -34,10 +50,10 @@ seAccounting.RecordAcquisition(unprovedProperty);
 ```
 
 #### Exploration Costs
-- ✅ **Expense** geological and geophysical (G&G) costs as incurred
-- ✅ **Capitalize** exploratory drilling costs if well finds proved reserves
-- ✅ **Expense** exploratory drilling costs if well is dry hole
-- ✅ Maintain detailed records of exploration activities
+- **Expense** geological and geophysical (G&G) costs as incurred
+- **Capitalize** exploratory drilling costs if well finds proved reserves
+- **Expense** exploratory drilling costs if well is dry hole
+- Maintain detailed records of exploration activities
 
 **Implementation**:
 ```csharp
@@ -53,9 +69,9 @@ seAccounting.RecordExplorationCosts(explorationCosts);
 ```
 
 #### Development Costs
-- ✅ **Capitalize** all development costs (drilling, completion, facilities)
-- ✅ Track by property and well
-- ✅ Link to AFE (Authorization for Expenditure) for approval tracking
+- **Capitalize** all development costs (drilling, completion, facilities)
+- Track by property and well
+- Link to AFE (Authorization for Expenditure) for approval tracking
 
 **Implementation**:
 ```csharp
@@ -70,9 +86,9 @@ seAccounting.RecordDevelopmentCosts(developmentCosts);
 ```
 
 #### Production Costs
-- ✅ **Expense** all production costs (lifting costs) as incurred
-- ✅ Include operating expenses, maintenance, workovers
-- ✅ Track by property and well for cost allocation
+- **Expense** all production costs (lifting costs) as incurred
+- Include operating expenses, maintenance, workovers
+- Track by property and well for cost allocation
 
 **Implementation**:
 ```csharp
@@ -88,10 +104,10 @@ seAccounting.RecordProductionCosts(productionCosts);
 ```
 
 #### Amortization
-- ✅ Use **units-of-production method** based on proved reserves
-- ✅ Calculate amortization rate: Net Capitalized Costs / Total Proved Reserves BOE
-- ✅ Apply rate to production for period
-- ✅ Update reserves annually
+- Use **units-of-production method** based on proved reserves
+- Calculate amortization rate: Net Capitalized Costs / Total Proved Reserves BOE
+- Apply rate to production for period
+- Update reserves annually
 
 **Implementation**:
 ```csharp
@@ -106,9 +122,9 @@ var amortization = AccountingManager.CalculateAmortization(
 ### Full Cost Method (Alternative)
 
 #### Cost Capitalization
-- ✅ **Capitalize** all exploration and development costs
-- ✅ Organize by cost center (country, region, or field)
-- ✅ No distinction between successful and unsuccessful exploration
+- **Capitalize** all exploration and development costs
+- Organize by cost center (country, region, or field)
+- No distinction between successful and unsuccessful exploration
 
 **Implementation**:
 ```csharp
@@ -121,10 +137,10 @@ fcAccounting.RecordExplorationCosts(
 ```
 
 #### Ceiling Test
-- ✅ Perform **annually** to ensure capitalized costs don't exceed discounted future net cash flows
-- ✅ Calculate: Net Capitalized Costs vs. Discounted Future Net Cash Flows
-- ✅ Record impairment if ceiling exceeded
-- ✅ Use appropriate discount rate (typically 10%)
+- Perform **annually** to ensure capitalized costs don't exceed discounted future net cash flows
+- Calculate: Net Capitalized Costs vs. Discounted Future Net Cash Flows
+- Record impairment if ceiling exceeded
+- Use appropriate discount rate (typically 10%)
 
 **Implementation**:
 ```csharp
@@ -138,12 +154,41 @@ var ceilingTest = new CEILING_TEST_CALCULATION
 // If NET_CAPITALIZED_COST > DISCOUNTED_FUTURE_NET_CASH_FLOWS, record impairment
 ```
 
+## Reserve Accounting and Depletion Inputs
+
+- Maintain **proved reserves** by property/lease with effective dates
+- Update reserves at least **annually** and upon material revisions
+- Feed reserve data into **unit-of-production** depletion and ceiling tests
+- Track pricing assumptions used in reserve reporting
+
+**Service Alignment**:
+- `ReserveAccountingService` for reserve storage and validation
+- `AmortizationService` for depletion calculation inputs
+
+## DD&A Allocation and Split
+
+- Calculate DD&amp;A using **unit-of-production** and reserve-based rates
+- Split DD&amp;A between **oil and gas** based on production or reserve mix
+- Separate **working vs non-working** interest depletion for reporting
+- Support **fieldwide** DD&amp;A when assets are pooled
+
+**Service Alignment**:
+- `AmortizationService` for fieldwide and split calculations
+
+**Best Practice**:
+```csharp
+var split = await amortizationService.CalculateSplitAsync(
+    propertyId,
+    periodEnd,
+    userId);
+```
+
 ## Revenue Recognition
 
 ### Point of Sale
-- ✅ Recognize revenue when **title transfers** (typically at wellhead or delivery point)
-- ✅ Use run tickets or LACT unit measurements for volume
-- ✅ Apply pricing at time of sale (index-based with differentials)
+- Recognize revenue when **title transfers** (typically at wellhead or delivery point)
+- Use run tickets or LACT unit measurements for volume
+- Apply pricing at time of sale (index-based with differentials)
 
 **Best Practice**:
 ```csharp
@@ -167,10 +212,10 @@ var revenueTransaction = new REVENUE_TRANSACTION
 ```
 
 ### Price Determination
-- ✅ Use **index-based pricing** (WTI, Brent, Henry Hub)
-- ✅ Apply **differentials** for quality, location, transportation
-- ✅ Document pricing methodology in contracts
-- ✅ Maintain price index history
+- Use **index-based pricing** (WTI, Brent, Henry Hub)
+- Apply **differentials** for quality, location, transportation
+- Document pricing methodology in contracts
+- Maintain price index history
 
 **Best Practice**:
 ```csharp
@@ -187,10 +232,10 @@ var price = basePrice + differential; // e.g., WTI + $2.50/bbl
 ```
 
 ### Volume Measurement
-- ✅ Use **certified measurement** (run tickets, LACT units, meters)
-- ✅ Apply **BSW (Basic Sediment and Water)** adjustments
-- ✅ Convert to **standard conditions** (temperature, pressure)
-- ✅ Maintain measurement audit trail
+- Use **certified measurement** (run tickets, LACT units, meters)
+- Apply **BSW (Basic Sediment and Water)** adjustments
+- Convert to **standard conditions** (temperature, pressure)
+- Maintain measurement audit trail
 
 **Best Practice**:
 ```csharp
@@ -206,10 +251,10 @@ var netVolume = measurement.GrossVolume * (1 - measurement.BSW / 100m);
 ```
 
 ### Revenue Allocation
-- ✅ Allocate revenue to **working interests** based on ownership
-- ✅ Deduct **royalties** before allocation
-- ✅ Apply **production sharing** agreements if applicable
-- ✅ Maintain allocation audit trail
+- Allocate revenue to **working interests** based on ownership
+- Deduct **royalties** before allocation
+- Apply **production sharing** agreements if applicable
+- Maintain allocation audit trail
 
 **Best Practice**:
 ```csharp
@@ -226,10 +271,10 @@ var revenueAllocation = new REVENUE_ALLOCATION
 ## Cost Management
 
 ### AFE (Authorization for Expenditure) Management
-- ✅ Require **AFE approval** before capital expenditures
-- ✅ Track **budget vs. actual** costs
-- ✅ Monitor **variance** and require approval for overruns
-- ✅ Link all costs to AFE for approval tracking
+- Require **AFE approval** before capital expenditures
+- Track **budget vs. actual** costs
+- Monitor **variance** and require approval for overruns
+- Link all costs to AFE for approval tracking
 
 **Best Practice**:
 ```csharp
@@ -256,9 +301,9 @@ var costTransaction = new COST_TRANSACTION
 ```
 
 ### Cost Centers
-- ✅ Organize costs by **property**, **well**, **field**, or **region**
-- ✅ Enable cost allocation and reporting
-- ✅ Support both Successful Efforts and Full Cost methods
+- Organize costs by **property**, **well**, **field**, or **region**
+- Enable cost allocation and reporting
+- Support both Successful Efforts and Full Cost methods
 
 **Best Practice**:
 ```csharp
@@ -280,10 +325,10 @@ var costAllocation = new COST_ALLOCATION
 ```
 
 ### Cost Allocation
-- ✅ Allocate **shared costs** (facilities, overhead) equitably
-- ✅ Use **volume-based**, **revenue-based**, or **equity-based** allocation
-- ✅ Document allocation methodology
-- ✅ Maintain allocation audit trail
+- Allocate **shared costs** (facilities, overhead) equitably
+- Use **volume-based**, **revenue-based**, or **equity-based** allocation
+- Document allocation methodology
+- Maintain allocation audit trail
 
 **Best Practice**:
 ```csharp
@@ -300,13 +345,132 @@ var allocation = allocationEngine.AllocateCosts(
 );
 ```
 
+## Unproved Property and Impairment
+
+- Track **unproved acquisitions** separately from proved properties
+- Capitalize acquisition costs and **test impairment** at least annually
+- Reclassify to proved upon **commercial discovery**
+- Record impairments without overwriting original acquisition records
+- Group unproved leases into **carrying groups** for pooled impairment testing
+- Track **lease expiries**, **options**, and **delay rentals** with effective dates
+- Write off expired leasehold costs with clear reason codes
+
+**Service Alignment**:
+- `UnprovedPropertyService` for acquisition, impairment, and reclassification
+
+**Best Practice**:
+```csharp
+var acquisition = await unprovedPropertyService.RecordUnprovedAcquisitionAsync(
+    propertyId,
+    cost: 250000m,
+    acquisitionDate: DateTime.UtcNow,
+    userId: userId);
+
+var impairment = await unprovedPropertyService.TestImpairmentAsync(
+    propertyId,
+    DateTime.UtcNow,
+    userId);
+```
+
+## Drilling Scenario Accounting
+
+- Expense **dry holes** immediately under Successful Efforts
+- Capitalize **successful drilling** and completion costs
+- Track **sidetracks** and **plug-back** costs as separate scenarios
+- Keep scenario metadata for auditability and reserve reconciliation
+- Record **salvage recoveries** as offsets to dry-hole expense
+- Expense **test-well contributions** when no proved reserves are found
+
+**Service Alignment**:
+- `DrillingScenarioAccountingService` for scenario-based capitalization
+
+**Best Practice**:
+```csharp
+var drillingCost = await drillingScenarioAccountingService.RecordDrillingCostAsync(
+    wellId,
+    cost: 1500000m,
+    scenario: "DRY_HOLE",
+    costDate: DateTime.UtcNow,
+    userId: userId);
+```
+
+## Inventory Valuation and LCM
+
+- Value inventory using **FIFO/LIFO/Weighted Average**
+- Apply **lower-of-cost-or-market (LCM)** at period close
+- Record write-downs as **inventory adjustments** with reason codes
+- Maintain valuation history for audit trail
+- Use **NRV adjustments** for transport and quality deductions
+
+**Service Alignment**:
+- `InventoryService` for core valuation methods
+- `InventoryLcmService` for LCM adjustments
+
+**Best Practice**:
+```csharp
+var lcmAdjustment = await inventoryLcmService.ApplyLowerOfCostOrMarketAsync(
+    inventoryItemId,
+    DateTime.UtcNow,
+    userId);
+```
+
+## Take-or-Pay Contracts
+
+- Identify **minimum volume commitments** in sales contracts
+- Record **deficiency charges** when deliveries fall below minimums
+- Track make-up rights and obligation status
+- Tie adjustments to the originating sales contract
+- Use **contract schedules** for minimum volume and pricing by period
+
+**Service Alignment**:
+- `TakeOrPayService` for contract deficiency adjustments
+
+**Best Practice**:
+```csharp
+var adjustment = await takeOrPayService.ApplyTakeOrPayAsync(
+    runTicket,
+    allocationResult,
+    deliveredVolume,
+    userId);
+```
+
+## Production Taxes
+
+- Calculate **severance** and **ad valorem** taxes by jurisdiction
+- Apply taxes on **gross revenue** before net allocations
+- Persist tax transactions for filing and audit
+- Align royalty statements to **tax deductions** where applicable
+- Record **IDC deductions**, **tax depletion**, and **deferred tax** balances
+
+**Service Alignment**:
+- `ProductionTaxService` for production tax calculations
+
+**Best Practice**:
+```csharp
+var tax = await productionTaxService.CalculateProductionTaxesAsync(
+    revenueTransaction,
+    userId);
+```
+
+## Authorization and Approvals
+
+- Require **AFE approval** before capitalizing exploration or development costs
+- Enforce **approval** for non-operated costs and revenue adjustments
+- Track **authorization status** and approver metadata for auditability
+- Reject or hold transactions when authorization is missing or expired
+
+**Service Alignment**:
+- `AuthorizationWorkflowService` for approval validation
+- `AfeService` for AFE lifecycle and budgeting
+- `InternalControlService` for segregation-of-duties checks
+
 ## Production Accounting
 
 ### Run Ticket Management
-- ✅ Create run ticket from **certified measurement**
-- ✅ Include **BSW**, **temperature**, **API gravity**
-- ✅ Link to **lease**, **well**, **tank battery**
-- ✅ Track **disposition** (sale, transfer, inventory)
+- Create run ticket from **certified measurement**
+- Include **BSW**, **temperature**, **API gravity**
+- Link to **lease**, **well**, **tank battery**
+- Track **disposition** (sale, transfer, inventory)
 
 **Best Practice**:
 ```csharp
@@ -321,10 +485,10 @@ var runTicket = productionManager.CreateRunTicket(
 ```
 
 ### Production Allocation
-- ✅ Allocate production to **working interests** accurately
-- ✅ Use **measured volumes** from run tickets
-- ✅ Apply **allocation factors** (ownership percentages)
-- ✅ Handle **imbalances** and adjustments
+- Allocate production to **working interests** accurately
+- Use **measured volumes** from run tickets
+- Apply **allocation factors** (ownership percentages)
+- Handle **imbalances** and adjustments
 
 **Best Practice**:
 ```csharp
@@ -339,10 +503,10 @@ var allocations = allocationEngine.AllocateProduction(
 ```
 
 ### Tank Inventory Management
-- ✅ Maintain **opening inventory**, **receipts**, **deliveries**, **closing inventory**
-- ✅ Reconcile **book inventory** vs. **actual inventory**
-- ✅ Track **inventory adjustments** and reasons
-- ✅ Calculate **inventory valuation** (FIFO, LIFO, weighted average)
+- Maintain **opening inventory**, **receipts**, **deliveries**, **closing inventory**
+- Reconcile **book inventory** vs. **actual inventory**
+- Track **inventory adjustments** and reasons
+- Calculate **inventory valuation** (FIFO, LIFO, weighted average)
 
 **Best Practice**:
 ```csharp
@@ -363,10 +527,10 @@ var variance = actualClosingInventory - calculatedClosing;
 ## Royalty Management
 
 ### Royalty Calculation
-- ✅ Calculate royalty based on **gross revenue** (before deductions)
-- ✅ Apply **royalty interest percentage** from lease or contract
-- ✅ Deduct **royalty** before allocating to working interests
-- ✅ Support **different royalty types** (mineral, overriding, production payment)
+- Calculate royalty based on **gross revenue** (before deductions)
+- Apply **royalty interest percentage** from lease or contract
+- Deduct **royalty** before allocating to working interests
+- Support **different royalty types** (mineral, overriding, production payment)
 
 **Best Practice**:
 ```csharp
@@ -392,10 +556,10 @@ var royaltyPayment = royaltyManager.CalculateAndCreatePayment(
 ```
 
 ### Royalty Payment
-- ✅ Pay royalties **monthly** or **quarterly** per lease terms
-- ✅ Provide **royalty statements** with production and revenue details
-- ✅ Track **payment status** (pending, paid, overdue)
-- ✅ Maintain **payment history**
+- Pay royalties **monthly** or **quarterly** per lease terms
+- Provide **royalty statements** with production and revenue details
+- Track **payment status** (pending, paid, overdue)
+- Maintain **payment history**
 
 **Best Practice**:
 ```csharp
@@ -409,13 +573,25 @@ var royaltyStatement = royaltyManager.CreateStatement(
 );
 ```
 
+## Lease and Economic Interests
+
+- Maintain **working interest**, **royalty interest**, and **NRI** with effective dates
+- Validate **interest totals** do not exceed 100% per property/lease
+- Use **division orders** to drive revenue and royalty allocations
+- Tie lease economics to JIB, revenue, and reporting outputs
+
+**Service Alignment**:
+- `LeaseEconomicInterestService` for ownership/economic validation
+- `AllocationService` for interest-based splits
+- `RoyaltyService` for royalty computation and statements
+
 ## Joint Interest Billing (JIB)
 
 ### Cost Sharing
-- ✅ Automate **cost allocation** among working interest owners
-- ✅ Bill **non-operated** costs to working interest owners
-- ✅ Include **overhead** and **administrative** charges
-- ✅ Provide **detailed line items** for all costs
+- Automate **cost allocation** among working interest owners
+- Bill **non-operated** costs to working interest owners
+- Include **overhead** and **administrative** charges
+- Provide **detailed line items** for all costs
 
 **Best Practice**:
 ```csharp
@@ -447,32 +623,50 @@ var allocation = new JOIB_ALLOCATION
 };
 ```
 
+### COPAS Overhead
+- Apply **COPAS overhead** schedules consistently by cost category
+- Document overhead bases and **effective dates**
+- Separate overhead from direct costs in statements
+- Audit overhead rate changes and approvals
+- Maintain **overhead schedules** with effective/expiry dates
+
+**Service Alignment**:
+- `CopasOverheadService` for overhead calculation and statement charges
+
+**Best Practice**:
+```csharp
+var overhead = await copasOverheadService.CalculateOverheadAsync(
+    leaseId,
+    baseAmount: totalCosts,
+    asOfDate: periodEnd);
+```
+
 ### Timely Billing
-- ✅ Bill within **60-90 days** of cost incurrence
-- ✅ Provide **approval workflow** for non-operated costs
-- ✅ Track **payment status** and **aging**
-- ✅ Reconcile with **operator statements**
+- Bill within **60-90 days** of cost incurrence
+- Provide **approval workflow** for non-operated costs
+- Track **payment status** and **aging**
+- Reconcile with **operator statements**
 
 ## Internal Controls
 
 ### Segregation of Duties
-- ✅ Separate **production**, **accounting**, and **approval** functions
-- ✅ Require **dual approval** for capital expenditures
-- ✅ Restrict **system access** based on role
-- ✅ Maintain **audit logs** for all transactions
+- Separate **production**, **accounting**, and **approval** functions
+- Require **dual approval** for capital expenditures
+- Restrict **system access** based on role
+- Maintain **audit logs** for all transactions
 
 ### Authorization
-- ✅ Require **AFE approval** before capital expenditures
-- ✅ Require **approval** for non-operated costs
-- ✅ Require **approval** for revenue adjustments
-- ✅ Maintain **approval workflow** and history
+- Require **AFE approval** before capital expenditures
+- Require **approval** for non-operated costs
+- Require **approval** for revenue adjustments
+- Maintain **approval workflow** and history
 
 ### Reconciliation
-- ✅ Reconcile **production volumes** (run tickets vs. sales)
-- ✅ Reconcile **revenue** (sales vs. cash receipts)
-- ✅ Reconcile **costs** (invoices vs. payments)
-- ✅ Reconcile **inventory** (book vs. actual)
-- ✅ Perform **monthly reconciliations**
+- Reconcile **production volumes** (run tickets vs. sales)
+- Reconcile **revenue** (sales vs. cash receipts)
+- Reconcile **costs** (invoices vs. payments)
+- Reconcile **inventory** (book vs. actual)
+- Perform **monthly reconciliations**
 
 **Best Practice**:
 ```csharp
@@ -488,10 +682,10 @@ var accountsReceivable = salesRevenue - cashReceipts;
 ```
 
 ### Audit Trail
-- ✅ Maintain **complete audit trail** of all transactions
-- ✅ Track **who**, **what**, **when**, **why** for all changes
-- ✅ Retain **supporting documentation** (run tickets, invoices, contracts)
-- ✅ Implement **change tracking** for critical data
+- Maintain **complete audit trail** of all transactions
+- Track **who**, **what**, **when**, **why** for all changes
+- Retain **supporting documentation** (run tickets, invoices, contracts)
+- Implement **change tracking** for critical data
 
 **Best Practice**:
 ```csharp
@@ -509,16 +703,16 @@ var transaction = new REVENUE_TRANSACTION
 ## Data Integrity
 
 ### PPDM Compliance
-- ✅ Use **PPDM standard tables** where possible
-- ✅ Follow **PPDM naming conventions**
-- ✅ Include **standard audit columns** (ROW_CREATED_BY, ROW_CREATED_DATE, etc.)
-- ✅ Maintain **referential integrity** with foreign keys
+- Use **PPDM standard tables** where possible
+- Follow **PPDM naming conventions**
+- Include **standard audit columns** (ROW_CREATED_BY, ROW_CREATED_DATE, etc.)
+- Maintain **referential integrity** with foreign keys
 
 ### Data Validation
-- ✅ Validate **all inputs** (volumes, prices, costs)
-- ✅ Enforce **business rules** (e.g., volumes cannot be negative)
-- ✅ Check **data quality** (e.g., BSW cannot exceed 100%)
-- ✅ Implement **data validation** at entry point
+- Validate **all inputs** (volumes, prices, costs)
+- Enforce **business rules** (e.g., volumes cannot be negative)
+- Check **data quality** (e.g., BSW cannot exceed 100%)
+- Implement **data validation** at entry point
 
 **Best Practice**:
 ```csharp
@@ -534,58 +728,269 @@ if (price < 0)
 ```
 
 ### Version Control
-- ✅ Track **changes** to critical data (ownership, contracts)
-- ✅ Maintain **version history** for contracts and agreements
-- ✅ Implement **effective dating** for time-based data
-- ✅ Support **audit queries** for historical data
+- Track **changes** to critical data (ownership, contracts)
+- Maintain **version history** for contracts and agreements
+- Implement **effective dating** for time-based data
+- Support **audit queries** for historical data
 
 ## Reporting and Compliance
 
 ### Financial Reports
-- ✅ Generate **Income Statement** (revenue, costs, amortization)
-- ✅ Generate **Balance Sheet** (assets, liabilities, equity)
-- ✅ Generate **Cash Flow Statement** (operating, investing, financing)
-- ✅ Include **FASB disclosures** (reserves, costs, production)
+- Generate **Income Statement** (revenue, costs, amortization)
+- Generate **Balance Sheet** (assets, liabilities, equity)
+- Generate **Cash Flow Statement** (operating, investing, financing)
+- Include **FASB disclosures** (reserves, costs, production)
 
 ### Operational Reports
-- ✅ Generate **Production Reports** (volumes by property, well, field)
-- ✅ Generate **Revenue Reports** (revenue by property, product, customer)
-- ✅ Generate **Cost Reports** (costs by property, well, cost center)
-- ✅ Generate **AFE Reports** (budget vs. actual, variance analysis)
+- Generate **Production Reports** (volumes by property, well, field)
+- Generate **Revenue Reports** (revenue by property, product, customer)
+- Generate **Cost Reports** (costs by property, well, cost center)
+- Generate **AFE Reports** (budget vs. actual, variance analysis)
 
 ### Compliance Reports
-- ✅ Generate **SEC Reports** (10-K, 10-Q disclosures)
-- ✅ Generate **Tax Reports** (federal, state, local)
-- ✅ Generate **Royalty Statements** (for royalty owners)
-- ✅ Generate **JIB Statements** (for working interest owners)
+- Generate **SEC Reports** (10-K, 10-Q disclosures)
+- Generate **Tax Reports** (federal, state, local)
+- Generate **Royalty Statements** (for royalty owners)
+- Generate **JIB Statements** (for working interest owners)
 
 ## System Integration
 
 ### Integration with Production Systems
-- ✅ Integrate with **production measurement** systems
-- ✅ Integrate with **SCADA** systems for automatic measurement
-- ✅ Integrate with **LACT units** for automatic measurement
-- ✅ Maintain **data synchronization** between systems
+- Integrate with **production measurement** systems
+- Integrate with **SCADA** systems for automatic measurement
+- Integrate with **LACT units** for automatic measurement
+- Maintain **data synchronization** between systems
 
 ### Integration with Land Systems
-- ✅ Integrate with **land management** systems for ownership
-- ✅ Integrate with **lease management** systems for contracts
-- ✅ Maintain **ownership and contract** data synchronization
+- Integrate with **land management** systems for ownership
+- Integrate with **lease management** systems for contracts
+- Maintain **ownership and contract** data synchronization
 
 ### Integration with Financial Systems
-- ✅ Integrate with **ERP systems** for general ledger
-- ✅ Integrate with **banking systems** for cash receipts
-- ✅ Maintain **financial data** synchronization
+- Integrate with **ERP systems** for general ledger
+- Integrate with **banking systems** for cash receipts
+- Maintain **financial data** synchronization
+
+## Accounting Foundation (GL)
+
+### Core Accounting Services
+- Post operational activity to **Journal Entries** and the **General Ledger**
+- Maintain **Chart of Accounts** and account validation rules
+- Provide **trial balance**, **financial statements**, and **GL reports**
+- Use standardized **period closing** and **bank reconciliation** workflows
+
+**Implementation Alignment**:
+```csharp
+var glAccountService = new GLAccountService();
+var journalEntryService = new JournalEntryService();
+var periodClosingService = new PeriodClosingService();
+var financialStatementService = new FinancialStatementService();
+```
+
+### Posting and Controls
+- Enforce **balanced entries** before posting to GL
+- Require **approval** for manual journal entries
+- Tag entries with **source module** for traceability
+- Support **reversing entries** for corrections and accruals
+
+## Period Close and Accruals
+
+### Close Calendar and Cutoff
+- Maintain a **monthly close calendar** with clear cutoff times
+- Lock production and pricing data after close
+- Use **effective dating** for late adjustments
+- Require approvals for reopenings
+
+**Best Practice**:
+```csharp
+var closePeriod = new ACCOUNTING_PERIOD
+{
+    PERIOD_NAME = "2024-01",
+    START_DATE = new DateTime(2024, 1, 1),
+    END_DATE = new DateTime(2024, 1, 31),
+    STATUS = "CLOSED",
+    CLOSED_BY = userId,
+    CLOSED_DATE = DateTime.UtcNow
+};
+```
+
+### Revenue and Expense Accruals
+- Accrue **unbilled revenue** based on production and pricing estimates
+- Accrue **unmatched expenses** for received services without invoices
+- Reverse accruals when actuals post
+- Track accrual **source and basis** for auditability
+
+**Best Practice**:
+```csharp
+var accrual = new ACCRUAL_TRANSACTION
+{
+    PROPERTY_ID = propertyId,
+    PERIOD = "2024-01",
+    ACCRUAL_TYPE = "REVENUE_ESTIMATE",
+    AMOUNT = 250000m,
+    BASIS = "RUN_TICKET_VOLUME * INDEX_PRICE",
+    REVERSAL_PERIOD = "2024-02"
+};
+```
+
+## Adjustments and Corrections
+
+### Adjustment Controls
+- Require **reason codes** and approvals for adjustments
+- Preserve **original transactions**; do not overwrite
+- Post **reversals** and **correcting entries**
+- Maintain **effective dates** for regulatory compliance
+
+**Best Practice**:
+```csharp
+var adjustment = new ADJUSTMENT_REQUEST
+{
+    SOURCE_TRANSACTION_ID = revenueTransactionId,
+    ADJUSTMENT_REASON = "PRICE_CORRECTION",
+    REQUESTED_BY = userId,
+    REQUESTED_DATE = DateTime.UtcNow,
+    APPROVAL_STATUS = "PENDING"
+};
+```
+
+### Measurement Corrections
+- Log **meter corrections** and revised run tickets
+- Retain **before/after** values for volume and BSW
+- Recalculate allocations and downstream revenue
+- Notify affected owners and partners
+
+**Best Practice**:
+```csharp
+var measurementCorrection = new MEASUREMENT_ADJUSTMENT
+{
+    RUN_TICKET_ID = runTicketId,
+    ORIGINAL_NET_VOLUME = 995.0m,
+    CORRECTED_NET_VOLUME = 1002.5m,
+    ADJUSTMENT_REASON = "METER_FACTOR_UPDATE"
+};
+```
+
+## Partner and Joint Venture Accounting
+
+### Cash Calls and Billings
+- Issue **cash calls** for operated projects when required
+- Track **call vs. receipt** and apply to AFEs
+- Use **standard overhead rates** and document changes
+- Reconcile operator vs. non-operator statements
+
+**Best Practice**:
+```csharp
+var cashCall = new CASH_CALL
+{
+    AFE_ID = afe.AFE_ID,
+    CALL_NUMBER = "CC-2024-001",
+    CALL_AMOUNT = 1500000m,
+    DUE_DATE = new DateTime(2024, 2, 15)
+};
+```
+
+### Partner Statements
+- Provide **monthly partner statements** with detail
+- Include **ownership changes** and effective dates
+- Highlight **disputes** and resolution status
+- Maintain statement delivery audit trail
+
+**Best Practice**:
+```csharp
+var partnerStatement = new PARTNER_STATEMENT
+{
+    PARTNER_BA_ID = partnerId,
+    PERIOD = "2024-01",
+    TOTAL_CHARGES = 450000m,
+    TOTAL_CREDITS = 120000m,
+    NET_DUE = 330000m
+};
+```
+
+## Tax and Regulatory Reporting
+
+### Severance and Production Taxes
+- Calculate **severance taxes** by jurisdiction
+- Apply **tax exemptions** and reduced rates
+- Track **taxable volume** separately from net volume
+- Reconcile tax accruals to filings
+
+**Best Practice**:
+```csharp
+var taxCalculation = new TAX_CALCULATION
+{
+    JURISDICTION = "TX",
+    TAX_TYPE = "SEVERANCE",
+    TAXABLE_VOLUME = 10000m,
+    TAX_RATE = 0.046m,
+    TAX_AMOUNT = 460m
+};
+```
+
+### Regulatory Filings
+- Support **state production** and **royalty** filings
+- Maintain **audit-ready** documentation
+- Track filing **deadlines** and confirmations
+- Store filing references and acknowledgments
+
+## Data Governance and Master Data
+
+### Master Data Stewardship
+- Define **data owners** for properties, wells, units, owners
+- Enforce **unique identifiers** and naming standards
+- Validate **ownership effective dates** and hierarchy
+- Maintain change history with approvals
+
+**Best Practice**:
+```csharp
+var validationResult = masterDataValidator.ValidateOwnership(
+    leaseId: leaseId,
+    effectiveDate: new DateTime(2024, 1, 1),
+    interests: ownershipInterests
+);
+if (!validationResult.IsValid)
+    throw new InvalidAccountingDataException(validationResult.Message);
+```
+
+### Reference Data Controls
+- Centralize **product codes**, cost types, and reason codes
+- Version **pricing indices** and allocation methods
+- Restrict changes to authorized roles
+- Apply changes with effective dating
+
+## Monitoring and Exception Management
+
+### Automated Exception Rules
+- Monitor **volume variances** vs. expected ranges
+- Flag **negative prices** or out-of-range differentials
+- Alert on **unbalanced allocations** and missing owners
+- Escalate exceptions based on severity
+
+**Best Practice**:
+```csharp
+var exceptionRule = new EXCEPTION_RULE
+{
+    RULE_NAME = "VOLUME_VARIANCE",
+    THRESHOLD_PERCENT = 2.5m,
+    SEVERITY = "HIGH",
+    ACTION = "NOTIFY_AND_HOLD"
+};
+```
+
+### KPI Monitoring
+- Track **days-to-close**, **billing timeliness**, **dispute rate**
+- Monitor **inventory variance** and **measurement corrections**
+- Report **accrual accuracy** and reversal timing
+- Use dashboards for operational visibility
 
 ## Conclusion
 
 Following these best practices ensures:
-- ✅ **FASB and SEC compliance**
-- ✅ **Accurate financial reporting**
-- ✅ **Efficient operations**
-- ✅ **Strong internal controls**
-- ✅ **Data integrity**
-- ✅ **Regulatory compliance**
+- **FASB and SEC compliance**
+- **Accurate financial reporting**
+- **Efficient operations**
+- **Strong internal controls**
+- **Data integrity**
+- **Regulatory compliance**
 
 The `Beep.OilandGas.ProductionAccounting` system implements these best practices throughout all modules.
-

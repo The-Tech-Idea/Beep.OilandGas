@@ -19,7 +19,7 @@ Implements production allocation and joint interest accounting per COPAS standar
 **Responsibility**: Core allocation calculation engine
 
 **Allocation Methods**:
-1. **Pro Rata**: Allocation = (Well Interest × Total Production) / 100
+1. **Pro Rata**: Allocation = (Well Interest x Total Production) / 100
 2. **Equation**: Custom formula-based allocation
 3. **Volumetric**: Volume-based allocation (MCF, BBL)
 4. **Yield**: Well performance-based allocation
@@ -33,20 +33,20 @@ public interface IAllocationEngine
         List<WELL_ALLOCATION_DATA> wells,
         decimal totalVolume,
         string? connectionName = null);
-    
+
     // Equation-Based Allocation
     Task<List<(string wellId, decimal allocated)>> AllocateByEquationAsync(
         string allocationFormula,
         List<WELL_ALLOCATION_DATA> wells,
         decimal totalVolume,
         string? connectionName = null);
-    
+
     // Validate Allocation
     Task<(bool isValid, decimal totalAllocated, decimal variance)> ValidateAllocationAsync(
         List<(string wellId, decimal allocated)> allocations,
         decimal totalVolume,
         string? connectionName = null);
-    
+
     // Get Allocation Method Capabilities
     Task<List<string>> GetSupportedAllocationMethodsAsync();
 }
@@ -77,26 +77,26 @@ public interface IAllocationService
         ALLOCATION_METHOD method,
         string userId,
         string? connectionName = null);
-    
+
     // Lease-Level Allocation
     Task<ALLOCATION_RESULT> AllocateToLeasesAsync(
         ALLOCATION_RESULT wellAllocation,
         List<LEASE_ALLOCATION_DATA> leases,
         string userId,
         string? connectionName = null);
-    
+
     // Tract-Level Allocation
     Task<ALLOCATION_RESULT> AllocateToTractsAsync(
         ALLOCATION_RESULT leaseAllocation,
         List<TRACT_ALLOCATION_DATA> tracts,
         string userId,
         string? connectionName = null);
-    
+
     // Validation & Reports
     Task<(bool isValid, List<string> issues)> ValidateAllocationAsync(
         ALLOCATION_RESULT allocation,
         string? connectionName = null);
-    
+
     Task<ALLOCATION_REPORT_SUMMARY> GetAllocationSummaryAsync(
         DateTime fromDate,
         DateTime toDate,
@@ -140,14 +140,14 @@ public interface IRoyaltyService
         PRICE_INDEX price,
         string userId,
         string? connectionName = null);
-    
+
     // Net Revenue Calculation
-    Task<(decimal gross, decimal costs, decimal deductions, decimal netRevenue)> 
+    Task<(decimal gross, decimal costs, decimal deductions, decimal netRevenue)>
         CalculateNetRevenueAsync(
             SALES_TRANSACTION sales,
             List<ROYALTY_DEDUCTIONS> deductions,
             string? connectionName = null);
-    
+
     // Royalty Payment Creation
     Task<ROYALTY_PAYMENT> CreateRoyaltyPaymentAsync(
         ROYALTY_CALCULATION calculation,
@@ -155,21 +155,21 @@ public interface IRoyaltyService
         DateTime paymentDate,
         string userId,
         string? connectionName = null);
-    
+
     // Working Interest Accounting
     Task<COST_ALLOCATION> AllocateCostsToInterestsAsync(
         List<ACCOUNTING_COST> costs,
         List<OWNERSHIP_INTEREST> interests,
         string userId,
         string? connectionName = null);
-    
+
     // Reconciliation
     Task<(decimal calculated, decimal paid, decimal variance)> ReconcileRoyaltyAsync(
         string wellId,
         DateTime fromDate,
         DateTime toDate,
         string? connectionName = null);
-    
+
     // Reports
     Task<List<ROYALTY_PAYMENT>> GetPaymentHistoryAsync(
         string recipientId,
@@ -180,7 +180,7 @@ public interface IRoyaltyService
 ```
 
 **Implementation Notes**:
-- Royalty = (Net Revenue × Royalty Rate)
+- Royalty = (Net Revenue x Royalty Rate)
 - Net Revenue = (Gross Revenue - Transportation - Ad Valorem Tax)
 - Collect and apply severance taxes
 - Handle revenue deductions per lease terms
@@ -214,7 +214,7 @@ public interface IJointInterestBillingService
         decimal netRoyaltyInterest,
         string userId,
         string? connectionName = null);
-    
+
     // Cost Allocation (COPAS AG)
     Task<List<JIB_CHARGE>> AllocateCostsAsync(
         string wellId,
@@ -223,7 +223,7 @@ public interface IJointInterestBillingService
         List<OWNERSHIP_INTEREST> interests,
         string userId,
         string? connectionName = null);
-    
+
     // Revenue Sharing
     Task<List<JIB_CREDIT>> ShareRevenueAsync(
         string wellId,
@@ -231,7 +231,7 @@ public interface IJointInterestBillingService
         List<OWNERSHIP_INTEREST> interests,
         string userId,
         string? connectionName = null);
-    
+
     // Overhead Allocation (per COPAS standards)
     Task<decimal> CalculateOverheadAsync(
         string wellId,
@@ -239,13 +239,13 @@ public interface IJointInterestBillingService
         decimal baseAmount,
         decimal overheadRate,
         string? connectionName = null);
-    
+
     // JIB Statement Generation
     Task<JOINT_INTEREST_STATEMENT> GenerateStatementAsync(
         string wellId,
         DateTime statementPeriodEnd,
         string? connectionName = null);
-    
+
     // Settlement & Payment
     Task<ROYALTY_PAYMENT> SettleJIBStatementAsync(
         string statementId,
@@ -255,7 +255,7 @@ public interface IJointInterestBillingService
 ```
 
 **Implementation Notes**:
-- Each party's share = (Interest × Net Revenue) - (Interest × Costs & Deductions)
+- Each party's share = (Interest x Net Revenue) - (Interest x Costs & Deductions)
 - Track operator's burden (non-consent costs)
 - Apply overhead per COPAS AG standards
 - Generate monthly statements per lease/well
@@ -286,7 +286,7 @@ public interface IImbalanceService
         decimal producedVolume,
         decimal soldVolume,
         string? connectionName = null);
-    
+
     // Imbalance Recording
     Task<IMBALANCE_ADJUSTMENT> RecordImbalanceAsync(
         string wellId,
@@ -294,7 +294,7 @@ public interface IImbalanceService
         string reason,  // "Over-produced", "Under-produced"
         string userId,
         string? connectionName = null);
-    
+
     // Imbalance Settlement
     Task<IMBALANCE_RECONCILIATION> SettleImbalanceAsync(
         string wellId,
@@ -303,12 +303,12 @@ public interface IImbalanceService
         decimal settlePrice,
         string userId,
         string? connectionName = null);
-    
+
     // Reports
     Task<List<OIL_IMBALANCE>> GetActiveImbalancesAsync(
         DateTime? asOfDate = null,
         string? connectionName = null);
-    
+
     Task<IMBALANCE_STATEMENT> GenerateImbalanceReportAsync(
         DateTime asOfDate,
         string? connectionName = null);
@@ -363,7 +363,7 @@ Total Production: 1,000 BBL
 Well A (75% interest):  750 BBL
 Well B (20% interest):  200 BBL
 Well C (5% interest):    50 BBL
-Total:                1,000 BBL ✓
+Total:                1,000 BBL
 ```
 
 ### Royalty Calculation
@@ -392,13 +392,13 @@ NPI Payment:                $700
 ## Validation Rules
 
 1. **Allocation Validation**:
-   - Sum of allocations = Total production ± 0.01%
+   - Sum of allocations = Total production within 0.01%
    - All allocations positive
    - No allocation exceeds 100%
 
 2. **Royalty Validation**:
-   - Royalty ≤ Net Revenue
-   - Working Interest ≤ 100%
+   - Royalty <= Net Revenue
+   - Working Interest <= 100%
    - All royalty rates > 0%
 
 3. **JIB Validation**:
@@ -408,7 +408,7 @@ NPI Payment:                $700
 
 4. **Imbalance Validation**:
    - Imbalance = |Produced - Sold|
-   - Settlement ≤ Imbalance quantity
+   - Settlement <= Imbalance quantity
    - Settlement price reasonable
 
 ---
@@ -423,5 +423,5 @@ NPI Payment:                $700
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 1.0
 **Status**: Ready for Implementation

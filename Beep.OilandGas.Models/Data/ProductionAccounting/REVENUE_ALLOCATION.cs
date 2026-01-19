@@ -20,6 +20,13 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref REVENUE_TRANSACTION_IDValue, value); }
         }
 
+        private System.String AFE_IDValue;
+        public System.String AFE_ID
+        {
+            get { return this.AFE_IDValue; }
+            set { SetProperty(ref AFE_IDValue, value); }
+        }
+
         private System.String INTEREST_OWNER_BA_IDValue;
         public System.String INTEREST_OWNER_BA_ID
         {

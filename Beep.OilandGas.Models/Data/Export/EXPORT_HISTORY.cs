@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Export
 {
-    public partial class EXPORT_HISTORY : Entity
+    public partial class EXPORT_HISTORY : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String EXPORT_HISTORY_IDValue;
         public System.String EXPORT_HISTORY_ID

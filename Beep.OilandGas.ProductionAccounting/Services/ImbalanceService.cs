@@ -60,6 +60,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentNullException(nameof(userId));
 
             _logger?.LogInformation("Recording imbalance for lease {LeaseId}, volume: {Volume}",
                 leaseId, volume);
@@ -70,6 +72,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 IMBALANCE_ADJUSTMENT_ID = Guid.NewGuid().ToString(),
                 ADJUSTMENT_AMOUNT = Math.Abs(volume),  // Store absolute value, track direction in REASON
                 ADJUSTMENT_TYPE = volume > 0 ? ImbalanceType.Overproduced : ImbalanceType.Underproduced,
+                PROPERTY_OR_LEASE_ID = leaseId,
                 REASON = $"Imbalance for lease {leaseId}",
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
@@ -255,6 +258,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = leaseId },
+                new AppFilter { FieldName = "ROW_CREATED_DATE", Operator = ">=", FilterValue = startDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "ROW_CREATED_DATE", Operator = "<=", FilterValue = endDate.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
 
@@ -269,7 +274,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             string leaseId,
             string cn = "PPDM39")
         {
-            return await GetImbalanceAdjustmentsAsync(leaseId, DateTime.MinValue, DateTime.MaxValue, cn);
+            // Avoid DateTime.MinValue/MaxValue which some providers cannot translate.
+            return await GetImbalanceAdjustmentsAsync(leaseId, new DateTime(1900, 1, 1), DateTime.UtcNow.Date.AddDays(1), cn);
         }
     }
 

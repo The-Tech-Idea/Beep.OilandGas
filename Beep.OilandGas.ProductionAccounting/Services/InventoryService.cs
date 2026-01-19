@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
@@ -241,6 +242,221 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new ProductionAccountingException(
                     $"Failed to validate inventory for tank {inventory.TANK_BATTERY_ID}", ex);
             }
+        }
+
+        public async Task<INVENTORY_VALUATION> CalculateValuationAsync(
+            string inventoryItemId,
+            DateTime valuationDate,
+            string method,
+            string userId,
+            string cn = "PPDM39")
+        {
+            if (string.IsNullOrWhiteSpace(inventoryItemId))
+                throw new ArgumentNullException(nameof(inventoryItemId));
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentNullException(nameof(userId));
+
+            var transactions = await GetInventoryTransactionsAsync(inventoryItemId, valuationDate, cn);
+            var valuationMethod = string.IsNullOrWhiteSpace(method) ? "WEIGHTED_AVG" : method.ToUpperInvariant();
+
+            var valuation = CalculateValuation(transactions, valuationMethod);
+            var record = new INVENTORY_VALUATION
+            {
+                INVENTORY_VALUATION_ID = Guid.NewGuid().ToString(),
+                INVENTORY_ITEM_ID = inventoryItemId,
+                VALUATION_DATE = valuationDate,
+                VALUATION_METHOD = valuationMethod,
+                QUANTITY = valuation.Quantity,
+                UNIT_COST = valuation.UnitCost,
+                TOTAL_VALUE = valuation.TotalValue,
+                DESCRIPTION = $"{valuationMethod} valuation as of {valuationDate:yyyy-MM-dd}",
+                ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                ROW_CREATED_BY = userId,
+                ROW_CREATED_DATE = DateTime.UtcNow
+            };
+
+            var repo = await GetRepoAsync<INVENTORY_VALUATION>("INVENTORY_VALUATION", cn);
+            await repo.InsertAsync(record, userId);
+            return record;
+        }
+
+        public async Task<INVENTORY_REPORT_SUMMARY> GenerateReconciliationReportAsync(
+            string inventoryItemId,
+            DateTime periodStart,
+            DateTime periodEnd,
+            string userId,
+            string cn = "PPDM39")
+        {
+            if (string.IsNullOrWhiteSpace(inventoryItemId))
+                throw new ArgumentNullException(nameof(inventoryItemId));
+            if (periodStart > periodEnd)
+                throw new ArgumentException("periodStart must be <= periodEnd", nameof(periodStart));
+
+            var allTransactions = await GetInventoryTransactionsAsync(inventoryItemId, periodEnd, cn);
+            var openingTransactions = allTransactions.Where(t => t.TRANSACTION_DATE.HasValue && t.TRANSACTION_DATE.Value.Date < periodStart.Date).ToList();
+            var periodTransactions = allTransactions.Where(t => t.TRANSACTION_DATE.HasValue &&
+                t.TRANSACTION_DATE.Value.Date >= periodStart.Date &&
+                t.TRANSACTION_DATE.Value.Date <= periodEnd.Date).ToList();
+
+            var opening = CalculateValuation(openingTransactions, "WEIGHTED_AVG");
+            var receipts = periodTransactions.Where(t => IsReceipt(t)).Sum(t => t.QUANTITY ?? 0m);
+            var deliveries = periodTransactions.Where(t => IsIssue(t)).Sum(t => Math.Abs(t.QUANTITY ?? 0m));
+            var closing = opening.Quantity + receipts - deliveries;
+
+            var summary = new INVENTORY_REPORT_SUMMARY
+            {
+                INVENTORY_REPORT_SUMMARY_ID = Guid.NewGuid().ToString(),
+                OPENING_INVENTORY = opening.Quantity,
+                RECEIPTS = receipts,
+                DELIVERIES = deliveries,
+                CLOSING_INVENTORY = closing,
+                ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                PPDM_GUID = Guid.NewGuid().ToString(),
+                REMARK = $"InventoryItemId: {inventoryItemId} Period: {periodStart:yyyy-MM-dd} to {periodEnd:yyyy-MM-dd}",
+                ROW_CREATED_BY = userId,
+                ROW_CREATED_DATE = DateTime.UtcNow
+            };
+
+            var repo = await GetRepoAsync<INVENTORY_REPORT_SUMMARY>("INVENTORY_REPORT_SUMMARY", cn);
+            await repo.InsertAsync(summary, userId);
+            return summary;
+        }
+
+        private async Task<List<INVENTORY_TRANSACTION>> GetInventoryTransactionsAsync(string inventoryItemId, DateTime asOfDate, string cn)
+        {
+            var repo = await GetRepoAsync<INVENTORY_TRANSACTION>("INVENTORY_TRANSACTION", cn);
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "INVENTORY_ITEM_ID", Operator = "=", FilterValue = inventoryItemId },
+                new AppFilter { FieldName = "TRANSACTION_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var results = await repo.GetAsync(filters);
+            return results?.Cast<INVENTORY_TRANSACTION>().OrderBy(t => t.TRANSACTION_DATE).ToList()
+                ?? new List<INVENTORY_TRANSACTION>();
+        }
+
+        private InventoryValuationResult CalculateValuation(List<INVENTORY_TRANSACTION> transactions, string method)
+        {
+            if (!transactions.Any())
+                return new InventoryValuationResult();
+
+            var layers = new List<InventoryLayer>();
+            decimal totalQuantity = 0m;
+            decimal totalCost = 0m;
+
+            foreach (var tx in transactions)
+            {
+                var quantity = tx.QUANTITY ?? 0m;
+                if (quantity == 0m)
+                    continue;
+
+                if (IsReceipt(tx))
+                {
+                    var unitCost = tx.UNIT_COST ?? (quantity != 0m ? (tx.TOTAL_COST ?? 0m) / quantity : 0m);
+                    layers.Add(new InventoryLayer { Quantity = quantity, UnitCost = unitCost });
+                    totalQuantity += quantity;
+                    totalCost += quantity * unitCost;
+                }
+                else if (IsIssue(tx))
+                {
+                    var issueQuantity = Math.Abs(quantity);
+                    if (method == "WEIGHTED_AVG")
+                    {
+                        var avgCost = totalQuantity == 0m ? 0m : totalCost / totalQuantity;
+                        totalQuantity -= issueQuantity;
+                        totalCost -= issueQuantity * avgCost;
+                    }
+                    else
+                    {
+                        ConsumeLayers(layers, method, issueQuantity, ref totalQuantity, ref totalCost);
+                    }
+                }
+            }
+
+            var unitCostFinal = totalQuantity == 0m ? 0m : totalCost / totalQuantity;
+            return new InventoryValuationResult
+            {
+                Quantity = totalQuantity,
+                UnitCost = unitCostFinal,
+                TotalValue = totalQuantity * unitCostFinal
+            };
+        }
+
+        private void ConsumeLayers(
+            List<InventoryLayer> layers,
+            string method,
+            decimal issueQuantity,
+            ref decimal totalQuantity,
+            ref decimal totalCost)
+        {
+            var orderedLayers = method == "LIFO"
+                ? layers.OrderByDescending(l => l.Sequence).ToList()
+                : layers.OrderBy(l => l.Sequence).ToList();
+
+            foreach (var layer in orderedLayers)
+            {
+                if (issueQuantity <= 0m)
+                    break;
+
+                var taken = Math.Min(layer.Quantity, issueQuantity);
+                layer.Quantity -= taken;
+                issueQuantity -= taken;
+                totalQuantity -= taken;
+                totalCost -= taken * layer.UnitCost;
+            }
+
+            layers.RemoveAll(l => l.Quantity <= 0m);
+        }
+
+        private bool IsReceipt(INVENTORY_TRANSACTION tx)
+        {
+            if (tx == null)
+                return false;
+            if ((tx.QUANTITY ?? 0m) > 0m)
+                return true;
+            return string.Equals(tx.TRANSACTION_TYPE, "RECEIPT", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(tx.TRANSACTION_TYPE, "PURCHASE", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(tx.TRANSACTION_TYPE, "IN", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private bool IsIssue(INVENTORY_TRANSACTION tx)
+        {
+            if (tx == null)
+                return false;
+            if ((tx.QUANTITY ?? 0m) < 0m)
+                return true;
+            return string.Equals(tx.TRANSACTION_TYPE, "ISSUE", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(tx.TRANSACTION_TYPE, "SALE", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(tx.TRANSACTION_TYPE, "OUT", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(T);
+
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, tableName);
+        }
+
+        private sealed class InventoryLayer
+        {
+            private static int _sequenceSeed = 1;
+            public int Sequence { get; } = _sequenceSeed++;
+            public decimal Quantity { get; set; }
+            public decimal UnitCost { get; set; }
+        }
+
+        private sealed class InventoryValuationResult
+        {
+            public decimal Quantity { get; set; }
+            public decimal UnitCost { get; set; }
+            public decimal TotalValue { get; set; }
         }
     }
 }

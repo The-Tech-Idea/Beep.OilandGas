@@ -29,6 +29,27 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref PROPERTY_OR_LEASE_IDValue, value); }
         }
 
+        private System.String ALLOCATION_RESULT_IDValue;
+        public System.String ALLOCATION_RESULT_ID
+        {
+            get { return this.ALLOCATION_RESULT_IDValue; }
+            set { SetProperty(ref ALLOCATION_RESULT_IDValue, value); }
+        }
+
+        private System.String ROYALTY_INTEREST_IDValue;
+        public System.String ROYALTY_INTEREST_ID
+        {
+            get { return this.ROYALTY_INTEREST_IDValue; }
+            set { SetProperty(ref ROYALTY_INTEREST_IDValue, value); }
+        }
+
+        private System.String ROYALTY_OWNER_IDValue;
+        public System.String ROYALTY_OWNER_ID
+        {
+            get { return this.ROYALTY_OWNER_IDValue; }
+            set { SetProperty(ref ROYALTY_OWNER_IDValue, value); }
+        }
+
         private System.Decimal? GROSS_REVENUEValue;
         public System.Decimal? GROSS_REVENUE
         {

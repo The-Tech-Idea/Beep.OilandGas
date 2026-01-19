@@ -62,10 +62,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger?.LogInformation("Starting allocation for run ticket {RunTicketId} using method {Method}",
                 runTicket.RUN_TICKET_ID, allocationMethod);
 
-            // Get gross volume from run ticket
-            var grossVolume = runTicket.GROSS_VOLUME ?? 0;
-            if (grossVolume <= 0)
-                throw new AllocationException($"Invalid gross volume: {grossVolume}");
+            // Prefer net volume if available, fall back to gross.
+            var volume = (runTicket.NET_VOLUME.HasValue && runTicket.NET_VOLUME.Value > 0)
+                ? runTicket.NET_VOLUME.Value
+                : (runTicket.GROSS_VOLUME ?? 0m);
+            if (volume <= 0)
+                throw new AllocationException($"Invalid volume: {volume}");
 
             // Create allocation result
             var allocationResult = new ALLOCATION_RESULT
@@ -73,8 +75,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 ALLOCATION_RESULT_ID = Guid.NewGuid().ToString(),
                 ALLOCATION_REQUEST_ID = runTicket.RUN_TICKET_ID,
                 ALLOCATION_METHOD = allocationMethod,
+                AFE_ID = runTicket.AFE_ID,
                 ALLOCATION_DATE = DateTime.UtcNow,
-                TOTAL_VOLUME = grossVolume,
+                TOTAL_VOLUME = volume,
                 ALLOCATED_VOLUME = 0,  // Will be calculated from details
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
@@ -94,7 +97,24 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             await repo.InsertAsync(allocationResult, userId);
 
             _logger?.LogInformation("Allocation created: {AllocationResultId} Total Volume: {TotalVolume}",
-                allocationResult.ALLOCATION_RESULT_ID, grossVolume);
+                allocationResult.ALLOCATION_RESULT_ID, volume);
+
+            if (allocationMethod == AllocationMethods.ProRata)
+            {
+                var details = await CreateProRataDetailsAsync(allocationResult, runTicket, userId, connectionName);
+                var allocatedTotal = details.Sum(d => d.ALLOCATED_VOLUME ?? 0m);
+                allocationResult.ALLOCATED_VOLUME = allocatedTotal;
+                allocationResult.ALLOCATION_VARIANCE = (allocationResult.TOTAL_VOLUME ?? 0m) - allocatedTotal;
+                allocationResult.DESCRIPTION = $"Pro-rata allocation for run ticket {runTicket.RUN_TICKET_ID}";
+                allocationResult.ROW_CHANGED_BY = userId;
+                allocationResult.ROW_CHANGED_DATE = DateTime.UtcNow;
+
+                await repo.UpdateAsync(allocationResult, userId);
+            }
+            else
+            {
+                throw new AllocationException($"Allocation method not implemented: {allocationMethod}");
+            }
 
             return allocationResult;
         }
@@ -167,6 +187,247 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 return false;
 
             return true;
+        }
+
+        private async Task<List<ALLOCATION_DETAIL>> CreateProRataDetailsAsync(
+            ALLOCATION_RESULT allocationResult,
+            RUN_TICKET runTicket,
+            string userId,
+            string connectionName)
+        {
+            if (allocationResult == null)
+                throw new AllocationException("Allocation result is required");
+            if (runTicket == null)
+                throw new AllocationException("Run ticket is required");
+
+            var ownerships = await GetOwnershipInterestsAsync(runTicket, connectionName);
+            if (ownerships.Count == 0)
+                throw new AllocationException("No ownership interests found for allocation");
+
+            var divisionOrders = await GetDivisionOrdersAsync(runTicket, connectionName);
+            ValidateDivisionOrders(ownerships, divisionOrders);
+
+            var detailsMetadata = await _metadata.GetTableMetadataAsync("ALLOCATION_DETAIL");
+            var detailsEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{detailsMetadata.EntityTypeName}")
+                ?? typeof(ALLOCATION_DETAIL);
+
+            var detailsRepo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                detailsEntityType, connectionName, "ALLOCATION_DETAIL");
+
+            var totalVolume = allocationResult.TOTAL_VOLUME ?? 0m;
+            if (totalVolume <= 0m)
+                throw new AllocationException($"Invalid total volume: {totalVolume}");
+
+            var normalized = ownerships
+                .Select(o => new
+                {
+                    Ownership = o,
+                    Percentage = NormalizePercentage(GetEffectiveInterest(o, divisionOrders))
+                })
+                .Where(x => x.Percentage > 0m)
+                .ToList();
+
+            var totalPct = normalized.Sum(x => x.Percentage);
+            if (totalPct <= 0m)
+                throw new AllocationException("Ownership percentages sum to zero");
+
+            var calculated = normalized
+                .Select(item =>
+                {
+                    var pct = item.Percentage;
+                    var scaledPct = Math.Round((pct / totalPct) * 100m, 6);
+                    var allocatedVolume = Math.Round(totalVolume * (scaledPct / 100m), 6);
+                    return new { item.Ownership, ScaledPct = scaledPct, AllocatedVolume = allocatedVolume };
+                })
+                .ToList();
+
+            if (calculated.Count == 0)
+                throw new AllocationException("No valid ownership percentages found");
+
+            var pctVariance = 100m - calculated.Sum(x => x.ScaledPct);
+            var volVariance = totalVolume - calculated.Sum(x => x.AllocatedVolume);
+            var lastIndex = calculated.Count - 1;
+            var last = calculated[lastIndex];
+            calculated[lastIndex] = new
+            {
+                last.Ownership,
+                ScaledPct = last.ScaledPct + pctVariance,
+                AllocatedVolume = last.AllocatedVolume + volVariance
+            };
+
+            var details = new List<ALLOCATION_DETAIL>();
+            foreach (var item in calculated)
+            {
+                var detail = new ALLOCATION_DETAIL
+                {
+                    ALLOCATION_DETAIL_ID = Guid.NewGuid().ToString(),
+                    ALLOCATION_RESULT_ID = allocationResult.ALLOCATION_RESULT_ID,
+                    ENTITY_ID = item.Ownership.OWNER_ID,
+                    ENTITY_TYPE = "OWNER",
+                    ENTITY_NAME = item.Ownership.OWNER_ID,
+                    ALLOCATION_PERCENTAGE = item.ScaledPct,
+                    ALLOCATED_VOLUME = item.AllocatedVolume,
+                    ALLOCATION_BASIS = totalVolume,
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                    PPDM_GUID = Guid.NewGuid().ToString(),
+                    ROW_CREATED_DATE = DateTime.UtcNow,
+                    ROW_CREATED_BY = userId
+                };
+
+                await detailsRepo.InsertAsync(detail, userId);
+                details.Add(detail);
+            }
+
+            return details;
+        }
+
+        private async Task<List<OWNERSHIP_INTEREST>> GetOwnershipInterestsAsync(
+            RUN_TICKET runTicket,
+            string connectionName)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync("OWNERSHIP_INTEREST");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(OWNERSHIP_INTEREST);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, connectionName, "OWNERSHIP_INTEREST");
+
+            var propertyOrLeaseId = !string.IsNullOrWhiteSpace(runTicket.LEASE_ID)
+                ? runTicket.LEASE_ID
+                : runTicket.WELL_ID;
+
+            if (string.IsNullOrWhiteSpace(propertyOrLeaseId))
+                throw new AllocationException("Run ticket has no lease or well ID for ownership lookup");
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = propertyOrLeaseId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
+
+            var results = await repo.GetAsync(filters);
+            var all = results?.Cast<OWNERSHIP_INTEREST>().ToList() ?? new List<OWNERSHIP_INTEREST>();
+
+            var effectiveDate = runTicket.TICKET_DATE_TIME?.Date;
+            if (effectiveDate.HasValue)
+            {
+                return all.Where(o =>
+                        (!o.EFFECTIVE_START_DATE.HasValue || o.EFFECTIVE_START_DATE.Value.Date <= effectiveDate.Value) &&
+                        (!o.EFFECTIVE_END_DATE.HasValue || o.EFFECTIVE_END_DATE.Value.Date >= effectiveDate.Value))
+                    .ToList();
+            }
+
+            return all;
+        }
+
+        private static decimal NormalizePercentage(decimal value)
+        {
+            if (value <= 0m)
+                return 0m;
+            return value <= 1m ? value * 100m : value;
+        }
+
+        private async Task<List<DIVISION_ORDER>> GetDivisionOrdersAsync(
+            RUN_TICKET runTicket,
+            string connectionName)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync("DIVISION_ORDER");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(DIVISION_ORDER);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, connectionName, "DIVISION_ORDER");
+
+            var propertyOrLeaseId = !string.IsNullOrWhiteSpace(runTicket.LEASE_ID)
+                ? runTicket.LEASE_ID
+                : runTicket.WELL_ID;
+
+            if (string.IsNullOrWhiteSpace(propertyOrLeaseId))
+                return new List<DIVISION_ORDER>();
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = propertyOrLeaseId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
+
+            var results = await repo.GetAsync(filters);
+            var orders = results?.Cast<DIVISION_ORDER>().ToList() ?? new List<DIVISION_ORDER>();
+
+            var effectiveDate = runTicket.TICKET_DATE_TIME?.Date;
+            if (!effectiveDate.HasValue)
+                return orders;
+
+            return orders
+                .Where(o =>
+                    string.Equals(o.STATUS, "APPROVED", StringComparison.OrdinalIgnoreCase) &&
+                    (!o.EFFECTIVE_DATE.HasValue || o.EFFECTIVE_DATE.Value.Date <= effectiveDate.Value) &&
+                    (!o.EXPIRATION_DATE.HasValue || o.EXPIRATION_DATE.Value.Date >= effectiveDate.Value))
+                .ToList();
+        }
+
+        private static decimal GetEffectiveInterest(
+            OWNERSHIP_INTEREST ownership,
+            List<DIVISION_ORDER> divisionOrders)
+        {
+            var nri = NormalizeFraction(ownership.NET_REVENUE_INTEREST);
+            if (nri > 0m)
+                return nri;
+
+            if (!string.IsNullOrWhiteSpace(ownership.DIVISION_ORDER_ID))
+            {
+                var order = divisionOrders.FirstOrDefault(d =>
+                    string.Equals(d.DIVISION_ORDER_ID, ownership.DIVISION_ORDER_ID, StringComparison.OrdinalIgnoreCase));
+                if (order != null)
+                {
+                    var orderNri = NormalizeFraction(order.NET_REVENUE_INTEREST);
+                    if (orderNri > 0m)
+                        return orderNri;
+                }
+            }
+
+            var working = NormalizeFraction(ownership.WORKING_INTEREST);
+            var royalty = NormalizeFraction(ownership.ROYALTY_INTEREST);
+            var overriding = NormalizeFraction(ownership.OVERRIDING_ROYALTY_INTEREST);
+            var computed = working - (royalty + overriding);
+            return computed < 0m ? 0m : computed;
+        }
+
+        private static decimal NormalizeFraction(decimal? value)
+        {
+            if (!value.HasValue)
+                return 0m;
+            if (value.Value <= 0m)
+                return 0m;
+            return value.Value > 1m ? value.Value / 100m : value.Value;
+        }
+
+        private static void ValidateDivisionOrders(
+            List<OWNERSHIP_INTEREST> ownerships,
+            List<DIVISION_ORDER> divisionOrders)
+        {
+            if (ownerships == null || ownerships.Count == 0)
+                return;
+
+            var approvedOrders = new HashSet<string>(
+                divisionOrders
+                    .Where(d => string.Equals(d.STATUS, "APPROVED", StringComparison.OrdinalIgnoreCase))
+                    .Select(d => d.DIVISION_ORDER_ID ?? string.Empty),
+                StringComparer.OrdinalIgnoreCase);
+
+            var missing = ownerships
+                .Where(o => !string.IsNullOrWhiteSpace(o.DIVISION_ORDER_ID))
+                .Where(o => !approvedOrders.Contains(o.DIVISION_ORDER_ID))
+                .Select(o => o.DIVISION_ORDER_ID)
+                .Distinct()
+                .ToList();
+
+            if (missing.Count > 0)
+                throw new AllocationException(
+                    $"Unapproved division orders: {string.Join(", ", missing)}");
         }
     }
 }

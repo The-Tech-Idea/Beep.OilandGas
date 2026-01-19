@@ -69,19 +69,19 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             // Create accounting cost record
             // CRITICAL: Decision point - is this well successful or dry hole?
             // In real system, would query well status from WELL entity
-            var accountingCost = new ACCOUNTING_COST
-            {
-                ACCOUNTING_COST_ID = Guid.NewGuid().ToString(),
-                WELL_ID = wellId,
-                AMOUNT = cost,
-                COST_DATE = DateTime.UtcNow,
-                COST_TYPE = CostType.Development,  // Default; would be set based on context
-                COST_CATEGORY = CostCategory.Drilling,  // Default; would be set based on context
-                ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                PPDM_GUID = Guid.NewGuid().ToString(),
-                ROW_CREATED_DATE = DateTime.UtcNow,
-                ROW_CREATED_BY = userId
-            };
+                var accountingCost = new ACCOUNTING_COST
+                {
+                    ACCOUNTING_COST_ID = Guid.NewGuid().ToString(),
+                    WELL_ID = wellId,
+                    AMOUNT = cost,
+                    COST_DATE = DateTime.UtcNow,
+                    COST_TYPE = CostTypes.Development,  // Default; would be set based on context
+                    COST_CATEGORY = CostCategories.Drilling,  // Default; would be set based on context
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                    PPDM_GUID = Guid.NewGuid().ToString(),
+                    ROW_CREATED_DATE = DateTime.UtcNow,
+                    ROW_CREATED_BY = userId
+                };
 
             // Save to database
             var metadata = await _metadata.GetTableMetadataAsync("ACCOUNTING_COST");
@@ -103,7 +103,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
         /// <summary>
         /// Calculates depletion for a well under Successful Efforts method.
-        /// Uses Unit of Production method: Depletion = (Production × Capitalized Cost) / Total Reserves
+        /// Uses Unit of Production method: Depletion = (Production x Capitalized Cost) / Total Reserves
         /// </summary>
         public async Task<decimal> CalculateDepletionAsync(
             string wellId,
@@ -129,7 +129,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Unit of Production Depletion Formula:
-                // Depletion = (Period Production × Total Capitalized Cost) / Total Proved Reserves
+                // Depletion = (Period Production x Total Capitalized Cost) / Total Proved Reserves
 
                 // Get period production from MEASUREMENT_RECORD
                 decimal periodProduction = await GetPeriodProductionAsync(wellId, cn);
@@ -143,7 +143,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     depletionAmount = (periodProduction * totalCapitalizedCosts) / totalReserves;
                     _logger?.LogInformation(
-                        "Depletion (UOP) for well {WellId}: ({Production} × ${Cost}) / {Reserves} = ${Amount}",
+                        "Depletion (UOP) for well {WellId}: ({Production} x ${Cost}) / {Reserves} = ${Amount}",
                         wellId, periodProduction, totalCapitalizedCosts, totalReserves, depletionAmount);
                 }
                 else
@@ -178,7 +178,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             try
             {
                 // Validation 1: Cost must be positive
-                if (cost.AMOUNT <= 0)
+                if (cost.AMOUNT <= 0 && !IsSalvageRecovery(cost))
                 {
                     _logger?.LogWarning("Accounting cost {CostId}: Invalid amount {Amount}",
                         cost.ACCOUNTING_COST_ID, cost.AMOUNT);
@@ -196,7 +196,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // Validation 3: Cost type should be valid if set
                 if (!string.IsNullOrWhiteSpace(cost.COST_TYPE))
                 {
-                    var validTypes = new[] { CostType.Exploration, CostType.Development, CostType.Acquisition };
+                    var validTypes = new[] { CostTypes.Exploration, CostTypes.Development, CostTypes.Acquisition, CostTypes.Production };
                     if (!validTypes.Contains(cost.COST_TYPE))
                     {
                         _logger?.LogWarning("Accounting cost {CostId}: Invalid cost type {Type}",
@@ -228,6 +228,70 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogError(ex, "Accounting cost validation failed");
                 throw;
             }
+        }
+
+        private static bool IsSalvageRecovery(ACCOUNTING_COST cost)
+        {
+            if (cost == null)
+                return false;
+            if (!string.IsNullOrWhiteSpace(cost.COST_CATEGORY) &&
+                string.Equals(cost.COST_CATEGORY, CostCategories.Salvage, StringComparison.OrdinalIgnoreCase))
+                return true;
+            if (!string.IsNullOrWhiteSpace(cost.DESCRIPTION) &&
+                cost.DESCRIPTION.IndexOf("SALVAGE", StringComparison.OrdinalIgnoreCase) >= 0)
+                return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Reclassifies unproved property costs to proved status by capitalizing exploration costs.
+        /// </summary>
+        public async Task<bool> ReclassifyPropertyAsync(string propertyId, string userId, string cn = "PPDM39")
+        {
+            if (string.IsNullOrWhiteSpace(propertyId))
+                throw new ArgumentNullException(nameof(propertyId));
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentNullException(nameof(userId));
+
+            var metadata = await _metadata.GetTableMetadataAsync("ACCOUNTING_COST");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(ACCOUNTING_COST);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "ACCOUNTING_COST");
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "PROPERTY_ID", Operator = "=", FilterValue = propertyId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var results = await repo.GetAsync(filters);
+            var costs = results?.Cast<ACCOUNTING_COST>().ToList() ?? new List<ACCOUNTING_COST>();
+            if (costs.Count == 0)
+                return false;
+
+            foreach (var cost in costs)
+            {
+                if (string.Equals(cost.COST_TYPE, CostTypes.Exploration, StringComparison.OrdinalIgnoreCase))
+                {
+                    cost.COST_TYPE = CostTypes.Development;
+                }
+
+                cost.IS_CAPITALIZED = "Y";
+                cost.IS_EXPENSED = "N";
+                cost.ROW_CHANGED_BY = userId;
+                cost.ROW_CHANGED_DATE = DateTime.UtcNow;
+
+                await repo.UpdateAsync(cost, userId);
+            }
+
+            _logger?.LogInformation(
+                "Reclassified {Count} cost records for property {PropertyId} to proved status",
+                costs.Count, propertyId);
+
+            return true;
         }
 
         /// <summary>
@@ -341,26 +405,4 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         }
     }
 
-    /// <summary>
-    /// Cost type constants per ASC 932 (Oil & Gas Accounting).
-    /// </summary>
-    public static class CostType
-    {
-        public const string Exploration = "EXPLORATION";
-        public const string Development = "DEVELOPMENT";
-        public const string Acquisition = "ACQUISITION";
-    }
-
-    /// <summary>
-    /// Cost category constants.
-    /// </summary>
-    public static class CostCategory
-    {
-        public const string Drilling = "DRILLING";
-        public const string Completion = "COMPLETION";
-        public const string Equipment = "EQUIPMENT";
-        public const string Lease = "LEASE";
-        public const string Seismic = "SEISMIC";
-        public const string Administrative = "ADMINISTRATIVE";
-    }
 }

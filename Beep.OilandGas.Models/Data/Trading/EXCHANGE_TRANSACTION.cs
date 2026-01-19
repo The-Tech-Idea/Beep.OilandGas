@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Trading
 {
-    public partial class EXCHANGE_TRANSACTION : Entity
+    public partial class EXCHANGE_TRANSACTION : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String EXCHANGE_TRANSACTION_IDValue;
         public System.String EXCHANGE_TRANSACTION_ID

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Accounting.Constants;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -15,7 +17,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// Journal Entry Service - Double-entry posting with GL validation
     /// Enforces: Debits = Credits (golden rule of accounting)
     /// </summary>
-    public class JournalEntryService
+    public class JournalEntryService : IJournalEntryService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -127,6 +129,210 @@ namespace Beep.OilandGas.Accounting.Services
         }
 
         /// <summary>
+        /// Create and post a journal entry for a single account, with AR as the offset.
+        /// </summary>
+        public async Task<JOURNAL_ENTRY> CreateEntryAsync(
+            string glAccount,
+            decimal amount,
+            string description,
+            string userId,
+            string cn = "PPDM39")
+        {
+            if (string.IsNullOrWhiteSpace(glAccount))
+                throw new ArgumentNullException(nameof(glAccount));
+            if (amount == 0)
+                throw new InvalidOperationException("Journal entry amount cannot be zero");
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentNullException(nameof(userId));
+
+            _logger?.LogInformation("Creating journal entry for GL account {Account}, amount: {Amount}",
+                glAccount, amount);
+
+            var arAccountId = DefaultGlAccounts.AccountsReceivable;
+            if (!await _glAccountService.ValidateAccountAsync(glAccount))
+                throw new InvalidOperationException($"GL account not found or inactive: {glAccount}");
+            if (!await _glAccountService.ValidateAccountAsync(arAccountId))
+                throw new InvalidOperationException($"AR account not found or inactive: {arAccountId}");
+
+            var absAmount = Math.Abs(amount);
+
+            var lines = amount > 0
+                ? new List<JOURNAL_ENTRY_LINE>
+                {
+                    new JOURNAL_ENTRY_LINE { GL_ACCOUNT_ID = arAccountId, DEBIT_AMOUNT = absAmount, CREDIT_AMOUNT = 0m, DESCRIPTION = description },
+                    new JOURNAL_ENTRY_LINE { GL_ACCOUNT_ID = glAccount, DEBIT_AMOUNT = 0m, CREDIT_AMOUNT = absAmount, DESCRIPTION = description }
+                }
+                : new List<JOURNAL_ENTRY_LINE>
+                {
+                    new JOURNAL_ENTRY_LINE { GL_ACCOUNT_ID = glAccount, DEBIT_AMOUNT = absAmount, CREDIT_AMOUNT = 0m, DESCRIPTION = description },
+                    new JOURNAL_ENTRY_LINE { GL_ACCOUNT_ID = arAccountId, DEBIT_AMOUNT = 0m, CREDIT_AMOUNT = absAmount, DESCRIPTION = description }
+                };
+
+            var entry = await CreateEntryAsync(
+                DateTime.UtcNow,
+                description,
+                lines,
+                userId,
+                referenceNumber: null,
+                sourceModule: "PRODUCTION_ACCOUNTING");
+
+            await PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
+            entry.STATUS = "POSTED";
+            return entry;
+        }
+
+        /// <summary>
+        /// Creates a balanced journal entry using explicit debit and credit accounts.
+        /// </summary>
+        public async Task<JOURNAL_ENTRY> CreateBalancedEntryAsync(
+            string debitAccount,
+            string creditAccount,
+            decimal amount,
+            string description,
+            string userId,
+            string cn = "PPDM39")
+        {
+            if (string.IsNullOrWhiteSpace(debitAccount))
+                throw new ArgumentNullException(nameof(debitAccount));
+            if (string.IsNullOrWhiteSpace(creditAccount))
+                throw new ArgumentNullException(nameof(creditAccount));
+            if (amount <= 0)
+                throw new InvalidOperationException("Journal entry amount must be positive");
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentNullException(nameof(userId));
+
+            if (!await _glAccountService.ValidateAccountAsync(debitAccount))
+                throw new InvalidOperationException($"GL account not found or inactive: {debitAccount}");
+            if (!await _glAccountService.ValidateAccountAsync(creditAccount))
+                throw new InvalidOperationException($"GL account not found or inactive: {creditAccount}");
+
+            var lines = new List<JOURNAL_ENTRY_LINE>
+            {
+                new JOURNAL_ENTRY_LINE
+                {
+                    GL_ACCOUNT_ID = debitAccount,
+                    DEBIT_AMOUNT = amount,
+                    CREDIT_AMOUNT = 0m,
+                    DESCRIPTION = description
+                },
+                new JOURNAL_ENTRY_LINE
+                {
+                    GL_ACCOUNT_ID = creditAccount,
+                    DEBIT_AMOUNT = 0m,
+                    CREDIT_AMOUNT = amount,
+                    DESCRIPTION = description
+                }
+            };
+
+            var entry = await CreateEntryAsync(
+                DateTime.UtcNow,
+                description,
+                lines,
+                userId,
+                referenceNumber: null,
+                sourceModule: "PRODUCTION_ACCOUNTING");
+
+            await PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
+            entry.STATUS = "POSTED";
+            return entry;
+        }
+
+        /// <summary>
+        /// Gets all GL entries for an account in a date range.
+        /// </summary>
+        public async Task<List<GL_ENTRY>> GetEntriesByAccountAsync(
+            string glAccount,
+            DateTime start,
+            DateTime end,
+            string cn = "PPDM39")
+        {
+            if (string.IsNullOrWhiteSpace(glAccount))
+                throw new ArgumentNullException(nameof(glAccount));
+            if (start > end)
+                throw new ArgumentException("start must be <= end", nameof(start));
+
+            _logger?.LogInformation("Getting GL entries for account {Account} from {StartDate} to {EndDate}",
+                glAccount, start.ToShortDateString(), end.ToShortDateString());
+
+            var metadata = await _metadata.GetTableMetadataAsync("GL_ENTRY");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(GL_ENTRY);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "GL_ENTRY");
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "GL_ACCOUNT_ID", Operator = "=", FilterValue = glAccount },
+                new AppFilter { FieldName = "ENTRY_DATE", Operator = ">=", FilterValue = start.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "ENTRY_DATE", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var entries = await repo.GetAsync(filters);
+            return entries?.Cast<GL_ENTRY>().OrderBy(e => e.ENTRY_DATE).ToList() ?? new List<GL_ENTRY>();
+        }
+
+        /// <summary>
+        /// Gets the balance of a GL account as of a date.
+        /// </summary>
+        public async Task<decimal> GetAccountBalanceAsync(
+            string glAccount,
+            DateTime asOfDate,
+            string cn = "PPDM39")
+        {
+            if (string.IsNullOrWhiteSpace(glAccount))
+                throw new ArgumentNullException(nameof(glAccount));
+
+            _logger?.LogInformation("Getting balance for GL account {Account} as of {Date}",
+                glAccount, asOfDate.ToShortDateString());
+
+            var metadata = await _metadata.GetTableMetadataAsync("GL_ENTRY");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(GL_ENTRY);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "GL_ENTRY");
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "GL_ACCOUNT_ID", Operator = "=", FilterValue = glAccount },
+                new AppFilter { FieldName = "ENTRY_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var entries = await repo.GetAsync(filters);
+            var entryList = entries?.Cast<GL_ENTRY>().ToList() ?? new List<GL_ENTRY>();
+
+            return entryList.Sum(e => (e.DEBIT_AMOUNT ?? 0m) - (e.CREDIT_AMOUNT ?? 0m));
+        }
+
+        /// <summary>
+        /// Validates a journal entry.
+        /// </summary>
+        public Task<bool> ValidateAsync(JOURNAL_ENTRY entry, string cn = "PPDM39")
+        {
+            if (entry == null)
+                throw new ArgumentNullException(nameof(entry));
+
+            decimal debits = entry.TOTAL_DEBIT ?? 0;
+            decimal credits = entry.TOTAL_CREDIT ?? 0;
+
+            if (Math.Abs(debits - credits) > BalanceTolerance)
+                throw new InvalidOperationException($"Journal entry not balanced: Debits {debits} != Credits {credits}");
+
+            if (entry.ENTRY_DATE.HasValue && entry.ENTRY_DATE > DateTime.UtcNow)
+                throw new InvalidOperationException("Entry date cannot be in the future");
+
+            if (string.IsNullOrWhiteSpace(entry.DESCRIPTION))
+                throw new InvalidOperationException("Entry description is required");
+
+            return Task.FromResult(true);
+        }
+
+        /// <summary>
         /// Post a journal entry (DRAFT -> POSTED)
         /// Only POSTED entries affect GL balances
         /// </summary>
@@ -145,6 +351,13 @@ namespace Beep.OilandGas.Accounting.Services
 
                 if (entry.STATUS != "DRAFT")
                     throw new InvalidOperationException($"Journal entry must be in DRAFT status to post (current: {entry.STATUS})");
+
+                var lineItems = await GetEntryLineItemsAsync(journalEntryId);
+                if (lineItems.Count == 0)
+                    throw new InvalidOperationException($"Journal entry {journalEntryId} has no line items");
+
+                // Materialize GL_ENTRY rows so account-based queries and GL reporting work off posted entries.
+                await InsertGlEntriesAsync(entry, lineItems, userId);
 
                 // Update status to POSTED
                 entry.STATUS = "POSTED";
@@ -329,6 +542,52 @@ namespace Beep.OilandGas.Accounting.Services
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error inserting line items for entry {EntryId}", journalEntryId);
+                throw;
+            }
+        }
+
+        private async Task InsertGlEntriesAsync(JOURNAL_ENTRY header, List<JOURNAL_ENTRY_LINE> lineItems, string userId)
+        {
+            try
+            {
+                var metadata = await _metadata.GetTableMetadataAsync("GL_ENTRY");
+                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
+                    ?? typeof(GL_ENTRY);
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    entityType, ConnectionName, "GL_ENTRY");
+
+                foreach (var item in lineItems)
+                {
+                    var debit = item.DEBIT_AMOUNT ?? 0m;
+                    var credit = item.CREDIT_AMOUNT ?? 0m;
+                    if (debit == 0m && credit == 0m)
+                        continue;
+
+                    var glEntry = new GL_ENTRY
+                    {
+                        GL_ENTRY_ID = Guid.NewGuid().ToString(),
+                        JOURNAL_ENTRY_ID = header.JOURNAL_ENTRY_ID,
+                        GL_ACCOUNT_ID = item.GL_ACCOUNT_ID,
+                        ENTRY_DATE = header.ENTRY_DATE ?? DateTime.UtcNow,
+                        DEBIT_AMOUNT = debit == 0m ? null : debit,
+                        CREDIT_AMOUNT = credit == 0m ? null : credit,
+                        DESCRIPTION = string.IsNullOrWhiteSpace(item.DESCRIPTION) ? header.DESCRIPTION : item.DESCRIPTION,
+                        REFERENCE_NUMBER = header.ENTRY_NUMBER,
+                        SOURCE_MODULE = header.SOURCE_MODULE,
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString(),
+                        ROW_CREATED_BY = userId,
+                        ROW_CREATED_DATE = DateTime.UtcNow
+                    };
+
+                    await repo.InsertAsync(glEntry, userId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error inserting GL entries for journal entry {EntryId}", header.JOURNAL_ENTRY_ID);
                 throw;
             }
         }

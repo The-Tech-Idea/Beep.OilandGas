@@ -66,7 +66,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 runTicket.RUN_TICKET_ID, method);
 
             // Delegate to allocation engine for core calculation
-            var allocationResult = await _allocationEngine.AllocateAsync(runTicket, method, userId, cn);
+            var normalizedMethod = AllocationMethods.AllMethods
+                .FirstOrDefault(m => string.Equals(m, method, StringComparison.OrdinalIgnoreCase))
+                ?? method;
+
+            var allocationResult = await _allocationEngine.AllocateAsync(runTicket, normalizedMethod, userId, cn);
 
             _logger?.LogInformation("Allocation completed: {AllocationResultId}", allocationResult.ALLOCATION_RESULT_ID);
             return allocationResult;

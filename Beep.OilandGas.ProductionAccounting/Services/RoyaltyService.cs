@@ -10,6 +10,8 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.Accounting.Constants;
+using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
 using Beep.OilandGas.PPDM39.Models;
@@ -21,7 +23,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
     /// Implements: Mineral royalty, Overriding royalty interest, Net profit interest.
     /// Per PPDM39 standards and industry accounting requirements (ASC 932, COPAS).
     /// 
-    /// Formula: Royalty = (Net Revenue × Royalty Rate)
+    /// Formula: Royalty = (Net Revenue x Royalty Rate)
     /// Where: Net Revenue = Gross Revenue - Transportation - Ad Valorem Tax - Severance Tax
     /// </summary>
     public class RoyaltyService : IRoyaltyService
@@ -30,6 +32,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
+        private readonly IJournalEntryService _glService;
+        private readonly IAccountingServices _accountingServices;
         private readonly ILogger<RoyaltyService> _logger;
         private const string ConnectionName = "PPDM39";
 
@@ -38,12 +42,16 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            ILogger<RoyaltyService> logger = null)
+            IJournalEntryService glService,
+            ILogger<RoyaltyService> logger = null,
+            IAccountingServices accountingServices = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
+            _accountingServices = accountingServices;
+            _glService = _accountingServices?.JournalEntries ?? glService ?? throw new ArgumentNullException(nameof(glService));
             _logger = logger;
         }
 
@@ -52,21 +60,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// 
         /// REAL BUSINESS LOGIC - FASB ASC 932 & COPAS Standards:
         /// 
-        /// Formula: ROYALTY_PAYMENT = NET_REVENUE × ROYALTY_RATE
+        /// Formula: ROYALTY_PAYMENT = NET_REVENUE x ROYALTY_RATE
         /// 
         /// Where:
         ///   NET_REVENUE = GROSS_REVENUE - DEDUCTIONS
-        ///   GROSS_REVENUE = Allocated Volume (BBL) × Commodity Price ($/BBL)
+        ///   GROSS_REVENUE = Allocated Volume (BBL) x Commodity Price ($/BBL)
         ///   DEDUCTIONS = Transportation + Ad Valorem Tax + Severance Tax + Processing Fees
         ///   ROYALTY_RATE = Interest % (typically 12.5% for mineral royalty, varies for overriding/net profit)
         /// 
         /// Process:
         /// 1. Get allocation volume from ALLOCATION_DETAIL
         /// 2. Get commodity price for period from PRICE_INDEX
-        /// 3. Calculate gross revenue: Volume × Price
+        /// 3. Calculate gross revenue: Volume x Price
         /// 4. Get deductions from cost records: TRANSPORTATION_COST, AD_VALOREM_TAX, SEVERANCE_TAX
         /// 5. Calculate net revenue: Gross - Deductions
-        /// 6. Apply royalty rate: Net × Rate
+        /// 6. Apply royalty rate: Net x Rate
         /// 7. Create ROYALTY_CALCULATION record
         /// 8. Create ROYALTY_PAYMENT record (mark as Pending until payment made)
         /// 9. Update IMBALANCE tracking if production exceeds royalty
@@ -92,11 +100,28 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var allocatedVolume = detail.ALLOCATED_VOLUME.Value;
                 _logger?.LogDebug("Allocated volume: {Volume} BBL", allocatedVolume);
 
-                // STEP 2: Get royalty rate (default to 12.5% mineral royalty if not specified)
-                var royaltyRate = detail.ALLOCATION_PERCENTAGE.HasValue && detail.ALLOCATION_PERCENTAGE > 0
-                    ? detail.ALLOCATION_PERCENTAGE.Value / 100m  // Convert percentage to decimal
-                    : 0.125m;  // Default 12.5% mineral royalty
-                
+                // STEP 2: Resolve allocation and lease for royalty interest lookup
+                if (string.IsNullOrWhiteSpace(detail.ALLOCATION_RESULT_ID))
+                    throw new RoyaltyException("Allocation detail is missing ALLOCATION_RESULT_ID");
+
+                var allocationResult = await GetAllocationResultAsync(detail.ALLOCATION_RESULT_ID, cn);
+                if (allocationResult == null)
+                    throw new RoyaltyException($"Allocation result not found: {detail.ALLOCATION_RESULT_ID}");
+
+                var runTicket = await GetRunTicketAsync(allocationResult.ALLOCATION_REQUEST_ID, cn);
+                var leaseId = runTicket?.LEASE_ID;
+                if (string.IsNullOrWhiteSpace(leaseId))
+                    throw new RoyaltyException("Lease ID is required for royalty calculation");
+
+                var royaltyInterest = await GetRoyaltyInterestAsync(
+                    leaseId,
+                    detail.ENTITY_ID,
+                    runTicket?.TICKET_DATE_TIME,
+                    cn);
+
+                var rawRate = royaltyInterest?.ROYALTY_RATE ?? royaltyInterest?.INTEREST_PERCENTAGE ?? 12.5m;
+                var royaltyRate = NormalizeRate(rawRate);
+
                 if (royaltyRate < 0 || royaltyRate > 0.5m)
                 {
                     _logger?.LogWarning("Royalty rate outside normal range: {Rate}%", royaltyRate * 100);
@@ -104,23 +129,23 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
                 _logger?.LogDebug("Royalty rate: {Rate}%", royaltyRate * 100);
 
-                // STEP 3: Calculate gross revenue (Volume × Commodity Price)
+                // STEP 3: Calculate gross revenue (Volume x Commodity Price) (Volume x Commodity Price)
                 // Query PRICE_INDEX for commodity price at calculation date
                 // GetCommodityPriceAsync returns fallback $75/BBL if lookup fails
-                decimal commodityPrice = await GetCommodityPriceAsync(
-                    detail.ALLOCATION_RESULT_ID ?? "OIL",  // Default to OIL if not specified
-                    DateTime.UtcNow,
-                    cn);
+                var priceDate = runTicket?.TICKET_DATE_TIME ?? DateTime.UtcNow;
+                decimal commodityPrice = runTicket?.PRICE_PER_BARREL > 0
+                    ? runTicket.PRICE_PER_BARREL.Value
+                    : await GetCommodityPriceAsync("OIL", priceDate, cn);
                 
                 decimal grossRevenue = allocatedVolume * commodityPrice;
-                _logger?.LogDebug("Gross revenue: {Volume} BBL × ${Price}/BBL = ${GrossRevenue}", 
+                _logger?.LogDebug("Gross revenue: {Volume} BBL x ${Price}/BBL = ${GrossRevenue}", 
                     allocatedVolume, commodityPrice, grossRevenue);
 
                 // STEP 4: Calculate deductions from cost records
                 // Query ACCOUNTING_COST for lease-specific deductions
                 var (dbTransportation, dbAdValorem, dbSeverance) = await GetDeductionsAsync(
-                    detail.ENTITY_ID ?? "LEASE-001",  // Use entity ID as lease reference
-                    DateTime.UtcNow,
+                    leaseId,
+                    priceDate,
                     cn);
 
                 // Use database values if found, otherwise fall back to percentage-based
@@ -145,14 +170,17 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 // STEP 6: Calculate royalty amount
                 decimal royaltyAmount = netRevenue * royaltyRate;
-                _logger?.LogInformation("Royalty amount: ${NetRevenue} × {Rate}% = ${Royalty}",
+                _logger?.LogInformation("Royalty amount: ${NetRevenue} x {Rate}% = ${Royalty}",
                     netRevenue, royaltyRate * 100, royaltyAmount);
 
                 // STEP 7: Create ROYALTY_CALCULATION record (ASC 932 requirement)
                 var royaltyCalc = new ROYALTY_CALCULATION
                 {
                     ROYALTY_CALCULATION_ID = Guid.NewGuid().ToString(),
-                    PROPERTY_OR_LEASE_ID = detail.ENTITY_ID,
+                    PROPERTY_OR_LEASE_ID = leaseId,
+                    ALLOCATION_RESULT_ID = allocationResult.ALLOCATION_RESULT_ID,
+                    ROYALTY_INTEREST_ID = royaltyInterest?.ROYALTY_INTEREST_ID,
+                    ROYALTY_OWNER_ID = detail.ENTITY_ID,
                     ALLOCATION_DETAIL_ID = detail.ALLOCATION_DETAIL_ID,
                     CALCULATION_DATE = DateTime.UtcNow,
                     GROSS_REVENUE = grossRevenue,
@@ -179,6 +207,26 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     entityType, cn, "ROYALTY_CALCULATION");
 
                 await repo.InsertAsync(royaltyCalc, userId);
+
+                if (royaltyAmount > 0m)
+                {
+                    var accrualDescription = $"Royalty accrual for allocation {detail.ALLOCATION_DETAIL_ID}";
+                    var accrualEntry = await _glService.CreateBalancedEntryAsync(
+                        DefaultGlAccounts.RoyaltyExpense,
+                        DefaultGlAccounts.AccruedRoyalties,
+                        royaltyAmount,
+                        accrualDescription,
+                        userId,
+                        cn);
+
+                    if (accrualEntry != null)
+                    {
+                        royaltyCalc.ROYALTY_STATUS = RoyaltyStatus.Accrued;
+                        royaltyCalc.ROW_CHANGED_DATE = DateTime.UtcNow;
+                        royaltyCalc.ROW_CHANGED_BY = userId;
+                        await repo.UpdateAsync(royaltyCalc, userId);
+                    }
+                }
 
                 _logger?.LogInformation(
                     "Royalty calculation saved: ID={RoyaltyId}, Amount=${Amount}",
@@ -283,11 +331,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var payment = new ROYALTY_PAYMENT
             {
                 ROYALTY_PAYMENT_ID = Guid.NewGuid().ToString(),
-                ROYALTY_INTEREST_ID = royalty.ROYALTY_CALCULATION_ID,  // Link to calculation
+                ROYALTY_INTEREST_ID = royalty.ROYALTY_INTEREST_ID,
+                ROYALTY_OWNER_ID = royalty.ROYALTY_OWNER_ID,
                 PROPERTY_OR_LEASE_ID = royalty.PROPERTY_OR_LEASE_ID,
                 ROYALTY_AMOUNT = amount,
+                NET_PAYMENT_AMOUNT = amount,
                 PAYMENT_DATE = DateTime.UtcNow,
                 PAYMENT_METHOD = "CHECK",  // Default; can be set by caller
+                STATUS = RoyaltyStatus.Paid,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_DATE = DateTime.UtcNow,
@@ -307,6 +358,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             _logger?.LogInformation("Royalty payment recorded: {PaymentId}, amount: {Amount}",
                 payment.ROYALTY_PAYMENT_ID, amount);
+
+            if (amount > 0m)
+            {
+                var paymentDescription = $"Royalty payment for calculation {royalty.ROYALTY_CALCULATION_ID}";
+                await _glService.CreateBalancedEntryAsync(
+                    DefaultGlAccounts.AccruedRoyalties,
+                    DefaultGlAccounts.Cash,
+                    amount,
+                    paymentDescription,
+                    userId,
+                    cn);
+            }
+
+            royalty.ROYALTY_STATUS = RoyaltyStatus.Paid;
+            await UpdateRoyaltyCalculationAsync(royalty, userId, cn);
 
             return payment;
         }
@@ -439,6 +505,213 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogWarning(ex, "Error retrieving commodity price for {Commodity}, using fallback $75.00/unit", commodity);
                 return 75.00m;  // Fallback directly instead of returning 0
             }
+        }
+
+        private async Task<ALLOCATION_RESULT?> GetAllocationResultAsync(string allocationResultId, string cn)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(ALLOCATION_RESULT);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "ALLOCATION_RESULT");
+
+            var result = await repo.GetByIdAsync(allocationResultId);
+            return result as ALLOCATION_RESULT;
+        }
+
+        private async Task<RUN_TICKET?> GetRunTicketAsync(string allocationRequestId, string cn)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync("RUN_TICKET");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(RUN_TICKET);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "RUN_TICKET");
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "ALLOCATION_REQUEST_ID", Operator = "=", FilterValue = allocationRequestId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var results = await repo.GetAsync(filters);
+            return results?.Cast<RUN_TICKET>().FirstOrDefault();
+        }
+
+        private async Task<ROYALTY_INTEREST?> GetRoyaltyInterestAsync(
+            string leaseId,
+            string ownerId,
+            DateTime? asOfDate,
+            string cn)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_INTEREST");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(ROYALTY_INTEREST);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "ROYALTY_INTEREST");
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = leaseId },
+                new AppFilter { FieldName = "ROYALTY_OWNER_ID", Operator = "=", FilterValue = ownerId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            if (asOfDate.HasValue)
+            {
+                filters.Add(new AppFilter
+                {
+                    FieldName = "EFFECTIVE_START_DATE",
+                    Operator = "<=",
+                    FilterValue = asOfDate.Value.ToString("yyyy-MM-dd")
+                });
+                filters.Add(new AppFilter
+                {
+                    FieldName = "EFFECTIVE_END_DATE",
+                    Operator = ">=",
+                    FilterValue = asOfDate.Value.ToString("yyyy-MM-dd")
+                });
+            }
+
+            var results = await repo.GetAsync(filters);
+            var direct = results?.Cast<ROYALTY_INTEREST>()
+                .OrderByDescending(r => r.EFFECTIVE_DATE ?? r.EFFECTIVE_START_DATE)
+                .FirstOrDefault();
+            if (direct != null)
+                return direct;
+
+            var ownership = await GetOwnershipInterestAsync(leaseId, ownerId, asOfDate, cn);
+            if (ownership == null)
+                return null;
+
+            var royaltyRate = NormalizeFraction(ownership.ROYALTY_INTEREST) +
+                              NormalizeFraction(ownership.OVERRIDING_ROYALTY_INTEREST);
+
+            if (royaltyRate <= 0m && !string.IsNullOrWhiteSpace(ownership.DIVISION_ORDER_ID))
+            {
+                var divisionOrder = await GetDivisionOrderAsync(ownership.DIVISION_ORDER_ID, cn);
+                if (divisionOrder != null)
+                {
+                    royaltyRate = NormalizeFraction(divisionOrder.ROYALTY_INTEREST) +
+                                  NormalizeFraction(divisionOrder.OVERRIDING_ROYALTY_INTEREST);
+                }
+            }
+
+            if (royaltyRate <= 0m)
+                return null;
+
+            return new ROYALTY_INTEREST
+            {
+                ROYALTY_INTEREST_ID = Guid.NewGuid().ToString(),
+                ROYALTY_OWNER_ID = ownerId,
+                PROPERTY_OR_LEASE_ID = leaseId,
+                INTEREST_PERCENTAGE = royaltyRate,
+                EFFECTIVE_DATE = asOfDate?.Date ?? DateTime.UtcNow.Date,
+                ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                PPDM_GUID = Guid.NewGuid().ToString()
+            };
+        }
+
+        private async Task<OWNERSHIP_INTEREST?> GetOwnershipInterestAsync(
+            string leaseId,
+            string ownerId,
+            DateTime? asOfDate,
+            string cn)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync("OWNERSHIP_INTEREST");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(OWNERSHIP_INTEREST);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "OWNERSHIP_INTEREST");
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "PROPERTY_OR_LEASE_ID", Operator = "=", FilterValue = leaseId },
+                new AppFilter { FieldName = "OWNER_ID", Operator = "=", FilterValue = ownerId },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+
+            var results = await repo.GetAsync(filters);
+            var interests = results?.Cast<OWNERSHIP_INTEREST>().ToList() ?? new List<OWNERSHIP_INTEREST>();
+
+            if (asOfDate.HasValue)
+            {
+                var date = asOfDate.Value.Date;
+                interests = interests
+                    .Where(o =>
+                        (!o.EFFECTIVE_START_DATE.HasValue || o.EFFECTIVE_START_DATE.Value.Date <= date) &&
+                        (!o.EFFECTIVE_END_DATE.HasValue || o.EFFECTIVE_END_DATE.Value.Date >= date))
+                    .ToList();
+            }
+
+            return interests.FirstOrDefault();
+        }
+
+        private async Task<DIVISION_ORDER?> GetDivisionOrderAsync(string divisionOrderId, string cn)
+        {
+            if (string.IsNullOrWhiteSpace(divisionOrderId))
+                return null;
+
+            var metadata = await _metadata.GetTableMetadataAsync("DIVISION_ORDER");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(DIVISION_ORDER);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "DIVISION_ORDER");
+
+            var result = await repo.GetByIdAsync(divisionOrderId);
+            var divisionOrder = result as DIVISION_ORDER;
+            if (divisionOrder == null)
+                return null;
+            if (!string.Equals(divisionOrder.STATUS, "APPROVED", StringComparison.OrdinalIgnoreCase))
+                return null;
+            return divisionOrder;
+        }
+
+        private static decimal NormalizeFraction(decimal? value)
+        {
+            if (!value.HasValue)
+                return 0m;
+            if (value.Value <= 0m)
+                return 0m;
+            return value.Value > 1m ? value.Value / 100m : value.Value;
+        }
+
+        private async Task UpdateRoyaltyCalculationAsync(
+            ROYALTY_CALCULATION royalty,
+            string userId,
+            string cn)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync("ROYALTY_CALCULATION");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(ROYALTY_CALCULATION);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "ROYALTY_CALCULATION");
+
+            royalty.ROW_CHANGED_DATE = DateTime.UtcNow;
+            royalty.ROW_CHANGED_BY = userId;
+            await repo.UpdateAsync(royalty, userId);
+        }
+
+        private static decimal NormalizeRate(decimal rawRate)
+        {
+            if (rawRate <= 0)
+                return 0m;
+
+            if (rawRate > 1m)
+                return rawRate / 100m;
+
+            return rawRate;
         }
 
         /// <summary>

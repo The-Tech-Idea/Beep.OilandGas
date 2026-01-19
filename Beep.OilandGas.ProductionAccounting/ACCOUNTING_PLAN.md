@@ -11,12 +11,109 @@ Implements FASB ASC 932 (Oil & Gas) accounting standards, including:
 
 ---
 
+## Best Practices Alignment
+
+This plan aligns Production Accounting to upstream best practices identified in:
+- University of Houston "Oil and Gas Accounting - Part I" (Successful Efforts focus)
+- Industry best practices (W Energy overview of key fields and principles)
+
+**Alignment targets and system mapping**:
+- Successful Efforts concepts -> `SuccessfulEffortsService`, `FullCostService`, `AmortizationService`
+- Exploration and development cost control -> `AfeService`, `InternalControlService`
+- Authorization workflow and approvals -> `AuthorizationWorkflowService` (new)
+- Lease and economic interests -> `LeaseEconomicInterestService` (new)
+- Reserve accounting inputs for depletion/impairment -> `ReserveAccountingService` (new)
+
+---
+
 ## Domain Architecture
+
+### Accounting Foundation Aggregator
+
+Production Accounting now integrates with core accounting through a single entry point:
+
+**File**: `Beep.OilandGas.Accounting/Services/AccountingServices.cs`
+
+**Purpose**: expose all foundation accounting services (GL/JE, AR/AP, inventory, reporting, period close) through `IAccountingServices` so Production Accounting has one integration surface.
+
+---
+
+## Roadmap Enhancements (Missing Modules)
+
+The following modules are added to close gaps against upstream best practices:
+
+1. **Authorization Workflow Service**
+   - Enforce AFE approvals before cost capture
+   - Validate approval status for adjustments and non-operated costs
+   - Service: `AuthorizationWorkflowService`
+
+2. **Lease & Economic Interest Service**
+   - Validate working interest, royalty interest, and effective dates
+   - Centralize ownership/lease economics for allocation and revenue
+   - Service: `LeaseEconomicInterestService`
+
+3. **Reserve Accounting Service**
+   - Maintain proved reserve inputs by property/lease
+   - Feed depletion rates, ceiling tests, and impairment support
+   - Service: `ReserveAccountingService`
+
+---
+
+## IFRS & Reporting Extensions (Best Practices)
+
+The following IFRS and financial reporting modules are added to align with
+industry best practices beyond US GAAP:
+
+1. **Reserves/Resources Disclosures (IFRS)**
+   - Disclosure package based on reserve quantities and PV10 cashflows
+   - Service: `ReserveDisclosureService`
+
+2. **Exploration & Evaluation (IFRS 6)**
+   - Separate capitalization/expense rules for E&E costs
+   - Service: `ExplorationEvaluationService`
+
+3. **Borrowing Cost Capitalization (IAS 23)**
+   - Capitalize eligible borrowing costs into E&E and development assets
+   - Service: `BorrowingCostCapitalizationService`
+
+4. **Asset Swaps / Farm-in / Farm-out**
+   - Track exchange fair values and gains/losses
+   - Service: `AssetSwapService`
+
+5. **Production Sharing Agreements (PSAs)**
+   - Profit oil/gas splits and PSA tax rules
+   - Service: `ProductionSharingService`
+
+6. **Decommissioning / ARO (IAS 37)**
+   - Recognition and discounting of asset retirement obligations
+   - Service: `DecommissioningService`
+
+7. **Impairment Testing (IAS 36, CGU-based)**
+   - Recoverable amount vs carrying value for CGUs
+   - Service: `ImpairmentTestingService`
+
+8. **Functional Currency & FX (IAS 21)**
+   - Translation records and FX adjustments
+   - Service: `FunctionalCurrencyService`
+
+9. **Leasing (IFRS 16)**
+   - Right-of-use assets and lease liabilities
+   - Service: `LeasingService`
+
+10. **Financial Instruments / Hedge Accounting (IFRS 9)**
+    - Embedded derivatives and hedge effectiveness tracking
+    - Service: `FinancialInstrumentsService`
+
+11. **Emissions Trading Schemes**
+    - Emissions liabilities and allowance tracking
+    - Service: `EmissionsTradingService`
+
+---
 
 ### Cost Accounting Methods
 
 #### 1. Successful Efforts Method Service
-**File**: `Accounting/SuccessfulEffortsService.cs`
+**File**: `Beep.OilandGas.ProductionAccounting/Services/SuccessfulEffortsService.cs`
 
 **Principle**: Capitalize costs only for successful wells; immediately expense unsuccessful exploratory wells.
 
@@ -39,34 +136,34 @@ public interface ISuccessfulEffortsService
         string costCenter,
         string userId,
         string? connectionName = null);
-    
+
     Task<JOURNAL_ENTRY> ExpenseUnsuccessfulWellAsync(
         WELL_ALLOCATION_DATA well,
         decimal totalCost,
         string reason,
         string userId,
         string? connectionName = null);
-    
+
     // Cost Center Management
     Task<List<COST_CENTER>> GetCostCentersAsync(string? connectionName = null);
     Task<COST_CENTER> CreateCostCenterAsync(
         COST_CENTER costCenter,
         string userId,
         string? connectionName = null);
-    
+
     // Successful Well Tracking
     Task<bool> MarkWellSuccessfulAsync(
         string wellId,
         DateTime successDate,
         string userId,
         string? connectionName = null);
-    
+
     Task<bool> MarkWellUnsuccessfulAsync(
         string wellId,
         DateTime decisionDate,
         string userId,
         string? connectionName = null);
-    
+
     // Cost Reports
     Task<decimal> GetTotalCapitalizedCostAsync(
         string costCenter,
@@ -76,7 +173,7 @@ public interface ISuccessfulEffortsService
 ```
 
 **Implementation Notes**:
-- Track well status changes (exploratory → successful/unsuccessful)
+- Track well status changes (exploratory -> successful/unsuccessful)
 - Maintain cost center definitions (field, country, development program)
 - Create dry hole expense journal entries immediately upon determination
 - Capitalize development well costs
@@ -85,7 +182,7 @@ public interface ISuccessfulEffortsService
 ---
 
 #### 2. Full Cost Method Service
-**File**: `Accounting/FullCostService.cs`
+**File**: `Beep.OilandGas.ProductionAccounting/Services/FullCostService.cs`
 
 **Principle**: Capitalize all exploration/development costs within cost center; amortize over production.
 
@@ -104,11 +201,11 @@ public interface IFullCostService
         decimal capitalizedCosts,
         string userId,
         string? connectionName = null);
-    
+
     Task<(decimal capitalized, decimal amortized)> GetCostPoolStatusAsync(
         string costCenter,
         string? connectionName = null);
-    
+
     // Cost Capitalization
     Task<ACCOUNTING_COST> AddCostToCostPoolAsync(
         string costCenter,
@@ -116,19 +213,19 @@ public interface IFullCostService
         string costType,  // "Exploration", "Development", "Acquisition"
         string userId,
         string? connectionName = null);
-    
+
     // Ceiling Test (SEC Requirement)
     Task<(bool passes, decimal bookValue, decimal fairValue)> PerformCeilingTestAsync(
         string costCenter,
         DateTime testDate,
         string? connectionName = null);
-    
+
     Task<IMPAIRMENT_RECORD> RecordCeilingTestImpairmentAsync(
         string costCenter,
         decimal impairmentAmount,
         string userId,
         string? connectionName = null);
-    
+
     // Amortization/Depletion
     Task<AMORTIZATION_RECORD> CalculateDepletionAsync(
         string costCenter,
@@ -149,7 +246,7 @@ public interface IFullCostService
 ---
 
 ### 3. Amortization & Depletion Service
-**File**: `Accounting/AmortizationService.cs`
+**File**: `Beep.OilandGas.ProductionAccounting/Services/AmortizationService.cs`
 
 **Principle**: Allocate capitalized costs over reserve life using unit of production method.
 
@@ -170,11 +267,11 @@ public interface IAmortizationService
         RUN_TICKET production,
         string userId,
         string? connectionName = null);
-    
+
     Task<decimal> GetDepletionRateAsync(
         string costCenter,
         string? connectionName = null);
-    
+
     // Depreciation for Equipment
     Task<AMORTIZATION_RECORD> CalculateDepreciationAsync(
         string wellId,
@@ -183,13 +280,13 @@ public interface IAmortizationService
         string depreciationMethod, // "Straight-line", "Unit of production"
         string userId,
         string? connectionName = null);
-    
+
     // Ceiling Test Support
     Task<decimal> CalculateNetBookValueAsync(
         string costCenter,
         DateTime asOfDate,
         string? connectionName = null);
-    
+
     // Reports
     Task<AMORTIZATION_RECORD> GetCumulativeDepletionAsync(
         string costCenter,
@@ -200,7 +297,7 @@ public interface IAmortizationService
 ```
 
 **Implementation Notes**:
-- Unit of production: Depletion = (Production × Capitalized Cost) / Total Reserves
+- Unit of production: Depletion = (Production x Capitalized Cost) / Total Reserves
 - Adjust for reserve estimate changes
 - Track equipment depreciation separately
 - Monthly/quarterly depletion calculation
@@ -209,7 +306,7 @@ public interface IAmortizationService
 ---
 
 ### 4. Journal Entry Service
-**File**: `Accounting/JournalEntryService.cs`
+**File**: `Beep.OilandGas.Accounting/Services/JournalEntryService.cs`
 
 **Principle**: Post all transactions to general ledger; ensure double-entry accounting.
 
@@ -229,7 +326,7 @@ public interface IJournalEntryService
         string description,
         string userId,
         string? connectionName = null);
-    
+
     Task<JOURNAL_ENTRY_LINE> AddLineItemAsync(
         string journalEntryId,
         string accountCode,
@@ -238,28 +335,28 @@ public interface IJournalEntryService
         string description,
         string userId,
         string? connectionName = null);
-    
+
     Task<bool> PostJournalEntryAsync(
         string journalEntryId,
         string userId,
         string? connectionName = null);
-    
+
     // GL Account Management
     Task<List<GL_ACCOUNT>> GetChartOfAccountsAsync(string? connectionName = null);
     Task<GL_ACCOUNT> GetAccountAsync(string accountCode, string? connectionName = null);
-    
+
     // GL Balance Queries
     Task<decimal> GetAccountBalanceAsync(
         string accountCode,
         DateTime asOfDate,
         string? connectionName = null);
-    
+
     Task<(decimal debits, decimal credits)> GetAccountActivityAsync(
         string accountCode,
         DateTime fromDate,
         DateTime toDate,
         string? connectionName = null);
-    
+
     // Validation
     Task<(bool isBalanced, decimal variance)> ValidateJournalEntryAsync(
         string journalEntryId,
@@ -277,7 +374,7 @@ public interface IJournalEntryService
 ---
 
 ### 5. Revenue Recognition Service
-**File**: `Accounting/RevenueService.cs`
+**File**: `Beep.OilandGas.ProductionAccounting/Services/RevenueService.cs`
 
 **Principle**: Recognize revenue per ASC 606; match to performance obligations.
 
@@ -297,13 +394,13 @@ public interface IRevenueService
         string performanceObligation,
         string userId,
         string? connectionName = null);
-    
+
     // Performance Obligation Tracking
     Task<(decimal totalAmount, decimal recognized, decimal deferred)> GetPerformanceObligationAsync(
         string customerId,
         string? contractId = null,
         string? connectionName = null);
-    
+
     // Revenue Adjustments
     Task<REVENUE_TRANSACTION> AdjustRevenueAsync(
         string salesTransactionId,
@@ -311,7 +408,7 @@ public interface IRevenueService
         string reason,
         string userId,
         string? connectionName = null);
-    
+
     // Invoicing
     Task<INVOICE> CreateInvoiceAsync(
         List<SALES_TRANSACTION> transactions,
@@ -319,21 +416,21 @@ public interface IRevenueService
         DateTime invoiceDate,
         string userId,
         string? connectionName = null);
-    
+
     Task<bool> ReconcileInvoiceAsync(
         string invoiceId,
         decimal paidAmount,
         DateTime paymentDate,
         string userId,
         string? connectionName = null);
-    
+
     // Revenue Reports
     Task<decimal> GetTotalRevenueAsync(
         DateTime fromDate,
         DateTime toDate,
         string? wellId = null,
         string? connectionName = null);
-    
+
     Task<List<REVENUE_TRANSACTION>> GetRevenueHistoryAsync(
         DateTime fromDate,
         DateTime toDate,
@@ -352,7 +449,7 @@ public interface IRevenueService
 ---
 
 ### 6. Period Closing Service
-**File**: `Accounting/PeriodClosingService.cs`
+**File**: `Beep.OilandGas.Accounting/Services/PeriodClosingService.cs`
 
 **Principle**: Month/quarter/year-end close procedures; generate financial statements.
 
@@ -370,15 +467,15 @@ public interface IPeriodClosingService
     Task<List<string>> GetMonthEndChecklistAsync(
         DateTime monthEnd,
         string? connectionName = null);
-    
+
     Task<(bool passes, List<string> issues)> ValidateMonthEndAsync(
         DateTime monthEnd,
         string? connectionName = null);
-    
+
     Task<OPERATIONAL_REPORT> GenerateMonthEndReportAsync(
         DateTime monthEnd,
         string? connectionName = null);
-    
+
     // Accruals & Reversals
     Task<JOURNAL_ENTRY> CreateAccrualAsync(
         string description,
@@ -387,24 +484,24 @@ public interface IPeriodClosingService
         DateTime periodEnd,
         string userId,
         string? connectionName = null);
-    
+
     Task<JOURNAL_ENTRY> ReverseAccrualAsync(
         string accrualEntryId,
         DateTime reverseDate,
         string userId,
         string? connectionName = null);
-    
+
     // Trial Balance
-    Task<List<(string accountCode, string accountName, decimal debit, decimal credit)>> 
+    Task<List<(string accountCode, string accountName, decimal debit, decimal credit)>>
         GetTrialBalanceAsync(
             DateTime asOfDate,
             string? connectionName = null);
-    
+
     // Reconciliations
     Task<bool> ReconcileProductionToRevenueAsync(
         DateTime monthEnd,
         string? connectionName = null);
-    
+
     Task<bool> ReconcileAllocationToRoyaltyAsync(
         DateTime monthEnd,
         string? connectionName = null);
@@ -426,14 +523,14 @@ public interface IPeriodClosingService
 
 ```
 Cost Center
-├── Geography (Country, State)
-├── Capitalized Costs Pool
-│   ├── Acquisition Costs
-│   ├── Exploration Costs
-│   └── Development Costs
-├── Reserves (Proved 1P, 2P, 3P)
-├── Depletion Rate ($/BBL or $/MCF)
-└── Ceiling Test Status
+|-- Geography (Country, State)
+|-- Capitalized Costs Pool
+|   |-- Acquisition Costs
+|   |-- Exploration Costs
+|   `-- Development Costs
+|-- Reserves (Proved 1P, 2P, 3P)
+|-- Depletion Rate ($/BBL or $/MCF)
+`-- Ceiling Test Status
 ```
 
 **Cost Center Tracking**:
@@ -445,7 +542,7 @@ Cost Center
 
 ## Joint Interest Accounting (COPAS)
 
-**File**: `Accounting/JointInterestService.cs`
+**File**: `Beep.OilandGas.ProductionAccounting/Services/JointInterestBillingService.cs`
 
 **Interface**:
 ```csharp
@@ -458,14 +555,14 @@ public interface IJointInterestService
         decimal interestPercent,
         string userId,
         string? connectionName = null);
-    
+
     // Cost Allocation
     Task<List<COST_ALLOCATION>> AllocateCostsToOwnersAsync(
         string wellId,
         List<ACCOUNTING_COST> costs,
         string userId,
         string? connectionName = null);
-    
+
     // Revenue Allocation
     Task<List<REVENUE_SHARING>> AllocateRevenueToOwnersAsync(
         string wellId,
@@ -473,13 +570,13 @@ public interface IJointInterestService
         List<ROYALTY_INTEREST> interests,
         string userId,
         string? connectionName = null);
-    
+
     // JIB Statement (Joint Interest Billing)
     Task<JOINT_INTEREST_STATEMENT> GenerateJIBStatementAsync(
         string wellId,
         DateTime statementDate,
         string? connectionName = null);
-    
+
     // Overhead Allocation (COPAS AG)
     Task<decimal> CalculateOverheadAsync(
         string costCenter,
@@ -493,13 +590,12 @@ public interface IJointInterestService
 ## Accounting Methods Selection
 
 **Decision Tree**:
-```
-Is company large (>$10B annual revenue)?
-├─ Yes → Successful Efforts (SE)
-└─ No → Full Cost (FC) or Hybrid
-    ├─ Exploration-focused? → SE
-    └─ Development-focused? → FC
-```
+- Is company large (>$10B annual revenue)?
+  - Yes -> Successful Efforts (SE)
+  - No -> Full Cost (FC) or Hybrid
+    - Exploration-focused? -> SE
+    - Development-focused? -> FC
+
 
 ---
 
@@ -519,7 +615,7 @@ Is company large (>$10B annual revenue)?
 40000-49999: Revenue
   41000: Oil & Gas Sales (Gross)
   41100: Sales Adjustments
-  
+
 50000-59999: Operating Costs
   51000-51999: Direct Operating Costs
   52000-52999: Exploration Costs (expensed)
@@ -529,7 +625,7 @@ Is company large (>$10B annual revenue)?
 60000-69999: Royalties & Interests
   61000: Royalty Payments
   62000: Working Interest Costs
-  
+
 70000-79999: Administrative
   71000: General & Administrative
 ```
@@ -589,5 +685,5 @@ Is company large (>$10B annual revenue)?
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 1.0
 **Status**: Ready for Implementation

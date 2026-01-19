@@ -18,27 +18,27 @@ This document provides a comprehensive overview of the `Beep.OilandGas.Productio
 
 ```
 Beep.OilandGas.ProductionAccounting/
-├── Financial/                    # Financial Accounting (FASB Compliant)
-│   ├── SuccessfulEfforts/        # FASB Statement No. 19
-│   ├── FullCost/                 # Alternative method
-│   └── Amortization/             # Units-of-production, Interest capitalization
-├── GeneralLedger/                # Chart of Accounts, Journal Entries
-├── Invoice/                      # Customer Invoices
-├── PurchaseOrder/                # Purchase Orders
-├── AccountsPayable/              # Vendor Invoices, Payments
-├── AccountsReceivable/           # Customer Invoices, Payments
-├── Inventory/                    # Inventory Management
-├── Production/                   # Production Data, Run Tickets
-├── Allocation/                   # Production Allocation Engine
-├── Royalty/                      # Royalty Calculations, Payments
-├── Pricing/                      # Price Index Management, Valuation
-├── Trading/                      # Exchange Trading, Reconciliation
-├── Storage/                      # Storage Facilities, Tank Batteries
-├── Ownership/                    # Working Interest, Division Orders
-├── Unitization/                  # Unit Operations
-├── Reporting/                    # Financial and Operational Reports
-├── PPDMIntegration/              # PPDM Table Mappings
-└── AccountingManager.cs          # Unified Entry Point
+|-- Financial/                    # Financial Accounting (FASB compliant)
+|   |-- SuccessfulEfforts/        # FASB Statement No. 19
+|   |-- FullCost/                 # Alternative method
+|   `-- Amortization/             # Units-of-production, interest capitalization
+|-- GeneralLedger/                # Chart of Accounts, Journal Entries
+|-- Invoice/                      # Customer Invoices
+|-- PurchaseOrder/                # Purchase Orders
+|-- AccountsPayable/              # Vendor Invoices, Payments
+|-- AccountsReceivable/           # Customer Invoices, Payments
+|-- Inventory/                    # Inventory Management
+|-- Production/                   # Production Data, Run Tickets
+|-- Allocation/                   # Production Allocation Engine
+|-- Royalty/                      # Royalty Calculations, Payments
+|-- Pricing/                      # Price Index Management, Valuation
+|-- Trading/                      # Exchange Trading, Reconciliation
+|-- Storage/                      # Storage Facilities, Tank Batteries
+|-- Ownership/                    # Working Interest, Division Orders
+|-- Unitization/                  # Unit Operations
+|-- Reporting/                    # Financial and Operational Reports
+|-- PPDMIntegration/              # PPDM Table Mappings
+`-- AccountingManager.cs          # Unified Entry Point
 ```
 
 ## Module Integration Patterns
@@ -130,7 +130,7 @@ var inventory = productionManager.CreateTankInventory(
 
 ### 4. Revenue Accounting Integration
 
-**Flow**: Production → Allocation → Pricing → Revenue Transaction → GL Entry
+**Flow**: Production -> Allocation -> Pricing -> Revenue Transaction -> GL Entry
 
 ```csharp
 // 1. Production recorded
@@ -167,13 +167,13 @@ var glEntry = traditionalAccounting.GeneralLedger.CreateJournalEntry(
 ```
 
 **Integration Points**:
-- `ProductionManager` → `AllocationEngine` → `PricingManager` → `REVENUE_TRANSACTION` → `GL_ENTRY`
+- `ProductionManager` -> `AllocationEngine` -> `PricingManager` -> `REVENUE_TRANSACTION` -> `GL_ENTRY`
 - Uses `OwnershipManager` for interest calculations
 - Uses `RoyaltyManager` for royalty deductions
 
 ### 5. Cost Accounting Integration
 
-**Flow**: Cost Transaction → Cost Allocation → AFE → GL Entry
+**Flow**: Cost Transaction -> Cost Allocation -> AFE -> GL Entry
 
 ```csharp
 // 1. Cost transaction recorded
@@ -216,13 +216,13 @@ var glEntry = traditionalAccounting.GeneralLedger.CreateJournalEntry(
 ```
 
 **Integration Points**:
-- `COST_TRANSACTION` → `COST_ALLOCATION` → `AFE` → `GL_ENTRY`
+- `COST_TRANSACTION` -> `COST_ALLOCATION` -> `AFE` -> `GL_ENTRY`
 - Links to Financial Accounting for capitalization decisions
 - Uses `COST_CENTER` for organizational tracking
 
 ### 6. Royalty Accounting Integration
 
-**Flow**: Revenue Transaction → Royalty Calculation → Royalty Payment → GL Entry
+**Flow**: Revenue Transaction -> Royalty Calculation -> Royalty Payment -> GL Entry
 
 ```csharp
 // 1. Revenue transaction exists
@@ -256,7 +256,7 @@ var glEntry = traditionalAccounting.GeneralLedger.CreateJournalEntry(
 ```
 
 **Integration Points**:
-- `REVENUE_TRANSACTION` → `RoyaltyManager` → `ROYALTY_PAYMENT` → `GL_ENTRY`
+- `REVENUE_TRANSACTION` -> `RoyaltyManager` -> `ROYALTY_PAYMENT` -> `GL_ENTRY`
 - Uses `ROYALTY_INTEREST` for interest definitions
 - Uses `BUSINESS_ASSOCIATE` for royalty owners
 
@@ -266,7 +266,7 @@ var glEntry = traditionalAccounting.GeneralLedger.CreateJournalEntry(
 
 #### Successful Efforts Method (FASB Statement No. 19)
 - **Acquisition Costs**: Capitalize as unproved property
-- **Exploration Costs**: 
+- **Exploration Costs**:
   - G&G costs: Expense as incurred
   - Exploratory drilling: Capitalize if finds proved reserves, expense if dry hole
 - **Development Costs**: Capitalize all development costs
@@ -334,117 +334,117 @@ var glEntry = traditionalAccounting.GeneralLedger.CreateJournalEntry(
 
 ```
 1. Production Measurement
-   └─> MeasurementManager.CreateMeasurement()
-       └─> ProductionManager.CreateRunTicket()
+   -> MeasurementManager.CreateMeasurement()
+       -> ProductionManager.CreateRunTicket()
 
 2. Production Allocation
-   └─> AllocationEngine.AllocateProduction()
-       └─> Uses OwnershipManager for interest calculations
+   -> AllocationEngine.AllocateProduction()
+       -> Uses OwnershipManager for interest calculations
 
 3. Pricing
-   └─> PricingManager.GetPrice()
-       └─> Uses PriceIndexManager for index prices
+   -> PricingManager.GetPrice()
+       -> Uses PriceIndexManager for index prices
 
 4. Revenue Transaction
-   └─> Create REVENUE_TRANSACTION
-       └─> Links to run ticket, allocation, price
+   -> Create REVENUE_TRANSACTION
+       -> Links to run ticket, allocation, price
 
 5. Revenue Allocation
-   └─> Create REVENUE_ALLOCATION
-       └─> Allocates revenue to working interests
+   -> Create REVENUE_ALLOCATION
+       -> Allocates revenue to working interests
 
 6. Royalty Calculation
-   └─> RoyaltyManager.CalculateAndCreatePayment()
-       └─> Creates ROYALTY_PAYMENT
+   -> RoyaltyManager.CalculateAndCreatePayment()
+       -> Creates ROYALTY_PAYMENT
 
 7. GL Entry
-   └─> TraditionalAccountingManager.GeneralLedger.CreateJournalEntry()
-       └─> Debit: Revenue, Credit: Accounts Receivable
-       └─> Debit: Royalty Expense, Credit: Cash
+   -> TraditionalAccountingManager.GeneralLedger.CreateJournalEntry()
+       -> Debit: Revenue, Credit: Accounts Receivable
+       -> Debit: Royalty Expense, Credit: Cash
 ```
 
 ### Complete Cost-to-Capitalization Workflow
 
 ```
 1. Cost Incurred
-   └─> Create COST_TRANSACTION
-       └─> Links to property, well, AFE
+   -> Create COST_TRANSACTION
+       -> Links to property, well, AFE
 
 2. Cost Allocation
-   └─> Create COST_ALLOCATION
-       └─> Allocates to cost centers
+   -> Create COST_ALLOCATION
+       -> Allocates to cost centers
 
 3. Financial Accounting Decision
-   └─> SuccessfulEffortsAccounting.RecordExplorationCosts()
-       └─> OR FullCostAccounting.RecordExplorationCosts()
-       └─> Determines capitalization vs. expensing
+   -> SuccessfulEffortsAccounting.RecordExplorationCosts()
+       -> OR FullCostAccounting.RecordExplorationCosts()
+       -> Determines capitalization vs. expensing
 
 4. GL Entry
-   └─> TraditionalAccountingManager.GeneralLedger.CreateJournalEntry()
-       └─> If capitalized: Debit Oil and Gas Properties
-       └─> If expensed: Debit Exploration Expense
-       └─> Credit: Accounts Payable
+   -> TraditionalAccountingManager.GeneralLedger.CreateJournalEntry()
+       -> If capitalized: Debit Oil and Gas Properties
+       -> If expensed: Debit Exploration Expense
+       -> Credit: Accounts Payable
 
 5. Amortization (Periodic)
-   └─> AccountingManager.CalculateAmortization()
-       └─> Creates AMORTIZATION_RECORD
-       └─> GL Entry: Debit Amortization Expense, Credit Accumulated Amortization
+   -> AccountingManager.CalculateAmortization()
+       -> Creates AMORTIZATION_RECORD
+       -> GL Entry: Debit Amortization Expense, Credit Accumulated Amortization
 ```
 
 ## Module Dependencies
 
 ```
 AccountingManager (Static)
-├── Financial.SuccessfulEfforts
-├── Financial.FullCost
-└── Financial.Amortization
+|-- Financial.SuccessfulEfforts
+|-- Financial.FullCost
+`-- Financial.Amortization
 
 TraditionalAccountingManager (Instance)
-├── GeneralLedger
-├── Invoice
-├── PurchaseOrder
-├── AccountsPayable
-├── AccountsReceivable
-└── Inventory
+|-- GeneralLedger
+|-- Invoice
+|-- PurchaseOrder
+|-- AccountsPayable
+|-- AccountsReceivable
+`-- Inventory
 
 ProductionManager
-├── Measurement
-├── Storage
-└── AllocationEngine
+|-- Measurement
+|-- Storage
+`-- AllocationEngine
 
 RoyaltyManager
-├── OwnershipManager
-├── PricingManager
-└── ProductionManager
+|-- OwnershipManager
+|-- PricingManager
+`-- ProductionManager
 
 AllocationEngine
-├── OwnershipManager
-└── ProductionManager
+|-- OwnershipManager
+`-- ProductionManager
 
 PricingManager
-└── PriceIndexManager
+`-- PriceIndexManager
 ```
 
 ## Data Flow Architecture
 
 ### Production Data Flow
 ```
-Measurement → RunTicket → Allocation → Revenue Transaction → GL Entry
+Measurement -> RunTicket -> Allocation -> Revenue Transaction -> GL Entry
 ```
 
 ### Cost Data Flow
 ```
-Cost Transaction → Cost Allocation → AFE → Financial Accounting → GL Entry
+Cost Transaction -> Cost Allocation -> AFE -> Financial Accounting -> GL Entry
 ```
 
 ### Revenue Data Flow
 ```
-Revenue Transaction → Revenue Allocation → Royalty Payment → GL Entry
+Revenue Transaction -> Revenue Allocation -> Royalty Payment -> GL Entry
 ```
 
 ### Financial Accounting Data Flow
 ```
-Property Acquisition → Exploration Costs → Development Costs → Amortization → GL Entry
+Property Acquisition -> Exploration Costs -> Development Costs -> Amortization -> GL Entry
 ```
 
 ## PPDM Integration Strategy
@@ -474,19 +474,19 @@ Property Acquisition → Exploration Costs → Development Costs → Amortizatio
 ## Compliance and Standards
 
 ### FASB Standards
-- ✅ FASB Statement No. 19 - Successful Efforts Method
-- ✅ FASB Statement No. 25 - Full Cost Method (Alternative)
-- ✅ FASB Statement No. 69 - Disclosures about Oil and Gas Producing Activities
+- FASB Statement No. 19 - Successful Efforts Method
+- FASB Statement No. 25 - Full Cost Method (Alternative)
+- FASB Statement No. 69 - Disclosures about Oil and Gas Producing Activities
 
 ### SEC Requirements
-- ✅ SEC Rule 4-10 - Definition of Proved Reserves
-- ✅ SEC Regulation S-X - Financial Statement Requirements
-- ✅ SEC Regulation S-K - Disclosure Requirements
+- SEC Rule 4-10 - Definition of Proved Reserves
+- SEC Regulation S-X - Financial Statement Requirements
+- SEC Regulation S-K - Disclosure Requirements
 
 ### Industry Standards
-- ✅ PPDM Data Model - Standard data model for oil and gas
-- ✅ API Standards - Measurement and allocation standards
-- ✅ AGA Standards - Gas measurement standards
+- PPDM Data Model - Standard data model for oil and gas
+- API Standards - Measurement and allocation standards
+- AGA Standards - Gas measurement standards
 
 ## Recommendations
 
@@ -518,4 +518,3 @@ Property Acquisition → Exploration Costs → Development Costs → Amortizatio
 ## Conclusion
 
 The `Beep.OilandGas.ProductionAccounting` system provides a comprehensive, integrated solution for oil and gas accounting that adheres to FASB, SEC, and industry standards. The modular architecture allows for flexible integration while maintaining separation of concerns and data integrity.
-

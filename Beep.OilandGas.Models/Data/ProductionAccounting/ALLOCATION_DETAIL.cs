@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class ALLOCATION_DETAIL : Entity
+    public partial class ALLOCATION_DETAIL : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String ALLOCATION_DETAIL_IDValue;
         public System.String ALLOCATION_DETAIL_ID

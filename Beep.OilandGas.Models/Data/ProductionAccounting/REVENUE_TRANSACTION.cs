@@ -13,6 +13,13 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref REVENUE_TRANSACTION_IDValue, value); }
         }
 
+        private System.String ALLOCATION_RESULT_IDValue;
+        public System.String ALLOCATION_RESULT_ID
+        {
+            get { return this.ALLOCATION_RESULT_IDValue; }
+            set { SetProperty(ref ALLOCATION_RESULT_IDValue, value); }
+        }
+
         private System.String PROPERTY_IDValue;
         public System.String PROPERTY_ID
         {
@@ -39,6 +46,13 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         {
             get { return this.CONTRACT_IDValue; }
             set { SetProperty(ref CONTRACT_IDValue, value); }
+        }
+
+        private System.String AFE_IDValue;
+        public System.String AFE_ID
+        {
+            get { return this.AFE_IDValue; }
+            set { SetProperty(ref AFE_IDValue, value); }
         }
 
         private System.DateTime? TRANSACTION_DATEValue;

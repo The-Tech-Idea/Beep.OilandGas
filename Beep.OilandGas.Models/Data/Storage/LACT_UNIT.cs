@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Storage
 {
-    public partial class LACT_UNIT : Entity
+    public partial class LACT_UNIT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String LACT_UNIT_IDValue;
         public System.String LACT_UNIT_ID

@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Imbalance
 {
-    public partial class IMBALANCE : Entity
+    public partial class IMBALANCE : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String IMBALANCE_IDValue;
         public System.String IMBALANCE_ID

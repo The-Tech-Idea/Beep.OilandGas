@@ -10,7 +10,7 @@ namespace Beep.OilandGas.Models.Data.Ownership
     /// <summary>
     /// Represents an ownership tree node.
     /// </summary>
-    public partial class OwnershipTreeNode : Entity
+    public partial class OwnershipTreeNode : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String OwnerIdValue = string.Empty;
         /// <summary>

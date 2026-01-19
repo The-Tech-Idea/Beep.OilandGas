@@ -53,16 +53,31 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             if (ticket == null)
                 throw new ArgumentNullException(nameof(ticket));
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentNullException(nameof(userId));
 
             _logger?.LogInformation("Recording measurement for run ticket {TicketId}", ticket.RUN_TICKET_ID);
+
+            var netVolume = ticket.NET_VOLUME;
+            if (!netVolume.HasValue && ticket.GROSS_VOLUME.HasValue && ticket.BSW_PERCENTAGE.HasValue)
+            {
+                var bswFraction = ticket.BSW_PERCENTAGE.Value / 100m;
+                netVolume = ticket.GROSS_VOLUME.Value * (1m - bswFraction);
+            }
 
             var measurement = new MEASUREMENT_RECORD
             {
                 MEASUREMENT_ID = Guid.NewGuid().ToString(),
+                RUN_TICKET_ID = ticket.RUN_TICKET_ID,
+                WELL_ID = ticket.WELL_ID,
+                LEASE_ID = ticket.LEASE_ID,
+                TANK_BATTERY_ID = ticket.TANK_BATTERY_ID,
                 MEASUREMENT_DATETIME = ticket.TICKET_DATE_TIME ?? DateTime.UtcNow,
                 GROSS_VOLUME = ticket.GROSS_VOLUME,
-                NET_VOLUME = ticket.NET_VOLUME,
-                MEASUREMENT_METHOD = "AUTOMATED",
+                NET_VOLUME = netVolume,
+                MEASUREMENT_METHOD = string.IsNullOrWhiteSpace(ticket.MEASUREMENT_METHOD)
+                    ? "AUTOMATED"
+                    : ticket.MEASUREMENT_METHOD,
                 MEASUREMENT_STANDARD = "API",
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
@@ -117,6 +132,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             if (string.IsNullOrWhiteSpace(wellId))
                 throw new ArgumentNullException(nameof(wellId));
+            if (start > end)
+                throw new ArgumentException("start must be <= end", nameof(start));
 
             var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -129,11 +146,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = wellId },
+                new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = ">=", FilterValue = start.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
 
             var records = await repo.GetAsync(filters);
-            return records?.Cast<MEASUREMENT_RECORD>().ToList() ?? new List<MEASUREMENT_RECORD>();
+            return records?.Cast<MEASUREMENT_RECORD>().OrderBy(r => r.MEASUREMENT_DATETIME).ToList() ?? new List<MEASUREMENT_RECORD>();
         }
 
         /// <summary>
@@ -147,6 +166,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
+            if (start > end)
+                throw new ArgumentException("start must be <= end", nameof(start));
 
             var metadata = await _metadata.GetTableMetadataAsync("MEASUREMENT_RECORD");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -159,11 +180,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "LEASE_ID", Operator = "=", FilterValue = leaseId },
+                new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = ">=", FilterValue = start.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "MEASUREMENT_DATETIME", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
 
             var records = await repo.GetAsync(filters);
-            return records?.Cast<MEASUREMENT_RECORD>().ToList() ?? new List<MEASUREMENT_RECORD>();
+            return records?.Cast<MEASUREMENT_RECORD>().OrderBy(r => r.MEASUREMENT_DATETIME).ToList() ?? new List<MEASUREMENT_RECORD>();
         }
 
         /// <summary>
@@ -186,6 +209,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 if (measurement.NET_VOLUME > measurement.GROSS_VOLUME)
                     throw new AllocationException("Net volume cannot exceed gross volume");
+
+                if (measurement.BSW_PERCENTAGE.HasValue &&
+                    (measurement.BSW_PERCENTAGE < 0m || measurement.BSW_PERCENTAGE > 100m))
+                    throw new AllocationException($"BSW percentage must be between 0 and 100: {measurement.BSW_PERCENTAGE}");
 
                 _logger?.LogInformation("Measurement {MeasurementId} validation passed", measurement.MEASUREMENT_ID);
                 return true;

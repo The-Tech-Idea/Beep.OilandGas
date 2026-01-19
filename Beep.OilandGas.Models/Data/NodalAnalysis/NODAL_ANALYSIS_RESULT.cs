@@ -3,7 +3,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    public partial class NODAL_ANALYSIS_RESULT : Entity
+    public partial class NODAL_ANALYSIS_RESULT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private string ANALYSIS_IDValue;
         public string ANALYSIS_ID

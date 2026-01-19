@@ -60,6 +60,13 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref COST_TYPEValue, value); }
         }
 
+        private String AFE_IDValue;
+        public String AFE_ID
+        {
+            get { return this.AFE_IDValue; }
+            set { SetProperty(ref AFE_IDValue, value); }
+        }
+
         private String COST_CATEGORYValue;
         public String COST_CATEGORY
         {

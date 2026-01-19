@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Royalty
 {
-    public partial class ROYALTY_STATEMENT : Entity
+    public partial class ROYALTY_STATEMENT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String ROYALTY_STATEMENT_IDValue;
         public System.String ROYALTY_STATEMENT_ID

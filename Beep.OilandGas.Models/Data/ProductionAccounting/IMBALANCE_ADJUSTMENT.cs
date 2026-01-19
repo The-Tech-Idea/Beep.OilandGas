@@ -36,6 +36,13 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref ADJUSTMENT_AMOUNTValue, value); }
         }
 
+        private System.String PROPERTY_OR_LEASE_IDValue;
+        public System.String PROPERTY_OR_LEASE_ID
+        {
+            get { return this.PROPERTY_OR_LEASE_IDValue; }
+            set { SetProperty(ref PROPERTY_OR_LEASE_IDValue, value); }
+        }
+
         private System.String REASONValue;
         public System.String REASON
         {

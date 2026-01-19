@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Storage
 {
-    public partial class TANK_BATTERY : Entity
+    public partial class TANK_BATTERY : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String TANK_BATTERY_IDValue;
         public System.String TANK_BATTERY_ID

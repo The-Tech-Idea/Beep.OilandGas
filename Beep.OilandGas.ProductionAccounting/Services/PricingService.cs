@@ -93,6 +93,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             if (string.IsNullOrWhiteSpace(productId))
                 throw new ArgumentNullException(nameof(productId));
+            if (start > end)
+                throw new ArgumentException("start must be <= end", nameof(start));
 
             var metadata = await _metadata.GetTableMetadataAsync("PRICE_INDEX");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -105,6 +107,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "COMMODITY_TYPE", Operator = "=", FilterValue = productId },
+                new AppFilter { FieldName = "PRICE_DATE", Operator = ">=", FilterValue = start.ToString("yyyy-MM-dd") },
+                new AppFilter { FieldName = "PRICE_DATE", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
 

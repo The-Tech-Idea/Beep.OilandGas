@@ -9,39 +9,39 @@ A unified, enterprise-grade production accounting system that integrates Financi
 This library provides complete production accounting functionality covering:
 
 ### Financial Accounting (FASB Compliant)
-- ✅ **Successful Efforts Accounting** (FASB Statement No. 19)
-- ✅ **Full Cost Accounting** (Alternative method)
-- ✅ **Amortization Calculations** (Units-of-production method)
-- ✅ **Interest Capitalization**
-- ✅ **Ceiling Test Calculations**
-- ✅ **Impairment Tracking**
+- **Successful Efforts Accounting** (FASB Statement No. 19)
+- **Full Cost Accounting** (Alternative method)
+- **Amortization Calculations** (Units-of-production method)
+- **Interest Capitalization**
+- **Ceiling Test Calculations**
+- **Impairment Tracking**
 
 ### Traditional Accounting
-- ✅ **General Ledger** (Chart of Accounts, Journal Entries)
-- ✅ **Invoice Management** (Customer Invoices, Payments)
-- ✅ **Purchase Order Management** (PO Creation, Receipts)
-- ✅ **Accounts Payable** (Vendor Invoices, Payments, Credit Memos)
-- ✅ **Accounts Receivable** (Customer Invoices, Payments, Credit Memos)
-- ✅ **Inventory Management** (Items, Transactions, Adjustments, Valuation)
+- **General Ledger** (Chart of Accounts, Journal Entries)
+- **Invoice Management** (Customer Invoices, Payments)
+- **Purchase Order Management** (PO Creation, Receipts)
+- **Accounts Payable** (Vendor Invoices, Payments, Credit Memos)
+- **Accounts Receivable** (Customer Invoices, Payments, Credit Memos)
+- **Inventory Management** (Items, Transactions, Adjustments, Valuation)
 
 ### Operational Accounting
-- ✅ **Production Management** (Run Tickets, Tank Inventories)
-- ✅ **Production Allocation** (Advanced allocation methods)
-- ✅ **Revenue Accounting** (Revenue Transactions, Allocations)
-- ✅ **Cost Accounting** (Cost Transactions, Allocations, AFE Management)
-- ✅ **Royalty Management** (Calculations, Payments, Statements)
-- ✅ **Pricing Management** (Price Indices, Valuation)
-- ✅ **Trading & Exchanges** (Exchange Trading, Reconciliation)
-- ✅ **Storage Facilities** (Tank Batteries, LACT Units)
-- ✅ **Ownership Management** (Working Interest, Division Orders)
-- ✅ **Unitization** (Unit Operations)
+- **Production Management** (Run Tickets, Tank Inventories)
+- **Production Allocation** (Advanced allocation methods)
+- **Revenue Accounting** (Revenue Transactions, Allocations)
+- **Cost Accounting** (Cost Transactions, Allocations, AFE Management)
+- **Royalty Management** (Calculations, Payments, Statements)
+- **Pricing Management** (Price Indices, Valuation)
+- **Trading & Exchanges** (Exchange Trading, Reconciliation)
+- **Storage Facilities** (Tank Batteries, LACT Units)
+- **Ownership Management** (Working Interest, Division Orders)
+- **Unitization** (Unit Operations)
 
 ### Reporting & Analytics
-- ✅ **Financial Reports** (Income Statement, Balance Sheet)
-- ✅ **Operational Reports** (Production, Revenue, Costs)
-- ✅ **Royalty Statements**
-- ✅ **Tax Reporting**
-- ✅ **Production Analytics**
+- **Financial Reports** (Income Statement, Balance Sheet)
+- **Operational Reports** (Production, Revenue, Costs)
+- **Royalty Statements**
+- **Tax Reporting**
+- **Production Analytics**
 
 ## Architecture
 
@@ -85,7 +85,7 @@ var inventoryItem = traditionalAccounting.Inventory.CreateItem(request, userId);
 ```csharp
 // Production
 var productionManager = new ProductionManager();
-var runTicket = productionManager.CreateRunTicket(leaseId, wellId, tankBatteryId, 
+var runTicket = productionManager.CreateRunTicket(leaseId, wellId, tankBatteryId,
     measurement, dispositionType, purchaser);
 
 // Allocation
@@ -127,56 +127,56 @@ var price = pricingManager.GetPrice(priceIndex, date, differential);
 
 **Production-to-Revenue Flow**:
 ```
-Measurement → RunTicket → Allocation → Pricing → Revenue Transaction → 
-Revenue Allocation → Royalty Payment → GL Entry
+Measurement -> RunTicket -> Allocation -> Pricing -> Revenue Transaction ->
+Revenue Allocation -> Royalty Payment -> GL Entry
 ```
 
 **Cost-to-Capitalization Flow**:
 ```
-Cost Transaction → Cost Allocation → AFE → Financial Accounting Decision → 
-GL Entry (Capitalized or Expensed) → Amortization (Periodic)
+Cost Transaction -> Cost Allocation -> AFE -> Financial Accounting Decision ->
+GL Entry (Capitalized or Expensed) -> Amortization (Periodic)
 ```
 
 ### 4. Industry Best Practices
-- ✅ Joint Interest Billing (JIB) automation
-- ✅ Revenue recognition at point of sale
-- ✅ Accurate production allocation
-- ✅ Royalty calculation and payment
-- ✅ Cost center management
-- ✅ AFE tracking and approval
-- ✅ Internal controls and audit trails
-- ✅ Regulatory compliance (SEC, FASB)
+- Joint Interest Billing (JIB) automation
+- Revenue recognition at point of sale
+- Accurate production allocation
+- Royalty calculation and payment
+- Cost center management
+- AFE tracking and approval
+- Internal controls and audit trails
+- Regulatory compliance (SEC, FASB)
 
 ## Project Structure
 
 ```
 Beep.OilandGas.ProductionAccounting/
-├── Financial/                    # Financial Accounting (FASB)
-│   ├── SuccessfulEfforts/
-│   ├── FullCost/
-│   └── Amortization/
-├── GeneralLedger/                # Chart of Accounts
-├── Invoice/                      # Customer Invoices
-├── PurchaseOrder/                # Purchase Orders
-├── AccountsPayable/               # Vendor Invoices
-├── AccountsReceivable/            # Customer Invoices
-├── Inventory/                     # Inventory Management
-├── Production/                    # Production Data
-├── Allocation/                    # Production Allocation
-├── Royalty/                       # Royalty Management
-├── Pricing/                       # Price Management
-├── Trading/                       # Exchange Trading
-├── Storage/                       # Storage Facilities
-├── Ownership/                     # Working Interest
-├── Unitization/                   # Unit Operations
-├── Reporting/                     # Reports
-├── PPDMIntegration/               # PPDM Mappings
-├── Models/                        # Data Models
-├── Calculations/                  # Calculation Engines
-├── Validation/                    # Data Validation
-├── Constants/                     # Constants
-├── Exceptions/                    # Exception Classes
-└── AccountingManager.cs           # Unified Entry Point
+|-- Financial/                    # Financial Accounting (FASB)
+|   |-- SuccessfulEfforts/
+|   |-- FullCost/
+|   `-- Amortization/
+|-- GeneralLedger/                # Chart of Accounts
+|-- Invoice/                      # Customer Invoices
+|-- PurchaseOrder/                # Purchase Orders
+|-- AccountsPayable/               # Vendor Invoices
+|-- AccountsReceivable/            # Customer Invoices
+|-- Inventory/                     # Inventory Management
+|-- Production/                    # Production Data
+|-- Allocation/                    # Production Allocation
+|-- Royalty/                       # Royalty Management
+|-- Pricing/                       # Price Management
+|-- Trading/                       # Exchange Trading
+|-- Storage/                       # Storage Facilities
+|-- Ownership/                     # Working Interest
+|-- Unitization/                   # Unit Operations
+|-- Reporting/                     # Reports
+|-- PPDMIntegration/               # PPDM Mappings
+|-- Models/                        # Data Models
+|-- Calculations/                  # Calculation Engines
+|-- Validation/                    # Data Validation
+|-- Constants/                     # Constants
+|-- Exceptions/                    # Exception Classes
+`-- AccountingManager.cs           # Unified Entry Point
 ```
 
 ## Data Models
@@ -328,51 +328,57 @@ var amortization = AccountingManager.CalculateAmortization(
 ## Dependencies
 
 - `Beep.OilandGas.Models` - Entity classes and DTOs
+- `Beep.OilandGas.Accounting` - Base accounting services (GL/AP/AR/Inventory/Close/Reporting)
 - `Beep.OilandGas.PPDM39.DataManagement` - PPDM data management
 - `Beep.OilandGas.PPDM39` - PPDM core functionality
 - `TheTechIdea.Beep.Editor` - Data management engine
 
 ## Documentation
 
+- **`COMPREHENSIVE_PLAN.md`** - Single roadmap (Accounting as base + ProductionAccounting evolution)
 - **`ARCHITECTURE_AND_INTEGRATION.md`** - Complete architecture and integration guide
 - **`PPDM_INTEGRATION_GUIDE.md`** - PPDM table usage and integration
-- **`DATABASE_SCRIPTS_GENERATION_GUIDE.md`** - Database script generation patterns
-- **`ACCOUNTING_PROJECT_REMOVAL_FINAL.md`** - Migration from Accounting project
-- **`COMPLETE_IMPLEMENTATION_SUMMARY.md`** - Implementation status and summary
+- **`MODULE_ENHANCEMENT_PLANS_INDEX.md`** - Index of module-level enhancement plans
+- **`ACCOUNTING_PLAN.md`** - Financial and accounting services plan
+- **`ALLOCATION_ROYALTY_PLAN.md`** - Allocation, royalty, JIB, and imbalance plan
+- **`BEST_PRACTICES_OIL_GAS_ACCOUNTING.md`** - Accounting standards and operating guidance
+- **`plan.md`** - Service-layer stabilization plan
+- **`TODO.md`** - Known issues and near-term fixes
+- **`../bk/DATABASE_SCRIPTS_GENERATION_GUIDE.md`** - Database script generation patterns
+- **`../bk/ACCOUNTING_PROJECT_REMOVAL_FINAL.md`** - Migration from Accounting project
+- **`../bk/COMPLETE_IMPLEMENTATION_SUMMARY.md`** - Implementation status and summary
 
 ## Compliance & Standards
 
 ### FASB Standards
-- ✅ FASB Statement No. 19 - Successful Efforts Method
-- ✅ FASB Statement No. 25 - Full Cost Method
-- ✅ FASB Statement No. 69 - Disclosures
+- FASB Statement No. 19 - Successful Efforts Method
+- FASB Statement No. 25 - Full Cost Method
+- FASB Statement No. 69 - Disclosures
 
 ### SEC Requirements
-- ✅ SEC Rule 4-10 - Proved Reserves Definition
-- ✅ SEC Regulation S-X - Financial Statements
-- ✅ SEC Regulation S-K - Disclosures
+- SEC Rule 4-10 - Proved Reserves Definition
+- SEC Regulation S-X - Financial Statements
+- SEC Regulation S-K - Disclosures
 
 ### Industry Standards
-- ✅ PPDM Data Model - Standard data model
-- ✅ API Standards - Measurement standards
-- ✅ AGA Standards - Gas measurement
+- PPDM Data Model - Standard data model
+- API Standards - Measurement standards
+- AGA Standards - Gas measurement
 
 ## Status
 
-**✅ Production Ready**
+**Production Ready**
 
 All core modules implemented and integrated:
-- Financial Accounting ✅
-- Traditional Accounting ✅
-- Operational Accounting ✅
-- PPDM Integration ✅
-- Database Scripts ✅
-- Documentation ✅
+- Financial Accounting
+- Traditional Accounting
+- Operational Accounting
+- PPDM Integration
+- Database Scripts
+- Documentation
 
 ## License
 
 [Your License Here]
 
 ---
-
-**Status: Production Ready** 🚀

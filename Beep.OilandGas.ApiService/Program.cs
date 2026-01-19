@@ -26,7 +26,13 @@ using Microsoft.OpenApi;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.DataManagement.Data;
 using Beep.OilandGas.ProductionAccounting.Services;
-using Beep.OilandGas.ProductionAccounting.GeneralLedger;
+using Beep.OilandGas.ProspectIdentification.Services;
+using Beep.OilandGas.ProductionOperations.Services;
+using Beep.OilandGas.LeaseAcquisition.Services;
+using Beep.OilandGas.PlungerLift.Services;
+using Beep.OilandGas.HydraulicPumps.Services;
+using Beep.OilandGas.Accounting.Services;
+using Beep.OilandGas.ApiService.Services;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -403,38 +409,409 @@ builder.Services.AddScoped<IAccountingService>(sp =>
         amortizationService: amortizationService);
 });
 
-// Production Accounting Service
-builder.Services.AddScoped<ProductionAccountingService>(sp =>
+// Production Accounting Services
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IAllocationEngine>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
     var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-    return new ProductionAccountingService(
-        editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
+    return new Beep.OilandGas.ProductionAccounting.Services.AllocationEngine(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.AllocationEngine>());
 });
 
-// ProductionAccounting Service Interfaces
-// Register IRoyaltyService
-builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IRoyaltyService>(sp =>
-{
-    var productionAccountingService = sp.GetRequiredService<ProductionAccountingService>();
-    return productionAccountingService.CreateRoyaltyService(connectionName);
-});
-
-// Register IAllocationService
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IAllocationService>(sp =>
 {
-    var productionAccountingService = sp.GetRequiredService<ProductionAccountingService>();
-    return productionAccountingService.CreateAllocationService(connectionName);
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var allocationEngine = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IAllocationEngine>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.AllocationService(
+        editor, commonColumnHandler, defaults, metadata, allocationEngine,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.AllocationService>());
 });
 
-// Register IAmortizationService
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IRoyaltyService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var glService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IJournalEntryService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var accountingServices = sp.GetService<Beep.OilandGas.Accounting.Services.IAccountingServices>();
+    return new Beep.OilandGas.ProductionAccounting.Services.RoyaltyService(
+        editor, commonColumnHandler, defaults, metadata, glService,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.RoyaltyService>(),
+        accountingServices);
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IJointInterestBillingService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.JointInterestBillingService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.JointInterestBillingService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IImbalanceService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.ImbalanceService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.ImbalanceService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.ISuccessfulEffortsService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.SuccessfulEffortsService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.SuccessfulEffortsService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IFullCostService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.FullCostService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.FullCostService>());
+});
+
 builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IAmortizationService>(sp =>
 {
-    var productionAccountingService = sp.GetRequiredService<ProductionAccountingService>();
-    return productionAccountingService.CreateAmortizationService(connectionName);
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.AmortizationService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.AmortizationService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IRevenueService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var leaseEconomicInterestService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.ILeaseEconomicInterestService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.RevenueService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.RevenueService>(),
+        leaseEconomicInterestService);
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IMeasurementService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.MeasurementService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.MeasurementService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPricingService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.PricingService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.PricingService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IInventoryService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.InventoryService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.InventoryService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPeriodClosingService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var accountingServices = sp.GetService<Beep.OilandGas.Accounting.Services.IAccountingServices>();
+    var amortizationService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IAmortizationService>();
+    var fullCostService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IFullCostService>();
+    var reserveAccountingService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IReserveAccountingService>();
+    var impairmentTestingService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IImpairmentTestingService>();
+    var decommissioningService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IDecommissioningService>();
+    var functionalCurrencyService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IFunctionalCurrencyService>();
+    var leasingService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.ILeasingService>();
+    var financialInstrumentsService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IFinancialInstrumentsService>();
+    var emissionsTradingService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IEmissionsTradingService>();
+    var reserveDisclosureService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IReserveDisclosureService>();
+    return new Beep.OilandGas.ProductionAccounting.Services.PeriodClosingService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.PeriodClosingService>(),
+        accountingServices,
+        amortizationService,
+        fullCostService,
+        reserveAccountingService,
+        impairmentTestingService,
+        decommissioningService,
+        functionalCurrencyService,
+        leasingService,
+        financialInstrumentsService,
+        emissionsTradingService,
+        reserveDisclosureService);
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IAuthorizationWorkflowService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.AuthorizationWorkflowService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.AuthorizationWorkflowService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.ILeaseEconomicInterestService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.LeaseEconomicInterestService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.LeaseEconomicInterestService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IReserveAccountingService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.ReserveAccountingService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.ReserveAccountingService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IReserveDisclosureService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.ReserveDisclosureService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.ReserveDisclosureService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IExplorationEvaluationService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.ExplorationEvaluationService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.ExplorationEvaluationService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IBorrowingCostCapitalizationService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.BorrowingCostCapitalizationService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.BorrowingCostCapitalizationService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IAssetSwapService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.AssetSwapService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.AssetSwapService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IProductionSharingService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.ProductionSharingService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.ProductionSharingService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IDecommissioningService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.DecommissioningService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.DecommissioningService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IImpairmentTestingService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.ImpairmentTestingService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.ImpairmentTestingService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IFunctionalCurrencyService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.FunctionalCurrencyService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.FunctionalCurrencyService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.ILeasingService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.LeasingService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.LeasingService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IFinancialInstrumentsService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.FinancialInstrumentsService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.FinancialInstrumentsService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IEmissionsTradingService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.ProductionAccounting.Services.EmissionsTradingService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.ProductionAccounting.Services.EmissionsTradingService>());
+});
+
+builder.Services.AddScoped<ProductionAccountingService>(sp =>
+{
+    var allocationService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IAllocationService>();
+    var royaltyService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IRoyaltyService>();
+    var jibService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IJointInterestBillingService>();
+    var imbalanceService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IImbalanceService>();
+    var seService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.ISuccessfulEffortsService>();
+    var fcService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IFullCostService>();
+    var amortizationService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IAmortizationService>();
+    var glService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IJournalEntryService>();
+    var revenueService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IRevenueService>();
+    var measurementService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IMeasurementService>();
+    var pricingService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IPricingService>();
+    var inventoryService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IInventoryService>();
+    var periodClosingService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IPeriodClosingService>();
+    var authorizationWorkflowService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IAuthorizationWorkflowService>();
+    var leaseEconomicInterestService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.ILeaseEconomicInterestService>();
+    var reserveAccountingService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IReserveAccountingService>();
+    var productionSharingService = sp.GetService<Beep.OilandGas.Models.Core.Interfaces.IProductionSharingService>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var logger = sp.GetService<ILogger<ProductionAccountingService>>();
+    var accountingServices = sp.GetService<Beep.OilandGas.Accounting.Services.IAccountingServices>();
+
+    return new ProductionAccountingService(
+        allocationService,
+        royaltyService,
+        jibService,
+        imbalanceService,
+        seService,
+        fcService,
+        amortizationService,
+        glService,
+        revenueService,
+        measurementService,
+        pricingService,
+        inventoryService,
+        periodClosingService,
+        authorizationWorkflowService,
+        leaseEconomicInterestService,
+        reserveAccountingService,
+        productionSharingService,
+        metadata,
+        editor,
+        commonColumnHandler,
+        defaults,
+        logger,
+        accountingServices);
 });
 
 // GL Integration Services
@@ -446,8 +823,10 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IJournalEntrySe
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-    return new Beep.OilandGas.ProductionAccounting.GeneralLedger.JournalEntryService(
-        editor, commonColumnHandler, defaults, metadata, loggerFactory, connectionName);
+    var glAccountService = sp.GetRequiredService<Beep.OilandGas.Accounting.Services.GLAccountService>();
+    return new JournalEntryService(
+        editor, commonColumnHandler, defaults, metadata, glAccountService,
+        loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.JournalEntryService>());
 });
 
 builder.Services.AddScoped<GLAccountMappingService>(sp =>
@@ -800,7 +1179,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IProductionOper
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.ProductionOperations.Services.ProductionOperationsService>();
-    return new Beep.OilandGas.ProductionOperations.Services.ProductionOperationsService(
+    return new ProductionOperationsService(
         editor, commonColumnHandler, defaults, metadata, connectionName, logger);
 });
 
@@ -813,7 +1192,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IProspectIdenti
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.ProspectIdentification.Services.ProspectIdentificationService>();
-    return new Beep.OilandGas.ProspectIdentification.Services.ProspectIdentificationService(
+    return new ProspectIdentificationService(
         editor, commonColumnHandler, defaults, metadata, connectionName, logger);
 });
 
@@ -852,7 +1231,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.ILeaseAcquisiti
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.LeaseAcquisition.Services.LeaseAcquisitionService>();
-    return new Beep.OilandGas.LeaseAcquisition.Services.LeaseAcquisitionService(
+    return new LeaseAcquisitionService(
         editor, commonColumnHandler, defaults, metadata, connectionName, logger);
 });
 
@@ -878,7 +1257,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IHydraulicPumpS
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.HydraulicPumps.Services.HydraulicPumpService>();
-    return new Beep.OilandGas.HydraulicPumps.Services.HydraulicPumpService(
+    return new HydraulicPumpService(
         editor, commonColumnHandler, defaults, metadata, connectionName, logger);
 });
 
@@ -891,7 +1270,7 @@ builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IPlungerLiftSer
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<Beep.OilandGas.PlungerLift.Services.PlungerLiftService>();
-    return new Beep.OilandGas.PlungerLift.Services.PlungerLiftService(
+    return new PlungerLiftService(
         editor, commonColumnHandler, defaults, metadata, connectionName, logger);
 });
 
@@ -930,8 +1309,9 @@ builder.Services.AddScoped<Beep.OilandGas.Accounting.Services.JournalEntryServic
     var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
     var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var glAccountService = sp.GetRequiredService<Beep.OilandGas.Accounting.Services.GLAccountService>();
     return new Beep.OilandGas.Accounting.Services.JournalEntryService(
-        editor, commonColumnHandler, defaults, metadata, connectionName, loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.JournalEntryService>());
+        editor, commonColumnHandler, defaults, metadata, glAccountService, loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.JournalEntryService>());
 });
 
 builder.Services.AddScoped<Beep.OilandGas.Accounting.Services.TrialBalanceService>(sp =>
@@ -1116,6 +1496,45 @@ builder.Services.AddScoped<Beep.OilandGas.Accounting.Services.CostAllocationServ
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     return new Beep.OilandGas.Accounting.Services.CostAllocationService(
         editor, commonColumnHandler, defaults, metadata, glAccountService, loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.CostAllocationService>());
+});
+
+// Accounting interface adapters (foundation services)
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.ICostAllocationService>(sp =>
+    sp.GetRequiredService<CostAllocationService>());
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.ICostCenterService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.Accounting.Services.CostCenterService(
+        editor, commonColumnHandler, defaults, metadata, loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.CostCenterService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IARService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var journalEntryService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IJournalEntryService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.Accounting.Services.ARService(
+        editor, commonColumnHandler, defaults, metadata, journalEntryService, loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.ARService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Models.Core.Interfaces.IInvoiceService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var journalEntryService = sp.GetRequiredService<Beep.OilandGas.Models.Core.Interfaces.IJournalEntryService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.Accounting.Services.InvoiceService(
+        editor, commonColumnHandler, defaults, metadata, journalEntryService, loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.InvoiceService>());
 });
 
 // SignalR for progress tracking

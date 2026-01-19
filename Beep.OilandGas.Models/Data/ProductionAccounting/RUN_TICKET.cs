@@ -21,6 +21,13 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref RUN_TICKET_NUMBERValue, value); }
         }
 
+        private System.String AFE_IDValue;
+        public System.String AFE_ID
+        {
+            get { return this.AFE_IDValue; }
+            set { SetProperty(ref AFE_IDValue, value); }
+        }
+
         private System.DateTime? TICKET_DATE_TIMEValue;
         public System.DateTime? TICKET_DATE_TIME
         {

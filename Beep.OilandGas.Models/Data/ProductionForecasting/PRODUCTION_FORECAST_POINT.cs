@@ -3,7 +3,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionForecasting
 {
-    public partial class PRODUCTION_FORECAST_POINT : Entity
+    public partial class PRODUCTION_FORECAST_POINT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private string FORECAST_POINT_IDValue;
         public string FORECAST_POINT_ID

@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Validation
 {
-    public partial class VALIDATION_RESULT : Entity
+    public partial class VALIDATION_RESULT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String VALIDATION_RESULT_IDValue;
         public System.String VALIDATION_RESULT_ID

@@ -8,7 +8,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Represents a sales transaction.
     /// </summary>
-    public partial class SalesTransaction : Entity
+    public partial class SalesTransaction : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String TransactionIdValue;
         /// <summary>
@@ -124,7 +124,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Represents delivery information.
     /// </summary>
-    public partial class DeliveryInformation : Entity
+    public partial class DeliveryInformation : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.DateTime DeliveryDateValue;
         /// <summary>
@@ -170,7 +170,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Represents production and marketing costs.
     /// </summary>
-    public partial class ProductionMarketingCosts : Entity
+    public partial class ProductionMarketingCosts : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.Decimal LiftingCostsPerBarrelValue;
         /// <summary>
@@ -247,7 +247,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Represents a production tax.
     /// </summary>
-    public partial class ProductionTax : Entity
+    public partial class ProductionTax : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String TaxIdValue = string.Empty;
         /// <summary>

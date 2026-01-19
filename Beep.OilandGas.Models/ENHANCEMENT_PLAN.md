@@ -96,11 +96,10 @@ Beep.OilandGas.Models provides core data models for oil and gas operations, incl
    - Relationship definitions
    - Index definitions
 
-3. **Data Transfer Objects (DTOs)**
-   - Create DTOs for API communication
-   - Mapping between entities and DTOs
-   - Versioned DTOs
-   - Partial update support
+3. **No DTO/Model Layer (Project Rule)**
+   - Use `Data/*` entities directly (inherit `Entity` and implement `IPPDMEntity`)
+   - Keep API/request/response contracts outside this repo or generate them from entities if needed
+   - Prefer explicit validation + versioning on entities over separate DTO classes
 
 ### Phase 4: Advanced Features (Priority: Medium)
 **Timeline: 4-5 weeks**

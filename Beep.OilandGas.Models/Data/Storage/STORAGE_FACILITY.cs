@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Storage
 {
-    public partial class STORAGE_FACILITY : Entity
+    public partial class STORAGE_FACILITY : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String STORAGE_FACILITY_IDValue;
         public System.String STORAGE_FACILITY_ID

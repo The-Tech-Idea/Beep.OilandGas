@@ -13,5 +13,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<TANK_INVENTORY> UpdateInventoryAsync(string tankId, decimal volume, string userId, string cn = "PPDM39");
         Task<TANK_INVENTORY?> GetInventoryAsync(string tankId, string cn = "PPDM39");
         Task<bool> ValidateAsync(TANK_INVENTORY inventory, string cn = "PPDM39");
+        Task<INVENTORY_VALUATION> CalculateValuationAsync(string inventoryItemId, DateTime valuationDate, string method, string userId, string cn = "PPDM39");
+        Task<INVENTORY_REPORT_SUMMARY> GenerateReconciliationReportAsync(string inventoryItemId, DateTime periodStart, DateTime periodEnd, string userId, string cn = "PPDM39");
     }
 }

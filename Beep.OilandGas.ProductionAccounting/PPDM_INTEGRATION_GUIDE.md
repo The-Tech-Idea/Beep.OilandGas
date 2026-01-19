@@ -35,9 +35,9 @@ var vendorRepo = PPDMTableMapping.GetPPDMRepository(
 - `BUSINESS_ASSOCIATE_ID` - Party to the contract
 
 **Usage:**
-- Sales contracts → Use CONTRACT with CONTRACT_TYPE = "SALES"
-- Purchase contracts → Use CONTRACT with CONTRACT_TYPE = "PURCHASE"
-- Service contracts → Use CONTRACT with CONTRACT_TYPE = "SERVICE"
+- Sales contracts -> Use CONTRACT with CONTRACT_TYPE = "SALES"
+- Purchase contracts -> Use CONTRACT with CONTRACT_TYPE = "PURCHASE"
+- Service contracts -> Use CONTRACT with CONTRACT_TYPE = "SERVICE"
 
 ### FINANCE
 **Use for:** Financial Transactions, Revenue Transactions (may enhance), Cost Transactions (may enhance)

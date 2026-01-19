@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Imbalance
 {
-    public partial class PRODUCTION_AVAIL : Entity
+    public partial class PRODUCTION_AVAIL : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String PRODUCTION_AVAIL_IDValue;
         public System.String PRODUCTION_AVAIL_ID

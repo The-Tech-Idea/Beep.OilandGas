@@ -36,6 +36,13 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref ALLOCATION_METHODValue, value); }
         }
 
+        private System.String AFE_IDValue;
+        public System.String AFE_ID
+        {
+            get { return this.AFE_IDValue; }
+            set { SetProperty(ref AFE_IDValue, value); }
+        }
+
         private System.Decimal? TOTAL_VOLUMEValue;
         public System.Decimal? TOTAL_VOLUME
         {

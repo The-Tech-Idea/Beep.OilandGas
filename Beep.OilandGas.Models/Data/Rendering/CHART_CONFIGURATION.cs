@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Rendering
 {
-    public partial class CHART_CONFIGURATION : Entity
+    public partial class CHART_CONFIGURATION : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String CHART_CONFIGURATION_IDValue;
         public System.String CHART_CONFIGURATION_ID

@@ -3,7 +3,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Common
 {
-    public partial class OIL_COMPOSITION : Entity
+    public partial class OIL_COMPOSITION : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private string OIL_COMPOSITION_IDValue;
         public string OIL_COMPOSITION_ID

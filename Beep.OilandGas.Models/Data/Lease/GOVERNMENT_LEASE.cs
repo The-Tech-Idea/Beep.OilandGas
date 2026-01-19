@@ -4,7 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.Lease
 {
-    public partial class GOVERNMENT_LEASE : Entity
+    public partial class GOVERNMENT_LEASE : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
     {
         private System.String LEASE_IDValue;
         public System.String LEASE_ID

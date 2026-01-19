@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -17,7 +18,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// Supports multiple allocation methods (Direct, Step-Down, Reciprocal, ABC)
     /// Critical for accurate product/department costing and profitability analysis
     /// </summary>
-    public class CostAllocationService
+    public class CostAllocationService : ICostAllocationService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;
@@ -254,6 +255,82 @@ namespace Beep.OilandGas.Accounting.Services
                     break;
                 }
             }
+        }
+
+        /// <summary>
+        /// Allocates a single accounting cost across cost centers and persists COST_ALLOCATION records.
+        /// </summary>
+        public async Task<List<COST_ALLOCATION>> AllocateCostAsync(
+            ACCOUNTING_COST cost,
+            List<COST_ALLOCATION> allocations,
+            string userId,
+            string cn = "PPDM39")
+        {
+            if (cost == null)
+                throw new ArgumentNullException(nameof(cost));
+            if (allocations == null || allocations.Count == 0)
+                throw new InvalidOperationException("Allocations are required");
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentNullException(nameof(userId));
+            if (cost.AMOUNT <= 0)
+                throw new InvalidOperationException("Cost amount must be positive");
+
+            var totalPercentage = allocations.Sum(a => a.ALLOCATION_PERCENTAGE ?? 0m);
+            if (Math.Abs(totalPercentage - 100m) > 0.01m)
+                throw new InvalidOperationException($"Allocation percentages must sum to 100 (got {totalPercentage})");
+
+            var metadata = await _metadata.GetTableMetadataAsync("COST_ALLOCATION");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(COST_ALLOCATION);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "COST_ALLOCATION");
+
+            var results = new List<COST_ALLOCATION>();
+            foreach (var allocation in allocations)
+            {
+                allocation.COST_ALLOCATION_ID ??= Guid.NewGuid().ToString();
+                allocation.COST_TRANSACTION_ID ??= cost.ACCOUNTING_COST_ID;
+                allocation.ALLOCATED_AMOUNT = cost.AMOUNT * ((allocation.ALLOCATION_PERCENTAGE ?? 0m) / 100m);
+                allocation.ALLOCATION_METHOD ??= "VOLUME_BASED";
+                allocation.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
+                allocation.PPDM_GUID ??= Guid.NewGuid().ToString();
+                allocation.ROW_CREATED_BY = userId;
+                allocation.ROW_CREATED_DATE = DateTime.UtcNow;
+
+                await repo.InsertAsync(allocation, userId);
+                results.Add(allocation);
+
+                await UpdateCostCenterTotalsAsync(allocation.COST_CENTER_ID, allocation.ALLOCATED_AMOUNT ?? 0m, userId, cn);
+            }
+
+            return results;
+        }
+
+        private async Task UpdateCostCenterTotalsAsync(string costCenterId, decimal amount, string userId, string cn)
+        {
+            if (string.IsNullOrWhiteSpace(costCenterId))
+                return;
+
+            var metadata = await _metadata.GetTableMetadataAsync("COST_CENTER");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
+                ?? typeof(COST_CENTER);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, cn, "COST_CENTER");
+
+            var result = await repo.GetByIdAsync(costCenterId);
+            var center = result as COST_CENTER;
+            if (center == null)
+                return;
+
+            center.TOTAL_CAPITALIZED_COSTS = (center.TOTAL_CAPITALIZED_COSTS ?? 0m) + amount;
+            center.ROW_CHANGED_BY = userId;
+            center.ROW_CHANGED_DATE = DateTime.UtcNow;
+
+            await repo.UpdateAsync(center, userId);
         }
 
         /// <summary>
