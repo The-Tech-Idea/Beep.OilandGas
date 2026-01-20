@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.EconomicAnalysis;
+using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
 
 namespace Beep.OilandGas.Client.App.Services.Calculations

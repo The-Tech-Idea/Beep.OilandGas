@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.DTOs.AccessControl;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using TheTechIdea.Beep.Report;
 using System.Collections.Generic;
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Get all assets a user can access
         /// </summary>
         [HttpGet("user/{userId}/assets")]
-        public async Task<ActionResult<List<AssetAccessDTO>>> GetUserAccessibleAssets(
+        public async Task<ActionResult<List<AssetAccess>>> GetUserAccessibleAssets(
             string userId, 
             [FromQuery] string? assetType = null, 
             [FromQuery] string? organizationId = null,

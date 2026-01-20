@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.EconomicAnalysis;
+using Beep.OilandGas.Models.Data.EconomicAnalysis;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.ChokeAnalysis;
+using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 
 namespace Beep.OilandGas.Client.App.Services.Analysis

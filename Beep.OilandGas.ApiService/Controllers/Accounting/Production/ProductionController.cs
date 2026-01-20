@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.ProductionAccounting.Production;
 using Beep.OilandGas.ProductionAccounting.Services;
-using Beep.OilandGas.Models.DTOs.Accounting.Production;
+using Beep.OilandGas.Models.Data.Accounting.Production;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production

@@ -2,7 +2,7 @@
 
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.Accounting;
-using Beep.OilandGas.Models.DTOs.Accounting;
+using Beep.OilandGas.Models.Data.Accounting;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.PPDM39.Models;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.EnhancedRecovery.Services
@@ -20,7 +20,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         /// Analyzes waterflooding performance with recovery factor calculations.
         /// Evaluates flood front movement, pressure maintenance, and oil displacement.
         /// </summary>
-        public async Task<WaterfloodPerformanceAnalysisDto> AnalyzeWaterfloodPerformanceAsync(
+        public async Task<WaterfloodPerformanceAnalysis> AnalyzeWaterfloodPerformanceAsync(
             string fieldId,
             List<double> productionHistory,
             List<DateTime> timeHistory,
@@ -37,7 +37,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
             try
             {
-                var result = new WaterfloodPerformanceAnalysisDto
+                var result = new WaterfloodPerformanceAnalysis
                 {
                     FieldId = fieldId,
                     AnalysisDate = DateTime.UtcNow,
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         /// <summary>
         /// Analyzes gas injection recovery mechanisms (miscible and immiscible displacement).
         /// </summary>
-        public async Task<GasInjectionAnalysisDto> AnalyzeGasInjectionAsync(
+        public async Task<GasInjectionAnalysis> AnalyzeGasInjectionAsync(
             string fieldId,
             string gasType,
             double injectionPressure,
@@ -106,7 +106,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
             try
             {
-                var result = new GasInjectionAnalysisDto
+                var result = new GasInjectionAnalysis
                 {
                     FieldId = fieldId,
                     GasType = gasType,
@@ -154,7 +154,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         /// <summary>
         /// Analyzes chemical EOR methods (polymer flooding, surfactant flooding, alkali flooding).
         /// </summary>
-        public async Task<ChemicalEORAnalysisDto> AnalyzeChemicalEORAsync(
+        public async Task<ChemicalEORAnalysis> AnalyzeChemicalEORAsync(
             string fieldId,
             string chemicalType,
             double reservoirTemperature,
@@ -172,7 +172,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
             try
             {
-                var result = new ChemicalEORAnalysisDto
+                var result = new ChemicalEORAnalysis
                 {
                     FieldId = fieldId,
                     ChemicalType = chemicalType,
@@ -221,7 +221,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         /// <summary>
         /// Analyzes thermal recovery methods (steam injection, in-situ combustion).
         /// </summary>
-        public async Task<ThermalRecoveryAnalysisDto> AnalyzeThermalRecoveryAsync(
+        public async Task<ThermalRecoveryAnalysis> AnalyzeThermalRecoveryAsync(
             string fieldId,
             string thermalMethod,
             double reservoirTemperature,
@@ -237,7 +237,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
             try
             {
-                var result = new ThermalRecoveryAnalysisDto
+                var result = new ThermalRecoveryAnalysis
                 {
                     FieldId = fieldId,
                     ThermalMethod = thermalMethod,
@@ -291,7 +291,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         /// <summary>
         /// Performs EOR method selection and comparison for optimal field development strategy.
         /// </summary>
-        public async Task<EORMethodComparisonDto> CompareEORMethodsAsync(
+        public async Task<EORMethodComparison> CompareEORMethodsAsync(
             string fieldId,
             List<string> methodsToEvaluate,
             Dictionary<string, double> reservoirProperties)
@@ -306,7 +306,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
             try
             {
-                var result = new EORMethodComparisonDto
+                var result = new EORMethodComparison
                 {
                     FieldId = fieldId,
                     MethodsCompared = methodsToEvaluate.Count,
@@ -323,7 +323,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 // Rank methods
                 result.RankedMethods = result.MethodScores
                     .OrderByDescending(x => x.Value.OverallScore)
-                    .Select((x, index) => new RankedEORMethodDto
+                    .Select((x, index) => new RankedEORMethod
                     {
                         Rank = index + 1,
                         MethodName = x.Key,
@@ -352,7 +352,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         /// <summary>
         /// Calculates injection well placement optimization for maximum reservoir contact.
         /// </summary>
-        public async Task<InjectionWellOptimizationDto> OptimizeInjectionWellPlacementAsync(
+        public async Task<InjectionWellOptimization> OptimizeInjectionWellPlacementAsync(
             string fieldId,
             int desiredWellCount,
             double reservoirArea,
@@ -370,7 +370,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
             try
             {
-                var result = new InjectionWellOptimizationDto
+                var result = new InjectionWellOptimization
                 {
                     FieldId = fieldId,
                     DesiredWellCount = desiredWellCount,
@@ -423,7 +423,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         /// <summary>
         /// Analyzes pressure performance and response in EOR operations.
         /// </summary>
-        public async Task<PressurePerformanceAnalysisDto> AnalyzePressurePerformanceAsync(
+        public async Task<PressurePerformanceAnalysis> AnalyzePressurePerformanceAsync(
             string fieldId,
             double initialReservoirPressure,
             double currentReservoirPressure,
@@ -440,7 +440,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
             try
             {
-                var result = new PressurePerformanceAnalysisDto
+                var result = new PressurePerformanceAnalysis
                 {
                     FieldId = fieldId,
                     InitialReservoirPressure = initialReservoirPressure,
@@ -490,7 +490,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
         /// <summary>
         /// Calculates economic feasibility of EOR implementation.
         /// </summary>
-        public async Task<EOREconomicAnalysisDto> AnalyzeEOReconomicsAsync(
+        public async Task<EOREconomicAnalysis> AnalyzeEOReconomicsAsync(
             string fieldId,
             double estimatedIncrementalOil,
             double oilPrice,
@@ -510,7 +510,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
             try
             {
-                var result = new EOREconomicAnalysisDto
+                var result = new EOREconomicAnalysis
                 {
                     FieldId = fieldId,
                     EstimatedIncrementalOil = estimatedIncrementalOil,
@@ -587,7 +587,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return 0.5 + (rate * 0.4); // 50-90% efficiency range
         }
 
-        private WaterCutTrendDto AnalyzeWaterCutTrend(List<double> productionData, int monthCount)
+        private WaterCutTrend AnalyzeWaterCutTrend(List<double> productionData, int monthCount)
         {
             // Simplified water cut calculation
             // Initial water cut low, increases over time
@@ -595,7 +595,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             double finalWaterCut = 0.40 + (monthCount / 300.0 * 0.3); // 40-70% final
             double rateOfIncrease = (finalWaterCut - initialWaterCut) / monthCount;
 
-            return new WaterCutTrendDto
+            return new WaterCutTrend
             {
                 InitialWaterCut = initialWaterCut,
                 FinalWaterCut = Math.Min(finalWaterCut, 0.95),
@@ -650,11 +650,11 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return (1 - residualOilSaturation) * displacementEfficiency * 100;
         }
 
-        private GasTypeCharacteristicsDto GetGasTypeCharacteristics(string gasType)
+        private GasTypeCharacteristics GetGasTypeCharacteristics(string gasType)
         {
             return gasType.ToUpper() switch
             {
-                "CO2" => new GasTypeCharacteristicsDto
+                "CO2" => new GasTypeCharacteristics
                 {
                     GasType = "CO2",
                     Density = 1.20,
@@ -662,7 +662,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                     CriticalPressure = 1070,
                     MiscibilityAdvantage = "Low IFT with most crudes"
                 },
-                "N2" => new GasTypeCharacteristicsDto
+                "N2" => new GasTypeCharacteristics
                 {
                     GasType = "N2",
                     Density = 0.81,
@@ -670,7 +670,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                     CriticalPressure = 492,
                     MiscibilityAdvantage = "High pressure required"
                 },
-                "HC" => new GasTypeCharacteristicsDto
+                "HC" => new GasTypeCharacteristics
                 {
                     GasType = "Hydrocarbon",
                     Density = 2.0,
@@ -678,7 +678,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                     CriticalPressure = 670,
                     MiscibilityAdvantage = "Low MMP, effective with light oils"
                 },
-                _ => new GasTypeCharacteristicsDto
+                _ => new GasTypeCharacteristics
                 {
                     GasType = gasType,
                     Density = 1.0,
@@ -766,9 +766,9 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return concerns;
         }
 
-        private ChemicalParametersDto GetChemicalParameters(string chemicalType)
+        private ChemicalParameters GetChemicalParameters(string chemicalType)
         {
-            return new ChemicalParametersDto
+            return new ChemicalParameters
             {
                 ChemicalType = chemicalType,
                 OptimalTemperature = 150,
@@ -833,9 +833,9 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                    "Moderate - ISC produces some CO2";
         }
 
-        private EORMethodScoreDto CalculateEORMethodScore(string method, Dictionary<string, double> properties)
+        private EORMethodScore CalculateEORMethodScore(string method, Dictionary<string, double> properties)
         {
-            var score = new EORMethodScoreDto { Method = method };
+            var score = new EORMethodScore { Method = method };
             
             // Weighted scoring
             double tempScore = (properties.ContainsKey("Temperature") && properties["Temperature"] < 150) ? 10 : 5;
@@ -850,7 +850,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return score;
         }
 
-        private double CalculateEORSynergyPotential(List<string> methods, Dictionary<string, EORMethodScoreDto> scores)
+        private double CalculateEORSynergyPotential(List<string> methods, Dictionary<string, EORMethodScore> scores)
         {
             // Synergy: combining methods can have greater effect than individual
             if (methods.Count < 2) return 0;

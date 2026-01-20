@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.CompressorAnalysis
 {
-    public partial class CENTRIFUGAL_COMPRESSOR_PROPERTIES : Entity, IPPDMEntity
-    {
+    public partial class CENTRIFUGAL_COMPRESSOR_PROPERTIES : ModelEntityBase {
         private String CENTRIFUGAL_COMPRESSOR_PROPERTIES_IDValue;
         public String CENTRIFUGAL_COMPRESSOR_PROPERTIES_ID
         {

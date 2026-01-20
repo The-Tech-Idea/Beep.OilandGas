@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.ProspectIdentification.Services
 {
@@ -16,22 +16,22 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Initiates a new prospect identification project
         /// </summary>
-        Task<ProspectIdentificationProjectDto> CreateProjectAsync(CreateProjectDto createDto, string userId);
+        Task<ProspectIdentificationProject> CreateProjectAsync(CreateProject createDto, string userId);
 
         /// <summary>
         /// Gets project status and progress
         /// </summary>
-        Task<ProspectIdentificationProjectDto> GetProjectAsync(string projectId);
+        Task<ProspectIdentificationProject> GetProjectAsync(string projectId);
 
         /// <summary>
         /// Updates project status
         /// </summary>
-        Task<ProspectIdentificationProjectDto> UpdateProjectStatusAsync(string projectId, ProjectStatus newStatus, string userId);
+        Task<ProspectIdentificationProject> UpdateProjectStatusAsync(string projectId, ProjectStatus newStatus, string userId);
 
         /// <summary>
         /// Gets all projects with filtering
         /// </summary>
-        Task<List<ProspectIdentificationProjectDto>> GetProjectsAsync(string? basinId = null, ProjectStatus? status = null, DateTime? startDate = null, DateTime? endDate = null);
+        Task<List<ProspectIdentificationProject>> GetProjectsAsync(string? basinId = null, ProjectStatus? status = null, DateTime? startDate = null, DateTime? endDate = null);
 
         #endregion
 
@@ -40,22 +40,22 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Imports seismic data into the project
         /// </summary>
-        Task<SeismicDataImportDto> ImportSeismicDataAsync(string projectId, SeismicDataImportRequestDto request, string userId);
+        Task<SeismicDataImport> ImportSeismicDataAsync(string projectId, SeismicDataImportRequest request, string userId);
 
         /// <summary>
         /// Imports well data for calibration
         /// </summary>
-        Task<WellDataImportDto> ImportWellDataAsync(string projectId, WellDataImportRequestDto request, string userId);
+        Task<WellDataImport> ImportWellDataAsync(string projectId, WellDataImportRequest request, string userId);
 
         /// <summary>
         /// Integrates multiple data sources
         /// </summary>
-        Task<DataIntegrationDto> IntegrateDataSourcesAsync(string projectId, DataIntegrationRequestDto request, string userId);
+        Task<DataIntegration> IntegrateDataSourcesAsync(string projectId, DataIntegrationRequest request, string userId);
 
         /// <summary>
         /// Performs quality control on imported data
         /// </summary>
-        Task<DataQualityDto> PerformDataQualityControlAsync(string projectId, DataQualityRequestDto request);
+        Task<DataQuality> PerformDataQualityControlAsync(string projectId, DataQualityRequest request);
 
         #endregion
 
@@ -64,22 +64,22 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Generates prospects from seismic interpretation
         /// </summary>
-        Task<List<GeneratedProspectDto>> GenerateProspectsFromSeismicAsync(string projectId, SeismicProspectGenerationRequestDto request, string userId);
+        Task<List<GeneratedProspect>> GenerateProspectsFromSeismicAsync(string projectId, SeismicProspectGenerationRequest request, string userId);
 
         /// <summary>
         /// Generates prospects from geological analysis
         /// </summary>
-        Task<List<GeneratedProspectDto>> GenerateProspectsFromGeologyAsync(string projectId, GeologicalProspectGenerationRequestDto request, string userId);
+        Task<List<GeneratedProspect>> GenerateProspectsFromGeologyAsync(string projectId, GeologicalProspectGenerationRequest request, string userId);
 
         /// <summary>
         /// Generates prospects from play-based analysis
         /// </summary>
-        Task<List<GeneratedProspectDto>> GenerateProspectsFromPlayAsync(string projectId, PlayBasedProspectGenerationRequestDto request, string userId);
+        Task<List<GeneratedProspect>> GenerateProspectsFromPlayAsync(string projectId, PlayBasedProspectGenerationRequest request, string userId);
 
         /// <summary>
         /// Merges duplicate or overlapping prospects
         /// </summary>
-        Task<List<GeneratedProspectDto>> MergeProspectsAsync(string projectId, ProspectMergeRequestDto request, string userId);
+        Task<List<GeneratedProspect>> MergeProspectsAsync(string projectId, ProspectMergeRequest request, string userId);
 
         #endregion
 
@@ -88,17 +88,17 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Runs complete evaluation pipeline on prospects
         /// </summary>
-        Task<EvaluationPipelineResultDto> RunEvaluationPipelineAsync(string projectId, EvaluationPipelineRequestDto request, string userId);
+        Task<EvaluationPipelineResult> RunEvaluationPipelineAsync(string projectId, EvaluationPipelineRequest request, string userId);
 
         /// <summary>
         /// Performs rapid screening of generated prospects
         /// </summary>
-        Task<RapidScreeningResultDto> PerformRapidScreeningAsync(string projectId, RapidScreeningRequestDto request);
+        Task<RapidScreeningResult> PerformRapidScreeningAsync(string projectId, RapidScreeningRequest request);
 
         /// <summary>
         /// Performs detailed evaluation of selected prospects
         /// </summary>
-        Task<DetailedEvaluationResultDto> PerformDetailedEvaluationAsync(string projectId, DetailedEvaluationRequestDto request, string userId);
+        Task<DetailedEvaluationResult> PerformDetailedEvaluationAsync(string projectId, DetailedEvaluationRequest request, string userId);
 
         /// <summary>
         /// Updates prospect evaluation status
@@ -112,22 +112,22 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Creates prospect portfolio for the project
         /// </summary>
-        Task<ProspectPortfolioDto> CreatePortfolioAsync(string projectId, PortfolioCreationRequestDto request, string userId);
+        Task<ProspectPortfolio> CreatePortfolioAsync(string projectId, PortfolioCreationRequest request, string userId);
 
         /// <summary>
         /// Optimizes prospect portfolio
         /// </summary>
-        Task<PortfolioOptimizationDto> OptimizePortfolioAsync(string projectId, PortfolioOptimizationRequestDto request, string userId);
+        Task<PortfolioOptimization> OptimizePortfolioAsync(string projectId, PortfolioOptimizationRequest request, string userId);
 
         /// <summary>
         /// Performs portfolio risk analysis
         /// </summary>
-        Task<PortfolioRiskAnalysisDto> AnalyzePortfolioRiskAsync(string projectId, PortfolioRiskRequestDto request);
+        Task<PortfolioRiskAnalysis> AnalyzePortfolioRiskAsync(string projectId, PortfolioRiskRequest request);
 
         /// <summary>
         /// Generates drilling schedule recommendations
         /// </summary>
-        Task<DrillingScheduleDto> GenerateDrillingScheduleAsync(string projectId, DrillingScheduleRequestDto request);
+        Task<DrillingSchedule> GenerateDrillingScheduleAsync(string projectId, DrillingScheduleRequest request);
 
         #endregion
 
@@ -136,22 +136,22 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Assigns prospects to evaluators
         /// </summary>
-        Task AssignProspectsAsync(string projectId, ProspectAssignmentRequestDto request, string userId);
+        Task AssignProspectsAsync(string projectId, ProspectAssignmentRequest request, string userId);
 
         /// <summary>
         /// Gets evaluation progress and status
         /// </summary>
-        Task<EvaluationProgressDto> GetEvaluationProgressAsync(string projectId);
+        Task<EvaluationProgress> GetEvaluationProgressAsync(string projectId);
 
         /// <summary>
         /// Performs quality assurance review
         /// </summary>
-        Task<QualityAssuranceDto> PerformQualityAssuranceAsync(string projectId, QualityAssuranceRequestDto request, string userId);
+        Task<QualityAssurance> PerformQualityAssuranceAsync(string projectId, QualityAssuranceRequest request, string userId);
 
         /// <summary>
         /// Escalates prospects requiring senior review
         /// </summary>
-        Task EscalateProspectsAsync(string projectId, ProspectEscalationRequestDto request, string userId);
+        Task EscalateProspectsAsync(string projectId, ProspectEscalationRequest request, string userId);
 
         #endregion
 
@@ -160,22 +160,22 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Generates project status report
         /// </summary>
-        Task<ProjectReportDto> GenerateProjectReportAsync(string projectId, ProjectReportRequestDto request);
+        Task<ProjectReport> GenerateProjectReportAsync(string projectId, ProjectReportRequest request);
 
         /// <summary>
         /// Generates prospect inventory report
         /// </summary>
-        Task<ProspectInventoryDto> GenerateProspectInventoryAsync(string projectId, ProspectInventoryRequestDto request);
+        Task<ProspectInventory> GenerateProspectInventoryAsync(string projectId, ProspectInventoryRequest request);
 
         /// <summary>
         /// Performs project analytics
         /// </summary>
-        Task<ProjectAnalyticsDto> PerformProjectAnalyticsAsync(string projectId, ProjectAnalyticsRequestDto request);
+        Task<ProjectAnalytics> PerformProjectAnalyticsAsync(string projectId, ProjectAnalyticsRequest request);
 
         /// <summary>
         /// Exports project data
         /// </summary>
-        Task<byte[]> ExportProjectDataAsync(string projectId, ExportRequestDto request);
+        Task<byte[]> ExportProjectDataAsync(string projectId, ExportRequest request);
 
         #endregion
 
@@ -184,22 +184,22 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Provides decision recommendations
         /// </summary>
-        Task<DecisionRecommendationDto> GetDecisionRecommendationsAsync(string projectId, DecisionRequestDto request);
+        Task<DecisionRecommendation> GetDecisionRecommendationsAsync(string projectId, DecisionRequest request);
 
         /// <summary>
         /// Performs scenario analysis
         /// </summary>
-        Task<ScenarioAnalysisDto> PerformScenarioAnalysisAsync(string projectId, ScenarioAnalysisRequestDto request);
+        Task<ScenarioAnalysis> PerformScenarioAnalysisAsync(string projectId, ScenarioAnalysisRequest request);
 
         /// <summary>
         /// Calculates value of information
         /// </summary>
-        Task<ValueOfInformationDto> CalculateValueOfInformationAsync(string projectId, ValueOfInformationRequestDto request);
+        Task<ValueOfInformation> CalculateValueOfInformationAsync(string projectId, ValueOfInformationRequest request);
 
         /// <summary>
         /// Generates management presentation
         /// </summary>
-        Task<ManagementPresentationDto> GenerateManagementPresentationAsync(string projectId, PresentationRequestDto request);
+        Task<ManagementPresentation> GenerateManagementPresentationAsync(string projectId, PresentationRequest request);
 
         #endregion
     }
@@ -209,7 +209,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Prospect identification project DTO
     /// </summary>
-    public class ProspectIdentificationProjectDto
+    public class ProspectIdentificationProject
     {
         public string ProjectId { get; set; } = string.Empty;
         public string ProjectName { get; set; } = string.Empty;
@@ -223,8 +223,8 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public List<string> TeamMembers { get; set; } = new();
         public decimal Budget { get; set; }
         public string BudgetCurrency { get; set; } = string.Empty;
-        public ProjectMetricsDto Metrics { get; set; } = new();
-        public List<ProjectMilestoneDto> Milestones { get; set; } = new();
+        public ProjectMetrics Metrics { get; set; } = new();
+        public List<ProjectMilestone> Milestones { get; set; } = new();
         public string Notes { get; set; } = string.Empty;
     }
 
@@ -247,7 +247,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Create project DTO
     /// </summary>
-    public class CreateProjectDto
+    public class CreateProject
     {
         public string ProjectName { get; set; } = string.Empty;
         public string BasinId { get; set; } = string.Empty;
@@ -256,13 +256,13 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public List<string> TeamMembers { get; set; } = new();
         public decimal Budget { get; set; }
         public string BudgetCurrency { get; set; } = string.Empty;
-        public List<ProjectMilestoneDto> Milestones { get; set; } = new();
+        public List<ProjectMilestone> Milestones { get; set; } = new();
     }
 
     /// <summary>
     /// Project metrics DTO
     /// </summary>
-    public class ProjectMetricsDto
+    public class ProjectMetrics
     {
         public int TotalProspects { get; set; }
         public int EvaluatedProspects { get; set; }
@@ -278,7 +278,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Project milestone DTO
     /// </summary>
-    public class ProjectMilestoneDto
+    public class ProjectMilestone
     {
         public string MilestoneId { get; set; } = string.Empty;
         public string MilestoneName { get; set; } = string.Empty;
@@ -296,12 +296,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Seismic data import DTO
     /// </summary>
-    public class SeismicDataImportDto
+    public class SeismicDataImport
     {
         public string ImportId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime ImportDate { get; set; }
-        public List<SeismicSurveyDto> ImportedSurveys { get; set; } = new();
+        public List<SeismicSurvey> ImportedSurveys { get; set; } = new();
         public int TotalFiles { get; set; }
         public long TotalSizeBytes { get; set; }
         public string ImportStatus { get; set; } = string.Empty;
@@ -311,12 +311,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Well data import DTO
     /// </summary>
-    public class WellDataImportDto
+    public class WellDataImport
     {
         public string ImportId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime ImportDate { get; set; }
-        public List<WellDto> ImportedWells { get; set; } = new();
+        public List<Well> ImportedWells { get; set; } = new();
         public int TotalWells { get; set; }
         public int TotalLogs { get; set; }
         public string ImportStatus { get; set; } = string.Empty;
@@ -326,7 +326,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Well DTO
     /// </summary>
-    public class WellDto
+    public class Well
     {
         public string WellUWI { get; set; } = string.Empty;
         public string WellName { get; set; } = string.Empty;
@@ -340,7 +340,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Data integration DTO
     /// </summary>
-    public class DataIntegrationDto
+    public class DataIntegration
     {
         public string IntegrationId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
@@ -356,21 +356,21 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Data quality DTO
     /// </summary>
-    public class DataQualityDto
+    public class DataQuality
     {
         public string QualityCheckId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime CheckDate { get; set; }
         public decimal OverallQualityScore { get; set; }
         public Dictionary<string, decimal> QualityByDataType { get; set; } = new();
-        public List<DataQualityIssueDto> Issues { get; set; } = new();
+        public List<DataQualityIssue> Issues { get; set; } = new();
         public List<string> Recommendations { get; set; } = new();
     }
 
     /// <summary>
     /// Data quality issue DTO
     /// </summary>
-    public class DataQualityIssueDto
+    public class DataQualityIssue
     {
         public string IssueId { get; set; } = string.Empty;
         public string DataType { get; set; } = string.Empty;
@@ -387,7 +387,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Generated prospect DTO
     /// </summary>
-    public class GeneratedProspectDto
+    public class GeneratedProspect
     {
         public string ProspectId { get; set; } = string.Empty;
         public string ProspectName { get; set; } = string.Empty;
@@ -428,14 +428,14 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Evaluation pipeline result DTO
     /// </summary>
-    public class EvaluationPipelineResultDto
+    public class EvaluationPipelineResult
     {
         public string PipelineId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime ExecutionDate { get; set; }
-        public PipelineStageResultDto ScreeningStage { get; set; } = new();
-        public PipelineStageResultDto DetailedEvaluationStage { get; set; } = new();
-        public PipelineStageResultDto FinalRankingStage { get; set; } = new();
+        public PipelineStageResult ScreeningStage { get; set; } = new();
+        public PipelineStageResult DetailedEvaluationStage { get; set; } = new();
+        public PipelineStageResult FinalRankingStage { get; set; } = new();
         public int TotalProspectsProcessed { get; set; }
         public int ProspectsAdvanced { get; set; }
         public string PipelineStatus { get; set; } = string.Empty;
@@ -444,7 +444,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Pipeline stage result DTO
     /// </summary>
-    public class PipelineStageResultDto
+    public class PipelineStageResult
     {
         public string StageName { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
@@ -459,12 +459,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Rapid screening result DTO
     /// </summary>
-    public class RapidScreeningResultDto
+    public class RapidScreeningResult
     {
         public string ScreeningId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime ScreeningDate { get; set; }
-        public List<ScreeningResultDto> Results { get; set; } = new();
+        public List<ScreeningResult> Results { get; set; } = new();
         public int TotalProspects { get; set; }
         public int PassedScreening { get; set; }
         public int FailedScreening { get; set; }
@@ -474,7 +474,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Screening result DTO
     /// </summary>
-    public class ScreeningResultDto
+    public class ScreeningResult
     {
         public string ProspectId { get; set; } = string.Empty;
         public string ProspectName { get; set; } = string.Empty;
@@ -488,12 +488,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Detailed evaluation result DTO
     /// </summary>
-    public class DetailedEvaluationResultDto
+    public class DetailedEvaluationResult
     {
         public string EvaluationId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime EvaluationDate { get; set; }
-        public List<DetailedProspectEvaluationDto> Evaluations { get; set; } = new();
+        public List<DetailedProspectEvaluation> Evaluations { get; set; } = new();
         public string EvaluationMethodology { get; set; } = string.Empty;
         public List<string> KeyFindings { get; set; } = new();
     }
@@ -501,13 +501,13 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Detailed prospect evaluation DTO
     /// </summary>
-    public class DetailedProspectEvaluationDto
+    public class DetailedProspectEvaluation
     {
         public string ProspectId { get; set; } = string.Empty;
         public string ProspectName { get; set; } = string.Empty;
-        public VolumetricAnalysisDto VolumetricAnalysis { get; set; } = new();
-        public RiskAssessmentDto RiskAssessment { get; set; } = new();
-        public EconomicEvaluationDto EconomicEvaluation { get; set; } = new();
+        public VolumetricAnalysis VolumetricAnalysis { get; set; } = new();
+        public RiskAssessment RiskAssessment { get; set; } = new();
+        public EconomicEvaluation EconomicEvaluation { get; set; } = new();
         public decimal OverallScore { get; set; }
         public string Recommendation { get; set; } = string.Empty;
     }
@@ -519,21 +519,21 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Prospect portfolio DTO
     /// </summary>
-    public class ProspectPortfolioDto
+    public class ProspectPortfolio
     {
         public string PortfolioId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public string PortfolioName { get; set; } = string.Empty;
         public DateTime CreatedDate { get; set; }
-        public List<PortfolioProspectDto> Prospects { get; set; } = new();
-        public PortfolioSummaryDto Summary { get; set; } = new();
+        public List<PortfolioProspect> Prospects { get; set; } = new();
+        public PortfolioSummary Summary { get; set; } = new();
         public string OptimizationStatus { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Portfolio prospect DTO
     /// </summary>
-    public class PortfolioProspectDto
+    public class PortfolioProspect
     {
         public string ProspectId { get; set; } = string.Empty;
         public string ProspectName { get; set; } = string.Empty;
@@ -549,21 +549,21 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Portfolio optimization DTO
     /// </summary>
-    public class PortfolioOptimizationDto
+    public class PortfolioOptimization
     {
         public string OptimizationId { get; set; } = string.Empty;
         public string PortfolioId { get; set; } = string.Empty;
         public DateTime OptimizationDate { get; set; }
         public string OptimizationMethod { get; set; } = string.Empty;
-        public List<OptimizationScenarioDto> Scenarios { get; set; } = new();
-        public OptimizationScenarioDto RecommendedScenario { get; set; } = new();
+        public List<OptimizationScenario> Scenarios { get; set; } = new();
+        public OptimizationScenario RecommendedScenario { get; set; } = new();
         public string OptimizationSummary { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Optimization scenario DTO
     /// </summary>
-    public class OptimizationScenarioDto
+    public class OptimizationScenario
     {
         public string ScenarioId { get; set; } = string.Empty;
         public string ScenarioName { get; set; } = string.Empty;
@@ -577,7 +577,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Portfolio risk analysis DTO
     /// </summary>
-    public class PortfolioRiskAnalysisDto
+    public class PortfolioRiskAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string PortfolioId { get; set; } = string.Empty;
@@ -585,7 +585,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public decimal OverallRisk { get; set; }
         public decimal ValueAtRisk { get; set; }
         public decimal ExpectedShortfall { get; set; }
-        public List<RiskFactorDto> KeyRiskFactors { get; set; } = new();
+        public List<RiskFactor> KeyRiskFactors { get; set; } = new();
         public byte[] RiskChart { get; set; } = Array.Empty<byte>();
         public List<string> RiskMitigationStrategies { get; set; } = new();
     }
@@ -593,12 +593,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Drilling schedule DTO
     /// </summary>
-    public class DrillingScheduleDto
+    public class DrillingSchedule
     {
         public string ScheduleId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime GeneratedDate { get; set; }
-        public List<DrillingSlotDto> DrillingSlots { get; set; } = new();
+        public List<DrillingSlot> DrillingSlots { get; set; } = new();
         public decimal TotalCost { get; set; }
         public decimal TotalValue { get; set; }
         public string ScheduleOptimization { get; set; } = string.Empty;
@@ -607,7 +607,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Drilling slot DTO
     /// </summary>
-    public class DrillingSlotDto
+    public class DrillingSlot
     {
         public string SlotId { get; set; } = string.Empty;
         public string ProspectId { get; set; } = string.Empty;
@@ -627,7 +627,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Seismic data import request DTO
     /// </summary>
-    public class SeismicDataImportRequestDto
+    public class SeismicDataImportRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> FilePaths { get; set; } = new();
@@ -640,7 +640,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Well data import request DTO
     /// </summary>
-    public class WellDataImportRequestDto
+    public class WellDataImportRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> WellFiles { get; set; } = new();
@@ -653,7 +653,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Data integration request DTO
     /// </summary>
-    public class DataIntegrationRequestDto
+    public class DataIntegrationRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> DataSources { get; set; } = new();
@@ -665,7 +665,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Data quality request DTO
     /// </summary>
-    public class DataQualityRequestDto
+    public class DataQualityRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> DataTypes { get; set; } = new();
@@ -677,7 +677,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Seismic prospect generation request DTO
     /// </summary>
-    public class SeismicProspectGenerationRequestDto
+    public class SeismicProspectGenerationRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> SurveyIds { get; set; } = new();
@@ -690,7 +690,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Geological prospect generation request DTO
     /// </summary>
-    public class GeologicalProspectGenerationRequestDto
+    public class GeologicalProspectGenerationRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> PlayIds { get; set; } = new();
@@ -703,7 +703,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Play-based prospect generation request DTO
     /// </summary>
-    public class PlayBasedProspectGenerationRequestDto
+    public class PlayBasedProspectGenerationRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public string PlayId { get; set; } = string.Empty;
@@ -715,7 +715,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Prospect merge request DTO
     /// </summary>
-    public class ProspectMergeRequestDto
+    public class ProspectMergeRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> ProspectIds { get; set; } = new();
@@ -727,7 +727,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Evaluation pipeline request DTO
     /// </summary>
-    public class EvaluationPipelineRequestDto
+    public class EvaluationPipelineRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> ProspectIds { get; set; } = new();
@@ -741,7 +741,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Rapid screening request DTO
     /// </summary>
-    public class RapidScreeningRequestDto
+    public class RapidScreeningRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> ProspectIds { get; set; } = new();
@@ -753,7 +753,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Detailed evaluation request DTO
     /// </summary>
-    public class DetailedEvaluationRequestDto
+    public class DetailedEvaluationRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> ProspectIds { get; set; } = new();
@@ -766,7 +766,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Portfolio creation request DTO
     /// </summary>
-    public class PortfolioCreationRequestDto
+    public class PortfolioCreationRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public string PortfolioName { get; set; } = string.Empty;
@@ -778,7 +778,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Portfolio optimization request DTO
     /// </summary>
-    public class PortfolioOptimizationRequestDto
+    public class PortfolioOptimizationRequest
     {
         public string PortfolioId { get; set; } = string.Empty;
         public string OptimizationObjective { get; set; } = "MaximizeValue";
@@ -790,7 +790,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Portfolio risk request DTO
     /// </summary>
-    public class PortfolioRiskRequestDto
+    public class PortfolioRiskRequest
     {
         public string PortfolioId { get; set; } = string.Empty;
         public decimal ConfidenceLevel { get; set; } = 0.95m;
@@ -801,7 +801,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Drilling schedule request DTO
     /// </summary>
-    public class DrillingScheduleRequestDto
+    public class DrillingScheduleRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public string PortfolioId { get; set; } = string.Empty;
@@ -814,7 +814,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Prospect assignment request DTO
     /// </summary>
-    public class ProspectAssignmentRequestDto
+    public class ProspectAssignmentRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public Dictionary<string, List<string>> Assignments { get; set; } = new(); // Evaluator -> ProspectIds
@@ -825,7 +825,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Evaluation progress DTO
     /// </summary>
-    public class EvaluationProgressDto
+    public class EvaluationProgress
     {
         public string ProjectId { get; set; } = string.Empty;
         public DateTime ReportDate { get; set; }
@@ -834,14 +834,14 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public int InProgressEvaluations { get; set; }
         public int PendingEvaluations { get; set; }
         public decimal OverallProgress { get; set; }
-        public List<EvaluatorProgressDto> EvaluatorProgress { get; set; } = new();
+        public List<EvaluatorProgress> EvaluatorProgress { get; set; } = new();
         public List<string> Bottlenecks { get; set; } = new();
     }
 
     /// <summary>
     /// Evaluator progress DTO
     /// </summary>
-    public class EvaluatorProgressDto
+    public class EvaluatorProgress
     {
         public string EvaluatorId { get; set; } = string.Empty;
         public string EvaluatorName { get; set; } = string.Empty;
@@ -855,13 +855,13 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Quality assurance DTO
     /// </summary>
-    public class QualityAssuranceDto
+    public class QualityAssurance
     {
         public string QAId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime ReviewDate { get; set; }
         public string Reviewer { get; set; } = string.Empty;
-        public List<QAReviewDto> Reviews { get; set; } = new();
+        public List<QAReview> Reviews { get; set; } = new();
         public decimal OverallQualityScore { get; set; }
         public List<string> QARecommendations { get; set; } = new();
     }
@@ -869,7 +869,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// QA review DTO
     /// </summary>
-    public class QAReviewDto
+    public class QAReview
     {
         public string ProspectId { get; set; } = string.Empty;
         public string ProspectName { get; set; } = string.Empty;
@@ -882,7 +882,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Prospect escalation request DTO
     /// </summary>
-    public class ProspectEscalationRequestDto
+    public class ProspectEscalationRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> ProspectIds { get; set; } = new();
@@ -895,7 +895,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Project report DTO
     /// </summary>
-    public class ProjectReportDto
+    public class ProjectReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
@@ -903,27 +903,27 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public string ReportType { get; set; } = string.Empty;
         public byte[] ReportContent { get; set; } = Array.Empty<byte>();
         public List<byte[]> Charts { get; set; } = new();
-        public ProjectMetricsDto Metrics { get; set; } = new();
+        public ProjectMetrics Metrics { get; set; } = new();
         public string ExecutiveSummary { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Prospect inventory DTO
     /// </summary>
-    public class ProspectInventoryDto
+    public class ProspectInventory
     {
         public string InventoryId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime GeneratedDate { get; set; }
-        public List<ProspectInventoryItemDto> Prospects { get; set; } = new();
-        public InventorySummaryDto Summary { get; set; } = new();
+        public List<ProspectInventoryItem> Prospects { get; set; } = new();
+        public InventorySummary Summary { get; set; } = new();
         public byte[] InventoryMap { get; set; } = Array.Empty<byte>();
     }
 
     /// <summary>
     /// Prospect inventory item DTO
     /// </summary>
-    public class ProspectInventoryItemDto
+    public class ProspectInventoryItem
     {
         public string ProspectId { get; set; } = string.Empty;
         public string ProspectName { get; set; } = string.Empty;
@@ -937,7 +937,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Inventory summary DTO
     /// </summary>
-    public class InventorySummaryDto
+    public class InventorySummary
     {
         public int TotalProspects { get; set; }
         public int ByStatus { get; set; } // This should be a dictionary
@@ -950,21 +950,21 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Project analytics DTO
     /// </summary>
-    public class ProjectAnalyticsDto
+    public class ProjectAnalytics
     {
         public string AnalyticsId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime AnalysisDate { get; set; }
-        public List<TrendAnalysisDto> Trends { get; set; } = new();
-        public List<PerformanceMetricDto> Metrics { get; set; } = new();
-        public List<PredictiveInsightDto> Insights { get; set; } = new();
+        public List<TrendAnalysis> Trends { get; set; } = new();
+        public List<PerformanceMetric> Metrics { get; set; } = new();
+        public List<PredictiveInsight> Insights { get; set; } = new();
         public byte[] AnalyticsDashboard { get; set; } = Array.Empty<byte>();
     }
 
     /// <summary>
     /// Trend analysis DTO
     /// </summary>
-    public class TrendAnalysisDto
+    public class TrendAnalysis
     {
         public string TrendName { get; set; } = string.Empty;
         public string TrendType { get; set; } = string.Empty;
@@ -977,7 +977,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Performance metric DTO
     /// </summary>
-    public class PerformanceMetricDto
+    public class PerformanceMetric
     {
         public string MetricName { get; set; } = string.Empty;
         public decimal CurrentValue { get; set; }
@@ -990,7 +990,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Predictive insight DTO
     /// </summary>
-    public class PredictiveInsightDto
+    public class PredictiveInsight
     {
         public string InsightType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -1002,7 +1002,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Export request DTO
     /// </summary>
-    public class ExportRequestDto
+    public class ExportRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> DataTypes { get; set; } = new();
@@ -1015,14 +1015,14 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Decision recommendation DTO
     /// </summary>
-    public class DecisionRecommendationDto
+    public class DecisionRecommendation
     {
         public string RecommendationId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime GeneratedDate { get; set; }
         public string DecisionType { get; set; } = string.Empty;
-        public List<RecommendationOptionDto> Options { get; set; } = new();
-        public RecommendationOptionDto RecommendedOption { get; set; } = new();
+        public List<RecommendationOption> Options { get; set; } = new();
+        public RecommendationOption RecommendedOption { get; set; } = new();
         public string Rationale { get; set; } = string.Empty;
         public List<string> Assumptions { get; set; } = new();
         public List<string> Risks { get; set; } = new();
@@ -1031,7 +1031,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Recommendation option DTO
     /// </summary>
-    public class RecommendationOptionDto
+    public class RecommendationOption
     {
         public string OptionId { get; set; } = string.Empty;
         public string OptionName { get; set; } = string.Empty;
@@ -1046,21 +1046,21 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Scenario analysis DTO
     /// </summary>
-    public class ScenarioAnalysisDto
+    public class ScenarioAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime AnalysisDate { get; set; }
-        public List<AnalysisScenarioDto> Scenarios { get; set; } = new();
-        public AnalysisScenarioDto BaseCase { get; set; } = new();
-        public List<ScenarioComparisonDto> Comparisons { get; set; } = new();
+        public List<AnalysisScenario> Scenarios { get; set; } = new();
+        public AnalysisScenario BaseCase { get; set; } = new();
+        public List<ScenarioComparison> Comparisons { get; set; } = new();
         public string AnalysisSummary { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Analysis scenario DTO
     /// </summary>
-    public class AnalysisScenarioDto
+    public class AnalysisScenario
     {
         public string ScenarioId { get; set; } = string.Empty;
         public string ScenarioName { get; set; } = string.Empty;
@@ -1074,7 +1074,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Scenario comparison DTO
     /// </summary>
-    public class ScenarioComparisonDto
+    public class ScenarioComparison
     {
         public string ComparisonId { get; set; } = string.Empty;
         public List<string> ScenarioIds { get; set; } = new();
@@ -1087,13 +1087,13 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Value of information DTO
     /// </summary>
-    public class ValueOfInformationDto
+    public class ValueOfInformation
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
         public DateTime AnalysisDate { get; set; }
-        public List<InformationValueDto> InformationValues { get; set; } = new();
-        public InformationValueDto HighestValueInformation { get; set; } = new();
+        public List<InformationValue> InformationValues { get; set; } = new();
+        public InformationValue HighestValueInformation { get; set; } = new();
         public decimal TotalVOI { get; set; }
         public string AnalysisSummary { get; set; } = string.Empty;
     }
@@ -1101,7 +1101,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Information value DTO
     /// </summary>
-    public class InformationValueDto
+    public class InformationValue
     {
         public string InformationType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -1115,7 +1115,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Management presentation DTO
     /// </summary>
-    public class ManagementPresentationDto
+    public class ManagementPresentation
     {
         public string PresentationId { get; set; } = string.Empty;
         public string ProjectId { get; set; } = string.Empty;
@@ -1132,7 +1132,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Presentation request DTO
     /// </summary>
-    public class PresentationRequestDto
+    public class PresentationRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public string PresentationType { get; set; } = "ExecutiveSummary";
@@ -1145,7 +1145,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Quality assurance request DTO
     /// </summary>
-    public class QualityAssuranceRequestDto
+    public class QualityAssuranceRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> ProspectIds { get; set; } = new();
@@ -1157,7 +1157,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Project report request DTO
     /// </summary>
-    public class ProjectReportRequestDto
+    public class ProjectReportRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public string ReportType { get; set; } = "Status";
@@ -1170,7 +1170,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Prospect inventory request DTO
     /// </summary>
-    public class ProspectInventoryRequestDto
+    public class ProspectInventoryRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<EvaluationStatus> StatusFilter { get; set; } = new();
@@ -1183,7 +1183,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Project analytics request DTO
     /// </summary>
-    public class ProjectAnalyticsRequestDto
+    public class ProjectAnalyticsRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> AnalyticsTypes { get; set; } = new();
@@ -1196,7 +1196,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Decision request DTO
     /// </summary>
-    public class DecisionRequestDto
+    public class DecisionRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public string DecisionType { get; set; } = "PortfolioSelection";
@@ -1208,7 +1208,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Scenario analysis request DTO
     /// </summary>
-    public class ScenarioAnalysisRequestDto
+    public class ScenarioAnalysisRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> ScenarioParameters { get; set; } = new();
@@ -1220,7 +1220,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// <summary>
     /// Value of information request DTO
     /// </summary>
-    public class ValueOfInformationRequestDto
+    public class ValueOfInformationRequest
     {
         public string ProjectId { get; set; } = string.Empty;
         public List<string> InformationTypes { get; set; } = new();

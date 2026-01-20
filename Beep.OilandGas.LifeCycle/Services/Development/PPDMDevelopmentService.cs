@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -12,7 +12,7 @@ using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.GasLift;
 using Beep.OilandGas.GasLift.Calculations;
-using Beep.OilandGas.Models.GasLift;
+using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.PipelineAnalysis;
 using Beep.OilandGas.PipelineAnalysis.Calculations;
 using Beep.OilandGas.PipelineAnalysis.Models;
@@ -1535,7 +1535,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Plans development for a field using DevelopmentPlanning service
         /// </summary>
-        public async Task<DevelopmentPlanDto> PlanDevelopmentAsync(string fieldId, CreateDevelopmentPlanDto planData, string userId)
+        public async Task<DevelopmentPlan> PlanDevelopmentAsync(string fieldId, CreateDevelopmentPlan planData, string userId)
         {
             try
             {
@@ -1545,7 +1545,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 // For now, store plan data in a generic table or use existing structures
                 // In full implementation, would use DevelopmentPlanService
 
-                return new DevelopmentPlanDto
+                return new DevelopmentPlan
                 {
                     PlanId = Guid.NewGuid().ToString(),
                     FieldId = fieldId,
@@ -1564,7 +1564,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Designs a well using DevelopmentPlanning service
         /// </summary>
-        public async Task<WellPlanDto> DesignWellAsync(string fieldId, string planId, CreateWellPlanDto wellPlanData, string userId)
+        public async Task<WellPlan> DesignWellAsync(string fieldId, string planId, CreateWellPlan wellPlanData, string userId)
         {
             try
             {
@@ -1573,7 +1573,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 // Create well design
                 // In full implementation, would use DevelopmentPlanService to add well plan to development plan
 
-                return new WellPlanDto
+                return new WellPlan
                 {
                     WellPlanId = Guid.NewGuid().ToString(),
                     PlanId = planId,
@@ -1597,7 +1597,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Executes drilling operation using DrillingAndConstruction service
         /// </summary>
-        public async Task<DrillingOperationDto> ExecuteDrillingAsync(string fieldId, string wellId, CreateDrillingOperationDto drillingData, string userId)
+        public async Task<DrillingOperation> ExecuteDrillingAsync(string fieldId, string wellId, CreateDrillingOperation drillingData, string userId)
         {
             try
             {
@@ -1637,7 +1637,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
 
                 _logger?.LogInformation("Drilling operation created: {OperationId} for well: {WellId}", operationId, wellId);
 
-                return new DrillingOperationDto
+                return new DrillingOperation
                 {
                     OperationId = operationId,
                     WellUWI = wellId,

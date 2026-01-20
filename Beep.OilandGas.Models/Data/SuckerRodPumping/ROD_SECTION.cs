@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.SuckerRodPumping
 {
-    public partial class ROD_SECTION : Entity, IPPDMEntity
-    {
+    public partial class ROD_SECTION : ModelEntityBase {
         private String ROD_SECTION_IDValue;
         public String ROD_SECTION_ID
         {

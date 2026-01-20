@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class IMBALANCE_ADJUSTMENT : Entity, IPPDMEntity
-    {
+    public partial class IMBALANCE_ADJUSTMENT : ModelEntityBase {
         private System.String IMBALANCE_ADJUSTMENT_IDValue;
         public System.String IMBALANCE_ADJUSTMENT_ID
         {

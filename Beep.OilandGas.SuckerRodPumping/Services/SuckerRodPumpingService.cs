@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs.Pumps;
+using Beep.OilandGas.Models.Data.Pumps;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using TheTechIdea.Beep.Editor;
@@ -45,7 +45,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
         /// <summary>
         /// Designs sucker rod pump system with industry-standard API calculations
         /// </summary>
-        public async Task<SuckerRodPumpDesignDto> DesignPumpSystemAsync(string wellUWI, SuckerRodPumpWellPropertiesDto wellProperties)
+        public async Task<SuckerRodPumpDesign> DesignPumpSystemAsync(string wellUWI, SuckerRodPumpWellProperties wellProperties)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -61,7 +61,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
             decimal strokeFrequency = CalculateStrokeFrequency(wellProperties.DesiredProductionRate, pumpSize, strokeLength);
             decimal rodStringLoad = CalculateRodStringLoad(wellProperties.DesiredProductionRate, wellProperties.FluidDensity, wellProperties.WellDepth);
 
-            var design = new SuckerRodPumpDesignDto
+            var design = new SuckerRodPumpDesign
             {
                 DesignId = _defaults.FormatIdForTable("SRP_DESIGN", Guid.NewGuid().ToString()),
                 WellUWI = wellUWI,
@@ -145,14 +145,14 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
         /// <summary>
         /// Analyzes pump performance with diagnosis of issues
         /// </summary>
-        public async Task<SuckerRodPumpPerformanceDto> AnalyzePerformanceAsync(string pumpId)
+        public async Task<SuckerRodPumpPerformance> AnalyzePerformanceAsync(string pumpId)
         {
             if (string.IsNullOrWhiteSpace(pumpId))
                 throw new ArgumentException("Pump ID cannot be null or empty", nameof(pumpId));
 
             _logger?.LogInformation("Analyzing sucker rod pump performance for pump {PumpId}", pumpId);
 
-            var performance = new SuckerRodPumpPerformanceDto
+            var performance = new SuckerRodPumpPerformance
             {
                 PumpId = pumpId,
                 PerformanceDate = DateTime.UtcNow,
@@ -251,7 +251,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
         /// <summary>
         /// Saves pump design to database
         /// </summary>
-        public async Task SavePumpDesignAsync(SuckerRodPumpDesignDto design, string userId)
+        public async Task SavePumpDesignAsync(SuckerRodPumpDesign design, string userId)
         {
             if (design == null)
                 throw new ArgumentNullException(nameof(design));

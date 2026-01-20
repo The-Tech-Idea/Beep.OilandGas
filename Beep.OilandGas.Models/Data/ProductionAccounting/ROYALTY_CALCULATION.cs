@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class ROYALTY_CALCULATION : Entity, IPPDMEntity
-    {
+    public partial class ROYALTY_CALCULATION : ModelEntityBase {
         private System.String ROYALTY_CALCULATION_IDValue;
         public System.String ROYALTY_CALCULATION_ID
         {

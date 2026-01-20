@@ -9,9 +9,9 @@ using Beep.OilandGas.ProductionAccounting.Measurement;
 using Beep.OilandGas.ProductionAccounting.Accounting;
 using Beep.OilandGas.ProductionAccounting.Inventory;
 using Beep.OilandGas.ProductionAccounting.Models;
-using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Services;
-using Beep.OilandGas.Models.DTOs.Accounting.Reporting;
+using Beep.OilandGas.Models.Data.Accounting.Reporting;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         /// Generate operational report.
         /// </summary>
         [HttpPost("operational")]
-        public ActionResult<OperationalReportDto> GenerateOperationalReport(
+        public ActionResult<OperationalReport> GenerateOperationalReport(
             [FromBody] GenerateOperationalReportRequest request,
             [FromQuery] string? connectionName = null)
         {
@@ -75,7 +75,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         /// Generate lease report.
         /// </summary>
         [HttpPost("lease")]
-        public ActionResult<LeaseReportDto> GenerateLeaseReport(
+        public ActionResult<LeaseReport> GenerateLeaseReport(
             [FromBody] GenerateLeaseReportRequest request,
             [FromQuery] string? connectionName = null)
         {
@@ -110,9 +110,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             }
         }
 
-        private OperationalReportDto MapToOperationalReportDto(OperationalReport report)
+        private OperationalReport MapToOperationalReportDto(OperationalReport report)
         {
-            return new OperationalReportDto
+            return new OperationalReport
             {
                 ReportId = report.ReportId,
                 ReportPeriodStart = report.ReportPeriodStart,
@@ -121,10 +121,10 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             };
         }
 
-        private LeaseReportDto MapToLeaseReportDto(LeaseReport report)
+        private LeaseReport MapToLeaseReportDto(LeaseReport report)
         {
             var lease = _service.LeaseManager.GetLease(report.LeaseId);
-            return new LeaseReportDto
+            return new LeaseReport
             {
                 ReportId = report.ReportId,
                 LeaseId = report.LeaseId,

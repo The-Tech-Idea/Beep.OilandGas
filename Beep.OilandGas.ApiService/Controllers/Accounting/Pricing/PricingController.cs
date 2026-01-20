@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.ProductionAccounting.Pricing;
 using Beep.OilandGas.ProductionAccounting.Models;
-using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Services;
-using Beep.OilandGas.Models.DTOs.Accounting.Pricing;
+using Beep.OilandGas.Models.Data.Accounting.Pricing;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
@@ -33,7 +33,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
         /// Get price indices.
         /// </summary>
         [HttpGet("indices")]
-        public ActionResult<List<PriceIndexDto>> GetPriceIndices(
+        public ActionResult<List<PriceIndex>> GetPriceIndices(
             [FromQuery] string? indexName = null,
             [FromQuery] string? connectionName = null)
         {
@@ -45,7 +45,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
                     var index = indexManager.GetLatestPrice(indexName);
                     if (index == null)
                         return NotFound(new { error = $"Price index {indexName} not found" });
-                    return Ok(new List<PriceIndexDto> { new PriceIndexDto
+                    return Ok(new List<PriceIndex> { new PriceIndex
                     {
                         IndexName = index.IndexName,
                         IndexDate = index.IndexDate,
@@ -58,7 +58,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
                 var dtos = standardIndices.Select(name =>
                 {
                     var idx = indexManager.GetLatestPrice(name);
-                    return idx != null ? new PriceIndexDto
+                    return idx != null ? new PriceIndex
                     {
                         IndexName = idx.IndexName,
                         IndexDate = idx.IndexDate,
@@ -79,7 +79,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
         /// Add or update price index.
         /// </summary>
         [HttpPost("indices")]
-        public ActionResult<PriceIndexDto> AddPriceIndex(
+        public ActionResult<PriceIndex> AddPriceIndex(
             [FromBody] PriceIndexRequest request,
             [FromQuery] string? connectionName = null)
         {
@@ -98,7 +98,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
                 };
 
                 indexManager.AddOrUpdatePriceIndex(index);
-                return Ok(new PriceIndexDto
+                return Ok(new PriceIndex
                 {
                     IndexName = index.IndexName,
                     IndexDate = index.IndexDate,
@@ -117,7 +117,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
         /// Value a run ticket.
         /// </summary>
         [HttpPost("valuateticket")]
-        public ActionResult<RUN_TICKET_VALUATIONDto> ValueRunTicket(
+        public ActionResult<RUN_TICKET_VALUATION> ValueRunTicket(
             [FromBody] ValueRunTicketRequest request,
             [FromQuery] string? connectionName = null)
         {
@@ -151,9 +151,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
             }
         }
 
-        private RUN_TICKET_VALUATIONDto MapToRUN_TICKET_VALUATIONDto(RUN_TICKET_VALUATION valuation)
+        private RUN_TICKET_VALUATION MapToRUN_TICKET_VALUATIONDto(RUN_TICKET_VALUATION valuation)
         {
-            return new RUN_TICKET_VALUATIONDto
+            return new RUN_TICKET_VALUATION
             {
                 ValuationId = valuation.ValuationId,
                 RunTicketNumber = valuation.RunTicketNumber,

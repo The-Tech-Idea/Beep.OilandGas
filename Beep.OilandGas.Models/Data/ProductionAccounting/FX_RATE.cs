@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class FX_RATE : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class FX_RATE : ModelEntityBase
     {
         private string FX_RATE_IDValue;
         public string FX_RATE_ID
@@ -92,3 +92,4 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+

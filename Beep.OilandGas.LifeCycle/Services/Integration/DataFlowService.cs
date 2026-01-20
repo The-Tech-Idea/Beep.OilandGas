@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Services.Calculations;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.LifeCycle.Services.Integration
@@ -107,7 +107,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
         /// <param name="userId">The user ID performing the analysis.</param>
         /// <param name="additionalParameters">Optional additional parameters for the analysis.</param>
         /// <returns>The well test analysis results.</returns>
-        public async Task<Beep.OilandGas.Models.DTOs.WellTestAnalysisResult> RunWellTestAnalysisAsync(
+        public async Task<Beep.OilandGas.Models.Data.WellTestAnalysisResult> RunWellTestAnalysisAsync(
             string wellId,
             string? testId = null,
             string userId = "system",

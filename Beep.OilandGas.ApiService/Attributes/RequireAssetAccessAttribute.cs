@@ -78,8 +78,8 @@ namespace Beep.OilandGas.ApiService.Attributes
 
             // Get access control service from DI
             var accessControlService = context.HttpContext.RequestServices
-                .GetService(typeof(Beep.OilandGas.Models.DTOs.IAccessControlService))
-                as Beep.OilandGas.Models.DTOs.IAccessControlService;
+                .GetService(typeof(Beep.OilandGas.Models.Data.IAccessControlService))
+                as Beep.OilandGas.Models.Data.IAccessControlService;
 
             if (accessControlService == null)
             {

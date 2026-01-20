@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
@@ -65,7 +65,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             return UnitOfWorkFactory.CreateUnitOfWork(typeof(FACILITY), _editor, _connectionName, "FACILITY", "FACILITY_ID");
         }
 
-        public async Task<List<DevelopmentPlanDto>> GetDevelopmentPlansAsync(string? fieldId = null)
+        public async Task<List<DevelopmentPlan>> GetDevelopmentPlansAsync(string? fieldId = null)
         {
             var applicationUow = GetApplicationUnitOfWork();
             List<APPLICATION> applications;
@@ -85,7 +85,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             var units = await applicationUow.Get(filters);
             applications = ConvertToList<APPLICATION>(units);
 
-            var plans = new List<DevelopmentPlanDto>();
+            var plans = new List<DevelopmentPlan>();
             foreach (var app in applications)
             {
                 var plan = await MapToDevelopmentPlanDtoAsync(app);
@@ -95,7 +95,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             return plans;
         }
 
-        public async Task<DevelopmentPlanDto?> GetDevelopmentPlanAsync(string planId)
+        public async Task<DevelopmentPlan?> GetDevelopmentPlanAsync(string planId)
         {
             if (string.IsNullOrWhiteSpace(planId))
                 return null;
@@ -108,7 +108,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             return await MapToDevelopmentPlanDtoAsync(application);
         }
 
-        public async Task<DevelopmentPlanDto> CreateDevelopmentPlanAsync(CreateDevelopmentPlanDto createDto)
+        public async Task<DevelopmentPlan> CreateDevelopmentPlanAsync(CreateDevelopmentPlan createDto)
         {
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
@@ -135,7 +135,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             return await MapToDevelopmentPlanDtoAsync(application);
         }
 
-        public async Task<DevelopmentPlanDto> UpdateDevelopmentPlanAsync(string planId, UpdateDevelopmentPlanDto updateDto)
+        public async Task<DevelopmentPlan> UpdateDevelopmentPlanAsync(string planId, UpdateDevelopmentPlan updateDto)
         {
             if (string.IsNullOrWhiteSpace(planId))
                 throw new ArgumentException("Plan ID cannot be null or empty.", nameof(planId));
@@ -168,7 +168,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             return await MapToDevelopmentPlanDtoAsync(application);
         }
 
-        public async Task<DevelopmentPlanDto> ApproveDevelopmentPlanAsync(string planId, string approvedBy)
+        public async Task<DevelopmentPlan> ApproveDevelopmentPlanAsync(string planId, string approvedBy)
         {
             if (string.IsNullOrWhiteSpace(planId))
                 throw new ArgumentException("Plan ID cannot be null or empty.", nameof(planId));
@@ -181,16 +181,16 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             plan.ApprovedBy = approvedBy;
             plan.ApprovalDate = DateTime.UtcNow;
 
-            return await UpdateDevelopmentPlanAsync(planId, new UpdateDevelopmentPlanDto
+            return await UpdateDevelopmentPlanAsync(planId, new UpdateDevelopmentPlan
             {
                 Status = "Approved"
             });
         }
 
-        public async Task<List<WellPlanDto>> GetWellPlansAsync(string planId)
+        public async Task<List<WellPlan>> GetWellPlansAsync(string planId)
         {
             if (string.IsNullOrWhiteSpace(planId))
-                return new List<WellPlanDto>();
+                return new List<WellPlan>();
 
             var wellUow = GetWellUnitOfWork();
             // Note: WELL might be linked to plan through AREA_ID or APPLICATION_ID
@@ -199,7 +199,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             List<WELL> allWells = ConvertToList<WELL>(units);
             var wells = allWells.Where(w => w.ACTIVE_IND == "Y").ToList();
 
-            return wells.Select(w => new WellPlanDto
+            return wells.Select(w => new WellPlan
             {
                 WellPlanId = w.UWI ?? string.Empty,
                 PlanId = planId,
@@ -211,10 +211,10 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             }).ToList();
         }
 
-        public async Task<List<FacilityPlanDto>> GetFacilityPlansAsync(string planId)
+        public async Task<List<FacilityPlan>> GetFacilityPlansAsync(string planId)
         {
             if (string.IsNullOrWhiteSpace(planId))
-                return new List<FacilityPlanDto>();
+                return new List<FacilityPlan>();
 
             var facilityUow = GetFacilityUnitOfWork();
             // Note: FACILITY might be linked to plan through AREA_ID or APPLICATION_ID
@@ -222,7 +222,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             List<FACILITY> allFacilities = ConvertToList<FACILITY>(units);
             var facilities = allFacilities.Where(f => f.ACTIVE_IND == "Y").ToList();
 
-            return facilities.Select(f => new FacilityPlanDto
+            return facilities.Select(f => new FacilityPlan
             {   
                 FacilityPlanId = f.FACILITY_ID ?? string.Empty,
                 PlanId = planId,
@@ -232,10 +232,10 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             }).ToList();
         }
 
-        public async Task<List<PermitApplicationDto>> GetPermitApplicationsAsync(string planId)
+        public async Task<List<PermitApplication>> GetPermitApplicationsAsync(string planId)
         {
             if (string.IsNullOrWhiteSpace(planId))
-                return new List<PermitApplicationDto>();
+                return new List<PermitApplication>();
 
             var applicationUow = GetApplicationUnitOfWork();
             var filters = new List<AppFilter>
@@ -246,7 +246,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             var units = await applicationUow.Get(filters);
             List<APPLICATION> allApplications = ConvertToList<APPLICATION>(units);
 
-            return allApplications.Select(app => new PermitApplicationDto
+            return allApplications.Select(app => new PermitApplication
             {
                 ApplicationId = app.APPLICATION_ID ?? string.Empty,
                 ApplicationType = app.APPLICATION_TYPE ?? string.Empty,
@@ -258,9 +258,9 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             }).ToList();
         }
 
-        private async Task<DevelopmentPlanDto> MapToDevelopmentPlanDtoAsync(APPLICATION application)
+        private async Task<DevelopmentPlan> MapToDevelopmentPlanDtoAsync(APPLICATION application)
         {
-            var plan = new DevelopmentPlanDto
+            var plan = new DevelopmentPlan
             {
                 PlanId = application.APPLICATION_ID ?? string.Empty,
                 PlanName = application.APPLICATION_TYPE ?? "Development Plan",

@@ -8,7 +8,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Base property calculation result DTO
     /// </summary>
-    public class PropertyResultDto
+    public class PropertyResult
     {
         public string CalculationId { get; set; } = string.Empty;
         public string PropertyType { get; set; } = string.Empty;
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Fluid property analysis DTO
     /// </summary>
-    public class FluidPropertyAnalysisDto
+    public class FluidPropertyAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
@@ -38,20 +38,20 @@ namespace Beep.OilandGas.Properties.DTOs
         public decimal WaterCut { get; set; }
         public string FluidClassification { get; set; } = string.Empty;
         public DateTime AnalysisDate { get; set; }
-        public List<PropertyResultDto> CalculatedProperties { get; set; } = new();
+        public List<PropertyResult> CalculatedProperties { get; set; } = new();
     }
 
     /// <summary>
     /// PVT analysis result DTO
     /// </summary>
-    public class PVTAnaysisResultDto
+    public class PVTAnaysisResult
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
         public string AnalysisType { get; set; } = string.Empty;
-        public List<PVTDataPointDto> DataPoints { get; set; } = new();
-        public PVTParametersDto Parameters { get; set; } = new();
-        public List<PropertyResultDto> DerivedProperties { get; set; } = new();
+        public List<PVTDataPoint> DataPoints { get; set; } = new();
+        public PVTParameters Parameters { get; set; } = new();
+        public List<PropertyResult> DerivedProperties { get; set; } = new();
         public string QualityAssessment { get; set; } = string.Empty;
         public DateTime AnalysisDate { get; set; }
     }
@@ -59,7 +59,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// PVT data point DTO
     /// </summary>
-    public class PVTDataPointDto
+    public class PVTDataPoint
     {
         public decimal Pressure { get; set; }
         public decimal Temperature { get; set; }
@@ -74,7 +74,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// PVT parameters DTO
     /// </summary>
-    public class PVTParametersDto
+    public class PVTParameters
     {
         public decimal SaturationPressure { get; set; }
         public decimal ReservoirTemperature { get; set; }
@@ -96,13 +96,13 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Phase envelope DTO
     /// </summary>
-    public class PhaseEnvelopeDto
+    public class PhaseEnvelope
     {
         public string EnvelopeId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
-        public List<PhaseEnvelopePointDto> BubblePointCurve { get; set; } = new();
-        public List<PhaseEnvelopePointDto> DewPointCurve { get; set; } = new();
-        public PhaseEnvelopePointDto CriticalPoint { get; set; } = new();
+        public List<PhaseEnvelopePoint> BubblePointCurve { get; set; } = new();
+        public List<PhaseEnvelopePoint> DewPointCurve { get; set; } = new();
+        public PhaseEnvelopePoint CriticalPoint { get; set; } = new();
         public decimal Cricondentherm { get; set; }
         public decimal Cricondenbar { get; set; }
         public string QualityAssessment { get; set; } = string.Empty;
@@ -112,7 +112,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Phase envelope point DTO
     /// </summary>
-    public class PhaseEnvelopePointDto
+    public class PhaseEnvelopePoint
     {
         public decimal Pressure { get; set; }
         public decimal Temperature { get; set; }
@@ -124,15 +124,15 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Flash calculation result DTO
     /// </summary>
-    public class FlashCalculationResultDto
+    public class FlashCalculationPropertyResult
     {
         public string CalculationId { get; set; } = string.Empty;
         public decimal Temperature { get; set; }
         public decimal Pressure { get; set; }
         public decimal LiquidFraction { get; set; }
         public decimal VaporFraction { get; set; }
-        public FluidCompositionDto LiquidComposition { get; set; } = new();
-        public FluidCompositionDto VaporComposition { get; set; } = new();
+        public FluidComposition LiquidComposition { get; set; } = new();
+        public FluidComposition VaporComposition { get; set; } = new();
         public string FlashType { get; set; } = string.Empty;
         public string CalculationMethod { get; set; } = string.Empty;
         public DateTime CalculationDate { get; set; }
@@ -141,21 +141,21 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Fluid composition DTO
     /// </summary>
-    public class FluidCompositionDto
+    public class FluidComposition
     {
         public string CompositionId { get; set; } = string.Empty;
         public string FluidType { get; set; } = string.Empty;
         public decimal MolecularWeight { get; set; }
         public decimal SpecificGravity { get; set; }
         public decimal API { get; set; }
-        public List<FluidComponentDto> Components { get; set; } = new();
+        public List<FluidComponent> Components { get; set; } = new();
         public DateTime AnalysisDate { get; set; }
     }
 
     /// <summary>
     /// Fluid component DTO
     /// </summary>
-    public class FluidComponentDto
+    public class FluidComponent
     {
         public string ComponentName { get; set; } = string.Empty;
         public decimal MoleFraction { get; set; }
@@ -171,14 +171,14 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Saturation test result DTO
     /// </summary>
-    public class SaturationTestResultDto
+    public class SaturationTestResult
     {
         public string TestId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
         public decimal SaturationPressure { get; set; }
         public decimal SaturationTemperature { get; set; }
         public string SaturationType { get; set; } = string.Empty; // Bubble or Dew
-        public List<SaturationPointDto> TestPoints { get; set; } = new();
+        public List<SaturationPoint> TestPoints { get; set; } = new();
         public decimal CompressibilityAboveSaturation { get; set; }
         public decimal CompressibilityBelowSaturation { get; set; }
         public DateTime TestDate { get; set; }
@@ -187,7 +187,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Saturation point DTO
     /// </summary>
-    public class SaturationPointDto
+    public class SaturationPoint
     {
         public decimal Pressure { get; set; }
         public decimal RelativeVolume { get; set; }
@@ -202,17 +202,17 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Equation of state result DTO
     /// </summary>
-    public class EOSResultDto
+    public class EOSResult
     {
         public string CalculationId { get; set; } = string.Empty;
         public string EquationOfState { get; set; } = string.Empty;
         public string MixingRule { get; set; } = string.Empty;
-        public List<EOSComponentDto> Components { get; set; } = new();
+        public List<EOSComponent> Components { get; set; } = new();
         public decimal CriticalPressure { get; set; }
         public decimal CriticalTemperature { get; set; }
         public decimal CriticalVolume { get; set; }
         public decimal AcentricFactor { get; set; }
-        public List<EOSPhaseDto> Phases { get; set; } = new();
+        public List<EOSPhase> Phases { get; set; } = new();
         public decimal BinaryInteractionParameter { get; set; }
         public string ConvergenceStatus { get; set; } = string.Empty;
         public DateTime CalculationDate { get; set; }
@@ -221,7 +221,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// EOS component DTO
     /// </summary>
-    public class EOSComponentDto
+    public class EOSComponent
     {
         public string ComponentName { get; set; } = string.Empty;
         public decimal MoleFraction { get; set; }
@@ -237,20 +237,20 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// EOS phase DTO
     /// </summary>
-    public class EOSPhaseDto
+    public class EOSPhase
     {
         public string PhaseType { get; set; } = string.Empty;
         public decimal MoleFraction { get; set; }
         public decimal Density { get; set; }
         public decimal Compressibility { get; set; }
         public decimal Fugacity { get; set; }
-        public FluidCompositionDto Composition { get; set; } = new();
+        public FluidComposition Composition { get; set; } = new();
     }
 
     /// <summary>
     /// Viscosity correlation result DTO
     /// </summary>
-    public class ViscosityCorrelationDto
+    public class ViscosityCorrelation
     {
         public string CorrelationId { get; set; } = string.Empty;
         public string CorrelationName { get; set; } = string.Empty;
@@ -266,7 +266,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Asphaltene analysis result DTO
     /// </summary>
-    public class AsphalteneAnalysisDto
+    public class AsphalteneAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
@@ -274,7 +274,7 @@ namespace Beep.OilandGas.Properties.DTOs
         public decimal OnsetTemperature { get; set; }
         public decimal AsphalteneContent { get; set; }
         public string PrecipitationMechanism { get; set; } = string.Empty;
-        public List<AsphaltenePointDto> PrecipitationPoints { get; set; } = new();
+        public List<AsphaltenePoint> PrecipitationPoints { get; set; } = new();
         public string AnalysisMethod { get; set; } = string.Empty;
         public DateTime AnalysisDate { get; set; }
     }
@@ -282,7 +282,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Asphaltene point DTO
     /// </summary>
-    public class AsphaltenePointDto
+    public class AsphaltenePoint
     {
         public decimal Pressure { get; set; }
         public decimal Temperature { get; set; }
@@ -293,7 +293,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Wax analysis result DTO
     /// </summary>
-    public class WaxAnalysisDto
+    public class WaxAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
@@ -301,7 +301,7 @@ namespace Beep.OilandGas.Properties.DTOs
         public decimal PourPoint { get; set; }
         public decimal CloudPoint { get; set; }
         public decimal WaxContent { get; set; }
-        public List<WaxFractionDto> WaxFractions { get; set; } = new();
+        public List<WaxFraction> WaxFractions { get; set; } = new();
         public string AnalysisMethod { get; set; } = string.Empty;
         public DateTime AnalysisDate { get; set; }
     }
@@ -309,7 +309,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Wax fraction DTO
     /// </summary>
-    public class WaxFractionDto
+    public class WaxFraction
     {
         public string FractionName { get; set; } = string.Empty;
         public decimal CarbonNumber { get; set; }
@@ -324,7 +324,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Laboratory test result DTO
     /// </summary>
-    public class LabTestResultDto
+    public class LabTestResult
     {
         public string TestId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
@@ -333,7 +333,7 @@ namespace Beep.OilandGas.Properties.DTOs
         public DateTime TestDate { get; set; }
         public string LabName { get; set; } = string.Empty;
         public string Analyst { get; set; } = string.Empty;
-        public List<TestMeasurementDto> Measurements { get; set; } = new();
+        public List<TestMeasurement> Measurements { get; set; } = new();
         public string QualityControl { get; set; } = string.Empty;
         public List<string> Notes { get; set; } = new();
     }
@@ -341,7 +341,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Test measurement DTO
     /// </summary>
-    public class TestMeasurementDto
+    public class TestMeasurement
     {
         public string Parameter { get; set; } = string.Empty;
         public decimal Value { get; set; }
@@ -355,7 +355,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Sample information DTO
     /// </summary>
-    public class SampleInfoDto
+    public class SampleInfo
     {
         public string SampleId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -374,10 +374,10 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Sample chain of custody DTO
     /// </summary>
-    public class SampleChainOfCustodyDto
+    public class SampleChainOfCustody
     {
         public string SampleId { get; set; } = string.Empty;
-        public List<CustodyTransferDto> Transfers { get; set; } = new();
+        public List<CustodyTransfer> Transfers { get; set; } = new();
         public string CurrentLocation { get; set; } = string.Empty;
         public string CurrentCustodian { get; set; } = string.Empty;
         public DateTime LastTransferDate { get; set; }
@@ -387,7 +387,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Custody transfer DTO
     /// </summary>
-    public class CustodyTransferDto
+    public class CustodyTransfer
     {
         public DateTime TransferDate { get; set; }
         public string FromCustodian { get; set; } = string.Empty;
@@ -404,14 +404,14 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Quality control result DTO
     /// </summary>
-    public class QCResultDto
+    public class QCResult
     {
         public string QCId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
         public string TestType { get; set; } = string.Empty;
         public DateTime QCDate { get; set; }
         public string QCMethod { get; set; } = string.Empty;
-        public List<QCCheckDto> Checks { get; set; } = new();
+        public List<QCCheck> Checks { get; set; } = new();
         public string OverallResult { get; set; } = string.Empty;
         public List<string> Recommendations { get; set; } = new();
         public string PerformedBy { get; set; } = string.Empty;
@@ -420,7 +420,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// QC check DTO
     /// </summary>
-    public class QCCheckDto
+    public class QCCheck
     {
         public string CheckType { get; set; } = string.Empty;
         public string Parameter { get; set; } = string.Empty;
@@ -435,7 +435,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Uncertainty analysis result DTO
     /// </summary>
-    public class UncertaintyAnalysisDto
+    public class UncertaintyAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string PropertyType { get; set; } = string.Empty;
@@ -447,14 +447,14 @@ namespace Beep.OilandGas.Properties.DTOs
         public decimal P90Value { get; set; }
         public decimal ConfidenceInterval { get; set; }
         public string DistributionType { get; set; } = string.Empty;
-        public List<UncertaintyFactorDto> ContributingFactors { get; set; } = new();
+        public List<UncertaintyFactor> ContributingFactors { get; set; } = new();
         public DateTime AnalysisDate { get; set; }
     }
 
     /// <summary>
     /// Uncertainty factor DTO
     /// </summary>
-    public class UncertaintyFactorDto
+    public class UncertaintyFactor
     {
         public string FactorName { get; set; } = string.Empty;
         public string FactorType { get; set; } = string.Empty; // Measurement, Model, Sampling
@@ -466,7 +466,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Validation result DTO
     /// </summary>
-    public class ValidationResultDto
+    public class ValidationResult
     {
         public string ValidationId { get; set; } = string.Empty;
         public string PropertyType { get; set; } = string.Empty;
@@ -474,7 +474,7 @@ namespace Beep.OilandGas.Properties.DTOs
         public List<string> ValidationErrors { get; set; } = new();
         public List<string> Warnings { get; set; } = new();
         public decimal ConfidenceScore { get; set; }
-        public List<ValidationRuleResultDto> RuleResults { get; set; } = new();
+        public List<ValidationRuleResult> RuleResults { get; set; } = new();
         public string ValidationSummary { get; set; } = string.Empty;
         public DateTime ValidationDate { get; set; }
     }
@@ -482,7 +482,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Validation rule result DTO
     /// </summary>
-    public class ValidationRuleResultDto
+    public class ValidationRuleResult
     {
         public string RuleName { get; set; } = string.Empty;
         public string RuleDescription { get; set; } = string.Empty;
@@ -499,15 +499,15 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// PVT report DTO
     /// </summary>
-    public class PVTReportDto
+    public class PVTReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
         public string ReportType { get; set; } = string.Empty;
         public DateTime GeneratedDate { get; set; }
-        public SampleInfoDto SampleInfo { get; set; } = new();
-        public FluidPropertyAnalysisDto PropertyAnalysis { get; set; } = new();
-        public PVTAnaysisResultDto PVTResults { get; set; } = new();
+        public SampleInfo SampleInfo { get; set; } = new();
+        public FluidPropertyAnalysis PropertyAnalysis { get; set; } = new();
+        public PVTAnaysisResult PVTResults { get; set; } = new();
         public List<byte[]> Charts { get; set; } = new();
         public List<byte[]> Tables { get; set; } = new();
         public string ExecutiveSummary { get; set; } = string.Empty;
@@ -518,17 +518,17 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Fluid analysis report DTO
     /// </summary>
-    public class FluidAnalysisReportDto
+    public class FluidAnalysisReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
         public DateTime GeneratedDate { get; set; }
-        public FluidCompositionDto Composition { get; set; } = new();
-        public List<PropertyResultDto> PhysicalProperties { get; set; } = new();
-        public List<PropertyResultDto> TransportProperties { get; set; } = new();
-        public List<PropertyResultDto> ThermalProperties { get; set; } = new();
-        public PhaseEnvelopeDto PhaseEnvelope { get; set; } = new();
-        public List<SpecialAnalysisDto> SpecialAnalyses { get; set; } = new();
+        public FluidComposition Composition { get; set; } = new();
+        public List<PropertyResult> PhysicalProperties { get; set; } = new();
+        public List<PropertyResult> TransportProperties { get; set; } = new();
+        public List<PropertyResult> ThermalProperties { get; set; } = new();
+        public PhaseEnvelope PhaseEnvelope { get; set; } = new();
+        public List<SpecialAnalysis> SpecialAnalyses { get; set; } = new();
         public string FluidClassification { get; set; } = string.Empty;
         public string ReservoirImplications { get; set; } = string.Empty;
     }
@@ -536,27 +536,27 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Special analysis DTO
     /// </summary>
-    public class SpecialAnalysisDto
+    public class SpecialAnalysis
     {
         public string AnalysisType { get; set; } = string.Empty;
         public string AnalysisName { get; set; } = string.Empty;
         public DateTime AnalysisDate { get; set; }
         public string Method { get; set; } = string.Empty;
         public string Results { get; set; } = string.Empty;
-        public List<PropertyResultDto> DerivedProperties { get; set; } = new();
+        public List<PropertyResult> DerivedProperties { get; set; } = new();
         public string Interpretation { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Correlation study report DTO
     /// </summary>
-    public class CorrelationStudyReportDto
+    public class CorrelationStudyReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string StudyName { get; set; } = string.Empty;
         public DateTime GeneratedDate { get; set; }
-        public List<CorrelationComparisonDto> Comparisons { get; set; } = new();
-        public List<CorrelationRecommendationDto> Recommendations { get; set; } = new();
+        public List<CorrelationComparison> Comparisons { get; set; } = new();
+        public List<CorrelationRecommendation> Recommendations { get; set; } = new();
         public List<byte[]> PerformanceCharts { get; set; } = new();
         public string StudyConclusions { get; set; } = string.Empty;
     }
@@ -564,7 +564,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Correlation recommendation DTO
     /// </summary>
-    public class CorrelationRecommendationDto
+    public class CorrelationRecommendation
     {
         public string PropertyType { get; set; } = string.Empty;
         public string RecommendedCorrelation { get; set; } = string.Empty;
@@ -581,7 +581,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Fluid analysis request DTO
     /// </summary>
-    public class FluidAnalysisRequestDto
+    public class FluidAnalysisRequest
     {
         public string SampleId { get; set; } = string.Empty;
         public List<string> AnalysisTypes { get; set; } = new();
@@ -595,7 +595,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// PVT analysis request DTO
     /// </summary>
-    public class PVTAnaysisRequestDto
+    public class PVTAnaysisRequest
     {
         public string SampleId { get; set; } = string.Empty;
         public string AnalysisType { get; set; } = string.Empty;
@@ -611,7 +611,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Correlation comparison request DTO
     /// </summary>
-    public class CorrelationComparisonRequestDto
+    public class CorrelationComparisonRequest
     {
         public string PropertyType { get; set; } = string.Empty;
         public Dictionary<string, decimal> InputParameters { get; set; } = new();
@@ -624,7 +624,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Uncertainty analysis request DTO
     /// </summary>
-    public class UncertaintyAnalysisRequestDto
+    public class UncertaintyAnalysisRequest
     {
         public string PropertyType { get; set; } = string.Empty;
         public Dictionary<string, decimal> BaseParameters { get; set; } = new();
@@ -637,9 +637,9 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Validation request DTO
     /// </summary>
-    public class ValidationRequestDto
+    public class ValidationRequest
     {
-        public PropertyResultDto CalculationResult { get; set; } = new();
+        public PropertyResult CalculationResult { get; set; } = new();
         public List<string> ValidationRules { get; set; } = new();
         public decimal? MeasuredValue { get; set; }
         public decimal Tolerance { get; set; } = 0.05m; // 5% tolerance
@@ -649,7 +649,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Report generation request DTO
     /// </summary>
-    public class ReportGenerationRequestDto
+    public class ReportGenerationRequest
     {
         public string SampleId { get; set; } = string.Empty;
         public string ReportType { get; set; } = string.Empty;
@@ -663,7 +663,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Data export request DTO
     /// </summary>
-    public class DataExportRequestDto
+    public class DataExportRequest
     {
         public string SampleId { get; set; } = string.Empty;
         public List<string> DataTypes { get; set; } = new();
@@ -677,7 +677,7 @@ namespace Beep.OilandGas.Properties.DTOs
     /// <summary>
     /// Chart generation request DTO
     /// </summary>
-    public class ChartGenerationRequestDto
+    public class ChartGenerationRequest
     {
         public string SampleId { get; set; } = string.Empty;
         public string ChartType { get; set; } = string.Empty;

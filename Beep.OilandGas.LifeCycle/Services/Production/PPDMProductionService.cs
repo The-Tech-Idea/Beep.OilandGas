@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -1146,7 +1146,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// <summary>
         /// Plans enhanced recovery operation using EnhancedRecovery service
         /// </summary>
-        public async Task<EnhancedRecoveryOperationDto> PlanEnhancedRecoveryAsync(string fieldId, CreateEnhancedRecoveryOperationDto eorData, string userId)
+        public async Task<EnhancedRecoveryOperation> PlanEnhancedRecoveryAsync(string fieldId, CreateEnhancedRecoveryOperation eorData, string userId)
         {
             try
             {
@@ -1155,7 +1155,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 // Create EOR plan in PPDM
                 // In full implementation, would use EnhancedRecoveryService
 
-                return new EnhancedRecoveryOperationDto
+                return new EnhancedRecoveryOperation
                 {
                     OperationId = Guid.NewGuid().ToString(),
                     FieldId = fieldId,
@@ -1174,7 +1174,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// <summary>
         /// Executes enhanced recovery operation using EnhancedRecovery service
         /// </summary>
-        public async Task<EnhancedRecoveryOperationDto> ExecuteEnhancedRecoveryAsync(string fieldId, string operationId, Dictionary<string, object> executionParameters, string userId)
+        public async Task<EnhancedRecoveryOperation> ExecuteEnhancedRecoveryAsync(string fieldId, string operationId, Dictionary<string, object> executionParameters, string userId)
         {
             try
             {
@@ -1184,7 +1184,7 @@ using Beep.OilandGas.Models.Data.ProductionForecasting;
                 // Update EOR operation status to EXECUTING
                 // In full implementation, would use EnhancedRecoveryService
 
-                return new EnhancedRecoveryOperationDto
+                return new EnhancedRecoveryOperation
                 {
                     OperationId = operationId,
                     FieldId = fieldId,

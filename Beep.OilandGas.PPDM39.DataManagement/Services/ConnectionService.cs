@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs.DataManagement;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.ConfigUtil;

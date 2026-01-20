@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs.Lease;
-using Beep.OilandGas.Models.DTOs.Operations;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Operations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPost]
-        public async Task<ActionResult<string>> CreateLeaseAcquisition([FromBody] CreateLeaseAcquisitionDto leaseRequest, [FromQuery] string? userId = null)
+        public async Task<ActionResult<string>> CreateLeaseAcquisition([FromBody] CreateLeaseAcquisition leaseRequest, [FromQuery] string? userId = null)
         {
             try
             {

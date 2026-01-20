@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.Models.GasProperties;
+using Beep.OilandGas.Models.Data.GasProperties;
 using Beep.OilandGas.GasProperties.Constants;
 
 namespace Beep.OilandGas.GasProperties.Calculations

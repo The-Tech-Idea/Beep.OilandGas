@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -86,7 +86,7 @@ namespace Beep.OilandGas.OilProperties.Services
             return deadOilViscosity;
         }
 
-        public async Task<OilPropertyResultDto> CalculateOilPropertiesAsync(OilCompositionDto composition, decimal pressure, decimal temperature)
+        public async Task<OilPropertyResult> CalculateOilPropertiesAsync(OilComposition composition, decimal pressure, decimal temperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -97,7 +97,7 @@ namespace Beep.OilandGas.OilProperties.Services
             var density = CalculateOilDensity(pressure, temperature, composition.OilGravity, composition.GasOilRatio);
             var viscosity = CalculateOilViscosity(pressure, temperature, composition.OilGravity, composition.GasOilRatio);
 
-            var result = new OilPropertyResultDto
+            var result = new OilPropertyResult
             {
                 CalculationId = _defaults.FormatIdForTable("OIL_PROPERTY", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
@@ -114,7 +114,7 @@ namespace Beep.OilandGas.OilProperties.Services
             return result;
         }
 
-        public async Task SaveOilCompositionAsync(OilCompositionDto composition, string userId)
+        public async Task SaveOilCompositionAsync(OilComposition composition, string userId)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -184,7 +184,7 @@ namespace Beep.OilandGas.OilProperties.Services
             _logger?.LogInformation("Successfully saved oil composition {CompositionId}", composition.CompositionId);
         }
 
-        public async Task<OilCompositionDto?> GetOilCompositionAsync(string compositionId)
+        public async Task<OilComposition?> GetOilCompositionAsync(string compositionId)
         {
             if (string.IsNullOrWhiteSpace(compositionId))
             {
@@ -212,7 +212,7 @@ namespace Beep.OilandGas.OilProperties.Services
                 return null;
             }
 
-            var composition = new OilCompositionDto
+            var composition = new OilComposition
             {
                 CompositionId = entity.OIL_COMPOSITION_ID ?? string.Empty,
                 CompositionName = entity.COMPOSITION_NAME ?? string.Empty,
@@ -227,7 +227,7 @@ namespace Beep.OilandGas.OilProperties.Services
             return composition;
         }
 
-        public async Task<List<OilPropertyResultDto>> GetOilPropertyHistoryAsync(string compositionId)
+        public async Task<List<OilPropertyResult>> GetOilPropertyHistoryAsync(string compositionId)
         {
             if (string.IsNullOrWhiteSpace(compositionId))
                 throw new ArgumentException("Composition ID cannot be null or empty", nameof(compositionId));
@@ -245,7 +245,7 @@ namespace Beep.OilandGas.OilProperties.Services
             };
             var entities = await resultRepo.GetAsync(filters);
             
-            var results = entities.Cast<OIL_PROPERTY_RESULT>().Select(entity => new OilPropertyResultDto
+            var results = entities.Cast<OIL_PROPERTY_RESULT>().Select(entity => new OilPropertyResult
             {
                 CalculationId = entity.CALCULATION_ID ?? string.Empty,
                 CompositionId = entity.OIL_COMPOSITION_ID ?? compositionId,
@@ -263,7 +263,7 @@ namespace Beep.OilandGas.OilProperties.Services
             return results;
         }
 
-        public async Task SaveOilPropertyResultAsync(OilPropertyResultDto result, string userId)
+        public async Task SaveOilPropertyResultAsync(OilPropertyResult result, string userId)
         {
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
@@ -309,7 +309,7 @@ namespace Beep.OilandGas.OilProperties.Services
         /// <summary>
         /// Analyzes the phase diagram for the given oil composition using critical property correlations.
         /// </summary>
-        public async Task<PhaseDiagramAnalysisDto> AnalyzePhaseDiagramAsync(OilCompositionDto composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
+        public async Task<PhaseDiagramAnalysis> AnalyzePhaseDiagramAsync(OilComposition composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -321,7 +321,7 @@ namespace Beep.OilandGas.OilProperties.Services
             var criticalTemp = 369.8m + 59.3m * composition.OilGravity;  // Rankine
             var criticalPress = 3648m + (0.5m - composition.OilGravity) * 10m;  // psia
 
-            var result = new PhaseDiagramAnalysisDto
+            var result = new PhaseDiagramAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("PHASE_DIAGRAM", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
@@ -347,7 +347,7 @@ namespace Beep.OilandGas.OilProperties.Services
                     var density = oilSpecificGravity * 62.4m * (1m - 0.0005m * (t - 459.67m));
 
                     string phase = DeterminePhase(reducedPressure, reducedTemp);
-                    result.PhasePoints.Add(new PhasePointDto
+                    result.PhasePoints.Add(new PhasePoint
                     {
                         Pressure = p,
                         Temperature = t,
@@ -365,7 +365,7 @@ namespace Beep.OilandGas.OilProperties.Services
         /// <summary>
         /// Calculates the compressibility factor (Z-factor) using the Pitzer correlation method.
         /// </summary>
-        public async Task<CompressibilityFactorAnalysisDto> CalculateCompressibilityFactorAsync(OilCompositionDto composition, decimal pressure, decimal temperature)
+        public async Task<CompressibilityFactorAnalysis> CalculateCompressibilityFactorAsync(OilComposition composition, decimal pressure, decimal temperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -389,7 +389,7 @@ namespace Beep.OilandGas.OilProperties.Services
             zFactor += correctionFactor * reducedPressure;
             var deviationFromIdeal = (1m - zFactor) * 100m;
 
-            var result = new CompressibilityFactorAnalysisDto
+            var result = new CompressibilityFactorAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("COMPRESSIBILITY", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
@@ -411,7 +411,7 @@ namespace Beep.OilandGas.OilProperties.Services
         /// <summary>
         /// Analyzes interfacial tension between oil and gas phases using the parachor method.
         /// </summary>
-        public async Task<InterfacialTensionAnalysisDto> AnalyzeInterfacialTensionAsync(OilCompositionDto composition, decimal pressure, decimal temperature)
+        public async Task<InterfacialTensionAnalysis> AnalyzeInterfacialTensionAsync(OilComposition composition, decimal pressure, decimal temperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -431,7 +431,7 @@ namespace Beep.OilandGas.OilProperties.Services
             var tempCoeff = -0.05m;
             var adjustedSurfaceTension = surfaceTension * (1m + tempCoeff * (temperature - 60m) / 100m);
 
-            var result = new InterfacialTensionAnalysisDto
+            var result = new InterfacialTensionAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("IFT_ANALYSIS", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
@@ -452,7 +452,7 @@ namespace Beep.OilandGas.OilProperties.Services
         /// <summary>
         /// Analyzes fluid behavior and classifies fluid type based on PVT properties.
         /// </summary>
-        public async Task<FluidBehaviorAnalysisDto> AnalyzeFluidBehaviorAsync(OilCompositionDto composition, decimal reservoirTemperature)
+        public async Task<FluidBehaviorAnalysis> AnalyzeFluidBehaviorAsync(OilComposition composition, decimal reservoirTemperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -462,7 +462,7 @@ namespace Beep.OilandGas.OilProperties.Services
             var fluidType = ClassifyFluidBehavior(composition, reservoirTemperature);
             var characteristics = GenerateFluidCharacteristics(composition, fluidType);
 
-            var result = new FluidBehaviorAnalysisDto
+            var result = new FluidBehaviorAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("FLUID_BEHAVIOR", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
@@ -484,20 +484,20 @@ namespace Beep.OilandGas.OilProperties.Services
         /// <summary>
         /// Generates a property correlation matrix for the given composition across pressure and temperature ranges.
         /// </summary>
-        public async Task<PropertyCorrelationMatrixDto> GeneratePropertyCorrelationMatrixAsync(OilCompositionDto composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
+        public async Task<PropertyCorrelationMatrix> GeneratePropertyCorrelationMatrixAsync(OilComposition composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
 
             _logger?.LogInformation("Generating property correlation matrix for composition {CompositionId}", composition.CompositionId);
 
-            var result = new PropertyCorrelationMatrixDto
+            var result = new PropertyCorrelationMatrix
             {
                 MatrixId = _defaults.FormatIdForTable("PROPERTY_MATRIX", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
                 AnalysisDate = DateTime.UtcNow,
-                PropertyByPressure = new List<PressureRangePropertyDto>(),
-                PropertyByTemperature = new List<TemperatureRangePropertyDto>(),
+                PropertyByPressure = new List<PressureRangeProperty>(),
+                PropertyByTemperature = new List<TemperatureRangeProperty>(),
                 CorrelationCoefficients = new Dictionary<string, decimal>()
             };
 
@@ -512,7 +512,7 @@ namespace Beep.OilandGas.OilProperties.Services
                 var viscosity = CalculateOilViscosity(p, avgTemp, composition.OilGravity, composition.GasOilRatio);
                 var compressibility = (fvf - CalculateFormationVolumeFactor(p + 100m, avgTemp, composition.GasOilRatio, composition.OilGravity)) / (100m * fvf);
 
-                result.PropertyByPressure.Add(new PressureRangePropertyDto
+                result.PropertyByPressure.Add(new PressureRangeProperty
                 {
                     Pressure = p,
                     Temperature = avgTemp,
@@ -534,7 +534,7 @@ namespace Beep.OilandGas.OilProperties.Services
                 var viscosity = CalculateOilViscosity(avgPress, t, composition.OilGravity, composition.GasOilRatio);
                 var compressibility = (fvf - CalculateFormationVolumeFactor(avgPress, t + 5m, composition.GasOilRatio, composition.OilGravity)) / (5m * fvf);
 
-                result.PropertyByTemperature.Add(new TemperatureRangePropertyDto
+                result.PropertyByTemperature.Add(new TemperatureRangeProperty
                 {
                     Temperature = t,
                     Pressure = avgPress,
@@ -558,7 +558,7 @@ namespace Beep.OilandGas.OilProperties.Services
         /// <summary>
         /// Predicts surface properties (stock tank) from subsurface conditions.
         /// </summary>
-        public async Task<PVTSurfacePropertyDto> PredictSurfacePropertiesAsync(OilCompositionDto composition, decimal reservoirPressure, decimal reservoirTemperature, decimal separatorPressure, decimal separatorTemperature)
+        public async Task<PVTSurfaceProperty> PredictSurfacePropertiesAsync(OilComposition composition, decimal reservoirPressure, decimal reservoirTemperature, decimal separatorPressure, decimal separatorTemperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -574,7 +574,7 @@ namespace Beep.OilandGas.OilProperties.Services
             var stockTankDensity = CalculateOilDensity(separatorPressure, separatorTemperature, composition.OilGravity, composition.GasOilRatio * pressureRatio);
             var stockTankGravity = (stockTankDensity / 62.4m - 1m) * 141.5m - 131.5m;
 
-            var result = new PVTSurfacePropertyDto
+            var result = new PVTSurfaceProperty
             {
                 PropertyId = _defaults.FormatIdForTable("SURFACE_PROPERTY", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
@@ -595,7 +595,7 @@ namespace Beep.OilandGas.OilProperties.Services
         /// <summary>
         /// Analyzes property trends across a range of pressures using linear regression.
         /// </summary>
-        public async Task<PropertyTrendAnalysisDto> AnalyzePropertyTrendAsync(OilCompositionDto composition, string propertyName, decimal minPressure, decimal maxPressure, decimal temperature)
+        public async Task<PropertyTrendAnalysis> AnalyzePropertyTrendAsync(OilComposition composition, string propertyName, decimal minPressure, decimal maxPressure, decimal temperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -629,7 +629,7 @@ namespace Beep.OilandGas.OilProperties.Services
             var rSquared = CalculateRSquared(pressureRange, propertyValues, slope);
             var trendDirection = slope > 0m ? "Increasing" : (slope < 0m ? "Decreasing" : "Linear");
 
-            var result = new PropertyTrendAnalysisDto
+            var result = new PropertyTrendAnalysis
             {
                 TrendId = _defaults.FormatIdForTable("TREND_ANALYSIS", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
@@ -663,7 +663,7 @@ namespace Beep.OilandGas.OilProperties.Services
         /// <summary>
         /// Helper method to classify fluid behavior based on composition and reservoir conditions.
         /// </summary>
-        private string ClassifyFluidBehavior(OilCompositionDto composition, decimal reservoirTemperature)
+        private string ClassifyFluidBehavior(OilComposition composition, decimal reservoirTemperature)
         {
             // Classification logic based on API gravity and bubble point
             if (composition.OilGravity > 45m)
@@ -676,7 +676,7 @@ namespace Beep.OilandGas.OilProperties.Services
         /// <summary>
         /// Helper method to generate fluid characteristics description.
         /// </summary>
-        private string GenerateFluidCharacteristics(OilCompositionDto composition, string fluidType)
+        private string GenerateFluidCharacteristics(OilComposition composition, string fluidType)
         {
             return $"{fluidType} with GOR={composition.GasOilRatio:F2} scf/stb, Bubble Point={composition.BubblePointPressure:F2} psia";
         }

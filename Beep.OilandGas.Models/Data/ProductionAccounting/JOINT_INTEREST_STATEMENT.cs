@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class JOINT_INTEREST_STATEMENT : Entity, IPPDMEntity
-    {
+    public partial class JOINT_INTEREST_STATEMENT : ModelEntityBase {
         private System.String JOINT_INTEREST_STATEMENT_IDValue;
         public System.String JOINT_INTEREST_STATEMENT_ID
         {

@@ -9,7 +9,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// </summary>
     public partial class PipelineAnalysisService
     {
-        public async Task<IntegrityAssessmentDto> AssessIntegrityAsync(string pipelineId, IntegrityRequestDto request)
+        public async Task<IntegrityAssessment> AssessIntegrityAsync(string pipelineId, IntegrityRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -26,7 +26,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var issues = GenerateIntegrityIssues(integrityStatus);
                 var recommendations = GenerateIntegrityRecommendations(integrityStatus, daysSinceInspection);
 
-                var result = new IntegrityAssessmentDto
+                var result = new IntegrityAssessment
                 {
                     PipelineId = pipelineId,
                     IntegrityStatus = integrityStatus,
@@ -47,7 +47,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<StressAnalysisDto> PerformStressAnalysisAsync(string pipelineId, StressRequestDto request)
+        public async Task<StressAnalysis> PerformStressAnalysisAsync(string pipelineId, StressRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -64,16 +64,16 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var safety_factor = allowable_stress > 0 ? allowable_stress / Math.Max(combined_stress, 0.1m) : 2m;
                 var is_safe = safety_factor >= 1.5m;
 
-                var result = new StressAnalysisDto
+                var result = new StressAnalysis
                 {
                     PipelineId = pipelineId,
                     MaximumStress = combined_stress,
                     AllowableStress = allowable_stress,
                     SafetyFactor = safety_factor,
                     IsSafe = is_safe,
-                    HighStressAreas = new List<StressLocationDto>
+                    HighStressAreas = new List<StressLocation>
                     {
-                        combined_stress > allowable_stress ? new StressLocationDto 
+                        combined_stress > allowable_stress ? new StressLocation 
                         { 
                             LocationDescription = "Pipe body",
                             StressLevel = combined_stress
@@ -95,7 +95,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<WallThicknessAnalysisDto> EvaluateWallThicknessAsync(string pipelineId, WallThicknessRequestDto request)
+        public async Task<WallThicknessAnalysis> EvaluateWallThicknessAsync(string pipelineId, WallThicknessRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -111,7 +111,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var corrosion_rate = 0.05m; // mm/year (assumed)
                 var remaining_life = (request.CurrentThickness - minimum_required) / corrosion_rate;
 
-                var result = new WallThicknessAnalysisDto
+                var result = new WallThicknessAnalysis
                 {
                     PipelineId = pipelineId,
                     CurrentWallThickness = request.CurrentThickness,
@@ -132,7 +132,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<StabilityAssessmentDto> AssessStabilityAsync(string pipelineId, StabilityRequestDto request)
+        public async Task<StabilityAssessment> AssessStabilityAsync(string pipelineId, StabilityRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -155,7 +155,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     safety_factor >= 3 ? "Excellent lateral stability" : safety_factor >= 2 ? "Good lateral stability" : "Marginal lateral stability"
                 };
 
-                var result = new StabilityAssessmentDto
+                var result = new StabilityAssessment
                 {
                     PipelineId = pipelineId,
                     IsStable = is_stable,
@@ -195,27 +195,27 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             return "Critical";
         }
 
-        private List<IntegrityIssueDto> GenerateIntegrityIssues(string status)
+        private List<IntegrityIssue> GenerateIntegrityIssues(string status)
         {
-            var issues = new List<IntegrityIssueDto>();
+            var issues = new List<IntegrityIssue>();
 
             return status switch
             {
-                "Critical" => new List<IntegrityIssueDto>
+                "Critical" => new List<IntegrityIssue>
                 {
                     new() { IssueType = "High corrosion", Severity = "Critical", Location = "Multiple", RemediationAction = "Immediate replacement required" },
                     new() { IssueType = "Defects", Severity = "Critical", Location = "Scattered", RemediationAction = "Emergency repair" }
                 },
-                "Poor" => new List<IntegrityIssueDto>
+                "Poor" => new List<IntegrityIssue>
                 {
                     new() { IssueType = "Active corrosion", Severity = "High", Location = "External", RemediationAction = "Accelerated inspection schedule" },
                     new() { IssueType = "Metal loss", Severity = "High", Location = "Bottom", RemediationAction = "Coating application" }
                 },
-                "Fair" => new List<IntegrityIssueDto>
+                "Fair" => new List<IntegrityIssue>
                 {
                     new() { IssueType = "Corrosion potential", Severity = "Medium", Location = "Localized areas", RemediationAction = "Enhanced monitoring" }
                 },
-                _ => new List<IntegrityIssueDto>()
+                _ => new List<IntegrityIssue>()
             };
         }
 

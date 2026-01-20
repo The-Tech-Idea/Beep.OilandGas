@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class TAKE_OR_PAY_SCHEDULE : Entity, IPPDMEntity
-    {
+    public partial class TAKE_OR_PAY_SCHEDULE : ModelEntityBase {
         private string TAKE_OR_PAY_SCHEDULE_IDValue;
         public string TAKE_OR_PAY_SCHEDULE_ID
         {

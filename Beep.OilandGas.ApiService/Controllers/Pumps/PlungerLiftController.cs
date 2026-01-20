@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs.Pumps;
+using Beep.OilandGas.Models.Data.Pumps;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         [HttpPost("design")]
-        public async Task<ActionResult<PlungerLiftDesignDto>> DesignPlungerLiftSystem([FromBody] DesignPlungerLiftSystemRequest request)
+        public async Task<ActionResult<PlungerLiftDesign>> DesignPlungerLiftSystem([FromBody] DesignPlungerLiftSystemRequest request)
         {
             try
             {
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         [HttpPost("analyze-performance")]
-        public async Task<ActionResult<PlungerLiftPerformanceDto>> AnalyzePerformance([FromBody] AnalyzePerformanceRequest request)
+        public async Task<ActionResult<PlungerLiftPerformance>> AnalyzePerformance([FromBody] AnalyzePerformanceRequest request)
         {
             try
             {
@@ -54,7 +54,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         [HttpPost("design/save")]
-        public async Task<ActionResult> SavePlungerLiftDesign([FromBody] PlungerLiftDesignDto design, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SavePlungerLiftDesign([FromBody] PlungerLiftDesign design, [FromQuery] string? userId = null)
         {
             try
             {

@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class TAX_RETURN : Entity,IPPDMEntity
-    {
+    public partial class TAX_RETURN : ModelEntityBase {
         private System.String TAX_RETURN_IDValue;
         public System.String TAX_RETURN_ID
         {

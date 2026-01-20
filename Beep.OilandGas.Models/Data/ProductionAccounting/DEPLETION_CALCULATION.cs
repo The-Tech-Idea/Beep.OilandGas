@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class DEPLETION_CALCULATION : Entity,IPPDMEntity
-    {
+    public partial class DEPLETION_CALCULATION : ModelEntityBase {
         private String DEPLETION_IDValue;
         public String DEPLETION_ID
         {

@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class CURRENCY_TRANSLATION_RESULT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class CURRENCY_TRANSLATION_RESULT : ModelEntityBase
     {
         private string TRANSLATION_RESULT_IDValue;
         public string TRANSLATION_RESULT_ID
@@ -99,3 +99,4 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+

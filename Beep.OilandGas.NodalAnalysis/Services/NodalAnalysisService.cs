@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.NodalAnalysis.Calculations;
-using Beep.OilandGas.Models.NodalAnalysis;
+using Beep.OilandGas.Models.Data.NodalAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -48,7 +48,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             _logger = logger;
         }
 
-        public async Task<NodalAnalysisResultDto> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParametersDto analysisParameters)
+        public async Task<NodalAnalysisRunResult> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParameters analysisParameters)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -85,7 +85,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
 
             var operatingPoint = NodalAnalyzer.FindOperatingPoint(iprCurve, vlpCurve);
 
-            var result = new NodalAnalysisResultDto
+            var result = new NodalAnalysisRunResult
             {
                 AnalysisId = _defaults.FormatIdForTable("NODAL_ANALYSIS", Guid.NewGuid().ToString()),
                 WellUWI = wellUWI,
@@ -105,7 +105,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             return result;
         }
 
-        public async Task<OptimizationResultDto> OptimizeSystemAsync(string wellUWI, OptimizationGoalsDto optimizationGoals)
+        public async Task<OptimizationResult> OptimizeSystemAsync(string wellUWI, OptimizationGoals optimizationGoals)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -116,7 +116,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
                 wellUWI, optimizationGoals.OptimizationType);
 
             // TODO: Implement optimization logic based on goals
-            var result = new OptimizationResultDto
+            var result = new OptimizationResult
             {
                 OptimizationId = _defaults.FormatIdForTable("OPTIMIZATION", Guid.NewGuid().ToString()),
                 WellUWI = wellUWI,
@@ -132,7 +132,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             return result;
         }
 
-        public async Task SaveAnalysisResultAsync(NodalAnalysisResultDto result, string userId)
+        public async Task SaveAnalysisResultAsync(NodalAnalysisRunResult result, string userId)
         {
             if (result == null)
                 throw new ArgumentNullException(nameof(result));
@@ -171,7 +171,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             _logger?.LogInformation("Successfully saved nodal analysis result {AnalysisId}", result.AnalysisId);
         }
 
-         public async Task<List<NodalAnalysisResultDto>> GetAnalysisHistoryAsync(string wellUWI)
+         public async Task<List<NodalAnalysisRunResult>> GetAnalysisHistoryAsync(string wellUWI)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
                  throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -189,7 +189,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              };
              var entities = await analysisRepo.GetAsync(filters);
              
-             var results = entities.Cast<NODAL_ANALYSIS_RESULT>().Select(entity => new NodalAnalysisResultDto
+             var results = entities.Cast<NODAL_ANALYSIS_RESULT>().Select(entity => new NodalAnalysisRunResult
              {
                  AnalysisId = entity.ANALYSIS_ID ?? string.Empty,
                  WellUWI = entity.WELL_UWI ?? wellUWI,
@@ -207,9 +207,9 @@ namespace Beep.OilandGas.NodalAnalysis.Services
          /// Analyzes performance matching between IPR and VLP curves
          /// Identifies bottlenecks and constraints affecting well production
          /// </summary>
-         public async Task<PerformanceMatchingAnalysisDto> AnalyzePerformanceMatchingAsync(
+         public async Task<PerformanceMatchingAnalysis> AnalyzePerformanceMatchingAsync(
              string wellUWI, 
-             NodalAnalysisParametersDto analysisParameters)
+             NodalAnalysisParameters analysisParameters)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
                  throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -248,7 +248,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              decimal marginToBubblePoint = (decimal)analysisParameters.ReservoirProperties.ReservoirPressure - 
                                           (decimal)analysisParameters.ReservoirProperties.BubblePointPressure;
 
-             var result = new PerformanceMatchingAnalysisDto
+             var result = new PerformanceMatchingAnalysis
              {
                  AnalysisId = _defaults.FormatIdForTable("PERF_MATCH", Guid.NewGuid().ToString()),
                  WellUWI = wellUWI,
@@ -271,9 +271,9 @@ namespace Beep.OilandGas.NodalAnalysis.Services
          /// Performs sensitivity analysis on key variables affecting well performance
          /// Tests impact of pressure, tubing diameter, and other parameters on production
          /// </summary>
-         public async Task<SensitivityAnalysisResultDto> PerformSensitivityAnalysisAsync(
+         public async Task<SensitivityAnalysisResult> PerformSensitivityAnalysisAsync(
              string wellUWI,
-             NodalAnalysisParametersDto baselineParameters,
+             NodalAnalysisParameters baselineParameters,
              List<string> parametersToVary)
          {
              if (string.IsNullOrWhiteSpace(wellUWI))
@@ -284,7 +284,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              _logger?.LogInformation("Performing sensitivity analysis for well {WellUWI} with {Count} parameters", 
                  wellUWI, parametersToVary?.Count ?? 0);
 
-             var result = new SensitivityAnalysisResultDto
+             var result = new SensitivityAnalysisResult
              {
                  AnalysisId = _defaults.FormatIdForTable("SENSITIVITY", Guid.NewGuid().ToString()),
                  WellUWI = wellUWI,
@@ -330,7 +330,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
          /// Evaluates and recommends artificial lift design for the well
          /// Analyzes suitability of ESP, gas lift, sucker rod, or hydraulic lift
          /// </summary>
-         public async Task<ArtificialLiftRecommendationDto> RecommendArtificialLiftAsync(
+         public async Task<ArtificialLiftRecommendation> RecommendArtificialLiftAsync(
              string wellUWI,
              decimal currentProduction,
              decimal targetProduction,
@@ -343,7 +343,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              _logger?.LogInformation("Recommending artificial lift design for well {WellUWI}: Target={Target}bpd, Depth={Depth}ft",
                  wellUWI, targetProduction, wellDepth);
 
-             var recommendation = new ArtificialLiftRecommendationDto
+             var recommendation = new ArtificialLiftRecommendation
              {
                  RecommendationId = _defaults.FormatIdForTable("AL_REC", Guid.NewGuid().ToString()),
                  WellUWI = wellUWI,
@@ -365,7 +365,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
          /// Diagnoses well performance issues using nodal analysis
          /// Identifies causes of underperformance and recommends remedial actions
          /// </summary>
-         public async Task<WellDiagnosticsResultDto> DiagnoseWellPerformanceAsync(
+         public async Task<WellDiagnosticsResult> DiagnoseWellPerformanceAsync(
              string wellUWI,
              decimal expectedProduction,
              decimal actualProduction,
@@ -378,7 +378,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              _logger?.LogInformation("Diagnosing well performance for {WellUWI}: Expected={Expected}bpd, Actual={Actual}bpd",
                  wellUWI, expectedProduction, actualProduction);
 
-             var result = new WellDiagnosticsResultDto
+             var result = new WellDiagnosticsResult
              {
                  DiagnosisId = _defaults.FormatIdForTable("DIAGNOSIS", Guid.NewGuid().ToString()),
                  WellUWI = wellUWI,
@@ -428,7 +428,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
          /// Forecasts future well production based on declining curve analysis
          /// Projects production decline curve for economic evaluation
          /// </summary>
-         public async Task<ProductionForecastDto> ForecastProductionAsync(
+         public async Task<ProductionForecast> ForecastProductionAsync(
              string wellUWI,
              decimal currentProduction,
              decimal declineRate,
@@ -440,7 +440,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              _logger?.LogInformation("Forecasting production for well {WellUWI} for {Months} months with decline rate {Decline}%",
                  wellUWI, forecastMonths, declineRate);
 
-             var forecast = new ProductionForecastDto
+             var forecast = new ProductionForecast
              {
                  ForecastId = _defaults.FormatIdForTable("FORECAST", Guid.NewGuid().ToString()),
                  WellUWI = wellUWI,
@@ -480,7 +480,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
          /// <summary>
          /// Analyzes pressure maintenance strategies for well optimization
          /// </summary>
-         public async Task<PressureMaintenanceStrategyDto> AnalyzePressureMaintenanceAsync(
+         public async Task<PressureMaintenanceStrategy> AnalyzePressureMaintenanceAsync(
              string wellUWI,
              decimal currentReservoirPressure,
              decimal bubblePointPressure,
@@ -492,7 +492,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              _logger?.LogInformation("Analyzing pressure maintenance strategy for well {WellUWI}: ResPres={ResPres}psi",
                  wellUWI, currentReservoirPressure);
 
-             var strategy = new PressureMaintenanceStrategyDto
+             var strategy = new PressureMaintenanceStrategy
              {
                  StrategyId = _defaults.FormatIdForTable("PM_STRATEGY", Guid.NewGuid().ToString()),
                  WellUWI = wellUWI,

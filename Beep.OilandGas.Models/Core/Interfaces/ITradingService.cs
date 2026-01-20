@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.Trading;
-using Beep.OilandGas.Models.DTOs.Trading;
+using Beep.OilandGas.Models.Data.Trading;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

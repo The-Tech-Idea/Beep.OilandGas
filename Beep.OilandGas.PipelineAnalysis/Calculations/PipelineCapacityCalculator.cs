@@ -1,7 +1,7 @@
 using System;
 
 using Beep.OilandGas.GasProperties.Calculations;
-using Beep.OilandGas.Models.PipelineAnalysis;
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
 
 namespace Beep.OilandGas.PipelineAnalysis.Calculations
 {

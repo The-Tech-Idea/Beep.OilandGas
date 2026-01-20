@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -15,8 +15,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="wellIdentifiers">List of well identifiers (UWIs) to compare</param>
         /// <param name="fieldNames">Optional list of specific fields to compare. If null, compares all common fields</param>
         /// <param name="connectionName">Connection name (defaults to repository connection)</param>
-        /// <returns>WellComparisonDTO with side-by-side comparison</returns>
-        Task<WellComparisonDTO> CompareWellsAsync(
+        /// <returns>WellComparison with side-by-side comparison</returns>
+        Task<WellComparison> CompareWellsAsync(
             List<string> wellIdentifiers,
             List<string> fieldNames = null,
             string connectionName = null);
@@ -26,8 +26,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// </summary>
         /// <param name="wellComparisons">List of well identifiers with their data sources</param>
         /// <param name="fieldNames">Optional list of specific fields to compare</param>
-        /// <returns>WellComparisonDTO with side-by-side comparison across data sources</returns>
-        Task<WellComparisonDTO> CompareWellsFromMultipleSourcesAsync(
+        /// <returns>WellComparison with side-by-side comparison across data sources</returns>
+        Task<WellComparison> CompareWellsFromMultipleSourcesAsync(
             List<WellSourceMapping> wellComparisons,
             List<string> fieldNames = null);
 

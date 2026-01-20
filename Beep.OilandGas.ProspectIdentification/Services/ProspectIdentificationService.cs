@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -46,7 +46,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             _logger = logger;
         }
 
-        public async Task<ProspectEvaluationDto> EvaluateProspectAsync(string prospectId)
+        public async Task<ProspectEvaluation> EvaluateProspectAsync(string prospectId)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
                 throw new ArgumentException("Prospect ID cannot be null or empty", nameof(prospectId));
@@ -54,7 +54,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
              _logger?.LogInformation("Evaluating prospect {ProspectId}", prospectId);
 
              // TODO: Implement prospect evaluation logic
-             var evaluation = new ProspectEvaluationDto
+             var evaluation = new ProspectEvaluation
              {
                  EvaluationId = _defaults.FormatIdForTable("EVAL", Guid.NewGuid().ToString()),
                  ProspectId = prospectId,
@@ -68,7 +68,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
              return evaluation;
         }
 
-        public async Task<List<ProspectDto>> GetProspectsAsync(Dictionary<string, string>? filters = null)
+        public async Task<List<Prospect>> GetProspectsAsync(Dictionary<string, string>? filters = null)
         {
             _logger?.LogInformation("Getting prospects with filters: {FilterCount}", filters?.Count ?? 0);
 
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             }
 
              var entities = await prospectRepo.GetAsync(appFilters);
-             var prospects = entities.Cast<PROSPECT>().Select(entity => new ProspectDto
+             var prospects = entities.Cast<PROSPECT>().Select(entity => new Prospect
              {
                  ProspectId = entity.PROSPECT_ID ?? string.Empty,
                  ProspectName = entity.PROSPECT_NAME ?? string.Empty,
@@ -102,7 +102,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return prospects;
         }
 
-        public async Task<string> CreateProspectAsync(ProspectDto prospect, string userId)
+        public async Task<string> CreateProspectAsync(Prospect prospect, string userId)
         {
             if (prospect == null)
                 throw new ArgumentNullException(nameof(prospect));
@@ -143,7 +143,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return prospect.ProspectId;
         }
 
-        public async Task<List<ProspectRankingDto>> RankProspectsAsync(List<string> prospectIds, Dictionary<string, decimal> rankingCriteria)
+        public async Task<List<ProspectRanking>> RankProspectsAsync(List<string> prospectIds, Dictionary<string, decimal> rankingCriteria)
         {
             if (prospectIds == null || prospectIds.Count == 0)
                 throw new ArgumentException("Prospect IDs cannot be null or empty", nameof(prospectIds));
@@ -154,10 +154,10 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 prospectIds.Count, rankingCriteria.Count);
 
             // TODO: Implement prospect ranking logic
-            var rankings = new List<ProspectRankingDto>();
+            var rankings = new List<ProspectRanking>();
             for (int i = 0; i < prospectIds.Count; i++)
             {
-                rankings.Add(new ProspectRankingDto
+                rankings.Add(new ProspectRanking
                 {
                     ProspectId = prospectIds[i],
                     ProspectName = $"Prospect {prospectIds[i]}",
@@ -175,11 +175,11 @@ namespace Beep.OilandGas.ProspectIdentification.Services
          /// <summary>
          /// Analyzes seismic interpretation data for prospect definition
          /// </summary>
-         public async Task<SeismicInterpretationAnalysisDto> AnalyzeSeismicInterpretationAsync(
+         public async Task<SeismicInterpretationAnalysis> AnalyzeSeismicInterpretationAsync(
              string prospectId,
              string surveyId,
-             List<HorizonDto> horizons,
-             List<FaultDto> faults)
+             List<Horizon> horizons,
+             List<Fault> faults)
          {
              if (string.IsNullOrWhiteSpace(prospectId))
                  throw new ArgumentException("Prospect ID cannot be null or empty", nameof(prospectId));
@@ -189,7 +189,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
              _logger?.LogInformation("Analyzing seismic interpretation for prospect {ProspectId}: Horizons={Horizons}, Faults={Faults}",
                  prospectId, horizons?.Count ?? 0, faults?.Count ?? 0);
 
-             var analysis = new SeismicInterpretationAnalysisDto
+             var analysis = new SeismicInterpretationAnalysis
              {
                  AnalysisId = _defaults.FormatIdForTable("SEISMIC_INT", Guid.NewGuid().ToString()),
                  ProspectId = prospectId,
@@ -197,8 +197,8 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                  SurveyId = surveyId,
                  HorizonCount = horizons?.Count ?? 0,
                  FaultCount = faults?.Count ?? 0,
-                 Horizons = horizons ?? new List<HorizonDto>(),
-                 Faults = faults ?? new List<FaultDto>(),
+                 Horizons = horizons ?? new List<Horizon>(),
+                 Faults = faults ?? new List<Fault>(),
                  InterpretationConfidence = 0.75m, // Default 75% confidence
                  InterpretationStatus = "Completed"
              };
@@ -212,7 +212,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
          /// <summary>
          /// Estimates hydrocarbon resources using volumetric method
          /// </summary>
-         public async Task<ResourceEstimationResultDto> EstimateResourcesAsync(
+         public async Task<ResourceEstimationResult> EstimateResourcesAsync(
              string prospectId,
              decimal grossRockVolume,
              decimal netToGrossRatio,
@@ -235,7 +235,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
              decimal estimatedOilVolume = netRockVolume * porosity * (1 - waterSaturation) * oilRecoveryFactor;
              decimal estimatedGasVolume = netRockVolume * porosity * (1 - waterSaturation) * gasRecoveryFactor;
 
-             var result = new ResourceEstimationResultDto
+             var result = new ResourceEstimationResult
              {
                  EstimationId = _defaults.FormatIdForTable("RESOURCE_EST", Guid.NewGuid().ToString()),
                  ProspectId = prospectId,
@@ -262,7 +262,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
          /// <summary>
          /// Analyzes trap geometry and closure geometry
          /// </summary>
-         public async Task<TrapGeometryAnalysisDto> AnalyzeTrapGeometryAsync(
+         public async Task<TrapGeometryAnalysis> AnalyzeTrapGeometryAsync(
              string prospectId,
              string trapType,
              decimal crestDepth,
@@ -278,7 +278,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
 
              decimal closure = spillPointDepth - crestDepth;
 
-             var analysis = new TrapGeometryAnalysisDto
+             var analysis = new TrapGeometryAnalysis
              {
                  AnalysisId = _defaults.FormatIdForTable("TRAP_GEOM", Guid.NewGuid().ToString()),
                  ProspectId = prospectId,
@@ -304,7 +304,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
          /// <summary>
          /// Analyzes hydrocarbon migration pathways
          /// </summary>
-         public async Task<MigrationPathAnalysisDto> AnalyzeMigrationPathAsync(
+         public async Task<MigrationPathAnalysis> AnalyzeMigrationPathAsync(
              string prospectId,
              string sourceRockId,
              decimal maturityLevel,
@@ -319,7 +319,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
              string migrationEfficiency = maturityLevel > 0.6m && distance < 50 ? "Excellent" :
                                          maturityLevel > 0.5m && distance < 100 ? "Good" : "Fair";
 
-             var analysis = new MigrationPathAnalysisDto
+             var analysis = new MigrationPathAnalysis
              {
                  AnalysisId = _defaults.FormatIdForTable("MIGRATION", Guid.NewGuid().ToString()),
                  ProspectId = prospectId,
@@ -348,7 +348,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
          /// <summary>
          /// Assesses seal and source rock characteristics
          /// </summary>
-         public async Task<SealSourceAssessmentDto> AssessSealAndSourceAsync(
+         public async Task<SealSourceAssessment> AssessSealAndSourceAsync(
              string prospectId,
              string sealRockType,
              decimal sealThickness,
@@ -364,7 +364,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
              string sealQuality = sealThickness > 50 ? "Excellent" : sealThickness > 20 ? "Good" : "Fair";
              string sourceStatus = sourceMaturity > 0.6m ? "Active" : sourceMaturity > 0.5m ? "Marginal" : "Inactive";
 
-             var assessment = new SealSourceAssessmentDto
+             var assessment = new SealSourceAssessment
              {
                  AssessmentId = _defaults.FormatIdForTable("SEAL_SOURCE", Guid.NewGuid().ToString()),
                  ProspectId = prospectId,
@@ -394,7 +394,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
          /// <summary>
          /// Performs comprehensive risk assessment for prospect
          /// </summary>
-         public async Task<ProspectRiskAnalysisResultDto> PerformRiskAssessmentAsync(
+         public async Task<ProspectRiskAnalysisResult> PerformRiskAssessmentAsync(
              string prospectId,
              string assessedBy,
              Dictionary<string, decimal> riskScores)
@@ -421,7 +421,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                                probabilityOfSuccess > 0.3m ? "Medium" :
                                probabilityOfSuccess > 0.1m ? "High" : "Critical";
 
-             var assessment = new ProspectRiskAnalysisResultDto
+             var assessment = new ProspectRiskAnalysisResult
              {
                  AnalysisId = _defaults.FormatIdForTable("RISK_ASSESS", Guid.NewGuid().ToString()),
                  ProspectId = prospectId,
@@ -447,7 +447,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
          /// <summary>
          /// Analyzes economic viability of prospect development
          /// </summary>
-         public async Task<EconomicViabilityAnalysisDto> AnalyzeEconomicViabilityAsync(
+         public async Task<EconomicViabilityAnalysis> AnalyzeEconomicViabilityAsync(
              string prospectId,
              decimal estimatedOil,
              decimal estimatedGas,
@@ -478,7 +478,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
              decimal paybackPeriod = capitalCost > 0 ? capitalCost / annualCashFlow : 0;
              decimal profitabilityIndex = npv / capitalCost;
 
-             var analysis = new EconomicViabilityAnalysisDto
+             var analysis = new EconomicViabilityAnalysis
              {
                  AnalysisId = _defaults.FormatIdForTable("ECON_VIA", Guid.NewGuid().ToString()),
                  ProspectId = prospectId,
@@ -505,8 +505,8 @@ namespace Beep.OilandGas.ProspectIdentification.Services
          /// <summary>
          /// Optimizes prospect portfolio based on risk and opportunity
          /// </summary>
-         public async Task<PortfolioOptimizationResultDto> OptimizePortfolioAsync(
-             List<ProspectRankingDto> rankedProspects,
+         public async Task<PortfolioOptimizationResult> OptimizePortfolioAsync(
+             List<ProspectRanking> rankedProspects,
              decimal riskTolerance,
              decimal capitalBudget)
          {
@@ -546,7 +546,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                  }
              }
 
-             var result = new PortfolioOptimizationResultDto
+             var result = new PortfolioOptimizationResult
              {
                  OptimizationId = _defaults.FormatIdForTable("PORTFOLIO_OPT", Guid.NewGuid().ToString()),
                  OptimizationDate = DateTime.UtcNow,
@@ -567,9 +567,9 @@ namespace Beep.OilandGas.ProspectIdentification.Services
 
          #region Helper Methods
 
-         private List<RiskCategoryDto> CreateRiskCategories(Dictionary<string, decimal> riskScores)
+         private List<RiskCategory> CreateRiskCategories(Dictionary<string, decimal> riskScores)
          {
-             var categories = new List<RiskCategoryDto>();
+             var categories = new List<RiskCategory>();
 
              var riskMapping = new Dictionary<string, string>
              {
@@ -585,7 +585,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                  string riskLevel = score.Value > 0.7m ? "High" :
                                    score.Value > 0.4m ? "Medium" : "Low";
 
-                 categories.Add(new RiskCategoryDto
+                 categories.Add(new RiskCategory
                  {
                      CategoryName = riskMapping.ContainsKey(score.Key) ? riskMapping[score.Key] : score.Key,
                      RiskScore = score.Value,

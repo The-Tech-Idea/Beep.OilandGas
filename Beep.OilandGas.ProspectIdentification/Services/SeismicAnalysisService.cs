@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
@@ -55,10 +55,10 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return result;
         }
 
-        public async Task<List<SeismicSurveyDto>> GetSeismicSurveysAsync(string? prospectId = null, string? fieldId = null, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<List<SeismicSurvey>> GetSeismicSurveysAsync(string? prospectId = null, string? fieldId = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             if (string.IsNullOrWhiteSpace(prospectId) && string.IsNullOrWhiteSpace(fieldId))
-                return new List<SeismicSurveyDto>();
+                return new List<SeismicSurvey>();
 
             var surveyUow = await GetSeismicSurveyUnitOfWorkAsync();
             var filters = new List<AppFilter>();
@@ -74,7 +74,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return surveys.Select(s => MapToSeismicSurveyDto(s, prospectId ?? fieldId ?? string.Empty)).ToList();
         }
 
-        public async Task<SeismicSurveyDto?> GetSeismicSurveyAsync(string surveyId)
+        public async Task<SeismicSurvey?> GetSeismicSurveyAsync(string surveyId)
         {
             if (string.IsNullOrWhiteSpace(surveyId)) return null;
             var surveyUow = await GetSeismicSurveyUnitOfWorkAsync();
@@ -83,7 +83,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return MapToSeismicSurveyDto(survey, survey.AREA_ID ?? string.Empty);
         }
 
-        public async Task<SeismicInterpretationResultDto> PerformSeismicInterpretationAsync(string surveyId, SeismicInterpretationRequestDto request)
+        public async Task<SeismicInterpretationResult> PerformSeismicInterpretationAsync(string surveyId, SeismicInterpretationRequest request)
         {
             if (string.IsNullOrWhiteSpace(surveyId))
                 throw new ArgumentException("Survey ID cannot be null or empty.", nameof(surveyId));
@@ -93,15 +93,15 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             if (survey == null)
                 throw new KeyNotFoundException($"Seismic survey with ID {surveyId} not found.");
 
-            var result = new SeismicInterpretationResultDto
+            var result = new SeismicInterpretationResult
             {
                 InterpretationId = Guid.NewGuid().ToString(),
                 SurveyId = surveyId,
                 InterpretationDate = DateTime.UtcNow,
                 Interpreter = "System",
                 Anomalies = IdentifyAnomalies(survey),
-                StratigraphicUnits = new List<StratigraphicUnitDto>(),
-                StructuralFeatures = new List<StructuralFeatureDto>(),
+                StratigraphicUnits = new List<StratigraphicUnit>(),
+                StructuralFeatures = new List<StructuralFeature>(),
                 OverallAssessment = survey.REMARK ?? "Seismic interpretation pending",
                 ConfidenceLevel = "0.5"
             };
@@ -109,7 +109,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return result;
         }
 
-        public async Task<SeismicSurveyDto> CreateSeismicSurveyAsync(CreateSeismicSurveyDto createDto, string userId)
+        public async Task<SeismicSurvey> CreateSeismicSurveyAsync(CreateSeismicSurvey createDto, string userId)
         {
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
@@ -144,9 +144,9 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return MapToSeismicSurveyDto(survey, prospectId);
         }
 
-        private SeismicSurveyDto MapToSeismicSurveyDto(SEIS_SET survey, string prospectId)
+        private SeismicSurvey MapToSeismicSurveyDto(SEIS_SET survey, string prospectId)
         {
-            return new SeismicSurveyDto
+            return new SeismicSurvey
             {
                 SurveyId = survey.SEIS_SET_ID ?? string.Empty,
                 ProspectId = prospectId,
@@ -158,12 +158,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             };
         }
 
-        private List<SeismicAnomalyDto> IdentifyAnomalies(SEIS_SET survey)
+        private List<SeismicAnomaly> IdentifyAnomalies(SEIS_SET survey)
         {
-            var anomalies = new List<SeismicAnomalyDto>();
+            var anomalies = new List<SeismicAnomaly>();
             if (!string.IsNullOrWhiteSpace(survey.REMARK))
             {
-                anomalies.Add(new SeismicAnomalyDto
+                anomalies.Add(new SeismicAnomaly
                 {
                     AnomalyId = Guid.NewGuid().ToString(),
                     AnomalyType = "Bright Spot",
@@ -175,12 +175,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return anomalies;
         }
 
-        private List<DrillingTargetDto> IdentifyDrillingTargets(SEIS_SET survey)
+        private List<DrillingTarget> IdentifyDrillingTargets(SEIS_SET survey)
         {
-            var targets = new List<DrillingTargetDto>();
+            var targets = new List<DrillingTarget>();
             if (!string.IsNullOrWhiteSpace(survey.REMARK))
             {
-                targets.Add(new DrillingTargetDto
+                targets.Add(new DrillingTarget
                 {
                     TargetId = Guid.NewGuid().ToString(),
                     TargetName = "Primary Target",
@@ -193,7 +193,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         }
 
         // --- Interface stubs (simple implementations or NotImplemented placeholders) ---
-        public async Task<SeismicSurveyDto> UpdateSeismicSurveyAsync(string surveyId, UpdateSeismicSurveyDto updateDto, string userId)
+        public async Task<SeismicSurvey> UpdateSeismicSurveyAsync(string surveyId, UpdateSeismicSurvey updateDto, string userId)
         {
             throw new NotImplementedException();
         }
@@ -203,90 +203,90 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             throw new NotImplementedException();
         }
 
-        public async Task<List<StructuralFeatureDto>> IdentifyStructuralFeaturesAsync(string surveyId, SeismicInterpretationRequestDto request)
+        public async Task<List<StructuralFeature>> IdentifyStructuralFeaturesAsync(string surveyId, SeismicInterpretationRequest request)
         {
-            return new List<StructuralFeatureDto>();
+            return new List<StructuralFeature>();
         }
 
-        public async Task<StratigraphicInterpretationDto> PerformStratigraphicInterpretationAsync(string surveyId, SeismicInterpretationRequestDto request)
+        public async Task<StratigraphicInterpretation> PerformStratigraphicInterpretationAsync(string surveyId, SeismicInterpretationRequest request)
         {
-            return new StratigraphicInterpretationDto();
+            return new StratigraphicInterpretation();
         }
 
-        public async Task<List<SeismicAnomalyDto>> IdentifySeismicAnomaliesAsync(string surveyId, SeismicInterpretationRequestDto request)
+        public async Task<List<SeismicAnomaly>> IdentifySeismicAnomaliesAsync(string surveyId, SeismicInterpretationRequest request)
         {
             var seismicUow = await GetSeismicSurveyUnitOfWorkAsync();
             var survey = seismicUow.Read(surveyId) as SEIS_SET;
-            if (survey == null) return new List<SeismicAnomalyDto>();
+            if (survey == null) return new List<SeismicAnomaly>();
             return IdentifyAnomalies(survey);
         }
 
-        public async Task<SeismicAttributesResultDto> CalculateSeismicAttributesAsync(string surveyId, SeismicAttributesRequestDto request)
+        public async Task<SeismicAttributesResult> CalculateSeismicAttributesAsync(string surveyId, SeismicAttributesRequest request)
         {
-            return new SeismicAttributesResultDto();
+            return new SeismicAttributesResult();
         }
 
-        public async Task<SpectralDecompositionResultDto> PerformSpectralDecompositionAsync(string surveyId, SpectralDecompositionRequestDto request)
+        public async Task<SpectralDecompositionResult> PerformSpectralDecompositionAsync(string surveyId, SpectralDecompositionRequest request)
         {
-            return new SpectralDecompositionResultDto();
+            return new SpectralDecompositionResult();
         }
 
-        public async Task<SeismicInversionResultDto> PerformSeismicInversionAsync(string surveyId, SeismicInversionRequestDto request)
+        public async Task<SeismicInversionResult> PerformSeismicInversionAsync(string surveyId, SeismicInversionRequest request)
         {
-            return new SeismicInversionResultDto();
+            return new SeismicInversionResult();
         }
 
-        public async Task<CoherenceAnalysisResultDto> PerformCoherenceAnalysisAsync(string surveyId, CoherenceAnalysisRequestDto request)
+        public async Task<CoherenceAnalysisResult> PerformCoherenceAnalysisAsync(string surveyId, CoherenceAnalysisRequest request)
         {
-            return new CoherenceAnalysisResultDto();
+            return new CoherenceAnalysisResult();
         }
 
-        public async Task<AVOAnalysisResultDto> PerformAVOAnalysisAsync(string surveyId, AVOAnalysisRequestDto request)
+        public async Task<AVOAnalysisResult> PerformAVOAnalysisAsync(string surveyId, AVOAnalysisRequest request)
         {
-            return new AVOAnalysisResultDto();
+            return new AVOAnalysisResult();
         }
 
-        public async Task<AVOCrossplotResultDto> GenerateAVOCrossplotAsync(string surveyId, AVOCrossplotRequestDto request)
+        public async Task<AVOCrossplotResult> GenerateAVOCrossplotAsync(string surveyId, AVOCrossplotRequest request)
         {
-            return new AVOCrossplotResultDto();
+            return new AVOCrossplotResult();
         }
 
-        public async Task<FluidSubstitutionResultDto> PerformFluidSubstitutionAsync(string surveyId, FluidSubstitutionRequestDto request)
+        public async Task<FluidSubstitutionResult> PerformFluidSubstitutionAsync(string surveyId, FluidSubstitutionRequest request)
         {
-            return new FluidSubstitutionResultDto();
+            return new FluidSubstitutionResult();
         }
 
-        public async Task<List<DrillingTargetDto>> IdentifyDrillingTargetsAsync(string surveyId, TargetIdentificationRequestDto request)
+        public async Task<List<DrillingTarget>> IdentifyDrillingTargetsAsync(string surveyId, TargetIdentificationRequest request)
         {
             var seismicUow = await GetSeismicSurveyUnitOfWorkAsync();
             var survey = seismicUow.Read(surveyId) as SEIS_SET;
-            if (survey == null) return new List<DrillingTargetDto>();
+            if (survey == null) return new List<DrillingTarget>();
             return IdentifyDrillingTargets(survey);
         }
 
-        public async Task<VolumetricAnalysisResultDto> PerformVolumetricAnalysisAsync(string prospectId, VolumetricAnalysisRequestDto request)
+        public async Task<VolumetricAnalysisResult> PerformVolumetricAnalysisAsync(string prospectId, VolumetricAnalysisRequest request)
         {
-            return new VolumetricAnalysisResultDto();
+            return new VolumetricAnalysisResult();
         }
 
-        public async Task<ProspectRiskAssessmentDto> AssessProspectRiskAsync(string prospectId, RiskAssessmentRequestDto request)
+        public async Task<ProspectRiskAssessment> AssessProspectRiskAsync(string prospectId, ProspectRiskAssessmentRequest request)
         {
-            return new ProspectRiskAssessmentDto();
+            return new ProspectRiskAssessment();
         }
 
-        public async Task<SeismicDataQualityDto> ValidateSeismicDataQualityAsync(string surveyId)
+        public async Task<SeismicDataQuality> ValidateSeismicDataQualityAsync(string surveyId)
         {
-            return new SeismicDataQualityDto();
+            return new SeismicDataQuality();
         }
 
-        public async Task<SeismicWellTieResultDto> PerformSeismicWellTieAsync(string surveyId, string wellUWI, SeismicWellTieRequestDto request)
+        public async Task<SeismicWellTieResult> PerformSeismicWellTieAsync(string surveyId, string wellUWI, SeismicWellTieRequest request)
         {
-            return new SeismicWellTieResultDto();
+            return new SeismicWellTieResult();
         }
 
-        public async Task<SeismicReportDto> GenerateSeismicReportAsync(string surveyId, SeismicReportRequestDto request)
+        public async Task<SeismicReport> GenerateSeismicReportAsync(string surveyId, SeismicReportRequest request)
         {
-            return new SeismicReportDto();
+            return new SeismicReport();
         }
 
         public async Task<byte[]> ExportSeismicDataAsync(string surveyId, string format = "SEG-Y")

@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 {
-    public partial class NPV_PROFILE_POINT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class NPV_PROFILE_POINT : ModelEntityBase {
         private String NPV_PROFILE_POINT_IDValue;
         public String NPV_PROFILE_POINT_ID
         {

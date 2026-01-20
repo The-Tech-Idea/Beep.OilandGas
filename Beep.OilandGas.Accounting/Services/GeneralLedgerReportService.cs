@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -50,7 +51,8 @@ namespace Beep.OilandGas.Accounting.Services
             string accountNumber,
             DateTime? startDate = null,
             DateTime? endDate = null,
-            string reportName = "")
+            string reportName = "",
+            string? bookId = null)
         {
             _logger?.LogInformation("Generating GL detail report for account {Account} from {Start} to {End}",
                 accountNumber, startDate?.Date ?? DateTime.MinValue, endDate?.Date ?? DateTime.MaxValue);
@@ -79,6 +81,8 @@ namespace Beep.OilandGas.Accounting.Services
                 {
                     new AppFilter { FieldName = "GL_ACCOUNT_NUMBER", Operator = "=", FilterValue = accountNumber }
                 };
+                if (!string.IsNullOrWhiteSpace(bookId))
+                    filters.Add(new AppFilter { FieldName = "SOURCE", Operator = "=", FilterValue = bookId });
 
                 if (startDate.HasValue)
                     filters.Add(new AppFilter { FieldName = "ENTRY_DATE", Operator = ">=", FilterValue = startDate.Value.ToString("yyyy-MM-dd") });
@@ -156,7 +160,8 @@ namespace Beep.OilandGas.Accounting.Services
         /// </summary>
         public async Task<GLSummaryReport> GenerateGLSummaryReportAsync(
             DateTime? asOfDate = null,
-            string reportName = "")
+            string reportName = "",
+            string? bookId = null)
         {
             _logger?.LogInformation("Generating GL summary report as of {Date}", asOfDate?.Date ?? DateTime.Today);
 
@@ -181,7 +186,7 @@ namespace Beep.OilandGas.Accounting.Services
 
                 foreach (var account in accounts)
                 {
-                    var balance = await _glAccountService.GetAccountBalanceAsync(account.ACCOUNT_NUMBER, asOfDate);
+                    var balance = await _glAccountService.GetAccountBalanceAsync(account.ACCOUNT_NUMBER, asOfDate, bookId);
 
                     // Only include accounts with balance
                     if (Math.Abs(balance) > 0.01m)
@@ -408,64 +413,5 @@ namespace Beep.OilandGas.Accounting.Services
                 throw;
             }
         }
-    }
-
-    /// <summary>
-    /// GL Detail Report - All transactions for an account
-    /// </summary>
-    public class GLDetailReport
-    {
-        public string ReportName { get; set; }
-        public DateTime GeneratedDate { get; set; }
-        public string AccountNumber { get; set; }
-        public string AccountName { get; set; }
-        public string AccountType { get; set; }
-        public string NormalBalance { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
-        public List<GLEntryLine> GLEntries { get; set; }
-        public decimal TotalDebits { get; set; }
-        public decimal TotalCredits { get; set; }
-        public decimal EndingBalance { get; set; }
-    }
-
-    /// <summary>
-    /// GL Entry Line - Single transaction
-    /// </summary>
-    public class GLEntryLine
-    {
-        public DateTime EntryDate { get; set; }
-        public string Description { get; set; }
-        public string Reference { get; set; }
-        public string EntryType { get; set; }
-        public decimal DebitAmount { get; set; }
-        public decimal CreditAmount { get; set; }
-        public decimal RunningBalance { get; set; }
-    }
-
-    /// <summary>
-    /// GL Summary Report - Account balances
-    /// </summary>
-    public class GLSummaryReport
-    {
-        public string ReportName { get; set; }
-        public DateTime GeneratedDate { get; set; }
-        public DateTime AsOfDate { get; set; }
-        public List<GLSummaryLine> Accounts { get; set; }
-        public decimal TotalDebits { get; set; }
-        public decimal TotalCredits { get; set; }
-        public bool IsBalanced { get; set; }
-    }
-
-    /// <summary>
-    /// GL Summary Line - Account balance
-    /// </summary>
-    public class GLSummaryLine
-    {
-        public string AccountNumber { get; set; }
-        public string AccountName { get; set; }
-        public string AccountType { get; set; }
-        public string NormalBalance { get; set; }
-        public decimal Balance { get; set; }
     }
 }

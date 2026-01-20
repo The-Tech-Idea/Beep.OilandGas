@@ -47,7 +47,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
         #region Pipeline Hydraulics Methods
 
-        public async Task<PipelineAnalysisResultDto> AnalyzePipelineFlowAsync(string pipelineId, decimal flowRate, decimal inletPressure)
+        public async Task<PipelineAnalysisResult> AnalyzePipelineFlowAsync(string pipelineId, decimal flowRate, decimal inletPressure)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -63,7 +63,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var velocity = (flowRate * 0.00584m) / pipelineArea; // Convert bbl/d to ft/s
                 var flowRegime = CalculateFlowRegime(flowRate, 0.8m, 350m); // Simplified Reynolds calc
 
-                var result = new PipelineAnalysisResultDto
+                var result = new PipelineAnalysisResult
                 {
                     AnalysisId = _defaults.FormatIdForTable("PIPELINE_ANALYSIS", Guid.NewGuid().ToString()),
                     PipelineId = pipelineId,
@@ -89,7 +89,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<PressureDropResultDto> CalculatePressureDropAsync(string pipelineId, decimal flowRate)
+        public async Task<PressureDropResult> CalculatePressureDropAsync(string pipelineId, decimal flowRate)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -109,7 +109,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var pressureDrop = CalculatePressureDropLinear(flowRate, pipelineLength, frictionFactor);
                 var flowRegime = reynoldsNumber > 4000 ? "Turbulent" : "Laminar";
 
-                var result = new PressureDropResultDto
+                var result = new PressureDropResult
                 {
                     PressureDrop = pressureDrop,
                     FrictionFactor = frictionFactor,
@@ -132,7 +132,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<FlowRegimeAnalysisDto> AnalyzeFlowRegimeAsync(string pipelineId, FlowRegimeRequestDto request)
+        public async Task<FlowRegimeAnalysis> AnalyzeFlowRegimeAsync(string pipelineId, FlowRegimeRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -147,7 +147,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var froudeNumber = CalculateFroudeNumber(request.FlowRate, request.PipelineDiameter);
                 var flowRegime = CalculateFlowRegime(request.FlowRate, request.FluidViscosity, request.FluidDensity);
 
-                var result = new FlowRegimeAnalysisDto
+                var result = new FlowRegimeAnalysis
                 {
                     PipelineId = pipelineId,
                     FlowRegime = flowRegime,
@@ -172,7 +172,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<MultiphaseFlowResultDto> CalculateBeggsbrillAsync(string pipelineId, MultiphaseFlowRequestDto request)
+        public async Task<MultiphaseFlowResult> CalculateBeggsbrillAsync(string pipelineId, MultiphaseFlowRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -188,7 +188,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var pipelineAreaBB = (decimal)Math.PI * (request.PipelineDiameter / 2m) * (request.PipelineDiameter / 2m) / 144m;
                 var mixtureVelocity = (totalRate * 0.00584m) / pipelineAreaBB;
                 
-                var result = new MultiphaseFlowResultDto
+                var result = new MultiphaseFlowResult
                 {
                     PipelineId = pipelineId,
                     PressureDrop = Math.Abs(request.PipelineInclination) * 0.5m + (totalRate * 0.001m),
@@ -209,7 +209,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<MultiphaseFlowResultDto> CalculateHagedornBrownAsync(string pipelineId, MultiphaseFlowRequestDto request)
+        public async Task<MultiphaseFlowResult> CalculateHagedornBrownAsync(string pipelineId, MultiphaseFlowRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -225,7 +225,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var pipelineAreaHB = (decimal)Math.PI * (request.PipelineDiameter / 2m) * (request.PipelineDiameter / 2m) / 144m;
                 var mixtureVelocity = (totalRate * 0.00584m) / pipelineAreaHB;
 
-                var result = new MultiphaseFlowResultDto
+                var result = new MultiphaseFlowResult
                 {
                     PipelineId = pipelineId,
                     PressureDrop = (Math.Abs(request.PipelineInclination) * 0.45m) + (totalRate * 0.0012m),
@@ -246,7 +246,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<MultiphaseFlowResultDto> CalculateDunsRosAsync(string pipelineId, MultiphaseFlowRequestDto request)
+        public async Task<MultiphaseFlowResult> CalculateDunsRosAsync(string pipelineId, MultiphaseFlowRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -263,7 +263,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var mixtureVelocity = (totalRate * 0.00584m) / pipelineAreaDR;
                 var inclination = Math.Abs(request.PipelineInclination);
 
-                var result = new MultiphaseFlowResultDto
+                var result = new MultiphaseFlowResult
                 {
                     PipelineId = pipelineId,
                     PressureDrop = (inclination * 0.55m) + (totalRate * 0.0015m),
@@ -284,7 +284,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<PipelineSizingDto> PerformPipelineSizingAsync(string pipelineId, PipelineSizingRequestDto request)
+        public async Task<PipelineSizing> PerformPipelineSizingAsync(string pipelineId, PipelineSizingRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -301,7 +301,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var maxDiameter = recommendedDiameter * 1.3m;
                 var pressureDropOptimal = CalculatePressureDropLinear(request.DesignFlowRate, 50m, 0.02m);
 
-                var result = new PipelineSizingDto
+                var result = new PipelineSizing
                 {
                     PipelineId = pipelineId,
                     RecommendedDiameter = recommendedDiameter,

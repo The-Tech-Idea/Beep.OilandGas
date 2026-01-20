@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.Models.NodalAnalysis;
-using OperatingPointModel = Beep.OilandGas.Models.NodalAnalysis.OperatingPoint;
+using Beep.OilandGas.Models.Data.NodalAnalysis;
+using OperatingPointModel = Beep.OilandGas.Models.Data.NodalAnalysis.OperatingPoint;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
 {

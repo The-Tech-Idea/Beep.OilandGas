@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("analyze-flow")]
-        public async Task<ActionResult<PipelineAnalysisResultDto>> AnalyzeFlow([FromBody] AnalyzePipelineFlowRequest request)
+        public async Task<ActionResult<PipelineAnalysisResult>> AnalyzeFlow([FromBody] AnalyzePipelineFlowRequest request)
         {
             try
             {
@@ -42,7 +42,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("pressure-drop")]
-        public async Task<ActionResult<PressureDropResultDto>> CalculatePressureDrop([FromBody] CalculatePressureDropRequest request)
+        public async Task<ActionResult<PressureDropResult>> CalculatePressureDrop([FromBody] CalculatePressureDropRequest request)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("result")]
-        public async Task<ActionResult> SaveResult([FromBody] PipelineAnalysisResultDto result, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SaveResult([FromBody] PipelineAnalysisResult result, [FromQuery] string? userId = null)
         {
             try
             {

@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.HydraulicPumps
 {
-    public partial class HYDRAULIC_JET_PUMP_PROPERTIES : Entity, IPPDMEntity
-    {
+    public partial class HYDRAULIC_JET_PUMP_PROPERTIES : ModelEntityBase {
         private String HYDRAULIC_JET_PUMP_PROPERTIES_IDValue;
         public String HYDRAULIC_JET_PUMP_PROPERTIES_ID
         {

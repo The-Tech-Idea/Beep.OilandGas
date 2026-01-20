@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.WellTestAnalysis.Constants;
 using Beep.OilandGas.WellTestAnalysis.Exceptions;
-using Beep.OilandGas.Models.WellTestAnalysis;
+using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.WellTestAnalysis.Validation;
 
 namespace Beep.OilandGas.WellTestAnalysis.Calculations

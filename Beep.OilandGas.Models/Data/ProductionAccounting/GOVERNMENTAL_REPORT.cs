@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class GOVERNMENTAL_REPORT : Entity, IPPDMEntity
-    {
+    public partial class GOVERNMENTAL_REPORT : ModelEntityBase {
         private System.String GOVERNMENTAL_REPORT_IDValue;
         public System.String GOVERNMENTAL_REPORT_ID
         {

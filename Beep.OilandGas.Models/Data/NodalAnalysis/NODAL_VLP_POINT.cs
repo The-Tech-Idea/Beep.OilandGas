@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    public partial class NODAL_VLP_POINT : Entity, IPPDMEntity
-    {
+    public partial class NODAL_VLP_POINT : ModelEntityBase {
         private String NODAL_VLP_POINT_IDValue;
         public String NODAL_VLP_POINT_ID
         {

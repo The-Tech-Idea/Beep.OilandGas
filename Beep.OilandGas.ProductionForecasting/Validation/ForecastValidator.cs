@@ -2,7 +2,7 @@ using System;
 
 using Beep.OilandGas.ProductionForecasting.Constants;
 using Beep.OilandGas.ProductionForecasting.Exceptions;
-using Beep.OilandGas.Models.ProductionForecasting;
+using Beep.OilandGas.Models.Data.ProductionForecasting;
 
 namespace Beep.OilandGas.ProductionForecasting.Validation
 {

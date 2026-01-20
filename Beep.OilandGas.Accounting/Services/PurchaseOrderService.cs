@@ -70,7 +70,7 @@ namespace Beep.OilandGas.Accounting.Services
                     TOTAL_AMOUNT = totalAmount,
                     STATUS = "DRAFT",
                     DESCRIPTION = description,
-                    ACTIVE_IND = "Y",
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -158,16 +158,21 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
+                var lineItem = await GetPoLineItemAsync(poLineItemId);
+                if (lineItem == null || string.IsNullOrWhiteSpace(lineItem.PURCHASE_ORDER_ID))
+                    throw new InvalidOperationException($"PO line item {poLineItemId} not found or missing PO reference");
+
                 var receipt = new PO_RECEIPT
                 {
                     PO_RECEIPT_ID = Guid.NewGuid().ToString(),
+                    PURCHASE_ORDER_ID = lineItem.PURCHASE_ORDER_ID,
                     PO_LINE_ITEM_ID = poLineItemId,
                     RECEIPT_DATE = receiptDate,
                     RECEIVED_QUANTITY = receivedQuantity,
                     RECEIVED_BY = receivedBy,
                     RECEIPT_STATUS = "RECEIVED",
                     DESCRIPTION = description,
-                    ACTIVE_IND = "Y",
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -358,6 +363,23 @@ namespace Beep.OilandGas.Accounting.Services
                 _logger?.LogError(ex, "Error generating receipt number");
                 throw;
             }
+        }
+
+        private async Task<PO_LINE_ITEM?> GetPoLineItemAsync(string poLineItemId)
+        {
+            if (string.IsNullOrWhiteSpace(poLineItemId))
+                return null;
+
+            var metadata = await _metadata.GetTableMetadataAsync("PO_LINE_ITEM");
+            var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
+                ?? typeof(PO_LINE_ITEM);
+
+            var repo = new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                entityType, ConnectionName, "PO_LINE_ITEM");
+
+            var lineItem = await repo.GetByIdAsync(poLineItemId);
+            return lineItem as PO_LINE_ITEM;
         }
     }
 }

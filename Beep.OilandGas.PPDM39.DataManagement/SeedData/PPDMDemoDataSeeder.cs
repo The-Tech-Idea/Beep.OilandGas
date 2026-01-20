@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.Models;

@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class INVENTORY_ADJUSTMENT : Entity,IPPDMEntity
-    {
+    public partial class INVENTORY_ADJUSTMENT : ModelEntityBase {
         private System.String INVENTORY_ADJUSTMENT_IDValue;
         public System.String INVENTORY_ADJUSTMENT_ID
         {

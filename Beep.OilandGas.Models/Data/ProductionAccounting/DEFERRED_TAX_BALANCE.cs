@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class DEFERRED_TAX_BALANCE : Entity, IPPDMEntity
-    {
+    public partial class DEFERRED_TAX_BALANCE : ModelEntityBase {
         private string DEFERRED_TAX_BALANCE_IDValue;
         public string DEFERRED_TAX_BALANCE_ID
         {

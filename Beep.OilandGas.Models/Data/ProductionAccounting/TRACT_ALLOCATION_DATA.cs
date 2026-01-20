@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class TRACT_ALLOCATION_DATA : Entity, IPPDMEntity
-    {
+    public partial class TRACT_ALLOCATION_DATA : ModelEntityBase {
         private System.String TRACT_ALLOCATION_DATA_IDValue;
         public System.String TRACT_ALLOCATION_DATA_ID
         {

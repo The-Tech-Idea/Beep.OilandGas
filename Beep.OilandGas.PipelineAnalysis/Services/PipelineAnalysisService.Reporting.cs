@@ -10,7 +10,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// </summary>
     public partial class PipelineAnalysisService
     {
-        public async Task<PipelineReportDto> GenerateAnalysisReportAsync(string pipelineId, ReportRequestDto request)
+        public async Task<PipelineReport> GenerateAnalysisReportAsync(string pipelineId, ReportRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -43,7 +43,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
                 var reportContent = GenerateReportContent(pipelineId, findings, recommendations);
 
-                var result = new PipelineReportDto
+                var result = new PipelineReport
                 {
                     ReportId = reportId,
                     PipelineId = pipelineId,
@@ -65,7 +65,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<PressureProfileReportDto> GeneratePressureProfileReportAsync(string pipelineId, PressureReportRequestDto request)
+        public async Task<PressureProfileReport> GeneratePressureProfileReportAsync(string pipelineId, PressureReportRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -77,7 +77,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             try
             {
                 var reportId = _defaults.FormatIdForTable("PRESSURE_REPORT", Guid.NewGuid().ToString());
-                var profileData = new List<PressureProfilePointDto>();
+                var profileData = new List<PressureProfilePoint>();
                 var pipelineLength = 100m;
                 var pointSpacing = pipelineLength / request.DataPoints;
                 var maxPressure = 2000m;
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 {
                     var distance = i * pointSpacing;
                     var pressure = 2000m - (distance * 0.15m); // 0.15 psi/mile drop
-                    profileData.Add(new PressureProfilePointDto
+                    profileData.Add(new PressureProfilePoint
                     {
                         Distance = distance,
                         Pressure = pressure,
@@ -98,7 +98,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     if (pressure < minPressure) minPressure = pressure;
                 }
 
-                var result = new PressureProfileReportDto
+                var result = new PressureProfileReport
                 {
                     ReportId = reportId,
                     PipelineId = pipelineId,
@@ -117,7 +117,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<IntegrityReportDto> GenerateIntegrityReportAsync(string pipelineId, IntegrityReportRequestDto request)
+        public async Task<IntegrityReport> GenerateIntegrityReportAsync(string pipelineId, IntegrityReportRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -129,7 +129,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             try
             {
                 var reportId = _defaults.FormatIdForTable("INTEGRITY_REPORT", Guid.NewGuid().ToString());
-                var findings = new List<IntegrityFindingDto>
+                var findings = new List<IntegrityFinding>
                 {
                     new() { FindingType = "External corrosion", Description = "Minor surface corrosion on exterior", Severity = "Low", RemediationAction = "Paint exterior and monitor" },
                     new() { FindingType = "Welds", Description = "All welds inspect satisfactory", Severity = "None", RemediationAction = "Continue monitoring" }
@@ -142,7 +142,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     "Monitor identified areas quarterly"
                 };
 
-                var result = new IntegrityReportDto
+                var result = new IntegrityReport
                 {
                     ReportId = reportId,
                     PipelineId = pipelineId,

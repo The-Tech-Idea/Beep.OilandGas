@@ -15,14 +15,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="wellUWI">Well UWI</param>
         /// <param name="wellProperties">Well properties</param>
         /// <returns>Plunger lift design result</returns>
-        Task<PlungerLiftDesignDto> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellPropertiesDto wellProperties);
+        Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellProperties wellProperties);
 
         /// <summary>
         /// Analyzes plunger lift performance.
         /// </summary>
         /// <param name="wellUWI">Well UWI</param>
         /// <returns>Performance analysis result</returns>
-        Task<PlungerLiftPerformanceDto> AnalyzePerformanceAsync(string wellUWI);
+        Task<PlungerLiftPerformance> AnalyzePerformanceAsync(string wellUWI);
 
         /// <summary>
         /// Saves plunger lift design to database.
@@ -30,13 +30,13 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="design">Plunger lift design</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Task</returns>
-        Task SavePlungerLiftDesignAsync(PlungerLiftDesignDto design, string userId);
+        Task SavePlungerLiftDesignAsync(PlungerLiftDesign design, string userId);
     }
 
     /// <summary>
     /// DTO for plunger lift design.
     /// </summary>
-    public class PlungerLiftDesignDto
+    public class PlungerLiftDesign
     {
         public string DesignId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -50,7 +50,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// <summary>
     /// DTO for plunger lift well properties.
     /// </summary>
-    public class PlungerLiftWellPropertiesDto
+    public class PlungerLiftWellProperties
     {
         public decimal WellDepth { get; set; }
         public decimal TubingDiameter { get; set; }
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// <summary>
     /// DTO for plunger lift performance.
     /// </summary>
-    public class PlungerLiftPerformanceDto
+    public class PlungerLiftPerformance
     {
         public string WellUWI { get; set; } = string.Empty;
         public System.DateTime PerformanceDate { get; set; }

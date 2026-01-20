@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Beep.OilandGas.Models.GasLift;
+using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.GasProperties.Calculations;
 
 namespace Beep.OilandGas.GasLift.Calculations

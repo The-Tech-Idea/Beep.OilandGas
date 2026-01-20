@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.Models.PlungerLift;
+using Beep.OilandGas.Models.Data.PlungerLift;
 using Beep.OilandGas.GasProperties.Calculations;
 
 namespace Beep.OilandGas.PlungerLift.Calculations

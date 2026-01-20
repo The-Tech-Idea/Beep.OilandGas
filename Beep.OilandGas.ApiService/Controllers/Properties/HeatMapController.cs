@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.HeatMap;
 using Beep.OilandGas.HeatMap.Configuration;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -26,7 +26,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpPost("generate")]
-        public async Task<ActionResult<HeatMapResultDto>> GenerateHeatMap([FromBody] GenerateHeatMapRequest request)
+        public async Task<ActionResult<HeatMapResult>> GenerateHeatMap([FromBody] GenerateHeatMapRequest request)
         {
             try
             {
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpPost("configuration")]
-        public async Task<ActionResult<string>> SaveConfiguration([FromBody] HeatMapConfigurationDto configuration, [FromQuery] string? userId = null)
+        public async Task<ActionResult<string>> SaveConfiguration([FromBody] HeatMapConfigurationRecord configuration, [FromQuery] string? userId = null)
         {
             try
             {
@@ -56,7 +56,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpGet("configuration/{heatMapId}")]
-        public async Task<ActionResult<HeatMapConfigurationDto>> GetConfiguration(string heatMapId)
+        public async Task<ActionResult<HeatMapConfigurationRecord>> GetConfiguration(string heatMapId)
         {
             try
             {
@@ -73,7 +73,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpPost("production")]
-        public async Task<ActionResult<HeatMapResultDto>> GenerateProductionHeatMap([FromBody] GenerateProductionHeatMapRequest request)
+        public async Task<ActionResult<HeatMapResult>> GenerateProductionHeatMap([FromBody] GenerateProductionHeatMapRequest request)
         {
             try
             {

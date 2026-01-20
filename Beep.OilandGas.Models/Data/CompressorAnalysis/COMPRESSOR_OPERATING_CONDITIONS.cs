@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.CompressorAnalysis
 {
-    public partial class COMPRESSOR_OPERATING_CONDITIONS : Entity, IPPDMEntity
-    {
+    public partial class COMPRESSOR_OPERATING_CONDITIONS : ModelEntityBase {
         private String COMPRESSOR_OPERATING_CONDITIONS_IDValue;
         public String COMPRESSOR_OPERATING_CONDITIONS_ID
         {

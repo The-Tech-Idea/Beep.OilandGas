@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.FlashCalculations;
+using Beep.OilandGas.Models.Data.FlashCalculations;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.PumpPerformance
 {
-    public partial class ESP_PUMP_POINT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class ESP_PUMP_POINT : ModelEntityBase {
         private String ESP_PUMP_POINT_IDValue;
         public String ESP_PUMP_POINT_ID
         {

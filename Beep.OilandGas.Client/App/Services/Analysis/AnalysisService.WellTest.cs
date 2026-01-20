@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.WellTestAnalysis;
+using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 
 namespace Beep.OilandGas.Client.App.Services.Analysis

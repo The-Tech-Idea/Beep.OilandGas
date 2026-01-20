@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -359,73 +360,5 @@ namespace Beep.OilandGas.Accounting.Services
                 throw;
             }
         }
-    }
-
-    /// <summary>
-    /// Fixed Asset
-    /// </summary>
-    public class FixedAsset
-    {
-        public string AssetId { get; set; }
-        public string AssetName { get; set; }
-        public decimal PurchasePrice { get; set; }
-        public DateTime PurchaseDate { get; set; }
-        public decimal SalvageValue { get; set; }
-        public int UsefulLifeYears { get; set; }
-        public DepreciationMethod DepreciationMethod { get; set; }
-        public decimal DepreciableBase { get; set; }
-        public List<DepreciationEntry> DepreciationSchedule { get; set; }
-        public decimal TotalScheduledDepreciation { get; set; }
-        public DateTime CreatedDate { get; set; }
-        public string CreatedBy { get; set; }
-        public string Status { get; set; }
-    }
-
-    /// <summary>
-    /// Depreciation Entry
-    /// </summary>
-    public class DepreciationEntry
-    {
-        public int Year { get; set; }
-        public decimal AnnualDepreciation { get; set; }
-        public decimal AccumulatedDepreciation { get; set; }
-        public decimal BookValue { get; set; }
-        public string Method { get; set; }
-    }
-
-    /// <summary>
-    /// Asset Depreciation Summary
-    /// </summary>
-    public class AssetDepreciationSummary
-    {
-        public DateTime AsOfDate { get; set; }
-        public DateTime GeneratedDate { get; set; }
-        public List<AssetSummaryLine> Assets { get; set; }
-        public decimal TotalFixedAssetsCost { get; set; }
-        public decimal TotalAccumulatedDepreciation { get; set; }
-        public decimal TotalNetBookValue { get; set; }
-    }
-
-    /// <summary>
-    /// Asset Summary Line
-    /// </summary>
-    public class AssetSummaryLine
-    {
-        public string AssetId { get; set; }
-        public string AssetName { get; set; }
-        public decimal CostBasis { get; set; }
-        public decimal AccumulatedDepreciation { get; set; }
-        public decimal NetBookValue { get; set; }
-    }
-
-    /// <summary>
-    /// Depreciation Method
-    /// </summary>
-    public enum DepreciationMethod
-    {
-        StraightLine,
-        DoubleDeclining,
-        UnitsOfProduction,
-        MACRS
     }
 }

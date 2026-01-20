@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -24,7 +25,8 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
-        private readonly JournalEntryService _journalEntryService;
+        private readonly AccountingBasisPostingService _basisPosting;
+        private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<APInvoiceService> _logger;
         private const string ConnectionName = "PPDM39";
 
@@ -33,15 +35,17 @@ namespace Beep.OilandGas.Accounting.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            JournalEntryService journalEntryService,
-            ILogger<APInvoiceService> logger)
+            AccountingBasisPostingService basisPosting,
+            ILogger<APInvoiceService> logger,
+            IAccountMappingService? accountMapping = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _journalEntryService = journalEntryService ?? throw new ArgumentNullException(nameof(journalEntryService));
+            _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _accountMapping = accountMapping;
         }
 
         /// <summary>
@@ -53,12 +57,15 @@ namespace Beep.OilandGas.Accounting.Services
             DateTime invoiceDate,
             string? invoiceNumber = null,
             string? description = null,
+            DateTime? dueDate = null,
             string userId = "SYSTEM")
         {
             if (string.IsNullOrWhiteSpace(vendorBaId))
                 throw new ArgumentNullException(nameof(vendorBaId));
             if (invoiceAmount <= 0)
                 throw new ArgumentException("Invoice amount must be greater than zero", nameof(invoiceAmount));
+            if (dueDate.HasValue && dueDate.Value.Date < invoiceDate.Date)
+                throw new InvalidOperationException("Due date cannot be earlier than invoice date");
 
             _logger?.LogInformation("Creating AP invoice for vendor {VendorId}, amount {Amount:C}",
                 vendorBaId, invoiceAmount);
@@ -71,11 +78,12 @@ namespace Beep.OilandGas.Accounting.Services
                     INVOICE_NUMBER = invoiceNumber ?? await GenerateInvoiceNumberAsync(),
                     VENDOR_BA_ID = vendorBaId,
                     INVOICE_DATE = invoiceDate,
+                    DUE_DATE = dueDate,
                     TOTAL_AMOUNT = invoiceAmount,
                     PAID_AMOUNT = 0m,
                     BALANCE_DUE = invoiceAmount,
                     STATUS = "DRAFT",
-                    ACTIVE_IND = "Y",
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow,
@@ -126,29 +134,27 @@ namespace Beep.OilandGas.Accounting.Services
                 {
                     new JOURNAL_ENTRY_LINE
                     {
-                        GL_ACCOUNT_ID = "6001", // Expense account (Lease Operating Costs)
+                        GL_ACCOUNT_ID = GetAccountId(AccountMappingKeys.OperatingExpense, DefaultGlAccounts.OperatingExpense),
                         DEBIT_AMOUNT = bill.TOTAL_AMOUNT,
                         CREDIT_AMOUNT = 0m,
                         DESCRIPTION = $"Bill {bill.INVOICE_NUMBER} - Vendor {bill.VENDOR_BA_ID}"
                     },
                     new JOURNAL_ENTRY_LINE
                     {
-                        GL_ACCOUNT_ID = "2000", // AP account
+                        GL_ACCOUNT_ID = GetAccountId(AccountMappingKeys.AccountsPayable, DefaultGlAccounts.AccountsPayable),
                         DEBIT_AMOUNT = 0m,
                         CREDIT_AMOUNT = bill.TOTAL_AMOUNT,
                         DESCRIPTION = $"Liability for bill {bill.INVOICE_NUMBER}"
                     }
                 };
 
-                var glEntry = await _journalEntryService.CreateEntryAsync(
+                await _basisPosting.PostEntryAsync(
                     bill.INVOICE_DATE ?? DateTime.UtcNow,
                     $"Bill receipt: {bill.INVOICE_NUMBER}",
                     lineItems,
                     userId,
                     bill.INVOICE_NUMBER,
                     "AP");
-
-                await _journalEntryService.PostEntryAsync(glEntry.JOURNAL_ENTRY_ID, userId);
 
                 // Update bill status
                 bill.STATUS = "RECEIVED";
@@ -197,7 +203,7 @@ namespace Beep.OilandGas.Accounting.Services
                 if (bill == null)
                     throw new InvalidOperationException($"Bill {billId} not found");
 
-                if (bill.STATUS != "RECEIVED" && bill.STATUS != "PARTIALLY_PAID")
+                if (bill.STATUS != "RECEIVED" && bill.STATUS != InvoiceStatuses.PartiallyPaid)
                     throw new InvalidOperationException($"Bill must be RECEIVED or PARTIALLY_PAID (current: {bill.STATUS})");
 
                 decimal currentBalance = bill.BALANCE_DUE ?? 0m;
@@ -209,29 +215,27 @@ namespace Beep.OilandGas.Accounting.Services
                 {
                     new JOURNAL_ENTRY_LINE
                     {
-                        GL_ACCOUNT_ID = "2000", // AP account
+                        GL_ACCOUNT_ID = GetAccountId(AccountMappingKeys.AccountsPayable, DefaultGlAccounts.AccountsPayable),
                         DEBIT_AMOUNT = paymentAmount,
                         CREDIT_AMOUNT = 0m,
                         DESCRIPTION = $"Payment for bill {bill.INVOICE_NUMBER}"
                     },
                     new JOURNAL_ENTRY_LINE
                     {
-                        GL_ACCOUNT_ID = "1000", // Cash account
+                        GL_ACCOUNT_ID = GetAccountId(AccountMappingKeys.Cash, DefaultGlAccounts.Cash),
                         DEBIT_AMOUNT = 0m,
                         CREDIT_AMOUNT = paymentAmount,
                         DESCRIPTION = $"Bill {bill.INVOICE_NUMBER} payment"
                     }
                 };
 
-                var glEntry = await _journalEntryService.CreateEntryAsync(
+                await _basisPosting.PostEntryAsync(
                     paymentDate,
                     $"Payment for bill {bill.INVOICE_NUMBER}",
                     lineItems,
                     userId,
                     $"PAY-{bill.INVOICE_NUMBER}",
                     "AP");
-
-                await _journalEntryService.PostEntryAsync(glEntry.JOURNAL_ENTRY_ID, userId);
 
                 // Update bill balance and status
                 decimal newBalance = currentBalance - paymentAmount;
@@ -244,7 +248,7 @@ namespace Beep.OilandGas.Accounting.Services
                 }
                 else
                 {
-                    bill.STATUS = "PARTIALLY_PAID";
+                    bill.STATUS = InvoiceStatuses.PartiallyPaid;
                 }
 
                 bill.ROW_CHANGED_BY = userId;
@@ -361,7 +365,7 @@ namespace Beep.OilandGas.Accounting.Services
                 var bills = await repo.GetAsync(filters);
                 var openBills = bills?
                     .Cast<AP_INVOICE>()
-                    .Where(x => x.STATUS == "RECEIVED" || x.STATUS == "PARTIALLY_PAID")
+                    .Where(x => x.STATUS == "RECEIVED" || x.STATUS == InvoiceStatuses.PartiallyPaid)
                     .ToList() ?? new List<AP_INVOICE>();
 
                 var current = new List<AP_INVOICE>();
@@ -418,5 +422,12 @@ namespace Beep.OilandGas.Accounting.Services
                 throw;
             }
         }
+
+        private string GetAccountId(string key, string fallback)
+        {
+            return _accountMapping?.GetAccountId(key) ?? fallback;
+        }
     }
 }
+
+

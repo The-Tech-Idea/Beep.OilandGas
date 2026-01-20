@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class TRANSFER_ORDER : Entity, IPPDMEntity
-    {
+    public partial class TRANSFER_ORDER : ModelEntityBase {
         private System.String TRANSFER_ORDER_IDValue;
         public System.String TRANSFER_ORDER_ID
         {

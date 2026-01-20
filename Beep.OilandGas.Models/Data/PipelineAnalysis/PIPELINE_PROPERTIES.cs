@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.PipelineAnalysis
 {
-    public partial class PIPELINE_PROPERTIES : Entity, IPPDMEntity
-    {
+    public partial class PIPELINE_PROPERTIES : ModelEntityBase {
         private String PIPELINE_PROPERTIES_IDValue;
         public String PIPELINE_PROPERTIES_ID
         {

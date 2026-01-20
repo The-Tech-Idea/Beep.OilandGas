@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ChokeAnalysis
 {
-    public partial class CHOKE_FLOW_RESULT : Entity, IPPDMEntity
-    {
+    public partial class CHOKE_FLOW_RESULT : ModelEntityBase {
         private String CHOKE_FLOW_RESULT_IDValue;
         public String CHOKE_FLOW_RESULT_ID
         {

@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class COST_CENTER : Entity,IPPDMEntity
-    {
+    public partial class COST_CENTER : ModelEntityBase {
         private System.String COST_CENTER_IDValue;
         public System.String COST_CENTER_ID
         {

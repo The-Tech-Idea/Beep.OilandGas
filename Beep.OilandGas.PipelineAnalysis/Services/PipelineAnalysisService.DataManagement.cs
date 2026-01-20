@@ -9,7 +9,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// </summary>
     public partial class PipelineAnalysisService
     {
-        public async Task SaveAnalysisResultsAsync(PipelineAnalysisResultDto results, string userId)
+        public async Task SaveAnalysisResultsAsync(PipelineAnalysisResult results, string userId)
         {
             if (results == null)
                 throw new ArgumentNullException(nameof(results));
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<List<PipelineAnalysisResultDto>> GetAnalysisHistoryAsync(string pipelineId, DateTime startDate, DateTime endDate)
+        public async Task<List<PipelineAnalysisResult>> GetAnalysisHistoryAsync(string pipelineId, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -51,7 +51,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
-                var history = new List<PipelineAnalysisResultDto>();
+                var history = new List<PipelineAnalysisResult>();
 
                 // In a real implementation, query from database with date range filter
                 // var repo = new PPDMGenericRepository(...);
@@ -66,7 +66,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 // Generate sample history for demonstration
                 for (int i = 0; i < 3; i++)
                 {
-                    history.Add(new PipelineAnalysisResultDto
+                    history.Add(new PipelineAnalysisResult
                     {
                         AnalysisId = _defaults.FormatIdForTable("PIPELINE_ANALYSIS", $"PA-{i:000}"),
                         PipelineId = pipelineId,
@@ -91,7 +91,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task UpdatePipelineConfigurationAsync(PipelineConfigurationDto config, string userId)
+        public async Task UpdatePipelineConfigurationAsync(PipelineConfiguration config, string userId)
         {
             if (config == null)
                 throw new ArgumentNullException(nameof(config));
@@ -121,7 +121,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<PipelineConfigurationDto?> GetPipelineConfigurationAsync(string pipelineId)
+        public async Task<PipelineConfiguration?> GetPipelineConfigurationAsync(string pipelineId)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -139,7 +139,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 // return await repo.GetAsync(filter);
 
                 // Return sample configuration for demonstration
-                var config = new PipelineConfigurationDto
+                var config = new PipelineConfiguration
                 {
                     PipelineId = pipelineId,
                     Diameter = 6m,

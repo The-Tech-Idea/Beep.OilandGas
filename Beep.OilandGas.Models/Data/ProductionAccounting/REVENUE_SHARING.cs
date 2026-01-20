@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class REVENUE_SHARING : Entity, IPPDMEntity
-    {
+    public partial class REVENUE_SHARING : ModelEntityBase {
         private System.String REVENUE_SHARING_IDValue;
         public System.String REVENUE_SHARING_ID
         {

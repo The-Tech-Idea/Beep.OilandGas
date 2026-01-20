@@ -15,7 +15,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 25: Manages landowner relationships
         /// </summary>
-        public async Task<LandownerManagementDto> ManageLandownerAsync(string leaseId, LandownerDetailsDto details, string userId)
+        public async Task<LandownerManagement> ManageLandownerAsync(string leaseId, LandownerDetails details, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -28,7 +28,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Managing landowner for {LeaseId}", leaseId);
 
-                var management = new LandownerManagementDto
+                var management = new LandownerManagement
                 {
                     LandownerId = $"LANDOWNER-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
@@ -50,7 +50,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 26: Manages working interest partners
         /// </summary>
-        public async Task<WorkingInterestManagementDto> ManageWorkingInterestAsync(string leaseId, WorkingInterestRequestDto request, string userId)
+        public async Task<WorkingInterestManagement> ManageWorkingInterestAsync(string leaseId, WorkingInterestRequest request, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -69,7 +69,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                     totalInterest += partner.InterestPercentage;
                 }
 
-                var management = new WorkingInterestManagementDto
+                var management = new WorkingInterestManagement
                 {
                     LeaseId = leaseId,
                     Partners = request.Partners,
@@ -89,7 +89,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 27: Manages royalty owners
         /// </summary>
-        public async Task<RoyaltyOwnerManagementDto> ManageRoyaltyOwnerAsync(string leaseId, RoyaltyOwnerDetailsDto details, string userId)
+        public async Task<RoyaltyOwnerManagement> ManageRoyaltyOwnerAsync(string leaseId, RoyaltyOwnerDetails details, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -102,7 +102,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Managing royalty owner for {LeaseId}", leaseId);
 
-                var management = new RoyaltyOwnerManagementDto
+                var management = new RoyaltyOwnerManagement
                 {
                     RoyaltyOwnerId = $"ROYOWNER-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
@@ -124,7 +124,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 28: Tracks stakeholder communications
         /// </summary>
-        public async Task<StakeholderCommunicationDto> LogCommunicationAsync(string leaseId, CommunicationLogDto log, string userId)
+        public async Task<StakeholderCommunication> LogCommunicationAsync(string leaseId, CommunicationLog log, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -138,7 +138,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 _logger?.LogInformation("Logging communication for {LeaseId} with stakeholder {StakeholderId}", 
                     leaseId, log.StakeholderId);
 
-                var communication = new StakeholderCommunicationDto
+                var communication = new StakeholderCommunication
                 {
                     CommunicationId = $"COMM-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
@@ -161,7 +161,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 29: Manages stakeholder agreements
         /// </summary>
-        public async Task<StakeholderAgreementDto> ManageStakeholderAgreementAsync(string leaseId, AgreementDetailsDto agreement, string userId)
+        public async Task<StakeholderAgreement> ManageStakeholderAgreementAsync(string leaseId, AgreementDetails agreement, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -174,7 +174,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Managing stakeholder agreement for {LeaseId}", leaseId);
 
-                var stakeholderAgreement = new StakeholderAgreementDto
+                var stakeholderAgreement = new StakeholderAgreement
                 {
                     AgreementId = $"AGREE-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,

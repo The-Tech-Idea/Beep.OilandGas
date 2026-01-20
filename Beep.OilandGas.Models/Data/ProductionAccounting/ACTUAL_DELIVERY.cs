@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class ACTUAL_DELIVERY : Entity, IPPDMEntity
-    {
+    public partial class ACTUAL_DELIVERY : ModelEntityBase {
         private System.String ACTUAL_DELIVERY_IDValue;
         public System.String ACTUAL_DELIVERY_ID
         {

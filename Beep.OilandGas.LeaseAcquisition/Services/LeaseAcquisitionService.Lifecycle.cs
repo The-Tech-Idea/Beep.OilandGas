@@ -15,7 +15,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 19: Manages lease renewals
         /// </summary>
-        public async Task<LeaseRenewalDto> InitiateLeaseRenewalAsync(string leaseId, RenewalRequestDto request, string userId)
+        public async Task<LeaseRenewal> InitiateLeaseRenewalAsync(string leaseId, RenewalRequest request, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -28,7 +28,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Initiating lease renewal for {LeaseId}", leaseId);
 
-                var renewal = new LeaseRenewalDto
+                var renewal = new LeaseRenewal
                 {
                     RenewalId = $"RENEW-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
@@ -51,7 +51,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 20: Manages lease extensions
         /// </summary>
-        public async Task<LeaseExtensionDto> ExtendLeaseTermAsync(string leaseId, ExtensionRequestDto request, string userId)
+        public async Task<LeaseExtension> ExtendLeaseTermAsync(string leaseId, ExtensionRequest request, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -64,7 +64,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Extending lease term for {LeaseId}", leaseId);
 
-                var extension = new LeaseExtensionDto
+                var extension = new LeaseExtension
                 {
                     ExtensionId = $"EXT-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
@@ -86,15 +86,15 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 21: Tracks lease expiration schedule
         /// </summary>
-        public async Task<LeaseExpirationScheduleDto> GetLeaseExpirationScheduleAsync(int daysAhead = 90)
+        public async Task<LeaseExpirationSchedule> GetLeaseExpirationScheduleAsync(int daysAhead = 90)
         {
             try
             {
                 _logger?.LogInformation("Getting lease expiration schedule for {DaysAhead} days ahead", daysAhead);
 
-                var expiringLeases = new List<ExpiringLeaseDto>
+                var expiringLeases = new List<ExpiringLease>
                 {
-                    new ExpiringLeaseDto
+                    new ExpiringLease
                     {
                         LeaseId = "LEASE-001",
                         LeaseName = "North Field - Block A",
@@ -102,7 +102,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                         DaysUntilExpiration = 30,
                         AcreageAtRisk = 640
                     },
-                    new ExpiringLeaseDto
+                    new ExpiringLease
                     {
                         LeaseId = "LEASE-002",
                         LeaseName = "South Field - Block B",
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                         DaysUntilExpiration = 60,
                         AcreageAtRisk = 320
                     },
-                    new ExpiringLeaseDto
+                    new ExpiringLease
                     {
                         LeaseId = "LEASE-003",
                         LeaseName = "Central Field - Block C",
@@ -120,7 +120,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                     }
                 };
 
-                var schedule = new LeaseExpirationScheduleDto
+                var schedule = new LeaseExpirationSchedule
                 {
                     ReportDate = DateTime.Now,
                     ExpiringLeases = expiringLeases,
@@ -140,7 +140,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 22: Manages lease termination process
         /// </summary>
-        public async Task<LeaseTerminationDto> InitiateLeaseTerminationAsync(string leaseId, TerminationRequestDto request, string userId)
+        public async Task<LeaseTermination> InitiateLeaseTerminationAsync(string leaseId, TerminationRequest request, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -153,7 +153,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Initiating lease termination for {LeaseId}", leaseId);
 
-                var termination = new LeaseTerminationDto
+                var termination = new LeaseTermination
                 {
                     TerminationId = $"TERM-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
@@ -175,7 +175,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 23: Manages lease abandonment
         /// </summary>
-        public async Task<LeaseAbandonmentDto> ProcessLeaseAbandonmentAsync(string leaseId, AbandonmentRequestDto request, string userId)
+        public async Task<LeaseAbandonment> ProcessLeaseAbandonmentAsync(string leaseId, AbandonmentRequest request, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -188,7 +188,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Processing lease abandonment for {LeaseId}", leaseId);
 
-                var abandonment = new LeaseAbandonmentDto
+                var abandonment = new LeaseAbandonment
                 {
                     AbandonmentId = $"ABAND-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,

@@ -44,7 +44,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 1: Initiates new lease acquisition process
         /// </summary>
-        public async Task<LeaseAcquisitionDto> InitiateLeaseAcquisitionAsync(LeaseAcquisitionRequestDto request, string userId)
+        public async Task<LeaseAcquisition> InitiateLeaseAcquisitionAsync(LeaseAcquisitionRequest request, string userId)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -58,7 +58,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
 
                 var leaseId = _defaults.FormatIdForTable("LEASE", Guid.NewGuid().ToString().Substring(0, 12));
 
-                var acquisition = new LeaseAcquisitionDto
+                var acquisition = new LeaseAcquisition
                 {
                     LeaseId = leaseId,
                     LeaseName = request.LeaseName,
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 2: Searches for available lease prospects
         /// </summary>
-        public async Task<List<LeaseProspectDto>> SearchLeaseProspectsAsync(LeaseSearchCriteriaDto criteria)
+        public async Task<List<LeaseProspect>> SearchLeaseProspectsAsync(LeaseSearchCriteria criteria)
         {
             if (criteria == null)
                 throw new ArgumentNullException(nameof(criteria));
@@ -97,11 +97,11 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 _logger?.LogInformation("Searching lease prospects with criteria in {County}, {State}", 
                     criteria.County, criteria.State);
 
-                var prospects = new List<LeaseProspectDto>();
+                var prospects = new List<LeaseProspect>();
 
                 for (int i = 1; i <= 5; i++)
                 {
-                    var prospect = new LeaseProspectDto
+                    var prospect = new LeaseProspect
                     {
                         ProspectId = $"PROSPECT-{Guid.NewGuid().ToString().Substring(0, 8)}",
                         ProspectName = $"Prospect {i} - {criteria.County}",
@@ -129,7 +129,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 3: Evaluates lease acquisition opportunity
         /// </summary>
-        public async Task<LeaseOpportunityEvaluationDto> EvaluateLeaseOpportunityAsync(string leaseId, LeaseEvaluationRequestDto request)
+        public async Task<LeaseOpportunityEvaluation> EvaluateLeaseOpportunityAsync(string leaseId, LeaseEvaluationRequest request)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -140,21 +140,21 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Evaluating lease opportunity for {LeaseId}", leaseId);
 
-                var factors = new List<EvaluationFactorDto>
+                var factors = new List<EvaluationFactor>
                 {
-                    new EvaluationFactorDto 
+                    new EvaluationFactor 
                     { 
                         FactorName = "Geological Potential", 
                         Score = 85, 
                         Description = "Strong geological indicators" 
                     },
-                    new EvaluationFactorDto 
+                    new EvaluationFactor 
                     { 
                         FactorName = "Market Conditions", 
                         Score = 75, 
                         Description = "Favorable market conditions" 
                     },
-                    new EvaluationFactorDto 
+                    new EvaluationFactor 
                     { 
                         FactorName = "Financial Viability", 
                         Score = 80, 
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                     }
                 };
 
-                var evaluation = new LeaseOpportunityEvaluationDto
+                var evaluation = new LeaseOpportunityEvaluation
                 {
                     LeaseId = leaseId,
                     OpportunityScore = factors.Average(f => f.Score),
@@ -184,7 +184,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 4: Performs competitive analysis for lease acquisition
         /// </summary>
-        public async Task<CompetitiveAnalysisDto> AnalyzeCompetitiveOpportunitiesAsync(string locationId, AnalysisRequestDto request)
+        public async Task<CompetitiveAnalysis> AnalyzeCompetitiveOpportunitiesAsync(string locationId, AnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(locationId))
                 throw new ArgumentNullException(nameof(locationId));
@@ -195,23 +195,23 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Performing competitive analysis for location {LocationId}", locationId);
 
-                var bids = new List<CompetitorBidDto>
+                var bids = new List<CompetitorBid>
                 {
-                    new CompetitorBidDto 
+                    new CompetitorBid 
                     { 
                         CompetitorName = "Competitor A", 
                         BonusAmount = 2500, 
                         RoyaltyRate = 0.18m, 
                         WorkingInterest = 0.85m 
                     },
-                    new CompetitorBidDto 
+                    new CompetitorBid 
                     { 
                         CompetitorName = "Competitor B", 
                         BonusAmount = 2800, 
                         RoyaltyRate = 0.175m, 
                         WorkingInterest = 0.80m 
                     },
-                    new CompetitorBidDto 
+                    new CompetitorBid 
                     { 
                         CompetitorName = "Competitor C", 
                         BonusAmount = 2300, 
@@ -220,7 +220,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                     }
                 };
 
-                var analysis = new CompetitiveAnalysisDto
+                var analysis = new CompetitiveAnalysis
                 {
                     LocationId = locationId,
                     CompetitorBids = bids,
@@ -242,7 +242,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 5: Calculates lease acquisition costs and returns
         /// </summary>
-        public async Task<LeaseFinancialAnalysisDto> AnalyzeLeaseFinancialsAsync(string leaseId, FinancialAnalysisRequestDto request)
+        public async Task<LeaseFinancialAnalysis> AnalyzeLeaseFinancialsAsync(string leaseId, FinancialAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -258,7 +258,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 var discountFactor = Math.Pow(1 + (double)request.DiscountRate, -request.ProjectionYears);
                 var npv = productionValue * (decimal)discountFactor - 1000000;
 
-                var analysis = new LeaseFinancialAnalysisDto
+                var analysis = new LeaseFinancialAnalysis
                 {
                     LeaseId = leaseId,
                     EstimatedResources = estimatedResources,

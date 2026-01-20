@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
 

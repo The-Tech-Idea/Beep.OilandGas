@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.DTOs.Operations;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Operations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -25,7 +25,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPost("analyze-eor")]
-        public async Task<ActionResult<EnhancedRecoveryOperationDto>> AnalyzeEOR([FromBody] AnalyzeEORRequest request)
+        public async Task<ActionResult<EnhancedRecoveryOperation>> AnalyzeEOR([FromBody] AnalyzeEORRequest request)
         {
             try
             {
@@ -40,7 +40,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPost("recovery-factor")]
-        public async Task<ActionResult<EnhancedRecoveryOperationDto>> CalculateRecoveryFactor([FromBody] CalculateRecoveryFactorRequest request)
+        public async Task<ActionResult<EnhancedRecoveryOperation>> CalculateRecoveryFactor([FromBody] CalculateRecoveryFactorRequest request)
         {
             try
             {
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPost("injection")]
-        public async Task<ActionResult<InjectionOperationDto>> ManageInjection([FromBody] ManageInjectionRequest request)
+        public async Task<ActionResult<InjectionOperation>> ManageInjection([FromBody] ManageInjectionRequest request)
         {
             try
             {

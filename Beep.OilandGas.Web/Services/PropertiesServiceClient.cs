@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.HeatMap;
 using Beep.OilandGas.HeatMap.Configuration;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.Web.Services
@@ -26,7 +26,7 @@ namespace Beep.OilandGas.Web.Services
 
         #region Heat Map Operations
 
-        public async Task<HeatMapResultDto> GenerateHeatMapAsync(List<HeatMapDataPoint> dataPoints, HeatMapConfiguration configuration)
+        public async Task<HeatMapResult> GenerateHeatMapAsync(List<HeatMapDataPoint> dataPoints, HeatMapConfiguration configuration)
         {
             try
             {
@@ -35,7 +35,7 @@ namespace Beep.OilandGas.Web.Services
                     DataPoints = dataPoints,
                     Configuration = configuration
                 };
-                var result = await _apiClient.PostAsync<object, HeatMapResultDto>(
+                var result = await _apiClient.PostAsync<object, HeatMapResult>(
                     "/api/heatmap/generate", request);
                 return result ?? throw new InvalidOperationException("Failed to generate heat map");
             }
@@ -46,7 +46,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationDto configuration, string? userId = null)
+        public async Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationRecord configuration, string? userId = null)
         {
             try
             {
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.Web.Services
                 {
                     endpoint += $"?userId={Uri.EscapeDataString(userId)}";
                 }
-                var response = await _apiClient.PostAsync<HeatMapConfigurationDto, dynamic>(endpoint, configuration);
+                var response = await _apiClient.PostAsync<HeatMapConfigurationRecord, dynamic>(endpoint, configuration);
                 return response?.heatMapId?.ToString() ?? throw new InvalidOperationException("Failed to save heat map configuration");
             }
             catch (Exception ex)
@@ -65,11 +65,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<HeatMapConfigurationDto?> GetHeatMapConfigurationAsync(string heatMapId)
+        public async Task<HeatMapConfigurationRecord?> GetHeatMapConfigurationAsync(string heatMapId)
         {
             try
             {
-                var result = await _apiClient.GetAsync<HeatMapConfigurationDto>(
+                var result = await _apiClient.GetAsync<HeatMapConfigurationRecord>(
                     $"/api/heatmap/configuration/{Uri.EscapeDataString(heatMapId)}");
                 return result;
             }
@@ -80,7 +80,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<HeatMapResultDto> GenerateProductionHeatMapAsync(string fieldId, DateTime startDate, DateTime endDate)
+        public async Task<HeatMapResult> GenerateProductionHeatMapAsync(string fieldId, DateTime startDate, DateTime endDate)
         {
             try
             {
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.Web.Services
                     StartDate = startDate,
                     EndDate = endDate
                 };
-                var result = await _apiClient.PostAsync<object, HeatMapResultDto>(
+                var result = await _apiClient.PostAsync<object, HeatMapResult>(
                     "/api/heatmap/production", request);
                 return result ?? throw new InvalidOperationException("Failed to generate production heat map");
             }

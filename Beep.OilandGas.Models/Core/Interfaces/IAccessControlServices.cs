@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -19,7 +19,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Gets all assets a user can access
         /// </summary>
-        Task<List<AssetAccessDTO>> GetUserAccessibleAssetsAsync(string userId, string? assetType = null, string? organizationId = null, bool includeInherited = true);
+        Task<List<AssetAccess>> GetUserAccessibleAssetsAsync(string userId, string? assetType = null, string? organizationId = null, bool includeInherited = true);
 
         /// <summary>
         /// Gets all roles assigned to a user
@@ -90,12 +90,12 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Gets the hierarchy configuration for an organization
         /// </summary>
-        Task<List<HierarchyConfigDTO>> GetHierarchyConfigAsync(string organizationId);
+        Task<List<HierarchyConfig>> GetHierarchyConfigAsync(string organizationId);
 
         /// <summary>
         /// Updates the hierarchy configuration for an organization
         /// </summary>
-        Task<bool> UpdateHierarchyConfigAsync(string organizationId, List<HierarchyConfigDTO> config);
+        Task<bool> UpdateHierarchyConfigAsync(string organizationId, List<HierarchyConfig> config);
     }
 
     /// <summary>
@@ -106,7 +106,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Gets a user's profile
         /// </summary>
-        Task<UserProfileDTO?> GetUserProfileAsync(string userId);
+        Task<UserProfile?> GetUserProfileAsync(string userId);
 
         /// <summary>
         /// Gets all roles for a user

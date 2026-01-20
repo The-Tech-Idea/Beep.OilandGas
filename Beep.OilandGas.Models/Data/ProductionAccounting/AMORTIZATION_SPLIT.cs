@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class AMORTIZATION_SPLIT : Entity, IPPDMEntity
-    {
+    public partial class AMORTIZATION_SPLIT : ModelEntityBase {
         private string AMORTIZATION_SPLIT_IDValue;
         public string AMORTIZATION_SPLIT_ID
         {

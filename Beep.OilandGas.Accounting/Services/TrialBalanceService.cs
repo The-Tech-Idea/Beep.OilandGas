@@ -50,7 +50,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// Generate full trial balance
         /// Returns list of GL accounts with calculated balances
         /// </summary>
-        public async Task<List<GL_ACCOUNT>> GenerateTrialBalanceAsync(DateTime? asOfDate = null)
+        public async Task<List<GL_ACCOUNT>> GenerateTrialBalanceAsync(DateTime? asOfDate = null, string? bookId = null)
         {
             _logger?.LogInformation("Generating trial balance as of {AsOfDate}", asOfDate?.Date ?? DateTime.Today);
 
@@ -61,7 +61,7 @@ namespace Beep.OilandGas.Accounting.Services
 
                 foreach (var account in accounts)
                 {
-                    var balance = await _glAccountService.GetAccountBalanceAsync(account.ACCOUNT_NUMBER, asOfDate);
+                    var balance = await _glAccountService.GetAccountBalanceAsync(account.ACCOUNT_NUMBER, asOfDate, bookId);
                     account.CURRENT_BALANCE = balance;
                 }
 
@@ -77,13 +77,13 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Get trial balance filtered by account type
         /// </summary>
-        public async Task<List<GL_ACCOUNT>> GetTrialBalanceByTypeAsync(string accountType, DateTime? asOfDate = null)
+        public async Task<List<GL_ACCOUNT>> GetTrialBalanceByTypeAsync(string accountType, DateTime? asOfDate = null, string? bookId = null)
         {
             _logger?.LogInformation("Getting trial balance for type {AccountType}", accountType);
 
             try
             {
-                var fullTB = await GenerateTrialBalanceAsync(asOfDate);
+                var fullTB = await GenerateTrialBalanceAsync(asOfDate, bookId);
                 return fullTB.Where(x => x.ACCOUNT_TYPE == accountType).ToList();
             }
             catch (Exception ex)
@@ -96,13 +96,13 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Validate GL is balanced (Debits = Credits)
         /// </summary>
-        public async Task<(bool IsBalanced, decimal TotalDebits, decimal TotalCredits, decimal Difference)> ValidateGLAsync(DateTime? asOfDate = null)
+        public async Task<(bool IsBalanced, decimal TotalDebits, decimal TotalCredits, decimal Difference)> ValidateGLAsync(DateTime? asOfDate = null, string? bookId = null)
         {
             _logger?.LogInformation("Validating GL balance");
 
             try
             {
-                var trialBalance = await GenerateTrialBalanceAsync(asOfDate);
+                var trialBalance = await GenerateTrialBalanceAsync(asOfDate, bookId);
                 
                 decimal totalDebits = 0m;
                 decimal totalCredits = 0m;
@@ -162,13 +162,13 @@ namespace Beep.OilandGas.Accounting.Services
         /// Get post-closing trial balance (permanent accounts only: Assets, Liabilities, Equity)
         /// Temporary accounts (Revenue, Expense) are closed
         /// </summary>
-        public async Task<List<GL_ACCOUNT>> GetPostClosingTrialBalanceAsync(DateTime? asOfDate = null)
+        public async Task<List<GL_ACCOUNT>> GetPostClosingTrialBalanceAsync(DateTime? asOfDate = null, string? bookId = null)
         {
             _logger?.LogInformation("Generating post-closing trial balance");
 
             try
             {
-                var fullTB = await GenerateTrialBalanceAsync(asOfDate);
+                var fullTB = await GenerateTrialBalanceAsync(asOfDate, bookId);
                 
                 // Post-closing TB only includes permanent accounts (Assets, Liabilities, Equity)
                 var permanentTypes = new[] { "ASSET", "LIABILITY", "EQUITY" };
@@ -184,11 +184,11 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Export trial balance to CSV format
         /// </summary>
-        public async Task<string> ExportToCSVAsync(DateTime? asOfDate = null)
+        public async Task<string> ExportToCSVAsync(DateTime? asOfDate = null, string? bookId = null)
         {
             try
             {
-                var trialBalance = await GenerateTrialBalanceAsync(asOfDate);
+                var trialBalance = await GenerateTrialBalanceAsync(asOfDate, bookId);
                 var csv = new StringBuilder();
 
                 // Header
@@ -203,7 +203,7 @@ namespace Beep.OilandGas.Accounting.Services
                 }
 
                 // Summary
-                var validation = await ValidateGLAsync(asOfDate);
+                var validation = await ValidateGLAsync(asOfDate, bookId);
                 csv.AppendLine();
                 csv.AppendLine($"Total Debits,{validation.TotalDebits:F2}");
                 csv.AppendLine($"Total Credits,{validation.TotalCredits:F2}");
@@ -223,11 +223,11 @@ namespace Beep.OilandGas.Accounting.Services
         /// Check if period close is ready
         /// GL must be balanced before closing period
         /// </summary>
-        public async Task<bool> CanClosePeriodAsync(DateTime? asOfDate = null)
+        public async Task<bool> CanClosePeriodAsync(DateTime? asOfDate = null, string? bookId = null)
         {
             try
             {
-                var validation = await ValidateGLAsync(asOfDate);
+                var validation = await ValidateGLAsync(asOfDate, bookId);
                 
                 if (!validation.IsBalanced)
                 {

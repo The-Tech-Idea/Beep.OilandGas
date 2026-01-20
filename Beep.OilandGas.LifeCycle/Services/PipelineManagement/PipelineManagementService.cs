@@ -8,7 +8,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.Models.DTOs.LifeCycle;
+using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.LifeCycle.Services.WorkOrder;
 using Beep.OilandGas.LifeCycle.Services.Integration;
 using TheTechIdea.Beep.Editor;
@@ -530,7 +530,7 @@ namespace Beep.OilandGas.LifeCycle.Services.PipelineManagement
         /// <summary>
         /// Runs pipeline analysis for a pipeline using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.DTOs.PipelineAnalysisResult> AnalyzePipelineAsync(
+        public async Task<Beep.OilandGas.Models.Data.PipelineAnalysisResult> AnalyzePipelineAsync(
             string pipelineId,
             string userId = "system",
             string pipelineType = "GAS",

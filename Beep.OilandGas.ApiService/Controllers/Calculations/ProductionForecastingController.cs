@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("generate")]
-        public async Task<ActionResult<ProductionForecastResultDto>> GenerateForecast([FromBody] GenerateForecastRequest request)
+        public async Task<ActionResult<ProductionForecastResult>> GenerateForecast([FromBody] GenerateForecastRequest request)
         {
             try
             {
@@ -43,7 +43,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("decline-curve")]
-        public async Task<ActionResult<DeclineCurveAnalysisDto>> PerformDeclineCurveAnalysis([FromBody] DeclineCurveAnalysisRequest request)
+        public async Task<ActionResult<DeclineCurveAnalysis>> PerformDeclineCurveAnalysis([FromBody] DeclineCurveAnalysisRequest request)
         {
             try
             {
@@ -61,7 +61,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("forecast")]
-        public async Task<ActionResult> SaveForecast([FromBody] ProductionForecastResultDto forecast, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SaveForecast([FromBody] ProductionForecastResult forecast, [FromQuery] string? userId = null)
         {
             try
             {

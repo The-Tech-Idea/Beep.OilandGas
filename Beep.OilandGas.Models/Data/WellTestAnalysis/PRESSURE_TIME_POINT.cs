@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
-    public partial class PRESSURE_TIME_POINT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class PRESSURE_TIME_POINT : ModelEntityBase {
         private String PRESSURE_TIME_POINT_IDValue;
         public String PRESSURE_TIME_POINT_ID
         {

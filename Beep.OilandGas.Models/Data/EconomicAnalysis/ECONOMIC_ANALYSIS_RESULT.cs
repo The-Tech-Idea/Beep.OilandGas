@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 {
-    public partial class ECONOMIC_ANALYSIS_RESULT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class ECONOMIC_ANALYSIS_RESULT : ModelEntityBase {
         private System.String ANALYSIS_IDValue;
         public System.String ANALYSIS_ID
         {

@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.GasProperties
 {
-    public partial class GAS_PROPERTIES : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class GAS_PROPERTIES : ModelEntityBase {
         private String GAS_PROPERTIES_IDValue;
         public String GAS_PROPERTIES_ID
         {

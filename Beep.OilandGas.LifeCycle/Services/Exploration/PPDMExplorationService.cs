@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -400,7 +400,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
         /// <summary>
         /// Identifies and evaluates a prospect using ProspectIdentification service
         /// </summary>
-        public async Task<ProspectEvaluationDto> IdentifyProspectAsync(string fieldId, ProspectRequest prospectData, string userId)
+        public async Task<ProspectEvaluation> IdentifyProspectAsync(string fieldId, ProspectRequest prospectData, string userId)
         {
             try
             {
@@ -411,7 +411,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
 
                 // If ProspectEvaluationService is available, evaluate it
                 // For now, return basic evaluation
-                return new ProspectEvaluationDto
+                return new ProspectEvaluation
                 {
                     ProspectId = prospect.PROSPECT_ID ?? string.Empty,
                     FieldId = fieldId,
@@ -431,7 +431,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
         /// <summary>
         /// Evaluates a prospect using ProspectIdentification service
         /// </summary>
-        public async Task<ProspectEvaluationDto> EvaluateProspectAsync(string fieldId, string prospectId)
+        public async Task<ProspectEvaluation> EvaluateProspectAsync(string fieldId, string prospectId)
         {
             try
             {
@@ -444,7 +444,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
                 }
 
                 // Basic evaluation - in full implementation, would use ProspectEvaluationService
-                return new ProspectEvaluationDto
+                return new ProspectEvaluation
                 {
                     ProspectId = prospectId,
                     FieldId = fieldId,
@@ -468,7 +468,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
         /// <summary>
         /// Acquires a lease using LeaseAcquisition service
         /// </summary>
-        public async Task<LeaseDto> AcquireLeaseAsync(string fieldId, CreateLeaseDto leaseData, string userId)
+        public async Task<Lease> AcquireLeaseAsync(string fieldId, CreateLease leaseData, string userId)
         {
             try
             {
@@ -501,7 +501,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
 
                 _logger?.LogInformation("Lease acquired: {LeaseId}, Name: {LeaseName}", createdLease.LEASE_ID, createdLease.LEASE_NAME);
 
-                return new LeaseDto
+                return new Lease
                 {
                     LeaseId = createdLease.LEASE_ID ?? string.Empty,
                     LeaseName = createdLease.LEASE_NAME ?? string.Empty,
@@ -521,7 +521,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
         /// <summary>
         /// Manages lease operations using LeaseAcquisition service
         /// </summary>
-        public async Task<LeaseDto> ManageLeaseAsync(string fieldId, string leaseId, UpdateLeaseDto updateData, string userId)
+        public async Task<Lease> ManageLeaseAsync(string fieldId, string leaseId, UpdateLease updateData, string userId)
         {
             try
             {
@@ -552,7 +552,7 @@ using Beep.OilandGas.Models.Data.ProspectIdentification;
                 }
 
                 // Update lease properties
-                // Note: UpdateLeaseDto doesn't have LeaseName, only status and dates
+                // Note: UpdateLease doesn't have LeaseName, only status and dates
                 if (updateData.StartDate.HasValue)
                     lease.LEASE_EFF_DATE = updateData.StartDate.Value;
                 if (updateData.EndDate.HasValue)
@@ -562,7 +562,7 @@ using Beep.OilandGas.Models.Data.ProspectIdentification;
                     _commonColumnHandler.PrepareForUpdate(entity, userId);
                 await repo.UpdateAsync(lease, userId);
 
-                return new LeaseDto
+                return new Lease
                 {
                     LeaseId = lease.LEASE_ID ?? string.Empty,
                     LeaseName = lease.LEASE_NAME ?? string.Empty,

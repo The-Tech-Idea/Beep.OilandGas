@@ -5,7 +5,7 @@ using Beep.OilandGas.ProductionAccounting.Financial.SuccessfulEfforts;
 using Beep.OilandGas.ProductionAccounting.Models;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
-using Beep.OilandGas.Models.DTOs.Accounting.Financial;
+using Beep.OilandGas.Models.Data.Accounting.Financial;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial

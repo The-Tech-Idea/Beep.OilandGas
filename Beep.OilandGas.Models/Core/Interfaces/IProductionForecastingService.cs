@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Calc = Beep.OilandGas.Models.DTOs.Calculations;
+using Calc = Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -19,7 +19,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="forecastMethod">Forecast method (e.g., "Exponential", "Hyperbolic", "Harmonic")</param>
         /// <param name="forecastPeriod">Forecast period in months</param>
         /// <returns>Production forecast result</returns>
-        Task<Calc.ProductionForecastResultDto> GenerateForecastAsync(string? wellUWI, string? fieldId, string forecastMethod, int forecastPeriod);
+        Task<Calc.ProductionForecastResult> GenerateForecastAsync(string? wellUWI, string? fieldId, string forecastMethod, int forecastPeriod);
 
         /// <summary>
         /// Performs decline curve analysis.
@@ -28,7 +28,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="startDate">Start date for analysis</param>
         /// <param name="endDate">End date for analysis</param>
         /// <returns>Decline curve analysis result</returns>
-        Task<Calc.DeclineCurveAnalysisDto> PerformDeclineCurveAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate);
+        Task<Calc.DeclineCurveAnalysis> PerformDeclineCurveAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Saves production forecast to database.
@@ -36,6 +36,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="forecast">Production forecast</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Task</returns>
-        Task SaveForecastAsync(Calc.ProductionForecastResultDto forecast, string userId);
+        Task SaveForecastAsync(Calc.ProductionForecastResult forecast, string userId);
     }
 }

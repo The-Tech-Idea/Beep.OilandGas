@@ -15,7 +15,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 7: Initiates lease negotiation process
         /// </summary>
-        public async Task<LeaseNegotiationDto> InitiateNegotiationAsync(string leaseId, NegotiationInitiationDto request, string userId)
+        public async Task<LeaseNegotiation> InitiateNegotiationAsync(string leaseId, NegotiationInitiation request, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -29,16 +29,16 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 _logger?.LogInformation("Initiating negotiation for lease {LeaseId} with landowner {LandownerId}", 
                     leaseId, request.LandownerId);
 
-                var negotiation = new LeaseNegotiationDto
+                var negotiation = new LeaseNegotiation
                 {
                     NegotiationId = $"NEG-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
                     InitiationDate = DateTime.Now,
                     Status = "INITIATED",
                     CurrentPhase = "OPENING",
-                    Rounds = new List<NegotiationRoundDto>
+                    Rounds = new List<NegotiationRound>
                     {
-                        new NegotiationRoundDto
+                        new NegotiationRound
                         {
                             RoundNumber = 1,
                             RoundDate = DateTime.Now,
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 8: Tracks negotiation progress and milestones
         /// </summary>
-        public async Task<NegotiationProgressDto> TrackNegotiationProgressAsync(string negotiationId)
+        public async Task<NegotiationProgress> TrackNegotiationProgressAsync(string negotiationId)
         {
             if (string.IsNullOrWhiteSpace(negotiationId))
                 throw new ArgumentNullException(nameof(negotiationId));
@@ -71,7 +71,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Tracking negotiation progress for {NegotiationId}", negotiationId);
 
-                var progress = new NegotiationProgressDto
+                var progress = new NegotiationProgress
                 {
                     NegotiationId = negotiationId,
                     ProgressPercent = 65,
@@ -94,7 +94,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 9: Manages term conditions and modifications
         /// </summary>
-        public async Task<LeaseTermsDto> ManageLeaseTermsAsync(string leaseId, LeaseTermsUpdateDto update, string userId)
+        public async Task<LeaseTerms> ManageLeaseTermsAsync(string leaseId, LeaseTermsUpdate update, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -107,7 +107,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Managing lease terms for {LeaseId} by user {UserId}", leaseId, userId);
 
-                var terms = new LeaseTermsDto
+                var terms = new LeaseTerms
                 {
                     LeaseId = leaseId,
                     EffectiveDate = DateTime.Now,
@@ -116,15 +116,15 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                     RoyaltyRate = update.NewRoyaltyRate ?? 0.1875m,
                     RentAmount = update.NewRentAmount ?? 1.50m,
                     MinimumProduction = 10,
-                    Conditions = update.ConditionUpdates ?? new List<TermConditionDto>
+                    Conditions = update.ConditionUpdates ?? new List<TermCondition>
                     {
-                        new TermConditionDto 
+                        new TermCondition 
                         { 
                             ConditionDescription = "Horizontal drilling allowed", 
                             IsMandatory = true, 
                             ConditionStatus = "ACTIVE" 
                         },
-                        new TermConditionDto 
+                        new TermCondition 
                         { 
                             ConditionDescription = "Environmental compliance required", 
                             IsMandatory = true, 
@@ -146,7 +146,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 10: Prepares lease documentation
         /// </summary>
-        public async Task<LeaseDocumentationDto> PrepareLeaseDocumentationAsync(string leaseId, DocumentationRequestDto request)
+        public async Task<LeaseDocumentation> PrepareLeaseDocumentationAsync(string leaseId, DocumentationRequest request)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -157,25 +157,25 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Preparing lease documentation for {LeaseId}", leaseId);
 
-                var documentation = new LeaseDocumentationDto
+                var documentation = new LeaseDocumentation
                 {
                     DocumentId = $"DOC-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
-                    DocumentPackages = new List<DocumentPackageDto>
+                    DocumentPackages = new List<DocumentPackage>
                     {
-                        new DocumentPackageDto
+                        new DocumentPackage
                         {
                             PackageName = "Lease Agreement",
                             Documents = new List<string> { "Main lease agreement", "Addendum A", "Addendum B" },
                             IsComplete = true
                         },
-                        new DocumentPackageDto
+                        new DocumentPackage
                         {
                             PackageName = "Title Documents",
                             Documents = new List<string> { "Title commitment", "Survey", "Legal description" },
                             IsComplete = true
                         },
-                        new DocumentPackageDto
+                        new DocumentPackage
                         {
                             PackageName = "Environmental Compliance",
                             Documents = new List<string> { "Phase I ESA", "Environmental compliance plan" },
@@ -199,7 +199,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 11: Manages lease agreement execution
         /// </summary>
-        public async Task<ExecutionStatusDto> ExecuteLeaseAgreementAsync(string leaseId, ExecutionDetailsDto details, string userId)
+        public async Task<ExecutionStatus> ExecuteLeaseAgreementAsync(string leaseId, ExecutionDetails details, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -213,7 +213,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 _logger?.LogInformation("Executing lease agreement for {LeaseId} on {ExecutionDate}", 
                     leaseId, details.ExecutionDate);
 
-                var status = new ExecutionStatusDto
+                var status = new ExecutionStatus
                 {
                     LeaseId = leaseId,
                     IsExecuted = true,
@@ -240,7 +240,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 12: Calculates royalty and revenue distribution
         /// </summary>
-        public async Task<RoyaltyCalculationDto> CalculateRoyaltyDistributionAsync(string leaseId, RoyaltyRequestDto request)
+        public async Task<RoyaltyCalculation> CalculateRoyaltyDistributionAsync(string leaseId, RoyaltyRequest request)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -253,15 +253,15 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
 
                 var royaltyAmount = request.ProductionVolume * request.ProductPrice * 0.1875m;
                 
-                var calculation = new RoyaltyCalculationDto
+                var calculation = new RoyaltyCalculation
                 {
                     LeaseId = leaseId,
                     ProductionVolume = request.ProductionVolume,
                     RoyaltyRate = 0.1875m,
                     CalculatedRoyalty = royaltyAmount,
-                    Shares = new List<RoyaltyShareDto>
+                    Shares = new List<RoyaltyShare>
                     {
-                        new RoyaltyShareDto 
+                        new RoyaltyShare 
                         { 
                             RecipientName = "Landowner", 
                             SharePercentage = 1.0m, 

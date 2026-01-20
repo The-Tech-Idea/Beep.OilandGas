@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.HeatMap
 {
-    public partial class HEAT_MAP_DATA_POINT : Entity, IPPDMEntity
-    {
+    public partial class HEAT_MAP_DATA_POINT : ModelEntityBase {
         private String HEAT_MAP_DATA_POINT_IDValue;
         public String HEAT_MAP_DATA_POINT_ID
         {

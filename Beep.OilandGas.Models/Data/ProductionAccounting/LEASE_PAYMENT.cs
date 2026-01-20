@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class LEASE_PAYMENT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class LEASE_PAYMENT : ModelEntityBase
     {
         private string LEASE_PAYMENT_IDValue;
         public string LEASE_PAYMENT_ID
@@ -85,3 +85,4 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+

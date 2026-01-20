@@ -2,7 +2,7 @@
 
 **Comprehensive Oil and Gas Production Accounting System**
 
-A unified, enterprise-grade production accounting system that integrates Financial Accounting (FASB compliant), Traditional Accounting (GL, AP, AR, Inventory), and Operational Accounting (Production, Allocation, Royalty, Pricing) following industry best practices and PPDM standards.
+A unified, enterprise-grade production accounting system that integrates Financial Accounting (FASB compliant) and Operational Accounting (Production, Allocation, Royalty, Pricing), while leveraging Traditional Accounting (GL, AP, AR, Inventory) from `Beep.OilandGas.Accounting`, following industry best practices and PPDM standards.
 
 ## Overview
 
@@ -16,7 +16,7 @@ This library provides complete production accounting functionality covering:
 - **Ceiling Test Calculations**
 - **Impairment Tracking**
 
-### Traditional Accounting
+### Traditional Accounting (Provided by Beep.OilandGas.Accounting)
 - **General Ledger** (Chart of Accounts, Journal Entries)
 - **Invoice Management** (Customer Invoices, Payments)
 - **Purchase Order Management** (PO Creation, Receipts)
@@ -65,7 +65,7 @@ var amortization = AccountingManager.CalculateAmortization(
     netCapitalizedCosts, totalProvedReservesBOE, productionBOE);
 ```
 
-**Traditional Accounting** (Instance-Based):
+**Traditional Accounting** (Instance-Based, from `Beep.OilandGas.Accounting`):
 ```csharp
 var traditionalAccounting = new TraditionalAccountingManager();
 

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.PPDM39.Models;
-using Beep.OilandGas.Models.GasLift;
+using Beep.OilandGas.Models.Data.GasLift;
 
 namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 {

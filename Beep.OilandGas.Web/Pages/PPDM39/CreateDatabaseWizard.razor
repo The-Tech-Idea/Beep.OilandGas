@@ -5,7 +5,7 @@
 @inject IProgressTrackingClient ProgressClient
 @using Beep.OilandGas.Web.Components
 @using Beep.OilandGas.ApiService.Models
-@using Beep.OilandGas.Models.DTOs
+@using Beep.OilandGas.Models.Data
 @using System.Net.Http.Json
 
 <PageTitle>Create PPDM Database</PageTitle>
@@ -678,7 +678,7 @@
 
         try
         {
-            var progress = await ApiClient.GetAsync<ScriptExecutionProgressDto>(
+            var progress = await ApiClient.GetAsync<ScriptExecutionProgressInfo>(
                 $"/api/ppdm39/setup/creation-progress/{_executionId}");
 
             if (progress != null)

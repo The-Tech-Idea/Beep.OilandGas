@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs.Lease;
+using Beep.OilandGas.Models.Data.Lease;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="leaseRequest">Lease creation request (fee mineral or government)</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Created lease identifier</returns>
-        Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisitionDto leaseRequest, string userId);
+        Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest, string userId);
 
         /// <summary>
         /// Updates lease acquisition status.

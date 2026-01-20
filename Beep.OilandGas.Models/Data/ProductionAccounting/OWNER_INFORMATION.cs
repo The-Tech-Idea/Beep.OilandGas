@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class OWNER_INFORMATION : Entity, IPPDMEntity
-    {
+    public partial class OWNER_INFORMATION : ModelEntityBase {
         private System.String OWNER_INFORMATION_IDValue;
         public System.String OWNER_INFORMATION_ID
         {

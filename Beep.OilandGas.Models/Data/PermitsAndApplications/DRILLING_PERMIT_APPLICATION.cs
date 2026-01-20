@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.PermitsAndApplications
 {
-    public partial class DRILLING_PERMIT_APPLICATION : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class DRILLING_PERMIT_APPLICATION : ModelEntityBase {
         private String DRILLING_PERMIT_APPLICATION_IDValue;
         public String DRILLING_PERMIT_APPLICATION_ID
         {

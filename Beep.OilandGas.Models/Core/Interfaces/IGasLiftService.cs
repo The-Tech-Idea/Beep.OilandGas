@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.GasLift;
+using Beep.OilandGas.Models.Data.GasLift;
 
 
 namespace Beep.OilandGas.Models.Core.Interfaces
@@ -45,14 +45,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="design">Gas lift design</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Task</returns>
-        Task SaveGasLiftDesignAsync(Beep.OilandGas.Models.DTOs.GasLiftDesignDto design, string userId);
+        Task SaveGasLiftDesignAsync(Beep.OilandGas.Models.Data.GasLiftDesign design, string userId);
 
         /// <summary>
         /// Gets gas lift performance data.
         /// </summary>
         /// <param name="wellUWI">Well UWI</param>
         /// <returns>Gas lift performance data</returns>
-        Task<Beep.OilandGas.Models.DTOs.GasLiftPerformanceDto> GetGasLiftPerformanceAsync(string wellUWI);
+        Task<Beep.OilandGas.Models.Data.GasLiftPerformance> GetGasLiftPerformanceAsync(string wellUWI);
     }
 }
 

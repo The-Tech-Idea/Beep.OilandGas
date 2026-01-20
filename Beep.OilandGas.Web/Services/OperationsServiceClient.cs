@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.DTOs.Lease;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Lease;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -26,11 +26,11 @@ namespace Beep.OilandGas.Web.Services
 
         #region Prospect Identification Operations
 
-        public async Task<ProspectEvaluationDto> EvaluateProspectAsync(string prospectId)
+        public async Task<ProspectEvaluation> EvaluateProspectAsync(string prospectId)
         {
             try
             {
-                var result = await _apiClient.GetAsync<ProspectEvaluationDto>(
+                var result = await _apiClient.GetAsync<ProspectEvaluation>(
                     $"/api/prospectidentification/evaluate/{Uri.EscapeDataString(prospectId)}");
                 return result ?? throw new InvalidOperationException($"Failed to evaluate prospect {prospectId}");
             }
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<List<ProspectDto>> GetProspectsAsync(Dictionary<string, string>? filters = null)
+        public async Task<List<Prospect>> GetProspectsAsync(Dictionary<string, string>? filters = null)
         {
             try
             {
@@ -55,17 +55,17 @@ namespace Beep.OilandGas.Web.Services
                     }
                     endpoint += "?" + string.Join("&", queryParams);
                 }
-                var result = await _apiClient.GetAsync<List<ProspectDto>>(endpoint);
-                return result ?? new List<ProspectDto>();
+                var result = await _apiClient.GetAsync<List<Prospect>>(endpoint);
+                return result ?? new List<Prospect>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting prospects");
-                return new List<ProspectDto>();
+                return new List<Prospect>();
             }
         }
 
-        public async Task<string> CreateProspectAsync(ProspectDto prospect, string? userId = null)
+        public async Task<string> CreateProspectAsync(Prospect prospect, string? userId = null)
         {
             try
             {
@@ -74,7 +74,7 @@ namespace Beep.OilandGas.Web.Services
                 {
                     endpoint += $"?userId={Uri.EscapeDataString(userId)}";
                 }
-                var response = await _apiClient.PostAsync<ProspectDto, dynamic>(endpoint, prospect);
+                var response = await _apiClient.PostAsync<Prospect, dynamic>(endpoint, prospect);
                 // Extract prospectId from response
                 return response?.prospectId?.ToString() ?? throw new InvalidOperationException("Failed to create prospect");
             }
@@ -85,7 +85,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<List<ProspectRankingDto>> RankProspectsAsync(List<string> prospectIds, Dictionary<string, decimal> rankingCriteria)
+        public async Task<List<ProspectRanking>> RankProspectsAsync(List<string> prospectIds, Dictionary<string, decimal> rankingCriteria)
         {
             try
             {
@@ -94,14 +94,14 @@ namespace Beep.OilandGas.Web.Services
                     ProspectIds = prospectIds,
                     RankingCriteria = rankingCriteria
                 };
-                var result = await _apiClient.PostAsync<object, List<ProspectRankingDto>>(
+                var result = await _apiClient.PostAsync<object, List<ProspectRanking>>(
                     "/api/prospectidentification/rank", request);
-                return result ?? new List<ProspectRankingDto>();
+                return result ?? new List<ProspectRanking>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error ranking prospects");
-                return new List<ProspectRankingDto>();
+                return new List<ProspectRanking>();
             }
         }
 
@@ -109,7 +109,7 @@ namespace Beep.OilandGas.Web.Services
 
         #region Enhanced Recovery Operations
 
-        public async Task<EnhancedRecoveryOperationDto> AnalyzeEORPotentialAsync(string fieldId, string eorMethod)
+        public async Task<EnhancedRecoveryOperation> AnalyzeEORPotentialAsync(string fieldId, string eorMethod)
         {
             try
             {
@@ -118,7 +118,7 @@ namespace Beep.OilandGas.Web.Services
                     FieldId = fieldId,
                     EorMethod = eorMethod
                 };
-                var result = await _apiClient.PostAsync<object, EnhancedRecoveryOperationDto>(
+                var result = await _apiClient.PostAsync<object, EnhancedRecoveryOperation>(
                     "/api/enhancedrecovery/analyze-eor", request);
                 return result ?? throw new InvalidOperationException("Failed to analyze EOR potential");
             }
@@ -129,7 +129,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<EnhancedRecoveryOperationDto> CalculateRecoveryFactorAsync(string projectId)
+        public async Task<EnhancedRecoveryOperation> CalculateRecoveryFactorAsync(string projectId)
         {
             try
             {
@@ -137,7 +137,7 @@ namespace Beep.OilandGas.Web.Services
                 {
                     ProjectId = projectId
                 };
-                var result = await _apiClient.PostAsync<object, EnhancedRecoveryOperationDto>(
+                var result = await _apiClient.PostAsync<object, EnhancedRecoveryOperation>(
                     "/api/enhancedrecovery/recovery-factor", request);
                 return result ?? throw new InvalidOperationException("Failed to calculate recovery factor");
             }
@@ -148,7 +148,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<InjectionOperationDto> ManageInjectionAsync(string injectionWellId, decimal injectionRate)
+        public async Task<InjectionOperation> ManageInjectionAsync(string injectionWellId, decimal injectionRate)
         {
             try
             {
@@ -157,7 +157,7 @@ namespace Beep.OilandGas.Web.Services
                     InjectionWellId = injectionWellId,
                     InjectionRate = injectionRate
                 };
-                var result = await _apiClient.PostAsync<object, InjectionOperationDto>(
+                var result = await _apiClient.PostAsync<object, InjectionOperation>(
                     "/api/enhancedrecovery/injection", request);
                 return result ?? throw new InvalidOperationException("Failed to manage injection");
             }
@@ -211,7 +211,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisitionDto leaseRequest, string? userId = null)
+        public async Task<string> CreateLeaseAcquisitionAsync(CreateLeaseAcquisition leaseRequest, string? userId = null)
         {
             try
             {
@@ -220,7 +220,7 @@ namespace Beep.OilandGas.Web.Services
                 {
                     endpoint += $"?userId={Uri.EscapeDataString(userId)}";
                 }
-                var response = await _apiClient.PostAsync<CreateLeaseAcquisitionDto, dynamic>(endpoint, leaseRequest);
+                var response = await _apiClient.PostAsync<CreateLeaseAcquisition, dynamic>(endpoint, leaseRequest);
                 return response?.leaseId?.ToString() ?? throw new InvalidOperationException("Failed to create lease acquisition");
             }
             catch (Exception ex)
@@ -253,7 +253,7 @@ namespace Beep.OilandGas.Web.Services
 
         #region Drilling Operation Operations
 
-        public async Task<List<DrillingOperationDto>> GetDrillingOperationsAsync(string? wellUWI = null)
+        public async Task<List<DrillingOperation>> GetDrillingOperationsAsync(string? wellUWI = null)
         {
             try
             {
@@ -262,21 +262,21 @@ namespace Beep.OilandGas.Web.Services
                 {
                     endpoint += $"?wellUWI={Uri.EscapeDataString(wellUWI)}";
                 }
-                var result = await _apiClient.GetAsync<List<DrillingOperationDto>>(endpoint);
-                return result ?? new List<DrillingOperationDto>();
+                var result = await _apiClient.GetAsync<List<DrillingOperation>>(endpoint);
+                return result ?? new List<DrillingOperation>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting drilling operations");
-                return new List<DrillingOperationDto>();
+                return new List<DrillingOperation>();
             }
         }
 
-        public async Task<DrillingOperationDto?> GetDrillingOperationAsync(string operationId)
+        public async Task<DrillingOperation?> GetDrillingOperationAsync(string operationId)
         {
             try
             {
-                var result = await _apiClient.GetAsync<DrillingOperationDto>(
+                var result = await _apiClient.GetAsync<DrillingOperation>(
                     $"/api/drillingoperation/operations/{Uri.EscapeDataString(operationId)}");
                 return result;
             }
@@ -287,11 +287,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<DrillingOperationDto> CreateDrillingOperationAsync(CreateDrillingOperationDto createDto)
+        public async Task<DrillingOperation> CreateDrillingOperationAsync(CreateDrillingOperation createDto)
         {
             try
             {
-                var result = await _apiClient.PostAsync<CreateDrillingOperationDto, DrillingOperationDto>(
+                var result = await _apiClient.PostAsync<CreateDrillingOperation, DrillingOperation>(
                     "/api/drillingoperation/operations", createDto);
                 return result ?? throw new InvalidOperationException("Failed to create drilling operation");
             }
@@ -302,11 +302,11 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<DrillingOperationDto> UpdateDrillingOperationAsync(string operationId, UpdateDrillingOperationDto updateDto)
+        public async Task<DrillingOperation> UpdateDrillingOperationAsync(string operationId, UpdateDrillingOperation updateDto)
         {
             try
             {
-                var result = await _apiClient.PutAsync<UpdateDrillingOperationDto, DrillingOperationDto>(
+                var result = await _apiClient.PutAsync<UpdateDrillingOperation, DrillingOperation>(
                     $"/api/drillingoperation/operations/{Uri.EscapeDataString(operationId)}", updateDto);
                 return result ?? throw new InvalidOperationException("Failed to update drilling operation");
             }
@@ -317,26 +317,26 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<List<DrillingReportDto>> GetDrillingReportsAsync(string operationId)
+        public async Task<List<DrillingReport>> GetDrillingReportsAsync(string operationId)
         {
             try
             {
-                var result = await _apiClient.GetAsync<List<DrillingReportDto>>(
+                var result = await _apiClient.GetAsync<List<DrillingReport>>(
                     $"/api/drillingoperation/operations/{Uri.EscapeDataString(operationId)}/reports");
-                return result ?? new List<DrillingReportDto>();
+                return result ?? new List<DrillingReport>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting drilling reports for operation {OperationId}", operationId);
-                return new List<DrillingReportDto>();
+                return new List<DrillingReport>();
             }
         }
 
-        public async Task<DrillingReportDto> CreateDrillingReportAsync(string operationId, CreateDrillingReportDto createDto)
+        public async Task<DrillingReport> CreateDrillingReportAsync(string operationId, CreateDrillingReport createDto)
         {
             try
             {
-                var result = await _apiClient.PostAsync<CreateDrillingReportDto, DrillingReportDto>(
+                var result = await _apiClient.PostAsync<CreateDrillingReport, DrillingReport>(
                     $"/api/drillingoperation/operations/{Uri.EscapeDataString(operationId)}/reports", createDto);
                 return result ?? throw new InvalidOperationException("Failed to create drilling report");
             }

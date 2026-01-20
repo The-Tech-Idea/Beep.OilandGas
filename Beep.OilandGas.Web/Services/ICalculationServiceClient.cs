@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.GasLift;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.EconomicAnalysis;
+using Beep.OilandGas.Models.Data.GasLift;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
 
 namespace Beep.OilandGas.Web.Services
@@ -24,24 +24,24 @@ namespace Beep.OilandGas.Web.Services
             decimal gasInjectionPressure,
             int numberOfValves,
             bool useSIUnits = false);
-        Task<bool> SaveGasLiftDesignAsync(GasLiftDesignDto design, string? userId = null);
-        Task<GasLiftPerformanceDto> GetGasLiftPerformanceAsync(string wellUWI);
+        Task<bool> SaveGasLiftDesignAsync(GasLiftDesign design, string? userId = null);
+        Task<GasLiftPerformance> GetGasLiftPerformanceAsync(string wellUWI);
 
         // Nodal Analysis Operations
-        Task<NodalAnalysisResultDto> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParametersDto analysisParameters);
-        Task<OptimizationResultDto> OptimizeSystemAsync(string wellUWI, OptimizationGoalsDto optimizationGoals);
-        Task<bool> SaveNodalAnalysisResultAsync(NodalAnalysisResultDto result, string? userId = null);
-        Task<List<NodalAnalysisResultDto>> GetNodalAnalysisHistoryAsync(string wellUWI);
+        Task<NodalAnalysisRunResult> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParameters analysisParameters);
+        Task<OptimizationResult> OptimizeSystemAsync(string wellUWI, OptimizationGoals optimizationGoals);
+        Task<bool> SaveNodalAnalysisResultAsync(NodalAnalysisRunResult result, string? userId = null);
+        Task<List<NodalAnalysisRunResult>> GetNodalAnalysisHistoryAsync(string wellUWI);
 
         // Production Forecasting Operations
-        Task<ProductionForecastResultDto> GenerateForecastAsync(string? wellUWI, string? fieldId, string forecastMethod, int forecastPeriod);
-        Task<DeclineCurveAnalysisDto> PerformDeclineCurveAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate);
-        Task<bool> SaveForecastAsync(ProductionForecastResultDto forecast, string? userId = null);
+        Task<ProductionForecastResult> GenerateForecastAsync(string? wellUWI, string? fieldId, string forecastMethod, int forecastPeriod);
+        Task<DeclineCurveAnalysis> PerformDeclineCurveAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate);
+        Task<bool> SaveForecastAsync(ProductionForecastResult forecast, string? userId = null);
 
         // Pipeline Analysis Operations
-        Task<PipelineAnalysisResultDto> AnalyzePipelineFlowAsync(string pipelineId, decimal flowRate, decimal inletPressure);
-        Task<PressureDropResultDto> CalculatePressureDropAsync(string pipelineId, decimal flowRate);
-        Task<bool> SavePipelineAnalysisResultAsync(PipelineAnalysisResultDto result, string? userId = null);
+        Task<PipelineAnalysisResult> AnalyzePipelineFlowAsync(string pipelineId, decimal flowRate, decimal inletPressure);
+        Task<PressureDropResult> CalculatePressureDropAsync(string pipelineId, decimal flowRate);
+        Task<bool> SavePipelineAnalysisResultAsync(PipelineAnalysisResult result, string? userId = null);
 
         // Economic Analysis Operations
         Task<double> CalculateNPVAsync(CashFlow[] cashFlows, double discountRate);

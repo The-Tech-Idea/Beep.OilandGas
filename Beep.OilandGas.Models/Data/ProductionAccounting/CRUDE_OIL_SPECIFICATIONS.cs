@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class CRUDE_OIL_SPECIFICATIONS : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class CRUDE_OIL_SPECIFICATIONS : ModelEntityBase
     {
         private System.String SPECIFICATIONS_IDValue;
         public System.String SPECIFICATIONS_ID
@@ -185,6 +185,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+
 
 
 

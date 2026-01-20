@@ -8,7 +8,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.Models.DTOs.LifeCycle;
+using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.LifeCycle.Services.WellLifecycle;
 using Beep.OilandGas.LifeCycle.Services.WorkOrder;
 using Beep.OilandGas.LifeCycle.Services.Integration;
@@ -630,7 +630,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         /// <summary>
         /// Runs nodal analysis for a well using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.DTOs.NodalAnalysisResult> RunWellNodalAnalysisAsync(
+        public async Task<Beep.OilandGas.Models.Data.NodalAnalysisResult> RunWellNodalAnalysisAsync(
             string wellId,
             string userId,
             Dictionary<string, object>? additionalParameters = null)
@@ -655,7 +655,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         /// <summary>
         /// Runs DCA (Decline Curve Analysis) for a well using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.DTOs.DCAResult> RunWellDCAAsync(
+        public async Task<Beep.OilandGas.Models.Data.DCAResult> RunWellDCAAsync(
             string wellId,
             string userId,
             string calculationType = "Hyperbolic",
@@ -681,7 +681,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         /// <summary>
         /// Runs well test analysis for a well using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.DTOs.WellTestAnalysisResult> RunWellTestAnalysisAsync(
+        public async Task<Beep.OilandGas.Models.Data.WellTestAnalysisResult> RunWellTestAnalysisAsync(
             string wellId,
             string? testId = null,
             string userId = "system",
@@ -707,7 +707,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         /// <summary>
         /// Runs choke analysis for a well using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.DTOs.ChokeAnalysisResult> AnalyzeWellChokeAsync(
+        public async Task<Beep.OilandGas.Models.Data.ChokeAnalysisResult> AnalyzeWellChokeAsync(
             string wellId,
             string userId = "system",
             string? equipmentId = null,
@@ -734,7 +734,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         /// <summary>
         /// Runs gas lift analysis for a well using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.DTOs.GasLiftAnalysisResult> AnalyzeGasLiftAsync(
+        public async Task<Beep.OilandGas.Models.Data.GasLiftAnalysisResult> AnalyzeGasLiftAsync(
             string wellId,
             string userId = "system",
             string analysisType = "POTENTIAL",
@@ -760,7 +760,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         /// <summary>
         /// Runs pump performance analysis for a well using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.DTOs.PumpAnalysisResult> AnalyzeWellPumpAsync(
+        public async Task<Beep.OilandGas.Models.Data.PumpAnalysisResult> AnalyzeWellPumpAsync(
             string wellId,
             string userId = "system",
             string? equipmentId = null,
@@ -788,7 +788,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         /// <summary>
         /// Runs sucker rod pumping analysis for a well using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.DTOs.SuckerRodAnalysisResult> AnalyzeSuckerRodSystemAsync(
+        public async Task<Beep.OilandGas.Models.Data.SuckerRodAnalysisResult> AnalyzeSuckerRodSystemAsync(
             string wellId,
             string userId = "system",
             string? equipmentId = null,
@@ -815,7 +815,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         /// <summary>
         /// Runs plunger lift analysis for a well using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.DTOs.PlungerLiftAnalysisResult> AnalyzePlungerLiftAsync(
+        public async Task<Beep.OilandGas.Models.Data.PlungerLiftAnalysisResult> AnalyzePlungerLiftAsync(
             string wellId,
             string userId = "system",
             string? equipmentId = null,
@@ -842,7 +842,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         /// <summary>
         /// Runs hydraulic pump analysis for a well using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.DTOs.HydraulicPumpAnalysisResult> AnalyzeHydraulicPumpAsync(
+        public async Task<Beep.OilandGas.Models.Data.HydraulicPumpAnalysisResult> AnalyzeHydraulicPumpAsync(
             string wellId,
             string userId = "system",
             string? equipmentId = null,

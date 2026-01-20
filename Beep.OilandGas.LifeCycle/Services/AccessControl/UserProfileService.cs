@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             _connectionName = connectionName;
         }
 
-        public async Task<UserProfileDTO?> GetUserProfileAsync(string userId)
+        public async Task<UserProfile?> GetUserProfileAsync(string userId)
         {
             try
             {
@@ -69,7 +69,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
 
                 var roles = await _accessControlService.GetUserRolesAsync(userId);
 
-                return new UserProfileDTO
+                return new UserProfile
                 {
                     UserId = userId,
                     PrimaryRole = GetPropertyValue(profile, "PRIMARY_ROLE")?.ToString(),
@@ -191,11 +191,11 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             }
         }
 
-        private async Task<UserProfileDTO> CreateDefaultProfileAsync(string userId)
+        private async Task<UserProfile> CreateDefaultProfileAsync(string userId)
         {
             // Create a default profile with no primary role
             // The profile will use DefaultLayout until a role is assigned
-            return new UserProfileDTO
+            return new UserProfile
             {
                 UserId = userId,
                 PrimaryRole = null,

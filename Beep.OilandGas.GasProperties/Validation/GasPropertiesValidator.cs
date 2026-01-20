@@ -1,5 +1,5 @@
 using System;
-using Beep.OilandGas.Models.GasProperties;
+using Beep.OilandGas.Models.Data.GasProperties;
 using Beep.OilandGas.GasProperties.Constants;
 using Beep.OilandGas.GasProperties.Exceptions;
 

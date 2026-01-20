@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Models.Processes;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes
 {

@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class RUN_TICKET : Entity, IPPDMEntity
-    {
+    public partial class RUN_TICKET : ModelEntityBase {
         private System.String RUN_TICKET_IDValue;
         public System.String RUN_TICKET_ID
         {

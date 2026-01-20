@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -72,7 +72,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpPost("composition")]
-        public async Task<ActionResult> SaveComposition([FromBody] GasCompositionDto composition, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SaveComposition([FromBody] GasComposition composition, [FromQuery] string? userId = null)
         {
             try
             {
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpGet("composition/{compositionId}")]
-        public async Task<ActionResult<GasCompositionDto>> GetComposition(string compositionId)
+        public async Task<ActionResult<GasComposition>> GetComposition(string compositionId)
         {
             try
             {

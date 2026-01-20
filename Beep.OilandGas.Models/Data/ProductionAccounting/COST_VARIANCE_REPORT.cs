@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class COST_VARIANCE_REPORT : Entity, IPPDMEntity
-    {
+    public partial class COST_VARIANCE_REPORT : ModelEntityBase {
         private System.String COST_VARIANCE_REPORT_IDValue;
         public System.String COST_VARIANCE_REPORT_ID
         {

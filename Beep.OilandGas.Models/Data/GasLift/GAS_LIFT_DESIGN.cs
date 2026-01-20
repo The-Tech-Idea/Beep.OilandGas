@@ -3,8 +3,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.GasLift
 {
-    public partial class GAS_LIFT_DESIGN : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class GAS_LIFT_DESIGN : ModelEntityBase {
         private string DESIGN_IDValue;
         public string DESIGN_ID
         {

@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class COST_SHARING : Entity, IPPDMEntity
-    {
+    public partial class COST_SHARING : ModelEntityBase {
         private System.String COST_SHARING_IDValue;
         public System.String COST_SHARING_ID
         {

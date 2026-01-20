@@ -9,7 +9,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// </summary>
     public partial class PipelineAnalysisService
     {
-        public async Task<LeakDetectionResultDto> DetectLeaksAsync(string pipelineId, LeakDetectionRequestDto request)
+        public async Task<LeakDetectionResult> DetectLeaksAsync(string pipelineId, LeakDetectionRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var leakLocations = GenerateLeakLocations(leakDetected, request.DetectionMethods.Count);
                 var estimatedLeakRate = leakDetected ? GenerateRandomLeakRate() : 0;
 
-                var result = new LeakDetectionResultDto
+                var result = new LeakDetectionResult
                 {
                     PipelineId = pipelineId,
                     LeakDetected = leakDetected,
@@ -46,7 +46,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<PressureAnomalyDto> AnalyzePressureAnomaliesAsync(string pipelineId, PressureAnomalyRequestDto request)
+        public async Task<PressureAnomaly> AnalyzePressureAnomaliesAsync(string pipelineId, PressureAnomalyRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -58,13 +58,13 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             try
             {
                 var anomalyDetected = GenerateRandomBoolean(0.3m);
-                var anomalyLocations = new List<AnomalyLocationDto>();
+                var anomalyLocations = new List<AnomalyLocation>();
 
                 if (anomalyDetected)
                 {
                     for (int i = 0; i < 2; i++)
                     {
-                        anomalyLocations.Add(new AnomalyLocationDto
+                        anomalyLocations.Add(new AnomalyLocation
                         {
                             Distance = (i + 1) * 10m,
                             PressureDeviation = GenerateRandomDecimal(5m, 25m),
@@ -73,7 +73,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     }
                 }
 
-                var result = new PressureAnomalyDto
+                var result = new PressureAnomaly
                 {
                     PipelineId = pipelineId,
                     AnomalyDetected = anomalyDetected,
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<AcousticDetectionResultDto> PerformAcousticLeakDetectionAsync(string pipelineId, AcousticRequestDto request)
+        public async Task<AcousticDetectionResult> PerformAcousticLeakDetectionAsync(string pipelineId, AcousticRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -102,11 +102,11 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             try
             {
                 var leakDetected = GenerateRandomBoolean(0.25m);
-                var signalData = new List<AcousticSignalDto>();
+                var signalData = new List<AcousticSignal>();
 
                 if (leakDetected)
                 {
-                    signalData.Add(new AcousticSignalDto 
+                    signalData.Add(new AcousticSignal 
                     { 
                         Frequency = GenerateRandomDecimal(1000m, 10000m),
                         Amplitude = GenerateRandomDecimal(0.5m, 5m),
@@ -114,7 +114,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     });
                 }
 
-                var result = new AcousticDetectionResultDto
+                var result = new AcousticDetectionResult
                 {
                     PipelineId = pipelineId,
                     LeakDetected = leakDetected,
@@ -131,7 +131,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<DiagnosisResultDto> DiagnoseOperationalIssuesAsync(string pipelineId, DiagnosisRequestDto request)
+        public async Task<DiagnosisResult> DiagnoseOperationalIssuesAsync(string pipelineId, DiagnosisRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -142,7 +142,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
-                var issues = new List<DiagnosedIssueDto>();
+                var issues = new List<DiagnosedIssue>();
 
                 foreach (var symptom in request.SymptomCodes)
                 {
@@ -153,7 +153,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var overallStatus = DetermineOverallStatus(issues);
                 var recommendations = GenerateDiagnosisRecommendations(issues);
 
-                var result = new DiagnosisResultDto
+                var result = new DiagnosisResult
                 {
                     PipelineId = pipelineId,
                     IdentifiedIssues = issues,
@@ -173,7 +173,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<GasLossRateDto> CalculateGasLossRateAsync(string pipelineId, decimal pressureDifference)
+        public async Task<GasLossRate> CalculateGasLossRateAsync(string pipelineId, decimal pressureDifference)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -188,7 +188,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var annualLoss = dailyLoss * 365m;
                 var estimatedValue = annualLoss * 3.5m; // $3.50/MCF (simplified)
 
-                var result = new GasLossRateDto
+                var result = new GasLossRate
                 {
                     PipelineId = pipelineId,
                     GasLossRate = gasLossRate,
@@ -225,12 +225,12 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             return false;
         }
 
-        private List<LeakLocationDto> GenerateLeakLocations(bool leakDetected, int methodCount)
+        private List<LeakLocation> GenerateLeakLocations(bool leakDetected, int methodCount)
         {
-            var locations = new List<LeakLocationDto>();
+            var locations = new List<LeakLocation>();
             if (!leakDetected || methodCount == 0) return locations;
 
-            locations.Add(new LeakLocationDto
+            locations.Add(new LeakLocation
             {
                 LocationDescription = "Pipeline joint area",
                 Distance = GenerateRandomDecimal(5m, 50m),
@@ -247,7 +247,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             return (decimal)(random.Next(1, 50)) + (decimal)random.NextDouble();
         }
 
-        private string DetermineAnomalyType(List<AnomalyLocationDto> locations)
+        private string DetermineAnomalyType(List<AnomalyLocation> locations)
         {
             if (locations.Count == 0) return "None";
             var maxDeviation = locations.Count > 0 ? locations[0].PressureDeviation : 0;
@@ -269,19 +269,19 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             return min + (decimal)(random.NextDouble() * (double)(max - min));
         }
 
-        private DiagnosedIssueDto DiagnoseSymptom(string symptomCode)
+        private DiagnosedIssue DiagnoseSymptom(string symptomCode)
         {
             return symptomCode?.ToUpper() switch
             {
-                "HV" => new DiagnosedIssueDto { IssueType = "High Velocity", Description = "Flow velocity exceeds safe limits", Severity = "High", RecommendedAction = "Reduce flow rate" },
-                "LP" => new DiagnosedIssueDto { IssueType = "Low Pressure", Description = "Inlet pressure below acceptable range", Severity = "Medium", RecommendedAction = "Check inlet conditions" },
-                "HS" => new DiagnosedIssueDto { IssueType = "High Slug", Description = "Excessive slug flow detected", Severity = "High", RecommendedAction = "Install slug catcher" },
-                "CR" => new DiagnosedIssueDto { IssueType = "Corrosion Risk", Description = "High corrosion indicators detected", Severity = "Medium", RecommendedAction = "Increase inspection frequency" },
+                "HV" => new DiagnosedIssue { IssueType = "High Velocity", Description = "Flow velocity exceeds safe limits", Severity = "High", RecommendedAction = "Reduce flow rate" },
+                "LP" => new DiagnosedIssue { IssueType = "Low Pressure", Description = "Inlet pressure below acceptable range", Severity = "Medium", RecommendedAction = "Check inlet conditions" },
+                "HS" => new DiagnosedIssue { IssueType = "High Slug", Description = "Excessive slug flow detected", Severity = "High", RecommendedAction = "Install slug catcher" },
+                "CR" => new DiagnosedIssue { IssueType = "Corrosion Risk", Description = "High corrosion indicators detected", Severity = "Medium", RecommendedAction = "Increase inspection frequency" },
                 _ => null
             };
         }
 
-        private string DetermineOverallStatus(List<DiagnosedIssueDto> issues)
+        private string DetermineOverallStatus(List<DiagnosedIssue> issues)
         {
             if (issues.Count == 0) return "Normal";
             if (issues.Any(i => i.Severity == "Critical")) return "Critical";
@@ -289,7 +289,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             return "Caution";
         }
 
-        private List<string> GenerateDiagnosisRecommendations(List<DiagnosedIssueDto> issues)
+        private List<string> GenerateDiagnosisRecommendations(List<DiagnosedIssue> issues)
         {
             var recommendations = new List<string>();
             foreach (var issue in issues)

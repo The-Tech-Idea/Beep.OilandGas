@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using Beep.OilandGas.Models.DTOs.Accounting.Cost;
+using Beep.OilandGas.Models.Data.Accounting.Cost;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;

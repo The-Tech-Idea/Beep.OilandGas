@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.Models.SuckerRodPumping;
+using Beep.OilandGas.Models.Data.SuckerRodPumping;
 using Beep.OilandGas.GasProperties.Calculations;
 
 namespace Beep.OilandGas.SuckerRodPumping.Calculations

@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.PlungerLift
 {
-    public partial class PLUNGER_LIFT_GAS_REQUIREMENTS : Entity, IPPDMEntity
-    {
+    public partial class PLUNGER_LIFT_GAS_REQUIREMENTS : ModelEntityBase {
         private String PLUNGER_LIFT_GAS_REQUIREMENTS_IDValue;
         public String PLUNGER_LIFT_GAS_REQUIREMENTS_ID
         {

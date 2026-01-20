@@ -3,8 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.ProductionAccounting.Services;
-using Beep.OilandGas.Models.DTOs.ProductionAccounting;
-using Beep.OilandGas.Models.DTOs.Accounting.Trading;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Accounting.Trading;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
@@ -31,7 +31,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
         /// Get exchange contract by ID.
         /// </summary>
         [HttpGet("exchanges")]
-        public async Task<ActionResult<List<ExchangeContractDto>>> GetExchanges(
+        public async Task<ActionResult<List<ExchangeContract>>> GetExchanges(
             [FromQuery] string? contractId = null,
             [FromQuery] string? connectionName = null)
         {
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
                 if (contract == null)
                     return NotFound(new { error = $"Exchange contract {contractId} not found" });
                 
-                return Ok(new List<ExchangeContractDto> { MapToExchangeContractDto(contract) });
+                return Ok(new List<ExchangeContract> { MapToExchangeContractDto(contract) });
             }
             catch (Exception ex)
             {
@@ -57,7 +57,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
         /// Create exchange contract.
         /// </summary>
         [HttpPost("exchanges")]
-        public async Task<ActionResult<ExchangeContractDto>> CreateExchangeContract(
+        public async Task<ActionResult<ExchangeContract>> CreateExchangeContract(
             [FromBody] CreateExchangeContractRequest request,
             [FromQuery] string? userId = null,
             [FromQuery] string? connectionName = null)
@@ -68,7 +68,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
                     return BadRequest(ModelState);
 
                 // Convert DTO to request for TradingService
-                var tradingRequest = new Beep.OilandGas.Models.DTOs.ProductionAccounting.CreateExchangeContractRequest
+                var tradingRequest = new Beep.OilandGas.Models.Data.ProductionAccounting.CreateExchangeContractRequest
                 {
                     ContractId = request.ContractId,
                     ContractName = request.ContractName,
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
             }
         }
 
-        private ExchangeContractDto MapToExchangeContractDto(Beep.OilandGas.Models.Data.ProductionAccounting.EXCHANGE_CONTRACT contract)
+        private ExchangeContract MapToExchangeContractDto(Beep.OilandGas.Models.Data.ProductionAccounting.EXCHANGE_CONTRACT contract)
         {
             // Parse ContractType from string to enum
             ExchangeContractType contractType = ExchangeContractType.PhysicalExchange;
@@ -96,7 +96,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
                 Enum.TryParse<ExchangeContractType>(contract.CONTRACT_TYPE, true, out contractType);
             }
 
-            return new ExchangeContractDto
+            return new ExchangeContract
             {
                 ContractId = contract.CONTRACT_ID ?? string.Empty,
                 ContractName = contract.CONTRACT_NAME ?? string.Empty,

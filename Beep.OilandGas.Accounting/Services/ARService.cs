@@ -8,7 +8,7 @@ using TheTechIdea.Beep.Report;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.Models.DTOs.Accounting;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -25,7 +25,8 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
-        private readonly IJournalEntryService _journalEntryService;
+        private readonly AccountingBasisPostingService _basisPosting;
+        private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<ARService> _logger;
         private const string ConnectionName = "PPDM39";
 
@@ -34,15 +35,17 @@ namespace Beep.OilandGas.Accounting.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            IJournalEntryService journalEntryService,
-            ILogger<ARService> logger = null)
+            AccountingBasisPostingService basisPosting,
+            ILogger<ARService> logger = null,
+            IAccountMappingService? accountMapping = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _journalEntryService = journalEntryService ?? throw new ArgumentNullException(nameof(journalEntryService));
+            _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
             _logger = logger;
+            _accountMapping = accountMapping;
         }
 
         public async Task<AR_INVOICE> CreateInvoiceAsync(CreateARInvoiceRequest request, string userId, string? connectionName = null)
@@ -53,6 +56,8 @@ namespace Beep.OilandGas.Accounting.Services
                 throw new InvalidOperationException("Customer BA ID is required");
             if (request.TotalAmount <= 0m)
                 throw new InvalidOperationException("Invoice amount must be positive");
+            if (request.DueDate.Date < request.InvoiceDate.Date)
+                throw new InvalidOperationException("Due date cannot be earlier than invoice date");
 
             var invoice = new AR_INVOICE
             {
@@ -66,7 +71,7 @@ namespace Beep.OilandGas.Accounting.Services
                 TOTAL_AMOUNT = request.TotalAmount,
                 PAID_AMOUNT = 0m,
                 BALANCE_DUE = request.TotalAmount,
-                STATUS = "DRAFT",
+                STATUS = InvoiceStatuses.Draft,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -123,7 +128,12 @@ namespace Beep.OilandGas.Accounting.Services
             invoice.INVOICE_NUMBER = request.InvoiceNumber ?? invoice.INVOICE_NUMBER;
             invoice.CUSTOMER_BA_ID = request.CustomerBaId ?? invoice.CUSTOMER_BA_ID;
             invoice.INVOICE_DATE = request.InvoiceDate ?? invoice.INVOICE_DATE;
-            invoice.DUE_DATE = request.DueDate ?? invoice.DUE_DATE;
+            var updatedDueDate = request.DueDate ?? invoice.DUE_DATE;
+            var updatedInvoiceDate = request.InvoiceDate ?? invoice.INVOICE_DATE;
+            if (updatedDueDate.HasValue && updatedInvoiceDate.HasValue
+                && updatedDueDate.Value.Date < updatedInvoiceDate.Value.Date)
+                throw new InvalidOperationException("Due date cannot be earlier than invoice date");
+            invoice.DUE_DATE = updatedDueDate;
             if (request.TotalAmount.HasValue)
             {
                 invoice.TOTAL_AMOUNT = request.TotalAmount.Value;
@@ -207,16 +217,16 @@ namespace Beep.OilandGas.Accounting.Services
 
             invoice.PAID_AMOUNT = (invoice.PAID_AMOUNT ?? 0m) + appliedAmount;
             invoice.BALANCE_DUE = Math.Max(0m, (invoice.TOTAL_AMOUNT ?? 0m) - (invoice.PAID_AMOUNT ?? 0m));
-            invoice.STATUS = invoice.BALANCE_DUE == 0m ? "PAID" : "PARTIAL";
+            invoice.STATUS = invoice.BALANCE_DUE == 0m ? InvoiceStatuses.Paid : InvoiceStatuses.PartiallyPaid;
             invoice.ROW_CHANGED_BY = userId;
             invoice.ROW_CHANGED_DATE = DateTime.UtcNow;
 
             var invoiceRepo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", connectionName);
             await invoiceRepo.UpdateAsync(invoice, userId);
 
-            await _journalEntryService.CreateBalancedEntryAsync(
-                DefaultGlAccounts.Cash,
-                DefaultGlAccounts.AccountsReceivable,
+            await _basisPosting.PostBalancedEntryByAccountAsync(
+                GetAccountId(AccountMappingKeys.Cash, DefaultGlAccounts.Cash),
+                GetAccountId(AccountMappingKeys.AccountsReceivable, DefaultGlAccounts.AccountsReceivable),
                 appliedAmount,
                 $"AR payment applied {invoice.INVOICE_NUMBER}",
                 userId,
@@ -281,7 +291,7 @@ namespace Beep.OilandGas.Accounting.Services
             var invoiceRepo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", connectionName);
             await invoiceRepo.UpdateAsync(invoice, userId);
 
-            await _journalEntryService.CreateBalancedEntryAsync(
+            await _basisPosting.PostBalancedEntryByAccountAsync(
                 DefaultGlAccounts.Revenue,
                 DefaultGlAccounts.AccountsReceivable,
                 request.CreditAmount,
@@ -314,7 +324,7 @@ namespace Beep.OilandGas.Accounting.Services
                 };
             }
 
-            await _journalEntryService.CreateBalancedEntryAsync(
+            await _basisPosting.PostBalancedEntryByAccountAsync(
                 DefaultGlAccounts.AccountsReceivable,
                 DefaultGlAccounts.Revenue,
                 invoice.TOTAL_AMOUNT ?? 0m,
@@ -485,5 +495,13 @@ namespace Beep.OilandGas.Accounting.Services
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 entityType, connectionName ?? ConnectionName, tableName);
         }
+
+        private string GetAccountId(string key, string fallback)
+        {
+            return _accountMapping?.GetAccountId(key) ?? fallback;
+        }
     }
 }
+
+
+

@@ -1,5 +1,5 @@
 @page "/ppdm39/calculations/nodalanalysis"
-@using Beep.OilandGas.Models.DTOs
+@using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
@@ -49,7 +49,7 @@
 </MudContainer>
 
 @code {
-    private List<NodalAnalysisResultDto>? _analysisHistory;
+    private List<NodalAnalysisRunResult>? _analysisHistory;
     private bool _isLoading = false;
     private string? _currentUserId = "system";
     private string? _selectedWellUWI;

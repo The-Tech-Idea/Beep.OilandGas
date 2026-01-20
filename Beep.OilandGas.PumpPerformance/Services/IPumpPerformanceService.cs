@@ -37,7 +37,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
         /// <param name="baseHead">Base head</param>
         /// <param name="motorInputPower">Motor input power</param>
         /// <returns>Performance curve data</returns>
-        Task<PumpPerformanceCurveDto> GeneratePerformanceCurveAsync(
+        Task<PumpPerformanceCurve> GeneratePerformanceCurveAsync(
             string pumpId,
             double baseFlowRate,
             double baseHead,
@@ -48,14 +48,14 @@ namespace Beep.OilandGas.PumpPerformance.Services
         /// </summary>
         /// <param name="operatingPoint">Operating point data</param>
         /// <returns>Performance analysis result</returns>
-        Task<PumpPerformanceAnalysisDto> AnalyzePerformanceAsync(PumpOperatingPointDto operatingPoint);
+        Task<PumpPerformanceAnalysis> AnalyzePerformanceAsync(PumpOperatingPoint operatingPoint);
 
         /// <summary>
         /// Optimizes pump performance based on system requirements.
         /// </summary>
         /// <param name="requirements">System requirements</param>
         /// <returns>Optimization recommendations</returns>
-        Task<PumpOptimizationDto> OptimizePerformanceAsync(PumpSystemRequirementsDto requirements);
+        Task<PumpOptimization> OptimizePerformanceAsync(PumpSystemRequirements requirements);
 
         /// <summary>
         /// Gets pump efficiency at a specific point.
@@ -83,13 +83,13 @@ namespace Beep.OilandGas.PumpPerformance.Services
         /// <param name="heads">Array of heads</param>
         /// <param name="powers">Array of powers</param>
         /// <returns>Validation result</returns>
-        Task<PumpValidationResultDto> ValidatePerformanceDataAsync(double[] flowRates, double[] heads, double[] powers);
+        Task<PumpValidationResult> ValidatePerformanceDataAsync(double[] flowRates, double[] heads, double[] powers);
     }
 
     /// <summary>
     /// DTO for pump H-Q curve performance analysis.
     /// </summary>
-    public class PumpPerformanceCurveDto
+    public class PumpPerformanceCurve
     {
         public string PumpId { get; set; } = string.Empty;
         public DateTime AnalysisDate { get; set; }
@@ -104,7 +104,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
     /// <summary>
     /// DTO for pump operating point.
     /// </summary>
-    public class PumpOperatingPointDto
+    public class PumpOperatingPoint
     {
         public string PumpId { get; set; } = string.Empty;
         public double FlowRate { get; set; }
@@ -117,7 +117,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
     /// <summary>
     /// DTO for pump performance analysis result.
     /// </summary>
-    public class PumpPerformanceAnalysisDto
+    public class PumpPerformanceAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string PumpId { get; set; } = string.Empty;
@@ -133,7 +133,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
     /// <summary>
     /// DTO for pump system requirements.
     /// </summary>
-    public class PumpSystemRequirementsDto
+    public class PumpSystemRequirements
     {
         public string WellId { get; set; } = string.Empty;
         public double DesiredFlowRate { get; set; }
@@ -147,7 +147,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
     /// <summary>
     /// DTO for pump optimization recommendations.
     /// </summary>
-    public class PumpOptimizationDto
+    public class PumpOptimization
     {
         public string OptimizationId { get; set; } = string.Empty;
         public DateTime OptimizationDate { get; set; }
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
     /// <summary>
     /// DTO for pump data validation result.
     /// </summary>
-    public class PumpValidationResultDto
+    public class PumpValidationResult
     {
         public bool IsValid { get; set; }
         public List<string> Errors { get; set; } = new();

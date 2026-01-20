@@ -15,7 +15,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 13: Manages mineral rights
         /// </summary>
-        public async Task<MineralRightsManagementDto> ManageMineralRightsAsync(string leaseId, MineralRightsRequestDto request, string userId)
+        public async Task<MineralRightsManagement> ManageMineralRightsAsync(string leaseId, MineralRightsRequest request, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -28,19 +28,19 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Managing mineral rights for {LeaseId}", leaseId);
 
-                var management = new MineralRightsManagementDto
+                var management = new MineralRightsManagement
                 {
                     LeaseId = leaseId,
-                    Rights = new List<MineralRightDto>
+                    Rights = new List<MineralRight>
                     {
-                        new MineralRightDto
+                        new MineralRight
                         {
                             MineralName = "Oil",
                             Owner = "Landowner",
                             OwnershipPercentage = 1.0m,
                             IsActive = true
                         },
-                        new MineralRightDto
+                        new MineralRight
                         {
                             MineralName = "Natural Gas",
                             Owner = "Landowner",
@@ -64,7 +64,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 14: Manages surface rights
         /// </summary>
-        public async Task<SurfaceRightsManagementDto> ManageSurfaceRightsAsync(string leaseId, SurfaceRightsRequestDto request, string userId)
+        public async Task<SurfaceRightsManagement> ManageSurfaceRightsAsync(string leaseId, SurfaceRightsRequest request, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -77,27 +77,27 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Managing surface rights for {LeaseId}", leaseId);
 
-                var management = new SurfaceRightsManagementDto
+                var management = new SurfaceRightsManagement
                 {
                     LeaseId = leaseId,
                     SurfaceArea = 640,
                     SurfaceOwner = request.SurfaceOwner,
                     AccessGranted = true,
-                    AccessRights = new List<AccessRightDto>
+                    AccessRights = new List<AccessRight>
                     {
-                        new AccessRightDto
+                        new AccessRight
                         {
                             RightDescription = "Well drilling access",
                             IsGranted = true,
                             EffectiveDate = DateTime.Now
                         },
-                        new AccessRightDto
+                        new AccessRight
                         {
                             RightDescription = "Pipeline installation",
                             IsGranted = true,
                             EffectiveDate = DateTime.Now
                         },
-                        new AccessRightDto
+                        new AccessRight
                         {
                             RightDescription = "Equipment staging area",
                             IsGranted = true,
@@ -119,7 +119,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 15: Manages water rights
         /// </summary>
-        public async Task<WaterRightsManagementDto> ManageWaterRightsAsync(string leaseId, WaterRightsRequestDto request, string userId)
+        public async Task<WaterRightsManagement> ManageWaterRightsAsync(string leaseId, WaterRightsRequest request, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -132,7 +132,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Managing water rights for {LeaseId}", leaseId);
 
-                var management = new WaterRightsManagementDto
+                var management = new WaterRightsManagement
                 {
                     LeaseId = leaseId,
                     WaterAllocationVolume = request.RequestedVolume,
@@ -159,7 +159,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 16: Tracks environmental obligations
         /// </summary>
-        public async Task<EnvironmentalObligationDto> TrackEnvironmentalObligationsAsync(string leaseId)
+        public async Task<EnvironmentalObligation> TrackEnvironmentalObligationsAsync(string leaseId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -168,26 +168,26 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Tracking environmental obligations for {LeaseId}", leaseId);
 
-                var tracking = new EnvironmentalObligationDto
+                var tracking = new EnvironmentalObligation
                 {
                     LeaseId = leaseId,
-                    Obligations = new List<ObligationDto>
+                    Obligations = new List<Obligation>
                     {
-                        new ObligationDto
+                        new Obligation
                         {
                             ObligationType = "Air Quality Monitoring",
                             Description = "Monthly air quality testing required",
                             ComplianceStatus = "COMPLIANT",
                             DueDate = DateTime.Now.AddMonths(1)
                         },
-                        new ObligationDto
+                        new Obligation
                         {
                             ObligationType = "Water Quality Testing",
                             Description = "Quarterly groundwater sampling",
                             ComplianceStatus = "COMPLIANT",
                             DueDate = DateTime.Now.AddMonths(3)
                         },
-                        new ObligationDto
+                        new Obligation
                         {
                             ObligationType = "Waste Management",
                             Description = "Proper disposal of drilling waste",
@@ -211,7 +211,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 17: Manages regulatory compliance requirements
         /// </summary>
-        public async Task<RegulatoryComplianceDto> ManageRegulatoryComplianceAsync(string leaseId, ComplianceRequestDto request)
+        public async Task<RegulatoryCompliance> ManageRegulatoryComplianceAsync(string leaseId, ComplianceRequest request)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -222,26 +222,26 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Managing regulatory compliance for {LeaseId}", leaseId);
 
-                var compliance = new RegulatoryComplianceDto
+                var compliance = new RegulatoryCompliance
                 {
                     LeaseId = leaseId,
-                    ComplianceItems = new List<ComplianceItemDto>
+                    ComplianceItems = new List<ComplianceItem>
                     {
-                        new ComplianceItemDto
+                        new ComplianceItem
                         {
                             RequirementName = "Drilling Permits",
                             Jurisdiction = "State Oil & Gas Commission",
                             IsCompliant = true,
                             Notes = "Permit #2024-001 issued"
                         },
-                        new ComplianceItemDto
+                        new ComplianceItem
                         {
                             RequirementName = "Environmental Assessment",
                             Jurisdiction = "EPA",
                             IsCompliant = true,
                             Notes = "Phase I ESA completed"
                         },
-                        new ComplianceItemDto
+                        new ComplianceItem
                         {
                             RequirementName = "Bonding Requirements",
                             Jurisdiction = "County Clerk",
@@ -265,7 +265,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 18: Tracks operational obligations
         /// </summary>
-        public async Task<OperationalObligationDto> TrackOperationalObligationsAsync(string leaseId)
+        public async Task<OperationalObligation> TrackOperationalObligationsAsync(string leaseId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -274,26 +274,26 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Tracking operational obligations for {LeaseId}", leaseId);
 
-                var tracking = new OperationalObligationDto
+                var tracking = new OperationalObligation
                 {
                     LeaseId = leaseId,
-                    ObligationItems = new List<OperationalItemDto>
+                    ObligationItems = new List<OperationalItem>
                     {
-                        new OperationalItemDto
+                        new OperationalItem
                         {
                             ItemName = "Well Maintenance",
                             Requirement = "Monthly well inspections",
                             DueDate = DateTime.Now.AddDays(7),
                             IsComplete = false
                         },
-                        new OperationalItemDto
+                        new OperationalItem
                         {
                             ItemName = "Equipment Service",
                             Requirement = "Annual pump service",
                             DueDate = DateTime.Now.AddMonths(2),
                             IsComplete = false
                         },
-                        new OperationalItemDto
+                        new OperationalItem
                         {
                             ItemName = "Safety Training",
                             Requirement = "Annual safety certification",

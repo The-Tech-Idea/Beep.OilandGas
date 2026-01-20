@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -22,7 +23,8 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
-        private readonly JournalEntryService _journalEntryService;
+        private readonly AccountingBasisPostingService _basisPosting;
+        private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<APPaymentService> _logger;
         private const string ConnectionName = "PPDM39";
 
@@ -31,15 +33,17 @@ namespace Beep.OilandGas.Accounting.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            JournalEntryService journalEntryService,
-            ILogger<APPaymentService> logger)
+            AccountingBasisPostingService basisPosting,
+            ILogger<APPaymentService> logger,
+            IAccountMappingService? accountMapping = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _journalEntryService = journalEntryService ?? throw new ArgumentNullException(nameof(journalEntryService));
+            _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _accountMapping = accountMapping;
         }
 
         /// <summary>
@@ -70,29 +74,27 @@ namespace Beep.OilandGas.Accounting.Services
                 {
                     new JOURNAL_ENTRY_LINE
                     {
-                        GL_ACCOUNT_ID = "2000", // AP account
+                        GL_ACCOUNT_ID = GetAccountId(AccountMappingKeys.AccountsPayable, DefaultGlAccounts.AccountsPayable),
                         DEBIT_AMOUNT = paymentAmount,
                         CREDIT_AMOUNT = 0m,
                         DESCRIPTION = $"Vendor payment - Invoice {apInvoiceId}"
                     },
                     new JOURNAL_ENTRY_LINE
                     {
-                        GL_ACCOUNT_ID = "1000", // Cash account
+                        GL_ACCOUNT_ID = GetAccountId(AccountMappingKeys.Cash, DefaultGlAccounts.Cash),
                         DEBIT_AMOUNT = 0m,
                         CREDIT_AMOUNT = paymentAmount,
                         DESCRIPTION = $"Payment via {paymentMethod}"
                     }
                 };
 
-                var glEntry = await _journalEntryService.CreateEntryAsync(
+                await _basisPosting.PostEntryAsync(
                     paymentDate,
                     $"Vendor payment for invoice {apInvoiceId}",
                     lineItems,
                     userId,
                     referenceNumber ?? $"AP-PAY-{apInvoiceId}",
                     "AP");
-
-                await _journalEntryService.PostEntryAsync(glEntry.JOURNAL_ENTRY_ID, userId);
 
                 // Create AP_PAYMENT record
                 var payment = new AP_PAYMENT
@@ -104,7 +106,7 @@ namespace Beep.OilandGas.Accounting.Services
                     PAYMENT_AMOUNT = paymentAmount,
                     PAYMENT_METHOD = paymentMethod,
                     CHECK_NUMBER = checkNumber,
-                    ACTIVE_IND = "Y",
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -133,6 +135,11 @@ namespace Beep.OilandGas.Accounting.Services
             }
         }
 
+        private string GetAccountId(string key, string fallback)
+        {
+            return _accountMapping?.GetAccountId(key) ?? fallback;
+        }
+
         /// <summary>
         /// Get all payments for a specific invoice
         /// </summary>
@@ -153,7 +160,7 @@ namespace Beep.OilandGas.Accounting.Services
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "AR_INVOICE_ID", Operator = "=", FilterValue = apInvoiceId },
+                    new AppFilter { FieldName = "AP_INVOICE_ID", Operator = "=", FilterValue = apInvoiceId },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                 };
 
@@ -262,3 +269,5 @@ namespace Beep.OilandGas.Accounting.Services
         }
     }
 }
+
+

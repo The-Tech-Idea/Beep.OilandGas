@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -108,7 +108,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             }
         }
 
-        public async Task<List<AssetAccessDTO>> GetUserAccessibleAssetsAsync(string userId, string? assetType = null, string? organizationId = null, bool includeInherited = true)
+        public async Task<List<AssetAccess>> GetUserAccessibleAssetsAsync(string userId, string? assetType = null, string? organizationId = null, bool includeInherited = true)
         {
             var filters = new List<AppFilter>
             {
@@ -131,11 +131,11 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                 typeof(object), _connectionName, "USER_ASSET_ACCESS");
 
             var results = await repo.GetAsync(filters);
-            var assetAccessList = new List<AssetAccessDTO>();
+            var assetAccessList = new List<AssetAccess>();
 
             foreach (var result in results ?? Enumerable.Empty<object>())
             {
-                assetAccessList.Add(new AssetAccessDTO
+                assetAccessList.Add(new AssetAccess
                 {
                     UserId = GetPropertyValue(result, "USER_ID")?.ToString() ?? string.Empty,
                     AssetType = GetPropertyValue(result, "ASSET_TYPE")?.ToString() ?? string.Empty,
@@ -150,7 +150,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             // If includeInherited, add child assets based on hierarchy
             if (includeInherited)
             {
-                var inheritedAssets = new List<AssetAccessDTO>();
+                var inheritedAssets = new List<AssetAccess>();
 
                 foreach (var assetAccess in assetAccessList.Where(a => a.Inherit && a.Active))
                 {
@@ -171,7 +171,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                             var wellId = GetPropertyValue(well, "WELL_ID")?.ToString();
                             if (!string.IsNullOrEmpty(wellId) && !assetAccessList.Any(a => a.AssetId == wellId && a.AssetType == "WELL"))
                             {
-                                inheritedAssets.Add(new AssetAccessDTO
+                                inheritedAssets.Add(new AssetAccess
                                 {
                                     UserId = userId,
                                     AssetType = "WELL",
@@ -198,7 +198,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                             var poolId = GetPropertyValue(pool, "POOL_ID")?.ToString();
                             if (!string.IsNullOrEmpty(poolId) && !assetAccessList.Any(a => a.AssetId == poolId && a.AssetType == "POOL"))
                             {
-                                inheritedAssets.Add(new AssetAccessDTO
+                                inheritedAssets.Add(new AssetAccess
                                 {
                                     UserId = userId,
                                     AssetType = "POOL",
@@ -225,7 +225,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                             var facilityId = GetPropertyValue(facility, "FACILITY_ID")?.ToString();
                             if (!string.IsNullOrEmpty(facilityId) && !assetAccessList.Any(a => a.AssetId == facilityId && a.AssetType == "FACILITY"))
                             {
-                                inheritedAssets.Add(new AssetAccessDTO
+                                inheritedAssets.Add(new AssetAccess
                                 {
                                     UserId = userId,
                                     AssetType = "FACILITY",
@@ -255,7 +255,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                             var wellId = GetPropertyValue(well, "WELL_ID")?.ToString();
                             if (!string.IsNullOrEmpty(wellId) && !assetAccessList.Any(a => a.AssetId == wellId && a.AssetType == "WELL"))
                             {
-                                inheritedAssets.Add(new AssetAccessDTO
+                                inheritedAssets.Add(new AssetAccess
                                 {
                                     UserId = userId,
                                     AssetType = "WELL",

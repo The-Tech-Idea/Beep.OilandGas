@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.FlashCalculations;
-using Beep.OilandGas.Models.NodalAnalysis;
-using Beep.OilandGas.Models.EconomicAnalysis;
+using Beep.OilandGas.Models.Data.FlashCalculations;
+using Beep.OilandGas.Models.Data.NodalAnalysis;
+using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;

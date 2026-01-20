@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -16,7 +16,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="wellUWI">Well UWI</param>
         /// <param name="analysisParameters">Analysis parameters</param>
         /// <returns>Nodal analysis result</returns>
-        Task<NodalAnalysisResultDto> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParametersDto analysisParameters);
+        Task<NodalAnalysisRunResult> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParameters analysisParameters);
 
         /// <summary>
         /// Optimizes well system based on nodal analysis.
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="wellUWI">Well UWI</param>
         /// <param name="optimizationGoals">Optimization goals</param>
         /// <returns>Optimization result</returns>
-        Task<OptimizationResultDto> OptimizeSystemAsync(string wellUWI, OptimizationGoalsDto optimizationGoals);
+        Task<OptimizationResult> OptimizeSystemAsync(string wellUWI, OptimizationGoals optimizationGoals);
 
         /// <summary>
         /// Saves nodal analysis result to database.
@@ -32,14 +32,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="result">Analysis result</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Task</returns>
-        Task SaveAnalysisResultAsync(NodalAnalysisResultDto result, string userId);
+        Task SaveAnalysisResultAsync(NodalAnalysisRunResult result, string userId);
 
         /// <summary>
         /// Gets nodal analysis history for a well.
         /// </summary>
         /// <param name="wellUWI">Well UWI</param>
         /// <returns>List of analysis results</returns>
-        Task<List<NodalAnalysisResultDto>> GetAnalysisHistoryAsync(string wellUWI);
+        Task<List<NodalAnalysisRunResult>> GetAnalysisHistoryAsync(string wellUWI);
     }
 }
 

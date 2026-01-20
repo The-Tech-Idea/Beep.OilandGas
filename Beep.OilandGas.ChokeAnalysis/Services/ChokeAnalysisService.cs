@@ -1,6 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.ChokeAnalysis;
+using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ChokeAnalysis.Calculations;
 using Beep.OilandGas.ChokeAnalysis.Validation;

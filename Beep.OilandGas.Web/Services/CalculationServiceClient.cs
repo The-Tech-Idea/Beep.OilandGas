@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.GasLift;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.EconomicAnalysis;
+using Beep.OilandGas.Models.Data.GasLift;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -79,7 +79,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveGasLiftDesignAsync(GasLiftDesignDto design, string? userId = null)
+        public async Task<bool> SaveGasLiftDesignAsync(GasLiftDesign design, string? userId = null)
         {
             try
             {
@@ -97,18 +97,18 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GasLiftPerformanceDto> GetGasLiftPerformanceAsync(string wellUWI)
+        public async Task<GasLiftPerformance> GetGasLiftPerformanceAsync(string wellUWI)
         {
             try
             {
-                var result = await _apiClient.GetAsync<GasLiftPerformanceDto>(
+                var result = await _apiClient.GetAsync<GasLiftPerformance>(
                     $"/api/gaslift/performance/{Uri.EscapeDataString(wellUWI)}");
-                return result ?? new GasLiftPerformanceDto { WellUWI = wellUWI };
+                return result ?? new GasLiftPerformance { WellUWI = wellUWI };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting gas lift performance for well {WellUWI}", wellUWI);
-                return new GasLiftPerformanceDto { WellUWI = wellUWI };
+                return new GasLiftPerformance { WellUWI = wellUWI };
             }
         }
 
@@ -116,7 +116,7 @@ namespace Beep.OilandGas.Web.Services
 
         #region Nodal Analysis Operations
 
-        public async Task<NodalAnalysisResultDto> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParametersDto analysisParameters)
+        public async Task<NodalAnalysisRunResult> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParameters analysisParameters)
         {
             try
             {
@@ -125,7 +125,7 @@ namespace Beep.OilandGas.Web.Services
                     WellUWI = wellUWI,
                     AnalysisParameters = analysisParameters
                 };
-                var result = await _apiClient.PostAsync<object, NodalAnalysisResultDto>(
+                var result = await _apiClient.PostAsync<object, NodalAnalysisRunResult>(
                     "/api/nodalanalysis/analyze", request);
                 return result ?? throw new InvalidOperationException("Failed to perform nodal analysis");
             }
@@ -136,7 +136,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<OptimizationResultDto> OptimizeSystemAsync(string wellUWI, OptimizationGoalsDto optimizationGoals)
+        public async Task<OptimizationResult> OptimizeSystemAsync(string wellUWI, OptimizationGoals optimizationGoals)
         {
             try
             {
@@ -145,7 +145,7 @@ namespace Beep.OilandGas.Web.Services
                     WellUWI = wellUWI,
                     OptimizationGoals = optimizationGoals
                 };
-                var result = await _apiClient.PostAsync<object, OptimizationResultDto>(
+                var result = await _apiClient.PostAsync<object, OptimizationResult>(
                     "/api/nodalanalysis/optimize", request);
                 return result ?? throw new InvalidOperationException("Failed to optimize system");
             }
@@ -156,7 +156,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveNodalAnalysisResultAsync(NodalAnalysisResultDto result, string? userId = null)
+        public async Task<bool> SaveNodalAnalysisResultAsync(NodalAnalysisRunResult result, string? userId = null)
         {
             try
             {
@@ -174,18 +174,18 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<List<NodalAnalysisResultDto>> GetNodalAnalysisHistoryAsync(string wellUWI)
+        public async Task<List<NodalAnalysisRunResult>> GetNodalAnalysisHistoryAsync(string wellUWI)
         {
             try
             {
-                var result = await _apiClient.GetAsync<List<NodalAnalysisResultDto>>(
+                var result = await _apiClient.GetAsync<List<NodalAnalysisRunResult>>(
                     $"/api/nodalanalysis/history/{Uri.EscapeDataString(wellUWI)}");
-                return result ?? new List<NodalAnalysisResultDto>();
+                return result ?? new List<NodalAnalysisRunResult>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting nodal analysis history for well {WellUWI}", wellUWI);
-                return new List<NodalAnalysisResultDto>();
+                return new List<NodalAnalysisRunResult>();
             }
         }
 
@@ -193,7 +193,7 @@ namespace Beep.OilandGas.Web.Services
 
         #region Production Forecasting Operations
 
-        public async Task<ProductionForecastResultDto> GenerateForecastAsync(string? wellUWI, string? fieldId, string forecastMethod, int forecastPeriod)
+        public async Task<ProductionForecastResult> GenerateForecastAsync(string? wellUWI, string? fieldId, string forecastMethod, int forecastPeriod)
         {
             try
             {
@@ -204,7 +204,7 @@ namespace Beep.OilandGas.Web.Services
                     ForecastMethod = forecastMethod,
                     ForecastPeriod = forecastPeriod
                 };
-                var result = await _apiClient.PostAsync<object, ProductionForecastResultDto>(
+                var result = await _apiClient.PostAsync<object, ProductionForecastResult>(
                     "/api/productionforecasting/generate", request);
                 return result ?? throw new InvalidOperationException("Failed to generate forecast");
             }
@@ -215,7 +215,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<DeclineCurveAnalysisDto> PerformDeclineCurveAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate)
+        public async Task<DeclineCurveAnalysis> PerformDeclineCurveAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate)
         {
             try
             {
@@ -225,7 +225,7 @@ namespace Beep.OilandGas.Web.Services
                     StartDate = startDate,
                     EndDate = endDate
                 };
-                var result = await _apiClient.PostAsync<object, DeclineCurveAnalysisDto>(
+                var result = await _apiClient.PostAsync<object, DeclineCurveAnalysis>(
                     "/api/productionforecasting/decline-curve", request);
                 return result ?? throw new InvalidOperationException("Failed to perform decline curve analysis");
             }
@@ -236,7 +236,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveForecastAsync(ProductionForecastResultDto forecast, string? userId = null)
+        public async Task<bool> SaveForecastAsync(ProductionForecastResult forecast, string? userId = null)
         {
             try
             {
@@ -258,7 +258,7 @@ namespace Beep.OilandGas.Web.Services
 
         #region Pipeline Analysis Operations
 
-        public async Task<PipelineAnalysisResultDto> AnalyzePipelineFlowAsync(string pipelineId, decimal flowRate, decimal inletPressure)
+        public async Task<PipelineAnalysisResult> AnalyzePipelineFlowAsync(string pipelineId, decimal flowRate, decimal inletPressure)
         {
             try
             {
@@ -268,7 +268,7 @@ namespace Beep.OilandGas.Web.Services
                     FlowRate = flowRate,
                     InletPressure = inletPressure
                 };
-                var result = await _apiClient.PostAsync<object, PipelineAnalysisResultDto>(
+                var result = await _apiClient.PostAsync<object, PipelineAnalysisResult>(
                     "/api/pipelineanalysis/analyze-flow", request);
                 return result ?? throw new InvalidOperationException("Failed to analyze pipeline flow");
             }
@@ -279,7 +279,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<PressureDropResultDto> CalculatePressureDropAsync(string pipelineId, decimal flowRate)
+        public async Task<PressureDropResult> CalculatePressureDropAsync(string pipelineId, decimal flowRate)
         {
             try
             {
@@ -288,7 +288,7 @@ namespace Beep.OilandGas.Web.Services
                     PipelineId = pipelineId,
                     FlowRate = flowRate
                 };
-                var result = await _apiClient.PostAsync<object, PressureDropResultDto>(
+                var result = await _apiClient.PostAsync<object, PressureDropResult>(
                     "/api/pipelineanalysis/pressure-drop", request);
                 return result ?? throw new InvalidOperationException("Failed to calculate pressure drop");
             }
@@ -299,7 +299,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SavePipelineAnalysisResultAsync(PipelineAnalysisResultDto result, string? userId = null)
+        public async Task<bool> SavePipelineAnalysisResultAsync(PipelineAnalysisResult result, string? userId = null)
         {
             try
             {

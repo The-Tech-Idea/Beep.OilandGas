@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class AFE : Entity,IPPDMEntity
-    {
+    public partial class AFE : ModelEntityBase {
         private System.String AFE_IDValue;
         public System.String AFE_ID
         {

@@ -15,37 +15,37 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         /// <summary>
         /// Analyzes pipeline flow conditions
         /// </summary>
-        Task<PipelineAnalysisResultDto> AnalyzePipelineFlowAsync(string pipelineId, decimal flowRate, decimal inletPressure);
+        Task<PipelineAnalysisResult> AnalyzePipelineFlowAsync(string pipelineId, decimal flowRate, decimal inletPressure);
 
         /// <summary>
         /// Calculates pressure drop across pipeline segment
         /// </summary>
-        Task<PressureDropResultDto> CalculatePressureDropAsync(string pipelineId, decimal flowRate);
+        Task<PressureDropResult> CalculatePressureDropAsync(string pipelineId, decimal flowRate);
 
         /// <summary>
         /// Determines flow regime (Laminar, Turbulent, Transitional)
         /// </summary>
-        Task<FlowRegimeAnalysisDto> AnalyzeFlowRegimeAsync(string pipelineId, FlowRegimeRequestDto request);
+        Task<FlowRegimeAnalysis> AnalyzeFlowRegimeAsync(string pipelineId, FlowRegimeRequest request);
 
         /// <summary>
         /// Calculates Beggs-Brill correlation for multiphase flow
         /// </summary>
-        Task<MultiphaseFlowResultDto> CalculateBeggsbrillAsync(string pipelineId, MultiphaseFlowRequestDto request);
+        Task<MultiphaseFlowResult> CalculateBeggsbrillAsync(string pipelineId, MultiphaseFlowRequest request);
 
         /// <summary>
         /// Calculates Hagedorn-Brown correlation for multiphase flow
         /// </summary>
-        Task<MultiphaseFlowResultDto> CalculateHagedornBrownAsync(string pipelineId, MultiphaseFlowRequestDto request);
+        Task<MultiphaseFlowResult> CalculateHagedornBrownAsync(string pipelineId, MultiphaseFlowRequest request);
 
         /// <summary>
         /// Calculates Duns-Ros correlation for vertical flow
         /// </summary>
-        Task<MultiphaseFlowResultDto> CalculateDunsRosAsync(string pipelineId, MultiphaseFlowRequestDto request);
+        Task<MultiphaseFlowResult> CalculateDunsRosAsync(string pipelineId, MultiphaseFlowRequest request);
 
         /// <summary>
         /// Performs comprehensive pipeline sizing analysis
         /// </summary>
-        Task<PipelineSizingDto> PerformPipelineSizingAsync(string pipelineId, PipelineSizingRequestDto request);
+        Task<PipelineSizing> PerformPipelineSizingAsync(string pipelineId, PipelineSizingRequest request);
 
         #endregion
 
@@ -54,27 +54,27 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         /// <summary>
         /// Analyzes erosion potential
         /// </summary>
-        Task<ErosionAnalysisDto> AnalyzeErosionAsync(string pipelineId, ErosionRequestDto request);
+        Task<ErosionAnalysis> AnalyzeErosionAsync(string pipelineId, ErosionRequest request);
 
         /// <summary>
         /// Calculates erosion velocity
         /// </summary>
-        Task<ErosionVelocityResultDto> CalculateErosionVelocityAsync(string pipelineId, ErosionVelocityRequestDto request);
+        Task<ErosionVelocityResult> CalculateErosionVelocityAsync(string pipelineId, ErosionVelocityRequest request);
 
         /// <summary>
         /// Analyzes corrosion risk factors
         /// </summary>
-        Task<CorrosionAnalysisDto> AnalyzeCorrosionRiskAsync(string pipelineId, CorrosionRequestDto request);
+        Task<CorrosionAnalysis> AnalyzeCorrosionRiskAsync(string pipelineId, CorrosionRequest request);
 
         /// <summary>
         /// Estimates corrosion rate
         /// </summary>
-        Task<CorrosionRateResultDto> EstimateCorrosionRateAsync(string pipelineId, CorrosionRateRequestDto request);
+        Task<CorrosionRateResult> EstimateCorrosionRateAsync(string pipelineId, CorrosionRateRequest request);
 
         /// <summary>
         /// Assesses pipeline material compatibility
         /// </summary>
-        Task<MaterialCompatibilityDto> AssessMaterialCompatibilityAsync(string pipelineId, MaterialRequestDto request);
+        Task<MaterialCompatibility> AssessMaterialCompatibilityAsync(string pipelineId, MaterialRequest request);
 
         #endregion
 
@@ -83,22 +83,22 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         /// <summary>
         /// Analyzes slug flow conditions
         /// </summary>
-        Task<SlugFlowAnalysisDto> AnalyzeSlugFlowAsync(string pipelineId, SlugFlowRequestDto request);
+        Task<SlugFlowAnalysis> AnalyzeSlugFlowAsync(string pipelineId, SlugFlowRequest request);
 
         /// <summary>
         /// Predicts slug frequency
         /// </summary>
-        Task<SlugFrequencyResultDto> PredictSlugFrequencyAsync(string pipelineId, SlugFrequencyRequestDto request);
+        Task<SlugFrequencyResult> PredictSlugFrequencyAsync(string pipelineId, SlugFrequencyRequest request);
 
         /// <summary>
         /// Analyzes slug formation mechanisms
         /// </summary>
-        Task<SlugFormationAnalysisDto> AnalyzeSlugFormationAsync(string pipelineId, SlugFormationRequestDto request);
+        Task<SlugFormationAnalysis> AnalyzeSlugFormationAsync(string pipelineId, SlugFormationRequest request);
 
         /// <summary>
         /// Evaluates slug mitigation strategies
         /// </summary>
-        Task<SlugMitigationDto> EvaluateSlugMitigationAsync(string pipelineId, List<string> mitigationStrategies);
+        Task<SlugMitigation> EvaluateSlugMitigationAsync(string pipelineId, List<string> mitigationStrategies);
 
         #endregion
 
@@ -107,27 +107,27 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         /// <summary>
         /// Detects potential leaks
         /// </summary>
-        Task<LeakDetectionResultDto> DetectLeaksAsync(string pipelineId, LeakDetectionRequestDto request);
+        Task<LeakDetectionResult> DetectLeaksAsync(string pipelineId, LeakDetectionRequest request);
 
         /// <summary>
         /// Analyzes pressure profile for anomalies
         /// </summary>
-        Task<PressureAnomalyDto> AnalyzePressureAnomaliesAsync(string pipelineId, PressureAnomalyRequestDto request);
+        Task<PressureAnomaly> AnalyzePressureAnomaliesAsync(string pipelineId, PressureAnomalyRequest request);
 
         /// <summary>
         /// Performs acoustic leak detection
         /// </summary>
-        Task<AcousticDetectionResultDto> PerformAcousticLeakDetectionAsync(string pipelineId, AcousticRequestDto request);
+        Task<AcousticDetectionResult> PerformAcousticLeakDetectionAsync(string pipelineId, AcousticRequest request);
 
         /// <summary>
         /// Diagnoses operational issues
         /// </summary>
-        Task<DiagnosisResultDto> DiagnoseOperationalIssuesAsync(string pipelineId, DiagnosisRequestDto request);
+        Task<DiagnosisResult> DiagnoseOperationalIssuesAsync(string pipelineId, DiagnosisRequest request);
 
         /// <summary>
         /// Calculates gas loss rate
         /// </summary>
-        Task<GasLossRateDto> CalculateGasLossRateAsync(string pipelineId, decimal pressureDifference);
+        Task<GasLossRate> CalculateGasLossRateAsync(string pipelineId, decimal pressureDifference);
 
         #endregion
 
@@ -136,22 +136,22 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         /// <summary>
         /// Assesses pipeline integrity
         /// </summary>
-        Task<IntegrityAssessmentDto> AssessIntegrityAsync(string pipelineId, IntegrityRequestDto request);
+        Task<IntegrityAssessment> AssessIntegrityAsync(string pipelineId, IntegrityRequest request);
 
         /// <summary>
         /// Performs stress analysis
         /// </summary>
-        Task<StressAnalysisDto> PerformStressAnalysisAsync(string pipelineId, StressRequestDto request);
+        Task<StressAnalysis> PerformStressAnalysisAsync(string pipelineId, StressRequest request);
 
         /// <summary>
         /// Evaluates wall thickness
         /// </summary>
-        Task<WallThicknessAnalysisDto> EvaluateWallThicknessAsync(string pipelineId, WallThicknessRequestDto request);
+        Task<WallThicknessAnalysis> EvaluateWallThicknessAsync(string pipelineId, WallThicknessRequest request);
 
         /// <summary>
         /// Assesses pipeline stability
         /// </summary>
-        Task<StabilityAssessmentDto> AssessStabilityAsync(string pipelineId, StabilityRequestDto request);
+        Task<StabilityAssessment> AssessStabilityAsync(string pipelineId, StabilityRequest request);
 
         #endregion
 
@@ -160,27 +160,27 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         /// <summary>
         /// Optimizes pipeline flow parameters
         /// </summary>
-        Task<OptimizationResultDto> OptimizeFlowParametersAsync(string pipelineId, OptimizationRequestDto request);
+        Task<OptimizationResult> OptimizeFlowParametersAsync(string pipelineId, OptimizationRequest request);
 
         /// <summary>
         /// Recommends optimal pipeline diameter
         /// </summary>
-        Task<DiameterRecommendationDto> RecommendOptimalDiameterAsync(string pipelineId, DiameterRequestDto request);
+        Task<DiameterRecommendation> RecommendOptimalDiameterAsync(string pipelineId, DiameterRequest request);
 
         /// <summary>
         /// Optimizes flow rate for maximum efficiency
         /// </summary>
-        Task<FlowRateOptimizationDto> OptimizeFlowRateAsync(string pipelineId, FlowOptimizationRequestDto request);
+        Task<FlowRateOptimization> OptimizeFlowRateAsync(string pipelineId, FlowOptimizationRequest request);
 
         /// <summary>
         /// Performs sensitivity analysis on pipeline parameters
         /// </summary>
-        Task<SensitivityAnalysisDto> PerformSensitivityAnalysisAsync(string pipelineId, SensitivityRequestDto request);
+        Task<SensitivityAnalysis> PerformSensitivityAnalysisAsync(string pipelineId, SensitivityRequest request);
 
         /// <summary>
         /// Recommends compressor/pump sizing
         /// </summary>
-        Task<PumpCompressorSizingDto> RecommendPumpCompressorSizingAsync(string pipelineId, PumpCompressorRequestDto request);
+        Task<PumpCompressorSizing> RecommendPumpCompressorSizingAsync(string pipelineId, PumpCompressorRequest request);
 
         #endregion
 
@@ -189,22 +189,22 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         /// <summary>
         /// Performs steady-state hydraulic simulation
         /// </summary>
-        Task<HydraulicSimulationResultDto> SimulateSteadyStateAsync(string pipelineId, SimulationRequestDto request);
+        Task<HydraulicSimulationResult> SimulateSteadyStateAsync(string pipelineId, SimulationRequest request);
 
         /// <summary>
         /// Performs transient analysis
         /// </summary>
-        Task<TransientAnalysisResultDto> PerformTransientAnalysisAsync(string pipelineId, TransientRequestDto request);
+        Task<TransientAnalysisResult> PerformTransientAnalysisAsync(string pipelineId, TransientRequest request);
 
         /// <summary>
         /// Analyzes temperature effects on flow
         /// </summary>
-        Task<TemperatureEffectDto> AnalyzeTemperatureEffectsAsync(string pipelineId, TemperatureRequestDto request);
+        Task<TemperatureEffect> AnalyzeTemperatureEffectsAsync(string pipelineId, TemperatureRequest request);
 
         /// <summary>
         /// Evaluates pigging operations
         /// </summary>
-        Task<PiggingAnalysisDto> EvaluatePiggingOperationsAsync(string pipelineId, PiggingRequestDto request);
+        Task<PiggingAnalysis> EvaluatePiggingOperationsAsync(string pipelineId, PiggingRequest request);
 
         #endregion
 
@@ -213,22 +213,22 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         /// <summary>
         /// Saves pipeline analysis results
         /// </summary>
-        Task SaveAnalysisResultsAsync(PipelineAnalysisResultDto results, string userId);
+        Task SaveAnalysisResultsAsync(PipelineAnalysisResult results, string userId);
 
         /// <summary>
         /// Retrieves pipeline analysis history
         /// </summary>
-        Task<List<PipelineAnalysisResultDto>> GetAnalysisHistoryAsync(string pipelineId, DateTime startDate, DateTime endDate);
+        Task<List<PipelineAnalysisResult>> GetAnalysisHistoryAsync(string pipelineId, DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Updates pipeline configuration
         /// </summary>
-        Task UpdatePipelineConfigurationAsync(PipelineConfigurationDto config, string userId);
+        Task UpdatePipelineConfigurationAsync(PipelineConfiguration config, string userId);
 
         /// <summary>
         /// Retrieves pipeline configuration
         /// </summary>
-        Task<PipelineConfigurationDto?> GetPipelineConfigurationAsync(string pipelineId);
+        Task<PipelineConfiguration?> GetPipelineConfigurationAsync(string pipelineId);
 
         #endregion
 
@@ -237,17 +237,17 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
         /// <summary>
         /// Generates comprehensive pipeline analysis report
         /// </summary>
-        Task<PipelineReportDto> GenerateAnalysisReportAsync(string pipelineId, ReportRequestDto request);
+        Task<PipelineReport> GenerateAnalysisReportAsync(string pipelineId, ReportRequest request);
 
         /// <summary>
         /// Generates pressure profile report
         /// </summary>
-        Task<PressureProfileReportDto> GeneratePressureProfileReportAsync(string pipelineId, PressureReportRequestDto request);
+        Task<PressureProfileReport> GeneratePressureProfileReportAsync(string pipelineId, PressureReportRequest request);
 
         /// <summary>
         /// Generates integrity assessment report
         /// </summary>
-        Task<IntegrityReportDto> GenerateIntegrityReportAsync(string pipelineId, IntegrityReportRequestDto request);
+        Task<IntegrityReport> GenerateIntegrityReportAsync(string pipelineId, IntegrityReportRequest request);
 
         /// <summary>
         /// Exports analysis data
@@ -262,7 +262,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pipeline analysis result DTO
     /// </summary>
-    public class PipelineAnalysisResultDto
+    public class PipelineAnalysisResult
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string PipelineId { get; set; } = string.Empty;
@@ -280,7 +280,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pressure drop result DTO
     /// </summary>
-    public class PressureDropResultDto
+    public class PressureDropResult
     {
         public decimal PressureDrop { get; set; }
         public decimal FrictionFactor { get; set; }
@@ -294,7 +294,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Flow regime analysis DTO
     /// </summary>
-    public class FlowRegimeAnalysisDto
+    public class FlowRegimeAnalysis
     {
         public string PipelineId { get; set; } = string.Empty;
         public string FlowRegime { get; set; } = string.Empty;
@@ -308,7 +308,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Flow regime request DTO
     /// </summary>
-    public class FlowRegimeRequestDto
+    public class FlowRegimeRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal FlowRate { get; set; }
@@ -321,7 +321,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Multiphase flow result DTO
     /// </summary>
-    public class MultiphaseFlowResultDto
+    public class MultiphaseFlowResult
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal PressureDrop { get; set; }
@@ -336,7 +336,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Multiphase flow request DTO
     /// </summary>
-    public class MultiphaseFlowRequestDto
+    public class MultiphaseFlowRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal OilRate { get; set; }
@@ -352,7 +352,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pipeline sizing DTO
     /// </summary>
-    public class PipelineSizingDto
+    public class PipelineSizing
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal RecommendedDiameter { get; set; }
@@ -368,7 +368,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pipeline sizing request DTO
     /// </summary>
-    public class PipelineSizingRequestDto
+    public class PipelineSizingRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal DesignFlowRate { get; set; }
@@ -385,21 +385,21 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Erosion analysis DTO
     /// </summary>
-    public class ErosionAnalysisDto
+    public class ErosionAnalysis
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal ErosionVelocity { get; set; }
         public decimal ActualVelocity { get; set; }
         public string ErosionRisk { get; set; } = string.Empty; // Low, Medium, High, Critical
         public decimal SafetyMargin { get; set; }
-        public List<ErosionSpotDto> HighRiskSpots { get; set; } = new();
+        public List<ErosionSpot> HighRiskSpots { get; set; } = new();
         public List<string> Recommendations { get; set; } = new();
     }
 
     /// <summary>
     /// Erosion spot DTO
     /// </summary>
-    public class ErosionSpotDto
+    public class ErosionSpot
     {
         public string LocationDescription { get; set; } = string.Empty;
         public decimal ErosionRating { get; set; }
@@ -409,7 +409,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Erosion request DTO
     /// </summary>
-    public class ErosionRequestDto
+    public class ErosionRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal FlowRate { get; set; }
@@ -422,7 +422,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Erosion velocity result DTO
     /// </summary>
-    public class ErosionVelocityResultDto
+    public class ErosionVelocityResult
     {
         public decimal ErosionVelocity { get; set; }
         public decimal ActualVelocity { get; set; }
@@ -433,7 +433,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Erosion velocity request DTO
     /// </summary>
-    public class ErosionVelocityRequestDto
+    public class ErosionVelocityRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public string PipeMaterial { get; set; } = string.Empty;
@@ -444,12 +444,12 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Corrosion analysis DTO
     /// </summary>
-    public class CorrosionAnalysisDto
+    public class CorrosionAnalysis
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal CorrosionRisk { get; set; } // 0-100 scale
         public string RiskLevel { get; set; } = string.Empty; // Low, Medium, High, Critical
-        public List<CorrosionFactorDto> CorrosionFactors { get; set; } = new();
+        public List<CorrosionFactor> CorrosionFactors { get; set; } = new();
         public List<string> MitigationStrategies { get; set; } = new();
         public string RecommendedMaterial { get; set; } = string.Empty;
     }
@@ -457,7 +457,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Corrosion factor DTO
     /// </summary>
-    public class CorrosionFactorDto
+    public class CorrosionFactor
     {
         public string FactorName { get; set; } = string.Empty;
         public decimal ContributionPercent { get; set; }
@@ -467,7 +467,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Corrosion request DTO
     /// </summary>
-    public class CorrosionRequestDto
+    public class CorrosionRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public string PipeMaterial { get; set; } = string.Empty;
@@ -482,7 +482,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Corrosion rate result DTO
     /// </summary>
-    public class CorrosionRateResultDto
+    public class CorrosionRateResult
     {
         public decimal CorrosionRate { get; set; } // mm/year or mils/year
         public string Unit { get; set; } = "mm/year";
@@ -494,19 +494,19 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Corrosion rate request DTO
     /// </summary>
-    public class CorrosionRateRequestDto
+    public class CorrosionRateRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public string PipeMaterial { get; set; } = string.Empty;
         public decimal CurrentWallThickness { get; set; }
         public DateTime LastInspectionDate { get; set; }
-        public List<CorrosionDataPointDto> HistoricalData { get; set; } = new();
+        public List<CorrosionDataPoint> HistoricalData { get; set; } = new();
     }
 
     /// <summary>
     /// Corrosion data point DTO
     /// </summary>
-    public class CorrosionDataPointDto
+    public class CorrosionDataPoint
     {
         public DateTime MeasurementDate { get; set; }
         public decimal WallThickness { get; set; }
@@ -515,7 +515,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Material compatibility DTO
     /// </summary>
-    public class MaterialCompatibilityDto
+    public class MaterialCompatibility
     {
         public string PipelineId { get; set; } = string.Empty;
         public string CurrentMaterial { get; set; } = string.Empty;
@@ -528,7 +528,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Material request DTO
     /// </summary>
-    public class MaterialRequestDto
+    public class MaterialRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public string ProposedMaterial { get; set; } = string.Empty;
@@ -544,7 +544,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Slug flow analysis DTO
     /// </summary>
-    public class SlugFlowAnalysisDto
+    public class SlugFlowAnalysis
     {
         public string PipelineId { get; set; } = string.Empty;
         public bool IsSlugFlowPresent { get; set; }
@@ -558,7 +558,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Slug flow request DTO
     /// </summary>
-    public class SlugFlowRequestDto
+    public class SlugFlowRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal OilRate { get; set; }
@@ -572,7 +572,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Slug frequency result DTO
     /// </summary>
-    public class SlugFrequencyResultDto
+    public class SlugFrequencyResult
     {
         public decimal SlugFrequency { get; set; }
         public string FrequencyUnit { get; set; } = "slugs/hour";
@@ -584,7 +584,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Slug frequency request DTO
     /// </summary>
-    public class SlugFrequencyRequestDto
+    public class SlugFrequencyRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal OilRate { get; set; }
@@ -596,10 +596,10 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Slug formation analysis DTO
     /// </summary>
-    public class SlugFormationAnalysisDto
+    public class SlugFormationAnalysis
     {
         public string PipelineId { get; set; } = string.Empty;
-        public List<SlugMechanismDto> FormationMechanisms { get; set; } = new();
+        public List<SlugMechanism> FormationMechanisms { get; set; } = new();
         public string DominantMechanism { get; set; } = string.Empty;
         public decimal PredictedSlugFrequency { get; set; }
     }
@@ -607,7 +607,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Slug mechanism DTO
     /// </summary>
-    public class SlugMechanismDto
+    public class SlugMechanism
     {
         public string MechanismType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -617,7 +617,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Slug formation request DTO
     /// </summary>
-    public class SlugFormationRequestDto
+    public class SlugFormationRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal OilRate { get; set; }
@@ -629,10 +629,10 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Slug mitigation DTO
     /// </summary>
-    public class SlugMitigationDto
+    public class SlugMitigation
     {
         public string PipelineId { get; set; } = string.Empty;
-        public List<MitigationStrategyDto> Strategies { get; set; } = new();
+        public List<MitigationStrategy> Strategies { get; set; } = new();
         public string BestStrategy { get; set; } = string.Empty;
         public string ImplementationCost { get; set; } = string.Empty;
     }
@@ -640,7 +640,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Mitigation strategy DTO
     /// </summary>
-    public class MitigationStrategyDto
+    public class MitigationStrategy
     {
         public string StrategyName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -655,11 +655,11 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Leak detection result DTO
     /// </summary>
-    public class LeakDetectionResultDto
+    public class LeakDetectionResult
     {
         public string PipelineId { get; set; } = string.Empty;
         public bool LeakDetected { get; set; }
-        public List<LeakLocationDto> LeakLocations { get; set; } = new();
+        public List<LeakLocation> LeakLocations { get; set; } = new();
         public decimal EstimatedLeakRate { get; set; }
         public DateTime DetectionTime { get; set; }
         public string RecommendedAction { get; set; } = string.Empty;
@@ -668,7 +668,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Leak location DTO
     /// </summary>
-    public class LeakLocationDto
+    public class LeakLocation
     {
         public string LocationDescription { get; set; } = string.Empty;
         public decimal Distance { get; set; }
@@ -679,7 +679,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Leak detection request DTO
     /// </summary>
-    public class LeakDetectionRequestDto
+    public class LeakDetectionRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
@@ -690,18 +690,18 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pressure anomaly DTO
     /// </summary>
-    public class PressureAnomalyDto
+    public class PressureAnomaly
     {
         public string PipelineId { get; set; } = string.Empty;
         public bool AnomalyDetected { get; set; }
-        public List<AnomalyLocationDto> AnomalyLocations { get; set; } = new();
+        public List<AnomalyLocation> AnomalyLocations { get; set; } = new();
         public string AnomalyType { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Anomaly location DTO
     /// </summary>
-    public class AnomalyLocationDto
+    public class AnomalyLocation
     {
         public decimal Distance { get; set; }
         public decimal PressureDeviation { get; set; }
@@ -711,7 +711,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pressure anomaly request DTO
     /// </summary>
-    public class PressureAnomalyRequestDto
+    public class PressureAnomalyRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
@@ -722,18 +722,18 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Acoustic detection result DTO
     /// </summary>
-    public class AcousticDetectionResultDto
+    public class AcousticDetectionResult
     {
         public string PipelineId { get; set; } = string.Empty;
         public bool LeakDetected { get; set; }
-        public List<AcousticSignalDto> SignalData { get; set; } = new();
+        public List<AcousticSignal> SignalData { get; set; } = new();
         public string MostLikelyLocation { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Acoustic signal DTO
     /// </summary>
-    public class AcousticSignalDto
+    public class AcousticSignal
     {
         public decimal Frequency { get; set; }
         public decimal Amplitude { get; set; }
@@ -743,7 +743,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Acoustic request DTO
     /// </summary>
-    public class AcousticRequestDto
+    public class AcousticRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public DateTime MeasurementDate { get; set; }
@@ -753,10 +753,10 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Diagnosis result DTO
     /// </summary>
-    public class DiagnosisResultDto
+    public class DiagnosisResult
     {
         public string PipelineId { get; set; } = string.Empty;
-        public List<DiagnosedIssueDto> IdentifiedIssues { get; set; } = new();
+        public List<DiagnosedIssue> IdentifiedIssues { get; set; } = new();
         public string OverallStatus { get; set; } = string.Empty;
         public List<string> RecommendedActions { get; set; } = new();
     }
@@ -764,7 +764,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Diagnosed issue DTO
     /// </summary>
-    public class DiagnosedIssueDto
+    public class DiagnosedIssue
     {
         public string IssueType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -775,7 +775,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Diagnosis request DTO
     /// </summary>
-    public class DiagnosisRequestDto
+    public class DiagnosisRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public List<string> SymptomCodes { get; set; } = new();
@@ -785,7 +785,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Gas loss rate DTO
     /// </summary>
-    public class GasLossRateDto
+    public class GasLossRate
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal GasLossRate { get; set; }
@@ -802,19 +802,19 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Integrity assessment DTO
     /// </summary>
-    public class IntegrityAssessmentDto
+    public class IntegrityAssessment
     {
         public string PipelineId { get; set; } = string.Empty;
         public string IntegrityStatus { get; set; } = string.Empty; // Excellent, Good, Fair, Poor, Critical
         public decimal IntegrityScore { get; set; }
-        public List<IntegrityIssueDto> Issues { get; set; } = new();
+        public List<IntegrityIssue> Issues { get; set; } = new();
         public List<string> InspectionRecommendations { get; set; } = new();
     }
 
     /// <summary>
     /// Integrity issue DTO
     /// </summary>
-    public class IntegrityIssueDto
+    public class IntegrityIssue
     {
         public string IssueType { get; set; } = string.Empty;
         public string Severity { get; set; } = string.Empty;
@@ -825,7 +825,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Integrity request DTO
     /// </summary>
-    public class IntegrityRequestDto
+    public class IntegrityRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public DateTime LastInspectionDate { get; set; }
@@ -835,20 +835,20 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Stress analysis DTO
     /// </summary>
-    public class StressAnalysisDto
+    public class StressAnalysis
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal MaximumStress { get; set; }
         public decimal AllowableStress { get; set; }
         public decimal SafetyFactor { get; set; }
         public bool IsSafe { get; set; }
-        public List<StressLocationDto> HighStressAreas { get; set; } = new();
+        public List<StressLocation> HighStressAreas { get; set; } = new();
     }
 
     /// <summary>
     /// Stress location DTO
     /// </summary>
-    public class StressLocationDto
+    public class StressLocation
     {
         public string LocationDescription { get; set; } = string.Empty;
         public decimal StressLevel { get; set; }
@@ -857,7 +857,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Stress request DTO
     /// </summary>
-    public class StressRequestDto
+    public class StressRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal OperatingPressure { get; set; }
@@ -868,7 +868,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Wall thickness analysis DTO
     /// </summary>
-    public class WallThicknessAnalysisDto
+    public class WallThicknessAnalysis
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal CurrentWallThickness { get; set; }
@@ -880,7 +880,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Wall thickness request DTO
     /// </summary>
-    public class WallThicknessRequestDto
+    public class WallThicknessRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal CurrentThickness { get; set; }
@@ -891,7 +891,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Stability assessment DTO
     /// </summary>
-    public class StabilityAssessmentDto
+    public class StabilityAssessment
     {
         public string PipelineId { get; set; } = string.Empty;
         public bool IsStable { get; set; }
@@ -902,7 +902,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Stability request DTO
     /// </summary>
-    public class StabilityRequestDto
+    public class StabilityRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal SoilBearingCapacity { get; set; }
@@ -917,10 +917,10 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Optimization result DTO
     /// </summary>
-    public class OptimizationResultDto
+    public class OptimizationResult
     {
         public string PipelineId { get; set; } = string.Empty;
-        public List<OptimizedParameterDto> OptimizedParameters { get; set; } = new();
+        public List<OptimizedParameter> OptimizedParameters { get; set; } = new();
         public decimal ExpectedCostSavings { get; set; }
         public decimal ProductionGainPercent { get; set; }
         public string Recommendations { get; set; } = string.Empty;
@@ -929,7 +929,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Optimized parameter DTO
     /// </summary>
-    public class OptimizedParameterDto
+    public class OptimizedParameter
     {
         public string ParameterName { get; set; } = string.Empty;
         public decimal CurrentValue { get; set; }
@@ -940,7 +940,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Optimization request DTO
     /// </summary>
-    public class OptimizationRequestDto
+    public class OptimizationRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public List<string> OptimizationObjectives { get; set; } = new();
@@ -950,7 +950,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Diameter recommendation DTO
     /// </summary>
-    public class DiameterRecommendationDto
+    public class DiameterRecommendation
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal RecommendedDiameter { get; set; }
@@ -962,7 +962,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Diameter request DTO
     /// </summary>
-    public class DiameterRequestDto
+    public class DiameterRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal DesignFlowRate { get; set; }
@@ -973,7 +973,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Flow rate optimization DTO
     /// </summary>
-    public class FlowRateOptimizationDto
+    public class FlowRateOptimization
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal OptimalFlowRate { get; set; }
@@ -985,7 +985,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Flow optimization request DTO
     /// </summary>
-    public class FlowOptimizationRequestDto
+    public class FlowOptimizationRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal DesignFlowRate { get; set; }
@@ -995,27 +995,27 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Sensitivity analysis DTO
     /// </summary>
-    public class SensitivityAnalysisDto
+    public class SensitivityAnalysis
     {
         public string PipelineId { get; set; } = string.Empty;
-        public List<SensitivityParameterResultDto> Parameters { get; set; } = new();
+        public List<SensitivityParameterResult> Parameters { get; set; } = new();
         public string AnalysisSummary { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Sensitivity parameter result DTO
     /// </summary>
-    public class SensitivityParameterResultDto
+    public class SensitivityParameterResult
     {
         public string ParameterName { get; set; } = string.Empty;
         public decimal BaseValue { get; set; }
-        public List<SensitivityPointResultDto> Results { get; set; } = new();
+        public List<SensitivityPointResult> Results { get; set; } = new();
     }
 
     /// <summary>
     /// Sensitivity point result DTO
     /// </summary>
-    public class SensitivityPointResultDto
+    public class SensitivityPointResult
     {
         public decimal ParameterValue { get; set; }
         public decimal PressureDrop { get; set; }
@@ -1025,7 +1025,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Sensitivity request DTO
     /// </summary>
-    public class SensitivityRequestDto
+    public class SensitivityRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public List<string> ParametersToAnalyze { get; set; } = new();
@@ -1035,7 +1035,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pump/Compressor sizing DTO
     /// </summary>
-    public class PumpCompressorSizingDto
+    public class PumpCompressorSizing
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal RequiredHP { get; set; }
@@ -1049,7 +1049,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pump/Compressor request DTO
     /// </summary>
-    public class PumpCompressorRequestDto
+    public class PumpCompressorRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal DesignFlowRate { get; set; }
@@ -1065,11 +1065,11 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Hydraulic simulation result DTO
     /// </summary>
-    public class HydraulicSimulationResultDto
+    public class HydraulicSimulationResult
     {
         public string PipelineId { get; set; } = string.Empty;
         public DateTime SimulationDate { get; set; }
-        public List<SimulationNodeDto> Nodes { get; set; } = new();
+        public List<SimulationNode> Nodes { get; set; } = new();
         public decimal MaximumPressure { get; set; }
         public decimal MinimumPressure { get; set; }
         public string Status { get; set; } = string.Empty;
@@ -1078,7 +1078,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Simulation node DTO
     /// </summary>
-    public class SimulationNodeDto
+    public class SimulationNode
     {
         public string NodeName { get; set; } = string.Empty;
         public decimal Distance { get; set; }
@@ -1090,7 +1090,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Simulation request DTO
     /// </summary>
-    public class SimulationRequestDto
+    public class SimulationRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal InletFlowRate { get; set; }
@@ -1102,10 +1102,10 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Transient analysis result DTO
     /// </summary>
-    public class TransientAnalysisResultDto
+    public class TransientAnalysisResult
     {
         public string PipelineId { get; set; } = string.Empty;
-        public List<TransientEventDto> Events { get; set; } = new();
+        public List<TransientEvent> Events { get; set; } = new();
         public decimal MaximumPressureSpike { get; set; }
         public decimal MinimumPressureSpike { get; set; }
     }
@@ -1113,7 +1113,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Transient event DTO
     /// </summary>
-    public class TransientEventDto
+    public class TransientEvent
     {
         public DateTime EventTime { get; set; }
         public decimal Pressure { get; set; }
@@ -1123,7 +1123,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Transient request DTO
     /// </summary>
-    public class TransientRequestDto
+    public class TransientRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public string InitialCondition { get; set; } = string.Empty;
@@ -1133,17 +1133,17 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Temperature effect DTO
     /// </summary>
-    public class TemperatureEffectDto
+    public class TemperatureEffect
     {
         public string PipelineId { get; set; } = string.Empty;
-        public List<TemperatureScenarioDto> Scenarios { get; set; } = new();
+        public List<TemperatureScenario> Scenarios { get; set; } = new();
         public string TemperatureImpact { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Temperature scenario DTO
     /// </summary>
-    public class TemperatureScenarioDto
+    public class TemperatureScenario
     {
         public decimal Temperature { get; set; }
         public decimal FluidDensity { get; set; }
@@ -1154,7 +1154,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Temperature request DTO
     /// </summary>
-    public class TemperatureRequestDto
+    public class TemperatureRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal MinTemperature { get; set; }
@@ -1165,7 +1165,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pigging analysis DTO
     /// </summary>
-    public class PiggingAnalysisDto
+    public class PiggingAnalysis
     {
         public string PipelineId { get; set; } = string.Empty;
         public bool IsSuitableForPigging { get; set; }
@@ -1178,7 +1178,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pigging request DTO
     /// </summary>
-    public class PiggingRequestDto
+    public class PiggingRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal PipelineDiameter { get; set; }
@@ -1193,7 +1193,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pipeline configuration DTO
     /// </summary>
-    public class PipelineConfigurationDto
+    public class PipelineConfiguration
     {
         public string PipelineId { get; set; } = string.Empty;
         public decimal Diameter { get; set; }
@@ -1213,7 +1213,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pipeline report DTO
     /// </summary>
-    public class PipelineReportDto
+    public class PipelineReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string PipelineId { get; set; } = string.Empty;
@@ -1228,7 +1228,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Report request DTO
     /// </summary>
-    public class ReportRequestDto
+    public class ReportRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public string ReportType { get; set; } = "Comprehensive";
@@ -1241,11 +1241,11 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pressure profile report DTO
     /// </summary>
-    public class PressureProfileReportDto
+    public class PressureProfileReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string PipelineId { get; set; } = string.Empty;
-        public List<PressureProfilePointDto> ProfileData { get; set; } = new();
+        public List<PressureProfilePoint> ProfileData { get; set; } = new();
         public decimal MaximumPressure { get; set; }
         public decimal MinimumPressure { get; set; }
     }
@@ -1253,7 +1253,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pressure profile point DTO
     /// </summary>
-    public class PressureProfilePointDto
+    public class PressureProfilePoint
     {
         public decimal Distance { get; set; }
         public decimal Pressure { get; set; }
@@ -1263,7 +1263,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Pressure report request DTO
     /// </summary>
-    public class PressureReportRequestDto
+    public class PressureReportRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
@@ -1274,19 +1274,19 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Integrity report DTO
     /// </summary>
-    public class IntegrityReportDto
+    public class IntegrityReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string PipelineId { get; set; } = string.Empty;
         public string IntegrityStatus { get; set; } = string.Empty;
-        public List<IntegrityFindingDto> Findings { get; set; } = new();
+        public List<IntegrityFinding> Findings { get; set; } = new();
         public List<string> RemediationActions { get; set; } = new();
     }
 
     /// <summary>
     /// Integrity finding DTO
     /// </summary>
-    public class IntegrityFindingDto
+    public class IntegrityFinding
     {
         public string FindingType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -1297,7 +1297,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// <summary>
     /// Integrity report request DTO
     /// </summary>
-    public class IntegrityReportRequestDto
+    public class IntegrityReportRequest
     {
         public string PipelineId { get; set; } = string.Empty;
         public DateTime EvaluationDate { get; set; }

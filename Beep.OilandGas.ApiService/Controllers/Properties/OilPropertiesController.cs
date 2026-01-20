@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -72,7 +72,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpPost("calculate-properties")]
-        public async Task<ActionResult<OilPropertyResultDto>> CalculateProperties([FromBody] CalculateOilPropertiesRequest request)
+        public async Task<ActionResult<OilPropertyResult>> CalculateProperties([FromBody] CalculateOilPropertiesRequest request)
         {
             try
             {
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpPost("composition")]
-        public async Task<ActionResult> SaveComposition([FromBody] OilCompositionDto composition, [FromQuery] string userId)
+        public async Task<ActionResult> SaveComposition([FromBody] OilComposition composition, [FromQuery] string userId)
         {
             try
             {
@@ -102,7 +102,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpGet("composition/{compositionId}")]
-        public async Task<ActionResult<OilCompositionDto>> GetComposition(string compositionId)
+        public async Task<ActionResult<OilComposition>> GetComposition(string compositionId)
         {
             try
             {
@@ -119,7 +119,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpGet("composition/{compositionId}/history")]
-        public async Task<ActionResult<List<OilPropertyResultDto>>> GetPropertyHistory(string compositionId)
+        public async Task<ActionResult<List<OilPropertyResult>>> GetPropertyHistory(string compositionId)
         {
             try
             {
@@ -134,7 +134,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         }
 
         [HttpPost("result")]
-        public async Task<ActionResult> SaveResult([FromBody] OilPropertyResultDto result, [FromQuery] string userId)
+        public async Task<ActionResult> SaveResult([FromBody] OilPropertyResult result, [FromQuery] string userId)
         {
             try
             {

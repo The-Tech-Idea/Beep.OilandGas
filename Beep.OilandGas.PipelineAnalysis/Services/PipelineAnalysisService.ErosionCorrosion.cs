@@ -9,7 +9,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// </summary>
     public partial class PipelineAnalysisService
     {
-        public async Task<ErosionAnalysisDto> AnalyzeErosionAsync(string pipelineId, ErosionRequestDto request)
+        public async Task<ErosionAnalysis> AnalyzeErosionAsync(string pipelineId, ErosionRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -26,16 +26,16 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var safetyMargin = erosionVelocity > 0 ? (erosionVelocity - actualVelocity) / erosionVelocity * 100m : 0;
                 var erosionRisk = DetermineErosionRisk(actualVelocity, erosionVelocity);
 
-                var result = new ErosionAnalysisDto
+                var result = new ErosionAnalysis
                 {
                     PipelineId = pipelineId,
                     ErosionVelocity = erosionVelocity,
                     ActualVelocity = actualVelocity,
                     ErosionRisk = erosionRisk,
                     SafetyMargin = safetyMargin,
-                    HighRiskSpots = new List<ErosionSpotDto>
+                    HighRiskSpots = new List<ErosionSpot>
                     {
-                        actualVelocity > erosionVelocity * 0.9m ? new ErosionSpotDto 
+                        actualVelocity > erosionVelocity * 0.9m ? new ErosionSpot 
                         { 
                             LocationDescription = "High flow velocity zones",
                             ErosionRating = (actualVelocity / erosionVelocity) * 100m,
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<ErosionVelocityResultDto> CalculateErosionVelocityAsync(string pipelineId, ErosionVelocityRequestDto request)
+        public async Task<ErosionVelocityResult> CalculateErosionVelocityAsync(string pipelineId, ErosionVelocityRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -70,7 +70,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var pipelineArea = (decimal)Math.PI * (request.PipeDiameter / 2) * (request.PipeDiameter / 2) / 144m;
                 var actualVelocity = request.FluidType == "Gas" ? 15m : 8m; // Assumed flow rate
 
-                var result = new ErosionVelocityResultDto
+                var result = new ErosionVelocityResult
                 {
                     ErosionVelocity = erosionVelocity,
                     ActualVelocity = actualVelocity,
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<CorrosionAnalysisDto> AnalyzeCorrosionRiskAsync(string pipelineId, CorrosionRequestDto request)
+        public async Task<CorrosionAnalysis> AnalyzeCorrosionRiskAsync(string pipelineId, CorrosionRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -110,12 +110,12 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var corrosionRisk = Math.Min(co2Factor + h2sFactor + temperatureFactor + waterFactor + pHFactor, 100m);
                 var riskLevel = DetermineCorrosionRiskLevel(corrosionRisk);
 
-                var result = new CorrosionAnalysisDto
+                var result = new CorrosionAnalysis
                 {
                     PipelineId = pipelineId,
                     CorrosionRisk = corrosionRisk,
                     RiskLevel = riskLevel,
-                    CorrosionFactors = new List<CorrosionFactorDto>
+                    CorrosionFactors = new List<CorrosionFactor>
                     {
                         new() { FactorName = "CO2", ContributionPercent = co2Factor, Severity = co2Factor > 20 ? "High" : "Low" },
                         new() { FactorName = "H2S", ContributionPercent = h2sFactor, Severity = h2sFactor > 25 ? "High" : "Low" },
@@ -135,7 +135,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<CorrosionRateResultDto> EstimateCorrosionRateAsync(string pipelineId, CorrosionRateRequestDto request)
+        public async Task<CorrosionRateResult> EstimateCorrosionRateAsync(string pipelineId, CorrosionRateRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -157,7 +157,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var remainingLife = request.CurrentWallThickness / Math.Max(corrosionRate, 0.001m);
                 var inspectionDue = DateTime.UtcNow.AddYears((int)(remainingLife / 2));
 
-                var result = new CorrosionRateResultDto
+                var result = new CorrosionRateResult
                 {
                     CorrosionRate = Math.Abs(corrosionRate),
                     Unit = "mm/year",
@@ -178,7 +178,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<MaterialCompatibilityDto> AssessMaterialCompatibilityAsync(string pipelineId, MaterialRequestDto request)
+        public async Task<MaterialCompatibility> AssessMaterialCompatibilityAsync(string pipelineId, MaterialRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -197,7 +197,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var concerns = IdentifyMaterialConcerns(request.ProposedMaterial, request.FluidType);
                 var alternatives = RecommendAlternativeMaterials(request.ProposedMaterial, request.DesignPressure);
 
-                var result = new MaterialCompatibilityDto
+                var result = new MaterialCompatibility
                 {
                     PipelineId = pipelineId,
                     CurrentMaterial = request.ProposedMaterial,

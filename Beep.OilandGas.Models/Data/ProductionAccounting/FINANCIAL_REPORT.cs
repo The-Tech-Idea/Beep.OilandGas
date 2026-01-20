@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class FINANCIAL_REPORT : Entity, IPPDMEntity
-    {
+    public partial class FINANCIAL_REPORT : ModelEntityBase {
         private System.String FINANCIAL_REPORT_IDValue;
         public System.String FINANCIAL_REPORT_ID
         {

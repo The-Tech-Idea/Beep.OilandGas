@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.ProductionForecasting.Services
 {
     public partial class ProductionForecastingService
     {
-        public async Task<EconomicAnalysisDto> PerformEconomicAnalysisAsync(EconomicAnalysisRequest request)
+        public async Task<EconomicAnalysis> PerformEconomicAnalysisAsync(EconomicAnalysisRequest request)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(request.ForecastId)) throw new ArgumentNullException(nameof(request.ForecastId));
@@ -16,13 +16,13 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             var forecast = await GetForecastAsync(request.ForecastId);
             if (forecast == null)
             {
-                var stub = new EconomicAnalysisDto
+                var stub = new EconomicAnalysis
                 {
                     AnalysisId = _defaults.FormatIdForTable("ECON_ANALYSIS", Guid.NewGuid().ToString()),
                     NPV = 0,
                     IRR = 0,
                     DiscountRate = request.DiscountRate,
-                    CashFlows = new List<CashFlowPointDto>()
+                    CashFlows = new List<CashFlowPoint>()
                 };
                 return stub;
             }
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 cashFlows[i].CumulativeCashFlow = cumulative;
             }
 
-            var result = new EconomicAnalysisDto
+            var result = new EconomicAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("ECON_ANALYSIS", Guid.NewGuid().ToString()),
                 NPV = Math.Round(npv, 2),
@@ -53,15 +53,15 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         }
 
         
-        private List<CashFlowPointDto> BuildCashFlowsFromForecast(
-            ProductionForecastResultDto forecast,
+        private List<CashFlowPoint> BuildCashFlowsFromForecast(
+            ProductionForecastResult forecast,
             decimal oilPrice,
             decimal gasPrice,
             decimal operatingCostPerBarrel = 10m,
             decimal fixedOpexPerPeriod = 0m,
             List<(DateTime Date, decimal Amount)>? capitalSchedule = null)
         {
-            var list = new List<CashFlowPointDto>();
+            var list = new List<CashFlowPoint>();
             if (forecast?.ForecastPoints == null) return list;
 
             foreach (var p in forecast.ForecastPoints)
@@ -89,7 +89,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
 
                 var net = revenue - operatingCosts - capitalCosts;
 
-                var cash = new CashFlowPointDto
+                var cash = new CashFlowPoint
                 {
                     Date = p.Date,
                     Revenue = Math.Round(revenue, 2),
@@ -104,7 +104,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             return list;
         }
 
-        private decimal ComputeNPV(List<CashFlowPointDto> cashFlows, decimal annualRate)
+        private decimal ComputeNPV(List<CashFlowPoint> cashFlows, decimal annualRate)
         {
             if (cashFlows == null || cashFlows.Count == 0) return 0m;
             var start = cashFlows.First().Date;
@@ -120,7 +120,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             return sum;
         }
 
-        private decimal ComputeIRR(List<CashFlowPointDto> cashFlows)
+        private decimal ComputeIRR(List<CashFlowPoint> cashFlows)
         {
             if (cashFlows == null || cashFlows.Count == 0) return 0m;
 

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.FlashCalculations;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data.FlashCalculations;
+using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 

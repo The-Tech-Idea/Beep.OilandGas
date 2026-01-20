@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.Decommissioning.Services
@@ -19,7 +19,7 @@ namespace Beep.OilandGas.Decommissioning.Services
         /// <summary>
         /// Analyzes well plugging requirements and generates comprehensive plugging plan.
         /// </summary>
-        public async Task<WellPluggingPlanDto> AnalyzePluggingRequirementsAsync(
+        public async Task<WellPluggingPlan> AnalyzePluggingRequirementsAsync(
             string wellUWI,
             double wellDepth,
             List<string> zonesCased,
@@ -36,7 +36,7 @@ namespace Beep.OilandGas.Decommissioning.Services
 
             try
             {
-                var result = new WellPluggingPlanDto
+                var result = new WellPluggingPlan
                 {
                     WellUWI = wellUWI,
                     WellDepth = wellDepth,
@@ -81,7 +81,7 @@ namespace Beep.OilandGas.Decommissioning.Services
         /// <summary>
         /// Calculates decommissioning and abandonment costs.
         /// </summary>
-        public async Task<DecommissioningCostAnalysisDto> AnalyzeDecommissioningCostsAsync(
+        public async Task<DecommissioningCostAnalysis> AnalyzeDecommissioningCostsAsync(
             string wellUWI,
             double wellDepth,
             string wellType,
@@ -96,7 +96,7 @@ namespace Beep.OilandGas.Decommissioning.Services
 
             try
             {
-                var result = new DecommissioningCostAnalysisDto
+                var result = new DecommissioningCostAnalysis
                 {
                     WellUWI = wellUWI,
                     WellDepth = wellDepth,
@@ -149,7 +149,7 @@ namespace Beep.OilandGas.Decommissioning.Services
         /// <summary>
         /// Analyzes environmental remediation requirements for abandoned wells.
         /// </summary>
-        public async Task<EnvironmentalRemediationAnalysisDto> AnalyzeEnvironmentalRemediationAsync(
+        public async Task<EnvironmentalRemediationAnalysis> AnalyzeEnvironmentalRemediationAsync(
             string wellUWI,
             string location,
             List<string> potentialContaminants,
@@ -164,7 +164,7 @@ namespace Beep.OilandGas.Decommissioning.Services
 
             try
             {
-                var result = new EnvironmentalRemediationAnalysisDto
+                var result = new EnvironmentalRemediationAnalysis
                 {
                     WellUWI = wellUWI,
                     Location = location,
@@ -211,7 +211,7 @@ namespace Beep.OilandGas.Decommissioning.Services
         /// <summary>
         /// Analyzes regulatory compliance requirements for well abandonment.
         /// </summary>
-        public async Task<RegulatoryComplianceAnalysisDto> AnalyzeRegulatoryComplianceAsync(
+        public async Task<RegulatoryComplianceAnalysis> AnalyzeRegulatoryComplianceAsync(
             string wellUWI,
             string jurisdiction,
             string wellClass,
@@ -227,7 +227,7 @@ namespace Beep.OilandGas.Decommissioning.Services
 
             try
             {
-                var result = new RegulatoryComplianceAnalysisDto
+                var result = new RegulatoryComplianceAnalysis
                 {
                     WellUWI = wellUWI,
                     Jurisdiction = jurisdiction,
@@ -277,7 +277,7 @@ namespace Beep.OilandGas.Decommissioning.Services
         /// <summary>
         /// Analyzes salvage value and asset recovery from decommissioned wells.
         /// </summary>
-        public async Task<SalvageValueAnalysisDto> AnalyzeSalvageValueAsync(
+        public async Task<SalvageValueAnalysis> AnalyzeSalvageValueAsync(
             string wellUWI,
             string wellType,
             double wellDepth,
@@ -291,7 +291,7 @@ namespace Beep.OilandGas.Decommissioning.Services
 
             try
             {
-                var result = new SalvageValueAnalysisDto
+                var result = new SalvageValueAnalysis
                 {
                     WellUWI = wellUWI,
                     WellType = wellType,
@@ -340,7 +340,7 @@ namespace Beep.OilandGas.Decommissioning.Services
         /// <summary>
         /// Generates comprehensive decommissioning project schedule.
         /// </summary>
-        public async Task<DecommissioningScheduleDto> GenerateDecommissioningScheduleAsync(
+        public async Task<DecommissioningSchedule> GenerateDecommissioningScheduleAsync(
             string wellUWI,
             double wellDepth,
             int priorityLevel,
@@ -354,7 +354,7 @@ namespace Beep.OilandGas.Decommissioning.Services
 
             try
             {
-                var result = new DecommissioningScheduleDto
+                var result = new DecommissioningSchedule
                 {
                     WellUWI = wellUWI,
                     WellDepth = wellDepth,
@@ -404,7 +404,7 @@ namespace Beep.OilandGas.Decommissioning.Services
         /// <summary>
         /// Performs comprehensive well abandonment feasibility assessment.
         /// </summary>
-        public async Task<AbandonmentFeasibilityDto> AssessAbandonmentFeasibilityAsync(
+        public async Task<AbandonmentFeasibility> AssessAbandonmentFeasibilityAsync(
             string wellUWI,
             double wellDepth,
             string wellStatus,
@@ -419,7 +419,7 @@ namespace Beep.OilandGas.Decommissioning.Services
 
             try
             {
-                var result = new AbandonmentFeasibilityDto
+                var result = new AbandonmentFeasibility
                 {
                     WellUWI = wellUWI,
                     WellDepth = wellDepth,
@@ -473,7 +473,7 @@ namespace Beep.OilandGas.Decommissioning.Services
         /// <summary>
         /// Analyzes decommissioning requirements across a portfolio of wells.
         /// </summary>
-        public async Task<PortfolioDecommissioningAnalysisDto> AnalyzeWellPortfolioDecommissioningAsync(
+        public async Task<PortfolioDecommissioningAnalysis> AnalyzeWellPortfolioDecommissioningAsync(
             string fieldId,
             List<string> wellUWIs,
             Dictionary<string, double> wellDepths)
@@ -488,7 +488,7 @@ namespace Beep.OilandGas.Decommissioning.Services
 
             try
             {
-                var result = new PortfolioDecommissioningAnalysisDto
+                var result = new PortfolioDecommissioningAnalysis
                 {
                     FieldId = fieldId,
                     WellsToDecommission = wellUWIs.Count,
@@ -496,7 +496,7 @@ namespace Beep.OilandGas.Decommissioning.Services
                 };
 
                 // Analyze each well
-                result.WellAnalyses = new List<PortfolioWellDecommissioningDto>();
+                result.WellAnalyses = new List<PortfolioWellDecommissioning>();
                 double totalCost = 0;
                 int totalDays = 0;
 
@@ -508,7 +508,7 @@ namespace Beep.OilandGas.Decommissioning.Services
                         var cost = CalculateWellPluggingCost(depth, "Oil");
                         var days = EstimatePluggingDuration(depth);
 
-                        result.WellAnalyses.Add(new PortfolioWellDecommissioningDto
+                        result.WellAnalyses.Add(new PortfolioWellDecommissioning
                         {
                             WellUWI = uwi,
                             WellDepth = depth,
@@ -760,14 +760,14 @@ namespace Beep.OilandGas.Decommissioning.Services
             return 5000 + (itemCount * 500); // Base + per-item cost
         }
 
-        private List<DecommissioningPhaseDto> GenerateProjectPhases(double wellDepth, DateTime startDate)
+        private List<DecommissioningPhase> GenerateProjectPhases(double wellDepth, DateTime startDate)
         {
-            var phases = new List<DecommissioningPhaseDto>
+            var phases = new List<DecommissioningPhase>
             {
-                new DecommissioningPhaseDto { Phase = "Mobilization", Duration = 3 },
-                new DecommissioningPhaseDto { Phase = "Well Plugging", Duration = (int)Math.Ceiling(wellDepth / 5000) },
-                new DecommissioningPhaseDto { Phase = "Wellhead Removal", Duration = 2 },
-                new DecommissioningPhaseDto { Phase = "Site Restoration", Duration = 5 }
+                new DecommissioningPhase { Phase = "Mobilization", Duration = 3 },
+                new DecommissioningPhase { Phase = "Well Plugging", Duration = (int)Math.Ceiling(wellDepth / 5000) },
+                new DecommissioningPhase { Phase = "Wellhead Removal", Duration = 2 },
+                new DecommissioningPhase { Phase = "Site Restoration", Duration = 5 }
             };
             return phases;
         }
@@ -777,7 +777,7 @@ namespace Beep.OilandGas.Decommissioning.Services
             return 3 + (int)Math.Ceiling(wellDepth / 5000) + 2 + 5;
         }
 
-        private List<string> IdentifyCriticalPathItems(List<DecommissioningPhaseDto> phases)
+        private List<string> IdentifyCriticalPathItems(List<DecommissioningPhase> phases)
         {
             return phases.OrderByDescending(p => p.Duration).Take(2).Select(p => p.Phase).ToList();
         }

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Beep.OilandGas.Models.DTOs.Accounting.Revenue;
+using Beep.OilandGas.Models.Data.Accounting.Revenue;
 using System;
 using System.Collections.Generic;
 using System.Linq;

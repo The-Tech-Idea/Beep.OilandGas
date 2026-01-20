@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
-using Beep.OilandGas.Models.PermitsAndApplications;
+using Beep.OilandGas.Models.Data.PermitsAndApplications;
 using Beep.OilandGas.PPDM39.Models;
 using APPLICATION_COMPONENT = Beep.OilandGas.Models.Data.PermitsAndApplications.APPLICATION_COMPONENT;
 

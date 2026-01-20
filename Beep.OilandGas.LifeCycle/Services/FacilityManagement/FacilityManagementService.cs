@@ -8,7 +8,7 @@ using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.Models.DTOs.LifeCycle;
+using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.LifeCycle.Services.WorkOrder;
 using Beep.OilandGas.LifeCycle.Services.Integration;
 using TheTechIdea.Beep.Editor;
@@ -442,7 +442,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
         /// <summary>
         /// Runs compressor analysis for a facility using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.DTOs.CompressorAnalysisResult> AnalyzeCompressorAsync(
+        public async Task<Beep.OilandGas.Models.Data.CompressorAnalysisResult> AnalyzeCompressorAsync(
             string facilityId,
             string userId = "system",
             string? equipmentId = null,
@@ -471,7 +471,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
         /// <summary>
         /// Runs pump performance analysis for a facility using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.DTOs.PumpAnalysisResult> AnalyzeFacilityPumpAsync(
+        public async Task<Beep.OilandGas.Models.Data.PumpAnalysisResult> AnalyzeFacilityPumpAsync(
             string facilityId,
             string userId = "system",
             string? equipmentId = null,

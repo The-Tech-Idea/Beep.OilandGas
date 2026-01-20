@@ -7,7 +7,7 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.Models.DTOs.LifeCycle;
+using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.LifeCycle.Services.WorkOrder;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;

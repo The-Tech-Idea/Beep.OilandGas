@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using Beep.OilandGas.Models.FlashCalculations;
+using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.FlashCalculations.Constants;
 using Beep.OilandGas.FlashCalculations.Exceptions;
 

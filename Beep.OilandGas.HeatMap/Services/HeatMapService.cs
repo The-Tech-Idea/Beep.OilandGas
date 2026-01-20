@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Beep.OilandGas.HeatMap.Configuration;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.HeatMap;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.HeatMap;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -49,7 +49,7 @@ namespace Beep.OilandGas.HeatMap.Services
             _logger = logger;
         }
 
-        public async Task<HeatMapResultDto> GenerateHeatMapAsync(List<Beep.OilandGas.Models.HeatMap.HeatMapDataPoint> dataPoints, HeatMapConfigurationDto configuration)
+        public async Task<HeatMapResult> GenerateHeatMapAsync(List<Beep.OilandGas.Models.Data.HeatMap.HeatMapDataPoint> dataPoints, HeatMapConfigurationRecord configuration)
         {
             if (dataPoints == null || dataPoints.Count == 0)
                 throw new ArgumentException("Data points cannot be null or empty", nameof(dataPoints));
@@ -69,7 +69,7 @@ namespace Beep.OilandGas.HeatMap.Services
             var generator = new HeatMapGenerator(generatorDataPoints, 800, 600, SKColors.Blue);
             
             // Generate the heat map
-            var result = new HeatMapResultDto
+            var result = new HeatMapResult
             {
                 HeatMapId = _defaults.FormatIdForTable("HEAT_MAP", Guid.NewGuid().ToString()),
                 HeatMapName = $"HeatMap_{DateTime.UtcNow:yyyyMMddHHmmss}",
@@ -84,7 +84,7 @@ namespace Beep.OilandGas.HeatMap.Services
             return result;
         }
 
-        public async Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationDto configuration, string userId)
+        public async Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationRecord configuration, string userId)
         {
             if (configuration == null)
                 throw new ArgumentNullException(nameof(configuration));
@@ -120,7 +120,7 @@ namespace Beep.OilandGas.HeatMap.Services
             return configuration.ConfigurationId;
         }
 
-        public async Task<HeatMapConfigurationDto?> GetHeatMapConfigurationAsync(string heatMapId)
+        public async Task<HeatMapConfigurationRecord?> GetHeatMapConfigurationAsync(string heatMapId)
         {
             if (string.IsNullOrWhiteSpace(heatMapId))
             {
@@ -148,7 +148,7 @@ namespace Beep.OilandGas.HeatMap.Services
                 return null;
             }
 
-            var config = new HeatMapConfigurationDto
+            var config = new HeatMapConfigurationRecord
             {
                 ConfigurationId = entity.HEAT_MAP_ID ?? string.Empty,
                 ConfigurationName = entity.CONFIGURATION_NAME ?? string.Empty,
@@ -159,7 +159,7 @@ namespace Beep.OilandGas.HeatMap.Services
             return config;
         }
 
-         public async Task<HeatMapResultDto> GenerateProductionHeatMapAsync(string fieldId, DateTime startDate, DateTime endDate)
+         public async Task<HeatMapResult> GenerateProductionHeatMapAsync(string fieldId, DateTime startDate, DateTime endDate)
          {
              if (string.IsNullOrWhiteSpace(fieldId))
                  throw new ArgumentException("Field ID cannot be null or empty", nameof(fieldId));
@@ -169,13 +169,13 @@ namespace Beep.OilandGas.HeatMap.Services
 
              // TODO: Retrieve production data from database and generate heat map
              // For now, return empty result
-             var result = new HeatMapResultDto
+             var result = new HeatMapResult
              {
                  HeatMapId = _defaults.FormatIdForTable("HEAT_MAP", Guid.NewGuid().ToString()),
                  HeatMapName = $"ProductionHeatMap_{fieldId}_{startDate:yyyyMMdd}",
                  GeneratedDate = DateTime.UtcNow,
-                 DataPoints = new List<Beep.OilandGas.Models.HeatMap.HeatMapDataPoint>(),
-                 Configuration = new HeatMapConfigurationDto()
+                 DataPoints = new List<Beep.OilandGas.Models.Data.HeatMap.HeatMapDataPoint>(),
+                 Configuration = new HeatMapConfigurationRecord()
              };
 
              _logger?.LogWarning("GenerateProductionHeatMapAsync not fully implemented - requires production data integration");
@@ -188,9 +188,9 @@ namespace Beep.OilandGas.HeatMap.Services
          /// Performs comprehensive thermal analysis on heat map data
          /// Calculates temperature statistics, patterns, and thermal characteristics
          /// </summary>
-         public async Task<ThermalAnalysisResultDto> AnalyzeThermalPatternAsync(
+         public async Task<ThermalAnalysisResult> AnalyzeThermalPatternAsync(
              string locationId,
-             List<Beep.OilandGas.Models.HeatMap.HeatMapDataPoint> dataPoints)
+             List<Beep.OilandGas.Models.Data.HeatMap.HeatMapDataPoint> dataPoints)
          {
              if (string.IsNullOrWhiteSpace(locationId))
                  throw new ArgumentException("Location ID cannot be null or empty", nameof(locationId));
@@ -216,7 +216,7 @@ namespace Beep.OilandGas.HeatMap.Services
              // Calculate gradient
              decimal gradient = range > 0 ? range / dataPoints.Count : 0;
 
-             var result = new ThermalAnalysisResultDto
+             var result = new ThermalAnalysisResult
              {
                  AnalysisId = _defaults.FormatIdForTable("THERMAL_ANALYSIS", Guid.NewGuid().ToString()),
                  LocationId = locationId,
@@ -241,9 +241,9 @@ namespace Beep.OilandGas.HeatMap.Services
          /// Detects thermal anomalies in heat map data
          /// Identifies outliers and unusual temperature zones
          /// </summary>
-         public async Task<List<ThermalAnomalyDto>> DetectThermalAnomaliesAsync(
+         public async Task<List<ThermalAnomaly>> DetectThermalAnomaliesAsync(
              string locationId,
-             List<Beep.OilandGas.Models.HeatMap.HeatMapDataPoint> dataPoints,
+             List<Beep.OilandGas.Models.Data.HeatMap.HeatMapDataPoint> dataPoints,
              decimal stdDevThreshold = 2.0m)
          {
              if (string.IsNullOrWhiteSpace(locationId))
@@ -259,7 +259,7 @@ namespace Beep.OilandGas.HeatMap.Services
              decimal sumSquareDiff = temperatures.Sum(t => (t - average) * (t - average));
              decimal stdDev = (decimal)Math.Sqrt((double)(sumSquareDiff / temperatures.Count));
 
-             var anomalies = new List<ThermalAnomalyDto>();
+             var anomalies = new List<ThermalAnomaly>();
 
              for (int i = 0; i < dataPoints.Count; i++)
              {
@@ -274,7 +274,7 @@ namespace Beep.OilandGas.HeatMap.Services
                                       deviationInStdDev > 3 ? "High" : 
                                       deviationInStdDev > 2.5m ? "Medium" : "Low";
 
-                     var anomaly = new ThermalAnomalyDto
+                     var anomaly = new ThermalAnomaly
                      {
                          AnomalyId = _defaults.FormatIdForTable("ANOMALY", Guid.NewGuid().ToString()),
                          LocationId = locationId,
@@ -305,7 +305,7 @@ namespace Beep.OilandGas.HeatMap.Services
          /// Analyzes temperature trends over time using historical data
          /// Performs linear regression and forecasts future temperatures
          /// </summary>
-         public async Task<ThermalTrendAnalysisDto> AnalyzeTemperatureTrendAsync(
+         public async Task<ThermalTrendAnalysis> AnalyzeTemperatureTrendAsync(
              string locationId,
              List<decimal> historicalTemperatures,
              int forecastMonths = 6)
@@ -349,7 +349,7 @@ namespace Beep.OilandGas.HeatMap.Services
 
              string direction = slope > 0 ? "Increasing" : slope < 0 ? "Decreasing" : "Stable";
 
-             var result = new ThermalTrendAnalysisDto
+             var result = new ThermalTrendAnalysis
              {
                  TrendId = _defaults.FormatIdForTable("TREND", Guid.NewGuid().ToString()),
                  LocationId = locationId,
@@ -375,9 +375,9 @@ namespace Beep.OilandGas.HeatMap.Services
          /// <summary>
          /// Analyzes temperature gradients to identify spatial temperature changes
          /// </summary>
-         public async Task<TemperatureGradientAnalysisDto> AnalyzeTemperatureGradientAsync(
+         public async Task<TemperatureGradientAnalysis> AnalyzeTemperatureGradientAsync(
              string locationId,
-             List<Beep.OilandGas.Models.HeatMap.HeatMapDataPoint> dataPoints)
+             List<Beep.OilandGas.Models.Data.HeatMap.HeatMapDataPoint> dataPoints)
          {
              if (string.IsNullOrWhiteSpace(locationId))
                  throw new ArgumentException("Location ID cannot be null or empty", nameof(locationId));
@@ -421,7 +421,7 @@ namespace Beep.OilandGas.HeatMap.Services
              decimal maxGradient = gradientPoints.Count > 0 ? gradientPoints.Max(gp => gp.LocalGradient) : 0;
              decimal minGradient = gradientPoints.Count > 0 ? gradientPoints.Min(gp => gp.LocalGradient) : 0;
 
-             var result = new TemperatureGradientAnalysisDto
+             var result = new TemperatureGradientAnalysis
              {
                  GradientId = _defaults.FormatIdForTable("GRADIENT", Guid.NewGuid().ToString()),
                  LocationId = locationId,
@@ -444,9 +444,9 @@ namespace Beep.OilandGas.HeatMap.Services
          /// <summary>
          /// Identifies and classifies temperature zones (hot, normal, cold)
          /// </summary>
-         public async Task<List<TemperatureZoneDto>> IdentifyTemperatureZonesAsync(
+         public async Task<List<TemperatureZone>> IdentifyTemperatureZonesAsync(
              string locationId,
-             List<Beep.OilandGas.Models.HeatMap.HeatMapDataPoint> dataPoints)
+             List<Beep.OilandGas.Models.Data.HeatMap.HeatMapDataPoint> dataPoints)
          {
              if (string.IsNullOrWhiteSpace(locationId))
                  throw new ArgumentException("Location ID cannot be null or empty", nameof(locationId));
@@ -462,7 +462,7 @@ namespace Beep.OilandGas.HeatMap.Services
              decimal range = max - min;
              decimal thirdRange = range / 3;
 
-             var zones = new List<TemperatureZoneDto>();
+             var zones = new List<TemperatureZone>();
 
              // Create three zones: Cold, Normal, Hot
              var coldPoints = dataPoints.Where(p => (decimal)p.Value < min + thirdRange).ToList();
@@ -482,9 +482,9 @@ namespace Beep.OilandGas.HeatMap.Services
          /// <summary>
          /// Assesses the quality of thermal imaging data
          /// </summary>
-         public async Task<ThermalImageQualityDto> AssessThermalImageQualityAsync(
+         public async Task<ThermalImageQuality> AssessThermalImageQualityAsync(
              string imageId,
-             List<Beep.OilandGas.Models.HeatMap.HeatMapDataPoint> dataPoints)
+             List<Beep.OilandGas.Models.Data.HeatMap.HeatMapDataPoint> dataPoints)
          {
              if (string.IsNullOrWhiteSpace(imageId))
                  throw new ArgumentException("Image ID cannot be null or empty", nameof(imageId));
@@ -524,7 +524,7 @@ namespace Beep.OilandGas.HeatMap.Services
                  improvements.Add("Increase data point resolution");
              }
 
-             var result = new ThermalImageQualityDto
+             var result = new ThermalImageQuality
              {
                  QualityId = _defaults.FormatIdForTable("QUALITY", Guid.NewGuid().ToString()),
                  ImageId = imageId,
@@ -547,10 +547,10 @@ namespace Beep.OilandGas.HeatMap.Services
          /// <summary>
          /// Compares thermal data between baseline and current measurements
          /// </summary>
-         public async Task<ThermalComparisonResultDto> CompareThermalDataAsync(
+         public async Task<ThermalComparisonResult> CompareThermalDataAsync(
              string locationId,
-             List<Beep.OilandGas.Models.HeatMap.HeatMapDataPoint> baselineData,
-             List<Beep.OilandGas.Models.HeatMap.HeatMapDataPoint> currentData)
+             List<Beep.OilandGas.Models.Data.HeatMap.HeatMapDataPoint> baselineData,
+             List<Beep.OilandGas.Models.Data.HeatMap.HeatMapDataPoint> currentData)
          {
              if (string.IsNullOrWhiteSpace(locationId))
                  throw new ArgumentException("Location ID cannot be null or empty", nameof(locationId));
@@ -578,7 +578,7 @@ namespace Beep.OilandGas.HeatMap.Services
              // Determine if change is significant (> 10% or > 2°C)
              bool isSignificant = Math.Abs(percentChange) > 10m || Math.Abs(tempChange) > 2m;
 
-             var result = new ThermalComparisonResultDto
+             var result = new ThermalComparisonResult
              {
                  ComparisonId = _defaults.FormatIdForTable("COMPARISON", Guid.NewGuid().ToString()),
                  LocationId = locationId,
@@ -651,15 +651,15 @@ namespace Beep.OilandGas.HeatMap.Services
              return "Nonlinear";
          }
 
-         private List<TemperatureZoneDto> CreateTemperatureZones(string locationId, List<Beep.OilandGas.Models.HeatMap.HeatMapDataPoint> zonePoints, 
+         private List<TemperatureZone> CreateTemperatureZones(string locationId, List<Beep.OilandGas.Models.Data.HeatMap.HeatMapDataPoint> zonePoints, 
              string classification, decimal minTemp, decimal maxTemp)
          {
-             var zones = new List<TemperatureZoneDto>();
+             var zones = new List<TemperatureZone>();
 
              if (zonePoints.Count == 0)
                  return zones;
 
-             zones.Add(new TemperatureZoneDto
+             zones.Add(new TemperatureZone
              {
                  ZoneId = _defaults.FormatIdForTable("ZONE", Guid.NewGuid().ToString()),
                  LocationId = locationId,
@@ -676,7 +676,7 @@ namespace Beep.OilandGas.HeatMap.Services
              return zones;
          }
 
-         private List<decimal> ExtractBoundaryCoordinates(List<Beep.OilandGas.Models.HeatMap.HeatMapDataPoint> points)
+         private List<decimal> ExtractBoundaryCoordinates(List<Beep.OilandGas.Models.Data.HeatMap.HeatMapDataPoint> points)
          {
              var coords = new List<decimal>();
              if (points.Count > 0)

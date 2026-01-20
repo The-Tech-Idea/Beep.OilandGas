@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.ProductionAccounting.Production;
 using Beep.OilandGas.ProductionAccounting.Measurement;
 using Beep.OilandGas.ProductionAccounting.Models;
-using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         /// Get all run tickets.
         /// </summary>
         [HttpGet]
-        public ActionResult<List<RunTicketDto>> GetRunTickets(
+        public ActionResult<List<RunTicket>> GetRunTickets(
             [FromQuery] DateTime? startDate = null, 
             [FromQuery] DateTime? endDate = null,
             [FromQuery] string? connectionName = null)
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         /// Get run ticket by ID.
         /// </summary>
         [HttpGet("{id}")]
-        public ActionResult<RunTicketDto> GetRunTicket(string id, [FromQuery] string? connectionName = null)
+        public ActionResult<RunTicket> GetRunTicket(string id, [FromQuery] string? connectionName = null)
         {
             try
             {
@@ -83,7 +83,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         /// Create a run ticket.
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<RunTicketDto>> CreateRunTicket(
+        public async Task<ActionResult<RunTicket>> CreateRunTicket(
             [FromBody] CreateRunTicketRequest request,
             [FromQuery] decimal? revenueAmount = null,
             [FromQuery] bool isCash = false,
@@ -142,9 +142,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             }
         }
 
-        private RunTicketDto MapToRunTicketDto(RunTicket ticket)
+        private RunTicket MapToRunTicketDto(RunTicket ticket)
         {
-                return new RunTicketDto
+                return new RunTicket
                 {
                     RunTicketNumber = ticket.RunTicketNumber,
                     TicketDateTime = ticket.TicketDateTime,

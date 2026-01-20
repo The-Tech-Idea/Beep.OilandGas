@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.Models.NodalAnalysis;
+using Beep.OilandGas.Models.Data.NodalAnalysis;
 
 namespace Beep.OilandGas.NodalAnalysis.Calculations
 {

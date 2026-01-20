@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class CONTRACT_PERFORMANCE_OBLIGATION : Entity, IPPDMEntity
-    {
+    public partial class CONTRACT_PERFORMANCE_OBLIGATION : ModelEntityBase {
         private System.String CONTRACT_PERFORMANCE_OBLIGATION_IDValue;
         public System.String CONTRACT_PERFORMANCE_OBLIGATION_ID
         {

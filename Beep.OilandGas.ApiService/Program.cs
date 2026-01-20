@@ -1,6 +1,6 @@
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.LifeCycle.Services;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Metadata;
@@ -15,7 +15,7 @@ using TheTechIdea.Beep.Utils;
 using TheTechIdea.Beep;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL;
 using TheTechIdea.Beep.Utilities;
@@ -1031,13 +1031,13 @@ builder.Services.AddHttpContextAccessor();
 // DEMO DATABASE SERVICES
 // ============================================
 // Configure DemoDatabase settings
-builder.Services.Configure<Beep.OilandGas.Models.DTOs.DataManagement.DemoDatabaseConfig>(
+builder.Services.Configure<Beep.OilandGas.Models.Data.DataManagement.DemoDatabaseConfig>(
     builder.Configuration.GetSection("DemoDatabase"));
 
 // Demo Database Repository
 builder.Services.AddScoped<DemoDatabaseRepository>(sp =>
 {
-    var config = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Beep.OilandGas.Models.DTOs.DataManagement.DemoDatabaseConfig>>().Value;
+    var config = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Beep.OilandGas.Models.Data.DataManagement.DemoDatabaseConfig>>().Value;
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var logger = loggerFactory.CreateLogger<DemoDatabaseRepository>();
     return new DemoDatabaseRepository(config.StoragePath, logger);
@@ -1046,7 +1046,7 @@ builder.Services.AddScoped<DemoDatabaseRepository>(sp =>
 // Demo Database Service
 builder.Services.AddScoped<DemoDatabaseService>(sp =>
 {
-    var config = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Beep.OilandGas.Models.DTOs.DataManagement.DemoDatabaseConfig>>();
+    var config = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Beep.OilandGas.Models.Data.DataManagement.DemoDatabaseConfig>>();
     var repository = sp.GetRequiredService<DemoDatabaseRepository>();
     var editor = sp.GetRequiredService<IDMEEditor>();
     var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
@@ -1326,18 +1326,6 @@ builder.Services.AddScoped<Beep.OilandGas.Accounting.Services.TrialBalanceServic
         editor, commonColumnHandler, defaults, metadata, glAccountService, loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.TrialBalanceService>());
 });
 
-builder.Services.AddScoped<Beep.OilandGas.Accounting.Services.ARInvoiceService>(sp =>
-{
-    var editor = sp.GetRequiredService<IDMEEditor>();
-    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
-    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
-    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
-    var journalEntryService = sp.GetRequiredService<Beep.OilandGas.Accounting.Services.JournalEntryService>();
-    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-    return new Beep.OilandGas.Accounting.Services.ARInvoiceService(
-        editor, commonColumnHandler, defaults, metadata, journalEntryService, loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.ARInvoiceService>());
-});
-
 builder.Services.AddScoped<Beep.OilandGas.Accounting.Services.APInvoiceService>(sp =>
 {
     var editor = sp.GetRequiredService<IDMEEditor>();
@@ -1383,6 +1371,20 @@ builder.Services.AddScoped<Beep.OilandGas.Accounting.Services.InventoryService>(
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     return new Beep.OilandGas.Accounting.Services.InventoryService(
         editor, commonColumnHandler, defaults, metadata, journalEntryService, loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.InventoryService>());
+});
+
+builder.Services.AddScoped<Beep.OilandGas.Accounting.Services.InventoryLcmService>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    var journalEntryService = sp.GetRequiredService<Beep.OilandGas.Accounting.Services.JournalEntryService>();
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    return new Beep.OilandGas.Accounting.Services.InventoryLcmService(
+        editor, commonColumnHandler, defaults, metadata,
+        loggerFactory.CreateLogger<Beep.OilandGas.Accounting.Services.InventoryLcmService>(),
+        journalEntryService);
 });
 
 builder.Services.AddScoped<Beep.OilandGas.Accounting.Services.PeriodClosingService>(sp =>

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Export;
-using Beep.OilandGas.Models.DTOs.Export;
+using Beep.OilandGas.Models.Data.Export;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

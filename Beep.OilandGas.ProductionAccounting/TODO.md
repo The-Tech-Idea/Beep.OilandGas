@@ -1,11 +1,11 @@
 # TODO - ProductionAccounting Services
 
 ## Critical (correctness)
-- [ ] Add missing entity properties via partial extensions:
+- [x] Add missing entity properties via partial extensions:
   - `MEASUREMENT_RECORD`: `WELL_ID`, `LEASE_ID`, `PROPERTY_ID`, `RUN_TICKET_ID`, `TANK_BATTERY_ID`
   - `IMBALANCE_ADJUSTMENT`: `PROPERTY_OR_LEASE_ID`
-- [ ] Fix `JournalEntryService.CreateEntryAsync` to create balanced entries and write `GL_ENTRY` rows.
-- [ ] Fix `JournalEntryService.GetAccountBalanceAsync` to calculate from `GL_ENTRY` for the requested account.
+- [x] Fix `JournalEntryService.CreateEntryAsync` to create balanced entries and write `GL_ENTRY` rows.
+- [x] Fix `JournalEntryService.GetAccountBalanceAsync` to calculate from `GL_ENTRY` for the requested account.
 
 ## High (behavior)
 - [ ] Apply `start`/`end` date filters in:
@@ -24,3 +24,13 @@
 - [ ] Add optional adapter layer to delegate traditional accounting workflows to `Beep.OilandGas.Accounting.Services`.
 - [ ] Add service-level unit tests (where the repo has a test harness).
 
+## Doc Gaps (from GAP_MATRIX.md)
+- [ ] Implement missing monitoring/exception management service (best practices).
+- [ ] Implement partner/JV cash calls and partner statements service.
+- [ ] Fill null-return paths in:
+  - `DecommissioningService`
+  - `LeasingService`
+  - `CopasOverheadService`
+  - `InventoryLcmService`
+  - `TakeOrPayService`
+  - `ProductionTaxService`

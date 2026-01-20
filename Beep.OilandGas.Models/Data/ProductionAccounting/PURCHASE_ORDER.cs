@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class PURCHASE_ORDER : Entity,IPPDMEntity
-    {
+    public partial class PURCHASE_ORDER : ModelEntityBase {
         private System.String PURCHASE_ORDER_IDValue;
         public System.String PURCHASE_ORDER_ID
         {

@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 using Beep.OilandGas.ProductionAccounting.Royalty;
 using Beep.OilandGas.ProductionAccounting.Accounting;
 using Beep.OilandGas.ProductionAccounting.Models;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
-using Beep.OilandGas.Models.DTOs.Accounting.Royalty;
+using Beep.OilandGas.Models.Data.Accounting.Royalty;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         /// Calculate and create royalty payment.
         /// </summary>
         [HttpPost("payments")]
-        public async Task<ActionResult<RoyaltyPaymentDto>> CreateRoyaltyPayment(
+        public async Task<ActionResult<RoyaltyPayment>> CreateRoyaltyPayment(
             [FromBody] CreateRoyaltyPaymentRequest request,
             [FromQuery] string? userId = null,
             [FromQuery] string? connectionName = null)
@@ -171,7 +171,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         /// Get royalty calculation records.
         /// </summary>
         [HttpGet("calculations")]
-        public async Task<ActionResult<List<Beep.OilandGas.Models.DTOs.ROYALTY_CALCULATION>>> GetRoyaltyCalculations(
+        public async Task<ActionResult<List<Beep.OilandGas.Models.Data.ROYALTY_CALCULATION>>> GetRoyaltyCalculations(
             [FromQuery] string? fieldId = null,
             [FromQuery] string? poolId = null,
             [FromQuery] DateTime? startDate = null,
@@ -196,7 +196,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         /// Get royalty payments by owner.
         /// </summary>
         [HttpGet("payments")]
-        public ActionResult<List<RoyaltyPaymentDto>> GetRoyaltyPayments([FromQuery] string? ownerId = null, [FromQuery] string? connectionName = null)
+        public ActionResult<List<RoyaltyPayment>> GetRoyaltyPayments([FromQuery] string? ownerId = null, [FromQuery] string? connectionName = null)
         {
             try
             {
@@ -214,9 +214,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
             }
         }
 
-        private RoyaltyPaymentDto MapToRoyaltyPaymentDto(RoyaltyPayment payment)
+        private RoyaltyPayment MapToRoyaltyPaymentDto(RoyaltyPayment payment)
         {
-            return new RoyaltyPaymentDto
+            return new RoyaltyPayment
             {
                 PaymentId = payment.PaymentId,
                 RoyaltyOwnerId = payment.RoyaltyOwnerId,

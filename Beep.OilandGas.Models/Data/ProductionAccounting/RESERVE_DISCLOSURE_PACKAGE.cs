@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class RESERVE_DISCLOSURE_PACKAGE : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class RESERVE_DISCLOSURE_PACKAGE : ModelEntityBase
     {
         private string RESERVE_DISCLOSURE_IDValue;
         public string RESERVE_DISCLOSURE_ID
@@ -141,3 +141,4 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+

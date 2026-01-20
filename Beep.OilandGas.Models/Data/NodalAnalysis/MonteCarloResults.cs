@@ -1,0 +1,166 @@
+using System;
+using Beep.OilandGas.PPDM.Models;
+using TheTechIdea.Beep.Editor;
+
+namespace Beep.OilandGas.Models.Data.NodalAnalysis
+{
+    /// <summary>
+    /// Represents results from Monte Carlo uncertainty analysis.
+    /// Contains probability distribution statistics (P10, P50, P90).
+    /// DTO for calculations - Entity class: MONTE_CARLO_RESULTS
+    /// </summary>
+    public partial class MonteCarloResults : ModelEntityBase {
+        /// <summary>
+        /// Mean production rate from simulation (bbl/day or equivalent)
+        /// </summary>
+        private double _meanValue;
+        public double Mean
+        {
+            get { return _meanValue; }
+            set { SetProperty(ref _meanValue, value); }
+        }
+
+        /// <summary>
+        /// Standard deviation of production rate
+        /// </summary>
+        private double _standardDeviationValue;
+        public double StandardDeviation
+        {
+            get { return _standardDeviationValue; }
+            set { SetProperty(ref _standardDeviationValue, value); }
+        }
+
+        /// <summary>
+        /// 10th percentile production rate (P10 - optimistic case)
+        /// </summary>
+        private double _p10Value;
+        public double P10
+        {
+            get { return _p10Value; }
+            set { SetProperty(ref _p10Value, value); }
+        }
+
+        /// <summary>
+        /// 50th percentile production rate (P50 - median/expected case)
+        /// </summary>
+        private double _p50Value;
+        public double P50
+        {
+            get { return _p50Value; }
+            set { SetProperty(ref _p50Value, value); }
+        }
+
+        /// <summary>
+        /// 90th percentile production rate (P90 - conservative case)
+        /// </summary>
+        private double _p90Value;
+        public double P90
+        {
+            get { return _p90Value; }
+            set { SetProperty(ref _p90Value, value); }
+        }
+
+        /// <summary>
+        /// Minimum production rate from all iterations
+        /// </summary>
+        private double _minimumValue;
+        public double Minimum
+        {
+            get { return _minimumValue; }
+            set { SetProperty(ref _minimumValue, value); }
+        }
+
+        /// <summary>
+        /// Maximum production rate from all iterations
+        /// </summary>
+        private double _maximumValue;
+        public double Maximum
+        {
+            get { return _maximumValue; }
+            set { SetProperty(ref _maximumValue, value); }
+        }
+
+        /// <summary>
+        /// Number of Monte Carlo iterations performed
+        /// </summary>
+        private int? _iterationsValue;
+        public int? Iterations
+        {
+            get { return _iterationsValue; }
+            set { SetProperty(ref _iterationsValue, value); }
+        }
+
+        // PPDM Entity Properties
+
+        private string _activeIndValue = "Y";
+        public string ACTIVE_IND
+        {
+            get { return _activeIndValue; }
+            set { SetProperty(ref _activeIndValue, value); }
+        }
+
+        private string _rowCreatedByValue;
+        public string ROW_CREATED_BY
+        {
+            get { return _rowCreatedByValue; }
+            set { SetProperty(ref _rowCreatedByValue, value); }
+        }
+
+        private DateTime? _rowCreatedDateValue;
+        public DateTime? ROW_CREATED_DATE
+        {
+            get { return _rowCreatedDateValue; }
+            set { SetProperty(ref _rowCreatedDateValue, value); }
+        }
+
+        private string _rowChangedByValue;
+        public string ROW_CHANGED_BY
+        {
+            get { return _rowChangedByValue; }
+            set { SetProperty(ref _rowChangedByValue, value); }
+        }
+
+        private DateTime? _rowChangedDateValue;
+        public DateTime? ROW_CHANGED_DATE
+        {
+            get { return _rowChangedDateValue; }
+            set { SetProperty(ref _rowChangedDateValue, value); }
+        }
+
+        private DateTime? _rowEffectiveDateValue;
+        public DateTime? ROW_EFFECTIVE_DATE
+        {
+            get { return _rowEffectiveDateValue; }
+            set { SetProperty(ref _rowEffectiveDateValue, value); }
+        }
+
+        private DateTime? _rowExpiryDateValue;
+        public DateTime? ROW_EXPIRY_DATE
+        {
+            get { return _rowExpiryDateValue; }
+            set { SetProperty(ref _rowExpiryDateValue, value); }
+        }
+
+        private string _rowQualityValue;
+        public string ROW_QUALITY
+        {
+            get { return _rowQualityValue; }
+            set { SetProperty(ref _rowQualityValue, value); }
+        }
+
+        private string _ppdmGuidValue;
+        public string PPDM_GUID
+        {
+            get { return _ppdmGuidValue; }
+            set { SetProperty(ref _ppdmGuidValue, value); }
+        }
+
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        public MonteCarloResults()
+        {
+            PPDM_GUID = Guid.NewGuid().ToString();
+        }
+    }
+}

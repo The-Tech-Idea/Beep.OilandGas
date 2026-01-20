@@ -6,6 +6,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -482,105 +483,5 @@ namespace Beep.OilandGas.Accounting.Services
                 throw;
             }
         }
-    }
-
-    /// <summary>
-    /// Cost Center
-    /// </summary>
-    public class CostCenter
-    {
-        public string CostCenterId { get; set; }
-        public string CostCenterName { get; set; }
-        public string CostCenterType { get; set; }  // REVENUE, SUPPORT
-        public string AllocationBasisType { get; set; }
-        public decimal AllocationBasisValue { get; set; }
-        public decimal ActivityUnits { get; set; }
-        public decimal TotalCost { get; set; }
-        public decimal DirectCosts { get; set; }
-        public decimal Revenue { get; set; }
-        public decimal AllocatedCosts { get; set; }
-        public int AllocationSequence { get; set; }
-    }
-
-    /// <summary>
-    /// Allocation Base
-    /// </summary>
-    public class AllocationBase
-    {
-        public string CostCenterId { get; set; }
-        public string ActivityName { get; set; }
-        public decimal ActivityPercent { get; set; }
-        public decimal ActivityUnits { get; set; }
-    }
-
-    /// <summary>
-    /// Allocation Result
-    /// </summary>
-    public class AllocationResult
-    {
-        public DateTime AllocationDate { get; set; }
-        public AllocationMethod AllocationMethod { get; set; }
-        public string PerformedBy { get; set; }
-        public DateTime PerformedDate { get; set; }
-        public List<AllocationEntry> AllocationEntries { get; set; }
-        public decimal TotalAllocated { get; set; }
-        public int AllocationCount { get; set; }
-        public string Status { get; set; }
-    }
-
-    /// <summary>
-    /// Allocation Entry
-    /// </summary>
-    public class AllocationEntry
-    {
-        public string SourceCostCenter { get; set; }
-        public string TargetCostCenter { get; set; }
-        public string AllocationBasis { get; set; }
-        public decimal AllocationPercent { get; set; }
-        public decimal AllocationAmount { get; set; }
-        public string Description { get; set; }
-    }
-
-    /// <summary>
-    /// Departmental Profitability
-    /// </summary>
-    public class DepartmentProfitability
-    {
-        public string DepartmentId { get; set; }
-        public string DepartmentName { get; set; }
-        public decimal Revenue { get; set; }
-        public decimal DirectCosts { get; set; }
-        public decimal AllocatedOverhead { get; set; }
-        public decimal Contribution { get; set; }
-        public decimal Profit { get; set; }
-        public decimal ContributionMargin { get; set; }
-        public decimal ProfitMargin { get; set; }
-        public decimal ROI { get; set; }
-    }
-
-    /// <summary>
-    /// Departmental Profitability Report
-    /// </summary>
-    public class DepartmentalProfitabilityReport
-    {
-        public DateTime PeriodStart { get; set; }
-        public DateTime PeriodEnd { get; set; }
-        public DateTime GeneratedDate { get; set; }
-        public List<DepartmentProfitability> Departments { get; set; }
-        public decimal TotalRevenue { get; set; }
-        public decimal TotalDirectCosts { get; set; }
-        public decimal TotalAllocatedOverhead { get; set; }
-        public decimal TotalProfit { get; set; }
-    }
-
-    /// <summary>
-    /// Allocation Method
-    /// </summary>
-    public enum AllocationMethod
-    {
-        DirectAllocation,
-        StepDown,
-        Reciprocal,
-        ActivityBasedCosting
     }
 }

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             return UnitOfWorkFactory.CreateUnitOfWork(typeof(LAND_AGREEMENT), _editor, _connectionName, "LAND_AGREEMENT", "LAND_RIGHT_ID");
         }
 
-        public async Task<List<LeaseDto>> GetLeasesAsync(string? fieldId = null)
+        public async Task<List<Lease>> GetLeasesAsync(string? fieldId = null)
         {
             var landRightUow = GetLandRightUnitOfWork();
             List<LAND_RIGHT> landRights;
@@ -77,7 +77,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 landRights = allLandRights.Where(lr => lr.ACTIVE_IND == "Y").ToList();
             }
 
-            var leases = new List<LeaseDto>();
+            var leases = new List<Lease>();
             var agreementUow = GetLandAgreementUnitOfWork();
 
             foreach (var landRight in landRights)
@@ -97,7 +97,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             return leases;
         }
 
-        public async Task<LeaseDto?> GetLeaseAsync(string leaseId)
+        public async Task<Lease?> GetLeaseAsync(string leaseId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 return null;
@@ -119,7 +119,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             return MapToLeaseDto(landRight, agreements.FirstOrDefault());
         }
 
-        public async Task<LeaseDto> CreateLeaseAsync(CreateLeaseDto createDto)
+        public async Task<Lease> CreateLeaseAsync(CreateLease createDto)
         {
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
@@ -161,7 +161,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             return MapToLeaseDto(landRight, agreement);
         }
 
-        public async Task<LeaseDto> UpdateLeaseAsync(string leaseId, UpdateLeaseDto updateDto)
+        public async Task<Lease> UpdateLeaseAsync(string leaseId, UpdateLease updateDto)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentException("Lease ID cannot be null or empty.", nameof(leaseId));
@@ -218,7 +218,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             return MapToLeaseDto(landRight, agreement);
         }
 
-        public async Task<LeaseDto> RenewLeaseAsync(string leaseId, DateTime newExpirationDate)
+        public async Task<Lease> RenewLeaseAsync(string leaseId, DateTime newExpirationDate)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentException("Lease ID cannot be null or empty.", nameof(leaseId));
@@ -229,13 +229,13 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
 
             lease.ExpirationDate = newExpirationDate;
             
-            return await UpdateLeaseAsync(leaseId, new UpdateLeaseDto
+            return await UpdateLeaseAsync(leaseId, new UpdateLease
             {
                 ExpirationDate = newExpirationDate
             });
         }
 
-        public async Task<List<LeaseDto>> GetExpiringLeasesAsync(int days)
+        public async Task<List<Lease>> GetExpiringLeasesAsync(int days)
         {
             var allLeases = await GetLeasesAsync();
             var cutoffDate = DateTime.UtcNow.AddDays(days);
@@ -247,10 +247,10 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 .ToList();
         }
 
-        public async Task<List<LandRightDto>> GetLandRightsAsync(string leaseId)
+        public async Task<List<LandRight>> GetLandRightsAsync(string leaseId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
-                return new List<LandRightDto>();
+                return new List<LandRight>();
 
             var landRightUow = GetLandRightUnitOfWork();
             var filters = new List<AppFilter>
@@ -261,7 +261,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             var units = await landRightUow.Get(filters);
             List<LAND_RIGHT> landRights = ConvertToList<LAND_RIGHT>(units);
 
-            return landRights.Select(lr => new LandRightDto
+            return landRights.Select(lr => new LandRight
             {
                 LandRightId = lr.LAND_RIGHT_ID ?? string.Empty,
                 LeaseId = leaseId,
@@ -273,18 +273,18 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             }).ToList();
         }
 
-        public async Task<List<MineralRightDto>> GetMineralRightsAsync(string leaseId)
+        public async Task<List<MineralRight>> GetMineralRightsAsync(string leaseId)
         {
             // Note: OBLIGATION entity would need to be checked if it exists in PPDM39
             // For now, returning empty list as placeholder
             await Task.CompletedTask;
-            return new List<MineralRightDto>();
+            return new List<MineralRight>();
         }
 
-        public async Task<List<SurfaceAgreementDto>> GetSurfaceAgreementsAsync(string leaseId)
+        public async Task<List<SurfaceAgreement>> GetSurfaceAgreementsAsync(string leaseId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
-                return new List<SurfaceAgreementDto>();
+                return new List<SurfaceAgreement>();
 
             var agreementUow = GetLandAgreementUnitOfWork();
             var filters = new List<AppFilter>
@@ -295,7 +295,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             var units = await agreementUow.Get(filters);
             List<LAND_AGREEMENT> agreements = ConvertToList<LAND_AGREEMENT>(units);
 
-            return agreements.Select(ag => new SurfaceAgreementDto
+            return agreements.Select(ag => new SurfaceAgreement
             {
                 AgreementId = ag.LAND_RIGHT_ID ?? string.Empty,
                 LeaseId = leaseId,
@@ -308,17 +308,17 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             }).ToList();
         }
 
-        public async Task<List<RoyaltyDto>> GetRoyaltiesAsync(string leaseId)
+        public async Task<List<Royalty>> GetRoyaltiesAsync(string leaseId)
         {
             // Note: OBLIGATION entity would need to be checked if it exists in PPDM39
             // For now, returning empty list as placeholder
             await Task.CompletedTask;
-            return new List<RoyaltyDto>();
+            return new List<Royalty>();
         }
 
-        private LeaseDto MapToLeaseDto(LAND_RIGHT landRight, LAND_AGREEMENT? agreement)
+        private Lease MapToLeaseDto(LAND_RIGHT landRight, LAND_AGREEMENT? agreement)
         {
-            return new LeaseDto
+            return new Lease
             {
                 LeaseId = landRight.LAND_RIGHT_ID ?? string.Empty,
                 LeaseNumber = landRight.CASE_SERIAL_NUM ?? string.Empty,

@@ -6,6 +6,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using AccountingModels = Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -46,12 +47,12 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Perform bank reconciliation
         /// </summary>
-        public async Task<BankReconciliation> ReconcileBankAccountAsync(
+        public async Task<AccountingModels.BankReconciliation> ReconcileBankAccountAsync(
             string accountNumber,
             decimal bankStatementBalance,
             DateTime statementDate,
-            List<OutstandingCheck> outstandingChecks = null,
-            List<DepositInTransit> depositsInTransit = null,
+            List<AccountingModels.OutstandingCheck> outstandingChecks = null,
+            List<AccountingModels.DepositInTransit> depositsInTransit = null,
             string reportName = "")
         {
             _logger?.LogInformation("Performing bank reconciliation for account {Account} as of {Date}",
@@ -76,7 +77,7 @@ namespace Beep.OilandGas.Accounting.Services
                 var glBalance = await _glAccountService.GetAccountBalanceAsync(accountNumber, statementDate);
 
                 // Initialize reconciliation
-                var reconciliation = new BankReconciliation
+                var reconciliation = new AccountingModels.BankReconciliation
                 {
                     ReportName = reportName,
                     GeneratedDate = DateTime.UtcNow,
@@ -84,8 +85,8 @@ namespace Beep.OilandGas.Accounting.Services
                     StatementDate = statementDate,
                     BankStatementBalance = bankStatementBalance,
                     GLBalance = glBalance,
-                    OutstandingChecks = outstandingChecks ?? new List<OutstandingCheck>(),
-                    DepositsInTransit = depositsInTransit ?? new List<DepositInTransit>()
+                    OutstandingChecks = outstandingChecks ?? new List<AccountingModels.OutstandingCheck>(),
+                    DepositsInTransit = depositsInTransit ?? new List<AccountingModels.DepositInTransit>()
                 };
 
                 // Calculate outstanding checks total
@@ -129,7 +130,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Analyze check clearing pattern
         /// </summary>
-        public async Task<CheckClearingAnalysis> AnalyzeCheckClearingAsync(
+        public async Task<AccountingModels.CheckClearingAnalysis> AnalyzeCheckClearingAsync(
             string accountNumber,
             DateTime periodStart,
             DateTime periodEnd)
@@ -157,7 +158,7 @@ namespace Beep.OilandGas.Accounting.Services
 
                 var payments = await repo.GetAsync(filters) as List<AP_PAYMENT> ?? new List<AP_PAYMENT>();
 
-                var analysis = new CheckClearingAnalysis
+                var analysis = new AccountingModels.CheckClearingAnalysis
                 {
                     AccountNumber = accountNumber,
                     PeriodStart = periodStart,
@@ -165,7 +166,7 @@ namespace Beep.OilandGas.Accounting.Services
                     AnalysisDate = DateTime.UtcNow,
                     TotalPayments = payments.Count,
                     TotalAmount = payments.Sum(x => x.PAYMENT_AMOUNT ?? 0m),
-                    PaymentsByType = new List<PaymentTypeAnalysis>(),
+                    PaymentsByType = new List<AccountingModels.PaymentTypeAnalysis>(),
                     AverageProcessingTime = CalculateAverageProcessingTime(payments)
                 };
 
@@ -173,7 +174,7 @@ namespace Beep.OilandGas.Accounting.Services
                 var groupedByMethod = payments.GroupBy(x => x.PAYMENT_METHOD ?? "UNKNOWN").ToList();
                 foreach (var group in groupedByMethod)
                 {
-                    analysis.PaymentsByType.Add(new PaymentTypeAnalysis
+                    analysis.PaymentsByType.Add(new AccountingModels.PaymentTypeAnalysis
                     {
                         PaymentMethod = group.Key,
                         Count = group.Count(),
@@ -197,7 +198,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Identify aged outstanding items
         /// </summary>
-        public async Task<AgedItemsReport> AnalyzeAgedOutstandingItemsAsync(
+        public async Task<AccountingModels.AgedItemsReport> AnalyzeAgedOutstandingItemsAsync(
             string accountNumber,
             DateTime asOfDate)
         {
@@ -209,15 +210,15 @@ namespace Beep.OilandGas.Accounting.Services
                 if (string.IsNullOrWhiteSpace(accountNumber))
                     throw new ArgumentNullException(nameof(accountNumber));
 
-                var report = new AgedItemsReport
+                var report = new AccountingModels.AgedItemsReport
                 {
                     AccountNumber = accountNumber,
                     AsOfDate = asOfDate,
                     AnalysisDate = DateTime.UtcNow,
-                    Current = new List<AgedItem>(),
-                    _30to60Days = new List<AgedItem>(),
-                    _60to90Days = new List<AgedItem>(),
-                    Over90Days = new List<AgedItem>()
+                    Current = new List<AccountingModels.AgedItem>(),
+                    _30to60Days = new List<AccountingModels.AgedItem>(),
+                    _60to90Days = new List<AccountingModels.AgedItem>(),
+                    Over90Days = new List<AccountingModels.AgedItem>()
                 };
 
                 // Get GL entries for the account
@@ -240,7 +241,7 @@ namespace Beep.OilandGas.Accounting.Services
                     var entryDate = entry.ROW_CREATED_DATE ?? DateTime.Today;
                     int ageInDays = (int)(asOfDate - entryDate).TotalDays;
 
-                    var agedItem = new AgedItem
+                    var agedItem = new AccountingModels.AgedItem
                     {
                         EntryDate = entryDate,
                         Description = entry.DESCRIPTION,
@@ -282,7 +283,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Export bank reconciliation as formatted text
         /// </summary>
-        public string ExportBankReconciliationAsText(BankReconciliation reconciliation)
+        public string ExportBankReconciliationAsText(AccountingModels.BankReconciliation reconciliation)
         {
             _logger?.LogInformation("Exporting bank reconciliation as text");
 
@@ -374,101 +375,5 @@ namespace Beep.OilandGas.Accounting.Services
 
             return clearingTimes.Any() ? (int)clearingTimes.Average() : 0;
         }
-    }
-
-    /// <summary>
-    /// Bank Reconciliation Result
-    /// </summary>
-    public class BankReconciliation
-    {
-        public string ReportName { get; set; }
-        public DateTime GeneratedDate { get; set; }
-        public string AccountNumber { get; set; }
-        public DateTime StatementDate { get; set; }
-        public decimal BankStatementBalance { get; set; }
-        public decimal GLBalance { get; set; }
-        public decimal TotalOutstandingChecks { get; set; }
-        public decimal TotalDepositsInTransit { get; set; }
-        public decimal ReconciledGLBalance { get; set; }
-        public decimal Difference { get; set; }
-        public bool IsReconciled { get; set; }
-        public List<OutstandingCheck> OutstandingChecks { get; set; }
-        public List<DepositInTransit> DepositsInTransit { get; set; }
-    }
-
-    /// <summary>
-    /// Outstanding Check
-    /// </summary>
-    public class OutstandingCheck
-    {
-        public string CheckNumber { get; set; }
-        public decimal Amount { get; set; }
-        public DateTime CheckDate { get; set; }
-    }
-
-    /// <summary>
-    /// Deposit In Transit
-    /// </summary>
-    public class DepositInTransit
-    {
-        public decimal Amount { get; set; }
-        public DateTime DepositDate { get; set; }
-    }
-
-    /// <summary>
-    /// Check Clearing Analysis
-    /// </summary>
-    public class CheckClearingAnalysis
-    {
-        public string AccountNumber { get; set; }
-        public DateTime PeriodStart { get; set; }
-        public DateTime PeriodEnd { get; set; }
-        public DateTime AnalysisDate { get; set; }
-        public int TotalPayments { get; set; }
-        public decimal TotalAmount { get; set; }
-        public int AverageProcessingTime { get; set; }
-        public List<PaymentTypeAnalysis> PaymentsByType { get; set; }
-    }
-
-    /// <summary>
-    /// Payment Type Analysis
-    /// </summary>
-    public class PaymentTypeAnalysis
-    {
-        public string PaymentMethod { get; set; }
-        public int Count { get; set; }
-        public decimal TotalAmount { get; set; }
-        public decimal AverageAmount { get; set; }
-    }
-
-    /// <summary>
-    /// Aged Outstanding Items Report
-    /// </summary>
-    public class AgedItemsReport
-    {
-        public string AccountNumber { get; set; }
-        public DateTime AsOfDate { get; set; }
-        public DateTime AnalysisDate { get; set; }
-        public List<AgedItem> Current { get; set; }
-        public List<AgedItem> _30to60Days { get; set; }
-        public List<AgedItem> _60to90Days { get; set; }
-        public List<AgedItem> Over90Days { get; set; }
-        public decimal CurrentTotal { get; set; }
-        public decimal _30to60Total { get; set; }
-        public decimal _60to90Total { get; set; }
-        public decimal Over90Total { get; set; }
-        public decimal GrandTotal { get; set; }
-    }
-
-    /// <summary>
-    /// Aged Item
-    /// </summary>
-    public class AgedItem
-    {
-        public DateTime EntryDate { get; set; }
-        public string Description { get; set; }
-        public decimal Amount { get; set; }
-        public int AgeInDays { get; set; }
-        public string Reference { get; set; }
     }
 }

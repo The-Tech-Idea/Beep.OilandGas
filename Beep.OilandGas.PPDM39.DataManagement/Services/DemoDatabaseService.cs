@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.PPDM39.DataManagement.Data;
-using Beep.OilandGas.Models.DTOs.DataManagement;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation;

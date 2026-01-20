@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.DTOs.Pumps;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Pumps;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -25,7 +25,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         [HttpPost("design")]
-        public async Task<ActionResult<HydraulicPumpDesignDto>> DesignPumpSystem([FromBody] DesignPumpSystemRequest request)
+        public async Task<ActionResult<HydraulicPumpDesign>> DesignPumpSystem([FromBody] DesignPumpSystemRequest request)
         {
             try
             {
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         [HttpPost("analyze-performance")]
-        public async Task<ActionResult<PumpPerformanceAnalysisDto>> AnalyzePerformance([FromBody] AnalyzePerformanceRequest request)
+        public async Task<ActionResult<PumpPerformanceAnalysis>> AnalyzePerformance([FromBody] AnalyzePerformanceRequest request)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         [HttpPost("design/save")]
-        public async Task<ActionResult> SavePumpDesign([FromBody] HydraulicPumpDesignDto design, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SavePumpDesign([FromBody] HydraulicPumpDesign design, [FromQuery] string? userId = null)
         {
             try
             {
@@ -74,7 +74,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         [HttpGet("performance-history/{pumpId}")]
-        public async Task<ActionResult<List<PumpPerformanceHistoryDto>>> GetPerformanceHistory(string pumpId)
+        public async Task<ActionResult<List<PumpPerformanceHistory>>> GetPerformanceHistory(string pumpId)
         {
             try
             {

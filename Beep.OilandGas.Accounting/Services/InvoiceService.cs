@@ -8,7 +8,7 @@ using TheTechIdea.Beep.Report;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.Models.DTOs.Accounting;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -19,6 +19,7 @@ namespace Beep.OilandGas.Accounting.Services
     /// <summary>
     /// Invoice service for revenue recognition, invoicing, and collections.
     /// Uses INVOICE/INVOICE_LINE_ITEM/INVOICE_PAYMENT entities.
+    /// Usage: Use for general billing workflows tied to INVOICE tables.
     /// </summary>
     public class InvoiceService : IInvoiceService
     {
@@ -26,7 +27,8 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
-        private readonly IJournalEntryService _journalEntryService;
+        private readonly AccountingBasisPostingService _basisPosting;
+        private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<InvoiceService> _logger;
         private const string ConnectionName = "PPDM39";
 
@@ -35,15 +37,17 @@ namespace Beep.OilandGas.Accounting.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            IJournalEntryService journalEntryService,
-            ILogger<InvoiceService> logger = null)
+            AccountingBasisPostingService basisPosting,
+            ILogger<InvoiceService> logger = null,
+            IAccountMappingService? accountMapping = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _journalEntryService = journalEntryService ?? throw new ArgumentNullException(nameof(journalEntryService));
+            _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
             _logger = logger;
+            _accountMapping = accountMapping;
         }
 
         public async Task<INVOICE> CreateInvoiceAsync(CreateInvoiceRequest request, string userId, string? connectionName = null)
@@ -54,6 +58,8 @@ namespace Beep.OilandGas.Accounting.Services
                 throw new InvalidOperationException("Customer BA ID is required");
             if (request.Subtotal <= 0m)
                 throw new InvalidOperationException("Invoice subtotal must be positive");
+            if (request.DueDate.Date < request.InvoiceDate.Date)
+                throw new InvalidOperationException("Due date cannot be earlier than invoice date");
 
             var invoice = new INVOICE
             {
@@ -71,7 +77,7 @@ namespace Beep.OilandGas.Accounting.Services
                 BALANCE_DUE = request.Subtotal + (request.TaxAmount ?? 0m),
                 CURRENCY_CODE = string.IsNullOrWhiteSpace(request.CurrencyCode) ? "USD" : request.CurrencyCode,
                 DESCRIPTION = request.Description,
-                STATUS = "DRAFT",
+                STATUS = InvoiceStatuses.Draft,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_BY = userId,
@@ -128,7 +134,12 @@ namespace Beep.OilandGas.Accounting.Services
             invoice.INVOICE_NUMBER = request.InvoiceNumber ?? invoice.INVOICE_NUMBER;
             invoice.CUSTOMER_BA_ID = request.CustomerBaId ?? invoice.CUSTOMER_BA_ID;
             invoice.INVOICE_DATE = request.InvoiceDate ?? invoice.INVOICE_DATE;
-            invoice.DUE_DATE = request.DueDate ?? invoice.DUE_DATE;
+            var updatedDueDate = request.DueDate ?? invoice.DUE_DATE;
+            var updatedInvoiceDate = request.InvoiceDate ?? invoice.INVOICE_DATE;
+            if (updatedDueDate.HasValue && updatedInvoiceDate.HasValue
+                && updatedDueDate.Value.Date < updatedInvoiceDate.Value.Date)
+                throw new InvalidOperationException("Due date cannot be earlier than invoice date");
+            invoice.DUE_DATE = updatedDueDate;
             invoice.SUBTOTAL = request.Subtotal ?? invoice.SUBTOTAL;
             invoice.TAX_AMOUNT = request.TaxAmount ?? invoice.TAX_AMOUNT;
             if (request.Subtotal.HasValue || request.TaxAmount.HasValue)
@@ -175,6 +186,9 @@ namespace Beep.OilandGas.Accounting.Services
             var invoice = await GetInvoiceAsync(request.InvoiceId, connectionName);
             if (invoice == null)
                 throw new InvalidOperationException($"Invoice not found: {request.InvoiceId}");
+            var currentBalance = (invoice.TOTAL_AMOUNT ?? 0m) - (invoice.PAID_AMOUNT ?? 0m);
+            if (request.PaymentAmount > currentBalance + 0.01m)
+                throw new InvalidOperationException("Payment amount exceeds invoice balance");
 
             var payment = new INVOICE_PAYMENT
             {
@@ -196,16 +210,16 @@ namespace Beep.OilandGas.Accounting.Services
 
             invoice.PAID_AMOUNT = (invoice.PAID_AMOUNT ?? 0m) + request.PaymentAmount;
             invoice.BALANCE_DUE = Math.Max(0m, (invoice.TOTAL_AMOUNT ?? 0m) - (invoice.PAID_AMOUNT ?? 0m));
-            invoice.STATUS = invoice.BALANCE_DUE == 0m ? "PAID" : "PARTIAL";
+            invoice.STATUS = invoice.BALANCE_DUE == 0m ? InvoiceStatuses.Paid : InvoiceStatuses.PartiallyPaid;
             invoice.ROW_CHANGED_BY = userId;
             invoice.ROW_CHANGED_DATE = DateTime.UtcNow;
 
             var invoiceRepo = await GetRepoAsync<INVOICE>("INVOICE", connectionName);
             await invoiceRepo.UpdateAsync(invoice, userId);
 
-            await _journalEntryService.CreateBalancedEntryAsync(
-                DefaultGlAccounts.Cash,
-                DefaultGlAccounts.AccountsReceivable,
+            await _basisPosting.PostBalancedEntryByAccountAsync(
+                GetAccountId(AccountMappingKeys.Cash, DefaultGlAccounts.Cash),
+                GetAccountId(AccountMappingKeys.AccountsReceivable, DefaultGlAccounts.AccountsReceivable),
                 request.PaymentAmount,
                 $"Invoice payment {invoice.INVOICE_NUMBER}",
                 userId,
@@ -257,7 +271,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (invoice == null)
                 throw new InvalidOperationException($"Invoice not found: {invoiceId}");
 
-            if (!string.Equals(invoice.STATUS, "DRAFT", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(invoice.STATUS, InvoiceStatuses.Draft, StringComparison.OrdinalIgnoreCase))
             {
                 return new InvoiceApprovalResult
                 {
@@ -268,15 +282,15 @@ namespace Beep.OilandGas.Accounting.Services
                 };
             }
 
-            await _journalEntryService.CreateBalancedEntryAsync(
-                DefaultGlAccounts.AccountsReceivable,
-                DefaultGlAccounts.Revenue,
+            await _basisPosting.PostBalancedEntryByAccountAsync(
+                GetAccountId(AccountMappingKeys.AccountsReceivable, DefaultGlAccounts.AccountsReceivable),
+                GetAccountId(AccountMappingKeys.Revenue, DefaultGlAccounts.Revenue),
                 invoice.TOTAL_AMOUNT ?? 0m,
                 $"Invoice approved {invoice.INVOICE_NUMBER}",
                 approverId,
                 connectionName ?? ConnectionName);
 
-            invoice.STATUS = "ISSUED";
+            invoice.STATUS = InvoiceStatuses.Issued;
             invoice.ROW_CHANGED_BY = approverId;
             invoice.ROW_CHANGED_DATE = DateTime.UtcNow;
 
@@ -347,10 +361,10 @@ namespace Beep.OilandGas.Accounting.Services
             var balance = totalAmount - totalPaid;
             var paymentStatus = balance switch
             {
-                < 0m => "Overpaid",
-                0m => "Paid",
-                _ when totalPaid > 0m => "Partial",
-                _ => "Unpaid"
+                < 0m => "OVERPAID",
+                0m => InvoiceStatuses.Paid,
+                _ when totalPaid > 0m => InvoiceStatuses.PartiallyPaid,
+                _ => "UNPAID"
             };
 
             var dueDate = invoice.DUE_DATE ?? invoice.INVOICE_DATE;
@@ -400,5 +414,13 @@ namespace Beep.OilandGas.Accounting.Services
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 entityType, connectionName ?? ConnectionName, tableName);
         }
+
+        private string GetAccountId(string key, string fallback)
+        {
+            return _accountMapping?.GetAccountId(key) ?? fallback;
+        }
     }
 }
+
+
+

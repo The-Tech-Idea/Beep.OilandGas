@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Models;
@@ -14,21 +14,21 @@ using Beep.OilandGas.ProductionForecasting.Calculations;
 using Beep.OilandGas.ProductionForecasting.Models;
 using Beep.OilandGas.EconomicAnalysis;
 using Beep.OilandGas.EconomicAnalysis.Calculations;
-using Beep.OilandGas.Models.EconomicAnalysis;
+using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Beep.OilandGas.NodalAnalysis;
 using Beep.OilandGas.NodalAnalysis.Calculations;
-using Beep.OilandGas.Models.NodalAnalysis;
+using Beep.OilandGas.Models.Data.NodalAnalysis;
 using Beep.OilandGas.WellTestAnalysis;
 using Beep.OilandGas.WellTestAnalysis.Models;
 using Beep.OilandGas.FlashCalculations;
 using Beep.OilandGas.FlashCalculations.Calculations;
-using Beep.OilandGas.Models.FlashCalculations;
+using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.ChokeAnalysis;
 using Beep.OilandGas.ChokeAnalysis.Calculations;
 using Beep.OilandGas.ChokeAnalysis.Models;
 using Beep.OilandGas.GasLift;
 using Beep.OilandGas.GasLift.Calculations;
-using Beep.OilandGas.Models.GasLift;
+using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.PumpPerformance;
 using Beep.OilandGas.PumpPerformance.Calculations;
 using Beep.OilandGas.SuckerRodPumping;
@@ -1839,7 +1839,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// <returns>Well test analysis result with permeability, skin factor, reservoir pressure, productivity index, and diagnostic data</returns>
         /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
         /// <exception cref="InvalidOperationException">Thrown when well test data is unavailable or calculation fails</exception>
-        public async Task<Beep.OilandGas.Models.DTOs.WellTestAnalysisResult> PerformWellTestAnalysisAsync(WellTestAnalysisCalculationRequest request)
+        public async Task<Beep.OilandGas.Models.Data.WellTestAnalysisResult> PerformWellTestAnalysisAsync(WellTestAnalysisCalculationRequest request)
         {
             try
             {
@@ -3704,13 +3704,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// <summary>
         /// Maps WellTestAnalysisResult from library to WellTestAnalysisResult DTO
         /// </summary>
-        private Beep.OilandGas.Models.DTOs.WellTestAnalysisResult MapWellTestResultToDTO(
+        private Beep.OilandGas.Models.Data.WellTestAnalysisResult MapWellTestResultToDTO(
             WellTestAnalysis.Models.WellTestAnalysisResult analysisResult,
             WellTestAnalysisCalculationRequest request,
             ReservoirModel identifiedModel,
             List<PressureTimePoint> derivativePoints)
         {
-            var result = new Beep.OilandGas.Models.DTOs.WellTestAnalysisResult
+            var result = new Beep.OilandGas.Models.Data.WellTestAnalysisResult
             {
                 CalculationId = Guid.NewGuid().ToString(),
                 WellId = request.WellId,

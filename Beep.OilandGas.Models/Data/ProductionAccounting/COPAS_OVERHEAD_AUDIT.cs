@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class COPAS_OVERHEAD_AUDIT : Entity, IPPDMEntity
-    {
+    public partial class COPAS_OVERHEAD_AUDIT : ModelEntityBase {
         private string COPAS_OVERHEAD_AUDIT_IDValue;
         public string COPAS_OVERHEAD_AUDIT_ID
         {

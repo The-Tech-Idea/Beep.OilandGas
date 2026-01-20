@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.GasProperties;
+using Beep.OilandGas.Models.Data.GasProperties;
 using Beep.OilandGas.Models.Data.Common;
 
 namespace Beep.OilandGas.Client.App.Services.Properties

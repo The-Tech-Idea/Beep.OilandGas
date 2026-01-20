@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ApiService.Controllers
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// Compare multiple wells
         /// </summary>
         [HttpPost("compare")]
-        public async Task<ActionResult<WellComparisonDTO>> CompareWells([FromBody] CompareWellsRequest request)
+        public async Task<ActionResult<WellComparison>> CompareWells([FromBody] CompareWellsRequest request)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// Compare wells from multiple data sources
         /// </summary>
         [HttpPost("compare-multi-source")]
-        public async Task<ActionResult<WellComparisonDTO>> CompareWellsMultiSource([FromBody] CompareWellsMultiSourceRequest request)
+        public async Task<ActionResult<WellComparison>> CompareWellsMultiSource([FromBody] CompareWellsMultiSourceRequest request)
         {
             try
             {

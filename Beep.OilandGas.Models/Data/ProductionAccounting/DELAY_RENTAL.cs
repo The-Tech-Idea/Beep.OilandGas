@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class DELAY_RENTAL : Entity, IPPDMEntity
-    {
+    public partial class DELAY_RENTAL : ModelEntityBase {
         private string DELAY_RENTAL_IDValue;
         public string DELAY_RENTAL_ID
         {

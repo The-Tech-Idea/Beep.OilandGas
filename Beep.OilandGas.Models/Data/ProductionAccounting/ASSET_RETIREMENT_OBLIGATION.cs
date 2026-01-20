@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class ASSET_RETIREMENT_OBLIGATION : Entity,IPPDMEntity
-    {
+    public partial class ASSET_RETIREMENT_OBLIGATION : ModelEntityBase {
         private String ARO_IDValue;
         public String ARO_ID
         {

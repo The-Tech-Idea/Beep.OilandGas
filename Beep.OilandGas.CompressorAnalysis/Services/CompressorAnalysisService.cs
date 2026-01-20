@@ -6,8 +6,8 @@ using Beep.OilandGas.CompressorAnalysis.Calculations;
 using Beep.OilandGas.CompressorAnalysis.Constants;
 using Beep.OilandGas.CompressorAnalysis.Exceptions;
 using Beep.OilandGas.CompressorAnalysis.Validation;
-using Beep.OilandGas.Models.CompressorAnalysis;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data.CompressorAnalysis;
+using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.CompressorAnalysis.Services
@@ -40,8 +40,8 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         /// <param name="gasSpecificGravity">Gas specific gravity (air = 1.0).</param>
         /// <param name="designTemperature">Design temperature in degrees Rankine.</param>
         /// <param name="compressorType">Type of compressor: "Centrifugal" or "Reciprocating".</param>
-        /// <returns>CompressorDesignDto with design specifications and stage breakdown.</returns>
-        public async Task<CompressorDesignDto> DesignCompressorAsync(
+        /// <returns>CompressorDesign with design specifications and stage breakdown.</returns>
+        public async Task<CompressorDesign> DesignCompressorAsync(
             decimal requiredFlowRate,
             decimal requiredDischargePressure,
             decimal requiredInletPressure,
@@ -72,7 +72,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 recommendedStages = Math.Max(1, Math.Min(6, recommendedStages)); // Limit to 1-6 stages
 
                 // Design stages
-                var stages = new List<CompressorStageDto>();
+                var stages = new List<CompressorStage>();
                 decimal currentPressure = requiredInletPressure;
                 decimal pressureIncrement = (requiredDischargePressure - requiredInletPressure) / recommendedStages;
 
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                     decimal stagePower = EstimateStagepower(requiredFlowRate / recommendedStages, currentPressure, 
                         stageDischargePressure, gasSpecificGravity, designTemperature, stageEfficiency);
 
-                    stages.Add(new CompressorStageDto
+                    stages.Add(new CompressorStage
                     {
                         StageNumber = i,
                         InletPressure = currentPressure,
@@ -107,7 +107,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 decimal totalPower = stages.Sum(s => s.StagePower);
                 decimal averageEfficiency = stages.Average(s => s.StageEfficiency);
 
-                var designResult = new CompressorDesignDto
+                var designResult = new CompressorDesign
                 {
                     DesignId = FormatIdForTable("COMPRESSOR_DESIGN", Guid.NewGuid().ToString()),
                     DesignDate = DateTime.UtcNow,
@@ -146,8 +146,8 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         /// <param name="inletTemperature">Inlet temperature in degrees Rankine.</param>
         /// <param name="gasSpecificGravity">Gas specific gravity (air = 1.0).</param>
         /// <param name="compressorType">Type of compressor: "Centrifugal" or "Reciprocating".</param>
-        /// <returns>CompressorPerformanceDto with calculated performance metrics.</returns>
-        public async Task<CompressorPerformanceDto> AnalyzePerformanceAsync(
+        /// <returns>CompressorPerformance with calculated performance metrics.</returns>
+        public async Task<CompressorPerformance> AnalyzePerformanceAsync(
             decimal inletPressure,
             decimal dischargePressure,
             decimal gasFlowRate,
@@ -213,7 +213,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                     powerResult = ReciprocatingCompressorCalculator.CalculatePower(reciprocatingProps);
                 }
 
-                var performanceResult = new CompressorPerformanceDto
+                var performanceResult = new CompressorPerformance
                 {
                     AnalysisId = FormatIdForTable("COMPRESSOR_PERFORMANCE", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
@@ -251,8 +251,8 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         /// <param name="inletTemperature">Inlet temperature in degrees Rankine.</param>
         /// <param name="dischargeTemperature">Discharge temperature in degrees Rankine.</param>
         /// <param name="gasSpecificGravity">Gas specific gravity (air = 1.0).</param>
-        /// <returns>CompressorEfficiencyAnalysisDto with calculated efficiency values.</returns>
-        public async Task<CompressorEfficiencyAnalysisDto> CalculateEfficiencyAsync(
+        /// <returns>CompressorEfficiencyAnalysis with calculated efficiency values.</returns>
+        public async Task<CompressorEfficiencyAnalysis> CalculateEfficiencyAsync(
             decimal inletPressure,
             decimal dischargePressure,
             decimal inletTemperature,
@@ -305,7 +305,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                     _ => "Poor"
                 };
 
-                var efficiencyResult = new CompressorEfficiencyAnalysisDto
+                var efficiencyResult = new CompressorEfficiencyAnalysis
                 {
                     AnalysisId = FormatIdForTable("COMPRESSOR_EFFICIENCY", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
@@ -340,8 +340,8 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         /// <param name="inletPressure">Inlet pressure in psia.</param>
         /// <param name="gasSpecificGravity">Gas specific gravity (air = 1.0).</param>
         /// <param name="designTemperature">Design temperature in degrees Rankine.</param>
-        /// <returns>CompressorPowerAnalysisDto with optimization recommendations.</returns>
-        public async Task<CompressorPowerAnalysisDto> OptimizeCompressorAsync(
+        /// <returns>CompressorPowerAnalysis with optimization recommendations.</returns>
+        public async Task<CompressorPowerAnalysis> OptimizeCompressorAsync(
             decimal requiredFlowRate,
             decimal requiredDischargePressure,
             decimal inletPressure,
@@ -399,7 +399,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 // Analyze isothermal power (theoretical minimum)
                 decimal isothermicPower = isentropicPower * 0.65m; // Typical ratio
 
-                var powerAnalysisResult = new CompressorPowerAnalysisDto
+                var powerAnalysisResult = new CompressorPowerAnalysis
                 {
                     AnalysisId = FormatIdForTable("COMPRESSOR_POWER", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
@@ -435,8 +435,8 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         /// <param name="inletPressure">Inlet pressure in psia.</param>
         /// <param name="dischargePressure">Discharge pressure in psia.</param>
         /// <param name="compressorType">Type of compressor: "Centrifugal" or "Reciprocating".</param>
-        /// <returns>CompressorMaintenancePredictionDto with maintenance schedule.</returns>
-        public async Task<CompressorMaintenancePredictionDto> PredictMaintenanceAsync(
+        /// <returns>CompressorMaintenancePrediction with maintenance schedule.</returns>
+        public async Task<CompressorMaintenancePrediction> PredictMaintenanceAsync(
             decimal operatingHoursPerYear,
             decimal inletPressure,
             decimal dischargePressure,
@@ -496,7 +496,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
 
                 decimal maintenancePriority = Math.Min(100m, (decimal)overallStressLevel);
 
-                var maintenanceResult = new CompressorMaintenancePredictionDto
+                var maintenanceResult = new CompressorMaintenancePrediction
                 {
                     PredictionId = FormatIdForTable("COMPRESSOR_MAINTENANCE", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
@@ -528,8 +528,8 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         /// <param name="inletPressure">Inlet pressure in psia.</param>
         /// <param name="gasSpecificGravity">Gas specific gravity (air = 1.0).</param>
         /// <param name="inletTemperature">Inlet temperature in degrees Rankine.</param>
-        /// <returns>CompressorPressureFlowAnalysisDto with performance map.</returns>
-        public async Task<CompressorPressureFlowAnalysisDto> AnalyzePressureFlowAsync(
+        /// <returns>CompressorPressureFlowAnalysis with performance map.</returns>
+        public async Task<CompressorPressureFlowAnalysis> AnalyzePressureFlowAsync(
             decimal inletPressure,
             decimal gasSpecificGravity,
             decimal inletTemperature)
@@ -542,7 +542,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
 
             try
             {
-                var performancePoints = new List<PressureFlowPointDto>();
+                var performancePoints = new List<PressureFlowPoint>();
 
                 // Generate performance map across flow range
                 for (decimal flowRate = 100m; flowRate <= 5000m; flowRate += 500m)
@@ -553,7 +553,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                     decimal efficiency = 0.75m - (flowRate / 20000m);
                     efficiency = Math.Max(0.5m, Math.Min(0.85m, efficiency));
 
-                    performancePoints.Add(new PressureFlowPointDto
+                    performancePoints.Add(new PressureFlowPoint
                     {
                         FlowRate = flowRate,
                         Pressure = pressure,
@@ -568,7 +568,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 decimal optimalFlowRate = performancePoints.OrderByDescending(p => p.Efficiency).First().FlowRate;
                 decimal optimalPressure = performancePoints.First(p => p.FlowRate == optimalFlowRate).Pressure;
 
-                var analysisResult = new CompressorPressureFlowAnalysisDto
+                var analysisResult = new CompressorPressureFlowAnalysis
                 {
                     AnalysisId = FormatIdForTable("COMPRESSOR_PFANALYSIS", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,

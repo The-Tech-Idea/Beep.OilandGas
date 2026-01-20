@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs.Calculations;
-using ProductionForecastResultDto = Beep.OilandGas.Models.DTOs.Calculations.ProductionForecastResultDto;
-using DeclineCurveAnalysisDto = Beep.OilandGas.Models.DTOs.Calculations.DeclineCurveAnalysisDto;
-using ProductionForecastPointDto = Beep.OilandGas.Models.DTOs.Calculations.ProductionForecastPointDto;
+using Beep.OilandGas.Models.Data.Calculations;
+using ProductionForecastResult = Beep.OilandGas.Models.Data.Calculations.ProductionForecastResult;
+using DeclineCurveAnalysis = Beep.OilandGas.Models.Data.Calculations.DeclineCurveAnalysis;
+using ProductionForecastPoint = Beep.OilandGas.Models.Data.Calculations.ProductionForecastPoint;
 
 namespace Beep.OilandGas.ProductionForecasting.Services
 {
@@ -19,22 +19,22 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         /// <summary>
         /// Generates a production forecast using specified method
         /// </summary>
-        Task<ProductionForecastResultDto> GenerateForecastAsync(GenerateForecastRequest request);
+        Task<ProductionForecastResult> GenerateForecastAsync(GenerateForecastRequest request);
 
         /// <summary>
         /// Generates DCA-based forecast using historical production data
         /// </summary>
-        Task<ProductionForecastResultDto> GenerateDCAForecastAsync(string wellUWI, string declineType, DateTime startDate, DateTime endDate, int forecastPeriod);
+        Task<ProductionForecastResult> GenerateDCAForecastAsync(string wellUWI, string declineType, DateTime startDate, DateTime endDate, int forecastPeriod);
 
         /// <summary>
         /// Generates probabilistic forecast with uncertainty analysis
         /// </summary>
-        Task<ProbabilisticForecastDto> GenerateProbabilisticForecastAsync(string wellUWI, string declineType, int forecastPeriod, int iterations = 1000);
+        Task<ProbabilisticForecast> GenerateProbabilisticForecastAsync(string wellUWI, string declineType, int forecastPeriod, int iterations = 1000);
 
         /// <summary>
         /// Performs decline curve analysis on historical production data
         /// </summary>
-        Task<DeclineCurveAnalysisDto> PerformDeclineCurveAnalysisAsync(DeclineCurveAnalysisRequest request);
+        Task<DeclineCurveAnalysis> PerformDeclineCurveAnalysisAsync(DeclineCurveAnalysisRequest request);
 
         #endregion
 
@@ -43,22 +43,22 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         /// <summary>
         /// Performs economic analysis on forecast results
         /// </summary>
-        Task<EconomicAnalysisDto> PerformEconomicAnalysisAsync(EconomicAnalysisRequest request);
+        Task<EconomicAnalysis> PerformEconomicAnalysisAsync(EconomicAnalysisRequest request);
 
         /// <summary>
         /// Performs risk analysis on forecast scenarios
         /// </summary>
-        Task<RiskAnalysisResultDto> PerformRiskAnalysisAsync(string forecastId);
+        Task<ForecastRiskAnalysisResult> PerformRiskAnalysisAsync(string forecastId);
 
         /// <summary>
         /// Validates forecast quality and reliability
         /// </summary>
-        Task<ForecastValidationResultDto> ValidateForecastAsync(string forecastId);
+        Task<ForecastValidationResult> ValidateForecastAsync(string forecastId);
 
         /// <summary>
         /// Optimizes forecast parameters using machine learning
         /// </summary>
-        Task<ProductionForecastResultDto> OptimizeForecastAsync(string wellUWI, string forecastMethod);
+        Task<ProductionForecastResult> OptimizeForecastAsync(string wellUWI, string forecastMethod);
 
         #endregion
 
@@ -67,22 +67,22 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         /// <summary>
         /// Saves forecast to PPDM database
         /// </summary>
-        Task SaveForecastAsync(ProductionForecastResultDto forecast, string userId);
+        Task SaveForecastAsync(ProductionForecastResult forecast, string userId);
 
         /// <summary>
         /// Retrieves forecast by ID
         /// </summary>
-        Task<ProductionForecastResultDto?> GetForecastAsync(string forecastId);
+        Task<ProductionForecastResult?> GetForecastAsync(string forecastId);
 
         /// <summary>
         /// Retrieves forecasts for well or field
         /// </summary>
-        Task<List<ProductionForecastResultDto>> GetForecastsAsync(string? wellUWI = null, string? fieldId = null, DateTime? startDate = null, DateTime? endDate = null);
+        Task<List<ProductionForecastResult>> GetForecastsAsync(string? wellUWI = null, string? fieldId = null, DateTime? startDate = null, DateTime? endDate = null);
 
         /// <summary>
         /// Updates existing forecast
         /// </summary>
-        Task UpdateForecastAsync(ProductionForecastResultDto forecast, string userId);
+        Task UpdateForecastAsync(ProductionForecastResult forecast, string userId);
 
         /// <summary>
         /// Deletes forecast from database
@@ -96,22 +96,22 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         /// <summary>
         /// Generates reservoir simulation-based forecast
         /// </summary>
-        Task<ProductionForecastResultDto> GenerateReservoirSimulationForecastAsync(string wellUWI, ReservoirPropertiesDto reservoirProperties, int forecastPeriod);
+        Task<ProductionForecastResult> GenerateReservoirSimulationForecastAsync(string wellUWI, ReservoirProperties reservoirProperties, int forecastPeriod);
 
         /// <summary>
         /// Generates type curve-based forecast
         /// </summary>
-        Task<ProductionForecastResultDto> GenerateTypeCurveForecastAsync(string wellUWI, string typeCurveId, int forecastPeriod);
+        Task<ProductionForecastResult> GenerateTypeCurveForecastAsync(string wellUWI, string typeCurveId, int forecastPeriod);
 
         /// <summary>
         /// Generates forecast using machine learning models
         /// </summary>
-        Task<ProductionForecastResultDto> GenerateMLForecastAsync(string wellUWI, string modelType, int forecastPeriod);
+        Task<ProductionForecastResult> GenerateMLForecastAsync(string wellUWI, string modelType, int forecastPeriod);
 
         /// <summary>
         /// Combines multiple forecast methods for ensemble forecasting
         /// </summary>
-        Task<ProductionForecastResultDto> GenerateEnsembleForecastAsync(string wellUWI, List<string> forecastMethods, int forecastPeriod);
+        Task<ProductionForecastResult> GenerateEnsembleForecastAsync(string wellUWI, List<string> forecastMethods, int forecastPeriod);
 
         #endregion
 
@@ -125,12 +125,12 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         /// <summary>
         /// Generates forecast report with charts and analysis
         /// </summary>
-        Task<ForecastReportDto> GenerateForecastReportAsync(string forecastId);
+        Task<ForecastReport> GenerateForecastReportAsync(string forecastId);
 
         /// <summary>
         /// Compares multiple forecasts
         /// </summary>
-        Task<ForecastComparisonDto> CompareForecastsAsync(List<string> forecastIds);
+        Task<ForecastComparison> CompareForecastsAsync(List<string> forecastIds);
 
         #endregion
 
@@ -139,17 +139,17 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         /// <summary>
         /// Gets available forecast methods
         /// </summary>
-        Task<List<ForecastMethodDto>> GetAvailableForecastMethodsAsync();
+        Task<List<ForecastMethod>> GetAvailableForecastMethodsAsync();
 
         /// <summary>
         /// Gets forecast statistics and quality metrics
         /// </summary>
-        Task<ForecastStatisticsDto> GetForecastStatisticsAsync(string forecastId);
+        Task<ForecastStatistics> GetForecastStatisticsAsync(string forecastId);
 
         /// <summary>
         /// Performs sensitivity analysis on forecast parameters
         /// </summary>
-        Task<SensitivityAnalysisDto> PerformSensitivityAnalysisAsync(string forecastId, List<string> parameters);
+        Task<SensitivityAnalysis> PerformSensitivityAnalysisAsync(string forecastId, List<string> parameters);
 
         #endregion
     }
@@ -159,7 +159,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
     /// <summary>
     /// Reservoir properties for simulation-based forecasting
     /// </summary>
-    public class ReservoirPropertiesDto
+    public class ReservoirProperties
     {
         public decimal InitialPressure { get; set; }
         public decimal ReservoirTemperature { get; set; }
@@ -176,7 +176,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
     /// <summary>
     /// Forecast validation result
     /// </summary>
-    public class ForecastValidationResultDto
+    public class ForecastValidationResult
     {
         public bool IsValid { get; set; }
         public List<string> ValidationErrors { get; set; } = new();
@@ -188,7 +188,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
     /// <summary>
     /// Forecast method information
     /// </summary>
-    public class ForecastMethodDto
+    public class ForecastMethod
     {
         public string MethodId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
@@ -201,7 +201,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
     /// <summary>
     /// Forecast statistics
     /// </summary>
-    public class ForecastStatisticsDto
+    public class ForecastStatistics
     {
         public int TotalForecasts { get; set; }
         public decimal AverageRSquared { get; set; }
@@ -213,19 +213,19 @@ namespace Beep.OilandGas.ProductionForecasting.Services
     /// <summary>
     /// Sensitivity analysis result
     /// </summary>
-    public class SensitivityAnalysisDto
+    public class SensitivityAnalysis
     {
         public string Parameter { get; set; } = string.Empty;
         public decimal BaseValue { get; set; }
         public decimal MinValue { get; set; }
         public decimal MaxValue { get; set; }
-        public List<SensitivityPointDto> SensitivityPoints { get; set; } = new();
+        public List<SensitivityPoint> SensitivityPoints { get; set; } = new();
     }
 
     /// <summary>
     /// Sensitivity analysis point
     /// </summary>
-    public class SensitivityPointDto
+    public class SensitivityPoint
     {
         public decimal ParameterValue { get; set; }
         public decimal NPV { get; set; }
@@ -236,20 +236,20 @@ namespace Beep.OilandGas.ProductionForecasting.Services
     /// <summary>
     /// Forecast report
     /// </summary>
-    public class ForecastReportDto
+    public class ForecastReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string ForecastId { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public DateTime GeneratedDate { get; set; }
-        public List<ReportSectionDto> Sections { get; set; } = new();
+        public List<ReportSection> Sections { get; set; } = new();
         public byte[]? ChartData { get; set; }
     }
 
     /// <summary>
     /// Report section
     /// </summary>
-    public class ReportSectionDto
+    public class ReportSection
     {
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
@@ -259,11 +259,11 @@ namespace Beep.OilandGas.ProductionForecasting.Services
     /// <summary>
     /// Forecast comparison result
     /// </summary>
-    public class ForecastComparisonDto
+    public class ForecastComparison
     {
         public string ComparisonId { get; set; } = string.Empty;
         public List<string> ForecastIds { get; set; } = new();
-        public List<ComparisonMetricDto> Metrics { get; set; } = new();
+        public List<ComparisonMetric> Metrics { get; set; } = new();
         public string BestPerformingMethod { get; set; } = string.Empty;
         public decimal AverageDifference { get; set; }
     }
@@ -271,7 +271,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
     /// <summary>
     /// Comparison metric
     /// </summary>
-    public class ComparisonMetricDto
+    public class ComparisonMetric
     {
         public string MetricName { get; set; } = string.Empty;
         public Dictionary<string, decimal> Values { get; set; } = new();

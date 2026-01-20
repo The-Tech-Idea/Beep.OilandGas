@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.PipelineAnalysis;
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
 
 namespace Beep.OilandGas.Client.App.Services.Analysis

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.HeatMap;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data.HeatMap;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -17,7 +17,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="dataPoints">Data points for heat map</param>
         /// <param name="configuration">Heat map configuration</param>
         /// <returns>Generated heat map</returns>
-        Task<HeatMapResultDto> GenerateHeatMapAsync(List<HeatMapDataPoint> dataPoints, HeatMapConfigurationDto configuration);
+        Task<HeatMapResult> GenerateHeatMapAsync(List<HeatMapDataPoint> dataPoints, HeatMapConfigurationRecord configuration);
 
         /// <summary>
         /// Saves heat map configuration to database.
@@ -25,14 +25,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="configuration">Heat map configuration</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Heat map identifier</returns>
-        Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationDto configuration, string userId);
+        Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationRecord configuration, string userId);
 
         /// <summary>
         /// Gets heat map configuration from database.
         /// </summary>
         /// <param name="heatMapId">Heat map identifier</param>
         /// <returns>Heat map configuration</returns>
-        Task<HeatMapConfigurationDto?> GetHeatMapConfigurationAsync(string heatMapId);
+        Task<HeatMapConfigurationRecord?> GetHeatMapConfigurationAsync(string heatMapId);
 
         /// <summary>
         /// Generates heat map from field production data.
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="startDate">Start date</param>
         /// <param name="endDate">End date</param>
         /// <returns>Generated heat map</returns>
-        Task<HeatMapResultDto> GenerateProductionHeatMapAsync(string fieldId, System.DateTime startDate, System.DateTime endDate);
+        Task<HeatMapResult> GenerateProductionHeatMapAsync(string fieldId, System.DateTime startDate, System.DateTime endDate);
     }
 }
 

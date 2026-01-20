@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.GasLift
 {
-    public partial class GAS_LIFT_VALVE : Entity, IPPDMEntity
-    {
+    public partial class GAS_LIFT_VALVE : ModelEntityBase {
         private String GAS_LIFT_VALVE_IDValue;
         public String GAS_LIFT_VALVE_ID
         {

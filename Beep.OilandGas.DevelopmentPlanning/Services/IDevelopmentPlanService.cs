@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.DevelopmentPlanning.Services
 {
@@ -12,42 +12,42 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
         /// <summary>
         /// Gets all development plans.
         /// </summary>
-        Task<List<DevelopmentPlanDto>> GetDevelopmentPlansAsync(string? fieldId = null);
+        Task<List<DevelopmentPlan>> GetDevelopmentPlansAsync(string? fieldId = null);
 
         /// <summary>
         /// Gets a development plan by ID.
         /// </summary>
-        Task<DevelopmentPlanDto?> GetDevelopmentPlanAsync(string planId);
+        Task<DevelopmentPlan?> GetDevelopmentPlanAsync(string planId);
 
         /// <summary>
         /// Creates a new development plan.
         /// </summary>
-        Task<DevelopmentPlanDto> CreateDevelopmentPlanAsync(CreateDevelopmentPlanDto createDto);
+        Task<DevelopmentPlan> CreateDevelopmentPlanAsync(CreateDevelopmentPlan createDto);
 
         /// <summary>
         /// Updates a development plan.
         /// </summary>
-        Task<DevelopmentPlanDto> UpdateDevelopmentPlanAsync(string planId, UpdateDevelopmentPlanDto updateDto);
+        Task<DevelopmentPlan> UpdateDevelopmentPlanAsync(string planId, UpdateDevelopmentPlan updateDto);
 
         /// <summary>
         /// Approves a development plan.
         /// </summary>
-        Task<DevelopmentPlanDto> ApproveDevelopmentPlanAsync(string planId, string approvedBy);
+        Task<DevelopmentPlan> ApproveDevelopmentPlanAsync(string planId, string approvedBy);
 
         /// <summary>
         /// Gets well plans for a development plan.
         /// </summary>
-        Task<List<WellPlanDto>> GetWellPlansAsync(string planId);
+        Task<List<WellPlan>> GetWellPlansAsync(string planId);
 
         /// <summary>
         /// Gets facility plans for a development plan.
         /// </summary>
-        Task<List<FacilityPlanDto>> GetFacilityPlansAsync(string planId);
+        Task<List<FacilityPlan>> GetFacilityPlansAsync(string planId);
 
         /// <summary>
         /// Gets permit applications for a development plan.
         /// </summary>
-        Task<List<PermitApplicationDto>> GetPermitApplicationsAsync(string planId);
+        Task<List<PermitApplication>> GetPermitApplicationsAsync(string planId);
     }
 }
 

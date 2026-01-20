@@ -1,4 +1,4 @@
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using System;
 using System.Collections.Generic;
 

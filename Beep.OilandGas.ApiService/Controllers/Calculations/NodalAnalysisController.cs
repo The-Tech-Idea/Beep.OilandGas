@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -25,7 +25,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("analyze")]
-        public async Task<ActionResult<NodalAnalysisResultDto>> PerformAnalysis([FromBody] PerformNodalAnalysisRequest request)
+        public async Task<ActionResult<NodalAnalysisRunResult>> PerformAnalysis([FromBody] PerformNodalAnalysisRequest request)
         {
             try
             {
@@ -40,7 +40,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("optimize")]
-        public async Task<ActionResult<OptimizationResultDto>> Optimize([FromBody] OptimizeSystemRequest request)
+        public async Task<ActionResult<OptimizationResult>> Optimize([FromBody] OptimizeSystemRequest request)
         {
             try
             {
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("result")]
-        public async Task<ActionResult> SaveResult([FromBody] NodalAnalysisResultDto result, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SaveResult([FromBody] NodalAnalysisRunResult result, [FromQuery] string? userId = null)
         {
             try
             {
@@ -70,7 +70,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpGet("history/{wellUWI}")]
-        public async Task<ActionResult<List<NodalAnalysisResultDto>>> GetHistory(string wellUWI)
+        public async Task<ActionResult<List<NodalAnalysisRunResult>>> GetHistory(string wellUWI)
         {
             try
             {

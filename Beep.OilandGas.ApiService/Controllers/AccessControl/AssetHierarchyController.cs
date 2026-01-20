@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.DTOs.AccessControl;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -130,7 +130,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Get the hierarchy configuration for an organization
         /// </summary>
         [HttpGet("organization/{organizationId}/config")]
-        public async Task<ActionResult<List<HierarchyConfigDTO>>> GetHierarchyConfig(string organizationId)
+        public async Task<ActionResult<List<HierarchyConfig>>> GetHierarchyConfig(string organizationId)
         {
             try
             {
@@ -149,7 +149,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         [HttpPut("organization/{organizationId}/config")]
         public async Task<ActionResult<bool>> UpdateHierarchyConfig(
             string organizationId,
-            [FromBody] List<HierarchyConfigDTO> config)
+            [FromBody] List<HierarchyConfig> config)
         {
             try
             {

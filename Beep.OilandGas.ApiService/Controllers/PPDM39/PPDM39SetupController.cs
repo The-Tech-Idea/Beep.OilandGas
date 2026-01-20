@@ -5,8 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.DTOs.DataManagement;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData;
@@ -714,7 +714,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Discover scripts for a database type
         /// </summary>
         [HttpGet("discover-scripts/{databaseType}")]
-        public async Task<ActionResult<List<ScriptInfoDto>>> DiscoverScripts(string databaseType)
+        public async Task<ActionResult<List<ScriptInfo>>> DiscoverScripts(string databaseType)
         {
             try
             {
@@ -730,7 +730,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 }
 
                 // Map to DTO
-                var result = allScripts.Select(s => new ScriptInfoDto
+                var result = allScripts.Select(s => new ScriptInfo
                 {
                     FileName = s.FileName,
                     FullPath = s.FullPath,
@@ -762,7 +762,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Create database by executing scripts using DataManager
         /// </summary>
         [HttpPost("create-database")]
-        public async Task<ActionResult<DatabaseCreationResultDto>> CreateDatabase([FromBody] CreateDatabaseRequest request)
+        public async Task<ActionResult<DatabaseCreationResult>> CreateDatabase([FromBody] CreateDatabaseRequest request)
         {
             try
             {
@@ -788,7 +788,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 var dataSource = _setupService.GetDataSourceFromConnectionConfig(connectionConfig);
                 if (dataSource.Openconnection() != System.Data.ConnectionState.Open)
                 {
-                    return StatusCode(500, new DatabaseCreationResultDto
+                    return StatusCode(500, new DatabaseCreationResult
                     {
                         Success = false,
                         ErrorMessage = "Failed to open database connection"
@@ -867,7 +867,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 var endTime = moduleResults.Values.Max(r => r.EndTime);
 
                 // Map to DTO
-                var resultDto = new DatabaseCreationResultDto
+                var resultDto = new DatabaseCreationResult
                 {
                     ExecutionId = executionOptions.ExecutionId ?? Guid.NewGuid().ToString(),
                     Success = overallSuccess,
@@ -879,7 +879,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     SuccessfulScripts = successfulScripts,
                     FailedScripts = failedScripts,
                     SkippedScripts = totalScripts - successfulScripts - failedScripts,
-                    ScriptResults = allScriptResults.Select(sr => new ScriptExecutionResultDto
+                    ScriptResults = allScriptResults.Select(sr => new ScriptExecutionResult
                     {
                         ScriptFileName = sr.ScriptFileName ?? string.Empty,
                         Success = sr.Success,
@@ -906,7 +906,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating database");
-                return StatusCode(500, new DatabaseCreationResultDto
+                return StatusCode(500, new DatabaseCreationResult
                 {
                     Success = false,
                     ErrorMessage = $"Database creation failed: {ex.Message}"
@@ -919,7 +919,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Get creation progress
         /// </summary>
         [HttpGet("creation-progress/{executionId}")]
-        public async Task<ActionResult<ScriptExecutionProgressDto>> GetCreationProgress(string executionId)
+        public async Task<ActionResult<ScriptExecutionProgressInfo>> GetCreationProgress(string executionId)
         {
             try
             {
@@ -941,7 +941,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 var progressPercentage = totalScripts > 0 ? (decimal)completedScripts * 100 / totalScripts : 0;
                 var currentScript = executionState.PendingScripts.FirstOrDefault() ?? string.Empty;
 
-                var progressDto = new ScriptExecutionProgressDto
+                var progressDto = new ScriptExecutionProgressInfo
                 {
                     ExecutionId = executionState.ExecutionId,
                     TotalScripts = totalScripts,
@@ -1710,7 +1710,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Add new LOV
         /// </summary>
         [HttpPost("lov")]
-        public async Task<ActionResult<LOVResponse>> AddLOV([FromBody] ListOfValueDto lovDto, [FromQuery] string? userId = null, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<LOVResponse>> AddLOV([FromBody] ListOfValue lovDto, [FromQuery] string? userId = null, [FromQuery] string? connectionName = null)
         {
             try
             {
@@ -1745,7 +1745,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = true,
                     Message = "LOV added successfully",
-                    LOVs = new List<ListOfValueDto> { lovDto },
+                    LOVs = new List<ListOfValue> { lovDto },
                     Count = 1
                 });
             }
@@ -1760,7 +1760,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         /// Update LOV
         /// </summary>
         [HttpPut("lov/{id}")]
-        public async Task<ActionResult<LOVResponse>> UpdateLOV(string id, [FromBody] ListOfValueDto lovDto, [FromQuery] string? userId = null, [FromQuery] string? connectionName = null)
+        public async Task<ActionResult<LOVResponse>> UpdateLOV(string id, [FromBody] ListOfValue lovDto, [FromQuery] string? userId = null, [FromQuery] string? connectionName = null)
         {
             try
             {
@@ -1795,7 +1795,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = true,
                     Message = "LOV updated successfully",
-                    LOVs = new List<ListOfValueDto> { lovDto },
+                    LOVs = new List<ListOfValue> { lovDto },
                     Count = 1
                 });
             }

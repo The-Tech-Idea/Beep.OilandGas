@@ -3,9 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.ProductionAccounting.Ownership;
-using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Services;
-using Beep.OilandGas.Models.DTOs.Accounting.Ownership;
+using Beep.OilandGas.Models.Data.Accounting.Ownership;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
@@ -32,7 +32,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
         /// Get ownership interests.
         /// </summary>
         [HttpGet("interests")]
-        public ActionResult<List<OwnershipInterestDto>> GetOwnershipInterests(
+        public ActionResult<List<OwnershipInterest>> GetOwnershipInterests(
             [FromQuery] string? propertyOrLeaseId = null,
             [FromQuery] DateTime? asOfDate = null,
             [FromQuery] string? connectionName = null)
@@ -58,7 +58,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
         /// Register ownership interest.
         /// </summary>
         [HttpPost("interests")]
-        public ActionResult<OwnershipInterestDto> RegisterOwnershipInterest(
+        public ActionResult<OwnershipInterest> RegisterOwnershipInterest(
             [FromBody] RegisterOwnershipInterestRequest request,
             [FromQuery] string? connectionName = null)
         {
@@ -97,9 +97,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
             }
         }
 
-        private OwnershipInterestDto MapToOwnershipInterestDto(OwnershipInterest interest)
+        private OwnershipInterest MapToOwnershipInterestDto(OwnershipInterest interest)
         {
-            return new OwnershipInterestDto
+            return new OwnershipInterest
             {
                 InterestId = interest.OwnershipId,
                 PropertyOrLeaseId = interest.PropertyOrLeaseId,

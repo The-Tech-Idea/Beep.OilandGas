@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.GasLift
 {
-    public partial class GAS_LIFT_PERFORMANCE_POINT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class GAS_LIFT_PERFORMANCE_POINT : ModelEntityBase {
         private String GAS_LIFT_PERFORMANCE_POINT_IDValue;
         public String GAS_LIFT_PERFORMANCE_POINT_ID
         {

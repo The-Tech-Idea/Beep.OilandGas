@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class DIVISION_ORDER : Entity, IPPDMEntity
-    {
+    public partial class DIVISION_ORDER : ModelEntityBase {
         private System.String DIVISION_ORDER_IDValue;
         public System.String DIVISION_ORDER_ID
         {

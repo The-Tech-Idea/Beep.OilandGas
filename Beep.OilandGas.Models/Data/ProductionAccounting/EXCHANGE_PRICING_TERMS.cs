@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class EXCHANGE_PRICING_TERMS : Entity, IPPDMEntity
-    {
+    public partial class EXCHANGE_PRICING_TERMS : ModelEntityBase {
         private System.String EXCHANGE_PRICING_TERMS_IDValue;
         public System.String EXCHANGE_PRICING_TERMS_ID
         {

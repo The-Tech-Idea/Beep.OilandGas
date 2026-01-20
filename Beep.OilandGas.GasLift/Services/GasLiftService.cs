@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.GasLift.Calculations;
-using Beep.OilandGas.Models.GasLift;
+using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -337,7 +337,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// <summary>
         /// Gets gas lift performance data (existing method)
         /// </summary>
-        public async Task<GasLiftPerformanceDto> GetGasLiftPerformanceAsync(string wellUWI)
+        public async Task<GasLiftPerformance> GetGasLiftPerformanceAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -359,14 +359,14 @@ namespace Beep.OilandGas.GasLift.Services
             if (entity == null)
             {
                 _logger?.LogWarning("No gas lift performance data found for well {WellUWI}", wellUWI);
-                return new GasLiftPerformanceDto
+                return new GasLiftPerformance
                 {
                     WellUWI = wellUWI,
                     PerformanceDate = DateTime.UtcNow
                 };
             }
 
-            var performance = new GasLiftPerformanceDto
+            var performance = new GasLiftPerformance
             {
                 WellUWI = entity.WELL_UWI ?? wellUWI,
                 PerformanceDate = entity.PERFORMANCE_DATE ?? DateTime.UtcNow,
@@ -386,8 +386,8 @@ namespace Beep.OilandGas.GasLift.Services
         /// Diagnoses performance issues and anomalies
         /// </summary>
         public async Task<GasLiftPerformanceDiagnosisResult> DiagnosePerformanceIssuesAsync(
-            GasLiftPerformanceDto currentPerformance,
-            GasLiftPerformanceDto historicalPerformance,
+            GasLiftPerformance currentPerformance,
+            GasLiftPerformance historicalPerformance,
             string userId)
         {
             if (currentPerformance == null)
@@ -460,7 +460,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// <summary>
         /// Saves gas lift design to database (existing method)
         /// </summary>
-        public async Task SaveGasLiftDesignAsync(GasLiftDesignDto design, string userId)
+        public async Task SaveGasLiftDesignAsync(GasLiftDesign design, string userId)
         {
             if (design == null)
                 throw new ArgumentNullException(nameof(design));
@@ -502,7 +502,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// <summary>
         /// Saves performance monitoring data
         /// </summary>
-        public async Task SavePerformanceDataAsync(GasLiftPerformanceDto performance, string userId)
+        public async Task SavePerformanceDataAsync(GasLiftPerformance performance, string userId)
         {
             if (performance == null)
                 throw new ArgumentNullException(nameof(performance));

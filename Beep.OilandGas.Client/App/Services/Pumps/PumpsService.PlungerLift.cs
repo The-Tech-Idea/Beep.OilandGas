@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.PlungerLift;
-using Beep.OilandGas.Models.PlungerLift;
+using Beep.OilandGas.Models.Data.PlungerLift;
 
 namespace Beep.OilandGas.Client.App.Services.Pumps
 {

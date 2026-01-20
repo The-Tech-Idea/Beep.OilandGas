@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -521,84 +522,5 @@ namespace Beep.OilandGas.Accounting.Services
 
             return score / kpis.Count;
         }
-    }
-
-    /// <summary>
-    /// Financial Dashboard
-    /// </summary>
-    public class FinancialDashboard
-    {
-        public DateTime AsOfDate { get; set; }
-        public DateTime GeneratedDate { get; set; }
-        public List<KPI> KPIs { get; set; }
-    }
-
-    /// <summary>
-    /// Key Performance Indicator
-    /// </summary>
-    public class KPI
-    {
-        public string Name { get; set; }
-        public decimal Value { get; set; }
-        public string Format { get; set; }  // Currency, Percentage, Ratio, Days
-        public string Status { get; set; }  // Good, Caution, Poor
-        public string Trend { get; set; }   // Upward, Downward, Neutral
-        public decimal Target { get; set; }
-        public decimal Threshold { get; set; }
-    }
-
-    /// <summary>
-    /// Executive Summary
-    /// </summary>
-    public class ExecutiveSummary
-    {
-        public DateTime PeriodStart { get; set; }
-        public DateTime PeriodEnd { get; set; }
-        public DateTime AsOfDate { get; set; }
-        public DateTime GeneratedDate { get; set; }
-        public List<HighlightedMetric> HighlightedMetrics { get; set; }
-        public decimal TotalAssets { get; set; }
-        public decimal TotalLiabilities { get; set; }
-        public decimal TotalEquity { get; set; }
-        public decimal NetIncome { get; set; }
-        public decimal HealthScore { get; set; }
-    }
-
-    /// <summary>
-    /// Highlighted Metric
-    /// </summary>
-    public class HighlightedMetric
-    {
-        public string Label { get; set; }
-        public decimal Value { get; set; }
-        public string Status { get; set; }
-        public string Insight { get; set; }
-    }
-
-    /// <summary>
-    /// Trend Analysis
-    /// </summary>
-    public class TrendAnalysis
-    {
-        public DateTime AnalysisStart { get; set; }
-        public DateTime AnalysisEnd { get; set; }
-        public int MonthsAnalyzed { get; set; }
-        public DateTime AnalysisDate { get; set; }
-        public List<TrendLine> TrendLines { get; set; }
-        public string OverallTrend { get; set; }
-    }
-
-    /// <summary>
-    /// Trend Line
-    /// </summary>
-    public class TrendLine
-    {
-        public string MetricName { get; set; }
-        public decimal StartValue { get; set; }
-        public decimal EndValue { get; set; }
-        public decimal Change { get; set; }
-        public decimal ChangePercent { get; set; }
-        public string Direction { get; set; }
-        public int DataPoints { get; set; }
     }
 }

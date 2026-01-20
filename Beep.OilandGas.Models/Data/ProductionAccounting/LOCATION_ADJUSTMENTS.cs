@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class LOCATION_ADJUSTMENTS : Entity, IPPDMEntity
-    {
+    public partial class LOCATION_ADJUSTMENTS : ModelEntityBase {
         private System.String LOCATION_ADJUSTMENTS_IDValue;
         public System.String LOCATION_ADJUSTMENTS_ID
         {

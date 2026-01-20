@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class INVOICE_LINE_ITEM : Entity,IPPDMEntity
-    {
+    public partial class INVOICE_LINE_ITEM : ModelEntityBase {
         private System.String INVOICE_LINE_ITEM_IDValue;
         public System.String INVOICE_LINE_ITEM_ID
         {

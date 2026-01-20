@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class LEASEHOLD_CARRYING_GROUP : Entity, IPPDMEntity
-    {
+    public partial class LEASEHOLD_CARRYING_GROUP : ModelEntityBase {
         private string LEASEHOLD_CARRYING_GROUP_IDValue;
         public string LEASEHOLD_CARRYING_GROUP_ID
         {

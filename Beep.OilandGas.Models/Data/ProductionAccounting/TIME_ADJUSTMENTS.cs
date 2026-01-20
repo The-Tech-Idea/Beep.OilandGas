@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class TIME_ADJUSTMENTS : Entity, IPPDMEntity
-    {
+    public partial class TIME_ADJUSTMENTS : ModelEntityBase {
         private System.String TIME_ADJUSTMENTS_IDValue;
         public System.String TIME_ADJUSTMENTS_ID
         {

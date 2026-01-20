@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class JIB_COST_ALLOCATION : Entity,IPPDMEntity
-    {
+    public partial class JIB_COST_ALLOCATION : ModelEntityBase {
         private String JIB_COST_ALLOCATION_IDValue;
         public String JIB_COST_ALLOCATION_ID
         {

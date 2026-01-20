@@ -16,7 +16,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="flowRate">Flow rate</param>
         /// <param name="inletPressure">Inlet pressure</param>
         /// <returns>Pipeline analysis result</returns>
-        Task<PipelineAnalysisResultDto> AnalyzePipelineFlowAsync(string pipelineId, decimal flowRate, decimal inletPressure);
+        Task<PipelineAnalysisResult> AnalyzePipelineFlowAsync(string pipelineId, decimal flowRate, decimal inletPressure);
 
         /// <summary>
         /// Calculates pressure drop in pipeline.
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="pipelineId">Pipeline identifier</param>
         /// <param name="flowRate">Flow rate</param>
         /// <returns>Pressure drop result</returns>
-        Task<PressureDropResultDto> CalculatePressureDropAsync(string pipelineId, decimal flowRate);
+        Task<PressureDropResult> CalculatePressureDropAsync(string pipelineId, decimal flowRate);
 
         /// <summary>
         /// Saves pipeline analysis result to database.
@@ -32,13 +32,13 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="result">Analysis result</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Task</returns>
-        Task SaveAnalysisResultAsync(PipelineAnalysisResultDto result, string userId);
+        Task SaveAnalysisResultAsync(PipelineAnalysisResult result, string userId);
     }
 
     /// <summary>
     /// DTO for pipeline analysis result.
     /// </summary>
-    public class PipelineAnalysisResultDto
+    public class PipelineAnalysisResult
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string PipelineId { get; set; } = string.Empty;
@@ -54,7 +54,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// <summary>
     /// DTO for pressure drop result.
     /// </summary>
-    public class PressureDropResultDto
+    public class PressureDropResult
     {
         public decimal PressureDrop { get; set; }
         public decimal FrictionFactor { get; set; }

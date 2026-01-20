@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.WellTestAnalysis;
+using Beep.OilandGas.Models.Data.WellTestAnalysis;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

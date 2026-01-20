@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using TheTechIdea.Beep.Editor;
@@ -40,258 +40,258 @@ namespace Beep.OilandGas.HydraulicPumps.Services
         }
 
         // Design and Sizing Methods
-        public async Task<PumpDesignResultDto> DesignPumpSystemAsync(string wellUWI, PumpDesignRequestDto request, string userId)
+        public async Task<PumpDesignResult> DesignPumpSystemAsync(string wellUWI, PumpDesignRequest request, string userId)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentNullException(nameof(userId));
             
-            var result = new PumpDesignResultDto { DesignId = _defaults.FormatIdForTable("PUMP_DESIGN", Guid.NewGuid().ToString()), WellUWI = wellUWI, PumpType = request.PumpType, DesignDate = DateTime.UtcNow, Status = "Designed" };
+            var result = new PumpDesignResult { DesignId = _defaults.FormatIdForTable("PUMP_DESIGN", Guid.NewGuid().ToString()), WellUWI = wellUWI, PumpType = request.PumpType, DesignDate = DateTime.UtcNow, Status = "Designed" };
             return await Task.FromResult(result);
         }
 
-        public async Task<PumpSizingResultDto> SizePumpAsync(string wellUWI, PumpSizingRequestDto request)
+        public async Task<PumpSizingResult> SizePumpAsync(string wellUWI, PumpSizingRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new PumpSizingResultDto { PumpId = _defaults.FormatIdForTable("PUMP", Guid.NewGuid().ToString()) };
+            var result = new PumpSizingResult { PumpId = _defaults.FormatIdForTable("PUMP", Guid.NewGuid().ToString()) };
             return await Task.FromResult(result);
         }
 
-        public async Task<PumpTypeSelectionDto> SelectOptimalPumpTypeAsync(string wellUWI, PumpSelectionCriteriaDto criteria)
+        public async Task<PumpTypeSelection> SelectOptimalPumpTypeAsync(string wellUWI, PumpSelectionCriteria criteria)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (criteria == null) throw new ArgumentNullException(nameof(criteria));
             
-            var result = new PumpTypeSelectionDto { WellUWI = wellUWI, RecommendedType = "Rod_Pump" };
+            var result = new PumpTypeSelection { WellUWI = wellUWI, RecommendedType = "Rod_Pump" };
             return await Task.FromResult(result);
         }
 
-        public async Task<PowerRequirementsDto> CalculatePowerRequirementsAsync(string wellUWI, PowerCalculationRequestDto request)
+        public async Task<PowerRequirements> CalculatePowerRequirementsAsync(string wellUWI, PowerCalculationRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new PowerRequirementsDto { TotalPowerRequired = 50m, PowerUnit = "HP" };
+            var result = new PowerRequirements { TotalPowerRequired = 50m, PowerUnit = "HP" };
             return await Task.FromResult(result);
         }
 
-        public async Task<HydraulicBalanceDto> AnalyzeHydraulicBalanceAsync(string pumpId, BalanceRequestDto request)
+        public async Task<HydraulicBalance> AnalyzeHydraulicBalanceAsync(string pumpId, BalanceRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new HydraulicBalanceDto { PumpId = pumpId, IsBalanced = true, BalanceScore = 0.9m };
+            var result = new HydraulicBalance { PumpId = pumpId, IsBalanced = true, BalanceScore = 0.9m };
             return await Task.FromResult(result);
         }
 
-        public async Task<RodStringDesignDto> DesignRodStringAsync(string wellUWI, RodStringRequestDto request)
+        public async Task<RodStringDesign> DesignRodStringAsync(string wellUWI, RodStringRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new RodStringDesignDto { DesignId = _defaults.FormatIdForTable("ROD_DESIGN", Guid.NewGuid().ToString()), WellUWI = wellUWI };
+            var result = new RodStringDesign { DesignId = _defaults.FormatIdForTable("ROD_DESIGN", Guid.NewGuid().ToString()), WellUWI = wellUWI };
             return await Task.FromResult(result);
         }
 
         // Performance Analysis Methods
-        public async Task<PumpPerformanceAnalysisDto> AnalyzePumpPerformanceAsync(string pumpId, PerformanceAnalysisRequestDto request)
+        public async Task<PumpPerformanceAnalysis> AnalyzePumpPerformanceAsync(string pumpId, PerformanceAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new PumpPerformanceAnalysisDto { AnalysisId = Guid.NewGuid().ToString(), PumpId = pumpId, AnalysisDate = DateTime.UtcNow };
+            var result = new PumpPerformanceAnalysis { AnalysisId = Guid.NewGuid().ToString(), PumpId = pumpId, AnalysisDate = DateTime.UtcNow };
             return await Task.FromResult(result);
         }
 
-        public async Task<PumpEfficiencyDto> CalculatePumpEfficiencyAsync(string pumpId, EfficiencyRequestDto request)
+        public async Task<PumpEfficiency> CalculatePumpEfficiencyAsync(string pumpId, EfficiencyRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new PumpEfficiencyDto { PumpId = pumpId };
+            var result = new PumpEfficiency { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<CavitationAnalysisDto> AnalyzeCavitationRiskAsync(string pumpId, CavitationRequestDto request)
+        public async Task<CavitationAnalysis> AnalyzeCavitationRiskAsync(string pumpId, CavitationRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new CavitationAnalysisDto { PumpId = pumpId };
+            var result = new CavitationAnalysis { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<VibrationAnalysisDto> AnalyzeVibrationAsync(string pumpId, VibrationRequestDto request)
+        public async Task<VibrationAnalysis> AnalyzeVibrationAsync(string pumpId, VibrationRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new VibrationAnalysisDto { PumpId = pumpId };
+            var result = new VibrationAnalysis { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<PressureDynamicsDto> AnalyzePressureDynamicsAsync(string pumpId, PressureRequestDto request)
+        public async Task<PressureDynamics> AnalyzePressureDynamicsAsync(string pumpId, PressureRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new PressureDynamicsDto { PumpId = pumpId };
+            var result = new PressureDynamics { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<FlowCharacteristicsDto> CalculateFlowCharacteristicsAsync(string pumpId, FlowRequestDto request)
+        public async Task<FlowCharacteristics> CalculateFlowCharacteristicsAsync(string pumpId, FlowRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new FlowCharacteristicsDto { PumpId = pumpId };
+            var result = new FlowCharacteristics { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
         // Optimization Methods
-        public async Task<OptimizationResultDto> OptimizePumpParametersAsync(string pumpId, OptimizationRequestDto request)
+        public async Task<OptimizationResult> OptimizePumpParametersAsync(string pumpId, OptimizationRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new OptimizationResultDto { PumpId = pumpId };
+            var result = new OptimizationResult { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<ParameterAdjustmentDto> RecommendParameterAdjustmentsAsync(string pumpId)
+        public async Task<ParameterAdjustment> RecommendParameterAdjustmentsAsync(string pumpId)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             
-            var result = new ParameterAdjustmentDto { PumpId = pumpId };
+            var result = new ParameterAdjustment { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<EfficiencyImprovementDto> IdentifyEfficiencyImprovementsAsync(string pumpId)
+        public async Task<EfficiencyImprovement> IdentifyEfficiencyImprovementsAsync(string pumpId)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             
-            var result = new EfficiencyImprovementDto { PumpId = pumpId };
+            var result = new EfficiencyImprovement { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<PumpComparisonDto> ComparePumpsAsync(List<string> pumpIds, ComparisonCriteriaDto criteria)
+        public async Task<PumpComparison> ComparePumpsAsync(List<string> pumpIds, ComparisonCriteria criteria)
         {
             if (pumpIds == null || pumpIds.Count == 0) throw new ArgumentNullException(nameof(pumpIds));
             if (criteria == null) throw new ArgumentNullException(nameof(criteria));
             
-            var result = new PumpComparisonDto();
+            var result = new PumpComparison();
             return await Task.FromResult(result);
         }
 
-        public async Task<PumpUpgradeRecommendationDto> RecommendPumpUpgradeAsync(string pumpId, UpgradeRequestDto request)
+        public async Task<PumpUpgradeRecommendation> RecommendPumpUpgradeAsync(string pumpId, UpgradeRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new PumpUpgradeRecommendationDto { PumpId = pumpId, UpgradeRecommended = false };
+            var result = new PumpUpgradeRecommendation { PumpId = pumpId, UpgradeRecommended = false };
             return await Task.FromResult(result);
         }
 
         // Monitoring Methods
-        public async Task<PumpMonitoringDataDto> MonitorPumpPerformanceAsync(string pumpId, MonitoringRequestDto request)
+        public async Task<PumpMonitoringData> MonitorPumpPerformanceAsync(string pumpId, MonitoringRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new PumpMonitoringDataDto { PumpId = pumpId };
+            var result = new PumpMonitoringData { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<DiagnosticsResultDto> PerformPumpDiagnosticsAsync(string pumpId, DiagnosticsRequestDto request)
+        public async Task<DiagnosticsResult> PerformPumpDiagnosticsAsync(string pumpId, DiagnosticsRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new DiagnosticsResultDto { PumpId = pumpId };
+            var result = new DiagnosticsResult { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<ConditionAssessmentDto> AssessPumpConditionAsync(string pumpId)
+        public async Task<ConditionAssessment> AssessPumpConditionAsync(string pumpId)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             
-            var result = new ConditionAssessmentDto { PumpId = pumpId };
+            var result = new ConditionAssessment { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<AnomalyDetectionDto> DetectOperationalAnomaliesAsync(string pumpId)
+        public async Task<AnomalyDetection> DetectOperationalAnomaliesAsync(string pumpId)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             
-            var result = new AnomalyDetectionDto { PumpId = pumpId };
+            var result = new AnomalyDetection { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<PredictiveMaintenanceDto> AnalyzeMaintenanceRequirementsAsync(string pumpId, MaintenanceRequestDto request)
+        public async Task<PredictiveMaintenance> AnalyzeMaintenanceRequirementsAsync(string pumpId, MaintenanceRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new PredictiveMaintenanceDto { PumpId = pumpId };
+            var result = new PredictiveMaintenance { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
         // Reliability Methods
-        public async Task<FailureModeAnalysisDto> AnalyzeFailureModesAsync(string pumpId)
+        public async Task<FailureModeAnalysis> AnalyzeFailureModesAsync(string pumpId)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             
-            var result = new FailureModeAnalysisDto { PumpId = pumpId };
+            var result = new FailureModeAnalysis { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<ReliabilityAssessmentDto> AssessReliabilityAsync(string pumpId, ReliabilityRequestDto request)
+        public async Task<ReliabilityAssessment> AssessReliabilityAsync(string pumpId, ReliabilityRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new ReliabilityAssessmentDto { PumpId = pumpId };
+            var result = new ReliabilityAssessment { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<MTBFCalculationDto> CalculateMTBFAsync(string pumpId)
+        public async Task<MTBFCalculation> CalculateMTBFAsync(string pumpId)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             
-            var result = new MTBFCalculationDto { PumpId = pumpId };
+            var result = new MTBFCalculation { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<WearAnalysisDto> AnalyzeWearPatternsAsync(string pumpId, WearRequestDto request)
+        public async Task<WearAnalysis> AnalyzeWearPatternsAsync(string pumpId, WearRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new WearAnalysisDto { PumpId = pumpId };
+            var result = new WearAnalysis { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<FailureRiskAssessmentDto> AssessFailureRiskAsync(string pumpId)
+        public async Task<FailureRiskAssessment> AssessFailureRiskAsync(string pumpId)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             
-            var result = new FailureRiskAssessmentDto { PumpId = pumpId };
+            var result = new FailureRiskAssessment { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
         // Maintenance Methods
-        public async Task<MaintenanceScheduleDto> GenerateMaintenanceScheduleAsync(string pumpId, ScheduleRequestDto request)
+        public async Task<MaintenanceSchedule> GenerateMaintenanceScheduleAsync(string pumpId, ScheduleRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new MaintenanceScheduleDto { PumpId = pumpId, NextMaintenanceDate = DateTime.UtcNow.AddMonths(3) };
+            var result = new MaintenanceSchedule { PumpId = pumpId, NextMaintenanceDate = DateTime.UtcNow.AddMonths(3) };
             return await Task.FromResult(result);
         }
 
-        public async Task LogMaintenanceActivityAsync(string pumpId, MaintenanceActivityDto activity, string userId)
+        public async Task LogMaintenanceActivityAsync(string pumpId, MaintenanceActivity activity, string userId)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (activity == null) throw new ArgumentNullException(nameof(activity));
@@ -301,100 +301,100 @@ namespace Beep.OilandGas.HydraulicPumps.Services
             await Task.CompletedTask;
         }
 
-        public async Task<RebuildAnalysisDto> AnalyzeRebuildRequirementsAsync(string pumpId, RebuildRequestDto request)
+        public async Task<RebuildAnalysis> AnalyzeRebuildRequirementsAsync(string pumpId, RebuildRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new RebuildAnalysisDto { PumpId = pumpId };
+            var result = new RebuildAnalysis { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<PartsInventoryDto> ManagePartsInventoryAsync(string pumpId, PartsRequestDto request)
+        public async Task<PartsInventory> ManagePartsInventoryAsync(string pumpId, PartsRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new PartsInventoryDto { PumpId = pumpId };
+            var result = new PartsInventory { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<MaintenanceCostEstimateDto> EstimateCostsAsync(string pumpId, CostEstimateRequestDto request)
+        public async Task<MaintenanceCostEstimate> EstimateCostsAsync(string pumpId, CostEstimateRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new MaintenanceCostEstimateDto { PumpId = pumpId };
+            var result = new MaintenanceCostEstimate { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
         // Fluid Management Methods
-        public async Task<FluidAnalysisDto> AnalyzeHydraulicFluidAsync(string pumpId, FluidAnalysisRequestDto request)
+        public async Task<FluidAnalysis> AnalyzeHydraulicFluidAsync(string pumpId, FluidAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new FluidAnalysisDto { PumpId = pumpId, FluidCondition = "Good" };
+            var result = new FluidAnalysis { PumpId = pumpId, FluidCondition = "Good" };
             return await Task.FromResult(result);
         }
 
-        public async Task<FluidChangeRecommendationDto> RecommendFluidChangeAsync(string pumpId)
+        public async Task<FluidChangeRecommendation> RecommendFluidChangeAsync(string pumpId)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             
-            var result = new FluidChangeRecommendationDto { PumpId = pumpId };
+            var result = new FluidChangeRecommendation { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<ContaminationLevelDto> TrackFluidContaminationAsync(string pumpId, ContaminationRequestDto request)
-        {
-            if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
-            if (request == null) throw new ArgumentNullException(nameof(request));
-            
-            var result = new ContaminationLevelDto { PumpId = pumpId };
-            return await Task.FromResult(result);
-        }
-
-        public async Task<FiltrationSystemDto> ManageFiltrationSystemAsync(string pumpId, FiltrationRequestDto request)
+        public async Task<ContaminationLevel> TrackFluidContaminationAsync(string pumpId, ContaminationRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new FiltrationSystemDto { PumpId = pumpId };
+            var result = new ContaminationLevel { PumpId = pumpId };
+            return await Task.FromResult(result);
+        }
+
+        public async Task<FiltrationSystem> ManageFiltrationSystemAsync(string pumpId, FiltrationRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
+            if (request == null) throw new ArgumentNullException(nameof(request));
+            
+            var result = new FiltrationSystem { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
         // Integration Methods
-        public async Task<SCODAIntegrationDto> IntegrateSCADAAsync(string pumpId, SCADAConfigDto config)
+        public async Task<SCODAIntegration> IntegrateSCADAAsync(string pumpId, SCADAConfig config)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (config == null) throw new ArgumentNullException(nameof(config));
             
-            var result = new SCODAIntegrationDto { PumpId = pumpId, IsIntegrated = true };
+            var result = new SCODAIntegration { PumpId = pumpId, IsIntegrated = true };
             return await Task.FromResult(result);
         }
 
-        public async Task<ControlParametersDto> ManageControlParametersAsync(string pumpId, ControlRequestDto request, string userId)
+        public async Task<ControlParameters> ManageControlParametersAsync(string pumpId, ControlRequest request, string userId)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentNullException(nameof(userId));
             
-            var result = new ControlParametersDto { PumpId = pumpId };
+            var result = new ControlParameters { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<WellboreInteractionDto> AnalyzePumpWellboreInteractionAsync(string wellUWI, InteractionRequestDto request)
+        public async Task<WellboreInteraction> AnalyzePumpWellboreInteractionAsync(string wellUWI, InteractionRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new WellboreInteractionDto { WellUWI = wellUWI, OverallAssessment = "Suitable" };
+            var result = new WellboreInteraction { WellUWI = wellUWI, OverallAssessment = "Suitable" };
             return await Task.FromResult(result);
         }
 
         // Data Management Methods
-        public async Task SavePumpDesignAsync(PumpDesignResultDto design, string userId)
+        public async Task SavePumpDesignAsync(PumpDesignResult design, string userId)
         {
             if (design == null) throw new ArgumentNullException(nameof(design));
             if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentNullException(nameof(userId));
@@ -403,7 +403,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
             await Task.CompletedTask;
         }
 
-        public async Task UpdatePumpDesignAsync(PumpDesignResultDto design, string userId)
+        public async Task UpdatePumpDesignAsync(PumpDesignResult design, string userId)
         {
             if (design == null) throw new ArgumentNullException(nameof(design));
             if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentNullException(nameof(userId));
@@ -412,55 +412,55 @@ namespace Beep.OilandGas.HydraulicPumps.Services
             await Task.CompletedTask;
         }
 
-        public async Task<PumpDesignResultDto?> GetPumpDesignAsync(string pumpId)
+        public async Task<PumpDesignResult?> GetPumpDesignAsync(string pumpId)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             
-            var result = new PumpDesignResultDto { DesignId = pumpId };
+            var result = new PumpDesignResult { DesignId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<List<PumpHistoryDto>> GetPumpHistoryAsync(string pumpId, DateTime startDate, DateTime endDate)
+        public async Task<List<PumpHistory>> GetPumpHistoryAsync(string pumpId, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             
-            var result = new List<PumpHistoryDto>();
+            var result = new List<PumpHistory>();
             return await Task.FromResult(result);
         }
 
-        public async Task<PerformanceTrendsDto> GetPerformanceTrendsAsync(string pumpId, int monthsBack = 12)
+        public async Task<PerformanceTrends> GetPerformanceTrendsAsync(string pumpId, int monthsBack = 12)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             
-            var result = new PerformanceTrendsDto { PumpId = pumpId };
+            var result = new PerformanceTrends { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
         // Reporting Methods
-        public async Task<PumpReportDto> GeneratePumpReportAsync(string pumpId, ReportRequestDto request)
+        public async Task<PumpReport> GeneratePumpReportAsync(string pumpId, ReportRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new PumpReportDto { PumpId = pumpId, ReportId = Guid.NewGuid().ToString() };
+            var result = new PumpReport { PumpId = pumpId, ReportId = Guid.NewGuid().ToString() };
             return await Task.FromResult(result);
         }
 
-        public async Task<PerformanceSummaryReportDto> GeneratePerformanceSummaryAsync(string pumpId, SummaryReportRequestDto request)
+        public async Task<PerformanceSummaryReport> GeneratePerformanceSummaryAsync(string pumpId, SummaryReportRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new PerformanceSummaryReportDto { PumpId = pumpId };
+            var result = new PerformanceSummaryReport { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 
-        public async Task<CostAnalysisReportDto> GenerateCostAnalysisAsync(string pumpId, CostReportRequestDto request)
+        public async Task<CostAnalysisReport> GenerateCostAnalysisAsync(string pumpId, CostReportRequest request)
         {
             if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             
-            var result = new CostAnalysisReportDto { PumpId = pumpId };
+            var result = new CostAnalysisReport { PumpId = pumpId };
             return await Task.FromResult(result);
         }
 

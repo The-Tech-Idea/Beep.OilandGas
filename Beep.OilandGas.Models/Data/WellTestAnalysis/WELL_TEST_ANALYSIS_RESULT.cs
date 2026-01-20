@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
-    public partial class WELL_TEST_ANALYSIS_RESULT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class WELL_TEST_ANALYSIS_RESULT : ModelEntityBase {
         private String WELL_TEST_ANALYSIS_RESULT_IDValue;
         public String WELL_TEST_ANALYSIS_RESULT_ID
         {

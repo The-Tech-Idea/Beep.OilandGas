@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.HeatMap;
+using Beep.OilandGas.Models.Data.HeatMap;
 using Beep.OilandGas.Models.Data.HeatMap;
 
 namespace Beep.OilandGas.Client.App.Services.Properties

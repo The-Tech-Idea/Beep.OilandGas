@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -48,7 +48,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="pressure">Pressure (psia)</param>
         /// <param name="temperature">Temperature (Rankine)</param>
         /// <returns>Oil property calculation result</returns>
-        Task<OilPropertyResultDto> CalculateOilPropertiesAsync(OilCompositionDto composition, decimal pressure, decimal temperature);
+        Task<OilPropertyResult> CalculateOilPropertiesAsync(OilComposition composition, decimal pressure, decimal temperature);
 
         /// <summary>
         /// Saves oil composition to database.
@@ -56,21 +56,21 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="composition">Oil composition data</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Task</returns>
-        Task SaveOilCompositionAsync(OilCompositionDto composition, string userId);
+        Task SaveOilCompositionAsync(OilComposition composition, string userId);
 
         /// <summary>
         /// Gets oil composition from database.
         /// </summary>
         /// <param name="compositionId">Composition identifier</param>
         /// <returns>Oil composition data</returns>
-        Task<OilCompositionDto?> GetOilCompositionAsync(string compositionId);
+        Task<OilComposition?> GetOilCompositionAsync(string compositionId);
 
         /// <summary>
         /// Gets oil property calculation history for a composition.
         /// </summary>
         /// <param name="compositionId">Composition identifier</param>
         /// <returns>List of oil property calculation results</returns>
-        Task<List<OilPropertyResultDto>> GetOilPropertyHistoryAsync(string compositionId);
+        Task<List<OilPropertyResult>> GetOilPropertyHistoryAsync(string compositionId);
 
         /// <summary>
         /// Saves oil property calculation result to database.
@@ -78,7 +78,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="result">Property calculation result</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Task</returns>
-        Task SaveOilPropertyResultAsync(OilPropertyResultDto result, string userId);
+        Task SaveOilPropertyResultAsync(OilPropertyResult result, string userId);
     }
 }
 

@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class QUALITY_ADJUSTMENTS : Entity, IPPDMEntity
-    {
+    public partial class QUALITY_ADJUSTMENTS : ModelEntityBase {
         private System.String QUALITY_ADJUSTMENTS_IDValue;
         public System.String QUALITY_ADJUSTMENTS_ID
         {

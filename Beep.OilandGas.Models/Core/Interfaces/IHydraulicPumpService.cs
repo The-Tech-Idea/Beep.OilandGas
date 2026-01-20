@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -18,14 +18,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="wellDepth">Well depth</param>
         /// <param name="desiredFlowRate">Desired flow rate</param>
         /// <returns>Pump design result</returns>
-        Task<HydraulicPumpDesignDto> DesignPumpSystemAsync(string wellUWI, string pumpType, decimal wellDepth, decimal desiredFlowRate);
+        Task<HydraulicPumpDesign> DesignPumpSystemAsync(string wellUWI, string pumpType, decimal wellDepth, decimal desiredFlowRate);
 
         /// <summary>
         /// Analyzes pump performance.
         /// </summary>
         /// <param name="pumpId">Pump identifier</param>
         /// <returns>Performance analysis result</returns>
-        Task<PumpPerformanceAnalysisDto> AnalyzePumpPerformanceAsync(string pumpId);
+        Task<PumpPerformanceAnalysis> AnalyzePumpPerformanceAsync(string pumpId);
 
         /// <summary>
         /// Saves pump design to database.
@@ -33,14 +33,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="design">Pump design</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Task</returns>
-        Task SavePumpDesignAsync(HydraulicPumpDesignDto design, string userId);
+        Task SavePumpDesignAsync(HydraulicPumpDesign design, string userId);
 
         /// <summary>
         /// Gets pump performance history.
         /// </summary>
         /// <param name="pumpId">Pump identifier</param>
         /// <returns>Performance history data</returns>
-        Task<List<PumpPerformanceHistoryDto>> GetPumpPerformanceHistoryAsync(string pumpId);
+        Task<List<PumpPerformanceHistory>> GetPumpPerformanceHistoryAsync(string pumpId);
     }
 }
 

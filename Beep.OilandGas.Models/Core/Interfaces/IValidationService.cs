@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Validation;
-using Beep.OilandGas.Models.DTOs.Validation;
+using Beep.OilandGas.Models.Data.Validation;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

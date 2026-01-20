@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 {
-    public partial class ECONOMIC_CASH_FLOW : Entity, IPPDMEntity
-    {
+    public partial class ECONOMIC_CASH_FLOW : ModelEntityBase {
         private String ECONOMIC_CASH_FLOW_IDValue;
         public String ECONOMIC_CASH_FLOW_ID
         {

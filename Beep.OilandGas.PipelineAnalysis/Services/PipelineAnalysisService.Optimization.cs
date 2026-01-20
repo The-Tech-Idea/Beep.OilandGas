@@ -10,7 +10,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// </summary>
     public partial class PipelineAnalysisService
     {
-        public async Task<OptimizationResultDto> OptimizeFlowParametersAsync(string pipelineId, OptimizationRequestDto request)
+        public async Task<OptimizationResult> OptimizeFlowParametersAsync(string pipelineId, OptimizationRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -21,7 +21,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
-                var parameters = new List<OptimizedParameterDto>
+                var parameters = new List<OptimizedParameter>
                 {
                     new() { ParameterName = "Flow Rate", CurrentValue = 1000m, OptimizedValue = 1150m, Unit = "bbl/d" },
                     new() { ParameterName = "Inlet Pressure", CurrentValue = 2000m, OptimizedValue = 1950m, Unit = "psia" },
@@ -31,7 +31,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var costSavings = CalculateCostSavings(parameters);
                 var productionGain = ((parameters[0].OptimizedValue - parameters[0].CurrentValue) / parameters[0].CurrentValue) * 100m;
 
-                var result = new OptimizationResultDto
+                var result = new OptimizationResult
                 {
                     PipelineId = pipelineId,
                     OptimizedParameters = parameters,
@@ -52,7 +52,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<DiameterRecommendationDto> RecommendOptimalDiameterAsync(string pipelineId, DiameterRequestDto request)
+        public async Task<DiameterRecommendation> RecommendOptimalDiameterAsync(string pipelineId, DiameterRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -68,7 +68,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var pressureDropPerMile = CalculatePressureDropLinear(request.DesignFlowRate, 1m, 0.025m);
                 var annualCostSavings = (recommendedDiameter - 6m) * 25000m;
 
-                var result = new DiameterRecommendationDto
+                var result = new DiameterRecommendation
                 {
                     PipelineId = pipelineId,
                     RecommendedDiameter = recommendedDiameter,
@@ -89,7 +89,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<FlowRateOptimizationDto> OptimizeFlowRateAsync(string pipelineId, FlowOptimizationRequestDto request)
+        public async Task<FlowRateOptimization> OptimizeFlowRateAsync(string pipelineId, FlowOptimizationRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -105,7 +105,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var minimumFlowRate = request.DesignFlowRate * 0.7m;
                 var energyConsumption = optimalFlowRate * 0.5m; // kW (simplified)
 
-                var result = new FlowRateOptimizationDto
+                var result = new FlowRateOptimization
                 {
                     PipelineId = pipelineId,
                     OptimalFlowRate = optimalFlowRate,
@@ -125,7 +125,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<SensitivityAnalysisDto> PerformSensitivityAnalysisAsync(string pipelineId, SensitivityRequestDto request)
+        public async Task<SensitivityAnalysis> PerformSensitivityAnalysisAsync(string pipelineId, SensitivityRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -136,17 +136,17 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
-                var parameters = new List<SensitivityParameterResultDto>();
+                var parameters = new List<SensitivityParameterResult>();
                 var baseFlowRate = 1000m;
                 var variation = request.VariationPercentage / 100m;
 
                 foreach (var paramName in request.ParametersToAnalyze)
                 {
-                    var results = new List<SensitivityPointResultDto>();
+                    var results = new List<SensitivityPointResult>();
                     for (int i = -2; i <= 2; i++)
                     {
                         var paramValue = baseFlowRate * (1m + (i * variation));
-                        results.Add(new SensitivityPointResultDto
+                        results.Add(new SensitivityPointResult
                         {
                             ParameterValue = paramValue,
                             PressureDrop = CalculatePressureDropLinear(paramValue, 50m, 0.025m),
@@ -154,7 +154,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                         });
                     }
 
-                    parameters.Add(new SensitivityParameterResultDto
+                    parameters.Add(new SensitivityParameterResult
                     {
                         ParameterName = paramName,
                         BaseValue = baseFlowRate,
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     });
                 }
 
-                var result = new SensitivityAnalysisDto
+                var result = new SensitivityAnalysis
                 {
                     PipelineId = pipelineId,
                     Parameters = parameters,
@@ -178,7 +178,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<PumpCompressorSizingDto> RecommendPumpCompressorSizingAsync(string pipelineId, PumpCompressorRequestDto request)
+        public async Task<PumpCompressorSizing> RecommendPumpCompressorSizingAsync(string pipelineId, PumpCompressorRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -196,7 +196,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var dischargeHead = (pressureRise / 0.433m) / 1000m; // Convert psia to ft-H2O then to 1000 ft
                 var estimatedCost = requiredHP * 1000m;
 
-                var result = new PumpCompressorSizingDto
+                var result = new PumpCompressorSizing
                 {
                     PipelineId = pipelineId,
                     RequiredHP = requiredHP,
@@ -220,7 +220,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
         #region Helper Methods
 
-        private decimal CalculateCostSavings(List<OptimizedParameterDto> parameters)
+        private decimal CalculateCostSavings(List<OptimizedParameter> parameters)
         {
             var flowImprovement = ((parameters[0].OptimizedValue - parameters[0].CurrentValue) / parameters[0].CurrentValue) * 100m;
             var pressureReduction = (parameters[1].CurrentValue - parameters[1].OptimizedValue) / parameters[1].CurrentValue * 50m;

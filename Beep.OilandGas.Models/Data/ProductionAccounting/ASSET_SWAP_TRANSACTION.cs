@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class ASSET_SWAP_TRANSACTION : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class ASSET_SWAP_TRANSACTION : ModelEntityBase
     {
         private string ASSET_SWAP_IDValue;
         public string ASSET_SWAP_ID
@@ -148,3 +148,4 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+

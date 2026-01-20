@@ -15,22 +15,22 @@ namespace Beep.OilandGas.PlungerLift.Services
         /// <summary>
         /// Designs a plunger lift system for a well
         /// </summary>
-        Task<PlungerLiftDesignDto> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellPropertiesDto wellProperties);
+        Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellProperties wellProperties);
 
         /// <summary>
         /// Optimizes plunger lift design parameters
         /// </summary>
-        Task<PlungerLiftDesignDto> OptimizeDesignAsync(string wellUWI, PlungerLiftOptimizationRequestDto request);
+        Task<PlungerLiftDesign> OptimizeDesignAsync(string wellUWI, PlungerLiftOptimizationRequest request);
 
         /// <summary>
         /// Selects optimal plunger type based on well conditions
         /// </summary>
-        Task<PlungerTypeSelectionDto> SelectPlungerTypeAsync(string wellUWI, PlungerSelectionCriteriaDto criteria);
+        Task<PlungerTypeSelection> SelectPlungerTypeAsync(string wellUWI, PlungerSelectionCriteria criteria);
 
         /// <summary>
         /// Calculates optimal cycle time for production
         /// </summary>
-        Task<CycleTimeCalculationDto> CalculateCycleTimeAsync(string wellUWI, CycleTimeRequestDto request);
+        Task<CycleTimeCalculation> CalculateCycleTimeAsync(string wellUWI, CycleTimeRequest request);
 
         #endregion
 
@@ -39,22 +39,22 @@ namespace Beep.OilandGas.PlungerLift.Services
         /// <summary>
         /// Analyzes plunger lift system performance
         /// </summary>
-        Task<PlungerLiftPerformanceDto> AnalyzePerformanceAsync(string wellUWI);
+        Task<PlungerLiftPerformance> AnalyzePerformanceAsync(string wellUWI);
 
         /// <summary>
         /// Calculates expected production rate
         /// </summary>
-        Task<ProductionRateDto> CalculateProductionRateAsync(string wellUWI, ProductionRateRequestDto request);
+        Task<ProductionRate> CalculateProductionRateAsync(string wellUWI, ProductionRateRequest request);
 
         /// <summary>
         /// Performs efficiency analysis
         /// </summary>
-        Task<EfficiencyAnalysisDto> AnalyzeEfficiencyAsync(string wellUWI, EfficiencyAnalysisRequestDto request);
+        Task<EfficiencyAnalysis> AnalyzeEfficiencyAsync(string wellUWI, EfficiencyAnalysisRequest request);
 
         /// <summary>
         /// Calculates system energy requirements
         /// </summary>
-        Task<EnergyRequirementsDto> CalculateEnergyRequirementsAsync(string wellUWI, EnergyRequestDto request);
+        Task<EnergyRequirements> CalculateEnergyRequirementsAsync(string wellUWI, EnergyRequest request);
 
         #endregion
 
@@ -63,22 +63,22 @@ namespace Beep.OilandGas.PlungerLift.Services
         /// <summary>
         /// Analyzes plunger valve performance
         /// </summary>
-        Task<ValvePerformanceDto> AnalyzeValvePerformanceAsync(string wellUWI, ValveAnalysisRequestDto request);
+        Task<ValvePerformance> AnalyzeValvePerformanceAsync(string wellUWI, ValveAnalysisRequest request);
 
         /// <summary>
         /// Calculates valve sizing requirements
         /// </summary>
-        Task<ValveSizingDto> CalculateValveSizingAsync(string wellUWI, ValveSizingRequestDto request);
+        Task<ValveSizing> CalculateValveSizingAsync(string wellUWI, ValveSizingRequest request);
 
         /// <summary>
         /// Performs tubing analysis for plunger lift
         /// </summary>
-        Task<TubingAnalysisDto> AnalyzeTubingAsync(string wellUWI, TubingAnalysisRequestDto request);
+        Task<TubingAnalysis> AnalyzeTubingAsync(string wellUWI, TubingAnalysisRequest request);
 
         /// <summary>
         /// Analyzes casing performance for plunger lift operations
         /// </summary>
-        Task<CasingAnalysisDto> AnalyzeCasingAsync(string wellUWI, CasingAnalysisRequestDto request);
+        Task<CasingAnalysis> AnalyzeCasingAsync(string wellUWI, CasingAnalysisRequest request);
 
         #endregion
 
@@ -87,22 +87,22 @@ namespace Beep.OilandGas.PlungerLift.Services
         /// <summary>
         /// Identifies optimization opportunities
         /// </summary>
-        Task<List<OptimizationOpportunityDto>> IdentifyOptimizationOpportunitiesAsync(string wellUWI);
+        Task<List<OptimizationOpportunity>> IdentifyOptimizationOpportunitiesAsync(string wellUWI);
 
         /// <summary>
         /// Recommends parameter adjustments
         /// </summary>
-        Task<ParameterAdjustmentDto> RecommendParameterAdjustmentsAsync(string wellUWI, PerformanceDataDto currentPerformance);
+        Task<ParameterAdjustment> RecommendParameterAdjustmentsAsync(string wellUWI, PerformanceData currentPerformance);
 
         /// <summary>
         /// Performs sensitivity analysis on design parameters
         /// </summary>
-        Task<SensitivityAnalysisDto> PerformSensitivityAnalysisAsync(string wellUWI, SensitivityRequestDto request);
+        Task<SensitivityAnalysis> PerformSensitivityAnalysisAsync(string wellUWI, SensitivityRequest request);
 
         /// <summary>
         /// Compares different plunger lift designs
         /// </summary>
-        Task<DesignComparisonDto> CompareDesignsAsync(List<PlungerLiftDesignDto> designs);
+        Task<DesignComparison> CompareDesignsAsync(List<PlungerLiftDesign> designs);
 
         #endregion
 
@@ -111,22 +111,22 @@ namespace Beep.OilandGas.PlungerLift.Services
         /// <summary>
         /// Performs acoustic telemetry analysis
         /// </summary>
-        Task<AcousticTelemetryDto> AnalyzeAcousticTelemetryAsync(string wellUWI, AcousticDataRequestDto request);
+        Task<AcousticTelemetry> AnalyzeAcousticTelemetryAsync(string wellUWI, AcousticDataRequest request);
 
         /// <summary>
         /// Analyzes real-time production data
         /// </summary>
-        Task<ProductionMonitoringDto> MonitorProductionAsync(string wellUWI, MonitoringRequestDto request);
+        Task<ProductionMonitoring> MonitorProductionAsync(string wellUWI, MonitoringRequest request);
 
         /// <summary>
         /// Detects operational issues
         /// </summary>
-        Task<IssueDetectionDto> DetectOperationalIssuesAsync(string wellUWI);
+        Task<IssueDetection> DetectOperationalIssuesAsync(string wellUWI);
 
         /// <summary>
         /// Performs predictive maintenance analysis
         /// </summary>
-        Task<PredictiveMaintenanceDto> PerformPredictiveMaintenanceAsync(string wellUWI, MaintenanceRequestDto request);
+        Task<PredictiveMaintenance> PerformPredictiveMaintenanceAsync(string wellUWI, MaintenanceRequest request);
 
         #endregion
 
@@ -135,17 +135,17 @@ namespace Beep.OilandGas.PlungerLift.Services
         /// <summary>
         /// Compares plunger lift with other artificial lift methods
         /// </summary>
-        Task<ArtificialLiftComparisonDto> CompareWithOtherMethodsAsync(string wellUWI, ComparisonRequestDto request);
+        Task<ArtificialLiftComparison> CompareWithOtherMethodsAsync(string wellUWI, ComparisonRequest request);
 
         /// <summary>
         /// Evaluates plunger lift feasibility
         /// </summary>
-        Task<FeasibilityAssessmentDto> AssessFeasibilityAsync(string wellUWI, FeasibilityRequestDto request);
+        Task<FeasibilityAssessment> AssessFeasibilityAsync(string wellUWI, FeasibilityRequest request);
 
         /// <summary>
         /// Performs cost analysis for plunger lift
         /// </summary>
-        Task<CostAnalysisDto> PerformCostAnalysisAsync(string wellUWI, CostAnalysisRequestDto request);
+        Task<CostAnalysis> PerformCostAnalysisAsync(string wellUWI, CostAnalysisRequest request);
 
         #endregion
 
@@ -154,27 +154,27 @@ namespace Beep.OilandGas.PlungerLift.Services
         /// <summary>
         /// Saves plunger lift design to database
         /// </summary>
-        Task SavePlungerLiftDesignAsync(PlungerLiftDesignDto design, string userId);
+        Task SavePlungerLiftDesignAsync(PlungerLiftDesign design, string userId);
 
         /// <summary>
         /// Retrieves plunger lift design
         /// </summary>
-        Task<PlungerLiftDesignDto?> GetPlungerLiftDesignAsync(string wellUWI);
+        Task<PlungerLiftDesign?> GetPlungerLiftDesignAsync(string wellUWI);
 
         /// <summary>
         /// Updates plunger lift design
         /// </summary>
-        Task UpdatePlungerLiftDesignAsync(PlungerLiftDesignDto design, string userId);
+        Task UpdatePlungerLiftDesignAsync(PlungerLiftDesign design, string userId);
 
         /// <summary>
         /// Saves performance monitoring data
         /// </summary>
-        Task SavePerformanceDataAsync(PerformanceDataDto performanceData, string userId);
+        Task SavePerformanceDataAsync(PerformanceData performanceData, string userId);
 
         /// <summary>
         /// Retrieves performance data
         /// </summary>
-        Task<List<PerformanceDataDto>> GetPerformanceDataAsync(string wellUWI, DateTime startDate, DateTime endDate);
+        Task<List<PerformanceData>> GetPerformanceDataAsync(string wellUWI, DateTime startDate, DateTime endDate);
 
         #endregion
 
@@ -183,7 +183,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         /// <summary>
         /// Generates plunger lift design report
         /// </summary>
-        Task<PlungerLiftReportDto> GenerateDesignReportAsync(string wellUWI, ReportRequestDto request);
+        Task<PlungerLiftReport> GenerateDesignReportAsync(string wellUWI, ReportRequest request);
 
         /// <summary>
         /// Exports performance data
@@ -193,7 +193,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         /// <summary>
         /// Generates technical specifications
         /// </summary>
-        Task<TechnicalSpecificationsDto> GenerateTechnicalSpecificationsAsync(string wellUWI, PlungerLiftDesignDto design);
+        Task<TechnicalSpecifications> GenerateTechnicalSpecificationsAsync(string wellUWI, PlungerLiftDesign design);
 
         #endregion
     }
@@ -203,7 +203,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Plunger lift design DTO
     /// </summary>
-    public class PlungerLiftDesignDto
+    public class PlungerLiftDesign
     {
         public string DesignId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -222,7 +222,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Plunger lift well properties DTO
     /// </summary>
-    public class PlungerLiftWellPropertiesDto
+    public class PlungerLiftWellProperties
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal WellheadPressure { get; set; }
@@ -241,7 +241,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Plunger lift optimization request DTO
     /// </summary>
-    public class PlungerLiftOptimizationRequestDto
+    public class PlungerLiftOptimizationRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public string OptimizationObjective { get; set; } = "MaximizeProduction";
@@ -252,10 +252,10 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Plunger type selection DTO
     /// </summary>
-    public class PlungerTypeSelectionDto
+    public class PlungerTypeSelection
     {
         public string WellUWI { get; set; } = string.Empty;
-        public List<PlungerTypeOptionDto> Options { get; set; } = new();
+        public List<PlungerTypeOption> Options { get; set; } = new();
         public string RecommendedType { get; set; } = string.Empty;
         public string RecommendationRationale { get; set; } = string.Empty;
     }
@@ -263,7 +263,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Plunger type option DTO
     /// </summary>
-    public class PlungerTypeOptionDto
+    public class PlungerTypeOption
     {
         public string PlungerType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -276,7 +276,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Cycle time calculation DTO
     /// </summary>
-    public class CycleTimeCalculationDto
+    public class CycleTimeCalculation
     {
         public string WellUWI { get; set; } = string.Empty;
         public int OptimalCycleTime { get; set; } // minutes
@@ -290,7 +290,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Cycle time request DTO
     /// </summary>
-    public class CycleTimeRequestDto
+    public class CycleTimeRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal TargetProductionRate { get; set; }
@@ -305,7 +305,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Plunger lift performance DTO
     /// </summary>
-    public class PlungerLiftPerformanceDto
+    public class PlungerLiftPerformance
     {
         public string PerformanceId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -322,7 +322,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Production rate DTO
     /// </summary>
-    public class ProductionRateDto
+    public class ProductionRate
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal OilRate { get; set; }
@@ -336,7 +336,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Production rate request DTO
     /// </summary>
-    public class ProductionRateRequestDto
+    public class ProductionRateRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public int CycleTime { get; set; }
@@ -347,7 +347,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Efficiency analysis DTO
     /// </summary>
-    public class EfficiencyAnalysisDto
+    public class EfficiencyAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -356,13 +356,13 @@ namespace Beep.OilandGas.PlungerLift.Services
         public decimal OverallEfficiency { get; set; }
         public decimal EnergyInput { get; set; }
         public decimal UsefulOutput { get; set; }
-        public List<EfficiencyLossDto> Losses { get; set; } = new();
+        public List<EfficiencyLoss> Losses { get; set; } = new();
     }
 
     /// <summary>
     /// Efficiency loss DTO
     /// </summary>
-    public class EfficiencyLossDto
+    public class EfficiencyLoss
     {
         public string LossType { get; set; } = string.Empty;
         public decimal LossPercentage { get; set; }
@@ -373,7 +373,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Efficiency analysis request DTO
     /// </summary>
-    public class EfficiencyAnalysisRequestDto
+    public class EfficiencyAnalysisRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
@@ -384,7 +384,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Energy requirements DTO
     /// </summary>
-    public class EnergyRequirementsDto
+    public class EnergyRequirements
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal DailyEnergyUsage { get; set; } // kWh
@@ -398,7 +398,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Energy request DTO
     /// </summary>
-    public class EnergyRequestDto
+    public class EnergyRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal CycleTime { get; set; }
@@ -409,7 +409,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Performance data DTO
     /// </summary>
-    public class PerformanceDataDto
+    public class PerformanceData
     {
         public string DataId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -430,7 +430,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Valve performance DTO
     /// </summary>
-    public class ValvePerformanceDto
+    public class ValvePerformance
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -445,7 +445,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Valve analysis request DTO
     /// </summary>
-    public class ValveAnalysisRequestDto
+    public class ValveAnalysisRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal TubingPressure { get; set; }
@@ -456,7 +456,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Valve sizing DTO
     /// </summary>
-    public class ValveSizingDto
+    public class ValveSizing
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal RequiredValveSize { get; set; }
@@ -468,7 +468,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Valve sizing request DTO
     /// </summary>
-    public class ValveSizingRequestDto
+    public class ValveSizingRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal MaximumFlowRate { get; set; }
@@ -478,7 +478,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Tubing analysis DTO
     /// </summary>
-    public class TubingAnalysisDto
+    public class TubingAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -493,7 +493,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Tubing analysis request DTO
     /// </summary>
-    public class TubingAnalysisRequestDto
+    public class TubingAnalysisRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal TubingSize { get; set; }
@@ -503,7 +503,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Casing analysis DTO
     /// </summary>
-    public class CasingAnalysisDto
+    public class CasingAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -518,7 +518,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Casing analysis request DTO
     /// </summary>
-    public class CasingAnalysisRequestDto
+    public class CasingAnalysisRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal CasingSize { get; set; }
@@ -532,7 +532,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Optimization opportunity DTO
     /// </summary>
-    public class OptimizationOpportunityDto
+    public class OptimizationOpportunity
     {
         public string OpportunityId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -547,11 +547,11 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Parameter adjustment DTO
     /// </summary>
-    public class ParameterAdjustmentDto
+    public class ParameterAdjustment
     {
         public string AdjustmentId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
-        public List<ParameterChangeDto> Adjustments { get; set; } = new();
+        public List<ParameterChange> Adjustments { get; set; } = new();
         public decimal ExpectedProductionImprovement { get; set; }
         public string Rationale { get; set; } = string.Empty;
     }
@@ -559,7 +559,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Parameter change DTO
     /// </summary>
-    public class ParameterChangeDto
+    public class ParameterChange
     {
         public string ParameterName { get; set; } = string.Empty;
         public decimal CurrentValue { get; set; }
@@ -571,30 +571,30 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Sensitivity analysis DTO
     /// </summary>
-    public class SensitivityAnalysisDto
+    public class SensitivityAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
-        public List<SensitivityParameterDto> Parameters { get; set; } = new();
+        public List<SensitivityParameter> Parameters { get; set; } = new();
         public string AnalysisSummary { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Sensitivity parameter DTO
     /// </summary>
-    public class SensitivityParameterDto
+    public class SensitivityParameter
     {
         public string ParameterName { get; set; } = string.Empty;
         public decimal BaseValue { get; set; }
         public decimal MinValue { get; set; }
         public decimal MaxValue { get; set; }
-        public List<SensitivityPointDto> Results { get; set; } = new();
+        public List<SensitivityPoint> Results { get; set; } = new();
     }
 
     /// <summary>
     /// Sensitivity point DTO
     /// </summary>
-    public class SensitivityPointDto
+    public class SensitivityPoint
     {
         public decimal ParameterValue { get; set; }
         public decimal ProductionRate { get; set; }
@@ -605,10 +605,10 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Design comparison DTO
     /// </summary>
-    public class DesignComparisonDto
+    public class DesignComparison
     {
         public string ComparisonId { get; set; } = string.Empty;
-        public List<DesignComparisonItemDto> Designs { get; set; } = new();
+        public List<DesignComparisonItem> Designs { get; set; } = new();
         public string BestDesign { get; set; } = string.Empty;
         public string ComparisonSummary { get; set; } = string.Empty;
     }
@@ -616,7 +616,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Design comparison item DTO
     /// </summary>
-    public class DesignComparisonItemDto
+    public class DesignComparisonItem
     {
         public string DesignId { get; set; } = string.Empty;
         public string DesignName { get; set; } = string.Empty;
@@ -634,7 +634,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Acoustic telemetry DTO
     /// </summary>
-    public class AcousticTelemetryDto
+    public class AcousticTelemetry
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -649,7 +649,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Acoustic data request DTO
     /// </summary>
-    public class AcousticDataRequestDto
+    public class AcousticDataRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
@@ -660,7 +660,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Production monitoring DTO
     /// </summary>
-    public class ProductionMonitoringDto
+    public class ProductionMonitoring
     {
         public string MonitoringId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -675,7 +675,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Monitoring request DTO
     /// </summary>
-    public class MonitoringRequestDto
+    public class MonitoringRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
@@ -686,11 +686,11 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Issue detection DTO
     /// </summary>
-    public class IssueDetectionDto
+    public class IssueDetection
     {
         public string IssueId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
-        public List<OperationalIssueDto> Issues { get; set; } = new();
+        public List<OperationalIssue> Issues { get; set; } = new();
         public string OverallStatus { get; set; } = string.Empty;
         public List<string> Recommendations { get; set; } = new();
     }
@@ -698,7 +698,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Operational issue DTO
     /// </summary>
-    public class OperationalIssueDto
+    public class OperationalIssue
     {
         public string IssueType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -710,11 +710,11 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Predictive maintenance DTO
     /// </summary>
-    public class PredictiveMaintenanceDto
+    public class PredictiveMaintenance
     {
         public string MaintenanceId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
-        public List<MaintenancePredictionDto> Predictions { get; set; } = new();
+        public List<MaintenancePrediction> Predictions { get; set; } = new();
         public DateTime AnalysisDate { get; set; }
         public string OverallHealth { get; set; } = string.Empty;
     }
@@ -722,7 +722,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Maintenance prediction DTO
     /// </summary>
-    public class MaintenancePredictionDto
+    public class MaintenancePrediction
     {
         public string ComponentName { get; set; } = string.Empty;
         public string EstimatedCondition { get; set; } = string.Empty;
@@ -734,7 +734,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Maintenance request DTO
     /// </summary>
-    public class MaintenanceRequestDto
+    public class MaintenanceRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public bool IncludeComponentAnalysis { get; set; } = true;
@@ -748,11 +748,11 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Artificial lift comparison DTO
     /// </summary>
-    public class ArtificialLiftComparisonDto
+    public class ArtificialLiftComparison
     {
         public string ComparisonId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
-        public List<LiftMethodComparisonDto> Methods { get; set; } = new();
+        public List<LiftMethodComparison> Methods { get; set; } = new();
         public string RecommendedMethod { get; set; } = string.Empty;
         public string ComparisonSummary { get; set; } = string.Empty;
     }
@@ -760,7 +760,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Lift method comparison DTO
     /// </summary>
-    public class LiftMethodComparisonDto
+    public class LiftMethodComparison
     {
         public string MethodName { get; set; } = string.Empty;
         public decimal EstimatedCost { get; set; }
@@ -774,20 +774,20 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Feasibility assessment DTO
     /// </summary>
-    public class FeasibilityAssessmentDto
+    public class FeasibilityAssessment
     {
         public string AssessmentId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
         public bool IsFeasible { get; set; }
         public decimal FeasibilityScore { get; set; }
-        public List<FeasibilityFactorDto> Factors { get; set; } = new();
+        public List<FeasibilityFactor> Factors { get; set; } = new();
         public string AssessmentSummary { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Feasibility factor DTO
     /// </summary>
-    public class FeasibilityFactorDto
+    public class FeasibilityFactor
     {
         public string FactorName { get; set; } = string.Empty;
         public bool IsFavorable { get; set; }
@@ -798,7 +798,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Feasibility request DTO
     /// </summary>
-    public class FeasibilityRequestDto
+    public class FeasibilityRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public List<string> EvaluationCriteria { get; set; } = new();
@@ -807,7 +807,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Cost analysis DTO
     /// </summary>
-    public class CostAnalysisDto
+    public class CostAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -823,7 +823,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Cost analysis request DTO
     /// </summary>
-    public class CostAnalysisRequestDto
+    public class CostAnalysisRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal OilPrice { get; set; }
@@ -838,7 +838,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Comparison request DTO
     /// </summary>
-    public class ComparisonRequestDto
+    public class ComparisonRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public List<string> LiftMethods { get; set; } = new();
@@ -852,7 +852,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Plunger selection criteria DTO
     /// </summary>
-    public class PlungerSelectionCriteriaDto
+    public class PlungerSelectionCriteria
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal TubingSize { get; set; }
@@ -868,7 +868,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Sensitivity analysis request DTO
     /// </summary>
-    public class SensitivityRequestDto
+    public class SensitivityRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public List<string> ParametersToAnalyze { get; set; } = new();
@@ -884,7 +884,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Plunger lift report DTO
     /// </summary>
-    public class PlungerLiftReportDto
+    public class PlungerLiftReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -899,7 +899,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Report request DTO
     /// </summary>
-    public class ReportRequestDto
+    public class ReportRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public string ReportType { get; set; } = "Comprehensive";
@@ -911,18 +911,18 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Technical specifications DTO
     /// </summary>
-    public class TechnicalSpecificationsDto
+    public class TechnicalSpecifications
     {
         public string SpecId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
-        public List<SpecificationItemDto> Specifications { get; set; } = new();
+        public List<SpecificationItem> Specifications { get; set; } = new();
         public string Notes { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Specification item DTO
     /// </summary>
-    public class SpecificationItemDto
+    public class SpecificationItem
     {
         public string ItemName { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

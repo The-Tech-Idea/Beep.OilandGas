@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    public partial class NODAL_IPR_POINT : Entity, IPPDMEntity
-    {
+    public partial class NODAL_IPR_POINT : ModelEntityBase {
         private String NODAL_IPR_POINT_IDValue;
         public String NODAL_IPR_POINT_ID
         {

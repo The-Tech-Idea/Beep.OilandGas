@@ -41,7 +41,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
         #region System Design
 
-        public async Task<PlungerLiftDesignDto> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellPropertiesDto wellProperties)
+        public async Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellProperties wellProperties)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -54,7 +54,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             {
                 var cycleTime = CalculateOptimalCycleTime(wellProperties.ReservoirPressure, wellProperties.WellDepth);
                 
-                var design = new PlungerLiftDesignDto
+                var design = new PlungerLiftDesign
                 {
                     DesignId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
@@ -81,7 +81,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<PlungerLiftDesignDto> OptimizeDesignAsync(string wellUWI, PlungerLiftOptimizationRequestDto request)
+        public async Task<PlungerLiftDesign> OptimizeDesignAsync(string wellUWI, PlungerLiftOptimizationRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -92,7 +92,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var optimized = new PlungerLiftDesignDto
+                var optimized = new PlungerLiftDesign
                 {
                     WellUWI = wellUWI,
                     DesignDate = DateTime.UtcNow,
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<PlungerTypeSelectionDto> SelectPlungerTypeAsync(string wellUWI, PlungerSelectionCriteriaDto criteria)
+        public async Task<PlungerTypeSelection> SelectPlungerTypeAsync(string wellUWI, PlungerSelectionCriteria criteria)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -121,14 +121,14 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var selection = new PlungerTypeSelectionDto
+                var selection = new PlungerTypeSelection
                 {
                     WellUWI = wellUWI,
-                    Options = new List<PlungerTypeOptionDto>
+                    Options = new List<PlungerTypeOption>
                     {
-                        new PlungerTypeOptionDto { PlungerType = "Conventional", Description = "Standard plunger", EstimatedCost = 5000, OperatingEfficiency = 0.75m },
-                        new PlungerTypeOptionDto { PlungerType = "Velocity", Description = "Velocity plunger", EstimatedCost = 7500, OperatingEfficiency = 0.80m },
-                        new PlungerTypeOptionDto { PlungerType = "Integral", Description = "Integral catcher", EstimatedCost = 10000, OperatingEfficiency = 0.85m }
+                        new PlungerTypeOption { PlungerType = "Conventional", Description = "Standard plunger", EstimatedCost = 5000, OperatingEfficiency = 0.75m },
+                        new PlungerTypeOption { PlungerType = "Velocity", Description = "Velocity plunger", EstimatedCost = 7500, OperatingEfficiency = 0.80m },
+                        new PlungerTypeOption { PlungerType = "Integral", Description = "Integral catcher", EstimatedCost = 10000, OperatingEfficiency = 0.85m }
                     },
                     RecommendedType = "Conventional",
                     RecommendationRationale = "Selected based on well conditions"
@@ -145,7 +145,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<CycleTimeCalculationDto> CalculateCycleTimeAsync(string wellUWI, CycleTimeRequestDto request)
+        public async Task<CycleTimeCalculation> CalculateCycleTimeAsync(string wellUWI, CycleTimeRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -157,7 +157,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             try
             {
                 var optimalCycleTime = 25;
-                var calculation = new CycleTimeCalculationDto
+                var calculation = new CycleTimeCalculation
                 {
                     WellUWI = wellUWI,
                     OptimalCycleTime = optimalCycleTime,
@@ -183,7 +183,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
         #region Performance Analysis
 
-        public async Task<PlungerLiftPerformanceDto> AnalyzePerformanceAsync(string wellUWI)
+        public async Task<PlungerLiftPerformance> AnalyzePerformanceAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -192,7 +192,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var performance = new PlungerLiftPerformanceDto
+                var performance = new PlungerLiftPerformance
                 {
                     PerformanceId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
@@ -217,7 +217,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<ProductionRateDto> CalculateProductionRateAsync(string wellUWI, ProductionRateRequestDto request)
+        public async Task<ProductionRate> CalculateProductionRateAsync(string wellUWI, ProductionRateRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -228,7 +228,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var calculation = new ProductionRateDto
+                var calculation = new ProductionRate
                 {
                     WellUWI = wellUWI,
                     OilRate = 150,
@@ -250,7 +250,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<EfficiencyAnalysisDto> AnalyzeEfficiencyAsync(string wellUWI, EfficiencyAnalysisRequestDto request)
+        public async Task<EfficiencyAnalysis> AnalyzeEfficiencyAsync(string wellUWI, EfficiencyAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -261,7 +261,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var analysis = new EfficiencyAnalysisDto
+                var analysis = new EfficiencyAnalysis
                 {
                     AnalysisId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
@@ -270,7 +270,7 @@ namespace Beep.OilandGas.PlungerLift.Services
                     OverallEfficiency = 0.765m,
                     EnergyInput = 100,
                     UsefulOutput = 76.5m,
-                    Losses = new List<EfficiencyLossDto>()
+                    Losses = new List<EfficiencyLoss>()
                 };
 
                 _logger?.LogInformation("Efficiency analysis completed for well {WellUWI}", wellUWI);
@@ -284,7 +284,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<EnergyRequirementsDto> CalculateEnergyRequirementsAsync(string wellUWI, EnergyRequestDto request)
+        public async Task<EnergyRequirements> CalculateEnergyRequirementsAsync(string wellUWI, EnergyRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -295,7 +295,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var calculation = new EnergyRequirementsDto
+                var calculation = new EnergyRequirements
                 {
                     WellUWI = wellUWI,
                     DailyEnergyUsage = 840,
@@ -321,7 +321,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
         #region Valve and Equipment Analysis
 
-        public async Task<ValvePerformanceDto> AnalyzeValvePerformanceAsync(string wellUWI, ValveAnalysisRequestDto request)
+        public async Task<ValvePerformance> AnalyzeValvePerformanceAsync(string wellUWI, ValveAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -332,7 +332,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var analysis = new ValvePerformanceDto
+                var analysis = new ValvePerformance
                 {
                     AnalysisId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
@@ -355,7 +355,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<ValveSizingDto> CalculateValveSizingAsync(string wellUWI, ValveSizingRequestDto request)
+        public async Task<ValveSizing> CalculateValveSizingAsync(string wellUWI, ValveSizingRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -366,7 +366,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var sizing = new ValveSizingDto
+                var sizing = new ValveSizing
                 {
                     WellUWI = wellUWI,
                     RequiredValveSize = 1.5m,
@@ -386,7 +386,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<TubingAnalysisDto> AnalyzeTubingAsync(string wellUWI, TubingAnalysisRequestDto request)
+        public async Task<TubingAnalysis> AnalyzeTubingAsync(string wellUWI, TubingAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -397,7 +397,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var analysis = new TubingAnalysisDto
+                var analysis = new TubingAnalysis
                 {
                     AnalysisId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
@@ -420,7 +420,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<CasingAnalysisDto> AnalyzeCasingAsync(string wellUWI, CasingAnalysisRequestDto request)
+        public async Task<CasingAnalysis> AnalyzeCasingAsync(string wellUWI, CasingAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -431,7 +431,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var analysis = new CasingAnalysisDto
+                var analysis = new CasingAnalysis
                 {
                     AnalysisId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
@@ -458,7 +458,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
         #region Production Optimization
 
-        public async Task<List<OptimizationOpportunityDto>> IdentifyOptimizationOpportunitiesAsync(string wellUWI)
+        public async Task<List<OptimizationOpportunity>> IdentifyOptimizationOpportunitiesAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -467,9 +467,9 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var opportunities = new List<OptimizationOpportunityDto>
+                var opportunities = new List<OptimizationOpportunity>
                 {
-                    new OptimizationOpportunityDto
+                    new OptimizationOpportunity
                     {
                         OpportunityId = Guid.NewGuid().ToString(),
                         WellUWI = wellUWI,
@@ -480,7 +480,7 @@ namespace Beep.OilandGas.PlungerLift.Services
                         PaybackPeriod = 0.5m,
                         Priority = "High"
                     },
-                    new OptimizationOpportunityDto
+                    new OptimizationOpportunity
                     {
                         OpportunityId = Guid.NewGuid().ToString(),
                         WellUWI = wellUWI,
@@ -504,7 +504,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<ParameterAdjustmentDto> RecommendParameterAdjustmentsAsync(string wellUWI, PerformanceDataDto currentPerformance)
+        public async Task<ParameterAdjustment> RecommendParameterAdjustmentsAsync(string wellUWI, PerformanceData currentPerformance)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -515,13 +515,13 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var recommendations = new ParameterAdjustmentDto
+                var recommendations = new ParameterAdjustment
                 {
                     AdjustmentId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
-                    Adjustments = new List<ParameterChangeDto>
+                    Adjustments = new List<ParameterChange>
                     {
-                        new ParameterChangeDto { ParameterName = "CycleTime", CurrentValue = 30m, RecommendedValue = 25m }
+                        new ParameterChange { ParameterName = "CycleTime", CurrentValue = 30m, RecommendedValue = 25m }
                     },
                     ExpectedProductionImprovement = 15,
                     Rationale = "Adjustments should improve efficiency"
@@ -538,7 +538,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<SensitivityAnalysisDto> PerformSensitivityAnalysisAsync(string wellUWI, SensitivityRequestDto request)
+        public async Task<SensitivityAnalysis> PerformSensitivityAnalysisAsync(string wellUWI, SensitivityRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -549,11 +549,11 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var analysis = new SensitivityAnalysisDto
+                var analysis = new SensitivityAnalysis
                 {
                     AnalysisId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
-                    Parameters = new List<SensitivityParameterDto>(),
+                    Parameters = new List<SensitivityParameter>(),
                     AnalysisSummary = "Production most sensitive to cycle time variations"
                 };
 
@@ -568,7 +568,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<DesignComparisonDto> CompareDesignsAsync(List<PlungerLiftDesignDto> designs)
+        public async Task<DesignComparison> CompareDesignsAsync(List<PlungerLiftDesign> designs)
         {
             if (designs == null || designs.Count < 2)
                 throw new ArgumentException("At least 2 designs required for comparison", nameof(designs));
@@ -577,10 +577,10 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var comparison = new DesignComparisonDto
+                var comparison = new DesignComparison
                 {
                     ComparisonId = Guid.NewGuid().ToString(),
-                    Designs = new List<DesignComparisonItemDto>(),
+                    Designs = new List<DesignComparisonItem>(),
                     BestDesign = designs.First().DesignId,
                     ComparisonSummary = "Comparison completed"
                 };
@@ -600,7 +600,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
         #region Acoustic and Monitoring
 
-        public async Task<AcousticTelemetryDto> AnalyzeAcousticTelemetryAsync(string wellUWI, AcousticDataRequestDto request)
+        public async Task<AcousticTelemetry> AnalyzeAcousticTelemetryAsync(string wellUWI, AcousticDataRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -611,7 +611,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var analysis = new AcousticTelemetryDto
+                var analysis = new AcousticTelemetry
                 {
                     AnalysisId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
@@ -634,7 +634,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<ProductionMonitoringDto> MonitorProductionAsync(string wellUWI, MonitoringRequestDto request)
+        public async Task<ProductionMonitoring> MonitorProductionAsync(string wellUWI, MonitoringRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -645,7 +645,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var monitoring = new ProductionMonitoringDto
+                var monitoring = new ProductionMonitoring
                 {
                     MonitoringId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
@@ -668,7 +668,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<IssueDetectionDto> DetectOperationalIssuesAsync(string wellUWI)
+        public async Task<IssueDetection> DetectOperationalIssuesAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -677,11 +677,11 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var issues = new IssueDetectionDto
+                var issues = new IssueDetection
                 {
                     IssueId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
-                    Issues = new List<OperationalIssueDto>(),
+                    Issues = new List<OperationalIssue>(),
                     OverallStatus = "Normal",
                     Recommendations = new List<string> { "Continue monitoring" }
                 };
@@ -697,7 +697,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<PredictiveMaintenanceDto> PerformPredictiveMaintenanceAsync(string wellUWI, MaintenanceRequestDto request)
+        public async Task<PredictiveMaintenance> PerformPredictiveMaintenanceAsync(string wellUWI, MaintenanceRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -708,11 +708,11 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var maintenance = new PredictiveMaintenanceDto
+                var maintenance = new PredictiveMaintenance
                 {
                     MaintenanceId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
-                    Predictions = new List<MaintenancePredictionDto>(),
+                    Predictions = new List<MaintenancePrediction>(),
                     AnalysisDate = DateTime.UtcNow,
                     OverallHealth = "Good"
                 };
@@ -732,7 +732,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
         #region Artificial Lift Comparison
 
-        public async Task<ArtificialLiftComparisonDto> CompareWithOtherMethodsAsync(string wellUWI, ComparisonRequestDto request)
+        public async Task<ArtificialLiftComparison> CompareWithOtherMethodsAsync(string wellUWI, ComparisonRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -743,11 +743,11 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var comparison = new ArtificialLiftComparisonDto
+                var comparison = new ArtificialLiftComparison
                 {
                     ComparisonId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
-                    Methods = new List<LiftMethodComparisonDto>(),
+                    Methods = new List<LiftMethodComparison>(),
                     RecommendedMethod = "Plunger Lift",
                     ComparisonSummary = "Plunger lift recommended for this well"
                 };
@@ -763,7 +763,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<FeasibilityAssessmentDto> AssessFeasibilityAsync(string wellUWI, FeasibilityRequestDto request)
+        public async Task<FeasibilityAssessment> AssessFeasibilityAsync(string wellUWI, FeasibilityRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -774,13 +774,13 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var feasibility = new FeasibilityAssessmentDto
+                var feasibility = new FeasibilityAssessment
                 {
                     AssessmentId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
                     IsFeasible = true,
                     FeasibilityScore = 0.85m,
-                    Factors = new List<FeasibilityFactorDto>(),
+                    Factors = new List<FeasibilityFactor>(),
                     AssessmentSummary = "Plunger lift is feasible for this well"
                 };
 
@@ -795,7 +795,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<CostAnalysisDto> PerformCostAnalysisAsync(string wellUWI, CostAnalysisRequestDto request)
+        public async Task<CostAnalysis> PerformCostAnalysisAsync(string wellUWI, CostAnalysisRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -806,7 +806,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var costAnalysis = new CostAnalysisDto
+                var costAnalysis = new CostAnalysis
                 {
                     AnalysisId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
@@ -834,7 +834,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
         #region Data Management
 
-        public async Task SavePlungerLiftDesignAsync(PlungerLiftDesignDto design, string userId)
+        public async Task SavePlungerLiftDesignAsync(PlungerLiftDesign design, string userId)
         {
             if (design == null)
                 throw new ArgumentNullException(nameof(design));
@@ -856,7 +856,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<PlungerLiftDesignDto?> GetPlungerLiftDesignAsync(string wellUWI)
+        public async Task<PlungerLiftDesign?> GetPlungerLiftDesignAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -875,7 +875,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task UpdatePlungerLiftDesignAsync(PlungerLiftDesignDto design, string userId)
+        public async Task UpdatePlungerLiftDesignAsync(PlungerLiftDesign design, string userId)
         {
             if (design == null)
                 throw new ArgumentNullException(nameof(design));
@@ -897,7 +897,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task SavePerformanceDataAsync(PerformanceDataDto performanceData, string userId)
+        public async Task SavePerformanceDataAsync(PerformanceData performanceData, string userId)
         {
             if (performanceData == null)
                 throw new ArgumentNullException(nameof(performanceData));
@@ -919,7 +919,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<List<PerformanceDataDto>> GetPerformanceDataAsync(string wellUWI, DateTime startDate, DateTime endDate)
+        public async Task<List<PerformanceData>> GetPerformanceDataAsync(string wellUWI, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -929,7 +929,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             try
             {
                 // TODO: Implement PPDM data retrieval with date filtering
-                return new List<PerformanceDataDto>();
+                return new List<PerformanceData>();
             }
             catch (Exception ex)
             {
@@ -942,7 +942,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
         #region Reporting and Export
 
-        public async Task<PlungerLiftReportDto> GenerateDesignReportAsync(string wellUWI, ReportRequestDto request)
+        public async Task<PlungerLiftReport> GenerateDesignReportAsync(string wellUWI, ReportRequest request)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -954,7 +954,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             try
             {
                 var reportContent = System.Text.Encoding.UTF8.GetBytes("Plunger Lift System Design Report");
-                var report = new PlungerLiftReportDto
+                var report = new PlungerLiftReport
                 {
                     ReportId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
@@ -1000,7 +1000,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             }
         }
 
-        public async Task<TechnicalSpecificationsDto> GenerateTechnicalSpecificationsAsync(string wellUWI, PlungerLiftDesignDto design)
+        public async Task<TechnicalSpecifications> GenerateTechnicalSpecificationsAsync(string wellUWI, PlungerLiftDesign design)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -1011,11 +1011,11 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var specs = new TechnicalSpecificationsDto
+                var specs = new TechnicalSpecifications
                 {
                     SpecId = Guid.NewGuid().ToString(),
                     WellUWI = wellUWI,
-                    Specifications = new List<SpecificationItemDto>(),
+                    Specifications = new List<SpecificationItem>(),
                     Notes = "Technical specifications generated from design"
                 };
 
@@ -1040,7 +1040,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             return baseCycleTime;
         }
 
-        private int DeterminePlungerType(PlungerLiftWellPropertiesDto wellProperties)
+        private int DeterminePlungerType(PlungerLiftWellProperties wellProperties)
         {
             if (wellProperties.WellDepth > 10000 && wellProperties.TubingSize <= 2.5m)
                 return 3;
@@ -1049,7 +1049,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             return 1;
         }
 
-        private List<string> GenerateDesignNotes(PlungerLiftWellPropertiesDto wellProperties)
+        private List<string> GenerateDesignNotes(PlungerLiftWellProperties wellProperties)
         {
             var notes = new List<string>();
             

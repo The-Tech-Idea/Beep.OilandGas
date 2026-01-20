@@ -9,7 +9,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// </summary>
     public partial class PipelineAnalysisService
     {
-        public async Task<HydraulicSimulationResultDto> SimulateSteadyStateAsync(string pipelineId, SimulationRequestDto request)
+        public async Task<HydraulicSimulationResult> SimulateSteadyStateAsync(string pipelineId, SimulationRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -20,7 +20,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
-                var nodes = new List<SimulationNodeDto>();
+                var nodes = new List<SimulationNode>();
                 var pipelineLength = 100m; // miles
                 var nodeSpacing = pipelineLength / request.NumberOfNodes;
                 var maxPressure = request.InletPressure;
@@ -35,7 +35,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     var pipelineArea = (decimal)Math.PI * (6m / 2m) * (6m / 2m) / 144m;
                     var velocity = (request.InletFlowRate * 0.00584m) / pipelineArea;
 
-                    nodes.Add(new SimulationNodeDto
+                    nodes.Add(new SimulationNode
                     {
                         NodeName = $"Node {i + 1}",
                         Distance = distance,
@@ -48,7 +48,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     if (pressure > maxPressure) maxPressure = pressure;
                 }
 
-                var result = new HydraulicSimulationResultDto
+                var result = new HydraulicSimulationResult
                 {
                     PipelineId = pipelineId,
                     SimulationDate = DateTime.UtcNow,
@@ -70,7 +70,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<TransientAnalysisResultDto> PerformTransientAnalysisAsync(string pipelineId, TransientRequestDto request)
+        public async Task<TransientAnalysisResult> PerformTransientAnalysisAsync(string pipelineId, TransientRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -81,7 +81,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
-                var events = new List<TransientEventDto>();
+                var events = new List<TransientEvent>();
                 var baselinePressure = 1500m;
                 var maxSpikeUp = 0m;
                 var minSpikeDown = 0m;
@@ -92,7 +92,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     var spike = (i % 2 == 0) ? 50m - (i * 10m) : -30m + (i * 5m);
                     var transientPressure = baselinePressure + spike;
 
-                    events.Add(new TransientEventDto
+                    events.Add(new TransientEvent
                     {
                         EventTime = DateTime.UtcNow.AddSeconds((double)timeOffset),
                         Pressure = transientPressure,
@@ -103,7 +103,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     if (spike < minSpikeDown) minSpikeDown = spike;
                 }
 
-                var result = new TransientAnalysisResultDto
+                var result = new TransientAnalysisResult
                 {
                     PipelineId = pipelineId,
                     Events = events,
@@ -123,7 +123,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<TemperatureEffectDto> AnalyzeTemperatureEffectsAsync(string pipelineId, TemperatureRequestDto request)
+        public async Task<TemperatureEffect> AnalyzeTemperatureEffectsAsync(string pipelineId, TemperatureRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -134,7 +134,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
-                var scenarios = new List<TemperatureScenarioDto>();
+                var scenarios = new List<TemperatureScenario>();
                 var tempStep = (request.MaxTemperature - request.MinTemperature) / (request.NumberOfSteps - 1);
 
                 for (int i = 0; i < request.NumberOfSteps; i++)
@@ -144,7 +144,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     var viscosity = Math.Max(1m - (temp * 0.01m), 0.1m); // Simplified viscosity
                     var pressureDrop = CalculatePressureDropLinear(1000m, 50m, 0.025m) * (viscosity / 1m);
 
-                    scenarios.Add(new TemperatureScenarioDto
+                    scenarios.Add(new TemperatureScenario
                     {
                         Temperature = temp,
                         FluidDensity = Math.Max(density, 10m),
@@ -154,7 +154,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 }
 
                 var tempImpact = "Temperature significantly affects fluid properties and flow behavior";
-                var result = new TemperatureEffectDto
+                var result = new TemperatureEffect
                 {
                     PipelineId = pipelineId,
                     Scenarios = scenarios,
@@ -170,7 +170,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<PiggingAnalysisDto> EvaluatePiggingOperationsAsync(string pipelineId, PiggingRequestDto request)
+        public async Task<PiggingAnalysis> EvaluatePiggingOperationsAsync(string pipelineId, PiggingRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -194,7 +194,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     "Schedule pigging every 12-18 months for maintenance"
                 };
 
-                var result = new PiggingAnalysisDto
+                var result = new PiggingAnalysis
                 {
                     PipelineId = pipelineId,
                     IsSuitableForPigging = isSuitable,

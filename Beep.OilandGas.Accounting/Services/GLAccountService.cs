@@ -142,7 +142,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// Calculate account balance from GL entries
         /// Respects NORMAL_BALANCE direction for debit/credit calculation
         /// </summary>
-        public async Task<decimal> GetAccountBalanceAsync(string accountNumber, DateTime? asOfDate = null)
+        public async Task<decimal> GetAccountBalanceAsync(string accountNumber, DateTime? asOfDate = null, string? bookId = null)
         {
             if (string.IsNullOrWhiteSpace(accountNumber))
                 throw new ArgumentNullException(nameof(accountNumber));
@@ -155,19 +155,24 @@ namespace Beep.OilandGas.Accounting.Services
 
                 _logger?.LogInformation("Calculating balance for account {AccountNumber}", accountNumber);
 
-                // Get GL entries for this account
-                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY_LINE");
+                // Get posted GL entries for this account
+                var metadata = await _metadata.GetTableMetadataAsync("GL_ENTRY");
                 var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(JOURNAL_ENTRY_LINE);
+                    ?? typeof(GL_ENTRY);
 
                 var repo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "JOURNAL_ENTRY_LINE");
+                    entityType, ConnectionName, "GL_ENTRY");
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "GL_ACCOUNT_NUMBER", Operator = "=", FilterValue = accountNumber }
+                    new AppFilter { FieldName = "GL_ACCOUNT_ID", Operator = "=", FilterValue = accountNumber },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                 };
+                if (!string.IsNullOrWhiteSpace(bookId))
+                {
+                    filters.Add(new AppFilter { FieldName = "SOURCE", Operator = "=", FilterValue = bookId });
+                }
 
                 if (asOfDate.HasValue)
                 {
@@ -179,7 +184,7 @@ namespace Beep.OilandGas.Accounting.Services
                     return 0m;
 
                 decimal balance = 0m;
-                foreach (var entry in entries?.Cast<JOURNAL_ENTRY_LINE>() ?? Enumerable.Empty<JOURNAL_ENTRY_LINE>())
+                foreach (var entry in entries?.Cast<GL_ENTRY>() ?? Enumerable.Empty<GL_ENTRY>())
                 {
                     decimal debit = entry.DEBIT_AMOUNT ?? 0m;
                     decimal credit = entry.CREDIT_AMOUNT ?? 0m;
@@ -245,7 +250,7 @@ namespace Beep.OilandGas.Accounting.Services
                     DESCRIPTION = description,
                     OPENING_BALANCE = 0m,
                     CURRENT_BALANCE = 0m,
-                    ACTIVE_IND = "Y",
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow

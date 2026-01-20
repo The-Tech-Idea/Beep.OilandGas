@@ -56,7 +56,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
             return cFactor;
         }
 
-        public async Task<PumpPerformanceCurveDto> GeneratePerformanceCurveAsync(
+        public async Task<PumpPerformanceCurve> GeneratePerformanceCurveAsync(
             string pumpId,
             double baseFlowRate,
             double baseHead,
@@ -94,7 +94,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
 
             _logger?.LogInformation("Performance curve generated with {Points} data points", flowRates.Length);
 
-            return new PumpPerformanceCurveDto
+            return new PumpPerformanceCurve
             {
                 PumpId = pumpId,
                 AnalysisDate = DateTime.UtcNow,
@@ -107,7 +107,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
             };
         }
 
-        public async Task<PumpPerformanceAnalysisDto> AnalyzePerformanceAsync(PumpOperatingPointDto operatingPoint)
+        public async Task<PumpPerformanceAnalysis> AnalyzePerformanceAsync(PumpOperatingPoint operatingPoint)
         {
             if (operatingPoint == null)
                 throw new ArgumentNullException(nameof(operatingPoint));
@@ -145,7 +145,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
 
             await Task.CompletedTask;
 
-            return new PumpPerformanceAnalysisDto
+            return new PumpPerformanceAnalysis
             {
                 AnalysisId = Guid.NewGuid().ToString(),
                 PumpId = operatingPoint.PumpId,
@@ -159,7 +159,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
             };
         }
 
-        public async Task<PumpOptimizationDto> OptimizePerformanceAsync(PumpSystemRequirementsDto requirements)
+        public async Task<PumpOptimization> OptimizePerformanceAsync(PumpSystemRequirements requirements)
         {
             if (requirements == null)
                 throw new ArgumentNullException(nameof(requirements));
@@ -198,7 +198,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
 
             await Task.CompletedTask;
 
-            return new PumpOptimizationDto
+            return new PumpOptimization
             {
                 OptimizationId = Guid.NewGuid().ToString(),
                 OptimizationDate = DateTime.UtcNow,
@@ -250,9 +250,9 @@ namespace Beep.OilandGas.PumpPerformance.Services
             return bhp;
         }
 
-        public async Task<PumpValidationResultDto> ValidatePerformanceDataAsync(double[] flowRates, double[] heads, double[] powers)
+        public async Task<PumpValidationResult> ValidatePerformanceDataAsync(double[] flowRates, double[] heads, double[] powers)
         {
-            var result = new PumpValidationResultDto();
+            var result = new PumpValidationResult();
 
             if (flowRates == null || flowRates.Length == 0)
             {

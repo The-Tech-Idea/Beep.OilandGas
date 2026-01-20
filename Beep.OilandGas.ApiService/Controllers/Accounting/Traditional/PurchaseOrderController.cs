@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.DTOs.Accounting;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.ProductionAccounting.GeneralLedger;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;

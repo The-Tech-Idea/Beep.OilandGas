@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -16,14 +16,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="fieldId">Field identifier</param>
         /// <param name="eorMethod">EOR method to analyze</param>
         /// <returns>EOR analysis result</returns>
-        Task<EnhancedRecoveryOperationDto> AnalyzeEORPotentialAsync(string fieldId, string eorMethod);
+        Task<EnhancedRecoveryOperation> AnalyzeEORPotentialAsync(string fieldId, string eorMethod);
 
         /// <summary>
         /// Calculates recovery factor for EOR project.
         /// </summary>
         /// <param name="projectId">EOR project identifier</param>
         /// <returns>Recovery factor calculation result</returns>
-        Task<EnhancedRecoveryOperationDto> CalculateRecoveryFactorAsync(string projectId);
+        Task<EnhancedRecoveryOperation> CalculateRecoveryFactorAsync(string projectId);
 
         /// <summary>
         /// Manages injection well operations.
@@ -31,7 +31,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="injectionWellId">Injection well identifier</param>
         /// <param name="injectionRate">Injection rate</param>
         /// <returns>Injection operation result</returns>
-        Task<InjectionOperationDto> ManageInjectionAsync(string injectionWellId, decimal injectionRate);
+        Task<InjectionOperation> ManageInjectionAsync(string injectionWellId, decimal injectionRate);
     }
 }
 

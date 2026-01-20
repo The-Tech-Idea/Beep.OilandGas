@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Common;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -385,7 +385,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Gets LOVs by value type
         /// </summary>
-        public async Task<List<ListOfValueDto>> GetLOVByTypeAsync(string valueType, string? category = null, string connectionName = null)
+        public async Task<List<ListOfValue>> GetLOVByTypeAsync(string valueType, string? category = null, string connectionName = null)
         {
             connectionName ??= _connectionName;
             var filters = new List<AppFilter>
@@ -411,7 +411,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Gets all LOVs in a category
         /// </summary>
-        public async Task<List<ListOfValueDto>> GetLOVByCategoryAsync(string category, string connectionName = null)
+        public async Task<List<ListOfValue>> GetLOVByCategoryAsync(string category, string connectionName = null)
         {
             connectionName ??= _connectionName;
             var filters = new List<AppFilter>
@@ -433,7 +433,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Gets all LOVs for a module
         /// </summary>
-        public async Task<List<ListOfValueDto>> GetLOVByModuleAsync(string module, string connectionName = null)
+        public async Task<List<ListOfValue>> GetLOVByModuleAsync(string module, string connectionName = null)
         {
             connectionName ??= _connectionName;
             var filters = new List<AppFilter>
@@ -455,7 +455,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Gets LOVs by source (PPDM, IHS, Custom, API, ISO, etc.)
         /// </summary>
-        public async Task<List<ListOfValueDto>> GetLOVBySourceAsync(string source, string connectionName = null)
+        public async Task<List<ListOfValue>> GetLOVBySourceAsync(string source, string connectionName = null)
         {
             connectionName ??= _connectionName;
             var filters = new List<AppFilter>
@@ -477,7 +477,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Gets hierarchical LOVs (parent-child relationships)
         /// </summary>
-        public async Task<List<ListOfValueDto>> GetHierarchicalLOVAsync(string valueType, string connectionName = null)
+        public async Task<List<ListOfValue>> GetHierarchicalLOVAsync(string valueType, string connectionName = null)
         {
             connectionName ??= _connectionName;
             var filters = new List<AppFilter>
@@ -513,7 +513,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Searches LOVs by search term
         /// </summary>
-        public async Task<List<ListOfValueDto>> SearchLOVsAsync(string searchTerm, LOVRequest? filters = null, string connectionName = null)
+        public async Task<List<ListOfValue>> SearchLOVsAsync(string searchTerm, LOVRequest? filters = null, string connectionName = null)
         {
             connectionName ??= _connectionName;
             var appFilters = new List<AppFilter>
@@ -709,9 +709,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Maps LIST_OF_VALUE entity to DTO
         /// </summary>
-        private ListOfValueDto MapToDto(LIST_OF_VALUE lov)
+        private ListOfValue MapToDto(LIST_OF_VALUE lov)
         {
-            return new ListOfValueDto
+            return new ListOfValue
             {
                 ListOfValueId = lov.LIST_OF_VALUE_ID,
                 ValueType = lov.VALUE_TYPE,

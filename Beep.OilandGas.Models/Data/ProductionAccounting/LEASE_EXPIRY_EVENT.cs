@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class LEASE_EXPIRY_EVENT : Entity, IPPDMEntity
-    {
+    public partial class LEASE_EXPIRY_EVENT : ModelEntityBase {
         private string LEASE_EXPIRY_EVENT_IDValue;
         public string LEASE_EXPIRY_EVENT_ID
         {

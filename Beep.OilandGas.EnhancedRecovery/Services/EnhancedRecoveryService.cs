@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
@@ -60,7 +60,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return UnitOfWorkFactory.CreateUnitOfWork(typeof(WELL), _editor, _connectionName, "WELL", "UWI");
         }
 
-        public async Task<List<EnhancedRecoveryOperationDto>> GetEnhancedRecoveryOperationsAsync(string? fieldId = null)
+        public async Task<List<EnhancedRecoveryOperation>> GetEnhancedRecoveryOperationsAsync(string? fieldId = null)
         {
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
@@ -77,7 +77,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             var units = await pdenUow.Get(filters);
             List<PDEN> pdenList = ConvertToList<PDEN>(units);
 
-            return pdenList.Select(p => new EnhancedRecoveryOperationDto
+            return pdenList.Select(p => new EnhancedRecoveryOperation
             {
                 OperationId = p.PDEN_ID ?? string.Empty,
                 FieldId = p.AREA_ID ?? string.Empty,
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             }).ToList();
         }
 
-        public async Task<EnhancedRecoveryOperationDto?> GetEnhancedRecoveryOperationAsync(string operationId)
+        public async Task<EnhancedRecoveryOperation?> GetEnhancedRecoveryOperationAsync(string operationId)
         {
             if (string.IsNullOrWhiteSpace(operationId))
                 return null;
@@ -97,7 +97,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             if (pden == null || pden.ACTIVE_IND != "Y")
                 return null;
 
-            return new EnhancedRecoveryOperationDto
+            return new EnhancedRecoveryOperation
             {
                 OperationId = pden.PDEN_ID ?? string.Empty,
                 FieldId = pden.AREA_ID ?? string.Empty,
@@ -107,7 +107,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             };
         }
 
-        public async Task<EnhancedRecoveryOperationDto> CreateEnhancedRecoveryOperationAsync(CreateEnhancedRecoveryOperationDto createDto)
+        public async Task<EnhancedRecoveryOperation> CreateEnhancedRecoveryOperationAsync(CreateEnhancedRecoveryOperation createDto)
         {
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
@@ -130,7 +130,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
 
             await pdenUow.Commit();
 
-            return new EnhancedRecoveryOperationDto
+            return new EnhancedRecoveryOperation
             {
                 OperationId = pden.PDEN_ID ?? string.Empty,
                 FieldId = createDto.FieldId,
@@ -142,7 +142,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             };
         }
 
-        public async Task<List<InjectionOperationDto>> GetInjectionOperationsAsync(string? wellUWI = null)
+        public async Task<List<InjectionOperation>> GetInjectionOperationsAsync(string? wellUWI = null)
         {
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
@@ -159,7 +159,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             var units = await pdenUow.Get(filters);
             List<PDEN> pdenList = ConvertToList<PDEN>(units);
 
-            return pdenList.Select(p => new InjectionOperationDto
+            return pdenList.Select(p => new InjectionOperation
             {
                 OperationId = p.PDEN_ID ?? string.Empty,
                 WellUWI = string.Empty, // PDEN doesn't have UWI - injection operations may be field-level
@@ -169,7 +169,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             }).ToList();
         }
 
-        public async Task<List<WaterFloodingDto>> GetWaterFloodingOperationsAsync(string? fieldId = null)
+        public async Task<List<WaterFlooding>> GetWaterFloodingOperationsAsync(string? fieldId = null)
         {
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
@@ -186,7 +186,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             var units = await pdenUow.Get(filters);
             List<PDEN> pdenList = ConvertToList<PDEN>(units);
 
-            return pdenList.Select(p => new WaterFloodingDto
+            return pdenList.Select(p => new WaterFlooding
             {
                 OperationId = p.PDEN_ID ?? string.Empty,
                 FieldId = p.AREA_ID ?? string.Empty,
@@ -195,7 +195,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             }).ToList();
         }
 
-        public async Task<List<GasInjectionDto>> GetGasInjectionOperationsAsync(string? fieldId = null)
+        public async Task<List<GasInjection>> GetGasInjectionOperationsAsync(string? fieldId = null)
         {
             var pdenUow = GetPDENUnitOfWork();
             var filters = new List<AppFilter>
@@ -212,7 +212,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             var units = await pdenUow.Get(filters);
             List<PDEN> pdenList = ConvertToList<PDEN>(units);
 
-            return pdenList.Select(p => new GasInjectionDto
+            return pdenList.Select(p => new GasInjection
             {
                 OperationId = p.PDEN_ID ?? string.Empty,
                 FieldId = p.AREA_ID ?? string.Empty,

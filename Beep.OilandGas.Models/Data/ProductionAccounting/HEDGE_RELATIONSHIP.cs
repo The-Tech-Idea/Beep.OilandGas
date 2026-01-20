@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class HEDGE_RELATIONSHIP : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class HEDGE_RELATIONSHIP : ModelEntityBase
     {
         private string HEDGE_RELATIONSHIP_IDValue;
         public string HEDGE_RELATIONSHIP_ID
@@ -92,3 +92,4 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+

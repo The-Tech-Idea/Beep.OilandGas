@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.DTOs.AccessControl;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.AccessControl;
 using Beep.OilandGas.LifeCycle.Services.AccessControl;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,7 +22,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         /// Get a user's profile
         /// </summary>
         [HttpGet("{userId}")]
-        public async Task<ActionResult<UserProfileDTO>> GetUserProfile(string userId)
+        public async Task<ActionResult<UserProfile>> GetUserProfile(string userId)
         {
             try
             {

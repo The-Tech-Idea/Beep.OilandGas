@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class PRODUCTION_SHARING_AGREEMENT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class PRODUCTION_SHARING_AGREEMENT : ModelEntityBase
     {
         private string PSA_IDValue;
         public string PSA_ID
@@ -141,3 +141,4 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+

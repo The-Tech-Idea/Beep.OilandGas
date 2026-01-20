@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.ProductionAccounting.Allocation;
-using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
@@ -93,7 +93,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
         /// Perform allocation to wells.
         /// </summary>
         [HttpPost("allocate")]
-        public ActionResult<AllocationResultDto> Allocate(
+        public ActionResult<AllocationResult> Allocate(
             [FromBody] AllocationRequest request, 
             [FromQuery] string? connectionName = null)
         {
@@ -126,9 +126,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
             }
         }
 
-        private AllocationResultDto MapToAllocationResultDto(AllocationResult result)
+        private AllocationResult MapToAllocationResultDto(AllocationResult result)
         {
-            return new AllocationResultDto
+            return new AllocationResult
             {
                 AllocationId = result.AllocationId,
                 AllocationDate = result.AllocationDate,
@@ -136,7 +136,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
                 TotalVolume = result.TotalVolume,
                 AllocatedVolume = result.AllocatedVolume,
                 AllocationVariance = result.AllocationVariance,
-                Details = result.Details.Select(d => new AllocationDetailDto
+                Details = result.Details.Select(d => new AllocationDetail
                 {
                     EntityId = d.EntityId,
                     EntityName = d.EntityName,

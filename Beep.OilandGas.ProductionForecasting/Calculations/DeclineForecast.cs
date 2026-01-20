@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.DCA.AdvancedDeclineMethods;
-using Beep.OilandGas.Models.ProductionForecasting;
+using Beep.OilandGas.Models.Data.ProductionForecasting;
 
 namespace Beep.OilandGas.ProductionForecasting.Calculations
 {

@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.FlashCalculations.Calculations;
-using Beep.OilandGas.Models.FlashCalculations;
+using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -166,14 +166,14 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Analyzes the PVT envelope for a given composition across a range of pressures and temperatures.
         /// </summary>
-        public async Task<PVTEnvelopeAnalysisDto> AnalyzePVTEnvelopeAsync(List<FlashComponent> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
+        public async Task<PVTEnvelopeAnalysis> AnalyzePVTEnvelopeAsync(List<FlashComponent> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
 
             _logger?.LogInformation("Analyzing PVT envelope for composition with {ComponentCount} components", composition.Count);
 
-            var result = new PVTEnvelopeAnalysisDto
+            var result = new PVTEnvelopeAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("PVT_ENVELOPE", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,
@@ -181,7 +181,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 MaxPressure = maxPressure,
                 MinTemperature = minTemperature,
                 MaxTemperature = maxTemperature,
-                EnvelopePoints = new List<EnvelopePointDto>()
+                EnvelopePoints = new List<EnvelopePoint>()
             };
 
             // Estimate critical properties from composition
@@ -207,7 +207,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
                     var flashResult = PerformIsothermalFlash(conditions);
                     var phaseRegion = DeterminePhaseRegion(flashResult.VaporFraction);
 
-                    result.EnvelopePoints.Add(new EnvelopePointDto
+                    result.EnvelopePoints.Add(new EnvelopePoint
                     {
                         Pressure = p,
                         Temperature = t,
@@ -226,14 +226,14 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Performs bubble point calculation for the given composition.
         /// </summary>
-        public async Task<BubblePointAnalysisDto> CalculateBubblePointAsync(List<FlashComponent> composition, decimal pressure)
+        public async Task<BubblePointAnalysis> CalculateBubblePointAsync(List<FlashComponent> composition, decimal pressure)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
 
             _logger?.LogInformation("Calculating bubble point at pressure {Pressure} psia", pressure);
 
-            var result = new BubblePointAnalysisDto
+            var result = new BubblePointAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("BUBBLE_POINT", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,
@@ -285,14 +285,14 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Performs dew point calculation for the given composition.
         /// </summary>
-        public async Task<DewPointAnalysisDto> CalculateDewPointAsync(List<FlashComponent> composition, decimal pressure)
+        public async Task<DewPointAnalysis> CalculateDewPointAsync(List<FlashComponent> composition, decimal pressure)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
 
             _logger?.LogInformation("Calculating dew point at pressure {Pressure} psia", pressure);
 
-            var result = new DewPointAnalysisDto
+            var result = new DewPointAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("DEW_POINT", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,
@@ -344,20 +344,20 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Analyzes separator design and performance for multi-stage separation.
         /// </summary>
-        public async Task<SeparatorSimulationDto> SimulateSeparatorAsync(List<FlashComponent> composition, decimal inletPressure, decimal inletTemperature, int stages)
+        public async Task<SeparatorSimulation> SimulateSeparatorAsync(List<FlashComponent> composition, decimal inletPressure, decimal inletTemperature, int stages)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
 
             _logger?.LogInformation("Simulating separator with {Stages} stages at inlet P={Pressure}, T={Temperature}", stages, inletPressure, inletTemperature);
 
-            var result = new SeparatorSimulationDto
+            var result = new SeparatorSimulation
             {
                 SimulationId = _defaults.FormatIdForTable("SEPARATOR_SIM", Guid.NewGuid().ToString()),
                 SimulationDate = DateTime.UtcNow,
                 InletPressure = inletPressure,
                 InletTemperature = inletTemperature,
-                Stages = new List<SeparatorStageDto>()
+                Stages = new List<SeparatorStage>()
             };
 
             var stagePressures = GenerateStagePressures(inletPressure, stages);
@@ -380,7 +380,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
 
                 var flashResult = PerformIsothermalFlash(conditions);
                 
-                result.Stages.Add(new SeparatorStageDto
+                result.Stages.Add(new SeparatorStage
                 {
                     StageNumber = i + 1,
                     StagePressure = stagePressure,
@@ -405,14 +405,14 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Generates pressure-temperature phase diagram for the composition.
         /// </summary>
-        public async Task<PhaseDiagramDto> GeneratePhaseDiagramAsync(List<FlashComponent> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
+        public async Task<PhaseDiagram> GeneratePhaseDiagramAsync(List<FlashComponent> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
 
             _logger?.LogInformation("Generating phase diagram for composition");
 
-            var result = new PhaseDiagramDto
+            var result = new PhaseDiagram
             {
                 DiagramId = _defaults.FormatIdForTable("PHASE_DIAGRAM", Guid.NewGuid().ToString()),
                 GenerationDate = DateTime.UtcNow,
@@ -420,13 +420,13 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 MaxPressure = maxPressure,
                 MinTemperature = minTemperature,
                 MaxTemperature = maxTemperature,
-                PhaseRegions = new List<PhaseRegionDto>()
+                PhaseRegions = new List<PhaseRegion>()
             };
 
             // Identify single-phase and two-phase regions
-            var singlePhaseGas = new PhaseRegionDto { RegionName = "Single Phase Gas", Pressures = new List<decimal>(), Temperatures = new List<decimal>() };
-            var singlePhaseOil = new PhaseRegionDto { RegionName = "Single Phase Oil", Pressures = new List<decimal>(), Temperatures = new List<decimal>() };
-            var twoPhase = new PhaseRegionDto { RegionName = "Two-Phase", Pressures = new List<decimal>(), Temperatures = new List<decimal>() };
+            var singlePhaseGas = new PhaseRegion { RegionName = "Single Phase Gas", Pressures = new List<decimal>(), Temperatures = new List<decimal>() };
+            var singlePhaseOil = new PhaseRegion { RegionName = "Single Phase Oil", Pressures = new List<decimal>(), Temperatures = new List<decimal>() };
+            var twoPhase = new PhaseRegion { RegionName = "Two-Phase", Pressures = new List<decimal>(), Temperatures = new List<decimal>() };
 
             var pressureStep = (maxPressure - minPressure) / 10m;
             var tempStep = (maxTemperature - minTemperature) / 10m;
@@ -468,14 +468,14 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Performs stability analysis using tangent plane distance criterion.
         /// </summary>
-        public async Task<StabilityAnalysisDto> AnalyzeStabilityAsync(List<FlashComponent> composition, decimal pressure, decimal temperature)
+        public async Task<StabilityAnalysis> AnalyzeStabilityAsync(List<FlashComponent> composition, decimal pressure, decimal temperature)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
 
             _logger?.LogInformation("Performing stability analysis at P={Pressure}, T={Temperature}", pressure, temperature);
 
-            var result = new StabilityAnalysisDto
+            var result = new StabilityAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("STABILITY_ANALYSIS", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,
@@ -511,7 +511,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Analyzes equilibrium constants (K-values) across pressure and temperature ranges.
         /// </summary>
-        public async Task<EquilibriumConstantAnalysisDto> AnalyzeEquilibriumConstantsAsync(List<FlashComponent> composition, decimal pressure, decimal temperature)
+        public async Task<EquilibriumConstantAnalysis> AnalyzeEquilibriumConstantsAsync(List<FlashComponent> composition, decimal pressure, decimal temperature)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -521,7 +521,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
             var conditions = new FlashConditions { Pressure = pressure, Temperature = temperature, FeedComposition = composition };
             var flashResult = PerformIsothermalFlash(conditions);
 
-            var result = new EquilibriumConstantAnalysisDto
+            var result = new EquilibriumConstantAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("EQUILIB_CONST", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,

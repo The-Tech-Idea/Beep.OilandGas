@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs.Pumps;
+using Beep.OilandGas.Models.Data.Pumps;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         [HttpPost("design")]
-        public async Task<ActionResult<SuckerRodPumpDesignDto>> DesignPumpSystem([FromBody] DesignPumpSystemRequest request)
+        public async Task<ActionResult<SuckerRodPumpDesign>> DesignPumpSystem([FromBody] DesignPumpSystemRequest request)
         {
             try
             {
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         [HttpPost("analyze-performance")]
-        public async Task<ActionResult<SuckerRodPumpPerformanceDto>> AnalyzePerformance([FromBody] AnalyzePerformanceRequest request)
+        public async Task<ActionResult<SuckerRodPumpPerformance>> AnalyzePerformance([FromBody] AnalyzePerformanceRequest request)
         {
             try
             {
@@ -54,7 +54,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
         }
 
         [HttpPost("design/save")]
-        public async Task<ActionResult> SavePumpDesign([FromBody] SuckerRodPumpDesignDto design, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SavePumpDesign([FromBody] SuckerRodPumpDesign design, [FromQuery] string? userId = null)
         {
             try
             {

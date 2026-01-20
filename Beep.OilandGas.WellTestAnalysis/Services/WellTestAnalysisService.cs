@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.WellTestAnalysis;
+using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.WellTestAnalysis.Calculations;
 using Beep.OilandGas.WellTestAnalysis.Validation;
 using Microsoft.Extensions.Logging;

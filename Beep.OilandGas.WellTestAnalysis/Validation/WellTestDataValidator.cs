@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using Beep.OilandGas.WellTestAnalysis.Constants;
 using Beep.OilandGas.WellTestAnalysis.Exceptions;
-using Beep.OilandGas.Models.WellTestAnalysis;
+using Beep.OilandGas.Models.Data.WellTestAnalysis;
 
 namespace Beep.OilandGas.WellTestAnalysis.Validation
 {

@@ -15,7 +15,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 35: Performs title examination
         /// </summary>
-        public async Task<TitleExaminationDto> PerformTitleExaminationAsync(string leaseId, TitleRequestDto request)
+        public async Task<TitleExamination> PerformTitleExaminationAsync(string leaseId, TitleRequest request)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -26,14 +26,14 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Performing title examination for {LeaseId}", leaseId);
 
-                var examination = new TitleExaminationDto
+                var examination = new TitleExamination
                 {
                     ExaminationId = $"TITLE-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
                     TitleStatus = "CLEAR",
-                    Issues = new List<TitleIssueDto>
+                    Issues = new List<TitleIssue>
                     {
-                        new TitleIssueDto
+                        new TitleIssue
                         {
                             IssueName = "Mineral Rights Conflict",
                             IssueSeverity = "LOW",
@@ -56,7 +56,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 36: Conducts environmental assessment
         /// </summary>
-        public async Task<EnvironmentalAssessmentDto> ConductEnvironmentalAssessmentAsync(string leaseId, AssessmentRequestDto request)
+        public async Task<EnvironmentalAssessment> ConductEnvironmentalAssessmentAsync(string leaseId, AssessmentRequest request)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -67,14 +67,14 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Conducting environmental assessment for {LeaseId}", leaseId);
 
-                var assessment = new EnvironmentalAssessmentDto
+                var assessment = new EnvironmentalAssessment
                 {
                     AssessmentId = $"ENV-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
                     EnvironmentalStatus = "CLEARED",
-                    IdentifiedIssues = new List<EnvironmentalIssueDto>
+                    IdentifiedIssues = new List<EnvironmentalIssue>
                     {
-                        new EnvironmentalIssueDto
+                        new EnvironmentalIssue
                         {
                             IssueType = "Soil Contamination",
                             IssueDescription = "Minor residual contamination from historical operations",
@@ -97,7 +97,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 37: Performs regulatory review
         /// </summary>
-        public async Task<RegulatoryReviewDto> PerformRegulatoryReviewAsync(string leaseId, RegulationReviewRequestDto request)
+        public async Task<RegulatoryReview> PerformRegulatoryReviewAsync(string leaseId, RegulationReviewRequest request)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -108,19 +108,19 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Performing regulatory review for {LeaseId}", leaseId);
 
-                var review = new RegulatoryReviewDto
+                var review = new RegulatoryReview
                 {
                     ReviewId = $"REG-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
-                    Findings = new List<RegulatoryFindingDto>
+                    Findings = new List<RegulatoryFinding>
                     {
-                        new RegulatoryFindingDto
+                        new RegulatoryFinding
                         {
                             FindingDescription = "Must comply with state oil and gas regulations",
                             Jurisdiction = "State Oil & Gas Commission",
                             RequiredAction = "Obtain drilling permit before operations"
                         },
-                        new RegulatoryFindingDto
+                        new RegulatoryFinding
                         {
                             FindingDescription = "Environmental regulations compliance",
                             Jurisdiction = "EPA",
@@ -143,7 +143,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 38: Executes geological evaluation
         /// </summary>
-        public async Task<GeologicalEvaluationDto> EvaluateGeologicalProspectsAsync(string leaseId, GeologicalRequestDto request)
+        public async Task<GeologicalEvaluation> EvaluateGeologicalProspectsAsync(string leaseId, GeologicalRequest request)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -154,7 +154,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Evaluating geological prospects for {LeaseId}", leaseId);
 
-                var evaluation = new GeologicalEvaluationDto
+                var evaluation = new GeologicalEvaluation
                 {
                     EvaluationId = $"GEO-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
@@ -178,7 +178,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 39: Conducts engineering feasibility study
         /// </summary>
-        public async Task<EngineeringFeasibilityDto> AssessEngineeringFeasibilityAsync(string leaseId, EngineeringRequestDto request)
+        public async Task<EngineeringFeasibility> AssessEngineeringFeasibilityAsync(string leaseId, EngineeringRequest request)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -189,21 +189,21 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Assessing engineering feasibility for {LeaseId}", leaseId);
 
-                var feasibility = new EngineeringFeasibilityDto
+                var feasibility = new EngineeringFeasibility
                 {
                     FeasibilityId = $"ENG-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
                     IsFeasible = true,
                     FeasibilityScore = 87,
-                    Constraints = new List<EngineeringConstraintDto>
+                    Constraints = new List<EngineeringConstraint>
                     {
-                        new EngineeringConstraintDto
+                        new EngineeringConstraint
                         {
                             ConstraintType = "Terrain Difficulty",
                             Description = "Moderate terrain challenges",
                             MitigationStrategy = "Use specialized drilling equipment"
                         },
-                        new EngineeringConstraintDto
+                        new EngineeringConstraint
                         {
                             ConstraintType = "Water Depth",
                             Description = "Offshore operations required",
@@ -226,7 +226,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 40: Saves lease acquisition data
         /// </summary>
-        public async Task SaveLeaseAcquisitionAsync(LeaseAcquisitionDto acquisition, string userId)
+        public async Task SaveLeaseAcquisitionAsync(LeaseAcquisition acquisition, string userId)
         {
             if (acquisition == null)
                 throw new ArgumentNullException(nameof(acquisition));
@@ -252,7 +252,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 41: Retrieves lease acquisition data
         /// </summary>
-        public async Task<LeaseAcquisitionDto?> GetLeaseAcquisitionAsync(string leaseId)
+        public async Task<LeaseAcquisition?> GetLeaseAcquisitionAsync(string leaseId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -261,7 +261,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Retrieving lease acquisition {LeaseId}", leaseId);
 
-                var acquisition = new LeaseAcquisitionDto
+                var acquisition = new LeaseAcquisition
                 {
                     LeaseId = leaseId,
                     LeaseName = "Sample Lease",
@@ -290,7 +290,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 42: Updates lease acquisition data
         /// </summary>
-        public async Task UpdateLeaseAcquisitionAsync(LeaseAcquisitionDto acquisition, string userId)
+        public async Task UpdateLeaseAcquisitionAsync(LeaseAcquisition acquisition, string userId)
         {
             if (acquisition == null)
                 throw new ArgumentNullException(nameof(acquisition));
@@ -315,7 +315,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 43: Retrieves lease history
         /// </summary>
-        public async Task<List<LeaseHistoryDto>> GetLeaseHistoryAsync(string leaseId)
+        public async Task<List<LeaseHistory>> GetLeaseHistoryAsync(string leaseId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -324,23 +324,23 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Retrieving lease history for {LeaseId}", leaseId);
 
-                var history = new List<LeaseHistoryDto>
+                var history = new List<LeaseHistory>
                 {
-                    new LeaseHistoryDto
+                    new LeaseHistory
                     {
                         EventDate = DateTime.Now.AddMonths(-1),
                         EventType = "INITIATED",
                         EventDescription = "Lease acquisition initiated",
                         ChangedBy = "user-001"
                     },
-                    new LeaseHistoryDto
+                    new LeaseHistory
                     {
                         EventDate = DateTime.Now.AddDays(-15),
                         EventType = "NEGOTIATION_STARTED",
                         EventDescription = "Negotiations with landowner commenced",
                         ChangedBy = "user-002"
                     },
-                    new LeaseHistoryDto
+                    new LeaseHistory
                     {
                         EventDate = DateTime.Now.AddDays(-5),
                         EventType = "EXECUTED",
@@ -363,7 +363,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 44: Generates lease acquisition report
         /// </summary>
-        public async Task<LeaseAcquisitionReportDto> GenerateAcquisitionReportAsync(string leaseId, ReportRequestDto request)
+        public async Task<LeaseAcquisitionReport> GenerateAcquisitionReportAsync(string leaseId, ReportRequest request)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -374,7 +374,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Generating acquisition report for {LeaseId}", leaseId);
 
-                var report = new LeaseAcquisitionReportDto
+                var report = new LeaseAcquisitionReport
                 {
                     ReportId = $"REPORT-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
@@ -403,7 +403,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 45: Generates portfolio analysis report
         /// </summary>
-        public async Task<PortfolioAnalysisReportDto> GeneratePortfolioAnalysisAsync(PortfolioRequestDto request)
+        public async Task<PortfolioAnalysisReport> GeneratePortfolioAnalysisAsync(PortfolioRequest request)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -412,7 +412,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Generating portfolio analysis report");
 
-                var report = new PortfolioAnalysisReportDto
+                var report = new PortfolioAnalysisReport
                 {
                     ReportId = $"PORTFOLIO-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     GeneratedDate = DateTime.Now,

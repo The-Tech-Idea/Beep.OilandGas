@@ -7,7 +7,7 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.ProductionAccounting.GeneralLedger;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
-using Beep.OilandGas.Models.DTOs.Accounting.Traditional;
+using Beep.OilandGas.Models.Data.Accounting.Traditional;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional

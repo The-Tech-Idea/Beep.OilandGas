@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class TAX_ADJUSTMENT : Entity, IPPDMEntity
-    {
+    public partial class TAX_ADJUSTMENT : ModelEntityBase {
         private string TAX_ADJUSTMENT_IDValue;
         public string TAX_ADJUSTMENT_ID
         {

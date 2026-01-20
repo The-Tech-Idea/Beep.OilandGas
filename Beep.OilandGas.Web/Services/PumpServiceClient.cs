@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -25,7 +25,7 @@ namespace Beep.OilandGas.Web.Services
 
         #region Hydraulic Pump Operations
 
-        public async Task<HydraulicPumpDesignDto> DesignHydraulicPumpSystemAsync(string wellUWI, string pumpType, decimal wellDepth, decimal desiredFlowRate)
+        public async Task<HydraulicPumpDesign> DesignHydraulicPumpSystemAsync(string wellUWI, string pumpType, decimal wellDepth, decimal desiredFlowRate)
         {
             try
             {
@@ -36,7 +36,7 @@ namespace Beep.OilandGas.Web.Services
                     WellDepth = wellDepth,
                     DesiredFlowRate = desiredFlowRate
                 };
-                var result = await _apiClient.PostAsync<object, HydraulicPumpDesignDto>(
+                var result = await _apiClient.PostAsync<object, HydraulicPumpDesign>(
                     "/api/hydraulicpump/design", request);
                 return result ?? throw new InvalidOperationException("Failed to design hydraulic pump system");
             }
@@ -47,12 +47,12 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<PumpPerformanceAnalysisDto> AnalyzeHydraulicPumpPerformanceAsync(string pumpId)
+        public async Task<PumpPerformanceAnalysis> AnalyzeHydraulicPumpPerformanceAsync(string pumpId)
         {
             try
             {
                 var request = new { PumpId = pumpId };
-                var result = await _apiClient.PostAsync<object, PumpPerformanceAnalysisDto>(
+                var result = await _apiClient.PostAsync<object, PumpPerformanceAnalysis>(
                     "/api/hydraulicpump/analyze-performance", request);
                 return result ?? throw new InvalidOperationException("Failed to analyze hydraulic pump performance");
             }
@@ -63,7 +63,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveHydraulicPumpDesignAsync(HydraulicPumpDesignDto design, string? userId = null)
+        public async Task<bool> SaveHydraulicPumpDesignAsync(HydraulicPumpDesign design, string? userId = null)
         {
             try
             {
@@ -81,18 +81,18 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<List<PumpPerformanceHistoryDto>> GetHydraulicPumpPerformanceHistoryAsync(string pumpId)
+        public async Task<List<PumpPerformanceHistory>> GetHydraulicPumpPerformanceHistoryAsync(string pumpId)
         {
             try
             {
-                var result = await _apiClient.GetAsync<List<PumpPerformanceHistoryDto>>(
+                var result = await _apiClient.GetAsync<List<PumpPerformanceHistory>>(
                     $"/api/hydraulicpump/performance-history/{Uri.EscapeDataString(pumpId)}");
-                return result ?? new List<PumpPerformanceHistoryDto>();
+                return result ?? new List<PumpPerformanceHistory>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting hydraulic pump performance history for pump {PumpId}", pumpId);
-                return new List<PumpPerformanceHistoryDto>();
+                return new List<PumpPerformanceHistory>();
             }
         }
 
@@ -100,7 +100,7 @@ namespace Beep.OilandGas.Web.Services
 
         #region Plunger Lift Operations
 
-        public async Task<PlungerLiftDesignDto> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellPropertiesDto wellProperties)
+        public async Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellProperties wellProperties)
         {
             try
             {
@@ -109,7 +109,7 @@ namespace Beep.OilandGas.Web.Services
                     WellUWI = wellUWI,
                     WellProperties = wellProperties
                 };
-                var result = await _apiClient.PostAsync<object, PlungerLiftDesignDto>(
+                var result = await _apiClient.PostAsync<object, PlungerLiftDesign>(
                     "/api/plungerlift/design", request);
                 return result ?? throw new InvalidOperationException("Failed to design plunger lift system");
             }
@@ -120,12 +120,12 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<PlungerLiftPerformanceDto> AnalyzePlungerLiftPerformanceAsync(string wellUWI)
+        public async Task<PlungerLiftPerformance> AnalyzePlungerLiftPerformanceAsync(string wellUWI)
         {
             try
             {
                 var request = new { WellUWI = wellUWI };
-                var result = await _apiClient.PostAsync<object, PlungerLiftPerformanceDto>(
+                var result = await _apiClient.PostAsync<object, PlungerLiftPerformance>(
                     "/api/plungerlift/analyze-performance", request);
                 return result ?? throw new InvalidOperationException("Failed to analyze plunger lift performance");
             }
@@ -136,7 +136,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SavePlungerLiftDesignAsync(PlungerLiftDesignDto design, string? userId = null)
+        public async Task<bool> SavePlungerLiftDesignAsync(PlungerLiftDesign design, string? userId = null)
         {
             try
             {
@@ -158,7 +158,7 @@ namespace Beep.OilandGas.Web.Services
 
         #region Sucker Rod Pumping Operations
 
-        public async Task<SuckerRodPumpDesignDto> DesignSuckerRodPumpSystemAsync(string wellUWI, SuckerRodPumpWellPropertiesDto wellProperties)
+        public async Task<SuckerRodPumpDesign> DesignSuckerRodPumpSystemAsync(string wellUWI, SuckerRodPumpWellProperties wellProperties)
         {
             try
             {
@@ -167,7 +167,7 @@ namespace Beep.OilandGas.Web.Services
                     WellUWI = wellUWI,
                     WellProperties = wellProperties
                 };
-                var result = await _apiClient.PostAsync<object, SuckerRodPumpDesignDto>(
+                var result = await _apiClient.PostAsync<object, SuckerRodPumpDesign>(
                     "/api/suckerrodpumping/design", request);
                 return result ?? throw new InvalidOperationException("Failed to design sucker rod pump system");
             }
@@ -178,12 +178,12 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<SuckerRodPumpPerformanceDto> AnalyzeSuckerRodPumpPerformanceAsync(string pumpId)
+        public async Task<SuckerRodPumpPerformance> AnalyzeSuckerRodPumpPerformanceAsync(string pumpId)
         {
             try
             {
                 var request = new { PumpId = pumpId };
-                var result = await _apiClient.PostAsync<object, SuckerRodPumpPerformanceDto>(
+                var result = await _apiClient.PostAsync<object, SuckerRodPumpPerformance>(
                     "/api/suckerrodpumping/analyze-performance", request);
                 return result ?? throw new InvalidOperationException("Failed to analyze sucker rod pump performance");
             }
@@ -194,7 +194,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveSuckerRodPumpDesignAsync(SuckerRodPumpDesignDto design, string? userId = null)
+        public async Task<bool> SaveSuckerRodPumpDesignAsync(SuckerRodPumpDesign design, string? userId = null)
         {
             try
             {

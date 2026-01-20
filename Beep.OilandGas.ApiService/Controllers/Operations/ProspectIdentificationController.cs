@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs.Operations;
+using Beep.OilandGas.Models.Data.Operations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPost("evaluate/{prospectId}")]
-        public async Task<ActionResult<ProspectEvaluationDto>> EvaluateProspect(string prospectId)
+        public async Task<ActionResult<ProspectEvaluation>> EvaluateProspect(string prospectId)
         {
             try
             {
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<ProspectDto>>> GetProspects([FromQuery] Dictionary<string, string>? filters = null)
+        public async Task<ActionResult<List<Prospect>>> GetProspects([FromQuery] Dictionary<string, string>? filters = null)
         {
             try
             {
@@ -54,7 +54,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPost]
-        public async Task<ActionResult<string>> CreateProspect([FromBody] ProspectDto prospect, [FromQuery] string? userId = null)
+        public async Task<ActionResult<string>> CreateProspect([FromBody] Prospect prospect, [FromQuery] string? userId = null)
         {
             try
             {
@@ -69,7 +69,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPost("rank")]
-        public async Task<ActionResult<List<ProspectRankingDto>>> RankProspects([FromBody] RankProspectsRequest request)
+        public async Task<ActionResult<List<ProspectRanking>>> RankProspects([FromBody] RankProspectsRequest request)
         {
             try
             {

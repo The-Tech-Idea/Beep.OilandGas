@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.Models.FlashCalculations;
+using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.GasProperties.Calculations;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.FlashCalculations.Calculations
 {

@@ -12,9 +12,9 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
-using Calc = Beep.OilandGas.Models.DTOs.Calculations;
+using Calc = Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.PPDM.Models;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.ProductionForecasting.Calculations;
 
 namespace Beep.OilandGas.ProductionForecasting.Services
@@ -48,7 +48,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             _logger = logger;
         }
 
-        public async Task<ProductionForecastResultDto> GenerateForecastAsync(string? wellUWI, string? fieldId, string forecastMethod, int forecastPeriod)
+        public async Task<ProductionForecastResult> GenerateForecastAsync(string? wellUWI, string? fieldId, string forecastMethod, int forecastPeriod)
         {
             if (string.IsNullOrWhiteSpace(wellUWI) && string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentException("Either wellUWI or fieldId must be provided");
@@ -59,14 +59,14 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 forecastMethod, wellUWI ?? string.Empty, fieldId ?? string.Empty, forecastPeriod);
 
             // TODO: Implement forecast generation logic
-            var forecast = new ProductionForecastResultDto
+            var forecast = new ProductionForecastResult
             {
                 ForecastId = _defaults.FormatIdForTable("PRODUCTION_FORECAST", Guid.NewGuid().ToString()),
                 WellUWI = wellUWI,
                 FieldId = fieldId,
                 ForecastDate = DateTime.UtcNow,
                 ForecastMethod = forecastMethod,
-                ForecastPoints = new List<ProductionForecastPointDto>(),
+                ForecastPoints = new List<ProductionForecastPoint>(),
                 EstimatedReserves = 0,
                 Status = "Generated"
             };
@@ -74,7 +74,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             // Generate forecast points
             for (int i = 0; i < forecastPeriod; i++)
             {
-                forecast.ForecastPoints.Add(new ProductionForecastPointDto
+                forecast.ForecastPoints.Add(new ProductionForecastPoint
                 {
                     Date = DateTime.UtcNow.AddMonths(i + 1),
                     OilRate = 1000 - (i * 10), // Simplified decline
@@ -92,7 +92,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         // Decline-curve analysis implementation moved to ProductionForecastingService.DCA.cs (partial)
 
         // Interface-compatible overloads / stubs
-        public async Task<ProductionForecastResultDto> GenerateForecastAsync(GenerateForecastRequest request)
+        public async Task<ProductionForecastResult> GenerateForecastAsync(GenerateForecastRequest request)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             return await GenerateForecastAsync(request.WellUWI, request.FieldId, request.ForecastMethod, request.ForecastPeriod);
@@ -102,7 +102,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
 
         // Probabilistic forecast implementation moved to ProductionForecastingService.DCA.cs (partial)
 
-        public async Task<DeclineCurveAnalysisDto> PerformDeclineCurveAnalysisAsync(DeclineCurveAnalysisRequest request)
+        public async Task<DeclineCurveAnalysis> PerformDeclineCurveAnalysisAsync(DeclineCurveAnalysisRequest request)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             return await PerformDeclineCurveAnalysisAsync(request.WellUWI, request.StartDate, request.EndDate);
@@ -110,13 +110,13 @@ namespace Beep.OilandGas.ProductionForecasting.Services
 
         // Economic analysis implementation moved to ProductionForecastingService.Economics.cs (partial)
 
-        public async Task<RiskAnalysisResultDto> PerformRiskAnalysisAsync(string forecastId)
+        public async Task<ForecastRiskAnalysisResult> PerformRiskAnalysisAsync(string forecastId)
         {
-            var result = new RiskAnalysisResultDto
+            var result = new ForecastRiskAnalysisResult
             {
                 AnalysisId = _defaults.FormatIdForTable("RISK_ANALYSIS", Guid.NewGuid().ToString()),
                 CommercialSuccessProbability = 0,
-                RiskFactors = new List<RiskFactorDto>(),
+                RiskFactors = new List<RiskFactor>(),
                 MitigationStrategies = new List<string>(),
                 RiskRating = "Unknown"
             };
@@ -124,9 +124,9 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             return result;
         }
 
-        public async Task<ForecastValidationResultDto> ValidateForecastAsync(string forecastId)
+        public async Task<ForecastValidationResult> ValidateForecastAsync(string forecastId)
         {
-            var result = new ForecastValidationResultDto
+            var result = new ForecastValidationResult
             {
                 IsValid = true,
                 QualityScore = 100,
@@ -136,12 +136,12 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             return result;
         }
 
-        public async Task<ProductionForecastResultDto> OptimizeForecastAsync(string wellUWI, string forecastMethod)
+        public async Task<ProductionForecastResult> OptimizeForecastAsync(string wellUWI, string forecastMethod)
         {
             return await GenerateForecastAsync(wellUWI, null, forecastMethod ?? "Optimized", 12);
         }
 
-        public async Task<ProductionForecastResultDto?> GetForecastAsync(string forecastId)
+        public async Task<ProductionForecastResult?> GetForecastAsync(string forecastId)
         {
             if (string.IsNullOrWhiteSpace(forecastId)) return null;
 
@@ -154,14 +154,14 @@ namespace Beep.OilandGas.ProductionForecasting.Services
 
             if (entity is not PRODUCTION_FORECAST pf) return null;
 
-            var result = new ProductionForecastResultDto
+            var result = new ProductionForecastResult
             {
                 ForecastId = pf.FORECAST_ID ?? string.Empty,
                 WellUWI = string.IsNullOrWhiteSpace(pf.WELL_UWI) ? null : pf.WELL_UWI,
                 FieldId = string.IsNullOrWhiteSpace(pf.FIELD_ID) ? null : pf.FIELD_ID,
                 ForecastDate = pf.FORECAST_START_DATE,
                 ForecastMethod = pf.FORECAST_TYPE ?? pf.FORECAST_NAME ?? string.Empty,
-                ForecastPoints = new List<ProductionForecastPointDto>(),
+                ForecastPoints = new List<ProductionForecastPoint>(),
                 EstimatedReserves = 0m,
                 Status = pf.ACTIVE_IND == _defaults.GetActiveIndicatorYes() ? "Active" : "Inactive",
                 Notes = null
@@ -181,7 +181,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             foreach (var p in points)
             {
                 if (p == null) continue;
-                result.ForecastPoints.Add(new ProductionForecastPointDto
+                result.ForecastPoints.Add(new ProductionForecastPoint
                 {
                     Date = p.FORECAST_DATE ?? DateTime.UtcNow,
                     OilRate = p.OIL_RATE,
@@ -193,14 +193,14 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             return result;
         }
 
-        public async Task<List<ProductionForecastResultDto>> GetForecastsAsync(string? wellUWI = null, string? fieldId = null, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<List<ProductionForecastResult>> GetForecastsAsync(string? wellUWI = null, string? fieldId = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             // Placeholder: return empty list
             await Task.CompletedTask;
-            return new List<ProductionForecastResultDto>();
+            return new List<ProductionForecastResult>();
         }
 
-        public async Task UpdateForecastAsync(ProductionForecastResultDto forecast, string userId)
+        public async Task UpdateForecastAsync(ProductionForecastResult forecast, string userId)
         {
             // Naive implementation: reuse SaveForecastAsync for upsert behavior
             await SaveForecastAsync(forecast, userId);
@@ -212,22 +212,22 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             await Task.CompletedTask;
         }
 
-        public async Task<ProductionForecastResultDto> GenerateReservoirSimulationForecastAsync(string wellUWI, ReservoirPropertiesDto reservoirProperties, int forecastPeriod)
+        public async Task<ProductionForecastResult> GenerateReservoirSimulationForecastAsync(string wellUWI, ReservoirProperties reservoirProperties, int forecastPeriod)
         {
             return await GenerateForecastAsync(wellUWI, null, "ReservoirSim", forecastPeriod);
         }
 
-        public async Task<ProductionForecastResultDto> GenerateTypeCurveForecastAsync(string wellUWI, string typeCurveId, int forecastPeriod)
+        public async Task<ProductionForecastResult> GenerateTypeCurveForecastAsync(string wellUWI, string typeCurveId, int forecastPeriod)
         {
             return await GenerateForecastAsync(wellUWI, null, "TypeCurve", forecastPeriod);
         }
 
-        public async Task<ProductionForecastResultDto> GenerateMLForecastAsync(string wellUWI, string modelType, int forecastPeriod)
+        public async Task<ProductionForecastResult> GenerateMLForecastAsync(string wellUWI, string modelType, int forecastPeriod)
         {
             return await GenerateForecastAsync(wellUWI, null, "ML-" + (modelType ?? "default"), forecastPeriod);
         }
 
-        public async Task<ProductionForecastResultDto> GenerateEnsembleForecastAsync(string wellUWI, List<string> forecastMethods, int forecastPeriod)
+        public async Task<ProductionForecastResult> GenerateEnsembleForecastAsync(string wellUWI, List<string> forecastMethods, int forecastPeriod)
         {
             // Simplified ensemble: call first method
             var method = (forecastMethods != null && forecastMethods.Count > 0) ? forecastMethods[0] : "Ensemble";
@@ -240,9 +240,9 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             return Array.Empty<byte>();
         }
 
-        public async Task<ForecastReportDto> GenerateForecastReportAsync(string forecastId)
+        public async Task<ForecastReport> GenerateForecastReportAsync(string forecastId)
         {
-            var report = new ForecastReportDto
+            var report = new ForecastReport
             {
                 ReportId = _defaults.FormatIdForTable("FORECAST_REPORT", Guid.NewGuid().ToString()),
                 ForecastId = forecastId,
@@ -253,33 +253,33 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             return report;
         }
 
-        public async Task<ForecastComparisonDto> CompareForecastsAsync(List<string> forecastIds)
+        public async Task<ForecastComparison> CompareForecastsAsync(List<string> forecastIds)
         {
-            var comparison = new ForecastComparisonDto
+            var comparison = new ForecastComparison
             {
                 ComparisonId = _defaults.FormatIdForTable("FORECAST_COMPARE", Guid.NewGuid().ToString()),
                 ForecastIds = forecastIds ?? new List<string>(),
-                Metrics = new List<ComparisonMetricDto>()
+                Metrics = new List<ComparisonMetric>()
             };
             await Task.CompletedTask;
             return comparison;
         }
 
-        public async Task<List<ForecastMethodDto>> GetAvailableForecastMethodsAsync()
+        public async Task<List<ForecastMethod>> GetAvailableForecastMethodsAsync()
         {
-            var list = new List<ForecastMethodDto>
+            var list = new List<ForecastMethod>
             {
-                new ForecastMethodDto { MethodId = "DCA", Name = "Decline Curve Analysis", Description = "Arps/decline based forecasting", Category = "Deterministic", RequiresHistoricalData = true },
-                new ForecastMethodDto { MethodId = "Prob", Name = "Probabilistic", Description = "Monte Carlo style probabilistic forecasting", Category = "Probabilistic", RequiresHistoricalData = true },
-                new ForecastMethodDto { MethodId = "ML", Name = "Machine Learning", Description = "ML-driven forecasts", Category = "ML", RequiresHistoricalData = true }
+                new ForecastMethod { MethodId = "DCA", Name = "Decline Curve Analysis", Description = "Arps/decline based forecasting", Category = "Deterministic", RequiresHistoricalData = true },
+                new ForecastMethod { MethodId = "Prob", Name = "Probabilistic", Description = "Monte Carlo style probabilistic forecasting", Category = "Probabilistic", RequiresHistoricalData = true },
+                new ForecastMethod { MethodId = "ML", Name = "Machine Learning", Description = "ML-driven forecasts", Category = "ML", RequiresHistoricalData = true }
             };
             await Task.CompletedTask;
             return list;
         }
 
-        public async Task<ForecastStatisticsDto> GetForecastStatisticsAsync(string forecastId)
+        public async Task<ForecastStatistics> GetForecastStatisticsAsync(string forecastId)
         {
-            var stats = new ForecastStatisticsDto
+            var stats = new ForecastStatistics
             {
                 TotalForecasts = 0,
                 AverageRMSE = 0,
@@ -291,21 +291,21 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             return stats;
         }
 
-        public async Task<SensitivityAnalysisDto> PerformSensitivityAnalysisAsync(string forecastId, List<string> parameters)
+        public async Task<SensitivityAnalysis> PerformSensitivityAnalysisAsync(string forecastId, List<string> parameters)
         {
-            var analysis = new SensitivityAnalysisDto
+            var analysis = new SensitivityAnalysis
             {
                 Parameter = parameters != null && parameters.Count > 0 ? parameters[0] : string.Empty,
                 BaseValue = 0,
                 MinValue = 0,
                 MaxValue = 0,
-                SensitivityPoints = new List<SensitivityPointDto>()
+                SensitivityPoints = new List<SensitivityPoint>()
             };
             await Task.CompletedTask;
             return analysis;
         }
 
-        public async Task SaveForecastAsync(ProductionForecastResultDto forecast, string userId)
+        public async Task SaveForecastAsync(ProductionForecastResult forecast, string userId)
         {
             if (forecast == null)
                 throw new ArgumentNullException(nameof(forecast));

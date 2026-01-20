@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
@@ -37,7 +37,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return UnitOfWorkFactory.CreateUnitOfWork(typeof(SEIS_SET), _editor, _connectionName, "SEIS_SET", "SEIS_SET_ID");
         }
 
-        public async Task<ProspectEvaluationDto> EvaluateProspectAsync(string prospectId, ProspectEvaluationRequestDto request)
+        public async Task<ProspectEvaluation> EvaluateProspectAsync(string prospectId, ProspectEvaluationRequest request)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
                 throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
@@ -57,7 +57,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             var seismicSurveys = ConvertToList<SEIS_SET>(seismicUnits);
 
             // Perform evaluation logic
-            var evaluation = new ProspectEvaluationDto
+            var evaluation = new ProspectEvaluation
             {
                 EvaluationId = Guid.NewGuid().ToString(),
                 ProspectId = prospectId,
@@ -77,7 +77,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return evaluation;
         }
 
-        public async Task<List<ProspectDto>> GetProspectsAsync(string? fieldId = null, string? basinId = null, ProspectStatus? status = null, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<List<Prospect>> GetProspectsAsync(string? fieldId = null, string? basinId = null, ProspectStatus? status = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             var fieldUow = await GetFieldUnitOfWorkAsync();
             List<FIELD> fields;
@@ -93,7 +93,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 fields = ConvertToList<FIELD>(units);
             }
 
-            var prospects = new List<ProspectDto>();
+            var prospects = new List<Prospect>();
             var seismicUow = await GetSeismicSurveyUnitOfWorkAsync();
             
             foreach (var field in fields)
@@ -113,7 +113,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return prospects;
         }
 
-        public async Task<ProspectDto?> GetProspectAsync(string prospectId)
+        public async Task<Prospect?> GetProspectAsync(string prospectId)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
                 return null;
@@ -135,7 +135,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return MapToProspectDto(field, seismicSurveys);
         }
 
-        public async Task<ProspectDto> CreateProspectAsync(CreateProspectDto createDto, string userId)
+        public async Task<Prospect> CreateProspectAsync(CreateProspect createDto, string userId)
         {
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return MapToProspectDto(field, new List<SEIS_SET>());
         }
 
-        public async Task<ProspectDto> UpdateProspectAsync(string prospectId, UpdateProspectDto updateDto, string userId)
+        public async Task<Prospect> UpdateProspectAsync(string prospectId, UpdateProspect updateDto, string userId)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
                 throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
@@ -205,7 +205,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return MapToProspectDto(field, seismicSurveys);
         }
 
-        public async Task<ProspectDto> ChangeProspectStatusAsync(string prospectId, ProspectStatus newStatus, string userId)
+        public async Task<Prospect> ChangeProspectStatusAsync(string prospectId, ProspectStatus newStatus, string userId)
         {
             if (string.IsNullOrWhiteSpace(prospectId))
                 throw new ArgumentException("Prospect ID cannot be null or empty.", nameof(prospectId));
@@ -275,9 +275,9 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return result;
         }
 
-        private ProspectDto MapToProspectDto(FIELD field, List<SEIS_SET> seismicSurveys)
+        private Prospect MapToProspectDto(FIELD field, List<SEIS_SET> seismicSurveys)
         {
-            return new ProspectDto
+            return new Prospect
             {
                 ProspectId = field.FIELD_ID,
                 FieldId = field.FIELD_ID,
@@ -285,7 +285,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 Description = field.REMARK,
                 Status = field.ACTIVE_IND == "Y" ? "Active" : "Inactive",
                 CreatedDate = field.ROW_CREATED_DATE,
-                SeismicSurveys = seismicSurveys.Select(s => new SeismicSurveyDto
+                SeismicSurveys = seismicSurveys.Select(s => new SeismicSurvey
                 {
                     SurveyId = s.SEIS_SET_ID ?? string.Empty,
                     ProspectId = field.FIELD_ID,
@@ -350,12 +350,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
                 return "High risk - detailed evaluation required before proceeding";
         }
 
-        private List<RiskFactorDto> GenerateRiskFactors(FIELD field, List<SEIS_SET> seismicSurveys)
+        private List<RiskFactor> GenerateRiskFactors(FIELD field, List<SEIS_SET> seismicSurveys)
         {
-            var factors = new List<RiskFactorDto>();
+            var factors = new List<RiskFactor>();
 
             // Geological risk
-            factors.Add(new RiskFactorDto
+            factors.Add(new RiskFactor
             {
                 RiskFactorId = Guid.NewGuid().ToString(),
                 Category = "Geological",
@@ -366,7 +366,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             // Technical risk
             if (!seismicSurveys.Any())
             {
-                factors.Add(new RiskFactorDto
+                factors.Add(new RiskFactor
                 {
                     RiskFactorId = Guid.NewGuid().ToString(),
                     Category = "Technical",
@@ -382,69 +382,69 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         }
 
         // --- Interface members not yet implemented in detail; provide simple stubs ---
-        public async Task<VolumetricAnalysisDto> PerformVolumetricAnalysisAsync(string prospectId, VolumetricAnalysisRequestDto request)
+        public async Task<VolumetricAnalysis> PerformVolumetricAnalysisAsync(string prospectId, VolumetricAnalysisRequest request)
         {
-            return new VolumetricAnalysisDto { ProspectId = prospectId, AnalysisDate = DateTime.UtcNow };
+            return new VolumetricAnalysis { ProspectId = prospectId, AnalysisDate = DateTime.UtcNow };
         }
 
-        public async Task<RiskAssessmentDto> PerformRiskAssessmentAsync(string prospectId, RiskAssessmentRequestDto request)
+        public async Task<RiskAssessment> PerformRiskAssessmentAsync(string prospectId, ProspectRiskAssessmentRequest request)
         {
-            return new RiskAssessmentDto { ProspectId = prospectId, AssessmentDate = DateTime.UtcNow };
+            return new RiskAssessment { ProspectId = prospectId, AssessmentDate = DateTime.UtcNow };
         }
 
-        public async Task<EconomicEvaluationDto> PerformEconomicEvaluationAsync(string prospectId, EconomicEvaluationRequestDto request)
+        public async Task<EconomicEvaluation> PerformEconomicEvaluationAsync(string prospectId, EconomicEvaluationRequest request)
         {
-            return new EconomicEvaluationDto { ProspectId = prospectId, EvaluationDate = DateTime.UtcNow };
+            return new EconomicEvaluation { ProspectId = prospectId, EvaluationDate = DateTime.UtcNow };
         }
 
-        public async Task<List<ProspectRankingDto>> RankProspectsAsync(ProspectRankingRequestDto request)
+        public async Task<List<ProspectRanking>> RankProspectsAsync(ProspectRankingRequest request)
         {
-            return new List<ProspectRankingDto>();
+            return new List<ProspectRanking>();
         }
 
-        public async Task<ProspectComparisonDto> CompareProspectsAsync(List<string> prospectIds, ProspectComparisonRequestDto request)
+        public async Task<ProspectComparison> CompareProspectsAsync(List<string> prospectIds, ProspectComparisonRequest request)
         {
-            return new ProspectComparisonDto();
+            return new ProspectComparison();
         }
 
-        public async Task<SensitivityAnalysisDto> PerformSensitivityAnalysisAsync(string prospectId, SensitivityAnalysisRequestDto request)
+        public async Task<SensitivityAnalysis> PerformSensitivityAnalysisAsync(string prospectId, SensitivityAnalysisRequest request)
         {
-            return new SensitivityAnalysisDto();
+            return new SensitivityAnalysis();
         }
 
-        public async Task<ResourceEstimateDto> EstimateResourcesAsync(string prospectId, ResourceEstimateRequestDto request)
+        public async Task<ResourceEstimate> EstimateResourcesAsync(string prospectId, ResourceEstimateRequest request)
         {
-            return new ResourceEstimateDto();
+            return new ResourceEstimate();
         }
 
-        public async Task<ProbabilisticAssessmentDto> PerformProbabilisticAssessmentAsync(string prospectId, ProbabilisticAssessmentRequestDto request)
+        public async Task<ProbabilisticAssessment> PerformProbabilisticAssessmentAsync(string prospectId, ProbabilisticAssessmentRequest request)
         {
-            return new ProbabilisticAssessmentDto();
+            return new ProbabilisticAssessment();
         }
 
-        public async Task<ResourceEstimateDto> UpdateResourceEstimatesAsync(string prospectId, string userId)
+        public async Task<ResourceEstimate> UpdateResourceEstimatesAsync(string prospectId, string userId)
         {
-            return new ResourceEstimateDto();
+            return new ResourceEstimate();
         }
 
-        public async Task<PlayAnalysisDto> AnalyzePlayAsync(string playId, PlayAnalysisRequestDto request)
+        public async Task<PlayAnalysis> AnalyzePlayAsync(string playId, PlayAnalysisRequest request)
         {
-            return new PlayAnalysisDto();
+            return new PlayAnalysis();
         }
 
-        public async Task<PlayStatisticsDto> GetPlayStatisticsAsync(string playId)
+        public async Task<PlayStatistics> GetPlayStatisticsAsync(string playId)
         {
-            return new PlayStatisticsDto();
+            return new PlayStatistics();
         }
 
-        public async Task<List<AnalogProspectDto>> FindAnalogProspectsAsync(string prospectId, AnalogSearchRequestDto request)
+        public async Task<List<AnalogProspect>> FindAnalogProspectsAsync(string prospectId, AnalogSearchRequest request)
         {
-            return new List<AnalogProspectDto>();
+            return new List<AnalogProspect>();
         }
 
-        public async Task<ProspectReportDto> GenerateProspectReportAsync(string prospectId, ProspectReportRequestDto request)
+        public async Task<ProspectReport> GenerateProspectReportAsync(string prospectId, ProspectReportRequest request)
         {
-            return new ProspectReportDto();
+            return new ProspectReport();
         }
 
         public async Task<byte[]> ExportProspectDataAsync(string prospectId, string format = "PDF")
@@ -452,19 +452,19 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             return Array.Empty<byte>();
         }
 
-        public async Task<PortfolioReportDto> GeneratePortfolioReportAsync(PortfolioReportRequestDto request)
+        public async Task<PortfolioReport> GeneratePortfolioReportAsync(PortfolioReportRequest request)
         {
-            return new PortfolioReportDto();
+            return new PortfolioReport();
         }
 
-        public async Task<ProspectValidationDto> ValidateProspectDataAsync(string prospectId)
+        public async Task<ProspectValidation> ValidateProspectDataAsync(string prospectId)
         {
-            return new ProspectValidationDto();
+            return new ProspectValidation();
         }
 
-        public async Task<PeerReviewDto> PerformPeerReviewAsync(string prospectId, PeerReviewRequestDto request)
+        public async Task<PeerReview> PerformPeerReviewAsync(string prospectId, PeerReviewRequest request)
         {
-            return new PeerReviewDto();
+            return new PeerReview();
         }
     }
 }

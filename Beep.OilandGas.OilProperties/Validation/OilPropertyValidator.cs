@@ -2,7 +2,7 @@ using System;
 
 using Beep.OilandGas.OilProperties.Constants;
 using Beep.OilandGas.OilProperties.Exceptions;
-using Beep.OilandGas.Models.OilProperties;
+using Beep.OilandGas.Models.Data.OilProperties;
 
 namespace Beep.OilandGas.OilProperties.Validation
 {

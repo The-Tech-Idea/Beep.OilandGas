@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs.DataManagement;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;

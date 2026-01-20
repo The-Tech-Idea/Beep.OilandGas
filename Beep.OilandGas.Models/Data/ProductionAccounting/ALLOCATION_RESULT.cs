@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class ALLOCATION_RESULT : Entity, IPPDMEntity
-    {
+    public partial class ALLOCATION_RESULT : ModelEntityBase {
         private System.String ALLOCATION_RESULT_IDValue;
         public System.String ALLOCATION_RESULT_ID
         {

@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class RUN_TICKET_VALUATION : Entity, IPPDMEntity
-    {
+    public partial class RUN_TICKET_VALUATION : ModelEntityBase {
         private System.String VALUATION_IDValue;
         public System.String VALUATION_ID
         {

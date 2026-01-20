@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    public partial class NODAL_WELLBORE_PROPERTIES : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class NODAL_WELLBORE_PROPERTIES : ModelEntityBase {
         private String NODAL_WELLBORE_PROPERTIES_IDValue;
         public String NODAL_WELLBORE_PROPERTIES_ID
         {

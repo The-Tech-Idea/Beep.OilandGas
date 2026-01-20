@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.DTOs.Calculations;
-using Beep.OilandGas.Models.EconomicAnalysis;
+using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.EconomicAnalysis.Services
@@ -18,7 +18,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Performs Monte Carlo simulation for probabilistic economic analysis.
         /// </summary>
-        public async Task<MonteCarloSimulationResultDto> PerformMonteCarloSimulationAsync(
+        public async Task<MonteCarloSimulationResult> PerformMonteCarloSimulationAsync(
             CashFlow[] baseCashFlows,
             double variationRange,
             double discountRate,
@@ -36,7 +36,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 if (simulationCount <= 0)
                     throw new ArgumentException("Simulation count must be positive", nameof(simulationCount));
 
-                var result = new MonteCarloSimulationResultDto
+                var result = new MonteCarloSimulationResult
                 {
                     AnalysisId = _defaults.FormatIdForTable("MONTECARLO", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
@@ -92,7 +92,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Performs real options analysis including expansion, abandonment, and switching options.
         /// </summary>
-        public async Task<RealOptionsAnalysisResultDto> PerformRealOptionsAnalysisAsync(
+        public async Task<RealOptionsAnalysisResult> PerformRealOptionsAnalysisAsync(
             double initialNPV,
             double volatility,
             int projectLife,
@@ -110,19 +110,19 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 if (discountRate < 0 || discountRate > 1.0)
                     throw new ArgumentException("Discount rate must be between 0 and 1", nameof(discountRate));
 
-                var result = new RealOptionsAnalysisResultDto
+                var result = new RealOptionsAnalysisResult
                 {
                     AnalysisId = _defaults.FormatIdForTable("REALOPTIONS", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
                     InitialNPV = initialNPV,
                     ProjectLife = projectLife,
                     Volatility = volatility,
-                    Options = new List<OptionValuationDto>()
+                    Options = new List<OptionValuation>()
                 };
 
                 // Calculate expansion option (20% upside scenario)
                 var expansionValue = CalculateExpansionOptionValue(initialNPV, volatility, projectLife, discountRate);
-                    result.Options.Add(new OptionValuationDto
+                    result.Options.Add(new OptionValuation
                 {
                     OptionType = "Expansion",
                     OptionValue = expansionValue,
@@ -132,7 +132,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
 
                 // Calculate abandonment option (downside protection)
                 var abandonmentValue = CalculateAbandonmentOptionValue(initialNPV, volatility, projectLife, discountRate);
-                    result.Options.Add(new OptionValuationDto
+                    result.Options.Add(new OptionValuation
                 {
                     OptionType = "Abandonment",
                     OptionValue = abandonmentValue,
@@ -142,7 +142,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
 
                 // Calculate switching option
                 var switchingValue = CalculateSwitchingOptionValue(initialNPV, volatility, projectLife, discountRate);
-                    result.Options.Add(new OptionValuationDto
+                    result.Options.Add(new OptionValuation
                 {
                     OptionType = "Switching",
                     OptionValue = switchingValue,
@@ -169,7 +169,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Performs decision tree analysis for multi-stage investment decisions.
         /// </summary>
-        public async Task<DecisionTreeAnalysisResultDto> PerformDecisionTreeAnalysisAsync(
+        public async Task<DecisionTreeAnalysisResult> PerformDecisionTreeAnalysisAsync(
             double initialInvestment,
             double successProbability,
             CashFlow[] successCashFlows,
@@ -188,7 +188,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 if (successCashFlows == null || successCashFlows.Length == 0)
                     throw new ArgumentException("Cash flows cannot be null or empty", nameof(successCashFlows));
 
-                var result = new DecisionTreeAnalysisResultDto
+                var result = new DecisionTreeAnalysisResult
                 {
                     AnalysisId = _defaults.FormatIdForTable("DECISION_TREE", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
@@ -198,7 +198,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
 
                 // Success scenario
                 var successNPV = CalculateNPV(successCashFlows, discountRate);
-                result.SuccessScenario = new DecisionScenarioDto
+                result.SuccessScenario = new DecisionScenario
                 {
                     ScenarioName = "Success",
                     Probability = successProbability,
@@ -213,7 +213,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     ? CalculateNPV(failureCashFlows, discountRate)
                     : -initialInvestment * 0.5;
 
-                result.FailureScenario = new DecisionScenarioDto
+                result.FailureScenario = new DecisionScenario
                 {
                     ScenarioName = "Failure",
                     Probability = failureProbability,
@@ -247,7 +247,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Analyzes after-tax economic metrics considering corporate tax and depreciation.
         /// </summary>
-        public async Task<AfterTaxAnalysisResultDto> PerformAfterTaxAnalysisAsync(
+        public async Task<AfterTaxAnalysisResult> PerformAfterTaxAnalysisAsync(
             double taxRate,
             double[] depreciationSchedule,
             CashFlow[] preTaxCashFlows,
@@ -263,7 +263,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 if (preTaxCashFlows == null || preTaxCashFlows.Length == 0)
                     throw new ArgumentException("Cash flows cannot be null or empty", nameof(preTaxCashFlows));
 
-                var result = new AfterTaxAnalysisResultDto
+                var result = new AfterTaxAnalysisResult
                 {
                     AnalysisId = _defaults.FormatIdForTable("AFTERTAX", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
@@ -311,7 +311,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Calculates DCF enterprise value using discounted cash flow methodology.
         /// </summary>
-        public async Task<DCFValuationResultDto> CalculateEnterpriseValueAsync(
+        public async Task<DCFValuationResult> CalculateEnterpriseValueAsync(
             CashFlow[] projectedCashFlows,
             double terminalGrowthRate,
             double wacc)
@@ -328,13 +328,13 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 if (wacc <= terminalGrowthRate)
                     throw new ArgumentException("WACC must be greater than terminal growth rate");
 
-                var result = new DCFValuationResultDto
+                var result = new DCFValuationResult
                 {
                     AnalysisId = _defaults.FormatIdForTable("DCF_VALUATION", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
                     TerminalGrowthRate = terminalGrowthRate,
                     WACC = wacc,
-                    PresentValueComponents = new List<PVComponentDto>()
+                    PresentValueComponents = new List<PVComponent>()
                 };
 
                 double totalPV = 0;
@@ -345,7 +345,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     var pv = projectedCashFlows[i].Amount / Math.Pow(1 + wacc, i + 1);
                     totalPV += pv;
 
-                    result.PresentValueComponents.Add(new PVComponentDto
+                    result.PresentValueComponents.Add(new PVComponent
                     {
                         Year = i + 1,
                         CashFlow = projectedCashFlows[i].Amount,
@@ -381,7 +381,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Performs lease vs. buy analysis for asset decisions.
         /// </summary>
-        public async Task<LeaseBuyAnalysisResultDto> PerformLeaseBuyAnalysisAsync(
+        public async Task<LeaseBuyAnalysisResult> PerformLeaseBuyAnalysisAsync(
             double assetCost,
             double[] leasePayments,
             int leaseTerm,
@@ -400,7 +400,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 if (leaseTerm <= 0)
                     throw new ArgumentException("Lease term must be positive", nameof(leaseTerm));
 
-                var result = new LeaseBuyAnalysisResultDto
+                var result = new LeaseBuyAnalysisResult
                 {
                     AnalysisId = _defaults.FormatIdForTable("LEASE_BUY", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
@@ -445,7 +445,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Analyzes optimal capital structure and financial risk.
         /// </summary>
-        public async Task<CapitalStructureAnalysisResultDto> AnalyzeOptimalCapitalStructureAsync(
+        public async Task<CapitalStructureAnalysisResult> AnalyzeOptimalCapitalStructureAsync(
             double unleveredValue,
             double taxRate,
             double debtCost,
@@ -465,13 +465,13 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 if (equityCost < 0 || equityCost > 1.0)
                     throw new ArgumentException("Equity cost must be between 0 and 1", nameof(equityCost));
 
-                var result = new CapitalStructureAnalysisResultDto
+                var result = new CapitalStructureAnalysisResult
                 {
                     AnalysisId = _defaults.FormatIdForTable("CAPSTRUCT", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
                     UnleveredValue = unleveredValue,
                     TaxRate = taxRate,
-                    Scenarios = new List<CapitalStructureScenarioDto>()
+                    Scenarios = new List<CapitalStructureScenario>()
                 };
 
                 // Analyze different debt ratios
@@ -486,7 +486,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     var leveredValue = unleveredValue + taxShield;
                     var wacc = (equityRatio * equityCost) + (debtRatio * debtCost * (1 - taxRate));
 
-                    result.Scenarios.Add(new CapitalStructureScenarioDto
+                    result.Scenarios.Add(new CapitalStructureScenario
                     {
                         DebtRatio = debtRatio,
                         EquityRatio = equityRatio,
@@ -520,7 +520,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Analyzes commodity price sensitivity for oil and gas projects.
         /// </summary>
-        public async Task<CommodityPriceSensitivityResultDto> AnalyzeCommodityPriceSensitivityAsync(
+        public async Task<CommodityPriceSensitivityResult> AnalyzeCommodityPriceSensitivityAsync(
             CashFlow[] baseCashFlows,
             double basePrice,
             double priceRange,
@@ -538,12 +538,12 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 if (discountRate < 0 || discountRate > 1.0)
                     throw new ArgumentException("Discount rate must be between 0 and 1", nameof(discountRate));
 
-                var result = new CommodityPriceSensitivityResultDto
+                var result = new CommodityPriceSensitivityResult
                 {
                     AnalysisId = _defaults.FormatIdForTable("PRICE_SENS", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
                     BasePrice = basePrice,
-                    PriceScenarios = new List<PriceScenarioDto>()
+                    PriceScenarios = new List<PriceScenario>()
                 };
 
                 var baseNPV = CalculateNPV(baseCashFlows, discountRate);
@@ -563,7 +563,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                     var npv = CalculateNPV(adjustedCashFlows, discountRate);
                     var irr = CalculateIRR(adjustedCashFlows);
 
-                    result.PriceScenarios.Add(new PriceScenarioDto
+                    result.PriceScenarios.Add(new PriceScenario
                     {
                         Price = price,
                         NPV = npv,

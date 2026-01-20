@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Accounting.Constants;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -50,7 +52,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// Generate Income Statement (P&L)
         /// Revenue - Expenses = Net Income
         /// </summary>
-        public async Task<IncomeStatement> GenerateIncomeStatementAsync(DateTime periodStart, DateTime periodEnd, string periodName = "")
+        public async Task<IncomeStatement> GenerateIncomeStatementAsync(DateTime periodStart, DateTime periodEnd, string periodName = "", string? bookId = null)
         {
             _logger?.LogInformation("Generating Income Statement for period {PeriodStart} to {PeriodEnd}", periodStart, periodEnd);
 
@@ -60,7 +62,7 @@ namespace Beep.OilandGas.Accounting.Services
                     periodName = $"{periodStart:MMM yyyy} to {periodEnd:MMM yyyy}";
 
                 // Get trial balance as of period end
-                var trialBalance = await _trialBalanceService.GenerateTrialBalanceAsync(periodEnd);
+                var trialBalance = await _trialBalanceService.GenerateTrialBalanceAsync(periodEnd, bookId);
 
                 // Initialize P&L statement
                 var incomeStatement = new IncomeStatement
@@ -178,7 +180,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// Generate Balance Sheet (Statement of Financial Position)
         /// Assets = Liabilities + Equity
         /// </summary>
-        public async Task<BalanceSheet> GenerateBalanceSheetAsync(DateTime asOfDate, string reportName = "")
+        public async Task<BalanceSheet> GenerateBalanceSheetAsync(DateTime asOfDate, string reportName = "", string? bookId = null)
         {
             _logger?.LogInformation("Generating Balance Sheet as of {AsOfDate}", asOfDate);
 
@@ -188,7 +190,7 @@ namespace Beep.OilandGas.Accounting.Services
                     reportName = $"Balance Sheet as of {asOfDate:MMMM dd, yyyy}";
 
                 // Get trial balance as of date
-                var trialBalance = await _trialBalanceService.GenerateTrialBalanceAsync(asOfDate);
+                var trialBalance = await _trialBalanceService.GenerateTrialBalanceAsync(asOfDate, bookId);
 
                 // Initialize Balance Sheet
                 var balanceSheet = new BalanceSheet
@@ -209,6 +211,43 @@ namespace Beep.OilandGas.Accounting.Services
                 decimal totalCurrentAssets = 0m;
                 decimal totalFixedAssets = 0m;
                 decimal totalOtherAssets = 0m;
+                var currentAssetOverrides = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    DefaultGlAccounts.Cash,
+                    DefaultGlAccounts.AccountsReceivable,
+                    DefaultGlAccounts.Inventory,
+                    DefaultGlAccounts.ContractAsset,
+                    DefaultGlAccounts.GrantReceivable,
+                    DefaultGlAccounts.FinancialInstrumentAsset,
+                    DefaultGlAccounts.ReinsuranceAsset,
+                    DefaultGlAccounts.LossAllowance,
+                    DefaultGlAccounts.HeldForSaleAsset,
+                    DefaultGlAccounts.IntercompanyReceivable,
+                    DefaultGlAccounts.GaapContractAsset
+                };
+                var fixedAssetOverrides = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    DefaultGlAccounts.FixedAssets,
+                    DefaultGlAccounts.AccumulatedDepreciation,
+                    DefaultGlAccounts.RightOfUseAsset,
+                    DefaultGlAccounts.AssetRetirementCost,
+                    DefaultGlAccounts.IntangibleAssets,
+                    DefaultGlAccounts.AccumulatedAmortization,
+                    DefaultGlAccounts.ImpairmentAllowance,
+                    DefaultGlAccounts.InvestmentProperty,
+                    DefaultGlAccounts.BiologicalAssets,
+                    DefaultGlAccounts.GaapRightOfUseAsset
+                };
+                var otherAssetOverrides = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    DefaultGlAccounts.DeferredTaxAsset,
+                    DefaultGlAccounts.RetirementPlanAsset,
+                    DefaultGlAccounts.AssociateInvestment,
+                    DefaultGlAccounts.JointVentureInvestment,
+                    DefaultGlAccounts.Goodwill,
+                    DefaultGlAccounts.ExplorationAsset,
+                    DefaultGlAccounts.RegulatoryDeferralAsset
+                };
 
                 foreach (var account in assetAccounts)
                 {
@@ -223,12 +262,17 @@ namespace Beep.OilandGas.Accounting.Services
                         };
 
                         // Classify asset
-                        if (account.ACCOUNT_NUMBER.StartsWith("1"))  // 1xxx = Current Assets
+                        if (otherAssetOverrides.Contains(account.ACCOUNT_NUMBER))
+                        {
+                            balanceSheet.OtherAssets.Add(line);
+                            totalOtherAssets += balance;
+                        }
+                        else if (currentAssetOverrides.Contains(account.ACCOUNT_NUMBER) || account.ACCOUNT_NUMBER.StartsWith("1"))  // 1xxx = Current Assets
                         {
                             balanceSheet.CurrentAssets.Add(line);
                             totalCurrentAssets += balance;
                         }
-                        else if (account.ACCOUNT_NUMBER.StartsWith("12"))  // 12xx = Fixed Assets
+                        else if (fixedAssetOverrides.Contains(account.ACCOUNT_NUMBER) || account.ACCOUNT_NUMBER.StartsWith("12"))  // 12xx = Fixed Assets
                         {
                             balanceSheet.FixedAssets.Add(line);
                             totalFixedAssets += balance;
@@ -250,6 +294,30 @@ namespace Beep.OilandGas.Accounting.Services
                 var liabilityAccounts = trialBalance.Where(x => x.ACCOUNT_TYPE == "LIABILITY").ToList();
                 decimal totalCurrentLiabilities = 0m;
                 decimal totalLongTermLiabilities = 0m;
+                var currentLiabilityOverrides = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    DefaultGlAccounts.AccountsPayable,
+                    DefaultGlAccounts.AccruedRoyalties,
+                    DefaultGlAccounts.ContractLiability,
+                    DefaultGlAccounts.IncomeTaxPayable,
+                    DefaultGlAccounts.EmployeeBenefitLiability,
+                    DefaultGlAccounts.DeferredGrantLiability,
+                    DefaultGlAccounts.InterestPayable,
+                    DefaultGlAccounts.FinancialInstrumentLiability,
+                    DefaultGlAccounts.InsuranceContractLiability,
+                    DefaultGlAccounts.ContractualServiceMargin,
+                    DefaultGlAccounts.HeldForSaleLiability,
+                    DefaultGlAccounts.IntercompanyPayable,
+                    DefaultGlAccounts.RegulatoryDeferralLiability,
+                    DefaultGlAccounts.GaapContractLiability,
+                    DefaultGlAccounts.GaapLeaseLiability
+                };
+                var longTermLiabilityOverrides = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    DefaultGlAccounts.AssetRetirementObligation,
+                    DefaultGlAccounts.LeaseLiability,
+                    DefaultGlAccounts.DeferredTaxLiability
+                };
 
                 foreach (var account in liabilityAccounts)
                 {
@@ -264,10 +332,15 @@ namespace Beep.OilandGas.Accounting.Services
                         };
 
                         // Classify liability
-                        if (account.ACCOUNT_NUMBER.StartsWith("20") || account.ACCOUNT_NUMBER.StartsWith("21"))  // 20xx-21xx = Current
+                        if (currentLiabilityOverrides.Contains(account.ACCOUNT_NUMBER) || account.ACCOUNT_NUMBER.StartsWith("20"))  // 20xx = Current
                         {
                             balanceSheet.CurrentLiabilities.Add(line);
                             totalCurrentLiabilities += balance;
+                        }
+                        else if (longTermLiabilityOverrides.Contains(account.ACCOUNT_NUMBER))
+                        {
+                            balanceSheet.LongTermLiabilities.Add(line);
+                            totalLongTermLiabilities += balance;
                         }
                         else
                         {
@@ -330,7 +403,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// Generate Cash Flow Statement (Simplified)
         /// Operating + Investing + Financing = Net Change in Cash
         /// </summary>
-        public async Task<CashFlowStatement> GenerateCashFlowStatementAsync(DateTime periodStart, DateTime periodEnd, string periodName = "")
+        public async Task<CashFlowStatement> GenerateCashFlowStatementAsync(DateTime periodStart, DateTime periodEnd, string periodName = "", string? bookId = null)
         {
             _logger?.LogInformation("Generating Cash Flow Statement for period {PeriodStart} to {PeriodEnd}", periodStart, periodEnd);
 
@@ -340,8 +413,8 @@ namespace Beep.OilandGas.Accounting.Services
                     periodName = $"{periodStart:MMM yyyy} to {periodEnd:MMM yyyy}";
 
                 // Get trial balance for period
-                var beginningBalance = await _trialBalanceService.GenerateTrialBalanceAsync(periodStart.AddDays(-1));
-                var endingBalance = await _trialBalanceService.GenerateTrialBalanceAsync(periodEnd);
+                var beginningBalance = await _trialBalanceService.GenerateTrialBalanceAsync(periodStart.AddDays(-1), bookId);
+                var endingBalance = await _trialBalanceService.GenerateTrialBalanceAsync(periodEnd, bookId);
 
                 // Initialize Cash Flow Statement
                 var cashFlow = new CashFlowStatement
@@ -357,47 +430,263 @@ namespace Beep.OilandGas.Accounting.Services
 
                 // OPERATING ACTIVITIES
                 // Net Income + Non-cash items (Depreciation) - Changes in Working Capital
-                var incomeStatement = await GenerateIncomeStatementAsync(periodStart, periodEnd, periodName);
+                var incomeStatement = await GenerateIncomeStatementAsync(periodStart, periodEnd, periodName, bookId);
                 decimal netIncome = incomeStatement.NetIncome;
 
                 cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Net Income", Amount = netIncome });
 
                 // Add depreciation (from Fixed Asset accounts)
-                var depreciationAccount = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == "1210"); // Accumulated Depreciation
-                if (depreciationAccount != null && depreciationAccount.CURRENT_BALANCE.HasValue)
+                var depreciationAccount = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.AccumulatedDepreciation);
+                if (depreciationAccount != null)
                 {
-                    decimal depreciationChange = Math.Abs(depreciationAccount.CURRENT_BALANCE.Value);
+                    var beginningDepreciation = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.AccumulatedDepreciation)?.CURRENT_BALANCE ?? 0m;
+                    var endingDepreciation = depreciationAccount.CURRENT_BALANCE ?? 0m;
+                    decimal depreciationChange = Math.Abs(endingDepreciation - beginningDepreciation);
                     if (depreciationChange != 0)
                     {
                         cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Add: Depreciation", Amount = depreciationChange });
                     }
                 }
 
+                var accretionExpense = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.AccretionExpense);
+                if (accretionExpense != null)
+                {
+                    var beginningAccretion = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.AccretionExpense)?.CURRENT_BALANCE ?? 0m;
+                    var endingAccretion = accretionExpense.CURRENT_BALANCE ?? 0m;
+                    var accretionChange = Math.Abs(endingAccretion - beginningAccretion);
+                    if (accretionChange != 0)
+                    {
+                        cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Add: ARO Accretion", Amount = accretionChange });
+                    }
+                }
+
+                var leaseAmortization = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.LeaseAmortizationExpense);
+                if (leaseAmortization != null)
+                {
+                    var beginningLeaseAmort = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.LeaseAmortizationExpense)?.CURRENT_BALANCE ?? 0m;
+                    var endingLeaseAmort = leaseAmortization.CURRENT_BALANCE ?? 0m;
+                    var leaseAmortChange = Math.Abs(endingLeaseAmort - beginningLeaseAmort);
+                    if (leaseAmortChange != 0)
+                    {
+                        cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Add: Lease Amortization", Amount = leaseAmortChange });
+                    }
+                }
+
+                var intangibleAmort = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.AmortizationExpense);
+                if (intangibleAmort != null)
+                {
+                    var beginningAmort = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.AmortizationExpense)?.CURRENT_BALANCE ?? 0m;
+                    var endingAmort = intangibleAmort.CURRENT_BALANCE ?? 0m;
+                    var amortChange = Math.Abs(endingAmort - beginningAmort);
+                    if (amortChange != 0)
+                    {
+                        cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Add: Intangible Amortization", Amount = amortChange });
+                    }
+                }
+
+                var impairmentLoss = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.ImpairmentLoss);
+                if (impairmentLoss != null)
+                {
+                    var beginningImpairment = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.ImpairmentLoss)?.CURRENT_BALANCE ?? 0m;
+                    var endingImpairment = impairmentLoss.CURRENT_BALANCE ?? 0m;
+                    var impairmentChange = Math.Abs(endingImpairment - beginningImpairment);
+                    if (impairmentChange != 0)
+                    {
+                        cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Add: Impairment Loss", Amount = impairmentChange });
+                    }
+                }
+
+                var lossAllowance = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.LossAllowance);
+                if (lossAllowance != null)
+                {
+                    var beginningAllowance = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.LossAllowance)?.CURRENT_BALANCE ?? 0m;
+                    var endingAllowance = lossAllowance.CURRENT_BALANCE ?? 0m;
+                    var allowanceChange = Math.Abs(endingAllowance - beginningAllowance);
+                    if (allowanceChange != 0)
+                    {
+                        cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Add: Expected Credit Loss", Amount = allowanceChange });
+                    }
+                }
+
                 // Changes in Working Capital (AR, AP, Inventory)
-                var beginningAR = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == "1110")?.CURRENT_BALANCE ?? 0m;
-                var endingAR = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == "1110")?.CURRENT_BALANCE ?? 0m;
+                var beginningAR = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.AccountsReceivable)?.CURRENT_BALANCE ?? 0m;
+                var endingAR = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.AccountsReceivable)?.CURRENT_BALANCE ?? 0m;
                 decimal arChange = beginningAR - endingAR;  // Decrease = cash inflow
                 if (arChange != 0)
                     cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Accounts Receivable", Amount = arChange });
 
-                var beginningAP = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == "2000")?.CURRENT_BALANCE ?? 0m;
-                var endingAP = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == "2000")?.CURRENT_BALANCE ?? 0m;
+                var beginningAP = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.AccountsPayable)?.CURRENT_BALANCE ?? 0m;
+                var endingAP = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.AccountsPayable)?.CURRENT_BALANCE ?? 0m;
                 decimal apChange = endingAP - beginningAP;  // Increase = cash inflow
                 if (apChange != 0)
                     cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Accounts Payable", Amount = apChange });
 
-                var beginningInventory = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == "1300")?.CURRENT_BALANCE ?? 0m;
-                var endingInventory = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == "1300")?.CURRENT_BALANCE ?? 0m;
+                var beginningInventory = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.Inventory)?.CURRENT_BALANCE ?? 0m;
+                var endingInventory = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.Inventory)?.CURRENT_BALANCE ?? 0m;
                 decimal inventoryChange = beginningInventory - endingInventory;  // Decrease = cash inflow
                 if (inventoryChange != 0)
                     cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Inventory", Amount = inventoryChange });
+
+                var beginningContractAsset = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.ContractAsset)?.CURRENT_BALANCE ?? 0m;
+                var endingContractAsset = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.ContractAsset)?.CURRENT_BALANCE ?? 0m;
+                var contractAssetChange = beginningContractAsset - endingContractAsset;
+                if (contractAssetChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Contract Assets", Amount = contractAssetChange });
+
+                var beginningContractLiability = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.ContractLiability)?.CURRENT_BALANCE ?? 0m;
+                var endingContractLiability = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.ContractLiability)?.CURRENT_BALANCE ?? 0m;
+                var contractLiabilityChange = endingContractLiability - beginningContractLiability;
+                if (contractLiabilityChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Contract Liabilities", Amount = contractLiabilityChange });
+
+                var beginningAro = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.AssetRetirementObligation)?.CURRENT_BALANCE ?? 0m;
+                var endingAro = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.AssetRetirementObligation)?.CURRENT_BALANCE ?? 0m;
+                var aroChange = endingAro - beginningAro;
+                if (aroChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in ARO Liability", Amount = aroChange });
+
+                var beginningTaxPayable = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.IncomeTaxPayable)?.CURRENT_BALANCE ?? 0m;
+                var endingTaxPayable = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.IncomeTaxPayable)?.CURRENT_BALANCE ?? 0m;
+                var taxPayableChange = endingTaxPayable - beginningTaxPayable;
+                if (taxPayableChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Income Taxes Payable", Amount = taxPayableChange });
+
+                var beginningDeferredTaxAsset = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.DeferredTaxAsset)?.CURRENT_BALANCE ?? 0m;
+                var endingDeferredTaxAsset = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.DeferredTaxAsset)?.CURRENT_BALANCE ?? 0m;
+                var deferredTaxAssetChange = beginningDeferredTaxAsset - endingDeferredTaxAsset;
+                if (deferredTaxAssetChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Deferred Tax Assets", Amount = deferredTaxAssetChange });
+
+                var beginningDeferredTaxLiability = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.DeferredTaxLiability)?.CURRENT_BALANCE ?? 0m;
+                var endingDeferredTaxLiability = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.DeferredTaxLiability)?.CURRENT_BALANCE ?? 0m;
+                var deferredTaxLiabilityChange = endingDeferredTaxLiability - beginningDeferredTaxLiability;
+                if (deferredTaxLiabilityChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Deferred Tax Liabilities", Amount = deferredTaxLiabilityChange });
+
+                var beginningGrantReceivable = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.GrantReceivable)?.CURRENT_BALANCE ?? 0m;
+                var endingGrantReceivable = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.GrantReceivable)?.CURRENT_BALANCE ?? 0m;
+                var grantReceivableChange = beginningGrantReceivable - endingGrantReceivable;
+                if (grantReceivableChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Grant Receivables", Amount = grantReceivableChange });
+
+                var beginningGrantLiability = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.DeferredGrantLiability)?.CURRENT_BALANCE ?? 0m;
+                var endingGrantLiability = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.DeferredGrantLiability)?.CURRENT_BALANCE ?? 0m;
+                var grantLiabilityChange = endingGrantLiability - beginningGrantLiability;
+                if (grantLiabilityChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Deferred Grant Liabilities", Amount = grantLiabilityChange });
+
+                var beginningBenefitLiability = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.EmployeeBenefitLiability)?.CURRENT_BALANCE ?? 0m;
+                var endingBenefitLiability = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.EmployeeBenefitLiability)?.CURRENT_BALANCE ?? 0m;
+                var benefitLiabilityChange = endingBenefitLiability - beginningBenefitLiability;
+                if (benefitLiabilityChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Employee Benefit Liabilities", Amount = benefitLiabilityChange });
+
+                var beginningInterestPayable = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.InterestPayable)?.CURRENT_BALANCE ?? 0m;
+                var endingInterestPayable = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.InterestPayable)?.CURRENT_BALANCE ?? 0m;
+                var interestPayableChange = endingInterestPayable - beginningInterestPayable;
+                if (interestPayableChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Interest Payable", Amount = interestPayableChange });
+
+                var beginningFinancialInstrumentAsset = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.FinancialInstrumentAsset)?.CURRENT_BALANCE ?? 0m;
+                var endingFinancialInstrumentAsset = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.FinancialInstrumentAsset)?.CURRENT_BALANCE ?? 0m;
+                var financialInstrumentAssetChange = beginningFinancialInstrumentAsset - endingFinancialInstrumentAsset;
+                if (financialInstrumentAssetChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Financial Instrument Assets", Amount = financialInstrumentAssetChange });
+
+                var beginningFinancialInstrumentLiability = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.FinancialInstrumentLiability)?.CURRENT_BALANCE ?? 0m;
+                var endingFinancialInstrumentLiability = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.FinancialInstrumentLiability)?.CURRENT_BALANCE ?? 0m;
+                var financialInstrumentLiabilityChange = endingFinancialInstrumentLiability - beginningFinancialInstrumentLiability;
+                if (financialInstrumentLiabilityChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Financial Instrument Liabilities", Amount = financialInstrumentLiabilityChange });
+
+                var beginningRetirementPlanAsset = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.RetirementPlanAsset)?.CURRENT_BALANCE ?? 0m;
+                var endingRetirementPlanAsset = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.RetirementPlanAsset)?.CURRENT_BALANCE ?? 0m;
+                var retirementPlanAssetChange = beginningRetirementPlanAsset - endingRetirementPlanAsset;
+                if (retirementPlanAssetChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Retirement Plan Assets", Amount = retirementPlanAssetChange });
+
+                var beginningInsuranceLiability = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.InsuranceContractLiability)?.CURRENT_BALANCE ?? 0m;
+                var endingInsuranceLiability = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.InsuranceContractLiability)?.CURRENT_BALANCE ?? 0m;
+                var insuranceLiabilityChange = endingInsuranceLiability - beginningInsuranceLiability;
+                if (insuranceLiabilityChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Insurance Contract Liabilities", Amount = insuranceLiabilityChange });
+
+                var beginningReinsuranceAsset = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.ReinsuranceAsset)?.CURRENT_BALANCE ?? 0m;
+                var endingReinsuranceAsset = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.ReinsuranceAsset)?.CURRENT_BALANCE ?? 0m;
+                var reinsuranceAssetChange = beginningReinsuranceAsset - endingReinsuranceAsset;
+                if (reinsuranceAssetChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Reinsurance Assets", Amount = reinsuranceAssetChange });
+
+                var beginningHeldForSaleAsset = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.HeldForSaleAsset)?.CURRENT_BALANCE ?? 0m;
+                var endingHeldForSaleAsset = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.HeldForSaleAsset)?.CURRENT_BALANCE ?? 0m;
+                var heldForSaleAssetChange = beginningHeldForSaleAsset - endingHeldForSaleAsset;
+                if (heldForSaleAssetChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Held-for-Sale Assets", Amount = heldForSaleAssetChange });
+
+                var beginningIntercompanyReceivable = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.IntercompanyReceivable)?.CURRENT_BALANCE ?? 0m;
+                var endingIntercompanyReceivable = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.IntercompanyReceivable)?.CURRENT_BALANCE ?? 0m;
+                var intercompanyReceivableChange = beginningIntercompanyReceivable - endingIntercompanyReceivable;
+                if (intercompanyReceivableChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Intercompany Receivables", Amount = intercompanyReceivableChange });
+
+                var beginningIntercompanyPayable = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.IntercompanyPayable)?.CURRENT_BALANCE ?? 0m;
+                var endingIntercompanyPayable = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.IntercompanyPayable)?.CURRENT_BALANCE ?? 0m;
+                var intercompanyPayableChange = endingIntercompanyPayable - beginningIntercompanyPayable;
+                if (intercompanyPayableChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Intercompany Payables", Amount = intercompanyPayableChange });
+
+                var beginningRegulatoryAsset = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.RegulatoryDeferralAsset)?.CURRENT_BALANCE ?? 0m;
+                var endingRegulatoryAsset = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.RegulatoryDeferralAsset)?.CURRENT_BALANCE ?? 0m;
+                var regulatoryAssetChange = beginningRegulatoryAsset - endingRegulatoryAsset;
+                if (regulatoryAssetChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Regulatory Deferral Assets", Amount = regulatoryAssetChange });
+
+                var beginningRegulatoryLiability = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.RegulatoryDeferralLiability)?.CURRENT_BALANCE ?? 0m;
+                var endingRegulatoryLiability = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.RegulatoryDeferralLiability)?.CURRENT_BALANCE ?? 0m;
+                var regulatoryLiabilityChange = endingRegulatoryLiability - beginningRegulatoryLiability;
+                if (regulatoryLiabilityChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in Regulatory Deferral Liabilities", Amount = regulatoryLiabilityChange });
+
+                var beginningGaapContractAsset = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.GaapContractAsset)?.CURRENT_BALANCE ?? 0m;
+                var endingGaapContractAsset = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.GaapContractAsset)?.CURRENT_BALANCE ?? 0m;
+                var gaapContractAssetChange = beginningGaapContractAsset - endingGaapContractAsset;
+                if (gaapContractAssetChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in ASC 606 Contract Assets", Amount = gaapContractAssetChange });
+
+                var beginningGaapContractLiability = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.GaapContractLiability)?.CURRENT_BALANCE ?? 0m;
+                var endingGaapContractLiability = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.GaapContractLiability)?.CURRENT_BALANCE ?? 0m;
+                var gaapContractLiabilityChange = endingGaapContractLiability - beginningGaapContractLiability;
+                if (gaapContractLiabilityChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in ASC 606 Contract Liabilities", Amount = gaapContractLiabilityChange });
+
+                var beginningCeclAllowance = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.CeclAllowance)?.CURRENT_BALANCE ?? 0m;
+                var endingCeclAllowance = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.CeclAllowance)?.CURRENT_BALANCE ?? 0m;
+                var ceclAllowanceChange = endingCeclAllowance - beginningCeclAllowance;
+                if (ceclAllowanceChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in CECL Allowance", Amount = ceclAllowanceChange });
+
+                var beginningGaapLeaseLiability = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.GaapLeaseLiability)?.CURRENT_BALANCE ?? 0m;
+                var endingGaapLeaseLiability = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.GaapLeaseLiability)?.CURRENT_BALANCE ?? 0m;
+                var gaapLeaseLiabilityChange = endingGaapLeaseLiability - beginningGaapLeaseLiability;
+                if (gaapLeaseLiabilityChange != 0)
+                    cashFlow.OperatingActivities.Add(new CashFlowLine { Description = "Change in ASC 842 Lease Liabilities", Amount = gaapLeaseLiabilityChange });
 
                 decimal netOperatingCash = cashFlow.OperatingActivities.Sum(x => x.Amount);
                 cashFlow.NetCashFromOperating = netOperatingCash;
 
                 // INVESTING ACTIVITIES
                 // Fixed asset purchases, equipment sales
-                var fixedAssetAccounts = endingBalance.Where(x => x.ACCOUNT_TYPE == "ASSET" && x.ACCOUNT_NUMBER.StartsWith("12")).ToList();
+                var excludedFixedAssets = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    DefaultGlAccounts.AccumulatedDepreciation,
+                    DefaultGlAccounts.RightOfUseAsset,
+                    DefaultGlAccounts.AssetRetirementCost,
+                    DefaultGlAccounts.ImpairmentAllowance,
+                    DefaultGlAccounts.AccumulatedAmortization
+                };
+                var fixedAssetAccounts = endingBalance
+                    .Where(x => x.ACCOUNT_TYPE == "ASSET" && x.ACCOUNT_NUMBER.StartsWith("12") && !excludedFixedAssets.Contains(x.ACCOUNT_NUMBER))
+                    .ToList();
                 foreach (var account in fixedAssetAccounts)
                 {
                     var beginningBalance_account = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == account.ACCOUNT_NUMBER)?.CURRENT_BALANCE ?? 0m;
@@ -417,17 +706,17 @@ namespace Beep.OilandGas.Accounting.Services
 
                 // FINANCING ACTIVITIES
                 // Debt changes, equity changes, dividends
-                var debtAccount = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == "2100");  // Long-term debt
-                if (debtAccount != null)
+                var leaseLiabilityAccount = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.LeaseLiability);
+                if (leaseLiabilityAccount != null)
                 {
-                    var beginningDebt = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == "2100")?.CURRENT_BALANCE ?? 0m;
-                    decimal debtChange = (debtAccount.CURRENT_BALANCE ?? 0m) - beginningDebt;
-                    if (Math.Abs(debtChange) > 0.01m)
+                    var beginningLeaseLiability = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.LeaseLiability)?.CURRENT_BALANCE ?? 0m;
+                    var leaseLiabilityChange = (leaseLiabilityAccount.CURRENT_BALANCE ?? 0m) - beginningLeaseLiability;
+                    if (Math.Abs(leaseLiabilityChange) > 0.01m)
                     {
                         cashFlow.FinancingActivities.Add(new CashFlowLine
                         {
-                            Description = "Debt Issuance/(Repayment)",
-                            Amount = debtChange
+                            Description = "Lease Liability Change",
+                            Amount = leaseLiabilityChange
                         });
                     }
                 }
@@ -438,8 +727,8 @@ namespace Beep.OilandGas.Accounting.Services
                 // NET CHANGE IN CASH
                 cashFlow.NetChangeInCash = netOperatingCash + netInvestingCash + netFinancingCash;
 
-                var beginningCash = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == "1000")?.CURRENT_BALANCE ?? 0m;
-                var endingCash = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == "1000")?.CURRENT_BALANCE ?? 0m;
+                var beginningCash = beginningBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.Cash)?.CURRENT_BALANCE ?? 0m;
+                var endingCash = endingBalance.FirstOrDefault(x => x.ACCOUNT_NUMBER == DefaultGlAccounts.Cash)?.CURRENT_BALANCE ?? 0m;
 
                 cashFlow.BeginningCash = beginningCash;
                 cashFlow.EndingCash = endingCash;
@@ -592,127 +881,4 @@ namespace Beep.OilandGas.Accounting.Services
         }
     }
 
-    /// <summary>
-    /// Income Statement (P&L) Data Model
-    /// </summary>
-    public class IncomeStatement
-    {
-        public DateTime PeriodStart { get; set; }
-        public DateTime PeriodEnd { get; set; }
-        public string PeriodName { get; set; }
-        public DateTime GeneratedDate { get; set; }
-
-        public List<IncomeStatementLine> Revenues { get; set; }
-        public decimal TotalRevenues { get; set; }
-
-        public List<IncomeStatementLine> CostOfGoods { get; set; }
-        public decimal TotalCostOfGoods { get; set; }
-        public decimal GrossProfit { get; set; }
-
-        public List<IncomeStatementLine> OperatingExpenses { get; set; }
-        public decimal TotalOperatingExpenses { get; set; }
-        public decimal OperatingIncome { get; set; }
-
-        public List<IncomeStatementLine> OtherIncomeExpense { get; set; }
-        public decimal TotalOtherIncomeExpense { get; set; }
-
-        public decimal NetIncome { get; set; }
-    }
-
-    /// <summary>
-    /// Income Statement Line Item
-    /// </summary>
-    public class IncomeStatementLine
-    {
-        public string AccountNumber { get; set; }
-        public string AccountName { get; set; }
-        public decimal Amount { get; set; }
-    }
-
-    /// <summary>
-    /// Balance Sheet Data Model
-    /// </summary>
-    public class BalanceSheet
-    {
-        public DateTime AsOfDate { get; set; }
-        public string ReportName { get; set; }
-        public DateTime GeneratedDate { get; set; }
-
-        // ASSETS
-        public List<BalanceSheetLine> CurrentAssets { get; set; }
-        public decimal TotalCurrentAssets { get; set; }
-
-        public List<BalanceSheetLine> FixedAssets { get; set; }
-        public decimal TotalFixedAssets { get; set; }
-
-        public List<BalanceSheetLine> OtherAssets { get; set; }
-        public decimal TotalOtherAssets { get; set; }
-
-        public decimal TotalAssets { get; set; }
-
-        // LIABILITIES
-        public List<BalanceSheetLine> CurrentLiabilities { get; set; }
-        public decimal TotalCurrentLiabilities { get; set; }
-
-        public List<BalanceSheetLine> LongTermLiabilities { get; set; }
-        public decimal TotalLongTermLiabilities { get; set; }
-
-        public decimal TotalLiabilities { get; set; }
-
-        // EQUITY
-        public List<BalanceSheetLine> EquityAccounts { get; set; }
-        public decimal TotalEquity { get; set; }
-
-        public decimal TotalLiabilitiesAndEquity { get; set; }
-        public decimal BalanceDifference { get; set; }
-        public bool IsBalanced { get; set; }
-    }
-
-    /// <summary>
-    /// Balance Sheet Line Item
-    /// </summary>
-    public class BalanceSheetLine
-    {
-        public string AccountNumber { get; set; }
-        public string AccountName { get; set; }
-        public decimal Amount { get; set; }
-    }
-
-    /// <summary>
-    /// Cash Flow Statement Data Model
-    /// </summary>
-    public class CashFlowStatement
-    {
-        public DateTime PeriodStart { get; set; }
-        public DateTime PeriodEnd { get; set; }
-        public string PeriodName { get; set; }
-        public DateTime GeneratedDate { get; set; }
-
-        // OPERATING ACTIVITIES
-        public List<CashFlowLine> OperatingActivities { get; set; }
-        public decimal NetCashFromOperating { get; set; }
-
-        // INVESTING ACTIVITIES
-        public List<CashFlowLine> InvestingActivities { get; set; }
-        public decimal NetCashFromInvesting { get; set; }
-
-        // FINANCING ACTIVITIES
-        public List<CashFlowLine> FinancingActivities { get; set; }
-        public decimal NetCashFromFinancing { get; set; }
-
-        // SUMMARY
-        public decimal NetChangeInCash { get; set; }
-        public decimal BeginningCash { get; set; }
-        public decimal EndingCash { get; set; }
-        public decimal CashReconciliation { get; set; }
-    }
-
-    /// <summary>
-    /// Cash Flow Statement Line Item
-    /// </summary>
-    public class CashFlowLine
-    {
-        public string Description { get; set; }
-        public decimal Amount { get; set; }
-    }
 }

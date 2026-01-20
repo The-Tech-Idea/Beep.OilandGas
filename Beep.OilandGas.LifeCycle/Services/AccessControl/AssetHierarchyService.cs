@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -121,7 +121,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             return true;
         }
 
-        public async Task<List<HierarchyConfigDTO>> GetHierarchyConfigAsync(string organizationId)
+        public async Task<List<HierarchyConfig>> GetHierarchyConfigAsync(string organizationId)
         {
             var filters = new List<AppFilter>
             {
@@ -134,11 +134,11 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                 typeof(object), _connectionName, "ORGANIZATION_HIERARCHY_CONFIG");
 
             var results = await repo.GetAsync(filters);
-            var config = new List<HierarchyConfigDTO>();
+            var config = new List<HierarchyConfig>();
 
             foreach (var result in results ?? Enumerable.Empty<object>())
             {
-                config.Add(new HierarchyConfigDTO
+                config.Add(new HierarchyConfig
                 {
                     OrganizationId = GetPropertyValue(result, "ORGANIZATION_ID")?.ToString() ?? string.Empty,
                     HierarchyLevel = Convert.ToInt32(GetPropertyValue(result, "HIERARCHY_LEVEL") ?? 0),
@@ -152,7 +152,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             return config.OrderBy(c => c.HierarchyLevel).ToList();
         }
 
-        public async Task<bool> UpdateHierarchyConfigAsync(string organizationId, List<HierarchyConfigDTO> config)
+        public async Task<bool> UpdateHierarchyConfigAsync(string organizationId, List<HierarchyConfig> config)
         {
             try
             {
@@ -184,7 +184,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             return null;
         }
 
-        private async Task<AssetHierarchyNode?> BuildConfiguredHierarchyAsync(string organizationId, List<HierarchyConfigDTO> config, string? rootAssetId, string? rootAssetType)
+        private async Task<AssetHierarchyNode?> BuildConfiguredHierarchyAsync(string organizationId, List<HierarchyConfig> config, string? rootAssetId, string? rootAssetType)
         {
             // Build hierarchy based on configuration
             // This would traverse the config and build the tree

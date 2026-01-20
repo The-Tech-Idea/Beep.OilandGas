@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class EXCHANGE_DELIVERY_POINT : Entity, IPPDMEntity
-    {
+    public partial class EXCHANGE_DELIVERY_POINT : ModelEntityBase {
         private System.String EXCHANGE_DELIVERY_POINT_IDValue;
         public System.String EXCHANGE_DELIVERY_POINT_ID
         {

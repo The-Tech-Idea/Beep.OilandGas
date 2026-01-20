@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class FINANCIAL_INSTRUMENT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class FINANCIAL_INSTRUMENT : ModelEntityBase
     {
         private string INSTRUMENT_IDValue;
         public string INSTRUMENT_ID
@@ -99,3 +99,4 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+

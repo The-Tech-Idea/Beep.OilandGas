@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.DTOs.Accounting;
-using Beep.OilandGas.Models.DTOs.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.GeneralLedger;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
@@ -34,12 +34,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         /// Get all GL accounts.
         /// </summary>
         [HttpGet("accounts")]
-        public ActionResult<List<GLAccountDto>> GetAccounts([FromQuery] string? connectionName = null)
+        public ActionResult<List<GLAccount>> GetAccounts([FromQuery] string? connectionName = null)
         {
             try
             {
                 var accounts = _service.TraditionalAccounting.GeneralLedger.GetAllAccounts()
-                    .Select(a => new GLAccountDto
+                    .Select(a => new GLAccount
                     {
                         GlAccountId = a.GL_ACCOUNT_ID,
                         AccountNumber = a.ACCOUNT_NUMBER,
@@ -66,7 +66,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         /// Get GL account by ID.
         /// </summary>
         [HttpGet("accounts/{id}")]
-        public ActionResult<GLAccountDto> GetAccount(
+        public ActionResult<GLAccount> GetAccount(
             string id,
             [FromQuery] string? connectionName = null)
         {
@@ -76,7 +76,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
                 if (account == null)
                     return NotFound(new { error = $"GL account with ID {id} not found" });
 
-                var dto = new GLAccountDto
+                var dto = new GLAccount
                 {
                     GlAccountId = account.GL_ACCOUNT_ID,
                     AccountNumber = account.ACCOUNT_NUMBER,
@@ -103,7 +103,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         /// Create a new GL account.
         /// </summary>
         [HttpPost("accounts")]
-        public ActionResult<GLAccountDto> CreateAccount(
+        public ActionResult<GLAccount> CreateAccount(
             [FromBody] CreateGLAccountRequest request,
             [FromQuery] string? userId = null,
             [FromQuery] string? connectionName = null)
@@ -115,7 +115,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
 
                 var account = _service.TraditionalAccounting.GeneralLedger.CreateAccount(request, userId ?? "system");
 
-                var dto = new GLAccountDto
+                var dto = new GLAccount
                 {
                     GlAccountId = account.GL_ACCOUNT_ID,
                     AccountNumber = account.ACCOUNT_NUMBER,

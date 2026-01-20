@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class DEPLETION_ROLLFORWARD : Entity, IPPDMEntity
-    {
+    public partial class DEPLETION_ROLLFORWARD : ModelEntityBase {
         private System.String DEPLETION_ROLLFORWARD_IDValue;
         public System.String DEPLETION_ROLLFORWARD_ID
         {

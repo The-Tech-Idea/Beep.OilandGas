@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class APPROVAL_WORKFLOW : Entity, IPPDMEntity
-    {
+    public partial class APPROVAL_WORKFLOW : ModelEntityBase {
         private System.String APPROVAL_WORKFLOW_IDValue;
         public System.String APPROVAL_WORKFLOW_ID
         {

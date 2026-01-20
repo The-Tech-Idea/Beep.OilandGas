@@ -9,7 +9,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// </summary>
     public partial class PipelineAnalysisService
     {
-        public async Task<SlugFlowAnalysisDto> AnalyzeSlugFlowAsync(string pipelineId, SlugFlowRequestDto request)
+        public async Task<SlugFlowAnalysis> AnalyzeSlugFlowAsync(string pipelineId, SlugFlowRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -32,7 +32,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var slugVelocity = superficialGasVelocity + superficialLiquidVelocity;
                 var pressureVariation = isSlugFlowPresent ? slugFrequency * 5m : 0;
 
-                var result = new SlugFlowAnalysisDto
+                var result = new SlugFlowAnalysis
                 {
                     PipelineId = pipelineId,
                     IsSlugFlowPresent = isSlugFlowPresent,
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<SlugFrequencyResultDto> PredictSlugFrequencyAsync(string pipelineId, SlugFrequencyRequestDto request)
+        public async Task<SlugFrequencyResult> PredictSlugFrequencyAsync(string pipelineId, SlugFrequencyRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -74,7 +74,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var averageSlugVelocity = superficialGasVelocity + superficialLiquidVelocity;
                 var pressureVariation = slugFrequency > 0 ? (slugFrequency * averageSlugVelocity) * 0.1m : 0;
 
-                var result = new SlugFrequencyResultDto
+                var result = new SlugFrequencyResult
                 {
                     SlugFrequency = slugFrequency,
                     FrequencyUnit = "slugs/hour",
@@ -94,7 +94,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<SlugFormationAnalysisDto> AnalyzeSlugFormationAsync(string pipelineId, SlugFormationRequestDto request)
+        public async Task<SlugFormationAnalysis> AnalyzeSlugFormationAsync(string pipelineId, SlugFormationRequest request)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -108,7 +108,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var totalRate = request.OilRate + request.GasRate;
                 var gasVolumetricFraction = request.GasRate / Math.Max(totalRate, 1);
 
-                var mechanisms = new List<SlugMechanismDto>
+                var mechanisms = new List<SlugMechanism>
                 {
                     new() 
                     { 
@@ -134,7 +134,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     mechanisms[0].Probability >= mechanisms[2].Probability ? mechanisms[0].MechanismType : 
                     mechanisms[1].Probability >= mechanisms[2].Probability ? mechanisms[1].MechanismType : mechanisms[2].MechanismType;
 
-                var result = new SlugFormationAnalysisDto
+                var result = new SlugFormationAnalysis
                 {
                     PipelineId = pipelineId,
                     FormationMechanisms = mechanisms,
@@ -152,7 +152,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
             }
         }
 
-        public async Task<SlugMitigationDto> EvaluateSlugMitigationAsync(string pipelineId, List<string> mitigationStrategies)
+        public async Task<SlugMitigation> EvaluateSlugMitigationAsync(string pipelineId, List<string> mitigationStrategies)
         {
             if (string.IsNullOrWhiteSpace(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty", nameof(pipelineId));
@@ -163,12 +163,12 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
-                var strategies = new List<MitigationStrategyDto>();
+                var strategies = new List<MitigationStrategy>();
 
                 foreach (var strategy in mitigationStrategies)
                 {
                     var (effectiveness, cost, description) = EvaluateStrategy(strategy);
-                    strategies.Add(new MitigationStrategyDto
+                    strategies.Add(new MitigationStrategy
                     {
                         StrategyName = strategy,
                         Description = description,
@@ -189,7 +189,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                     }
                 }
 
-                var result = new SlugMitigationDto
+                var result = new SlugMitigation
                 {
                     PipelineId = pipelineId,
                     Strategies = strategies,

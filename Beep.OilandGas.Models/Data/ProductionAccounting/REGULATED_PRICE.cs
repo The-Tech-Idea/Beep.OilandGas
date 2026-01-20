@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class REGULATED_PRICE : Entity, IPPDMEntity
-    {
+    public partial class REGULATED_PRICE : ModelEntityBase {
         private System.String REGULATED_PRICE_IDValue;
         public System.String REGULATED_PRICE_ID
         {

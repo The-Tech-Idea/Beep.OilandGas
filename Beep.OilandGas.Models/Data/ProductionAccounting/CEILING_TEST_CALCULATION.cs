@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class CEILING_TEST_CALCULATION : Entity,IPPDMEntity
-    {
+    public partial class CEILING_TEST_CALCULATION : ModelEntityBase {
         private System.String CEILING_TEST_CALCULATION_IDValue;
         public System.String CEILING_TEST_CALCULATION_ID
         {

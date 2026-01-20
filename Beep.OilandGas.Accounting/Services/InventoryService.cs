@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -24,7 +25,8 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;
         private readonly IPPDMMetadataRepository _metadata;
-        private readonly JournalEntryService _journalEntryService;
+        private readonly AccountingBasisPostingService _basisPosting;
+        private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<InventoryService> _logger;
         private const string ConnectionName = "PPDM39";
 
@@ -33,15 +35,17 @@ namespace Beep.OilandGas.Accounting.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             IPPDMMetadataRepository metadata,
-            JournalEntryService journalEntryService,
-            ILogger<InventoryService> logger)
+            AccountingBasisPostingService basisPosting,
+            ILogger<InventoryService> logger,
+            IAccountMappingService? accountMapping = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _journalEntryService = journalEntryService ?? throw new ArgumentNullException(nameof(journalEntryService));
+            _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _accountMapping = accountMapping;
         }
 
         /// <summary>
@@ -76,7 +80,7 @@ namespace Beep.OilandGas.Accounting.Services
                     UNIT_COST = unitCost,
                     QUANTITY_ON_HAND = 0m,
                     DESCRIPTION = description,
-                    ACTIVE_IND = "Y",
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -119,6 +123,8 @@ namespace Beep.OilandGas.Accounting.Services
                 throw new ArgumentNullException(nameof(inventoryItemId));
             if (quantity <= 0)
                 throw new ArgumentException("Quantity must be greater than zero", nameof(quantity));
+            if (costPerUnit <= 0m)
+                throw new ArgumentException("Cost per unit must be greater than zero", nameof(costPerUnit));
 
             _logger?.LogInformation("Recording stock receipt: Item {ItemId}, Qty {Qty}",
                 inventoryItemId, quantity);
@@ -137,29 +143,27 @@ namespace Beep.OilandGas.Accounting.Services
                 {
                     new JOURNAL_ENTRY_LINE
                     {
-                        GL_ACCOUNT_ID = "1300", // Inventory account
+                        GL_ACCOUNT_ID = GetAccountId(AccountMappingKeys.Inventory, DefaultGlAccounts.Inventory),
                         DEBIT_AMOUNT = transactionAmount,
                         CREDIT_AMOUNT = 0m,
                         DESCRIPTION = $"Stock receipt: {item.ITEM_NAME} x {quantity}"
                     },
                     new JOURNAL_ENTRY_LINE
                     {
-                        GL_ACCOUNT_ID = "2000", // AP account
+                        GL_ACCOUNT_ID = GetAccountId(AccountMappingKeys.AccountsPayable, DefaultGlAccounts.AccountsPayable),
                         DEBIT_AMOUNT = 0m,
                         CREDIT_AMOUNT = transactionAmount,
                         DESCRIPTION = $"Purchase liability for {item.ITEM_NAME}"
                     }
                 };
 
-                var glEntry = await _journalEntryService.CreateEntryAsync(
+                await _basisPosting.PostEntryAsync(
                     transactionDate,
                     $"Stock receipt: {item.ITEM_NAME}",
                     lineItems,
                     userId,
                     referenceNumber ?? $"RCPT-{inventoryItemId}",
                     "INVENTORY");
-
-                await _journalEntryService.PostEntryAsync(glEntry.JOURNAL_ENTRY_ID, userId);
 
                 // Create inventory transaction record
                 var transaction = new INVENTORY_TRANSACTION
@@ -173,7 +177,7 @@ namespace Beep.OilandGas.Accounting.Services
                     TOTAL_COST = transactionAmount,
                     REFERENCE_NUMBER = referenceNumber,
                     NOTES = notes,
-                    ACTIVE_IND = "Y",
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -189,8 +193,14 @@ namespace Beep.OilandGas.Accounting.Services
 
                 await txnRepo.InsertAsync(transaction, userId);
 
-                // Update on-hand quantity
-                item.QUANTITY_ON_HAND = (item.QUANTITY_ON_HAND ?? 0m) + quantity;
+                // Update on-hand quantity and weighted average unit cost
+                var priorQty = item.QUANTITY_ON_HAND ?? 0m;
+                var newQty = priorQty + quantity;
+                var priorCost = item.UNIT_COST ?? 0m;
+                item.UNIT_COST = newQty == 0m
+                    ? 0m
+                    : ((priorQty * priorCost) + (quantity * costPerUnit)) / newQty;
+                item.QUANTITY_ON_HAND = newQty;
                 item.ROW_CHANGED_BY = userId;
                 item.ROW_CHANGED_DATE = DateTime.UtcNow;
 
@@ -256,29 +266,27 @@ namespace Beep.OilandGas.Accounting.Services
                 {
                     new JOURNAL_ENTRY_LINE
                     {
-                        GL_ACCOUNT_ID = "5000", // COGS account
+                        GL_ACCOUNT_ID = GetAccountId(AccountMappingKeys.CostOfGoodsSold, DefaultGlAccounts.CostOfGoodsSold),
                         DEBIT_AMOUNT = costOfGoods,
                         CREDIT_AMOUNT = 0m,
                         DESCRIPTION = $"COGS: {item.ITEM_NAME} x {quantity}"
                     },
                     new JOURNAL_ENTRY_LINE
                     {
-                        GL_ACCOUNT_ID = "1300", // Inventory account
+                        GL_ACCOUNT_ID = GetAccountId(AccountMappingKeys.Inventory, DefaultGlAccounts.Inventory),
                         DEBIT_AMOUNT = 0m,
                         CREDIT_AMOUNT = costOfGoods,
                         DESCRIPTION = $"Inventory reduction: {item.ITEM_NAME}"
                     }
                 };
 
-                var glEntry = await _journalEntryService.CreateEntryAsync(
+                await _basisPosting.PostEntryAsync(
                     transactionDate,
                     $"Stock usage: {item.ITEM_NAME}",
                     lineItems,
                     userId,
                     referenceNumber ?? $"USE-{inventoryItemId}",
                     "INVENTORY");
-
-                await _journalEntryService.PostEntryAsync(glEntry.JOURNAL_ENTRY_ID, userId);
 
                 // Create inventory transaction record
                 var transaction = new INVENTORY_TRANSACTION
@@ -292,7 +300,7 @@ namespace Beep.OilandGas.Accounting.Services
                     TOTAL_COST = -costOfGoods, // Negative for deduction
                     REFERENCE_NUMBER = referenceNumber,
                     NOTES = notes,
-                    ACTIVE_IND = "Y",
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -437,5 +445,12 @@ namespace Beep.OilandGas.Accounting.Services
             decimal avgCost = item.UNIT_COST ?? 0m;
             return quantityUsed * avgCost;
         }
+
+        private string GetAccountId(string key, string fallback)
+        {
+            return _accountMapping?.GetAccountId(key) ?? fallback;
+        }
     }
 }
+
+

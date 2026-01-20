@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class TAX_WITHHOLDING : Entity, IPPDMEntity
-    {
+    public partial class TAX_WITHHOLDING : ModelEntityBase {
         private System.String TAX_WITHHOLDING_IDValue;
         public System.String TAX_WITHHOLDING_ID
         {

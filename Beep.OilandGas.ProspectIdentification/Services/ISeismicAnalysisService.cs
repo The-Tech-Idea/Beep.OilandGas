@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.ProspectIdentification.Services
 {
@@ -16,22 +16,22 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Gets seismic surveys for a prospect or field
         /// </summary>
-        Task<List<SeismicSurveyDto>> GetSeismicSurveysAsync(string? prospectId = null, string? fieldId = null, DateTime? startDate = null, DateTime? endDate = null);
+        Task<List<SeismicSurvey>> GetSeismicSurveysAsync(string? prospectId = null, string? fieldId = null, DateTime? startDate = null, DateTime? endDate = null);
 
         /// <summary>
         /// Gets a specific seismic survey by ID
         /// </summary>
-        Task<SeismicSurveyDto?> GetSeismicSurveyAsync(string surveyId);
+        Task<SeismicSurvey?> GetSeismicSurveyAsync(string surveyId);
 
         /// <summary>
         /// Creates a new seismic survey
         /// </summary>
-        Task<SeismicSurveyDto> CreateSeismicSurveyAsync(CreateSeismicSurveyDto createDto, string userId);
+        Task<SeismicSurvey> CreateSeismicSurveyAsync(CreateSeismicSurvey createDto, string userId);
 
         /// <summary>
         /// Updates an existing seismic survey
         /// </summary>
-        Task<SeismicSurveyDto> UpdateSeismicSurveyAsync(string surveyId, UpdateSeismicSurveyDto updateDto, string userId);
+        Task<SeismicSurvey> UpdateSeismicSurveyAsync(string surveyId, UpdateSeismicSurvey updateDto, string userId);
 
         /// <summary>
         /// Deletes a seismic survey
@@ -45,22 +45,22 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Performs comprehensive seismic interpretation
         /// </summary>
-        Task<SeismicInterpretationResultDto> PerformSeismicInterpretationAsync(string surveyId, SeismicInterpretationRequestDto request);
+        Task<SeismicInterpretationResult> PerformSeismicInterpretationAsync(string surveyId, SeismicInterpretationRequest request);
 
         /// <summary>
         /// Identifies structural features from seismic data
         /// </summary>
-        Task<List<StructuralFeatureDto>> IdentifyStructuralFeaturesAsync(string surveyId, SeismicInterpretationRequestDto request);
+        Task<List<StructuralFeature>> IdentifyStructuralFeaturesAsync(string surveyId, SeismicInterpretationRequest request);
 
         /// <summary>
         /// Performs stratigraphic interpretation
         /// </summary>
-        Task<StratigraphicInterpretationDto> PerformStratigraphicInterpretationAsync(string surveyId, SeismicInterpretationRequestDto request);
+        Task<StratigraphicInterpretation> PerformStratigraphicInterpretationAsync(string surveyId, SeismicInterpretationRequest request);
 
         /// <summary>
         /// Identifies seismic anomalies and potential hydrocarbon indicators
         /// </summary>
-        Task<List<SeismicAnomalyDto>> IdentifySeismicAnomaliesAsync(string surveyId, SeismicInterpretationRequestDto request);
+        Task<List<SeismicAnomaly>> IdentifySeismicAnomaliesAsync(string surveyId, SeismicInterpretationRequest request);
 
         #endregion
 
@@ -69,22 +69,22 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Calculates seismic attributes (amplitude, frequency, phase, etc.)
         /// </summary>
-        Task<SeismicAttributesResultDto> CalculateSeismicAttributesAsync(string surveyId, SeismicAttributesRequestDto request);
+        Task<SeismicAttributesResult> CalculateSeismicAttributesAsync(string surveyId, SeismicAttributesRequest request);
 
         /// <summary>
         /// Performs spectral decomposition analysis
         /// </summary>
-        Task<SpectralDecompositionResultDto> PerformSpectralDecompositionAsync(string surveyId, SpectralDecompositionRequestDto request);
+        Task<SpectralDecompositionResult> PerformSpectralDecompositionAsync(string surveyId, SpectralDecompositionRequest request);
 
         /// <summary>
         /// Generates seismic inversion results
         /// </summary>
-        Task<SeismicInversionResultDto> PerformSeismicInversionAsync(string surveyId, SeismicInversionRequestDto request);
+        Task<SeismicInversionResult> PerformSeismicInversionAsync(string surveyId, SeismicInversionRequest request);
 
         /// <summary>
         /// Performs coherence analysis
         /// </summary>
-        Task<CoherenceAnalysisResultDto> PerformCoherenceAnalysisAsync(string surveyId, CoherenceAnalysisRequestDto request);
+        Task<CoherenceAnalysisResult> PerformCoherenceAnalysisAsync(string surveyId, CoherenceAnalysisRequest request);
 
         #endregion
 
@@ -93,17 +93,17 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Performs Amplitude Versus Offset (AVO) analysis
         /// </summary>
-        Task<AVOAnalysisResultDto> PerformAVOAnalysisAsync(string surveyId, AVOAnalysisRequestDto request);
+        Task<AVOAnalysisResult> PerformAVOAnalysisAsync(string surveyId, AVOAnalysisRequest request);
 
         /// <summary>
         /// Generates AVO crossplots and classification
         /// </summary>
-        Task<AVOCrossplotResultDto> GenerateAVOCrossplotAsync(string surveyId, AVOCrossplotRequestDto request);
+        Task<AVOCrossplotResult> GenerateAVOCrossplotAsync(string surveyId, AVOCrossplotRequest request);
 
         /// <summary>
         /// Performs fluid substitution modeling
         /// </summary>
-        Task<FluidSubstitutionResultDto> PerformFluidSubstitutionAsync(string surveyId, FluidSubstitutionRequestDto request);
+        Task<FluidSubstitutionResult> PerformFluidSubstitutionAsync(string surveyId, FluidSubstitutionRequest request);
 
         #endregion
 
@@ -112,17 +112,17 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Identifies drilling targets from seismic analysis
         /// </summary>
-        Task<List<DrillingTargetDto>> IdentifyDrillingTargetsAsync(string surveyId, TargetIdentificationRequestDto request);
+        Task<List<DrillingTarget>> IdentifyDrillingTargetsAsync(string surveyId, TargetIdentificationRequest request);
 
         /// <summary>
         /// Performs volumetric analysis for prospects
         /// </summary>
-        Task<VolumetricAnalysisResultDto> PerformVolumetricAnalysisAsync(string prospectId, VolumetricAnalysisRequestDto request);
+        Task<VolumetricAnalysisResult> PerformVolumetricAnalysisAsync(string prospectId, VolumetricAnalysisRequest request);
 
         /// <summary>
         /// Generates prospect risk assessment
         /// </summary>
-        Task<ProspectRiskAssessmentDto> AssessProspectRiskAsync(string prospectId, RiskAssessmentRequestDto request);
+        Task<ProspectRiskAssessment> AssessProspectRiskAsync(string prospectId, ProspectRiskAssessmentRequest request);
 
         #endregion
 
@@ -131,12 +131,12 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Validates seismic data quality
         /// </summary>
-        Task<SeismicDataQualityDto> ValidateSeismicDataQualityAsync(string surveyId);
+        Task<SeismicDataQuality> ValidateSeismicDataQualityAsync(string surveyId);
 
         /// <summary>
         /// Performs seismic-well tie analysis
         /// </summary>
-        Task<SeismicWellTieResultDto> PerformSeismicWellTieAsync(string surveyId, string wellUWI, SeismicWellTieRequestDto request);
+        Task<SeismicWellTieResult> PerformSeismicWellTieAsync(string surveyId, string wellUWI, SeismicWellTieRequest request);
 
         #endregion
 
@@ -145,7 +145,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         /// <summary>
         /// Generates seismic interpretation report
         /// </summary>
-        Task<SeismicReportDto> GenerateSeismicReportAsync(string surveyId, SeismicReportRequestDto request);
+        Task<SeismicReport> GenerateSeismicReportAsync(string surveyId, SeismicReportRequest request);
 
         /// <summary>
         /// Exports seismic data and results

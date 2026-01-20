@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class EMISSIONS_OBLIGATION : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class EMISSIONS_OBLIGATION : ModelEntityBase
     {
         private string EMISSIONS_OBLIGATION_IDValue;
         public string EMISSIONS_OBLIGATION_ID
@@ -106,3 +106,4 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+

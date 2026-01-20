@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.DTOs.DataManagement;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.DataManagement;
 using TheTechIdea.Beep.ConfigUtil;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
@@ -19,10 +19,10 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<SchemaPrivilegeCheckResult> CheckSchemaPrivilegesAsync(ConnectionConfig config, string? schemaName = null);
         Task<CreateSchemaResult> CreateSchemaAsync(ConnectionConfig config, string schemaName);
         Task<ConnectionTestResult> TestConnectionAsync(ConnectionConfig config);
-        Task<List<ScriptInfoDto>> GetAvailableScriptsAsync(string databaseType);
-        List<ScriptInfoDto> GetAvailableScripts(string databaseType);
-        Task<ScriptExecutionResultDto> ExecuteScriptAsync(ConnectionConfig config, string scriptName, string? operationId = null);
-        Task<Beep.OilandGas.Models.DTOs.AllScriptsExecutionResult> ExecuteAllScriptsAsync(ConnectionConfig config, List<string> scriptNames, string? operationId = null);
+        Task<List<ScriptInfo>> GetAvailableScriptsAsync(string databaseType);
+        List<ScriptInfo> GetAvailableScripts(string databaseType);
+        Task<ScriptExecutionResult> ExecuteScriptAsync(ConnectionConfig config, string scriptName, string? operationId = null);
+        Task<Beep.OilandGas.Models.Data.AllScriptsExecutionResult> ExecuteAllScriptsAsync(ConnectionConfig config, List<string> scriptNames, string? operationId = null);
         List<DatabaseConnectionListItem> GetAllConnections();
         string? GetCurrentConnectionName();
         SetCurrentDatabaseResult SetCurrentConnection(string connectionName);

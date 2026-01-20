@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs.DataManagement;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Data

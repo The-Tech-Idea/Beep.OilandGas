@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.EconomicAnalysis.Calculations;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.EconomicAnalysis;
+using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Performs sensitivity analysis on key variables affecting NPV.
         /// </summary>
-        public async Task<SensitivityAnalysisDto> PerformSensitivityAnalysisAsync(CashFlow[] cashFlows, double discountRate)
+        public async Task<SensitivityAnalysis> PerformSensitivityAnalysisAsync(CashFlow[] cashFlows, double discountRate)
         {
             if (cashFlows == null || cashFlows.Length == 0)
                 throw new ArgumentException("Cash flows cannot be null or empty", nameof(cashFlows));
@@ -170,13 +170,13 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
             _logger?.LogInformation("Performing sensitivity analysis for {Count} cash flows", cashFlows.Length);
 
             var baseNPV = CalculateNPV(cashFlows, discountRate);
-            var result = new SensitivityAnalysisDto
+            var result = new SensitivityAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("SENSITIVITY", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,
                 BaseNPV = baseNPV,
                 BaseIRR = CalculateIRR(cashFlows),
-                Parameters = new List<SensitivityParameterDto>()
+                Parameters = new List<SensitivityParameter>()
             };
 
             // Sensitivity to discount rate
@@ -185,7 +185,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
             var negativeNPV = CalculateNPV(cashFlows, negativeDiscountRate);
             var positiveNPV = CalculateNPV(cashFlows, positiveDiscountRate);
 
-            result.Parameters.Add(new SensitivityParameterDto
+            result.Parameters.Add(new SensitivityParameter
             {
                 ParameterName = "Discount Rate",
                 BaseValue = discountRate,
@@ -207,7 +207,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 var reducedNPV = CalculateNPV(reducedCashFlows, discountRate);
                 var increasedNPV = CalculateNPV(increasedCashFlows, discountRate);
 
-                result.Parameters.Add(new SensitivityParameterDto
+                result.Parameters.Add(new SensitivityParameter
                 {
                     ParameterName = "Initial Investment",
                     BaseValue = Math.Abs(cashFlows[0].Amount),
@@ -226,7 +226,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Performs scenario analysis with best case, base case, and worst case scenarios.
         /// </summary>
-        public async Task<ScenarioAnalysisDto> PerformScenarioAnalysisAsync(CashFlow[] baseCase, CashFlow[] bestCase, CashFlow[] worstCase, double discountRate)
+        public async Task<ScenarioAnalysis> PerformScenarioAnalysisAsync(CashFlow[] baseCase, CashFlow[] bestCase, CashFlow[] worstCase, double discountRate)
         {
             if (baseCase == null || baseCase.Length == 0)
                 throw new ArgumentException("Base case cash flows cannot be null or empty", nameof(baseCase));
@@ -243,7 +243,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
             var stdDev = Math.Sqrt(variance);
             var cv = expectedNPV != 0 ? stdDev / expectedNPV : 0;
 
-            var result = new ScenarioAnalysisDto
+            var result = new ScenarioAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("SCENARIO", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,
@@ -253,9 +253,9 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 ExpectedValueNPV = expectedNPV,
                 StandardDeviation = stdDev,
                 CoefficientOfVariation = cv,
-                Scenarios = new List<ScenarioResultDto>
+                Scenarios = new List<ScenarioResult>
                 {
-                    new ScenarioResultDto
+                    new ScenarioResult
                     {
                         ScenarioName = "Worst Case",
                         Probability = 0.25,
@@ -263,7 +263,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                         IRR = CalculateIRR(worstCase ?? baseCase),
                         PaybackPeriod = CalculatePaybackPeriod(worstCase ?? baseCase)
                     },
-                    new ScenarioResultDto
+                    new ScenarioResult
                     {
                         ScenarioName = "Base Case",
                         Probability = 0.5,
@@ -271,7 +271,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                         IRR = CalculateIRR(baseCase),
                         PaybackPeriod = CalculatePaybackPeriod(baseCase)
                     },
-                    new ScenarioResultDto
+                    new ScenarioResult
                     {
                         ScenarioName = "Best Case",
                         Probability = 0.25,
@@ -290,7 +290,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Calculates comprehensive financial metrics including ROI, Profitability Index, and Modified IRR.
         /// </summary>
-        public async Task<FinancialMetricsDto> CalculateFinancialMetricsAsync(CashFlow[] cashFlows, double discountRate, double financeRate = 0.1, double reinvestRate = 0.1)
+        public async Task<FinancialMetrics> CalculateFinancialMetricsAsync(CashFlow[] cashFlows, double discountRate, double financeRate = 0.1, double reinvestRate = 0.1)
         {
             if (cashFlows == null || cashFlows.Length == 0)
                 throw new ArgumentException("Cash flows cannot be null or empty", nameof(cashFlows));
@@ -305,7 +305,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
             var modifiedIrr = CalculateModifiedIRR(cashFlows, financeRate, reinvestRate);
             var equivalentAnnualCost = CalculateEquivalentAnnualCost(cashFlows, discountRate);
 
-            var result = new FinancialMetricsDto
+            var result = new FinancialMetrics
             {
                 MetricsId = _defaults.FormatIdForTable("METRICS", Guid.NewGuid().ToString()),
                 CalculationDate = DateTime.UtcNow,
@@ -327,7 +327,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Performs breakeven analysis for price, volume, or cost variables.
         /// </summary>
-        public async Task<BreakevenAnalysisDto> PerformBreakevenAnalysisAsync(CashFlow[] baseCashFlows, double discountRate, string variableType = "Price")
+        public async Task<BreakevenAnalysis> PerformBreakevenAnalysisAsync(CashFlow[] baseCashFlows, double discountRate, string variableType = "Price")
         {
             if (baseCashFlows == null || baseCashFlows.Length == 0)
                 throw new ArgumentException("Cash flows cannot be null or empty", nameof(baseCashFlows));
@@ -335,11 +335,11 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
             _logger?.LogInformation("Performing breakeven analysis for variable: {VariableType}", variableType);
 
             var baseNPV = CalculateNPV(baseCashFlows, discountRate);
-            var result = new BreakevenAnalysisDto
+            var result = new BreakevenAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("BREAKEVEN", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,
-                BreakevenPoints = new List<BreakevenPointDto>()
+                BreakevenPoints = new List<BreakevenPoint>()
             };
 
             // Calculate breakeven through binary search or iteration
@@ -358,7 +358,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
                 var npvAtVariation = CalculateNPV(adjustedCashFlows, discountRate);
                 var isBreakeven = Math.Abs(npvAtVariation) < 100; // Within $100 of breakeven
 
-                result.BreakevenPoints.Add(new BreakevenPointDto
+                result.BreakevenPoints.Add(new BreakevenPoint
                 {
                     Variable = adjustmentFactor,
                     NPVAtVariable = npvAtVariation,
@@ -382,7 +382,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Performs risk metrics analysis including Value at Risk and Conditional Value at Risk.
         /// </summary>
-        public async Task<RiskMetricsDto> AnalyzeRiskMetricsAsync(CashFlow[] cashFlows, double discountRate, int simulationCount = 1000)
+        public async Task<RiskMetrics> AnalyzeRiskMetricsAsync(CashFlow[] cashFlows, double discountRate, int simulationCount = 1000)
         {
             if (cashFlows == null || cashFlows.Length == 0)
                 throw new ArgumentException("Cash flows cannot be null or empty", nameof(cashFlows));
@@ -411,7 +411,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
             var cvar95 = sortedNPVs.Take((int)(simulationCount * 0.05)).Average();
             var probLoss = npvDistribution.Count(x => x < 0) / (double)simulationCount;
 
-            var result = new RiskMetricsDto
+            var result = new RiskMetrics
             {
                 RiskAnalysisId = _defaults.FormatIdForTable("RISK_METRICS", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,
@@ -432,26 +432,26 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Compares multiple projects and ranks them based on financial metrics.
         /// </summary>
-        public async Task<ProjectComparisonDto> CompareProjectsAsync(Dictionary<string, CashFlow[]> projects, double discountRate, string rankingMethod = "NPV")
+        public async Task<ProjectComparison> CompareProjectsAsync(Dictionary<string, CashFlow[]> projects, double discountRate, string rankingMethod = "NPV")
         {
             if (projects == null || projects.Count == 0)
                 throw new ArgumentException("Projects dictionary cannot be null or empty", nameof(projects));
 
             _logger?.LogInformation("Comparing {ProjectCount} projects using {RankingMethod} method", projects.Count, rankingMethod);
 
-            var result = new ProjectComparisonDto
+            var result = new ProjectComparison
             {
                 ComparisonId = _defaults.FormatIdForTable("COMPARISON", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,
-                Projects = new List<ProjectMetricsDto>(),
+                Projects = new List<ProjectMetrics>(),
                 RankingMethod = rankingMethod
             };
 
-            var projectMetrics = new List<ProjectMetricsDto>();
+            var projectMetrics = new List<ProjectMetrics>();
 
             foreach (var project in projects)
             {
-                var metrics = new ProjectMetricsDto
+                var metrics = new ProjectMetrics
                 {
                     ProjectName = project.Key,
                     NPV = CalculateNPV(project.Value, discountRate),

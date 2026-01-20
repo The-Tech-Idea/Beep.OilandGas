@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.HydraulicPumps;
 using Beep.OilandGas.Models.Data.PlungerLift;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
-using Beep.OilandGas.Models.PlungerLift;
-using Beep.OilandGas.Models.SuckerRodPumping;
+using Beep.OilandGas.Models.Data.PlungerLift;
+using Beep.OilandGas.Models.Data.SuckerRodPumping;
 
 namespace Beep.OilandGas.Client.App.Services.Pumps
 {

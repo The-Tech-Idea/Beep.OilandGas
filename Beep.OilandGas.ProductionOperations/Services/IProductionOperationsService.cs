@@ -16,27 +16,27 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// <summary>
         /// Records daily well production data
         /// </summary>
-        Task RecordWellProductionAsync(WellProductionDataDto productionData, string userId);
+        Task RecordWellProductionAsync(WellProductionData productionData, string userId);
 
         /// <summary>
         /// Retrieves well production data for specified period
         /// </summary>
-        Task<List<WellProductionDataDto>> GetWellProductionAsync(string wellUWI, DateTime startDate, DateTime endDate);
+        Task<List<WellProductionData>> GetWellProductionAsync(string wellUWI, DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Calculates well uptime percentage
         /// </summary>
-        Task<WellUptimeDto> CalculateWellUptimeAsync(string wellUWI, DateTime startDate, DateTime endDate);
+        Task<WellUptime> CalculateWellUptimeAsync(string wellUWI, DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Gets current well status and operational parameters
         /// </summary>
-        Task<WellStatusDto> GetWellStatusAsync(string wellUWI);
+        Task<WellStatus> GetWellStatusAsync(string wellUWI);
 
         /// <summary>
         /// Updates well operational parameters
         /// </summary>
-        Task UpdateWellParametersAsync(string wellUWI, WellParametersDto parameters, string userId);
+        Task UpdateWellParametersAsync(string wellUWI, WellParameters parameters, string userId);
 
         #endregion
 
@@ -45,27 +45,27 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// <summary>
         /// Records equipment maintenance activity
         /// </summary>
-        Task RecordEquipmentMaintenanceAsync(EquipmentMaintenanceDto maintenance, string userId);
+        Task RecordEquipmentMaintenanceAsync(EquipmentMaintenance maintenance, string userId);
 
         /// <summary>
         /// Gets equipment maintenance history
         /// </summary>
-        Task<List<EquipmentMaintenanceDto>> GetEquipmentMaintenanceHistoryAsync(string equipmentId, DateTime startDate, DateTime endDate);
+        Task<List<EquipmentMaintenance>> GetEquipmentMaintenanceHistoryAsync(string equipmentId, DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Schedules preventive maintenance
         /// </summary>
-        Task ScheduleMaintenanceAsync(MaintenanceScheduleDto schedule, string userId);
+        Task ScheduleMaintenanceAsync(MaintenanceSchedule schedule, string userId);
 
         /// <summary>
         /// Gets upcoming maintenance schedules
         /// </summary>
-        Task<List<MaintenanceScheduleDto>> GetUpcomingMaintenanceAsync(DateTime startDate, DateTime endDate);
+        Task<List<MaintenanceSchedule>> GetUpcomingMaintenanceAsync(DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Calculates equipment reliability metrics
         /// </summary>
-        Task<EquipmentReliabilityDto> CalculateEquipmentReliabilityAsync(string equipmentId, DateTime startDate, DateTime endDate);
+        Task<EquipmentReliability> CalculateEquipmentReliabilityAsync(string equipmentId, DateTime startDate, DateTime endDate);
 
         #endregion
 
@@ -74,22 +74,22 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// <summary>
         /// Records facility production data
         /// </summary>
-        Task RecordFacilityProductionAsync(FacilityProductionDto productionData, string userId);
+        Task RecordFacilityProductionAsync(FacilityProduction productionData, string userId);
 
         /// <summary>
         /// Gets facility production data
         /// </summary>
-        Task<List<FacilityProductionDto>> GetFacilityProductionAsync(string facilityId, DateTime startDate, DateTime endDate);
+        Task<List<FacilityProduction>> GetFacilityProductionAsync(string facilityId, DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Updates facility operational status
         /// </summary>
-        Task UpdateFacilityStatusAsync(string facilityId, FacilityStatusDto status, string userId);
+        Task UpdateFacilityStatusAsync(string facilityId, FacilityStatus status, string userId);
 
         /// <summary>
         /// Gets facility operational status
         /// </summary>
-        Task<FacilityStatusDto> GetFacilityStatusAsync(string facilityId);
+        Task<FacilityStatus> GetFacilityStatusAsync(string facilityId);
 
         #endregion
 
@@ -98,22 +98,22 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// <summary>
         /// Records safety incident
         /// </summary>
-        Task RecordSafetyIncidentAsync(SafetyIncidentDto incident, string userId);
+        Task RecordSafetyIncidentAsync(SafetyIncident incident, string userId);
 
         /// <summary>
         /// Gets safety incidents for specified criteria
         /// </summary>
-        Task<List<SafetyIncidentDto>> GetSafetyIncidentsAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null);
+        Task<List<SafetyIncident>> GetSafetyIncidentsAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null);
 
         /// <summary>
         /// Updates safety incident status
         /// </summary>
-        Task UpdateSafetyIncidentAsync(string incidentId, SafetyIncidentDto incident, string userId);
+        Task UpdateSafetyIncidentAsync(string incidentId, SafetyIncident incident, string userId);
 
         /// <summary>
         /// Calculates safety KPIs
         /// </summary>
-        Task<SafetyKPIsDto> CalculateSafetyKPIsAsync(DateTime startDate, DateTime endDate);
+        Task<SafetyKPIs> CalculateSafetyKPIsAsync(DateTime startDate, DateTime endDate);
 
         #endregion
 
@@ -122,22 +122,22 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// <summary>
         /// Records environmental monitoring data
         /// </summary>
-        Task RecordEnvironmentalDataAsync(EnvironmentalDataDto data, string userId);
+        Task RecordEnvironmentalDataAsync(EnvironmentalData data, string userId);
 
         /// <summary>
         /// Gets environmental monitoring data
         /// </summary>
-        Task<List<EnvironmentalDataDto>> GetEnvironmentalDataAsync(DateTime startDate, DateTime endDate, string? locationId = null);
+        Task<List<EnvironmentalData>> GetEnvironmentalDataAsync(DateTime startDate, DateTime endDate, string? locationId = null);
 
         /// <summary>
         /// Performs environmental compliance check
         /// </summary>
-        Task<ComplianceCheckDto> PerformEnvironmentalComplianceCheckAsync(string locationId, DateTime checkDate);
+        Task<ComplianceCheck> PerformEnvironmentalComplianceCheckAsync(string locationId, DateTime checkDate);
 
         /// <summary>
         /// Gets environmental compliance status
         /// </summary>
-        Task<List<ComplianceStatusDto>> GetEnvironmentalComplianceStatusAsync(DateTime startDate, DateTime endDate);
+        Task<List<ComplianceStatus>> GetEnvironmentalComplianceStatusAsync(DateTime startDate, DateTime endDate);
 
         #endregion
 
@@ -146,22 +146,22 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// <summary>
         /// Records operational costs
         /// </summary>
-        Task RecordOperationalCostsAsync(OperationalCostsDto costs, string userId);
+        Task RecordOperationalCostsAsync(OperationalCosts costs, string userId);
 
         /// <summary>
         /// Gets operational cost data
         /// </summary>
-        Task<List<OperationalCostsDto>> GetOperationalCostsAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null);
+        Task<List<OperationalCosts>> GetOperationalCostsAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null);
 
         /// <summary>
         /// Calculates cost per barrel/boe
         /// </summary>
-        Task<CostAnalysisDto> CalculateCostAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate);
+        Task<CostAnalysis> CalculateCostAnalysisAsync(string wellUWI, DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Generates operations report
         /// </summary>
-        Task<OperationsReportDto> GenerateOperationsReportAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null);
+        Task<OperationsReport> GenerateOperationsReportAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null);
 
         #endregion
 
@@ -170,7 +170,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// <summary>
         /// Identifies production optimization opportunities
         /// </summary>
-        Task<List<OptimizationOpportunityDto>> IdentifyOptimizationOpportunitiesAsync(string wellUWI);
+        Task<List<OptimizationOpportunity>> IdentifyOptimizationOpportunitiesAsync(string wellUWI);
 
         /// <summary>
         /// Implements production optimization recommendation
@@ -180,7 +180,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// <summary>
         /// Monitors optimization effectiveness
         /// </summary>
-        Task<OptimizationEffectivenessDto> MonitorOptimizationEffectivenessAsync(string opportunityId);
+        Task<OptimizationEffectiveness> MonitorOptimizationEffectivenessAsync(string opportunityId);
 
         #endregion
 
@@ -189,7 +189,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// <summary>
         /// Gets production operations summary
         /// </summary>
-        Task<ProductionOperationsSummaryDto> GetProductionOperationsSummaryAsync(DateTime startDate, DateTime endDate);
+        Task<ProductionOperationsSummary> GetProductionOperationsSummaryAsync(DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Exports operations data to specified format
@@ -199,7 +199,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         /// <summary>
         /// Validates operations data integrity
         /// </summary>
-        Task<DataValidationResultDto> ValidateOperationsDataAsync(string dataType, DateTime startDate, DateTime endDate);
+        Task<DataValidationResult> ValidateOperationsDataAsync(string dataType, DateTime startDate, DateTime endDate);
 
         #endregion
     }
@@ -209,7 +209,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Well production data DTO
     /// </summary>
-    public class WellProductionDataDto
+    public class WellProductionData
     {
         public string WellUWI { get; set; } = string.Empty;
         public DateTime ProductionDate { get; set; }
@@ -230,7 +230,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Well uptime calculation result
     /// </summary>
-    public class WellUptimeDto
+    public class WellUptime
     {
         public string WellUWI { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
@@ -239,13 +239,13 @@ namespace Beep.OilandGas.ProductionOperations.Services
         public int ProducingDays { get; set; }
         public int DownDays { get; set; }
         public decimal UptimePercentage { get; set; }
-        public List<DowntimeEventDto> DowntimeEvents { get; set; } = new();
+        public List<DowntimeEvent> DowntimeEvents { get; set; } = new();
     }
 
     /// <summary>
     /// Downtime event DTO
     /// </summary>
-    public class DowntimeEventDto
+    public class DowntimeEvent
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
@@ -257,7 +257,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Well status DTO
     /// </summary>
-    public class WellStatusDto
+    public class WellStatus
     {
         public string WellUWI { get; set; } = string.Empty;
         public DateTime StatusDate { get; set; }
@@ -270,13 +270,13 @@ namespace Beep.OilandGas.ProductionOperations.Services
         public decimal? CasingPressure { get; set; }
         public string? LastMaintenanceDate { get; set; }
         public string? NextMaintenanceDate { get; set; }
-        public List<WellIssueDto> CurrentIssues { get; set; } = new();
+        public List<WellIssue> CurrentIssues { get; set; } = new();
     }
 
     /// <summary>
     /// Well issue DTO
     /// </summary>
-    public class WellIssueDto
+    public class WellIssue
     {
         public string IssueId { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -288,7 +288,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Well parameters DTO
     /// </summary>
-    public class WellParametersDto
+    public class WellParameters
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal? TargetRate { get; set; }
@@ -302,7 +302,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Equipment maintenance DTO
     /// </summary>
-    public class EquipmentMaintenanceDto
+    public class EquipmentMaintenance
     {
         public string MaintenanceId { get; set; } = string.Empty;
         public string EquipmentId { get; set; } = string.Empty;
@@ -320,7 +320,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Maintenance schedule DTO
     /// </summary>
-    public class MaintenanceScheduleDto
+    public class MaintenanceSchedule
     {
         public string ScheduleId { get; set; } = string.Empty;
         public string EquipmentId { get; set; } = string.Empty;
@@ -336,7 +336,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Equipment reliability DTO
     /// </summary>
-    public class EquipmentReliabilityDto
+    public class EquipmentReliability
     {
         public string EquipmentId { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
@@ -352,7 +352,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Facility production DTO
     /// </summary>
-    public class FacilityProductionDto
+    public class FacilityProduction
     {
         public string FacilityId { get; set; } = string.Empty;
         public DateTime ProductionDate { get; set; }
@@ -370,7 +370,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Facility status DTO
     /// </summary>
-    public class FacilityStatusDto
+    public class FacilityStatus
     {
         public string FacilityId { get; set; } = string.Empty;
         public DateTime StatusDate { get; set; }
@@ -385,7 +385,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Safety incident DTO
     /// </summary>
-    public class SafetyIncidentDto
+    public class SafetyIncident
     {
         public string IncidentId { get; set; } = string.Empty;
         public DateTime IncidentDate { get; set; }
@@ -404,7 +404,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Safety KPIs DTO
     /// </summary>
-    public class SafetyKPIsDto
+    public class SafetyKPIs
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
@@ -421,7 +421,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Environmental data DTO
     /// </summary>
-    public class EnvironmentalDataDto
+    public class EnvironmentalData
     {
         public string LocationId { get; set; } = string.Empty;
         public DateTime MeasurementDate { get; set; }
@@ -436,12 +436,12 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Compliance check result DTO
     /// </summary>
-    public class ComplianceCheckDto
+    public class ComplianceCheck
     {
         public string LocationId { get; set; } = string.Empty;
         public DateTime CheckDate { get; set; }
         public bool IsCompliant { get; set; }
-        public List<ComplianceViolationDto> Violations { get; set; } = new();
+        public List<ComplianceViolation> Violations { get; set; } = new();
         public string OverallStatus { get; set; } = string.Empty;
         public List<string> Recommendations { get; set; } = new();
     }
@@ -449,7 +449,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Compliance violation DTO
     /// </summary>
-    public class ComplianceViolationDto
+    public class ComplianceViolation
     {
         public string Parameter { get; set; } = string.Empty;
         public decimal MeasuredValue { get; set; }
@@ -461,7 +461,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Compliance status DTO
     /// </summary>
-    public class ComplianceStatusDto
+    public class ComplianceStatus
     {
         public string LocationId { get; set; } = string.Empty;
         public string Parameter { get; set; } = string.Empty;
@@ -476,7 +476,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Operational costs DTO
     /// </summary>
-    public class OperationalCostsDto
+    public class OperationalCosts
     {
         public string CostId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -493,7 +493,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Cost analysis DTO
     /// </summary>
-    public class CostAnalysisDto
+    public class CostAnalysis
     {
         public string WellUWI { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
@@ -509,24 +509,24 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Operations report DTO
     /// </summary>
-    public class OperationsReportDto
+    public class OperationsReport
     {
         public string ReportId { get; set; } = string.Empty;
         public DateTime GeneratedDate { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public ProductionOperationsSummaryDto Summary { get; set; } = new();
-        public List<WellPerformanceDto> WellPerformance { get; set; } = new();
-        public List<FacilityPerformanceDto> FacilityPerformance { get; set; } = new();
-        public SafetyKPIsDto SafetyMetrics { get; set; } = new();
-        public List<ComplianceStatusDto> EnvironmentalCompliance { get; set; } = new();
-        public CostAnalysisDto CostAnalysis { get; set; } = new();
+        public ProductionOperationsSummary Summary { get; set; } = new();
+        public List<WellPerformance> WellPerformance { get; set; } = new();
+        public List<FacilityPerformance> FacilityPerformance { get; set; } = new();
+        public SafetyKPIs SafetyMetrics { get; set; } = new();
+        public List<ComplianceStatus> EnvironmentalCompliance { get; set; } = new();
+        public CostAnalysis CostAnalysis { get; set; } = new();
     }
 
     /// <summary>
     /// Production operations summary DTO
     /// </summary>
-    public class ProductionOperationsSummaryDto
+    public class ProductionOperationsSummary
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
@@ -544,7 +544,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Well performance DTO
     /// </summary>
-    public class WellPerformanceDto
+    public class WellPerformance
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal AverageOilRate { get; set; }
@@ -560,7 +560,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Facility performance DTO
     /// </summary>
-    public class FacilityPerformanceDto
+    public class FacilityPerformance
     {
         public string FacilityId { get; set; } = string.Empty;
         public decimal CapacityUtilization { get; set; }
@@ -574,7 +574,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Optimization opportunity DTO
     /// </summary>
-    public class OptimizationOpportunityDto
+    public class OptimizationOpportunity
     {
         public string OpportunityId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -590,7 +590,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Optimization effectiveness DTO
     /// </summary>
-    public class OptimizationEffectivenessDto
+    public class OptimizationEffectiveness
     {
         public string OpportunityId { get; set; } = string.Empty;
         public DateTime ImplementationDate { get; set; }
@@ -606,7 +606,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// <summary>
     /// Data validation result DTO
     /// </summary>
-    public class DataValidationResultDto
+    public class DataValidationResult
     {
         public string DataType { get; set; } = string.Empty;
         public bool IsValid { get; set; }

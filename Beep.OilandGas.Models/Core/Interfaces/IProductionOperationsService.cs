@@ -18,7 +18,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="startDate">Start date</param>
         /// <param name="endDate">End date</param>
         /// <returns>List of production data points</returns>
-        Task<List<ProductionDataDto>> GetProductionDataAsync(string? wellUWI, string? fieldId, DateTime startDate, DateTime endDate);
+        Task<List<ProductionData>> GetProductionDataAsync(string? wellUWI, string? fieldId, DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Records production data.
@@ -26,7 +26,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="productionData">Production data to record</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Task</returns>
-        Task RecordProductionDataAsync(ProductionDataDto productionData, string userId);
+        Task RecordProductionDataAsync(ProductionData productionData, string userId);
 
         /// <summary>
         /// Optimizes production operations.
@@ -34,13 +34,13 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="wellUWI">Well UWI</param>
         /// <param name="optimizationGoals">Optimization goals</param>
         /// <returns>Optimization recommendations</returns>
-        Task<List<ProductionOptimizationRecommendationDto>> OptimizeProductionAsync(string wellUWI, Dictionary<string, object> optimizationGoals);
+        Task<List<ProductionOptimizationRecommendation>> OptimizeProductionAsync(string wellUWI, Dictionary<string, object> optimizationGoals);
     }
 
     /// <summary>
     /// DTO for production data.
     /// </summary>
-    public class ProductionDataDto
+    public class ProductionData
     {
         public string ProductionId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// <summary>
     /// DTO for production optimization recommendation.
     /// </summary>
-    public class ProductionOptimizationRecommendationDto
+    public class ProductionOptimizationRecommendation
     {
         public string RecommendationId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;

@@ -3,8 +3,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.FlashCalculations
 {
-    public partial class FLASH_CALCULATION_RESULT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class FLASH_CALCULATION_RESULT : ModelEntityBase {
         private string CALCULATION_IDValue;
         public string CALCULATION_ID
         {

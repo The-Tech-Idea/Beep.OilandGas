@@ -15,7 +15,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 30: Manages lease acquisition budgets
         /// </summary>
-        public async Task<BudgetManagementDto> ManageBudgetAsync(string leaseId, BudgetRequestDto budget, string userId)
+        public async Task<BudgetManagement> ManageBudgetAsync(string leaseId, BudgetRequest budget, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -32,7 +32,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                     ? budget.LineItems[0].AllocatedAmount 
                     : 0;
 
-                var management = new BudgetManagementDto
+                var management = new BudgetManagement
                 {
                     BudgetId = $"BUDGET-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 31: Tracks acquisition costs and expenses
         /// </summary>
-        public async Task<CostTrackingDto> TrackAcquisitionCostsAsync(string leaseId, CostEntryDto cost, string userId)
+        public async Task<CostTracking> TrackAcquisitionCostsAsync(string leaseId, CostEntry cost, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -68,7 +68,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Tracking acquisition costs for {LeaseId}", leaseId);
 
-                var tracking = new CostTrackingDto
+                var tracking = new CostTracking
                 {
                     LeaseId = leaseId,
                     DateIncurred = DateTime.Now,
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 32: Manages lease payments and escrows
         /// </summary>
-        public async Task<LeasePaymentDto> ProcessLeasePaymentAsync(string leaseId, PaymentDetailsDto payment, string userId)
+        public async Task<LeasePayment> ProcessLeasePaymentAsync(string leaseId, PaymentDetails payment, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -103,7 +103,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
             {
                 _logger?.LogInformation("Processing lease payment for {LeaseId}", leaseId);
 
-                var paymentDto = new LeasePaymentDto
+                var paymentDto = new LeasePayment
                 {
                     PaymentId = $"PAY-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
@@ -127,7 +127,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 33: Calculates lease value and metrics
         /// </summary>
-        public async Task<LeaseValueMetricsDto> CalculateLeaseValueMetricsAsync(string leaseId)
+        public async Task<LeaseValueMetrics> CalculateLeaseValueMetricsAsync(string leaseId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -140,7 +140,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 var acreage = 640;
                 var acquisitionCost = 1600000m;
 
-                var metrics = new LeaseValueMetricsDto
+                var metrics = new LeaseValueMetrics
                 {
                     LeaseId = leaseId,
                     EstimatedValue = estimatedValue,
@@ -163,7 +163,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 34: Manages reserve requirements
         /// </summary>
-        public async Task<ReserveRequirementDto> ManageReserveRequirementsAsync(string leaseId, ReserveRequestDto reserve, string userId)
+        public async Task<ReserveRequirement> ManageReserveRequirementsAsync(string leaseId, ReserveRequest reserve, string userId)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -179,7 +179,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                 var currentReserve = 250000m;
                 var requirementMet = currentReserve >= reserve.RequiredAmount;
 
-                var management = new ReserveRequirementDto
+                var management = new ReserveRequirement
                 {
                     LeaseId = leaseId,
                     RequiredReserve = reserve.RequiredAmount,

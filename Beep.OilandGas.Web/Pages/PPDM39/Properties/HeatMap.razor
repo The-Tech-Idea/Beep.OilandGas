@@ -1,7 +1,7 @@
 @page "/ppdm39/properties/heatmap"
 @using Beep.OilandGas.HeatMap
 @using Beep.OilandGas.HeatMap.Configuration
-@using Beep.OilandGas.Models.DTOs
+@using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
@@ -133,7 +133,7 @@
     {
         try
         {
-            var configuration = new HeatMapConfigurationDto
+            var configuration = new HeatMapConfigurationRecord
             {
                 HeatMapId = Guid.NewGuid().ToString(),
                 ConfigurationName = "Production Heat Map",

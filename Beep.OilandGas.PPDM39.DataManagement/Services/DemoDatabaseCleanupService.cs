@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.DTOs.DataManagement;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

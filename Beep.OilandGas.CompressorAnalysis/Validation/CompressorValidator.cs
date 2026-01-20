@@ -2,7 +2,7 @@ using System;
 
 using Beep.OilandGas.CompressorAnalysis.Constants;
 using Beep.OilandGas.CompressorAnalysis.Exceptions;
-using Beep.OilandGas.Models.CompressorAnalysis;
+using Beep.OilandGas.Models.Data.CompressorAnalysis;
 
 namespace Beep.OilandGas.CompressorAnalysis.Validation
 {

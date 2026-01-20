@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Beep.OilandGas.GasProperties.Calculations;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -93,7 +93,7 @@ namespace Beep.OilandGas.GasProperties.Services
             return fvf;
         }
 
-        public async Task SaveGasCompositionAsync(GasCompositionDto composition, string userId)
+        public async Task SaveGasCompositionAsync(GasComposition composition, string userId)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -202,7 +202,7 @@ namespace Beep.OilandGas.GasProperties.Services
             _logger?.LogInformation("Successfully saved gas composition {CompositionId}", composition.CompositionId);
         }
 
-        public async Task<GasCompositionDto?> GetGasCompositionAsync(string compositionId)
+        public async Task<GasComposition?> GetGasCompositionAsync(string compositionId)
         {
             if (string.IsNullOrWhiteSpace(compositionId))
             {
@@ -232,7 +232,7 @@ namespace Beep.OilandGas.GasProperties.Services
             }
 
             // Map entity to DTO
-            var composition = new GasCompositionDto
+            var composition = new GasComposition
             {
                 CompositionId = compositionEntity.GAS_COMPOSITION_ID ?? string.Empty,
                 CompositionName = compositionEntity.COMPOSITION_NAME ?? string.Empty,
@@ -255,10 +255,10 @@ namespace Beep.OilandGas.GasProperties.Services
 
             if (componentEntities != null && componentEntities.Any())
             {
-                composition.Components = new List<GasComponentDto>();
+                composition.Components = new List<GasComponent>();
                 foreach (var componentEntity in componentEntities.Cast<GAS_COMPOSITION_COMPONENT>())
                 {
-                    composition.Components.Add(new GasComponentDto
+                    composition.Components.Add(new GasComponent
                     {
                         ComponentName = componentEntity.COMPONENT_NAME ?? string.Empty,
                         MoleFraction = componentEntity.MOLE_FRACTION ?? 0,
@@ -276,7 +276,7 @@ namespace Beep.OilandGas.GasProperties.Services
         /// <summary>
         /// Analyzes gas viscosity using Lee-Gonzalez-Eakin correlation.
         /// </summary>
-        public async Task<GasViscosityAnalysisDto> AnalyzeGasViscosityAsync(GasCompositionDto composition, decimal pressure, decimal temperature)
+        public async Task<GasViscosityAnalysis> AnalyzeGasViscosityAsync(GasComposition composition, decimal pressure, decimal temperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -292,7 +292,7 @@ namespace Beep.OilandGas.GasProperties.Services
             
             var viscosity = viscosityAtSC * (1m + 10.8m * (decimal)Math.Pow((double)(pressure / 1000m), 0.4));
 
-            var result = new GasViscosityAnalysisDto
+            var result = new GasViscosityAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("GAS_VISCOSITY", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
@@ -314,7 +314,7 @@ namespace Beep.OilandGas.GasProperties.Services
         /// <summary>
         /// Analyzes gas compressibility across pressure and temperature ranges.
         /// </summary>
-        public async Task<GasCompressibilityAnalysisDto> AnalyzeCompressibilityAsync(GasCompositionDto composition, decimal pressure, decimal temperature)
+        public async Task<GasCompressibilityAnalysis> AnalyzeCompressibilityAsync(GasComposition composition, decimal pressure, decimal temperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -332,7 +332,7 @@ namespace Beep.OilandGas.GasProperties.Services
             var adiabaticCompressibility = 1.4m * Math.Abs(isothermalCompressibility);
             var compressibilityFactor = (pressure * composition.MolecularWeight) / (zFactor * 10.73m * temperature);
 
-            var result = new GasCompressibilityAnalysisDto
+            var result = new GasCompressibilityAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("GAS_COMPRESSIBILITY", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
@@ -353,7 +353,7 @@ namespace Beep.OilandGas.GasProperties.Services
         /// <summary>
         /// Calculates virial coefficients for the gas mixture.
         /// </summary>
-        public async Task<VirialCoefficientAnalysisDto> CalculateVirialCoefficientsAsync(GasCompositionDto composition, decimal pressure, decimal temperature)
+        public async Task<VirialCoefficientAnalysis> CalculateVirialCoefficientsAsync(GasComposition composition, decimal pressure, decimal temperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -373,7 +373,7 @@ namespace Beep.OilandGas.GasProperties.Services
             // Third virial coefficient (dimensionless)
             var thirdVirial = 0.139m - (0.172m / (decimal)Math.Pow((double)reducedTemp, 4.2));
 
-            var result = new VirialCoefficientAnalysisDto
+            var result = new VirialCoefficientAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("VIRIAL_COEFF", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
@@ -394,7 +394,7 @@ namespace Beep.OilandGas.GasProperties.Services
         /// <summary>
         /// Analyzes gas mixture properties and pseudocritical conditions.
         /// </summary>
-        public async Task<GasMixtureAnalysisDto> AnalyzeMixturePropertiesAsync(GasCompositionDto composition)
+        public async Task<GasMixtureAnalysis> AnalyzeMixturePropertiesAsync(GasComposition composition)
         {
             if (composition == null || composition.Components == null || composition.Components.Count == 0)
                 throw new ArgumentException("Composition must have components", nameof(composition));
@@ -404,19 +404,19 @@ namespace Beep.OilandGas.GasProperties.Services
             var pseudoCriticalTemp = 0m;
             var pseudoCriticalPress = 0m;
 
-            var result = new GasMixtureAnalysisDto
+            var result = new GasMixtureAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("MIXTURE_ANALYSIS", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
                 AnalysisDate = DateTime.UtcNow,
                 AverageMolecularWeight = composition.MolecularWeight,
-                ComponentAnalysis = new List<MixtureComponentAnalysisDto>()
+                ComponentAnalysis = new List<MixtureComponentAnalysis>()
             };
 
             // Analyze each component
             foreach (var component in composition.Components)
             {
-                var componentAnalysis = new MixtureComponentAnalysisDto
+                var componentAnalysis = new MixtureComponentAnalysis
                 {
                     ComponentName = component.ComponentName,
                     MoleFraction = component.MoleFraction,
@@ -442,7 +442,7 @@ namespace Beep.OilandGas.GasProperties.Services
         /// <summary>
         /// Analyzes thermal conductivity of the gas.
         /// </summary>
-        public async Task<ThermalConductivityAnalysisDto> AnalyzeThermalConductivityAsync(GasCompositionDto composition, decimal pressure, decimal temperature)
+        public async Task<ThermalConductivityAnalysis> AnalyzeThermalConductivityAsync(GasComposition composition, decimal pressure, decimal temperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
@@ -455,7 +455,7 @@ namespace Beep.OilandGas.GasProperties.Services
             var pressureFactor = 1m + (0.000001m * pressure);
             var thermalConductivity = thermalConductivityAtSC * tempFactor * pressureFactor;
 
-            var result = new ThermalConductivityAnalysisDto
+            var result = new ThermalConductivityAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("THERMAL_COND", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
@@ -476,14 +476,14 @@ namespace Beep.OilandGas.GasProperties.Services
         /// <summary>
         /// Generates a property correlation matrix across pressure and temperature ranges.
         /// </summary>
-        public async Task<GasPropertyMatrixDto> GeneratePropertyMatrixAsync(GasCompositionDto composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
+        public async Task<GasPropertyMatrix> GeneratePropertyMatrixAsync(GasComposition composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
         {
             if (composition == null)
                 throw new ArgumentNullException(nameof(composition));
 
             _logger?.LogInformation("Generating property matrix for composition {CompositionId}", composition.CompositionId);
 
-            var result = new GasPropertyMatrixDto
+            var result = new GasPropertyMatrix
             {
                 MatrixId = _defaults.FormatIdForTable("GAS_PROPERTY_MATRIX", Guid.NewGuid().ToString()),
                 CompositionId = composition.CompositionId,
@@ -492,7 +492,7 @@ namespace Beep.OilandGas.GasProperties.Services
                 MaxPressure = maxPressure,
                 MinTemperature = minTemperature,
                 MaxTemperature = maxTemperature,
-                PropertyValues = new List<PropertyValueDto>()
+                PropertyValues = new List<PropertyValue>()
             };
 
             var pressureStep = (maxPressure - minPressure) / 10m;
@@ -509,7 +509,7 @@ namespace Beep.OilandGas.GasProperties.Services
                     var viscosityAnalysis = await AnalyzeGasViscosityAsync(composition, p, t);
                     var conductivityAnalysis = await AnalyzeThermalConductivityAsync(composition, p, t);
 
-                    result.PropertyValues.Add(new PropertyValueDto
+                    result.PropertyValues.Add(new PropertyValue
                     {
                         Pressure = p,
                         Temperature = t,

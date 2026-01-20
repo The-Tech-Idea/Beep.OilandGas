@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class JOURNAL_ENTRY_LINE : Entity,IPPDMEntity
-    {
+    public partial class JOURNAL_ENTRY_LINE : ModelEntityBase {
         private System.String JOURNAL_ENTRY_LINE_IDValue;
         public System.String JOURNAL_ENTRY_LINE_ID
         {

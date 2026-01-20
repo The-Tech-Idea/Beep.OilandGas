@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class JOINT_INTEREST_BILL : Entity,IPPDMEntity
-    {
+    public partial class JOINT_INTEREST_BILL : ModelEntityBase {
         private String JIB_IDValue;
         public String JIB_ID
         {

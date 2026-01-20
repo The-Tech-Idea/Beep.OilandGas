@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -337,104 +338,4 @@ namespace Beep.OilandGas.Accounting.Services
         }
     }
 
-    /// <summary>
-    /// Tax Provision
-    /// </summary>
-    public class TaxProvision
-    {
-        public DateTime CalculatedDate { get; set; }
-        public decimal TaxableIncome { get; set; }
-        public decimal EffectiveTaxRate { get; set; }
-        public List<TaxDeduction> Deductions { get; set; }
-        public decimal TotalDeductions { get; set; }
-        public decimal AdjustedTaxableIncome { get; set; }
-        public decimal BaseTax { get; set; }
-        public List<TaxCredit> Credits { get; set; }
-        public decimal TotalCredits { get; set; }
-        public decimal TaxAfterCredits { get; set; }
-        public decimal AlternativeMinimumTax { get; set; }
-        public decimal TaxProvisionAmount { get; set; }
-        public decimal EffectiveProvisionRate { get; set; }
-    }
-
-    /// <summary>
-    /// Tax Deduction
-    /// </summary>
-    public class TaxDeduction
-    {
-        public string Description { get; set; }
-        public decimal Amount { get; set; }
-    }
-
-    /// <summary>
-    /// Tax Credit
-    /// </summary>
-    public class TaxCredit
-    {
-        public string Description { get; set; }
-        public decimal Amount { get; set; }
-    }
-
-    /// <summary>
-    /// Quarterly Estimated Tax
-    /// </summary>
-    public class QuarterlyEstimatedTax
-    {
-        public int TaxYear { get; set; }
-        public DateTime CalculatedDate { get; set; }
-        public decimal AnnualTaxableIncome { get; set; }
-        public decimal EstimatedTaxRate { get; set; }
-        public List<QuarterlyPayment> Quarters { get; set; }
-        public List<QuarterlyAdjustment> Adjustments { get; set; }
-        public decimal TotalAnnualPayment { get; set; }
-        public decimal TotalAdjustments { get; set; }
-    }
-
-    /// <summary>
-    /// Quarterly Payment
-    /// </summary>
-    public class QuarterlyPayment
-    {
-        public int Quarter { get; set; }
-        public DateTime DueDate { get; set; }
-        public decimal BasePayment { get; set; }
-        public decimal Adjustments { get; set; }
-        public decimal TotalPayment { get; set; }
-    }
-
-    /// <summary>
-    /// Quarterly Adjustment
-    /// </summary>
-    public class QuarterlyAdjustment
-    {
-        public int Quarter { get; set; }
-        public string Description { get; set; }
-        public decimal Amount { get; set; }
-    }
-
-    /// <summary>
-    /// Tax Deferral Analysis
-    /// </summary>
-    public class TaxDeferralAnalysis
-    {
-        public DateTime AnalysisDate { get; set; }
-        public decimal CurrentYearIncome { get; set; }
-        public List<DeferralOpportunity> Opportunities { get; set; }
-        public decimal TotalDeferralAmount { get; set; }
-        public decimal TotalTaxSavings { get; set; }
-        public decimal TotalCashFlowImpact { get; set; }
-    }
-
-    /// <summary>
-    /// Deferral Opportunity
-    /// </summary>
-    public class DeferralOpportunity
-    {
-        public string OpportunityType { get; set; }
-        public string Description { get; set; }
-        public decimal DeferralAmount { get; set; }
-        public decimal TaxSavings { get; set; }
-        public decimal CashFlowImpact { get; set; }
-        public DateTime Deadline { get; set; }
-    }
 }

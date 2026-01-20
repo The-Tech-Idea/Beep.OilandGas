@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class GL_ENTRY : Entity,IPPDMEntity
-    {
+    public partial class GL_ENTRY : ModelEntityBase {
         private System.String GL_ENTRY_IDValue;
         public System.String GL_ENTRY_ID
         {

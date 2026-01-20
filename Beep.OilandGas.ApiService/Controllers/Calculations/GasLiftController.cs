@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.Models.GasLift;
-using Beep.OilandGas.Models.DTOs;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data.GasLift;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -64,7 +64,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("design")]
-        public async Task<ActionResult> SaveDesign([FromBody] GasLiftDesignDto design, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SaveDesign([FromBody] GasLiftDesign design, [FromQuery] string? userId = null)
         {
             try
             {
@@ -79,7 +79,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpGet("performance/{wellUWI}")]
-        public async Task<ActionResult<GasLiftPerformanceDto>> GetPerformance(string wellUWI)
+        public async Task<ActionResult<GasLiftPerformance>> GetPerformance(string wellUWI)
         {
             try
             {

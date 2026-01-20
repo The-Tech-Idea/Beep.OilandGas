@@ -15,32 +15,32 @@ namespace Beep.OilandGas.HydraulicPumps.Services
         /// <summary>
         /// Designs a hydraulic pump system for a well
         /// </summary>
-        Task<PumpDesignResultDto> DesignPumpSystemAsync(string wellUWI, PumpDesignRequestDto request, string userId);
+        Task<PumpDesignResult> DesignPumpSystemAsync(string wellUWI, PumpDesignRequest request, string userId);
 
         /// <summary>
         /// Performs pump sizing calculations
         /// </summary>
-        Task<PumpSizingResultDto> SizePumpAsync(string wellUWI, PumpSizingRequestDto request);
+        Task<PumpSizingResult> SizePumpAsync(string wellUWI, PumpSizingRequest request);
 
         /// <summary>
         /// Selects optimal pump type based on conditions
         /// </summary>
-        Task<PumpTypeSelectionDto> SelectOptimalPumpTypeAsync(string wellUWI, PumpSelectionCriteriaDto criteria);
+        Task<PumpTypeSelection> SelectOptimalPumpTypeAsync(string wellUWI, PumpSelectionCriteria criteria);
 
         /// <summary>
         /// Calculates power requirements for pump
         /// </summary>
-        Task<PowerRequirementsDto> CalculatePowerRequirementsAsync(string wellUWI, PowerCalculationRequestDto request);
+        Task<PowerRequirements> CalculatePowerRequirementsAsync(string wellUWI, PowerCalculationRequest request);
 
         /// <summary>
         /// Analyzes pump hydraulic balance
         /// </summary>
-        Task<HydraulicBalanceDto> AnalyzeHydraulicBalanceAsync(string pumpId, BalanceRequestDto request);
+        Task<HydraulicBalance> AnalyzeHydraulicBalanceAsync(string pumpId, BalanceRequest request);
 
         /// <summary>
         /// Performs pump rod string design
         /// </summary>
-        Task<RodStringDesignDto> DesignRodStringAsync(string wellUWI, RodStringRequestDto request);
+        Task<RodStringDesign> DesignRodStringAsync(string wellUWI, RodStringRequest request);
 
         #endregion
 
@@ -49,32 +49,32 @@ namespace Beep.OilandGas.HydraulicPumps.Services
         /// <summary>
         /// Analyzes pump performance
         /// </summary>
-        Task<PumpPerformanceAnalysisDto> AnalyzePumpPerformanceAsync(string pumpId, PerformanceAnalysisRequestDto request);
+        Task<PumpPerformanceAnalysis> AnalyzePumpPerformanceAsync(string pumpId, PerformanceAnalysisRequest request);
 
         /// <summary>
         /// Calculates pump efficiency
         /// </summary>
-        Task<PumpEfficiencyDto> CalculatePumpEfficiencyAsync(string pumpId, EfficiencyRequestDto request);
+        Task<PumpEfficiency> CalculatePumpEfficiencyAsync(string pumpId, EfficiencyRequest request);
 
         /// <summary>
         /// Analyzes pump cavitation risk
         /// </summary>
-        Task<CavitationAnalysisDto> AnalyzeCavitationRiskAsync(string pumpId, CavitationRequestDto request);
+        Task<CavitationAnalysis> AnalyzeCavitationRiskAsync(string pumpId, CavitationRequest request);
 
         /// <summary>
         /// Performs vibration analysis
         /// </summary>
-        Task<VibrationAnalysisDto> AnalyzeVibrationAsync(string pumpId, VibrationRequestDto request);
+        Task<VibrationAnalysis> AnalyzeVibrationAsync(string pumpId, VibrationRequest request);
 
         /// <summary>
         /// Analyzes pressure dynamics
         /// </summary>
-        Task<PressureDynamicsDto> AnalyzePressureDynamicsAsync(string pumpId, PressureRequestDto request);
+        Task<PressureDynamics> AnalyzePressureDynamicsAsync(string pumpId, PressureRequest request);
 
         /// <summary>
         /// Calculates flow rate characteristics
         /// </summary>
-        Task<FlowCharacteristicsDto> CalculateFlowCharacteristicsAsync(string pumpId, FlowRequestDto request);
+        Task<FlowCharacteristics> CalculateFlowCharacteristicsAsync(string pumpId, FlowRequest request);
 
         #endregion
 
@@ -83,27 +83,27 @@ namespace Beep.OilandGas.HydraulicPumps.Services
         /// <summary>
         /// Optimizes pump performance parameters
         /// </summary>
-        Task<OptimizationResultDto> OptimizePumpParametersAsync(string pumpId, OptimizationRequestDto request);
+        Task<OptimizationResult> OptimizePumpParametersAsync(string pumpId, OptimizationRequest request);
 
         /// <summary>
         /// Recommends pump parameter adjustments
         /// </summary>
-        Task<ParameterAdjustmentDto> RecommendParameterAdjustmentsAsync(string pumpId);
+        Task<ParameterAdjustment> RecommendParameterAdjustmentsAsync(string pumpId);
 
         /// <summary>
         /// Analyzes pump efficiency improvement opportunities
         /// </summary>
-        Task<EfficiencyImprovementDto> IdentifyEfficiencyImprovementsAsync(string pumpId);
+        Task<EfficiencyImprovement> IdentifyEfficiencyImprovementsAsync(string pumpId);
 
         /// <summary>
         /// Performs comparative pump analysis
         /// </summary>
-        Task<PumpComparisonDto> ComparePumpsAsync(List<string> pumpIds, ComparisonCriteriaDto criteria);
+        Task<PumpComparison> ComparePumpsAsync(List<string> pumpIds, ComparisonCriteria criteria);
 
         /// <summary>
         /// Recommends pump upgrade or replacement
         /// </summary>
-        Task<PumpUpgradeRecommendationDto> RecommendPumpUpgradeAsync(string pumpId, UpgradeRequestDto request);
+        Task<PumpUpgradeRecommendation> RecommendPumpUpgradeAsync(string pumpId, UpgradeRequest request);
 
         #endregion
 
@@ -112,27 +112,27 @@ namespace Beep.OilandGas.HydraulicPumps.Services
         /// <summary>
         /// Monitors pump performance in real-time
         /// </summary>
-        Task<PumpMonitoringDataDto> MonitorPumpPerformanceAsync(string pumpId, MonitoringRequestDto request);
+        Task<PumpMonitoringData> MonitorPumpPerformanceAsync(string pumpId, MonitoringRequest request);
 
         /// <summary>
         /// Performs pump diagnostics
         /// </summary>
-        Task<DiagnosticsResultDto> PerformPumpDiagnosticsAsync(string pumpId, DiagnosticsRequestDto request);
+        Task<DiagnosticsResult> PerformPumpDiagnosticsAsync(string pumpId, DiagnosticsRequest request);
 
         /// <summary>
         /// Analyzes pump condition
         /// </summary>
-        Task<ConditionAssessmentDto> AssessPumpConditionAsync(string pumpId);
+        Task<ConditionAssessment> AssessPumpConditionAsync(string pumpId);
 
         /// <summary>
         /// Detects pump operational anomalies
         /// </summary>
-        Task<AnomalyDetectionDto> DetectOperationalAnomaliesAsync(string pumpId);
+        Task<AnomalyDetection> DetectOperationalAnomaliesAsync(string pumpId);
 
         /// <summary>
         /// Performs predictive maintenance analysis
         /// </summary>
-        Task<PredictiveMaintenanceDto> AnalyzeMaintenanceRequirementsAsync(string pumpId, MaintenanceRequestDto request);
+        Task<PredictiveMaintenance> AnalyzeMaintenanceRequirementsAsync(string pumpId, MaintenanceRequest request);
 
         #endregion
 
@@ -141,27 +141,27 @@ namespace Beep.OilandGas.HydraulicPumps.Services
         /// <summary>
         /// Analyzes pump failure modes
         /// </summary>
-        Task<FailureModeAnalysisDto> AnalyzeFailureModesAsync(string pumpId);
+        Task<FailureModeAnalysis> AnalyzeFailureModesAsync(string pumpId);
 
         /// <summary>
         /// Assesses pump reliability
         /// </summary>
-        Task<ReliabilityAssessmentDto> AssessReliabilityAsync(string pumpId, ReliabilityRequestDto request);
+        Task<ReliabilityAssessment> AssessReliabilityAsync(string pumpId, ReliabilityRequest request);
 
         /// <summary>
         /// Calculates mean time between failures (MTBF)
         /// </summary>
-        Task<MTBFCalculationDto> CalculateMTBFAsync(string pumpId);
+        Task<MTBFCalculation> CalculateMTBFAsync(string pumpId);
 
         /// <summary>
         /// Analyzes pump wear patterns
         /// </summary>
-        Task<WearAnalysisDto> AnalyzeWearPatternsAsync(string pumpId, WearRequestDto request);
+        Task<WearAnalysis> AnalyzeWearPatternsAsync(string pumpId, WearRequest request);
 
         /// <summary>
         /// Identifies potential failure points
         /// </summary>
-        Task<FailureRiskAssessmentDto> AssessFailureRiskAsync(string pumpId);
+        Task<FailureRiskAssessment> AssessFailureRiskAsync(string pumpId);
 
         #endregion
 
@@ -170,27 +170,27 @@ namespace Beep.OilandGas.HydraulicPumps.Services
         /// <summary>
         /// Manages pump maintenance schedule
         /// </summary>
-        Task<MaintenanceScheduleDto> GenerateMaintenanceScheduleAsync(string pumpId, ScheduleRequestDto request);
+        Task<MaintenanceSchedule> GenerateMaintenanceScheduleAsync(string pumpId, ScheduleRequest request);
 
         /// <summary>
         /// Logs pump maintenance activities
         /// </summary>
-        Task LogMaintenanceActivityAsync(string pumpId, MaintenanceActivityDto activity, string userId);
+        Task LogMaintenanceActivityAsync(string pumpId, MaintenanceActivity activity, string userId);
 
         /// <summary>
         /// Manages pump rebuild process
         /// </summary>
-        Task<RebuildAnalysisDto> AnalyzeRebuildRequirementsAsync(string pumpId, RebuildRequestDto request);
+        Task<RebuildAnalysis> AnalyzeRebuildRequirementsAsync(string pumpId, RebuildRequest request);
 
         /// <summary>
         /// Tracks pump spare parts inventory
         /// </summary>
-        Task<PartsInventoryDto> ManagePartsInventoryAsync(string pumpId, PartsRequestDto request);
+        Task<PartsInventory> ManagePartsInventoryAsync(string pumpId, PartsRequest request);
 
         /// <summary>
         /// Estimates maintenance costs
         /// </summary>
-        Task<MaintenanceCostEstimateDto> EstimateCostsAsync(string pumpId, CostEstimateRequestDto request);
+        Task<MaintenanceCostEstimate> EstimateCostsAsync(string pumpId, CostEstimateRequest request);
 
         #endregion
 
@@ -199,22 +199,22 @@ namespace Beep.OilandGas.HydraulicPumps.Services
         /// <summary>
         /// Analyzes hydraulic fluid condition
         /// </summary>
-        Task<FluidAnalysisDto> AnalyzeHydraulicFluidAsync(string pumpId, FluidAnalysisRequestDto request);
+        Task<FluidAnalysis> AnalyzeHydraulicFluidAsync(string pumpId, FluidAnalysisRequest request);
 
         /// <summary>
         /// Recommends fluid changes
         /// </summary>
-        Task<FluidChangeRecommendationDto> RecommendFluidChangeAsync(string pumpId);
+        Task<FluidChangeRecommendation> RecommendFluidChangeAsync(string pumpId);
 
         /// <summary>
         /// Tracks fluid contamination levels
         /// </summary>
-        Task<ContaminationLevelDto> TrackFluidContaminationAsync(string pumpId, ContaminationRequestDto request);
+        Task<ContaminationLevel> TrackFluidContaminationAsync(string pumpId, ContaminationRequest request);
 
         /// <summary>
         /// Manages fluid filtration system
         /// </summary>
-        Task<FiltrationSystemDto> ManageFiltrationSystemAsync(string pumpId, FiltrationRequestDto request);
+        Task<FiltrationSystem> ManageFiltrationSystemAsync(string pumpId, FiltrationRequest request);
 
         #endregion
 
@@ -223,17 +223,17 @@ namespace Beep.OilandGas.HydraulicPumps.Services
         /// <summary>
         /// Integrates pump with SCADA systems
         /// </summary>
-        Task<SCODAIntegrationDto> IntegrateSCADAAsync(string pumpId, SCADAConfigDto config);
+        Task<SCODAIntegration> IntegrateSCADAAsync(string pumpId, SCADAConfig config);
 
         /// <summary>
         /// Manages pump control parameters
         /// </summary>
-        Task<ControlParametersDto> ManageControlParametersAsync(string pumpId, ControlRequestDto request, string userId);
+        Task<ControlParameters> ManageControlParametersAsync(string pumpId, ControlRequest request, string userId);
 
         /// <summary>
         /// Analyzes pump-wellbore interaction
         /// </summary>
-        Task<WellboreInteractionDto> AnalyzePumpWellboreInteractionAsync(string wellUWI, InteractionRequestDto request);
+        Task<WellboreInteraction> AnalyzePumpWellboreInteractionAsync(string wellUWI, InteractionRequest request);
 
         #endregion
 
@@ -242,27 +242,27 @@ namespace Beep.OilandGas.HydraulicPumps.Services
         /// <summary>
         /// Saves pump design data
         /// </summary>
-        Task SavePumpDesignAsync(PumpDesignResultDto design, string userId);
+        Task SavePumpDesignAsync(PumpDesignResult design, string userId);
 
         /// <summary>
         /// Retrieves pump design data
         /// </summary>
-        Task<PumpDesignResultDto?> GetPumpDesignAsync(string pumpId);
+        Task<PumpDesignResult?> GetPumpDesignAsync(string pumpId);
 
         /// <summary>
         /// Updates pump design data
         /// </summary>
-        Task UpdatePumpDesignAsync(PumpDesignResultDto design, string userId);
+        Task UpdatePumpDesignAsync(PumpDesignResult design, string userId);
 
         /// <summary>
         /// Retrieves pump operational history
         /// </summary>
-        Task<List<PumpHistoryDto>> GetPumpHistoryAsync(string pumpId, DateTime startDate, DateTime endDate);
+        Task<List<PumpHistory>> GetPumpHistoryAsync(string pumpId, DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Retrieves pump performance trends
         /// </summary>
-        Task<PerformanceTrendsDto> GetPerformanceTrendsAsync(string pumpId, int monthsBack = 12);
+        Task<PerformanceTrends> GetPerformanceTrendsAsync(string pumpId, int monthsBack = 12);
 
         #endregion
 
@@ -271,17 +271,17 @@ namespace Beep.OilandGas.HydraulicPumps.Services
         /// <summary>
         /// Generates comprehensive pump report
         /// </summary>
-        Task<PumpReportDto> GeneratePumpReportAsync(string pumpId, ReportRequestDto request);
+        Task<PumpReport> GeneratePumpReportAsync(string pumpId, ReportRequest request);
 
         /// <summary>
         /// Generates performance summary report
         /// </summary>
-        Task<PerformanceSummaryReportDto> GeneratePerformanceSummaryAsync(string pumpId, SummaryReportRequestDto request);
+        Task<PerformanceSummaryReport> GeneratePerformanceSummaryAsync(string pumpId, SummaryReportRequest request);
 
         /// <summary>
         /// Generates cost analysis report
         /// </summary>
-        Task<CostAnalysisReportDto> GenerateCostAnalysisAsync(string pumpId, CostReportRequestDto request);
+        Task<CostAnalysisReport> GenerateCostAnalysisAsync(string pumpId, CostReportRequest request);
 
         /// <summary>
         /// Exports pump data
@@ -296,7 +296,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump design result DTO
     /// </summary>
-    public class PumpDesignResultDto
+    public class PumpDesignResult
     {
         public string DesignId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -316,7 +316,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump design request DTO
     /// </summary>
-    public class PumpDesignRequestDto
+    public class PumpDesignRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public string PumpType { get; set; } = string.Empty;
@@ -332,7 +332,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump sizing result DTO
     /// </summary>
-    public class PumpSizingResultDto
+    public class PumpSizingResult
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal RecommendedDisplacement { get; set; }
@@ -345,7 +345,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump sizing request DTO
     /// </summary>
-    public class PumpSizingRequestDto
+    public class PumpSizingRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal DesiredFlowRate { get; set; }
@@ -356,10 +356,10 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump type selection DTO
     /// </summary>
-    public class PumpTypeSelectionDto
+    public class PumpTypeSelection
     {
         public string WellUWI { get; set; } = string.Empty;
-        public List<PumpTypeOptionDto> Options { get; set; } = new();
+        public List<PumpTypeOption> Options { get; set; } = new();
         public string RecommendedType { get; set; } = string.Empty;
         public string SelectionRationale { get; set; } = string.Empty;
     }
@@ -367,7 +367,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump type option DTO
     /// </summary>
-    public class PumpTypeOptionDto
+    public class PumpTypeOption
     {
         public string PumpType { get; set; } = string.Empty;
         public decimal Efficiency { get; set; }
@@ -380,7 +380,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump selection criteria DTO
     /// </summary>
-    public class PumpSelectionCriteriaDto
+    public class PumpSelectionCriteria
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal FlowRate { get; set; }
@@ -392,7 +392,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Power requirements DTO
     /// </summary>
-    public class PowerRequirementsDto
+    public class PowerRequirements
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal HydraulicPower { get; set; }
@@ -405,7 +405,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Power calculation request DTO
     /// </summary>
-    public class PowerCalculationRequestDto
+    public class PowerCalculationRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal FlowRate { get; set; }
@@ -416,19 +416,19 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Hydraulic balance DTO
     /// </summary>
-    public class HydraulicBalanceDto
+    public class HydraulicBalance
     {
         public string PumpId { get; set; } = string.Empty;
         public bool IsBalanced { get; set; }
         public decimal BalanceScore { get; set; }
-        public List<BalanceFactorDto> Factors { get; set; } = new();
+        public List<BalanceFactor> Factors { get; set; } = new();
         public List<string> Recommendations { get; set; } = new();
     }
 
     /// <summary>
     /// Balance factor DTO
     /// </summary>
-    public class BalanceFactorDto
+    public class BalanceFactor
     {
         public string FactorName { get; set; } = string.Empty;
         public decimal Value { get; set; }
@@ -438,7 +438,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Balance request DTO
     /// </summary>
-    public class BalanceRequestDto
+    public class BalanceRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal DischargeFlow { get; set; }
@@ -448,7 +448,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Rod string design DTO
     /// </summary>
-    public class RodStringDesignDto
+    public class RodStringDesign
     {
         public string DesignId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -463,7 +463,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Rod string request DTO
     /// </summary>
-    public class RodStringRequestDto
+    public class RodStringRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal WellDepth { get; set; }
@@ -478,7 +478,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump performance analysis DTO
     /// </summary>
-    public class PumpPerformanceAnalysisDto
+    public class PumpPerformanceAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string PumpId { get; set; } = string.Empty;
@@ -494,7 +494,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Performance analysis request DTO
     /// </summary>
-    public class PerformanceAnalysisRequestDto
+    public class PerformanceAnalysisRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal MeasuredFlowRate { get; set; }
@@ -505,7 +505,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump efficiency DTO
     /// </summary>
-    public class PumpEfficiencyDto
+    public class PumpEfficiency
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal OverallEfficiency { get; set; }
@@ -518,7 +518,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Efficiency request DTO
     /// </summary>
-    public class EfficiencyRequestDto
+    public class EfficiencyRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal ActualOutput { get; set; }
@@ -528,7 +528,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Cavitation analysis DTO
     /// </summary>
-    public class CavitationAnalysisDto
+    public class CavitationAnalysis
     {
         public string PumpId { get; set; } = string.Empty;
         public bool CavitationRisk { get; set; }
@@ -541,7 +541,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Cavitation request DTO
     /// </summary>
-    public class CavitationRequestDto
+    public class CavitationRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal Pressure { get; set; }
@@ -552,7 +552,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Vibration analysis DTO
     /// </summary>
-    public class VibrationAnalysisDto
+    public class VibrationAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string PumpId { get; set; } = string.Empty;
@@ -565,7 +565,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Vibration request DTO
     /// </summary>
-    public class VibrationRequestDto
+    public class VibrationRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal MeasuredVibration { get; set; }
@@ -575,7 +575,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pressure dynamics DTO
     /// </summary>
-    public class PressureDynamicsDto
+    public class PressureDynamics
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal PeakPressure { get; set; }
@@ -588,7 +588,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pressure request DTO
     /// </summary>
-    public class PressureRequestDto
+    public class PressureRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal DischargePressure { get; set; }
@@ -598,7 +598,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Flow characteristics DTO
     /// </summary>
-    public class FlowCharacteristicsDto
+    public class FlowCharacteristics
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal VolumetricFlowRate { get; set; }
@@ -610,7 +610,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Flow request DTO
     /// </summary>
-    public class FlowRequestDto
+    public class FlowRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal PumpDisplacement { get; set; }
@@ -624,10 +624,10 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Optimization result DTO
     /// </summary>
-    public class OptimizationResultDto
+    public class OptimizationResult
     {
         public string PumpId { get; set; } = string.Empty;
-        public List<OptimizedParameterDto> OptimizedParameters { get; set; } = new();
+        public List<OptimizedParameter> OptimizedParameters { get; set; } = new();
         public decimal ExpectedEfficiencyGain { get; set; }
         public decimal CostSavingsPerYear { get; set; }
         public string Recommendations { get; set; } = string.Empty;
@@ -636,7 +636,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Optimized parameter DTO
     /// </summary>
-    public class OptimizedParameterDto
+    public class OptimizedParameter
     {
         public string ParameterName { get; set; } = string.Empty;
         public decimal CurrentValue { get; set; }
@@ -647,7 +647,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Optimization request DTO
     /// </summary>
-    public class OptimizationRequestDto
+    public class OptimizationRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public List<string> OptimizationObjectives { get; set; } = new();
@@ -657,17 +657,17 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Parameter adjustment DTO
     /// </summary>
-    public class ParameterAdjustmentDto
+    public class ParameterAdjustment
     {
         public string PumpId { get; set; } = string.Empty;
-        public List<AdjustmentDto> Adjustments { get; set; } = new();
+        public List<Adjustment> Adjustments { get; set; } = new();
         public string AdjustmentRationale { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Adjustment DTO
     /// </summary>
-    public class AdjustmentDto
+    public class Adjustment
     {
         public string ParameterName { get; set; } = string.Empty;
         public decimal CurrentValue { get; set; }
@@ -677,17 +677,17 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Efficiency improvement DTO
     /// </summary>
-    public class EfficiencyImprovementDto
+    public class EfficiencyImprovement
     {
         public string PumpId { get; set; } = string.Empty;
-        public List<ImprovementOpportunityDto> Opportunities { get; set; } = new();
+        public List<ImprovementOpportunity> Opportunities { get; set; } = new();
         public decimal TotalPotentialGain { get; set; }
     }
 
     /// <summary>
     /// Improvement opportunity DTO
     /// </summary>
-    public class ImprovementOpportunityDto
+    public class ImprovementOpportunity
     {
         public string OpportunityName { get; set; } = string.Empty;
         public decimal PotentialGain { get; set; }
@@ -698,9 +698,9 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump comparison DTO
     /// </summary>
-    public class PumpComparisonDto
+    public class PumpComparison
     {
-        public List<ComparisonItemDto> Items { get; set; } = new();
+        public List<ComparisonItem> Items { get; set; } = new();
         public string BestPerformer { get; set; } = string.Empty;
         public string ComparisonSummary { get; set; } = string.Empty;
     }
@@ -708,7 +708,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Comparison item DTO
     /// </summary>
-    public class ComparisonItemDto
+    public class ComparisonItem
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal Efficiency { get; set; }
@@ -719,7 +719,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Comparison criteria DTO
     /// </summary>
-    public class ComparisonCriteriaDto
+    public class ComparisonCriteria
     {
         public List<string> CriteriaToCompare { get; set; } = new();
         public bool IncludeCostAnalysis { get; set; } = true;
@@ -728,7 +728,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump upgrade recommendation DTO
     /// </summary>
-    public class PumpUpgradeRecommendationDto
+    public class PumpUpgradeRecommendation
     {
         public string PumpId { get; set; } = string.Empty;
         public bool UpgradeRecommended { get; set; }
@@ -741,7 +741,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Upgrade request DTO
     /// </summary>
-    public class UpgradeRequestDto
+    public class UpgradeRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public bool IncludeCostAnalysis { get; set; } = true;
@@ -754,7 +754,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump monitoring data DTO
     /// </summary>
-    public class PumpMonitoringDataDto
+    public class PumpMonitoringData
     {
         public string PumpId { get; set; } = string.Empty;
         public DateTime MonitoringDate { get; set; }
@@ -769,7 +769,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Monitoring request DTO
     /// </summary>
-    public class MonitoringRequestDto
+    public class MonitoringRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public bool IncludeDetailedAnalysis { get; set; } = true;
@@ -778,11 +778,11 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Diagnostics result DTO
     /// </summary>
-    public class DiagnosticsResultDto
+    public class DiagnosticsResult
     {
         public string DiagnosticsId { get; set; } = string.Empty;
         public string PumpId { get; set; } = string.Empty;
-        public List<DiagnosticFindingDto> Findings { get; set; } = new();
+        public List<DiagnosticFinding> Findings { get; set; } = new();
         public string OverallStatus { get; set; } = string.Empty;
         public List<string> RecommendedActions { get; set; } = new();
     }
@@ -790,7 +790,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Diagnostic finding DTO
     /// </summary>
-    public class DiagnosticFindingDto
+    public class DiagnosticFinding
     {
         public string FindingType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -801,7 +801,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Diagnostics request DTO
     /// </summary>
-    public class DiagnosticsRequestDto
+    public class DiagnosticsRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public List<string> DiagnosticAspects { get; set; } = new();
@@ -810,19 +810,19 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Condition assessment DTO
     /// </summary>
-    public class ConditionAssessmentDto
+    public class ConditionAssessment
     {
         public string PumpId { get; set; } = string.Empty;
         public string OverallCondition { get; set; } = string.Empty;
         public decimal ConditionScore { get; set; }
-        public List<ComponentConditionDto> Components { get; set; } = new();
+        public List<ComponentCondition> Components { get; set; } = new();
         public DateTime NextInspectionDue { get; set; }
     }
 
     /// <summary>
     /// Component condition DTO
     /// </summary>
-    public class ComponentConditionDto
+    public class ComponentCondition
     {
         public string ComponentName { get; set; } = string.Empty;
         public string Condition { get; set; } = string.Empty;
@@ -832,18 +832,18 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Anomaly detection DTO
     /// </summary>
-    public class AnomalyDetectionDto
+    public class AnomalyDetection
     {
         public string PumpId { get; set; } = string.Empty;
         public bool AnomaliesDetected { get; set; }
-        public List<DetectedAnomalyDto> Anomalies { get; set; } = new();
+        public List<DetectedAnomaly> Anomalies { get; set; } = new();
         public DateTime AnalysisDate { get; set; }
     }
 
     /// <summary>
     /// Detected anomaly DTO
     /// </summary>
-    public class DetectedAnomalyDto
+    public class DetectedAnomaly
     {
         public string AnomalyType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -854,10 +854,10 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Predictive maintenance DTO
     /// </summary>
-    public class PredictiveMaintenanceDto
+    public class PredictiveMaintenance
     {
         public string PumpId { get; set; } = string.Empty;
-        public List<MaintenancePredictionDto> Predictions { get; set; } = new();
+        public List<MaintenancePrediction> Predictions { get; set; } = new();
         public DateTime NextMaintenanceDue { get; set; }
         public string MaintenanceUrgency { get; set; } = string.Empty;
     }
@@ -865,7 +865,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Maintenance prediction DTO
     /// </summary>
-    public class MaintenancePredictionDto
+    public class MaintenancePrediction
     {
         public string ComponentName { get; set; } = string.Empty;
         public DateTime PredictedFailureDate { get; set; }
@@ -876,7 +876,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Maintenance request DTO
     /// </summary>
-    public class MaintenanceRequestDto
+    public class MaintenanceRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public bool IncludeComponentAnalysis { get; set; } = true;
@@ -890,17 +890,17 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Failure mode analysis DTO
     /// </summary>
-    public class FailureModeAnalysisDto
+    public class FailureModeAnalysis
     {
         public string PumpId { get; set; } = string.Empty;
-        public List<FailureModeDto> FailureModes { get; set; } = new();
+        public List<FailureMode> FailureModes { get; set; } = new();
         public string OverallRisk { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Failure mode DTO
     /// </summary>
-    public class FailureModeDto
+    public class FailureMode
     {
         public string FailureType { get; set; } = string.Empty;
         public string Cause { get; set; } = string.Empty;
@@ -911,7 +911,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Reliability assessment DTO
     /// </summary>
-    public class ReliabilityAssessmentDto
+    public class ReliabilityAssessment
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal ReliabilityScore { get; set; }
@@ -923,7 +923,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Reliability request DTO
     /// </summary>
-    public class ReliabilityRequestDto
+    public class ReliabilityRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public int HistoricalYears { get; set; } = 5;
@@ -932,7 +932,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// MTBF calculation DTO
     /// </summary>
-    public class MTBFCalculationDto
+    public class MTBFCalculation
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal CalculatedMTBF { get; set; }
@@ -944,10 +944,10 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Wear analysis DTO
     /// </summary>
-    public class WearAnalysisDto
+    public class WearAnalysis
     {
         public string PumpId { get; set; } = string.Empty;
-        public List<WearItemDto> WearItems { get; set; } = new();
+        public List<WearItem> WearItems { get; set; } = new();
         public string OverallWearStatus { get; set; } = string.Empty;
         public DateTime EstimatedReplacement { get; set; }
     }
@@ -955,7 +955,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Wear item DTO
     /// </summary>
-    public class WearItemDto
+    public class WearItem
     {
         public string ComponentName { get; set; } = string.Empty;
         public decimal WearPercent { get; set; }
@@ -966,7 +966,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Wear request DTO
     /// </summary>
-    public class WearRequestDto
+    public class WearRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public bool IncludeHistoricalAnalysis { get; set; } = true;
@@ -975,18 +975,18 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Failure risk assessment DTO
     /// </summary>
-    public class FailureRiskAssessmentDto
+    public class FailureRiskAssessment
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal FailureRisk { get; set; }
-        public List<RiskPointDto> RiskPoints { get; set; } = new();
+        public List<RiskPoint> RiskPoints { get; set; } = new();
         public string OverallRiskLevel { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Risk point DTO
     /// </summary>
-    public class RiskPointDto
+    public class RiskPoint
     {
         public string ComponentName { get; set; } = string.Empty;
         public decimal RiskScore { get; set; }
@@ -1000,17 +1000,17 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Maintenance schedule DTO
     /// </summary>
-    public class MaintenanceScheduleDto
+    public class MaintenanceSchedule
     {
         public string PumpId { get; set; } = string.Empty;
-        public List<ScheduledMaintenanceDto> ScheduledItems { get; set; } = new();
+        public List<ScheduledMaintenance> ScheduledItems { get; set; } = new();
         public DateTime NextMaintenanceDate { get; set; }
     }
 
     /// <summary>
     /// Scheduled maintenance DTO
     /// </summary>
-    public class ScheduledMaintenanceDto
+    public class ScheduledMaintenance
     {
         public string MaintenanceType { get; set; } = string.Empty;
         public DateTime ScheduledDate { get; set; }
@@ -1021,7 +1021,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Schedule request DTO
     /// </summary>
-    public class ScheduleRequestDto
+    public class ScheduleRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public int MonthsAhead { get; set; } = 12;
@@ -1030,7 +1030,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Maintenance activity DTO
     /// </summary>
-    public class MaintenanceActivityDto
+    public class MaintenanceActivity
     {
         public string PumpId { get; set; } = string.Empty;
         public DateTime ActivityDate { get; set; }
@@ -1042,7 +1042,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Rebuild analysis DTO
     /// </summary>
-    public class RebuildAnalysisDto
+    public class RebuildAnalysis
     {
         public string PumpId { get; set; } = string.Empty;
         public bool RebuildRecommended { get; set; }
@@ -1054,7 +1054,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Rebuild request DTO
     /// </summary>
-    public class RebuildRequestDto
+    public class RebuildRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public bool IncludeCostAnalysis { get; set; } = true;
@@ -1063,17 +1063,17 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Parts inventory DTO
     /// </summary>
-    public class PartsInventoryDto
+    public class PartsInventory
     {
         public string PumpId { get; set; } = string.Empty;
-        public List<PartItemDto> Parts { get; set; } = new();
+        public List<PartItem> Parts { get; set; } = new();
         public string InventoryStatus { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Part item DTO
     /// </summary>
-    public class PartItemDto
+    public class PartItem
     {
         public string PartName { get; set; } = string.Empty;
         public int QuantityOnHand { get; set; }
@@ -1084,7 +1084,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Parts request DTO
     /// </summary>
-    public class PartsRequestDto
+    public class PartsRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public List<string> PartsToTrack { get; set; } = new();
@@ -1093,7 +1093,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Maintenance cost estimate DTO
     /// </summary>
-    public class MaintenanceCostEstimateDto
+    public class MaintenanceCostEstimate
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal EstimatedLaborCost { get; set; }
@@ -1105,7 +1105,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Cost estimate request DTO
     /// </summary>
-    public class CostEstimateRequestDto
+    public class CostEstimateRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public string MaintenanceType { get; set; } = string.Empty;
@@ -1118,7 +1118,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Fluid analysis DTO
     /// </summary>
-    public class FluidAnalysisDto
+    public class FluidAnalysis
     {
         public string PumpId { get; set; } = string.Empty;
         public string FluidType { get; set; } = string.Empty;
@@ -1132,7 +1132,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Fluid analysis request DTO
     /// </summary>
-    public class FluidAnalysisRequestDto
+    public class FluidAnalysisRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public bool IncludeContaminationAnalysis { get; set; } = true;
@@ -1141,7 +1141,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Fluid change recommendation DTO
     /// </summary>
-    public class FluidChangeRecommendationDto
+    public class FluidChangeRecommendation
     {
         public string PumpId { get; set; } = string.Empty;
         public bool ChangeRecommended { get; set; }
@@ -1153,19 +1153,19 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Contamination level DTO
     /// </summary>
-    public class ContaminationLevelDto
+    public class ContaminationLevel
     {
         public string PumpId { get; set; } = string.Empty;
         public decimal ISO4406Rating { get; set; }
         public decimal ContaminationPercent { get; set; }
-        public List<ContaminantDto> Contaminants { get; set; } = new();
+        public List<Contaminant> Contaminants { get; set; } = new();
         public string ContaminationStatus { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Contaminant DTO
     /// </summary>
-    public class ContaminantDto
+    public class Contaminant
     {
         public string ContaminantType { get; set; } = string.Empty;
         public decimal Concentration { get; set; }
@@ -1175,7 +1175,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Contamination request DTO
     /// </summary>
-    public class ContaminationRequestDto
+    public class ContaminationRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public bool IncludeParticleAnalysis { get; set; } = true;
@@ -1184,10 +1184,10 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Filtration system DTO
     /// </summary>
-    public class FiltrationSystemDto
+    public class FiltrationSystem
     {
         public string PumpId { get; set; } = string.Empty;
-        public List<FilterStatusDto> Filters { get; set; } = new();
+        public List<FilterStatus> Filters { get; set; } = new();
         public string FiltrationStatus { get; set; } = string.Empty;
         public DateTime NextFilterChangeDate { get; set; }
     }
@@ -1195,7 +1195,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Filter status DTO
     /// </summary>
-    public class FilterStatusDto
+    public class FilterStatus
     {
         public string FilterName { get; set; } = string.Empty;
         public decimal BetaRating { get; set; }
@@ -1206,7 +1206,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Filtration request DTO
     /// </summary>
-    public class FiltrationRequestDto
+    public class FiltrationRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public List<string> FilterTypesToManage { get; set; } = new();
@@ -1219,18 +1219,18 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// SCADA integration DTO
     /// </summary>
-    public class SCODAIntegrationDto
+    public class SCODAIntegration
     {
         public string PumpId { get; set; } = string.Empty;
         public bool IsIntegrated { get; set; }
-        public List<IntegrationParameterDto> Parameters { get; set; } = new();
+        public List<IntegrationParameter> Parameters { get; set; } = new();
         public string IntegrationStatus { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Integration parameter DTO
     /// </summary>
-    public class IntegrationParameterDto
+    public class IntegrationParameter
     {
         public string ParameterName { get; set; } = string.Empty;
         public string DataType { get; set; } = string.Empty;
@@ -1240,7 +1240,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// SCADA configuration DTO
     /// </summary>
-    public class SCADAConfigDto
+    public class SCADAConfig
     {
         public string PumpId { get; set; } = string.Empty;
         public string SCODAServer { get; set; } = string.Empty;
@@ -1250,17 +1250,17 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Control parameters DTO
     /// </summary>
-    public class ControlParametersDto
+    public class ControlParameters
     {
         public string PumpId { get; set; } = string.Empty;
-        public List<ControlParamDto> Parameters { get; set; } = new();
+        public List<ControlParam> Parameters { get; set; } = new();
         public string ControlMode { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Control parameter DTO
     /// </summary>
-    public class ControlParamDto
+    public class ControlParam
     {
         public string ParameterName { get; set; } = string.Empty;
         public decimal CurrentValue { get; set; }
@@ -1271,7 +1271,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Control request DTO
     /// </summary>
-    public class ControlRequestDto
+    public class ControlRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public Dictionary<string, decimal> ParameterUpdates { get; set; } = new();
@@ -1280,18 +1280,18 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Wellbore interaction DTO
     /// </summary>
-    public class WellboreInteractionDto
+    public class WellboreInteraction
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal InteractionIntensity { get; set; }
-        public List<InteractionFactorDto> Factors { get; set; } = new();
+        public List<InteractionFactor> Factors { get; set; } = new();
         public string OverallAssessment { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Interaction factor DTO
     /// </summary>
-    public class InteractionFactorDto
+    public class InteractionFactor
     {
         public string FactorName { get; set; } = string.Empty;
         public decimal Impact { get; set; }
@@ -1301,7 +1301,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Interaction request DTO
     /// </summary>
-    public class InteractionRequestDto
+    public class InteractionRequest
     {
         public string WellUWI { get; set; } = string.Empty;
         public bool IncludeDetailedAnalysis { get; set; } = true;
@@ -1314,7 +1314,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump history DTO
     /// </summary>
-    public class PumpHistoryDto
+    public class PumpHistory
     {
         public DateTime EventDate { get; set; }
         public string EventType { get; set; } = string.Empty;
@@ -1325,17 +1325,17 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Performance trends DTO
     /// </summary>
-    public class PerformanceTrendsDto
+    public class PerformanceTrends
     {
         public string PumpId { get; set; } = string.Empty;
-        public List<TrendPointDto> TrendData { get; set; } = new();
+        public List<TrendPoint> TrendData { get; set; } = new();
         public string OverallTrend { get; set; } = string.Empty;
     }
 
     /// <summary>
     /// Trend point DTO
     /// </summary>
-    public class TrendPointDto
+    public class TrendPoint
     {
         public DateTime MeasurementDate { get; set; }
         public decimal Efficiency { get; set; }
@@ -1346,7 +1346,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Pump report DTO
     /// </summary>
-    public class PumpReportDto
+    public class PumpReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string PumpId { get; set; } = string.Empty;
@@ -1359,7 +1359,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Report request DTO
     /// </summary>
-    public class ReportRequestDto
+    public class ReportRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public string ReportType { get; set; } = "Comprehensive";
@@ -1370,7 +1370,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Performance summary report DTO
     /// </summary>
-    public class PerformanceSummaryReportDto
+    public class PerformanceSummaryReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string PumpId { get; set; } = string.Empty;
@@ -1383,7 +1383,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Summary report request DTO
     /// </summary>
-    public class SummaryReportRequestDto
+    public class SummaryReportRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public int ReportPeriodMonths { get; set; } = 12;
@@ -1392,7 +1392,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Cost analysis report DTO
     /// </summary>
-    public class CostAnalysisReportDto
+    public class CostAnalysisReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string PumpId { get; set; } = string.Empty;
@@ -1405,7 +1405,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// <summary>
     /// Cost report request DTO
     /// </summary>
-    public class CostReportRequestDto
+    public class CostReportRequest
     {
         public string PumpId { get; set; } = string.Empty;
         public int AnalysisPeriodYears { get; set; } = 5;

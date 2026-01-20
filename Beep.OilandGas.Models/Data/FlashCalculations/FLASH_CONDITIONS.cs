@@ -5,8 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.FlashCalculations
 {
-    public partial class FLASH_CONDITIONS : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class FLASH_CONDITIONS : ModelEntityBase {
         private String FLASH_CONDITIONS_IDValue;
         public String FLASH_CONDITIONS_ID
         {

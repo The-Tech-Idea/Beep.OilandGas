@@ -4,8 +4,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class IMPAIRMENT_RECORD : Entity,IPPDMEntity
-    {
+    public partial class IMPAIRMENT_RECORD : ModelEntityBase {
         private System.String IMPAIRMENT_RECORD_IDValue;
         public System.String IMPAIRMENT_RECORD_ID
         {

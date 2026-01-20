@@ -3,8 +3,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.PipelineAnalysis
 {
-    public partial class PIPELINE_ANALYSIS_RESULT : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
-    {
+    public partial class PIPELINE_ANALYSIS_RESULT : ModelEntityBase {
         private string ANALYSIS_IDValue;
         public string ANALYSIS_ID
         {

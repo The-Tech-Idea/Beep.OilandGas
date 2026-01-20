@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Beep.OilandGas.ChokeAnalysis.Calculations;
 using Beep.OilandGas.ChokeAnalysis.Constants;
 using Beep.OilandGas.ChokeAnalysis.Exceptions;
-using Beep.OilandGas.Models.ChokeAnalysis;
-using Beep.OilandGas.Models.DTOs.Calculations;
+using Beep.OilandGas.Models.Data.ChokeAnalysis;
+using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ChokeAnalysis.Services
@@ -22,7 +22,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// <summary>
         /// Designs bean choke per API RP 43 standard.
         /// </summary>
-        public async Task<BeanChokeDesignDto> DesignBeanChokeAsync(
+        public async Task<BeanChokeDesign> DesignBeanChokeAsync(
             decimal desiredFlowRate, decimal upstreamPressure, decimal downstreamPressure,
             decimal temperature, decimal gasSpecificGravity, string trimMaterial = "WC")
         {
@@ -48,7 +48,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                 decimal recommendedDiameter = trimSizes[recommendedTrim];
                 decimal estimatedErosionRate = (gasSpecificGravity * upstreamPressure / 1000m) * 2m;
 
-                var result = new BeanChokeDesignDto
+                var result = new BeanChokeDesign
                 {
                     DesignId = $"BEAN-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
                     DesignDate = DateTime.UtcNow,
@@ -83,7 +83,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// <summary>
         /// Analyzes venturi choke with recovery section.
         /// </summary>
-        public async Task<VenturiChokeAnalysisDto> AnalyzeVenturiChokeAsync(
+        public async Task<VenturiChokeAnalysis> AnalyzeVenturiChokeAsync(
             decimal throatDiameter, decimal upstreamDiameter, decimal downstreamDiameter,
             decimal recoveryLength, decimal upstreamPressure, decimal downstreamPressure,
             decimal gasFlowRate, decimal temperature, decimal gasSpecificGravity)
@@ -102,7 +102,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                 decimal pressureDrop = upstreamPressure - downstreamPressure;
                 decimal recoveryPressure = downstreamPressure + (pressureDrop * recoveryFactor);
 
-                var result = new VenturiChokeAnalysisDto
+                var result = new VenturiChokeAnalysis
                 {
                     AnalysisId = $"VENTURI-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
                     AnalysisDate = DateTime.UtcNow,
@@ -138,7 +138,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// <summary>
         /// Analyzes multiphase flow (oil, water, gas) through choke.
         /// </summary>
-        public async Task<MultiphaseChokeAnalysisDto> AnalyzeMultiphaseChokeFlowAsync(
+        public async Task<MultiphaseChokeAnalysis> AnalyzeMultiphaseChokeFlowAsync(
             decimal oilFlowRate, decimal waterFlowRate, decimal gasFlowRate,
             decimal oilDensity, decimal waterDensity, decimal gasDensity,
             decimal oilViscosity, decimal waterViscosity, decimal gasViscosity,
@@ -169,7 +169,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                 decimal fricDP = (mixtureViscosity * velocity) / (chokeDiameter * chokeDiameter * 100m);
                 decimal totalDP = accelDP + fricDP;
 
-                var result = new MultiphaseChokeAnalysisDto
+                var result = new MultiphaseChokeAnalysis
                 {
                     AnalysisId = $"MP-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
                     AnalysisDate = DateTime.UtcNow,
@@ -211,7 +211,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// <summary>
         /// Predicts choke erosion rate and life using API RP 43 methodology.
         /// </summary>
-        public async Task<ChokeErosionPredictionDto> PredictChokeErosionAsync(
+        public async Task<ChokeErosionPrediction> PredictChokeErosionAsync(
             decimal sandProductionRate, decimal sandParticleSize, decimal chokeDiameter,
             decimal upstreamPressure, decimal gasFlowRate, string chokeMaterial = "WC",
             decimal? currentWearDepth = null)
@@ -246,7 +246,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     recommendations.Add("Evaluate upstream sand control");
                 }
 
-                var result = new ChokeErosionPredictionDto
+                var result = new ChokeErosionPrediction
                 {
                     PredictionId = $"EROSION-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
                     AnalysisDate = DateTime.UtcNow,
@@ -280,7 +280,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// <summary>
         /// Optimizes choke back-pressure for maximum production.
         /// </summary>
-        public async Task<ChokeBackPressureOptimizationDto> OptimizeBackPressureAsync(
+        public async Task<ChokeBackPressureOptimization> OptimizeBackPressureAsync(
             decimal reservoirPressure, decimal bubblePointPressure, decimal currentChokeDiameter,
             decimal currentProduction, decimal gasFlowRate, decimal temperature, decimal gasSpecificGravity)
         {
@@ -314,7 +314,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                 var optimal = openingCurve.OrderByDescending(p => p.ProductionRate).First();
                 decimal prodIncrease = ((optimal.ProductionRate - currentProduction) / currentProduction) * 100m;
 
-                var result = new ChokeBackPressureOptimizationDto
+                var result = new ChokeBackPressureOptimization
                 {
                     OptimizationId = $"OPT-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
                     AnalysisDate = DateTime.UtcNow,
@@ -349,7 +349,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// <summary>
         /// Analyzes choke interaction with artificial lift systems.
         /// </summary>
-        public async Task<LiftSystemChokeInteractionDto> AnalyzeLiftSystemInteractionAsync(
+        public async Task<LiftSystemChokeInteraction> AnalyzeLiftSystemInteractionAsync(
             string liftSystemType, decimal currentChokeSize, decimal currentDischarge,
             decimal liftSystemPower, decimal requiredHeadOrPressure, decimal gasFlowRate)
         {
@@ -375,7 +375,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     constraints.Add("Keep inlet GOR < 3000 scf/bbl");
                 }
 
-                var result = new LiftSystemChokeInteractionDto
+                var result = new LiftSystemChokeInteraction
                 {
                     AnalysisId = $"LIFT-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
                     AnalysisDate = DateTime.UtcNow,
@@ -410,7 +410,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// <summary>
         /// Performs well nodal analysis integrating choke effects.
         /// </summary>
-        public async Task<ChokeNodalAnalysisDto> PerformNodalAnalysisWithChokeAsync(
+        public async Task<ChokeNodalAnalysis> PerformNodalAnalysisWithChokeAsync(
             string wellUWI, decimal reservoirPressure, decimal bubblePointPressure,
             decimal tubingHeadPressure, decimal separatorPressure, decimal chokeDiameter,
             decimal currentProduction, decimal tubeID, decimal wellDepth)
@@ -440,7 +440,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     new NodalPoint { PointName = "Wellhead", Pressure = tubingHeadPressure, FlowRate = currentProduction, RestrictionType = 0 }
                 };
 
-                var result = new ChokeNodalAnalysisDto
+                var result = new ChokeNodalAnalysis
                 {
                     AnalysisId = $"NODAL-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
                     AnalysisDate = DateTime.UtcNow,
@@ -477,7 +477,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// <summary>
         /// Assesses sand cut risk and predicts sand migration.
         /// </summary>
-        public async Task<ChokeSandCutRiskAssessmentDto> AssessSandCutRiskAsync(
+        public async Task<ChokeSandCutRiskAssessment> AssessSandCutRiskAsync(
             string wellUWI, decimal estimatedSandRate, decimal sandGrainSize,
             decimal chokeDiameter, decimal gasFlowRate, decimal temperature)
         {
@@ -506,7 +506,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                 decimal damageRate = 0.001m * estimatedSandRate * (decimal)Math.Pow((double)flowVelocity, 2.5);
                 int daysToReplace = (int)((2.0m / Math.Max(0.01m, damageRate / 365.25m)));
 
-                var result = new ChokeSandCutRiskAssessmentDto
+                var result = new ChokeSandCutRiskAssessment
                 {
                     AssessmentId = $"SAND-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
                     AnalysisDate = DateTime.UtcNow,
@@ -540,7 +540,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// <summary>
         /// Analyzes temperature effect on choke flow.
         /// </summary>
-        public async Task<ChokeTemperatureEffectAnalysisDto> AnalyzeTemperatureEffectsAsync(
+        public async Task<ChokeTemperatureEffectAnalysis> AnalyzeTemperatureEffectsAsync(
             decimal baselineTemperature, decimal baselineFlowRate, decimal upstreamPressure,
             decimal downstreamPressure, decimal chokeDiameter, decimal tempMin = 400m, decimal tempMax = 600m)
         {
@@ -589,7 +589,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                 decimal flowSensitivity = (curve.Count > 1) ?
                     (curve.Last().FlowRate - curve.First().FlowRate) / (curve.Last().Temperature - curve.First().Temperature) : 0m;
 
-                var result = new ChokeTemperatureEffectAnalysisDto
+                var result = new ChokeTemperatureEffectAnalysis
                 {
                     AnalysisId = $"TEMP-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
                     AnalysisDate = DateTime.UtcNow,

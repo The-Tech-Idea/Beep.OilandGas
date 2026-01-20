@@ -5,7 +5,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class RESERVE_CASHFLOW : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class RESERVE_CASHFLOW : ModelEntityBase
     {
         private System.String RESERVE_CASHFLOW_IDValue;
         public System.String RESERVE_CASHFLOW_ID
@@ -184,3 +184,4 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+

@@ -23,7 +23,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
         }
 
         [HttpGet("data")]
-        public async Task<ActionResult<List<ProductionDataDto>>> GetProductionData(
+        public async Task<ActionResult<List<ProductionData>>> GetProductionData(
             [FromQuery] string? wellUWI = null,
             [FromQuery] string? fieldId = null,
             [FromQuery] DateTime? startDate = null,
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
         }
 
         [HttpPost("data")]
-        public async Task<ActionResult> RecordProductionData([FromBody] ProductionDataDto productionData, [FromQuery] string? userId = null)
+        public async Task<ActionResult> RecordProductionData([FromBody] ProductionData productionData, [FromQuery] string? userId = null)
         {
             try
             {
@@ -59,7 +59,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
         }
 
         [HttpPost("optimize")]
-        public async Task<ActionResult<List<ProductionOptimizationRecommendationDto>>> OptimizeProduction(
+        public async Task<ActionResult<List<ProductionOptimizationRecommendation>>> OptimizeProduction(
             [FromQuery] string wellUWI,
             [FromBody] Dictionary<string, object> optimizationGoals)
         {

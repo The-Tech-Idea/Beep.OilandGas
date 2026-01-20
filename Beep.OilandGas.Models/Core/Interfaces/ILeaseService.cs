@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Lease;
 using Beep.OilandGas.Models.Data.Agreement;
-using Beep.OilandGas.Models.DTOs.Lease;
-using Beep.OilandGas.Models.DTOs.Agreement;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Agreement;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

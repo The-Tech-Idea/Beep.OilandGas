@@ -13,7 +13,7 @@ using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
-using Beep.OilandGas.Models.DTOs;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.ApiService.Controllers
 {

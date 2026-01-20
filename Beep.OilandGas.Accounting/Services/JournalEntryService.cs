@@ -56,7 +56,8 @@ namespace Beep.OilandGas.Accounting.Services
             List<JOURNAL_ENTRY_LINE> lineItems,
             string userId,
             string? referenceNumber = null,
-            string? sourceModule = null)
+            string? sourceModule = null,
+            string? bookId = null)
         {
             if (lineItems == null || lineItems.Count == 0)
                 throw new ArgumentException("Journal entry must have at least one line item", nameof(lineItems));
@@ -65,6 +66,8 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
+                var resolvedBookId = string.IsNullOrWhiteSpace(bookId) ? AccountingBooks.Ifrs : bookId;
+
                 // Validate all accounts exist and are active
                 foreach (var item in lineItems)
                 {
@@ -96,9 +99,11 @@ namespace Beep.OilandGas.Accounting.Services
                     DESCRIPTION = description,
                     REFERENCE_NUMBER = referenceNumber,
                     SOURCE_MODULE = sourceModule ?? "MANUAL",
+                    SOURCE = resolvedBookId,
+                    REMARK = $"BOOK={resolvedBookId}",
                     TOTAL_DEBIT = totalDebit,
                     TOTAL_CREDIT = totalCredit,
-                    ACTIVE_IND = "Y",
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                     PPDM_GUID = Guid.NewGuid().ToString(),
                     ROW_CREATED_BY = userId,
                     ROW_CREATED_DATE = DateTime.UtcNow
@@ -116,7 +121,7 @@ namespace Beep.OilandGas.Accounting.Services
                 await repo.InsertAsync(entry, userId);
 
                 // Insert line items
-                await InsertLineItemsAsync(entry.JOURNAL_ENTRY_ID, lineItems, userId);
+                await InsertLineItemsAsync(entry.JOURNAL_ENTRY_ID, lineItems, userId, resolvedBookId);
 
                 _logger?.LogInformation("Journal entry {EntryNumber} created with status DRAFT", entry.ENTRY_NUMBER);
                 return entry;
@@ -136,7 +141,8 @@ namespace Beep.OilandGas.Accounting.Services
             decimal amount,
             string description,
             string userId,
-            string cn = "PPDM39")
+            string cn = "PPDM39",
+            string? bookId = null)
         {
             if (string.IsNullOrWhiteSpace(glAccount))
                 throw new ArgumentNullException(nameof(glAccount));
@@ -174,7 +180,8 @@ namespace Beep.OilandGas.Accounting.Services
                 lines,
                 userId,
                 referenceNumber: null,
-                sourceModule: "PRODUCTION_ACCOUNTING");
+                sourceModule: "PRODUCTION_ACCOUNTING",
+                bookId: bookId);
 
             await PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
             entry.STATUS = "POSTED";
@@ -190,7 +197,8 @@ namespace Beep.OilandGas.Accounting.Services
             decimal amount,
             string description,
             string userId,
-            string cn = "PPDM39")
+            string cn = "PPDM39",
+            string? bookId = null)
         {
             if (string.IsNullOrWhiteSpace(debitAccount))
                 throw new ArgumentNullException(nameof(debitAccount));
@@ -230,11 +238,55 @@ namespace Beep.OilandGas.Accounting.Services
                 lines,
                 userId,
                 referenceNumber: null,
-                sourceModule: "PRODUCTION_ACCOUNTING");
+                sourceModule: "PRODUCTION_ACCOUNTING",
+                bookId: bookId);
 
             await PostEntryAsync(entry.JOURNAL_ENTRY_ID, userId);
             entry.STATUS = "POSTED";
             return entry;
+        }
+
+        public async Task<(JOURNAL_ENTRY IfrsEntry, JOURNAL_ENTRY GaapEntry)> CreateDualBalancedEntryFromKeysAsync(
+            string debitKey,
+            string creditKey,
+            decimal amount,
+            string description,
+            string userId,
+            IAccountMappingService ifrsMapping,
+            IAccountMappingService gaapMapping,
+            string ifrsBookId = AccountingBooks.Ifrs,
+            string gaapBookId = AccountingBooks.Gaap,
+            string cn = "PPDM39")
+        {
+            if (ifrsMapping == null)
+                throw new ArgumentNullException(nameof(ifrsMapping));
+            if (gaapMapping == null)
+                throw new ArgumentNullException(nameof(gaapMapping));
+
+            var ifrsDebit = ifrsMapping.GetAccountId(debitKey);
+            var ifrsCredit = ifrsMapping.GetAccountId(creditKey);
+            var gaapDebit = gaapMapping.GetAccountId(debitKey);
+            var gaapCredit = gaapMapping.GetAccountId(creditKey);
+
+            var ifrsEntry = await CreateBalancedEntryAsync(
+                ifrsDebit,
+                ifrsCredit,
+                amount,
+                $"{description} (IFRS)",
+                userId,
+                cn,
+                ifrsBookId);
+
+            var gaapEntry = await CreateBalancedEntryAsync(
+                gaapDebit,
+                gaapCredit,
+                amount,
+                $"{description} (GAAP)",
+                userId,
+                cn,
+                gaapBookId);
+
+            return (ifrsEntry, gaapEntry);
         }
 
         /// <summary>
@@ -244,7 +296,8 @@ namespace Beep.OilandGas.Accounting.Services
             string glAccount,
             DateTime start,
             DateTime end,
-            string cn = "PPDM39")
+            string cn = "PPDM39",
+            string? bookId = null)
         {
             if (string.IsNullOrWhiteSpace(glAccount))
                 throw new ArgumentNullException(nameof(glAccount));
@@ -269,6 +322,10 @@ namespace Beep.OilandGas.Accounting.Services
                 new AppFilter { FieldName = "ENTRY_DATE", Operator = "<=", FilterValue = end.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
+            if (!string.IsNullOrWhiteSpace(bookId))
+            {
+                filters.Add(new AppFilter { FieldName = "SOURCE", Operator = "=", FilterValue = bookId });
+            }
 
             var entries = await repo.GetAsync(filters);
             return entries?.Cast<GL_ENTRY>().OrderBy(e => e.ENTRY_DATE).ToList() ?? new List<GL_ENTRY>();
@@ -280,7 +337,8 @@ namespace Beep.OilandGas.Accounting.Services
         public async Task<decimal> GetAccountBalanceAsync(
             string glAccount,
             DateTime asOfDate,
-            string cn = "PPDM39")
+            string cn = "PPDM39",
+            string? bookId = null)
         {
             if (string.IsNullOrWhiteSpace(glAccount))
                 throw new ArgumentNullException(nameof(glAccount));
@@ -302,6 +360,10 @@ namespace Beep.OilandGas.Accounting.Services
                 new AppFilter { FieldName = "ENTRY_DATE", Operator = "<=", FilterValue = asOfDate.ToString("yyyy-MM-dd") },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
+            if (!string.IsNullOrWhiteSpace(bookId))
+            {
+                filters.Add(new AppFilter { FieldName = "SOURCE", Operator = "=", FilterValue = bookId });
+            }
 
             var entries = await repo.GetAsync(filters);
             var entryList = entries?.Cast<GL_ENTRY>().ToList() ?? new List<GL_ENTRY>();
@@ -512,7 +574,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Insert journal entry line items
         /// </summary>
-        private async Task InsertLineItemsAsync(string journalEntryId, List<JOURNAL_ENTRY_LINE> lineItems, string userId)
+        private async Task InsertLineItemsAsync(string journalEntryId, List<JOURNAL_ENTRY_LINE> lineItems, string userId, string? bookId)
         {
             try
             {
@@ -530,8 +592,11 @@ namespace Beep.OilandGas.Accounting.Services
                     item.JOURNAL_ENTRY_LINE_ID = Guid.NewGuid().ToString();
                     item.JOURNAL_ENTRY_ID = journalEntryId;
                     item.LINE_NUMBER = lineNumber;
-                    item.ACTIVE_IND = "Y";
+                    item.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
                     item.PPDM_GUID = Guid.NewGuid().ToString();
+                    item.SOURCE = bookId;
+                    if (string.IsNullOrWhiteSpace(item.REMARK) && !string.IsNullOrWhiteSpace(bookId))
+                        item.REMARK = $"BOOK={bookId}";
                     item.ROW_CREATED_BY = userId;
                     item.ROW_CREATED_DATE = DateTime.UtcNow;
 
@@ -576,7 +641,9 @@ namespace Beep.OilandGas.Accounting.Services
                         DESCRIPTION = string.IsNullOrWhiteSpace(item.DESCRIPTION) ? header.DESCRIPTION : item.DESCRIPTION,
                         REFERENCE_NUMBER = header.ENTRY_NUMBER,
                         SOURCE_MODULE = header.SOURCE_MODULE,
-                        ACTIVE_IND = "Y",
+                        SOURCE = header.SOURCE,
+                        REMARK = string.IsNullOrWhiteSpace(header.REMARK) ? item.REMARK : header.REMARK,
+                        ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                         PPDM_GUID = Guid.NewGuid().ToString(),
                         ROW_CREATED_BY = userId,
                         ROW_CREATED_DATE = DateTime.UtcNow

@@ -1,153 +1,69 @@
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using TheTechIdea.Beep.Editor;
+using System;
+using System.Collections.Generic;
 
 namespace Beep.OilandGas.Models.Data.Imbalance
 {
-    public partial class IMBALANCE : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public class CreateProductionAvailRequest : ModelEntityBase
     {
-        private System.String IMBALANCE_IDValue;
-        public System.String IMBALANCE_ID
-        {
-            get { return this.IMBALANCE_IDValue; }
-            set { SetProperty(ref IMBALANCE_IDValue, value); }
-        }
+        public string PropertyId { get; set; }
+        public DateTime AvailDate { get; set; }
+        public decimal EstimatedVolume { get; set; }
+        public decimal? AvailableForDelivery { get; set; }
+    }
 
-        private System.String NOMINATION_IDValue;
-        public System.String NOMINATION_ID
-        {
-            get { return this.NOMINATION_IDValue; }
-            set { SetProperty(ref NOMINATION_IDValue, value); }
-        }
+    public class CreateNominationRequest : ModelEntityBase
+    {
+        public DateTime PeriodStart { get; set; }
+        public DateTime PeriodEnd { get; set; }
+        public decimal NominatedVolume { get; set; }
+        public List<string> DeliveryPoints { get; set; } = new();
+    }
 
-        private System.DateTime? PERIOD_STARTValue;
-        public System.DateTime? PERIOD_START
-        {
-            get { return this.PERIOD_STARTValue; }
-            set { SetProperty(ref PERIOD_STARTValue, value); }
-        }
+    public class CreateActualDeliveryRequest : ModelEntityBase
+    {
+        public string NominationId { get; set; }
+        public DateTime DeliveryDate { get; set; }
+        public decimal ActualVolume { get; set; }
+        public string DeliveryPoint { get; set; }
+        public string AllocationMethod { get; set; }
+        public string RunTicketNumber { get; set; }
+    }
 
-        private System.DateTime? PERIOD_ENDValue;
-        public System.DateTime? PERIOD_END
-        {
-            get { return this.PERIOD_ENDValue; }
-            set { SetProperty(ref PERIOD_ENDValue, value); }
-        }
+    public class ImbalanceReconciliationResult : ModelEntityBase
+    {
+        public string ReconciliationId { get; set; }
+        public string ImbalanceId { get; set; }
+        public decimal ImbalanceBefore { get; set; }
+        public decimal ImbalanceAfter { get; set; }
+        public bool IsReconciled { get; set; }
+        public DateTime ReconciliationDate { get; set; } = DateTime.UtcNow;
+        public string ReconciledBy { get; set; }
+    }
 
-        private System.Decimal? NOMINATED_VOLUMEValue;
-        public System.Decimal? NOMINATED_VOLUME
-        {
-            get { return this.NOMINATED_VOLUMEValue; }
-            set { SetProperty(ref NOMINATED_VOLUMEValue, value); }
-        }
+    public class ImbalanceSettlementResult : ModelEntityBase
+    {
+        public string SettlementId { get; set; }
+        public string ImbalanceId { get; set; }
+        public DateTime SettlementDate { get; set; }
+        public decimal SettlementAmount { get; set; }
+        public string Status { get; set; }
+        public string SettledBy { get; set; }
+    }
 
-        private System.Decimal? ACTUAL_VOLUMEValue;
-        public System.Decimal? ACTUAL_VOLUME
-        {
-            get { return this.ACTUAL_VOLUMEValue; }
-            set { SetProperty(ref ACTUAL_VOLUMEValue, value); }
-        }
-
-        private System.Decimal? IMBALANCE_AMOUNTValue;
-        public System.Decimal? IMBALANCE_AMOUNT
-        {
-            get { return this.IMBALANCE_AMOUNTValue; }
-            set { SetProperty(ref IMBALANCE_AMOUNTValue, value); }
-        }
-
-        private System.Decimal? TOLERANCE_PERCENTAGEValue;
-        public System.Decimal? TOLERANCE_PERCENTAGE
-        {
-            get { return this.TOLERANCE_PERCENTAGEValue; }
-            set { SetProperty(ref TOLERANCE_PERCENTAGEValue, value); }
-        }
-
-        private System.String STATUSValue;
-        public System.String STATUS
-        {
-            get { return this.STATUSValue; }
-            set { SetProperty(ref STATUSValue, value); }
-        }
-
-        private System.DateTime? SETTLEMENT_DATEValue;
-        public System.DateTime? SETTLEMENT_DATE
-        {
-            get { return this.SETTLEMENT_DATEValue; }
-            set { SetProperty(ref SETTLEMENT_DATEValue, value); }
-        }
-
-        // Standard PPDM columns
-        private System.String ACTIVE_INDValue;
-        public System.String ACTIVE_IND
-        {
-            get { return this.ACTIVE_INDValue; }
-            set { SetProperty(ref ACTIVE_INDValue, value); }
-        }
-
-        private System.String PPDM_GUIDValue;
-        public System.String PPDM_GUID
-        {
-            get { return this.PPDM_GUIDValue; }
-            set { SetProperty(ref PPDM_GUIDValue, value); }
-        }
-
-        private System.String REMARKValue;
-        public System.String REMARK
-        {
-            get { return this.REMARKValue; }
-            set { SetProperty(ref REMARKValue, value); }
-        }
-
-        private System.String SOURCEValue;
-        public System.String SOURCE
-        {
-            get { return this.SOURCEValue; }
-            set { SetProperty(ref SOURCEValue, value); }
-        }
-
-        private System.DateTime? ROW_CREATED_DATEValue;
-        public System.DateTime? ROW_CREATED_DATE
-        {
-            get { return this.ROW_CREATED_DATEValue; }
-            set { SetProperty(ref ROW_CREATED_DATEValue, value); }
-        }
-
-        private System.String ROW_CREATED_BYValue;
-        public System.String ROW_CREATED_BY
-        {
-            get { return this.ROW_CREATED_BYValue; }
-            set { SetProperty(ref ROW_CREATED_BYValue, value); }
-        }
-
-        private System.DateTime? ROW_CHANGED_DATEValue;
-        public System.DateTime? ROW_CHANGED_DATE
-        {
-            get { return this.ROW_CHANGED_DATEValue; }
-            set { SetProperty(ref ROW_CHANGED_DATEValue, value); }
-        }
-
-        private System.String ROW_CHANGED_BYValue;
-        public System.String ROW_CHANGED_BY
-        {
-            get { return this.ROW_CHANGED_BYValue; }
-            set { SetProperty(ref ROW_CHANGED_BYValue, value); }
-        }
-
-        private System.DateTime? ROW_EFFECTIVE_DATEValue;
-        public System.DateTime? ROW_EFFECTIVE_DATE
-        {
-            get { return this.ROW_EFFECTIVE_DATEValue; }
-            set { SetProperty(ref ROW_EFFECTIVE_DATEValue, value); }
-        }
-
-        private System.DateTime? ROW_EXPIRY_DATEValue;
-        public System.DateTime? ROW_EXPIRY_DATE
-        {
-            get { return this.ROW_EXPIRY_DATEValue; }
-            set { SetProperty(ref ROW_EXPIRY_DATEValue, value); }
-        }
+    public class ImbalanceSummary : ModelEntityBase
+    {
+        public string PeriodStart { get; set; }
+        public string PeriodEnd { get; set; }
+        public decimal TotalNominatedVolume { get; set; }
+        public decimal TotalActualVolume { get; set; }
+        public decimal TotalImbalanceAmount { get; set; }
+        public int ImbalanceCount { get; set; }
+        public int BalancedCount { get; set; }
+        public int OverDeliveredCount { get; set; }
+        public int UnderDeliveredCount { get; set; }
     }
 }
+
 
 
 

@@ -15,32 +15,32 @@ namespace Beep.OilandGas.Properties.Services
         /// <summary>
         /// Calculates oil formation volume factor (FVF)
         /// </summary>
-        Task<OilPropertyResultDto> CalculateFormationVolumeFactorAsync(CalculateFVFRequest request);
+        Task<OilPropertyResult> CalculateFormationVolumeFactorAsync(CalculateFVFRequest request);
 
         /// <summary>
         /// Calculates oil density at reservoir conditions
         /// </summary>
-        Task<OilPropertyResultDto> CalculateDensityAsync(CalculateDensityRequest request);
+        Task<OilPropertyResult> CalculateDensityAsync(CalculateDensityRequest request);
 
         /// <summary>
         /// Calculates oil viscosity at reservoir conditions
         /// </summary>
-        Task<OilPropertyResultDto> CalculateViscosityAsync(CalculateViscosityRequest request);
+        Task<OilPropertyResult> CalculateViscosityAsync(CalculateViscosityRequest request);
 
         /// <summary>
         /// Calculates oil compressibility
         /// </summary>
-        Task<OilPropertyResultDto> CalculateCompressibilityAsync(CalculateCompressibilityRequest request);
+        Task<OilPropertyResult> CalculateCompressibilityAsync(CalculateCompressibilityRequest request);
 
         /// <summary>
         /// Calculates bubble point pressure
         /// </summary>
-        Task<OilPropertyResultDto> CalculateBubblePointPressureAsync(CalculateBubblePointRequest request);
+        Task<OilPropertyResult> CalculateBubblePointPressureAsync(CalculateBubblePointRequest request);
 
         /// <summary>
         /// Calculates solution gas-oil ratio (GOR)
         /// </summary>
-        Task<OilPropertyResultDto> CalculateSolutionGORAsync(CalculateSolutionGORRequest request);
+        Task<OilPropertyResult> CalculateSolutionGORAsync(CalculateSolutionGORRequest request);
 
         #endregion
 
@@ -49,22 +49,22 @@ namespace Beep.OilandGas.Properties.Services
         /// <summary>
         /// Performs flash calculation for oil system
         /// </summary>
-        Task<FlashCalculationResultDto> PerformFlashCalculationAsync(FlashCalculationRequest request);
+        Task<FlashCalculationPropertyResult> PerformFlashCalculationAsync(FlashCalculationRequest request);
 
         /// <summary>
         /// Calculates saturation pressures
         /// </summary>
-        Task<SaturationPressureResultDto> CalculateSaturationPressureAsync(SaturationPressureRequest request);
+        Task<SaturationPressureResult> CalculateSaturationPressureAsync(SaturationPressureRequest request);
 
         /// <summary>
         /// Performs differential liberation test simulation
         /// </summary>
-        Task<DifferentialLiberationResultDto> PerformDifferentialLiberationAsync(DifferentialLiberationRequest request);
+        Task<DifferentialLiberationResult> PerformDifferentialLiberationAsync(DifferentialLiberationRequest request);
 
         /// <summary>
         /// Performs constant composition expansion
         /// </summary>
-        Task<ConstantCompositionResultDto> PerformConstantCompositionExpansionAsync(ConstantCompositionRequest request);
+        Task<ConstantCompositionResult> PerformConstantCompositionExpansionAsync(ConstantCompositionRequest request);
 
         #endregion
 
@@ -73,17 +73,17 @@ namespace Beep.OilandGas.Properties.Services
         /// <summary>
         /// Calculates oil thermal conductivity
         /// </summary>
-        Task<OilPropertyResultDto> CalculateThermalConductivityAsync(CalculateThermalConductivityRequest request);
+        Task<OilPropertyResult> CalculateThermalConductivityAsync(CalculateThermalConductivityRequest request);
 
         /// <summary>
         /// Calculates oil specific heat capacity
         /// </summary>
-        Task<OilPropertyResultDto> CalculateSpecificHeatAsync(CalculateSpecificHeatRequest request);
+        Task<OilPropertyResult> CalculateSpecificHeatAsync(CalculateSpecificHeatRequest request);
 
         /// <summary>
         /// Calculates oil thermal expansion coefficient
         /// </summary>
-        Task<OilPropertyResultDto> CalculateThermalExpansionAsync(CalculateThermalExpansionRequest request);
+        Task<OilPropertyResult> CalculateThermalExpansionAsync(CalculateThermalExpansionRequest request);
 
         #endregion
 
@@ -92,22 +92,22 @@ namespace Beep.OilandGas.Properties.Services
         /// <summary>
         /// Performs equation of state (EOS) calculations
         /// </summary>
-        Task<EOSResultDto> PerformEOSCalculationAsync(EOSRequest request);
+        Task<EOSResult> PerformEOSCalculationAsync(EOSRequest request);
 
         /// <summary>
         /// Calculates asphaltene onset pressure
         /// </summary>
-        Task<OilPropertyResultDto> CalculateAsphalteneOnsetAsync(CalculateAsphalteneOnsetRequest request);
+        Task<OilPropertyResult> CalculateAsphalteneOnsetAsync(CalculateAsphalteneOnsetRequest request);
 
         /// <summary>
         /// Calculates wax appearance temperature
         /// </summary>
-        Task<OilPropertyResultDto> CalculateWaxAppearanceAsync(CalculateWaxAppearanceRequest request);
+        Task<OilPropertyResult> CalculateWaxAppearanceAsync(CalculateWaxAppearanceRequest request);
 
         /// <summary>
         /// Performs viscosity blending calculations
         /// </summary>
-        Task<ViscosityBlendResultDto> PerformViscosityBlendingAsync(ViscosityBlendRequest request);
+        Task<ViscosityBlendResult> PerformViscosityBlendingAsync(ViscosityBlendRequest request);
 
         #endregion
 
@@ -116,22 +116,22 @@ namespace Beep.OilandGas.Properties.Services
         /// <summary>
         /// Calculates oil-gas interfacial tension
         /// </summary>
-        Task<OilPropertyResultDto> CalculateInterfacialTensionAsync(CalculateInterfacialTensionRequest request);
+        Task<OilPropertyResult> CalculateInterfacialTensionAsync(CalculateInterfacialTensionRequest request);
 
         /// <summary>
         /// Calculates oil wettability
         /// </summary>
-        Task<WettabilityResultDto> CalculateWettabilityAsync(WettabilityRequest request);
+        Task<WettabilityResult> CalculateWettabilityAsync(WettabilityRequest request);
 
         /// <summary>
         /// Calculates oil pour point
         /// </summary>
-        Task<OilPropertyResultDto> CalculatePourPointAsync(CalculatePourPointRequest request);
+        Task<OilPropertyResult> CalculatePourPointAsync(CalculatePourPointRequest request);
 
         /// <summary>
         /// Calculates oil cloud point
         /// </summary>
-        Task<OilPropertyResultDto> CalculateCloudPointAsync(CalculateCloudPointRequest request);
+        Task<OilPropertyResult> CalculateCloudPointAsync(CalculateCloudPointRequest request);
 
         #endregion
 
@@ -140,17 +140,17 @@ namespace Beep.OilandGas.Properties.Services
         /// <summary>
         /// Gets available correlations for property calculation
         /// </summary>
-        Task<List<CorrelationInfoDto>> GetAvailableCorrelationsAsync(string propertyType);
+        Task<List<CorrelationInfo>> GetAvailableCorrelationsAsync(string propertyType);
 
         /// <summary>
         /// Validates correlation applicability
         /// </summary>
-        Task<CorrelationValidationDto> ValidateCorrelationAsync(CorrelationValidationRequest request);
+        Task<CorrelationValidation> ValidateCorrelationAsync(CorrelationValidationRequest request);
 
         /// <summary>
         /// Compares different correlations for the same property
         /// </summary>
-        Task<CorrelationComparisonDto> CompareCorrelationsAsync(CorrelationComparisonRequest request);
+        Task<CorrelationComparison> CompareCorrelationsAsync(CorrelationComparisonRequest request);
 
         #endregion
 
@@ -159,17 +159,17 @@ namespace Beep.OilandGas.Properties.Services
         /// <summary>
         /// Performs compositional analysis
         /// </summary>
-        Task<CompositionalAnalysisDto> PerformCompositionalAnalysisAsync(CompositionalAnalysisRequest request);
+        Task<CompositionalAnalysis> PerformCompositionalAnalysisAsync(CompositionalAnalysisRequest request);
 
         /// <summary>
         /// Calculates molecular weight from composition
         /// </summary>
-        Task<OilPropertyResultDto> CalculateMolecularWeightAsync(CalculateMolecularWeightRequest request);
+        Task<OilPropertyResult> CalculateMolecularWeightAsync(CalculateMolecularWeightRequest request);
 
         /// <summary>
         /// Performs SARA analysis (Saturates, Aromatics, Resins, Asphaltenes)
         /// </summary>
-        Task<SaraAnalysisDto> PerformSaraAnalysisAsync(SaraAnalysisRequest request);
+        Task<SaraAnalysis> PerformSaraAnalysisAsync(SaraAnalysisRequest request);
 
         #endregion
 
@@ -178,22 +178,22 @@ namespace Beep.OilandGas.Properties.Services
         /// <summary>
         /// Stores laboratory PVT data
         /// </summary>
-        Task<PVTDataDto> StorePVTDataAsync(PVTDataDto pvtData, string userId);
+        Task<PVTData> StorePVTDataAsync(PVTData pvtData, string userId);
 
         /// <summary>
         /// Retrieves laboratory PVT data
         /// </summary>
-        Task<List<PVTDataDto>> GetPVTDataAsync(string sampleId, DateTime? startDate = null, DateTime? endDate = null);
+        Task<List<PVTData>> GetPVTDataAsync(string sampleId, DateTime? startDate = null, DateTime? endDate = null);
 
         /// <summary>
         /// Matches laboratory data with correlations
         /// </summary>
-        Task<CorrelationMatchingDto> MatchLabDataWithCorrelationsAsync(CorrelationMatchingRequest request);
+        Task<CorrelationMatching> MatchLabDataWithCorrelationsAsync(CorrelationMatchingRequest request);
 
         /// <summary>
         /// Validates laboratory data quality
         /// </summary>
-        Task<DataQualityDto> ValidateLabDataQualityAsync(string sampleId);
+        Task<DataQuality> ValidateLabDataQualityAsync(string sampleId);
 
         #endregion
 
@@ -202,17 +202,17 @@ namespace Beep.OilandGas.Properties.Services
         /// <summary>
         /// Calculates oil-water relative permeability
         /// </summary>
-        Task<RelativePermeabilityDto> CalculateRelativePermeabilityAsync(RelativePermeabilityRequest request);
+        Task<RelativePermeability> CalculateRelativePermeabilityAsync(RelativePermeabilityRequest request);
 
         /// <summary>
         /// Calculates capillary pressure
         /// </summary>
-        Task<CapillaryPressureDto> CalculateCapillaryPressureAsync(CapillaryPressureRequest request);
+        Task<CapillaryPressure> CalculateCapillaryPressureAsync(CapillaryPressureRequest request);
 
         /// <summary>
         /// Performs emulsion viscosity calculation
         /// </summary>
-        Task<OilPropertyResultDto> CalculateEmulsionViscosityAsync(CalculateEmulsionViscosityRequest request);
+        Task<OilPropertyResult> CalculateEmulsionViscosityAsync(CalculateEmulsionViscosityRequest request);
 
         #endregion
 
@@ -221,17 +221,17 @@ namespace Beep.OilandGas.Properties.Services
         /// <summary>
         /// Validates oil property calculation results
         /// </summary>
-        Task<ValidationResultDto> ValidateCalculationResultsAsync(ValidationRequest request);
+        Task<ValidationResult> ValidateCalculationResultsAsync(ValidationRequest request);
 
         /// <summary>
         /// Performs uncertainty analysis on property calculations
         /// </summary>
-        Task<UncertaintyAnalysisDto> PerformUncertaintyAnalysisAsync(UncertaintyAnalysisRequest request);
+        Task<UncertaintyAnalysis> PerformUncertaintyAnalysisAsync(UncertaintyAnalysisRequest request);
 
         /// <summary>
         /// Generates quality assurance report
         /// </summary>
-        Task<QAReportDto> GenerateQAReportAsync(QAReportRequest request);
+        Task<QAReport> GenerateQAReportAsync(QAReportRequest request);
 
         #endregion
 
@@ -240,7 +240,7 @@ namespace Beep.OilandGas.Properties.Services
         /// <summary>
         /// Generates PVT report
         /// </summary>
-        Task<PVTReportDto> GeneratePVTReportAsync(PVTReportRequest request);
+        Task<PVTReport> GeneratePVTReportAsync(PVTReportRequest request);
 
         /// <summary>
         /// Exports oil properties data
@@ -260,7 +260,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Oil property calculation result DTO
     /// </summary>
-    public class OilPropertyResultDto
+    public class OilPropertyResult
     {
         public string CalculationId { get; set; } = string.Empty;
         public string PropertyType { get; set; } = string.Empty;
@@ -276,15 +276,15 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Flash calculation result DTO
     /// </summary>
-    public class FlashCalculationResultDto
+    public class FlashCalculationPropertyResult
     {
         public string CalculationId { get; set; } = string.Empty;
         public decimal Temperature { get; set; }
         public decimal Pressure { get; set; }
         public decimal LiquidFraction { get; set; }
         public decimal VaporFraction { get; set; }
-        public OilCompositionDto LiquidComposition { get; set; } = new();
-        public GasCompositionDto VaporComposition { get; set; } = new();
+        public OilComposition LiquidComposition { get; set; } = new();
+        public GasComposition VaporComposition { get; set; } = new();
         public string FlashType { get; set; } = string.Empty;
         public DateTime CalculationDate { get; set; }
     }
@@ -292,7 +292,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Saturation pressure result DTO
     /// </summary>
-    public class SaturationPressureResultDto
+    public class SaturationPressureResult
     {
         public string CalculationId { get; set; } = string.Empty;
         public decimal BubblePointPressure { get; set; }
@@ -305,10 +305,10 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Differential liberation result DTO
     /// </summary>
-    public class DifferentialLiberationResultDto
+    public class DifferentialLiberationResult
     {
         public string TestId { get; set; } = string.Empty;
-        public List<DifferentialLiberationPointDto> LiberationPoints { get; set; } = new();
+        public List<DifferentialLiberationPoint> LiberationPoints { get; set; } = new();
         public decimal InitialGOR { get; set; }
         public decimal ResidualOilVolume { get; set; }
         public string TestConditions { get; set; } = string.Empty;
@@ -318,7 +318,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Differential liberation point DTO
     /// </summary>
-    public class DifferentialLiberationPointDto
+    public class DifferentialLiberationPoint
     {
         public decimal Pressure { get; set; }
         public decimal Temperature { get; set; }
@@ -331,10 +331,10 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Constant composition result DTO
     /// </summary>
-    public class ConstantCompositionResultDto
+    public class ConstantCompositionResult
     {
         public string TestId { get; set; } = string.Empty;
-        public List<ConstantCompositionPointDto> ExpansionPoints { get; set; } = new();
+        public List<ConstantCompositionPoint> ExpansionPoints { get; set; } = new();
         public decimal SaturationPressure { get; set; }
         public decimal InitialVolume { get; set; }
         public string TestConditions { get; set; } = string.Empty;
@@ -344,7 +344,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Constant composition point DTO
     /// </summary>
-    public class ConstantCompositionPointDto
+    public class ConstantCompositionPoint
     {
         public decimal Pressure { get; set; }
         public decimal RelativeVolume { get; set; }
@@ -355,22 +355,22 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// EOS result DTO
     /// </summary>
-    public class EOSResultDto
+    public class EOSResult
     {
         public string CalculationId { get; set; } = string.Empty;
         public string EquationOfState { get; set; } = string.Empty;
-        public List<EOSComponentDto> Components { get; set; } = new();
+        public List<EOSComponent> Components { get; set; } = new();
         public decimal CriticalPressure { get; set; }
         public decimal CriticalTemperature { get; set; }
         public decimal AcentricFactor { get; set; }
-        public List<EOSPhaseDto> Phases { get; set; } = new();
+        public List<EOSPhase> Phases { get; set; } = new();
         public DateTime CalculationDate { get; set; }
     }
 
     /// <summary>
     /// EOS component DTO
     /// </summary>
-    public class EOSComponentDto
+    public class EOSComponent
     {
         public string ComponentName { get; set; } = string.Empty;
         public decimal MoleFraction { get; set; }
@@ -383,22 +383,22 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// EOS phase DTO
     /// </summary>
-    public class EOSPhaseDto
+    public class EOSPhase
     {
         public string PhaseType { get; set; } = string.Empty;
         public decimal MoleFraction { get; set; }
         public decimal Density { get; set; }
         public decimal Compressibility { get; set; }
-        public OilCompositionDto Composition { get; set; } = new();
+        public OilComposition Composition { get; set; } = new();
     }
 
     /// <summary>
     /// Viscosity blend result DTO
     /// </summary>
-    public class ViscosityBlendResultDto
+    public class ViscosityBlendResult
     {
         public string BlendId { get; set; } = string.Empty;
-        public List<ViscosityComponentDto> Components { get; set; } = new();
+        public List<ViscosityComponent> Components { get; set; } = new();
         public decimal BlendedViscosity { get; set; }
         public string BlendMethod { get; set; } = string.Empty;
         public decimal Temperature { get; set; }
@@ -408,7 +408,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Viscosity component DTO
     /// </summary>
-    public class ViscosityComponentDto
+    public class ViscosityComponent
     {
         public string ComponentName { get; set; } = string.Empty;
         public decimal VolumeFraction { get; set; }
@@ -419,7 +419,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Wettability result DTO
     /// </summary>
-    public class WettabilityResultDto
+    public class WettabilityResult
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string WettabilityIndex { get; set; } = string.Empty;
@@ -432,7 +432,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Correlation info DTO
     /// </summary>
-    public class CorrelationInfoDto
+    public class CorrelationInfo
     {
         public string CorrelationId { get; set; } = string.Empty;
         public string CorrelationName { get; set; } = string.Empty;
@@ -447,7 +447,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Correlation validation DTO
     /// </summary>
-    public class CorrelationValidationDto
+    public class CorrelationValidation
     {
         public string ValidationId { get; set; } = string.Empty;
         public string CorrelationId { get; set; } = string.Empty;
@@ -460,11 +460,11 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Correlation comparison DTO
     /// </summary>
-    public class CorrelationComparisonDto
+    public class CorrelationComparison
     {
         public string ComparisonId { get; set; } = string.Empty;
         public string PropertyType { get; set; } = string.Empty;
-        public List<CorrelationResultDto> CorrelationResults { get; set; } = new();
+        public List<CorrelationResult> CorrelationResults { get; set; } = new();
         public string BestCorrelation { get; set; } = string.Empty;
         public string ComparisonSummary { get; set; } = string.Empty;
     }
@@ -472,7 +472,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Correlation result DTO
     /// </summary>
-    public class CorrelationResultDto
+    public class CorrelationResult
     {
         public string CorrelationId { get; set; } = string.Empty;
         public decimal CalculatedValue { get; set; }
@@ -483,21 +483,21 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Compositional analysis DTO
     /// </summary>
-    public class CompositionalAnalysisDto
+    public class CompositionalAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
-        public OilCompositionDto Composition { get; set; } = new();
+        public OilComposition Composition { get; set; } = new();
         public decimal MolecularWeight { get; set; }
         public decimal SpecificGravity { get; set; }
         public decimal APIGravity { get; set; }
-        public List<CompositionComponentDto> Components { get; set; } = new();
+        public List<CompositionComponent> Components { get; set; } = new();
         public DateTime AnalysisDate { get; set; }
     }
 
     /// <summary>
     /// Composition component DTO
     /// </summary>
-    public class CompositionComponentDto
+    public class CompositionComponent
     {
         public string ComponentName { get; set; } = string.Empty;
         public decimal MoleFraction { get; set; }
@@ -509,7 +509,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// SARA analysis DTO
     /// </summary>
-    public class SaraAnalysisDto
+    public class SaraAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public decimal SaturatesFraction { get; set; }
@@ -523,7 +523,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// PVT data DTO
     /// </summary>
-    public class PVTDataDto
+    public class PVTData
     {
         public string SampleId { get; set; } = string.Empty;
         public string WellUWI { get; set; } = string.Empty;
@@ -531,8 +531,8 @@ namespace Beep.OilandGas.Properties.Services
         public decimal ReservoirTemperature { get; set; }
         public decimal BubblePointPressure { get; set; }
         public decimal InitialGOR { get; set; }
-        public OilCompositionDto OilComposition { get; set; } = new();
-        public List<PVTMeasurementDto> Measurements { get; set; } = new();
+        public OilComposition OilComposition { get; set; } = new();
+        public List<PVTMeasurement> Measurements { get; set; } = new();
         public string LabName { get; set; } = string.Empty;
         public string ReportNumber { get; set; } = string.Empty;
     }
@@ -540,7 +540,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// PVT measurement DTO
     /// </summary>
-    public class PVTMeasurementDto
+    public class PVTMeasurement
     {
         public decimal Pressure { get; set; }
         public decimal Temperature { get; set; }
@@ -555,11 +555,11 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Correlation matching DTO
     /// </summary>
-    public class CorrelationMatchingDto
+    public class CorrelationMatching
     {
         public string MatchingId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
-        public List<CorrelationMatchDto> Matches { get; set; } = new();
+        public List<CorrelationMatch> Matches { get; set; } = new();
         public string BestMatchCorrelation { get; set; } = string.Empty;
         public decimal BestMatchAccuracy { get; set; }
     }
@@ -567,7 +567,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Correlation match DTO
     /// </summary>
-    public class CorrelationMatchDto
+    public class CorrelationMatch
     {
         public string CorrelationId { get; set; } = string.Empty;
         public decimal AverageError { get; set; }
@@ -579,12 +579,12 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Data quality DTO
     /// </summary>
-    public class DataQualityDto
+    public class DataQuality
     {
         public string AssessmentId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
         public decimal OverallQualityScore { get; set; }
-        public List<DataQualityIssueDto> Issues { get; set; } = new();
+        public List<DataQualityIssue> Issues { get; set; } = new();
         public List<string> Recommendations { get; set; } = new();
         public string QualityRating { get; set; } = string.Empty;
     }
@@ -592,7 +592,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Data quality issue DTO
     /// </summary>
-    public class DataQualityIssueDto
+    public class DataQualityIssue
     {
         public string IssueType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
@@ -604,10 +604,10 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Relative permeability DTO
     /// </summary>
-    public class RelativePermeabilityDto
+    public class RelativePermeability
     {
         public string CalculationId { get; set; } = string.Empty;
-        public List<RelativePermeabilityPointDto> Points { get; set; } = new();
+        public List<RelativePermeabilityPoint> Points { get; set; } = new();
         public string Correlation { get; set; } = string.Empty;
         public decimal ResidualOilSaturation { get; set; }
         public decimal ResidualWaterSaturation { get; set; }
@@ -617,7 +617,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Relative permeability point DTO
     /// </summary>
-    public class RelativePermeabilityPointDto
+    public class RelativePermeabilityPoint
     {
         public decimal WaterSaturation { get; set; }
         public decimal OilRelativePermeability { get; set; }
@@ -627,10 +627,10 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Capillary pressure DTO
     /// </summary>
-    public class CapillaryPressureDto
+    public class CapillaryPressure
     {
         public string CalculationId { get; set; } = string.Empty;
-        public List<CapillaryPressurePointDto> Points { get; set; } = new();
+        public List<CapillaryPressurePoint> Points { get; set; } = new();
         public string Correlation { get; set; } = string.Empty;
         public decimal InterfacialTension { get; set; }
         public decimal ContactAngle { get; set; }
@@ -640,7 +640,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Capillary pressure point DTO
     /// </summary>
-    public class CapillaryPressurePointDto
+    public class CapillaryPressurePoint
     {
         public decimal WaterSaturation { get; set; }
         public decimal CapillaryPressure { get; set; }
@@ -650,7 +650,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Validation result DTO
     /// </summary>
-    public class ValidationResultDto
+    public class ValidationResult
     {
         public string ValidationId { get; set; } = string.Empty;
         public bool IsValid { get; set; }
@@ -663,7 +663,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Uncertainty analysis DTO
     /// </summary>
-    public class UncertaintyAnalysisDto
+    public class UncertaintyAnalysis
     {
         public string AnalysisId { get; set; } = string.Empty;
         public string PropertyType { get; set; } = string.Empty;
@@ -679,12 +679,12 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// QA report DTO
     /// </summary>
-    public class QAReportDto
+    public class QAReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
         public DateTime GeneratedDate { get; set; }
-        public List<QASectionDto> Sections { get; set; } = new();
+        public List<QASection> Sections { get; set; } = new();
         public string OverallAssessment { get; set; } = string.Empty;
         public List<string> Recommendations { get; set; } = new();
     }
@@ -692,7 +692,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// QA section DTO
     /// </summary>
-    public class QASectionDto
+    public class QASection
     {
         public string SectionName { get; set; } = string.Empty;
         public string Assessment { get; set; } = string.Empty;
@@ -704,13 +704,13 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// PVT report DTO
     /// </summary>
-    public class PVTReportDto
+    public class PVTReport
     {
         public string ReportId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
         public DateTime GeneratedDate { get; set; }
-        public PVTDataDto PVTData { get; set; } = new();
-        public List<OilPropertyResultDto> CalculatedProperties { get; set; } = new();
+        public PVTData PVTData { get; set; } = new();
+        public List<OilPropertyResult> CalculatedProperties { get; set; } = new();
         public byte[] ReportContent { get; set; } = Array.Empty<byte>();
         public List<byte[]> Charts { get; set; } = new();
     }
@@ -722,7 +722,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Oil composition DTO
     /// </summary>
-    public class OilCompositionDto
+    public class OilComposition
     {
         public string CompositionId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
@@ -731,21 +731,21 @@ namespace Beep.OilandGas.Properties.Services
         public decimal MolecularWeight { get; set; }
         public decimal SulfurContent { get; set; }
         public decimal NitrogenContent { get; set; }
-        public List<CompositionComponentDto> Components { get; set; } = new();
+        public List<CompositionComponent> Components { get; set; } = new();
         public DateTime AnalysisDate { get; set; }
     }
 
     /// <summary>
     /// Gas composition DTO
     /// </summary>
-    public class GasCompositionDto
+    public class GasComposition
     {
         public string CompositionId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
         public decimal MolecularWeight { get; set; }
         public decimal SpecificGravity { get; set; }
         public decimal HeatingValue { get; set; }
-        public List<CompositionComponentDto> Components { get; set; } = new();
+        public List<CompositionComponent> Components { get; set; } = new();
         public DateTime AnalysisDate { get; set; }
     }
 
@@ -827,7 +827,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class FlashCalculationRequest
     {
-        public OilCompositionDto FeedComposition { get; set; } = new();
+        public OilComposition FeedComposition { get; set; } = new();
         public decimal Temperature { get; set; }
         public decimal Pressure { get; set; }
         public string FlashType { get; set; } = "PT";
@@ -838,7 +838,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class SaturationPressureRequest
     {
-        public OilCompositionDto Composition { get; set; } = new();
+        public OilComposition Composition { get; set; } = new();
         public decimal Temperature { get; set; }
         public string Method { get; set; } = "EOS";
     }
@@ -848,7 +848,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class DifferentialLiberationRequest
     {
-        public OilCompositionDto Composition { get; set; } = new();
+        public OilComposition Composition { get; set; } = new();
         public decimal InitialPressure { get; set; }
         public decimal Temperature { get; set; }
         public decimal DepletionStep { get; set; }
@@ -859,7 +859,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class ConstantCompositionRequest
     {
-        public OilCompositionDto Composition { get; set; } = new();
+        public OilComposition Composition { get; set; } = new();
         public decimal SaturationPressure { get; set; }
         public decimal Temperature { get; set; }
         public decimal PressureStep { get; set; }
@@ -902,7 +902,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class EOSRequest
     {
-        public OilCompositionDto Composition { get; set; } = new();
+        public OilComposition Composition { get; set; } = new();
         public decimal Temperature { get; set; }
         public decimal Pressure { get; set; }
         public string EquationOfState { get; set; } = "Peng-Robinson";
@@ -914,7 +914,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class CalculateAsphalteneOnsetRequest
     {
-        public OilCompositionDto Composition { get; set; } = new();
+        public OilComposition Composition { get; set; } = new();
         public decimal Temperature { get; set; }
         public string Method { get; set; } = "Flory-Huggins";
     }
@@ -924,7 +924,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class CalculateWaxAppearanceRequest
     {
-        public OilCompositionDto Composition { get; set; } = new();
+        public OilComposition Composition { get; set; } = new();
         public string Method { get; set; } = "CloudPoint";
     }
 
@@ -933,7 +933,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class ViscosityBlendRequest
     {
-        public List<ViscosityComponentDto> Components { get; set; } = new();
+        public List<ViscosityComponent> Components { get; set; } = new();
         public decimal Temperature { get; set; }
         public string BlendMethod { get; set; } = "Refutas";
     }
@@ -964,7 +964,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class CalculatePourPointRequest
     {
-        public OilCompositionDto Composition { get; set; } = new();
+        public OilComposition Composition { get; set; } = new();
         public string Method { get; set; } = "API";
     }
 
@@ -973,7 +973,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class CalculateCloudPointRequest
     {
-        public OilCompositionDto Composition { get; set; } = new();
+        public OilComposition Composition { get; set; } = new();
         public string Method { get; set; } = "API";
     }
 
@@ -1004,7 +1004,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class CompositionalAnalysisRequest
     {
-        public OilCompositionDto Composition { get; set; } = new();
+        public OilComposition Composition { get; set; } = new();
         public string AnalysisType { get; set; } = "Full";
     }
 
@@ -1013,7 +1013,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class CalculateMolecularWeightRequest
     {
-        public OilCompositionDto Composition { get; set; } = new();
+        public OilComposition Composition { get; set; } = new();
         public string Method { get; set; } = "WeightedAverage";
     }
 
@@ -1074,7 +1074,7 @@ namespace Beep.OilandGas.Properties.Services
     /// </summary>
     public class ValidationRequest
     {
-        public OilPropertyResultDto CalculationResult { get; set; } = new();
+        public OilPropertyResult CalculationResult { get; set; } = new();
         public List<string> ValidationRules { get; set; } = new();
         public decimal? MeasuredValue { get; set; }
     }

@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class JIB_CHARGE : Entity, IPPDMEntity
-    {
+    public partial class JIB_CHARGE : ModelEntityBase {
         private System.String JIB_CHARGE_IDValue;
         public System.String JIB_CHARGE_ID
         {

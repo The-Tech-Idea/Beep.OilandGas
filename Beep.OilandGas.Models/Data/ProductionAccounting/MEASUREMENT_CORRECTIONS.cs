@@ -6,8 +6,7 @@ using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class MEASUREMENT_CORRECTIONS : Entity, IPPDMEntity
-    {
+    public partial class MEASUREMENT_CORRECTIONS : ModelEntityBase {
         private System.String MEASUREMENT_CORRECTIONS_IDValue;
         public System.String MEASUREMENT_CORRECTIONS_ID
         {
