@@ -9,34 +9,95 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         /// <summary>
         /// Required gas injection rate in Mscf/day
         /// </summary>
-        public decimal RequiredGasInjectionRate { get; set; }
+        private decimal RequiredGasInjectionRateValue;
+
+        public decimal RequiredGasInjectionRate
+
+        {
+
+            get { return this.RequiredGasInjectionRateValue; }
+
+            set { SetProperty(ref RequiredGasInjectionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Available gas from well in Mscf/day
         /// </summary>
-        public decimal AvailableGas { get; set; }
+        private decimal AvailableGasValue;
+
+        public decimal AvailableGas
+
+        {
+
+            get { return this.AvailableGasValue; }
+
+            set { SetProperty(ref AvailableGasValue, value); }
+
+        }
 
         /// <summary>
         /// Additional gas required in Mscf/day
         /// </summary>
-        public decimal AdditionalGasRequired { get; set; }
+        private decimal AdditionalGasRequiredValue;
+
+        public decimal AdditionalGasRequired
+
+        {
+
+            get { return this.AdditionalGasRequiredValue; }
+
+            set { SetProperty(ref AdditionalGasRequiredValue, value); }
+
+        }
 
         /// <summary>
         /// Gas-liquid ratio required
         /// </summary>
-        public decimal RequiredGasLiquidRatio { get; set; }
+        private decimal RequiredGasLiquidRatioValue;
+
+        public decimal RequiredGasLiquidRatio
+
+        {
+
+            get { return this.RequiredGasLiquidRatioValue; }
+
+            set { SetProperty(ref RequiredGasLiquidRatioValue, value); }
+
+        }
 
         /// <summary>
         /// Minimum casing pressure in psia
         /// </summary>
-        public decimal MinimumCasingPressure { get; set; }
+        private decimal MinimumCasingPressureValue;
+
+        public decimal MinimumCasingPressure
+
+        {
+
+            get { return this.MinimumCasingPressureValue; }
+
+            set { SetProperty(ref MinimumCasingPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Maximum casing pressure in psia
         /// </summary>
-        public decimal MaximumCasingPressure { get; set; }
+        private decimal MaximumCasingPressureValue;
+
+        public decimal MaximumCasingPressure
+
+        {
+
+            get { return this.MaximumCasingPressureValue; }
+
+            set { SetProperty(ref MaximumCasingPressureValue, value); }
+
+        }
     }
 }
+
 
 
 

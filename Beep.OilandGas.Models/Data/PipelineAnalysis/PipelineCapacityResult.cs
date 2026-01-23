@@ -9,39 +9,110 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
         /// <summary>
         /// Maximum flow rate in Mscf/day (gas) or bbl/day (liquid)
         /// </summary>
-        public decimal MaximumFlowRate { get; set; }
+        private decimal MaximumFlowRateValue;
+
+        public decimal MaximumFlowRate
+
+        {
+
+            get { return this.MaximumFlowRateValue; }
+
+            set { SetProperty(ref MaximumFlowRateValue, value); }
+
+        }
 
         /// <summary>
         /// Pressure drop in psi
         /// </summary>
-        public decimal PressureDrop { get; set; }
+        private decimal PressureDropValue;
+
+        public decimal PressureDrop
+
+        {
+
+            get { return this.PressureDropValue; }
+
+            set { SetProperty(ref PressureDropValue, value); }
+
+        }
 
         /// <summary>
         /// Flow velocity in ft/s
         /// </summary>
-        public decimal FlowVelocity { get; set; }
+        private decimal FlowVelocityValue;
+
+        public decimal FlowVelocity
+
+        {
+
+            get { return this.FlowVelocityValue; }
+
+            set { SetProperty(ref FlowVelocityValue, value); }
+
+        }
 
         /// <summary>
         /// Reynolds number
         /// </summary>
-        public decimal ReynoldsNumber { get; set; }
+        private decimal ReynoldsNumberValue;
+
+        public decimal ReynoldsNumber
+
+        {
+
+            get { return this.ReynoldsNumberValue; }
+
+            set { SetProperty(ref ReynoldsNumberValue, value); }
+
+        }
 
         /// <summary>
         /// Friction factor
         /// </summary>
-        public decimal FrictionFactor { get; set; }
+        private decimal FrictionFactorValue;
+
+        public decimal FrictionFactor
+
+        {
+
+            get { return this.FrictionFactorValue; }
+
+            set { SetProperty(ref FrictionFactorValue, value); }
+
+        }
 
         /// <summary>
         /// Pressure gradient in psia/ft
         /// </summary>
-        public decimal PressureGradient { get; set; }
+        private decimal PressureGradientValue;
+
+        public decimal PressureGradient
+
+        {
+
+            get { return this.PressureGradientValue; }
+
+            set { SetProperty(ref PressureGradientValue, value); }
+
+        }
 
         /// <summary>
         /// Outlet pressure in psia
         /// </summary>
-        public decimal OutletPressure { get; set; }
+        private decimal OutletPressureValue;
+
+        public decimal OutletPressure
+
+        {
+
+            get { return this.OutletPressureValue; }
+
+            set { SetProperty(ref OutletPressureValue, value); }
+
+        }
     }
 }
+
 
 
 

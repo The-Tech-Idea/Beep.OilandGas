@@ -9,49 +9,140 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
         /// <summary>
         /// Compression ratio
         /// </summary>
-        public decimal CompressionRatio { get; set; }
+        private decimal CompressionRatioValue;
+
+        public decimal CompressionRatio
+
+        {
+
+            get { return this.CompressionRatioValue; }
+
+            set { SetProperty(ref CompressionRatioValue, value); }
+
+        }
 
         /// <summary>
         /// Adiabatic head in feet
         /// </summary>
-        public decimal AdiabaticHead { get; set; }
+        private decimal AdiabaticHeadValue;
+
+        public decimal AdiabaticHead
+
+        {
+
+            get { return this.AdiabaticHeadValue; }
+
+            set { SetProperty(ref AdiabaticHeadValue, value); }
+
+        }
 
         /// <summary>
         /// Polytropic head in feet
         /// </summary>
-        public decimal PolytropicHead { get; set; }
+        private decimal PolytropicHeadValue;
+
+        public decimal PolytropicHead
+
+        {
+
+            get { return this.PolytropicHeadValue; }
+
+            set { SetProperty(ref PolytropicHeadValue, value); }
+
+        }
 
         /// <summary>
         /// Theoretical power in horsepower
         /// </summary>
-        public decimal TheoreticalPower { get; set; }
+        private decimal TheoreticalPowerValue;
+
+        public decimal TheoreticalPower
+
+        {
+
+            get { return this.TheoreticalPowerValue; }
+
+            set { SetProperty(ref TheoreticalPowerValue, value); }
+
+        }
 
         /// <summary>
         /// Brake horsepower
         /// </summary>
-        public decimal BrakeHorsepower { get; set; }
+        private decimal BrakeHorsepowerValue;
+
+        public decimal BrakeHorsepower
+
+        {
+
+            get { return this.BrakeHorsepowerValue; }
+
+            set { SetProperty(ref BrakeHorsepowerValue, value); }
+
+        }
 
         /// <summary>
         /// Motor horsepower
         /// </summary>
-        public decimal MotorHorsepower { get; set; }
+        private decimal MotorHorsepowerValue;
+
+        public decimal MotorHorsepower
+
+        {
+
+            get { return this.MotorHorsepowerValue; }
+
+            set { SetProperty(ref MotorHorsepowerValue, value); }
+
+        }
 
         /// <summary>
         /// Power consumption in kW
         /// </summary>
-        public decimal PowerConsumptionKW { get; set; }
+        private decimal PowerConsumptionKWValue;
+
+        public decimal PowerConsumptionKW
+
+        {
+
+            get { return this.PowerConsumptionKWValue; }
+
+            set { SetProperty(ref PowerConsumptionKWValue, value); }
+
+        }
 
         /// <summary>
         /// Discharge temperature in Rankine
         /// </summary>
-        public decimal DischargeTemperature { get; set; }
+        private decimal DischargeTemperatureValue;
+
+        public decimal DischargeTemperature
+
+        {
+
+            get { return this.DischargeTemperatureValue; }
+
+            set { SetProperty(ref DischargeTemperatureValue, value); }
+
+        }
 
         /// <summary>
         /// Overall efficiency (0-1)
         /// </summary>
-        public decimal OverallEfficiency { get; set; }
+        private decimal OverallEfficiencyValue;
+
+        public decimal OverallEfficiency
+
+        {
+
+            get { return this.OverallEfficiencyValue; }
+
+            set { SetProperty(ref OverallEfficiencyValue, value); }
+
+        }
     }
 }
+
 
 
 

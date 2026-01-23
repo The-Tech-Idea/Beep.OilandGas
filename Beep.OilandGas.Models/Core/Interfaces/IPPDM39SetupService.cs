@@ -38,74 +38,35 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// <summary>
     /// Database driver information
     /// </summary>
-    public class DatabaseDriverInfo
-    {
-        public string NuGetPackage { get; set; } = string.Empty;
-        public string DataSourceType { get; set; } = string.Empty;
-        public int DefaultPort { get; set; }
-        public string ScriptPath { get; set; } = string.Empty;
-        public string DisplayName { get; set; } = string.Empty;
-    }
+    
 
     /// <summary>
     /// Driver availability information
     /// </summary>
-    public class DriverInfo
-    {
-        public string DatabaseType { get; set; } = string.Empty;
-        public string? NuGetPackage { get; set; }
-        public bool IsAvailable { get; set; }
-        public bool IsInstalled { get; set; }
-        public string StatusMessage { get; set; } = string.Empty;
-    }
+    
 
     /// <summary>
     /// Schema privilege check result
     /// </summary>
-    public class SchemaPrivilegeCheckResult
-    {
-        public bool HasCreatePrivilege { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public string? ErrorDetails { get; set; }
-        public List<string> ExistingSchemas { get; set; } = new List<string>();
-    }
+    
 
     /// <summary>
     /// Create schema result
     /// </summary>
-    public class CreateSchemaResult
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public string? ErrorDetails { get; set; }
-        public string? SchemaName { get; set; }
-    }
+    
 
     /// <summary>
     /// Database connection list item
     /// </summary>
-    public class DatabaseConnectionListItem
-    {
-        public string ConnectionName { get; set; } = string.Empty;
-        public string DatabaseType { get; set; } = string.Empty;
-        public string Host { get; set; } = string.Empty;
-        public int Port { get; set; }
-        public string Database { get; set; } = string.Empty;
-        public string? Username { get; set; }
-        public bool IsCurrent { get; set; }
-        public string GuidId { get; set; } = string.Empty;
-    }
+    
 
     /// <summary>
     /// Delete connection result
     /// </summary>
-    public class DeleteConnectionResult
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public string? ErrorDetails { get; set; }
-    }
+    
 }
+
+
 
 
 

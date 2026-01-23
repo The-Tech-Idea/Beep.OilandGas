@@ -1,68 +1,392 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Export
 {
     public class ExportToCsvRequest : ModelEntityBase
     {
-        public string EntityType { get; set; }
-        public List<string>? EntityIds { get; set; }
-        public string FilePath { get; set; }
+        private string EntityTypeValue;
+
+        public string EntityType
+
+        {
+
+            get { return this.EntityTypeValue; }
+
+            set { SetProperty(ref EntityTypeValue, value); }
+
+        }
+        private List<string>? EntityIdsValue;
+
+        public List<string>? EntityIds
+
+        {
+
+            get { return this.EntityIdsValue; }
+
+            set { SetProperty(ref EntityIdsValue, value); }
+
+        }
+        private string FilePathValue;
+
+        public string FilePath
+
+        {
+
+            get { return this.FilePathValue; }
+
+            set { SetProperty(ref FilePathValue, value); }
+
+        }
         public Dictionary<string, object>? Filters { get; set; }
     }
 
     public class ExportToExcelRequest : ModelEntityBase
     {
-        public string EntityType { get; set; }
-        public List<string>? EntityIds { get; set; }
-        public string FilePath { get; set; }
+        private string EntityTypeValue;
+
+        public string EntityType
+
+        {
+
+            get { return this.EntityTypeValue; }
+
+            set { SetProperty(ref EntityTypeValue, value); }
+
+        }
+        private List<string>? EntityIdsValue;
+
+        public List<string>? EntityIds
+
+        {
+
+            get { return this.EntityIdsValue; }
+
+            set { SetProperty(ref EntityIdsValue, value); }
+
+        }
+        private string FilePathValue;
+
+        public string FilePath
+
+        {
+
+            get { return this.FilePathValue; }
+
+            set { SetProperty(ref FilePathValue, value); }
+
+        }
         public Dictionary<string, object>? Filters { get; set; }
-        public string? SheetName { get; set; }
+        private string? SheetNameValue;
+
+        public string? SheetName
+
+        {
+
+            get { return this.SheetNameValue; }
+
+            set { SetProperty(ref SheetNameValue, value); }
+
+        }
     }
 
     public class ExportToJsonRequest : ModelEntityBase
     {
-        public string EntityType { get; set; }
-        public List<string>? EntityIds { get; set; }
-        public string FilePath { get; set; }
+        private string EntityTypeValue;
+
+        public string EntityType
+
+        {
+
+            get { return this.EntityTypeValue; }
+
+            set { SetProperty(ref EntityTypeValue, value); }
+
+        }
+        private List<string>? EntityIdsValue;
+
+        public List<string>? EntityIds
+
+        {
+
+            get { return this.EntityIdsValue; }
+
+            set { SetProperty(ref EntityIdsValue, value); }
+
+        }
+        private string FilePathValue;
+
+        public string FilePath
+
+        {
+
+            get { return this.FilePathValue; }
+
+            set { SetProperty(ref FilePathValue, value); }
+
+        }
         public Dictionary<string, object>? Filters { get; set; }
     }
 
     public class ExportResult : ModelEntityBase
     {
-        public string ExportId { get; set; }
-        public string ExportType { get; set; }
-        public string ExportFormat { get; set; }
-        public string FilePath { get; set; }
-        public int RecordCount { get; set; }
-        public DateTime ExportDate { get; set; } = DateTime.UtcNow;
-        public bool IsSuccess { get; set; }
-        public string? ErrorMessage { get; set; }
+        private string ExportIdValue;
+
+        public string ExportId
+
+        {
+
+            get { return this.ExportIdValue; }
+
+            set { SetProperty(ref ExportIdValue, value); }
+
+        }
+        private string ExportTypeValue;
+
+        public string ExportType
+
+        {
+
+            get { return this.ExportTypeValue; }
+
+            set { SetProperty(ref ExportTypeValue, value); }
+
+        }
+        private string ExportFormatValue;
+
+        public string ExportFormat
+
+        {
+
+            get { return this.ExportFormatValue; }
+
+            set { SetProperty(ref ExportFormatValue, value); }
+
+        }
+        private string FilePathValue;
+
+        public string FilePath
+
+        {
+
+            get { return this.FilePathValue; }
+
+            set { SetProperty(ref FilePathValue, value); }
+
+        }
+        private int RecordCountValue;
+
+        public int RecordCount
+
+        {
+
+            get { return this.RecordCountValue; }
+
+            set { SetProperty(ref RecordCountValue, value); }
+
+        }
+        private DateTime ExportDateValue = DateTime.UtcNow;
+
+        public DateTime ExportDate
+
+        {
+
+            get { return this.ExportDateValue; }
+
+            set { SetProperty(ref ExportDateValue, value); }
+
+        }
+        private bool IsSuccessValue;
+
+        public bool IsSuccess
+
+        {
+
+            get { return this.IsSuccessValue; }
+
+            set { SetProperty(ref IsSuccessValue, value); }
+
+        }
+        private string? ErrorMessageValue;
+
+        public string? ErrorMessage
+
+        {
+
+            get { return this.ErrorMessageValue; }
+
+            set { SetProperty(ref ErrorMessageValue, value); }
+
+        }
     }
 
     public class ExportHistoryResponse : ModelEntityBase
     {
-        public string ExportId { get; set; }
-        public string ExportType { get; set; }
-        public string ExportFormat { get; set; }
-        public DateTime ExportDate { get; set; }
-        public string ExportedBy { get; set; }
-        public string FilePath { get; set; }
-        public int RecordCount { get; set; }
-        public string Status { get; set; }
+        private string ExportIdValue;
+
+        public string ExportId
+
+        {
+
+            get { return this.ExportIdValue; }
+
+            set { SetProperty(ref ExportIdValue, value); }
+
+        }
+        private string ExportTypeValue;
+
+        public string ExportType
+
+        {
+
+            get { return this.ExportTypeValue; }
+
+            set { SetProperty(ref ExportTypeValue, value); }
+
+        }
+        private string ExportFormatValue;
+
+        public string ExportFormat
+
+        {
+
+            get { return this.ExportFormatValue; }
+
+            set { SetProperty(ref ExportFormatValue, value); }
+
+        }
+        private DateTime ExportDateValue;
+
+        public DateTime ExportDate
+
+        {
+
+            get { return this.ExportDateValue; }
+
+            set { SetProperty(ref ExportDateValue, value); }
+
+        }
+        private string ExportedByValue;
+
+        public string ExportedBy
+
+        {
+
+            get { return this.ExportedByValue; }
+
+            set { SetProperty(ref ExportedByValue, value); }
+
+        }
+        private string FilePathValue;
+
+        public string FilePath
+
+        {
+
+            get { return this.FilePathValue; }
+
+            set { SetProperty(ref FilePathValue, value); }
+
+        }
+        private int RecordCountValue;
+
+        public int RecordCount
+
+        {
+
+            get { return this.RecordCountValue; }
+
+            set { SetProperty(ref RecordCountValue, value); }
+
+        }
+        private string StatusValue;
+
+        public string Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
     }
 
     public class ScheduleExportRequest : ModelEntityBase
     {
-        public string ExportType { get; set; }
-        public string ExportFormat { get; set; }
-        public string ScheduleFrequency { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
-        public string OutputPath { get; set; }
+        private string ExportTypeValue;
+
+        public string ExportType
+
+        {
+
+            get { return this.ExportTypeValue; }
+
+            set { SetProperty(ref ExportTypeValue, value); }
+
+        }
+        private string ExportFormatValue;
+
+        public string ExportFormat
+
+        {
+
+            get { return this.ExportFormatValue; }
+
+            set { SetProperty(ref ExportFormatValue, value); }
+
+        }
+        private string ScheduleFrequencyValue;
+
+        public string ScheduleFrequency
+
+        {
+
+            get { return this.ScheduleFrequencyValue; }
+
+            set { SetProperty(ref ScheduleFrequencyValue, value); }
+
+        }
+        private DateTime StartDateValue;
+
+        public DateTime StartDate
+
+        {
+
+            get { return this.StartDateValue; }
+
+            set { SetProperty(ref StartDateValue, value); }
+
+        }
+        private DateTime? EndDateValue;
+
+        public DateTime? EndDate
+
+        {
+
+            get { return this.EndDateValue; }
+
+            set { SetProperty(ref EndDateValue, value); }
+
+        }
+        private string OutputPathValue;
+
+        public string OutputPath
+
+        {
+
+            get { return this.OutputPathValue; }
+
+            set { SetProperty(ref OutputPathValue, value); }
+
+        }
         public Dictionary<string, object>? ExportParameters { get; set; }
     }
 }
+
+
+
 
 
 

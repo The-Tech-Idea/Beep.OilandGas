@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Stratigraphy
 {
     /// <summary>
@@ -12,72 +13,114 @@ namespace Beep.OilandGas.Models.Data.Stratigraphy
         /// <summary>
         /// Parent Stratigraphic Name Set ID
         /// </summary>
-        public string PARENT_STRAT_NAME_SET_ID { get; set; }
+        private string PARENT_STRAT_NAME_SET_IDValue;
+
+        public string PARENT_STRAT_NAME_SET_ID
+
+        {
+
+            get { return this.PARENT_STRAT_NAME_SET_IDValue; }
+
+            set { SetProperty(ref PARENT_STRAT_NAME_SET_IDValue, value); }
+
+        }
 
         /// <summary>
         /// Parent Stratigraphic Unit ID
         /// </summary>
-        public string PARENT_STRAT_UNIT_ID { get; set; }
+        private string PARENT_STRAT_UNIT_IDValue;
+
+        public string PARENT_STRAT_UNIT_ID
+
+        {
+
+            get { return this.PARENT_STRAT_UNIT_IDValue; }
+
+            set { SetProperty(ref PARENT_STRAT_UNIT_IDValue, value); }
+
+        }
 
         /// <summary>
         /// Child Stratigraphic Name Set ID
         /// </summary>
-        public string CHILD_STRAT_NAME_SET_ID { get; set; }
+        private string CHILD_STRAT_NAME_SET_IDValue;
+
+        public string CHILD_STRAT_NAME_SET_ID
+
+        {
+
+            get { return this.CHILD_STRAT_NAME_SET_IDValue; }
+
+            set { SetProperty(ref CHILD_STRAT_NAME_SET_IDValue, value); }
+
+        }
 
         /// <summary>
         /// Child Stratigraphic Unit ID
         /// </summary>
-        public string CHILD_STRAT_UNIT_ID { get; set; }
+        private string CHILD_STRAT_UNIT_IDValue;
+
+        public string CHILD_STRAT_UNIT_ID
+
+        {
+
+            get { return this.CHILD_STRAT_UNIT_IDValue; }
+
+            set { SetProperty(ref CHILD_STRAT_UNIT_IDValue, value); }
+
+        }
 
         /// <summary>
         /// Hierarchy Type
         /// </summary>
-        public string HIERARCHY_TYPE { get; set; }
+        private string HIERARCHY_TYPEValue;
+
+        public string HIERARCHY_TYPE
+
+        {
+
+            get { return this.HIERARCHY_TYPEValue; }
+
+            set { SetProperty(ref HIERARCHY_TYPEValue, value); }
+
+        }
 
         /// <summary>
         /// Effective Date
         /// </summary>
-        public DateTime? EFFECTIVE_DATE { get; set; }
 
         /// <summary>
         /// Expiry Date
         /// </summary>
-        public DateTime? EXPIRY_DATE { get; set; }
 
         /// <summary>
         /// Remark
         /// </summary>
-        public string REMARK { get; set; }
 
         /// <summary>
         /// Active Indicator ('Y' or 'N')
         /// </summary>
-        public string ACTIVE_IND { get; set; }
 
         /// <summary>
         /// PPDM GUID
         /// </summary>
-        public string PPDM_GUID { get; set; }
 
         /// <summary>
         /// Row Created By
         /// </summary>
-        public string ROW_CREATED_BY { get; set; }
 
         /// <summary>
         /// Row Created Date
         /// </summary>
-        public DateTime? ROW_CREATED_DATE { get; set; }
 
         /// <summary>
         /// Row Changed By
         /// </summary>
-        public string ROW_CHANGED_BY { get; set; }
 
         /// <summary>
         /// Row Changed Date
         /// </summary>
-        public DateTime? ROW_CHANGED_DATE { get; set; }
+
     }
 
     /// <summary>
@@ -89,12 +132,32 @@ namespace Beep.OilandGas.Models.Data.Stratigraphy
         /// <summary>
         /// Root stratigraphic unit
         /// </summary>
-        public StratUnit RootUnit { get; set; }
+        private StratUnit RootUnitValue;
+
+        public StratUnit RootUnit
+
+        {
+
+            get { return this.RootUnitValue; }
+
+            set { SetProperty(ref RootUnitValue, value); }
+
+        }
 
         /// <summary>
         /// Child units (direct children)
         /// </summary>
-        public List<StratHierarchyTreeNode> Children { get; set; } = new List<StratHierarchyTreeNode>();
+        private List<StratHierarchyTreeNode> ChildrenValue = new List<StratHierarchyTreeNode>();
+
+        public List<StratHierarchyTreeNode> Children
+
+        {
+
+            get { return this.ChildrenValue; }
+
+            set { SetProperty(ref ChildrenValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -105,21 +168,48 @@ namespace Beep.OilandGas.Models.Data.Stratigraphy
         /// <summary>
         /// Stratigraphic unit
         /// </summary>
-        public StratUnit Unit { get; set; }
+        private StratUnit UnitValue;
+
+        public StratUnit Unit
+
+        {
+
+            get { return this.UnitValue; }
+
+            set { SetProperty(ref UnitValue, value); }
+
+        }
 
         /// <summary>
         /// Child units (nested children)
         /// </summary>
-        public List<StratHierarchyTreeNode> Children { get; set; } = new List<StratHierarchyTreeNode>();
+        private List<StratHierarchyTreeNode> ChildrenValue = new List<StratHierarchyTreeNode>();
+
+        public List<StratHierarchyTreeNode> Children
+
+        {
+
+            get { return this.ChildrenValue; }
+
+            set { SetProperty(ref ChildrenValue, value); }
+
+        }
 
         /// <summary>
         /// Hierarchy level (depth in tree)
         /// </summary>
-        public int Level { get; set; }
+        private int LevelValue;
+
+        public int Level
+
+        {
+
+            get { return this.LevelValue; }
+
+            set { SetProperty(ref LevelValue, value); }
+
+        }
     }
 }
-
-
-
 
 

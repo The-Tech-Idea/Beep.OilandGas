@@ -1,12 +1,13 @@
 using System;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
     /// Reconciliation summary.
     /// </summary>
-    public partial class ReconciliationSummary : AccountingEntityBase
+    public partial class ReconciliationSummary : ModelEntityBase
     {
         private System.String AccountKeyValue = string.Empty;
         /// <summary>
@@ -69,4 +70,5 @@ namespace Beep.OilandGas.Models.Data.Accounting
         }
     }
 }
+
 

@@ -1,5 +1,6 @@
 using System;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Stratigraphy
 {
     /// <summary>
@@ -10,131 +11,269 @@ namespace Beep.OilandGas.Models.Data.Stratigraphy
         /// <summary>
         /// Stratigraphic Name Set ID
         /// </summary>
-        public string STRAT_NAME_SET_ID { get; set; }
+        private string STRAT_NAME_SET_IDValue;
+
+        public string STRAT_NAME_SET_ID
+
+        {
+
+            get { return this.STRAT_NAME_SET_IDValue; }
+
+            set { SetProperty(ref STRAT_NAME_SET_IDValue, value); }
+
+        }
 
         /// <summary>
         /// Stratigraphic Unit ID (Primary Key)
         /// </summary>
-        public string STRAT_UNIT_ID { get; set; }
+        private string STRAT_UNIT_IDValue;
+
+        public string STRAT_UNIT_ID
+
+        {
+
+            get { return this.STRAT_UNIT_IDValue; }
+
+            set { SetProperty(ref STRAT_UNIT_IDValue, value); }
+
+        }
 
         /// <summary>
         /// Abbreviation
         /// </summary>
-        public string ABBREVIATION { get; set; }
+        private string ABBREVIATIONValue;
+
+        public string ABBREVIATION
+
+        {
+
+            get { return this.ABBREVIATIONValue; }
+
+            set { SetProperty(ref ABBREVIATIONValue, value); }
+
+        }
 
         /// <summary>
         /// Short Name
         /// </summary>
-        public string SHORT_NAME { get; set; }
+        private string SHORT_NAMEValue;
+
+        public string SHORT_NAME
+
+        {
+
+            get { return this.SHORT_NAMEValue; }
+
+            set { SetProperty(ref SHORT_NAMEValue, value); }
+
+        }
 
         /// <summary>
         /// Long Name
         /// </summary>
-        public string LONG_NAME { get; set; }
+        private string LONG_NAMEValue;
+
+        public string LONG_NAME
+
+        {
+
+            get { return this.LONG_NAMEValue; }
+
+            set { SetProperty(ref LONG_NAMEValue, value); }
+
+        }
 
         /// <summary>
         /// Description
         /// </summary>
-        public string DESCRIPTION { get; set; }
+        private string DESCRIPTIONValue;
+
+        public string DESCRIPTION
+
+        {
+
+            get { return this.DESCRIPTIONValue; }
+
+            set { SetProperty(ref DESCRIPTIONValue, value); }
+
+        }
 
         /// <summary>
         /// Stratigraphic Type
         /// </summary>
-        public string STRAT_TYPE { get; set; }
+        private string STRAT_TYPEValue;
+
+        public string STRAT_TYPE
+
+        {
+
+            get { return this.STRAT_TYPEValue; }
+
+            set { SetProperty(ref STRAT_TYPEValue, value); }
+
+        }
 
         /// <summary>
         /// Stratigraphic Unit Type
         /// </summary>
-        public string STRAT_UNIT_TYPE { get; set; }
+        private string STRAT_UNIT_TYPEValue;
+
+        public string STRAT_UNIT_TYPE
+
+        {
+
+            get { return this.STRAT_UNIT_TYPEValue; }
+
+            set { SetProperty(ref STRAT_UNIT_TYPEValue, value); }
+
+        }
 
         /// <summary>
         /// Stratigraphic Status
         /// </summary>
-        public string STRAT_STATUS { get; set; }
+        private string STRAT_STATUSValue;
+
+        public string STRAT_STATUS
+
+        {
+
+            get { return this.STRAT_STATUSValue; }
+
+            set { SetProperty(ref STRAT_STATUSValue, value); }
+
+        }
 
         /// <summary>
         /// Preferred Indicator ('Y' or 'N')
         /// </summary>
-        public string PREFERRED_IND { get; set; }
+        private string PREFERRED_INDValue;
+
+        public string PREFERRED_IND
+
+        {
+
+            get { return this.PREFERRED_INDValue; }
+
+            set { SetProperty(ref PREFERRED_INDValue, value); }
+
+        }
 
         /// <summary>
         /// Ordinal Age Code
         /// </summary>
-        public decimal? ORDINAL_AGE_CODE { get; set; }
+        private decimal? ORDINAL_AGE_CODEValue;
+
+        public decimal? ORDINAL_AGE_CODE
+
+        {
+
+            get { return this.ORDINAL_AGE_CODEValue; }
+
+            set { SetProperty(ref ORDINAL_AGE_CODEValue, value); }
+
+        }
 
         /// <summary>
         /// Current Status Date
         /// </summary>
-        public DateTime? CURRENT_STATUS_DATE { get; set; }
+        private DateTime? CURRENT_STATUS_DATEValue;
+
+        public DateTime? CURRENT_STATUS_DATE
+
+        {
+
+            get { return this.CURRENT_STATUS_DATEValue; }
+
+            set { SetProperty(ref CURRENT_STATUS_DATEValue, value); }
+
+        }
 
         /// <summary>
         /// Effective Date
         /// </summary>
-        public DateTime? EFFECTIVE_DATE { get; set; }
 
         /// <summary>
         /// Expiry Date
         /// </summary>
-        public DateTime? EXPIRY_DATE { get; set; }
 
         /// <summary>
         /// Area ID
         /// </summary>
-        public string AREA_ID { get; set; }
+        private string AREA_IDValue;
+
+        public string AREA_ID
+
+        {
+
+            get { return this.AREA_IDValue; }
+
+            set { SetProperty(ref AREA_IDValue, value); }
+
+        }
 
         /// <summary>
         /// Area Type
         /// </summary>
-        public string AREA_TYPE { get; set; }
+        private string AREA_TYPEValue;
+
+        public string AREA_TYPE
+
+        {
+
+            get { return this.AREA_TYPEValue; }
+
+            set { SetProperty(ref AREA_TYPEValue, value); }
+
+        }
 
         /// <summary>
         /// Business Associate ID
         /// </summary>
-        public string BUSINESS_ASSOCIATE_ID { get; set; }
+        private string BUSINESS_ASSOCIATE_IDValue;
+
+        public string BUSINESS_ASSOCIATE_ID
+
+        {
+
+            get { return this.BUSINESS_ASSOCIATE_IDValue; }
+
+            set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
+
+        }
 
         /// <summary>
         /// Source
         /// </summary>
-        public string SOURCE { get; set; }
 
         /// <summary>
         /// Remark
         /// </summary>
-        public string REMARK { get; set; }
 
         /// <summary>
         /// Active Indicator ('Y' or 'N')
         /// </summary>
-        public string ACTIVE_IND { get; set; }
 
         /// <summary>
         /// PPDM GUID
         /// </summary>
-        public string PPDM_GUID { get; set; }
 
         /// <summary>
         /// Row Created By
         /// </summary>
-        public string ROW_CREATED_BY { get; set; }
 
         /// <summary>
         /// Row Created Date
         /// </summary>
-        public DateTime? ROW_CREATED_DATE { get; set; }
 
         /// <summary>
         /// Row Changed By
         /// </summary>
-        public string ROW_CHANGED_BY { get; set; }
 
         /// <summary>
         /// Row Changed Date
         /// </summary>
-        public DateTime? ROW_CHANGED_DATE { get; set; }
+
     }
 }
-
-
-
 
 

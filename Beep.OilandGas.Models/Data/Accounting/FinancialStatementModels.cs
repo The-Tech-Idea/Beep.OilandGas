@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
     /// Income Statement (P&L) Data Model
     /// </summary>
-    public partial class IncomeStatement : AccountingEntityBase
+    public partial class IncomeStatement : ModelEntityBase
     {
         private System.DateTime PeriodStartValue;
         /// <summary>
@@ -163,7 +164,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Income Statement Line Item
     /// </summary>
-    public partial class IncomeStatementLine : AccountingEntityBase
+    public partial class IncomeStatementLine : ModelEntityBase
     {
         private System.String AccountNumberValue = string.Empty;
         /// <summary>
@@ -199,7 +200,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Balance Sheet Data Model
     /// </summary>
-    public partial class BalanceSheet : AccountingEntityBase
+    public partial class BalanceSheet : ModelEntityBase
     {
         private System.DateTime AsOfDateValue;
         /// <summary>
@@ -405,7 +406,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Balance Sheet Line Item
     /// </summary>
-    public partial class BalanceSheetLine : AccountingEntityBase
+    public partial class BalanceSheetLine : ModelEntityBase
     {
         private System.String AccountNumberValue = string.Empty;
         /// <summary>
@@ -438,4 +439,5 @@ namespace Beep.OilandGas.Models.Data.Accounting
         }
     }
 }
+
 

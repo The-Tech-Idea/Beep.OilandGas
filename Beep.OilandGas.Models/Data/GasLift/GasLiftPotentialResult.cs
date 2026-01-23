@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.GasLift
 {
     /// <summary>
@@ -11,22 +12,62 @@ namespace Beep.OilandGas.Models.Data.GasLift
         /// <summary>
         /// Optimal gas injection rate (Mscf/day or m³/day)
         /// </summary>
-        public decimal OptimalGasInjectionRate { get; set; }
+        private decimal OptimalGasInjectionRateValue;
+
+        public decimal OptimalGasInjectionRate
+
+        {
+
+            get { return this.OptimalGasInjectionRateValue; }
+
+            set { SetProperty(ref OptimalGasInjectionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Maximum production rate achievable (STB/day or m³/day)
         /// </summary>
-        public decimal MaximumProductionRate { get; set; }
+        private decimal MaximumProductionRateValue;
+
+        public decimal MaximumProductionRate
+
+        {
+
+            get { return this.MaximumProductionRateValue; }
+
+            set { SetProperty(ref MaximumProductionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Optimal gas-liquid ratio
         /// </summary>
-        public decimal OptimalGasLiquidRatio { get; set; }
+        private decimal OptimalGasLiquidRatioValue;
+
+        public decimal OptimalGasLiquidRatio
+
+        {
+
+            get { return this.OptimalGasLiquidRatioValue; }
+
+            set { SetProperty(ref OptimalGasLiquidRatioValue, value); }
+
+        }
 
         /// <summary>
         /// Performance points for different gas injection rates
         /// </summary>
-        public List<GasLiftPerformancePoint> PerformancePoints { get; set; } = new List<GasLiftPerformancePoint>();
+        private List<GasLiftPerformancePoint> PerformancePointsValue = new List<GasLiftPerformancePoint>();
+
+        public List<GasLiftPerformancePoint> PerformancePoints
+
+        {
+
+            get { return this.PerformancePointsValue; }
+
+            set { SetProperty(ref PerformancePointsValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -38,24 +79,67 @@ namespace Beep.OilandGas.Models.Data.GasLift
         /// <summary>
         /// Gas injection rate (Mscf/day or m³/day)
         /// </summary>
-        public decimal GasInjectionRate { get; set; }
+        private decimal GasInjectionRateValue;
+
+        public decimal GasInjectionRate
+
+        {
+
+            get { return this.GasInjectionRateValue; }
+
+            set { SetProperty(ref GasInjectionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Production rate (STB/day or m³/day)
         /// </summary>
-        public decimal ProductionRate { get; set; }
+        private decimal ProductionRateValue;
+
+        public decimal ProductionRate
+
+        {
+
+            get { return this.ProductionRateValue; }
+
+            set { SetProperty(ref ProductionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Gas-liquid ratio
         /// </summary>
-        public decimal GasLiquidRatio { get; set; }
+        private decimal GasLiquidRatioValue;
+
+        public decimal GasLiquidRatio
+
+        {
+
+            get { return this.GasLiquidRatioValue; }
+
+            set { SetProperty(ref GasLiquidRatioValue, value); }
+
+        }
 
         /// <summary>
         /// Bottom hole pressure (psia or kPa)
         /// </summary>
-        public decimal BottomHolePressure { get; set; }
+        private decimal BottomHolePressureValue;
+
+        public decimal BottomHolePressure
+
+        {
+
+            get { return this.BottomHolePressureValue; }
+
+            set { SetProperty(ref BottomHolePressureValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

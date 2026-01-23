@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
     /// Budget Definition
     /// </summary>
-    public partial class Budget : AccountingEntityBase
+    public partial class Budget : ModelEntityBase
     {
         private System.String BudgetNameValue = string.Empty;
         public System.String BudgetName
@@ -76,7 +77,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Budget Line Item
     /// </summary>
-    public partial class BudgetLine : AccountingEntityBase
+    public partial class BudgetLine : ModelEntityBase
     {
         private System.String AccountNumberValue = string.Empty;
         public System.String AccountNumber
@@ -103,7 +104,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Budget Variance Report
     /// </summary>
-    public partial class BudgetVarianceReport : AccountingEntityBase
+    public partial class BudgetVarianceReport : ModelEntityBase
     {
         private System.String ReportNameValue = string.Empty;
         public System.String ReportName
@@ -186,7 +187,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Budget Variance Line
     /// </summary>
-    public partial class BudgetVarianceLine : AccountingEntityBase
+    public partial class BudgetVarianceLine : ModelEntityBase
     {
         private System.String AccountNumberValue = string.Empty;
         public System.String AccountNumber
@@ -241,7 +242,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Year-to-Date Performance
     /// </summary>
-    public partial class YTDPerformance : AccountingEntityBase
+    public partial class YTDPerformance : ModelEntityBase
     {
         private System.String BudgetNameValue = string.Empty;
         public System.String BudgetName
@@ -338,7 +339,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// YTD Item
     /// </summary>
-    public partial class YTDItem : AccountingEntityBase
+    public partial class YTDItem : ModelEntityBase
     {
         private System.String AccountNumberValue = string.Empty;
         public System.String AccountNumber
@@ -393,7 +394,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Budget Forecast
     /// </summary>
-    public partial class BudgetForecast : AccountingEntityBase
+    public partial class BudgetForecast : ModelEntityBase
     {
         private System.String BudgetNameValue = string.Empty;
         public System.String BudgetName
@@ -483,7 +484,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Forecast Item
     /// </summary>
-    public partial class ForecastItem : AccountingEntityBase
+    public partial class ForecastItem : ModelEntityBase
     {
         private System.String AccountNumberValue = string.Empty;
         public System.String AccountNumber
@@ -552,4 +553,5 @@ namespace Beep.OilandGas.Models.Data.Accounting
         ExponentialSmoothing
     }
 }
+
 

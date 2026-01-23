@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Imbalance;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -16,3 +17,4 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<bool> ValidateAsync(IMBALANCE_ADJUSTMENT imbalance, string cn = "PPDM39");
     }
 }
+

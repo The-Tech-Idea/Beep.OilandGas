@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Calculations
 {
     /// <summary>
@@ -16,32 +17,92 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Base parameters used for analysis [qi, di, b]
         /// </summary>
-        public double[] BaseParameters { get; set; }
+        private double[] BaseParametersValue;
+
+        public double[] BaseParameters
+
+        {
+
+            get { return this.BaseParametersValue; }
+
+            set { SetProperty(ref BaseParametersValue, value); }
+
+        }
 
         /// <summary>
         /// Percentage variation applied to parameters (e.g., 20 for ±20%)
         /// </summary>
-        public double VariationPercent { get; set; }
+        private double VariationPercentValue;
+
+        public double VariationPercent
+
+        {
+
+            get { return this.VariationPercentValue; }
+
+            set { SetProperty(ref VariationPercentValue, value); }
+
+        }
 
         /// <summary>
         /// Sensitivity results for initial production rate (qi)
         /// </summary>
-        public DcaParameterSensitivity QiSensitivity { get; set; }
+        private DcaParameterSensitivity QiSensitivityValue;
+
+        public DcaParameterSensitivity QiSensitivity
+
+        {
+
+            get { return this.QiSensitivityValue; }
+
+            set { SetProperty(ref QiSensitivityValue, value); }
+
+        }
 
         /// <summary>
         /// Sensitivity results for initial decline rate (di)
         /// </summary>
-        public DcaParameterSensitivity DiSensitivity { get; set; }
+        private DcaParameterSensitivity DiSensitivityValue;
+
+        public DcaParameterSensitivity DiSensitivity
+
+        {
+
+            get { return this.DiSensitivityValue; }
+
+            set { SetProperty(ref DiSensitivityValue, value); }
+
+        }
 
         /// <summary>
         /// Sensitivity results for decline exponent (b)
         /// </summary>
-        public DcaParameterSensitivity BSensitivity { get; set; }
+        private DcaParameterSensitivity BSensitivityValue;
+
+        public DcaParameterSensitivity BSensitivity
+
+        {
+
+            get { return this.BSensitivityValue; }
+
+            set { SetProperty(ref BSensitivityValue, value); }
+
+        }
 
         /// <summary>
         /// Date the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -52,22 +113,62 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Production at baseline parameter value
         /// </summary>
-        public double BaselineProduction { get; set; }
+        private double BaselineProductionValue;
+
+        public double BaselineProduction
+
+        {
+
+            get { return this.BaselineProductionValue; }
+
+            set { SetProperty(ref BaselineProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Production with low variation (-X%)
         /// </summary>
-        public double LowVariationProduction { get; set; }
+        private double LowVariationProductionValue;
+
+        public double LowVariationProduction
+
+        {
+
+            get { return this.LowVariationProductionValue; }
+
+            set { SetProperty(ref LowVariationProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Production with high variation (+X%)
         /// </summary>
-        public double HighVariationProduction { get; set; }
+        private double HighVariationProductionValue;
+
+        public double HighVariationProduction
+
+        {
+
+            get { return this.HighVariationProductionValue; }
+
+            set { SetProperty(ref HighVariationProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Total impact on final production as percentage
         /// </summary>
-        public double ImpactOnFinalProduction { get; set; }
+        private double ImpactOnFinalProductionValue;
+
+        public double ImpactOnFinalProduction
+
+        {
+
+            get { return this.ImpactOnFinalProductionValue; }
+
+            set { SetProperty(ref ImpactOnFinalProductionValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -78,37 +179,107 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Number of data points analyzed
         /// </summary>
-        public int DataPointsAnalyzed { get; set; }
+        private int DataPointsAnalyzedValue;
+
+        public int DataPointsAnalyzed
+
+        {
+
+            get { return this.DataPointsAnalyzedValue; }
+
+            set { SetProperty(ref DataPointsAnalyzedValue, value); }
+
+        }
 
         /// <summary>
         /// Date analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Exponential decline model results
         /// </summary>
-        public DcaDeclineModel ExponentialModel { get; set; }
+        private DcaDeclineModel ExponentialModelValue;
+
+        public DcaDeclineModel ExponentialModel
+
+        {
+
+            get { return this.ExponentialModelValue; }
+
+            set { SetProperty(ref ExponentialModelValue, value); }
+
+        }
 
         /// <summary>
         /// Hyperbolic decline model results
         /// </summary>
-        public DcaDeclineModel HyperbolicModel { get; set; }
+        private DcaDeclineModel HyperbolicModelValue;
+
+        public DcaDeclineModel HyperbolicModel
+
+        {
+
+            get { return this.HyperbolicModelValue; }
+
+            set { SetProperty(ref HyperbolicModelValue, value); }
+
+        }
 
         /// <summary>
         /// Harmonic decline model results
         /// </summary>
-        public DcaDeclineModel HarmonicModel { get; set; }
+        private DcaDeclineModel HarmonicModelValue;
+
+        public DcaDeclineModel HarmonicModel
+
+        {
+
+            get { return this.HarmonicModelValue; }
+
+            set { SetProperty(ref HarmonicModelValue, value); }
+
+        }
 
         /// <summary>
         /// Name of the best fitting model
         /// </summary>
-        public string BestFitModel { get; set; }
+        private string BestFitModelValue;
+
+        public string BestFitModel
+
+        {
+
+            get { return this.BestFitModelValue; }
+
+            set { SetProperty(ref BestFitModelValue, value); }
+
+        }
 
         /// <summary>
         /// R² value of the best fitting model
         /// </summary>
-        public double BestRSquared { get; set; }
+        private double BestRSquaredValue;
+
+        public double BestRSquared
+
+        {
+
+            get { return this.BestRSquaredValue; }
+
+            set { SetProperty(ref BestRSquaredValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -119,32 +290,92 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Type of decline model (Exponential, Hyperbolic, Harmonic)
         /// </summary>
-        public string ModelType { get; set; }
+        private string ModelTypeValue;
+
+        public string ModelType
+
+        {
+
+            get { return this.ModelTypeValue; }
+
+            set { SetProperty(ref ModelTypeValue, value); }
+
+        }
 
         /// <summary>
         /// Fitted parameters [qi, di, b]
         /// </summary>
-        public double[] Parameters { get; set; }
+        private double[] ParametersValue;
+
+        public double[] Parameters
+
+        {
+
+            get { return this.ParametersValue; }
+
+            set { SetProperty(ref ParametersValue, value); }
+
+        }
 
         /// <summary>
         /// Coefficient of determination (R²)
         /// </summary>
-        public double RSquared { get; set; }
+        private double RSquaredValue;
+
+        public double RSquared
+
+        {
+
+            get { return this.RSquaredValue; }
+
+            set { SetProperty(ref RSquaredValue, value); }
+
+        }
 
         /// <summary>
         /// Akaike Information Criterion
         /// </summary>
-        public double AIC { get; set; }
+        private double AICValue;
+
+        public double AIC
+
+        {
+
+            get { return this.AICValue; }
+
+            set { SetProperty(ref AICValue, value); }
+
+        }
 
         /// <summary>
         /// Bayesian Information Criterion
         /// </summary>
-        public double BIC { get; set; }
+        private double BICValue;
+
+        public double BIC
+
+        {
+
+            get { return this.BICValue; }
+
+            set { SetProperty(ref BICValue, value); }
+
+        }
 
         /// <summary>
         /// Root mean square error
         /// </summary>
-        public double RMSE { get; set; }
+        private double RMSEValue;
+
+        public double RMSE
+
+        {
+
+            get { return this.RMSEValue; }
+
+            set { SetProperty(ref RMSEValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -155,37 +386,107 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Number of simulations performed
         /// </summary>
-        public int SimulationCount { get; set; }
+        private int SimulationCountValue;
+
+        public int SimulationCount
+
+        {
+
+            get { return this.SimulationCountValue; }
+
+            set { SetProperty(ref SimulationCountValue, value); }
+
+        }
 
         /// <summary>
         /// Number of months forecasted
         /// </summary>
-        public int ForecastMonths { get; set; }
+        private int ForecastMonthsValue;
+
+        public int ForecastMonths
+
+        {
+
+            get { return this.ForecastMonthsValue; }
+
+            set { SetProperty(ref ForecastMonthsValue, value); }
+
+        }
 
         /// <summary>
         /// Confidence level used (0.0-1.0)
         /// </summary>
-        public double ConfidenceLevel { get; set; }
+        private double ConfidenceLevelValue;
+
+        public double ConfidenceLevel
+
+        {
+
+            get { return this.ConfidenceLevelValue; }
+
+            set { SetProperty(ref ConfidenceLevelValue, value); }
+
+        }
 
         /// <summary>
         /// Date analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Monthly forecast statistics for each forecast month
         /// </summary>
-        public List<DcaMonteCarloMonthlyStats> ForecastMonthly { get; set; } = new();
+        private List<DcaMonteCarloMonthlyStats> ForecastMonthlyValue = new();
+
+        public List<DcaMonteCarloMonthlyStats> ForecastMonthly
+
+        {
+
+            get { return this.ForecastMonthlyValue; }
+
+            set { SetProperty(ref ForecastMonthlyValue, value); }
+
+        }
 
         /// <summary>
         /// Total cumulative production across all months
         /// </summary>
-        public double CumulativeProduction { get; set; }
+        private double CumulativeProductionValue;
+
+        public double CumulativeProduction
+
+        {
+
+            get { return this.CumulativeProductionValue; }
+
+            set { SetProperty(ref CumulativeProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Probability well remains above economic limit
         /// </summary>
-        public double ProbabilityEconomicViable { get; set; }
+        private double ProbabilityEconomicViableValue;
+
+        public double ProbabilityEconomicViable
+
+        {
+
+            get { return this.ProbabilityEconomicViableValue; }
+
+            set { SetProperty(ref ProbabilityEconomicViableValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -196,47 +497,137 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Forecast month number (1-N)
         /// </summary>
-        public int Month { get; set; }
+        private int MonthValue;
+
+        public int Month
+
+        {
+
+            get { return this.MonthValue; }
+
+            set { SetProperty(ref MonthValue, value); }
+
+        }
 
         /// <summary>
         /// Mean production rate (bbl/day)
         /// </summary>
-        public double MeanProduction { get; set; }
+        private double MeanProductionValue;
+
+        public double MeanProduction
+
+        {
+
+            get { return this.MeanProductionValue; }
+
+            set { SetProperty(ref MeanProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Median production rate (bbl/day)
         /// </summary>
-        public double MedianProduction { get; set; }
+        private double MedianProductionValue;
+
+        public double MedianProduction
+
+        {
+
+            get { return this.MedianProductionValue; }
+
+            set { SetProperty(ref MedianProductionValue, value); }
+
+        }
 
         /// <summary>
         /// 10th percentile production rate
         /// </summary>
-        public double P10Production { get; set; }
+        private double P10ProductionValue;
+
+        public double P10Production
+
+        {
+
+            get { return this.P10ProductionValue; }
+
+            set { SetProperty(ref P10ProductionValue, value); }
+
+        }
 
         /// <summary>
         /// 50th percentile production rate
         /// </summary>
-        public double P50Production { get; set; }
+        private double P50ProductionValue;
+
+        public double P50Production
+
+        {
+
+            get { return this.P50ProductionValue; }
+
+            set { SetProperty(ref P50ProductionValue, value); }
+
+        }
 
         /// <summary>
         /// 90th percentile production rate
         /// </summary>
-        public double P90Production { get; set; }
+        private double P90ProductionValue;
+
+        public double P90Production
+
+        {
+
+            get { return this.P90ProductionValue; }
+
+            set { SetProperty(ref P90ProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Minimum production in simulations
         /// </summary>
-        public double MinProduction { get; set; }
+        private double MinProductionValue;
+
+        public double MinProduction
+
+        {
+
+            get { return this.MinProductionValue; }
+
+            set { SetProperty(ref MinProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Maximum production in simulations
         /// </summary>
-        public double MaxProduction { get; set; }
+        private double MaxProductionValue;
+
+        public double MaxProduction
+
+        {
+
+            get { return this.MaxProductionValue; }
+
+            set { SetProperty(ref MaxProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Standard deviation of production
         /// </summary>
-        public double StandardDeviation { get; set; }
+        private double StandardDeviationValue;
+
+        public double StandardDeviation
+
+        {
+
+            get { return this.StandardDeviationValue; }
+
+            set { SetProperty(ref StandardDeviationValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -247,32 +638,92 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Number of models compared
         /// </summary>
-        public int ModelsCompared { get; set; }
+        private int ModelsComparedValue;
+
+        public int ModelsCompared
+
+        {
+
+            get { return this.ModelsComparedValue; }
+
+            set { SetProperty(ref ModelsComparedValue, value); }
+
+        }
 
         /// <summary>
         /// Date analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Metrics for each model
         /// </summary>
-        public List<DcaModelMetric> ModelMetrics { get; set; } = new();
+        private List<DcaModelMetric> ModelMetricsValue = new();
+
+        public List<DcaModelMetric> ModelMetrics
+
+        {
+
+            get { return this.ModelMetricsValue; }
+
+            set { SetProperty(ref ModelMetricsValue, value); }
+
+        }
 
         /// <summary>
         /// Index of model with best AIC
         /// </summary>
-        public int BestAICIndex { get; set; }
+        private int BestAICIndexValue;
+
+        public int BestAICIndex
+
+        {
+
+            get { return this.BestAICIndexValue; }
+
+            set { SetProperty(ref BestAICIndexValue, value); }
+
+        }
 
         /// <summary>
         /// Index of model with best R²
         /// </summary>
-        public int BestRSquaredIndex { get; set; }
+        private int BestRSquaredIndexValue;
+
+        public int BestRSquaredIndex
+
+        {
+
+            get { return this.BestRSquaredIndexValue; }
+
+            set { SetProperty(ref BestRSquaredIndexValue, value); }
+
+        }
 
         /// <summary>
         /// Index of model with best BIC
         /// </summary>
-        public int BestBICIndex { get; set; }
+        private int BestBICIndexValue;
+
+        public int BestBICIndex
+
+        {
+
+            get { return this.BestBICIndexValue; }
+
+            set { SetProperty(ref BestBICIndexValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -283,52 +734,152 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Model index in comparison
         /// </summary>
-        public int ModelIndex { get; set; }
+        private int ModelIndexValue;
+
+        public int ModelIndex
+
+        {
+
+            get { return this.ModelIndexValue; }
+
+            set { SetProperty(ref ModelIndexValue, value); }
+
+        }
 
         /// <summary>
         /// R² coefficient of determination
         /// </summary>
-        public double RSquared { get; set; }
+        private double RSquaredValue;
+
+        public double RSquared
+
+        {
+
+            get { return this.RSquaredValue; }
+
+            set { SetProperty(ref RSquaredValue, value); }
+
+        }
 
         /// <summary>
         /// Adjusted R²
         /// </summary>
-        public double AdjustedRSquared { get; set; }
+        private double AdjustedRSquaredValue;
+
+        public double AdjustedRSquared
+
+        {
+
+            get { return this.AdjustedRSquaredValue; }
+
+            set { SetProperty(ref AdjustedRSquaredValue, value); }
+
+        }
 
         /// <summary>
         /// Root mean square error
         /// </summary>
-        public double RMSE { get; set; }
+        private double RMSEValue;
+
+        public double RMSE
+
+        {
+
+            get { return this.RMSEValue; }
+
+            set { SetProperty(ref RMSEValue, value); }
+
+        }
 
         /// <summary>
         /// Mean absolute error
         /// </summary>
-        public double MAE { get; set; }
+        private double MAEValue;
+
+        public double MAE
+
+        {
+
+            get { return this.MAEValue; }
+
+            set { SetProperty(ref MAEValue, value); }
+
+        }
 
         /// <summary>
         /// Akaike Information Criterion
         /// </summary>
-        public double AIC { get; set; }
+        private double AICValue;
+
+        public double AIC
+
+        {
+
+            get { return this.AICValue; }
+
+            set { SetProperty(ref AICValue, value); }
+
+        }
 
         /// <summary>
         /// Bayesian Information Criterion
         /// </summary>
-        public double BIC { get; set; }
+        private double BICValue;
+
+        public double BIC
+
+        {
+
+            get { return this.BICValue; }
+
+            set { SetProperty(ref BICValue, value); }
+
+        }
 
         /// <summary>
         /// Whether model converged
         /// </summary>
-        public bool Converged { get; set; }
+        private bool ConvergedValue;
+
+        public bool Converged
+
+        {
+
+            get { return this.ConvergedValue; }
+
+            set { SetProperty(ref ConvergedValue, value); }
+
+        }
 
         /// <summary>
         /// Number of parameters in model
         /// </summary>
-        public int ParameterCount { get; set; }
+        private int ParameterCountValue;
+
+        public int ParameterCount
+
+        {
+
+            get { return this.ParameterCountValue; }
+
+            set { SetProperty(ref ParameterCountValue, value); }
+
+        }
 
         /// <summary>
         /// Overall performance score (0-100)
         /// </summary>
-        public double PerformanceScore { get; set; }
+        private double PerformanceScoreValue;
+
+        public double PerformanceScore
+
+        {
+
+            get { return this.PerformanceScoreValue; }
+
+            set { SetProperty(ref PerformanceScoreValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -339,37 +890,107 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Number of data points analyzed
         /// </summary>
-        public int DataPointsAnalyzed { get; set; }
+        private int DataPointsAnalyzedValue;
+
+        public int DataPointsAnalyzed
+
+        {
+
+            get { return this.DataPointsAnalyzedValue; }
+
+            set { SetProperty(ref DataPointsAnalyzedValue, value); }
+
+        }
 
         /// <summary>
         /// Date analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Decline rates by interval
         /// </summary>
-        public List<double> DeclineRatesByInterval { get; set; } = new();
+        private List<double> DeclineRatesByIntervalValue = new();
+
+        public List<double> DeclineRatesByInterval
+
+        {
+
+            get { return this.DeclineRatesByIntervalValue; }
+
+            set { SetProperty(ref DeclineRatesByIntervalValue, value); }
+
+        }
 
         /// <summary>
         /// Identified inflection points
         /// </summary>
-        public List<DcaInflectionPoint> InflectionPoints { get; set; } = new();
+        private List<DcaInflectionPoint> InflectionPointsValue = new();
+
+        public List<DcaInflectionPoint> InflectionPoints
+
+        {
+
+            get { return this.InflectionPointsValue; }
+
+            set { SetProperty(ref InflectionPointsValue, value); }
+
+        }
 
         /// <summary>
         /// Detected phase transitions
         /// </summary>
-        public List<DcaPhaseTransition> PhaseTransitions { get; set; } = new();
+        private List<DcaPhaseTransition> PhaseTransitionsValue = new();
+
+        public List<DcaPhaseTransition> PhaseTransitions
+
+        {
+
+            get { return this.PhaseTransitionsValue; }
+
+            set { SetProperty(ref PhaseTransitionsValue, value); }
+
+        }
 
         /// <summary>
         /// Average decline rate in early phase
         /// </summary>
-        public double EarlyPhaseDecline { get; set; }
+        private double EarlyPhaseDeclineValue;
+
+        public double EarlyPhaseDecline
+
+        {
+
+            get { return this.EarlyPhaseDeclineValue; }
+
+            set { SetProperty(ref EarlyPhaseDeclineValue, value); }
+
+        }
 
         /// <summary>
         /// Average decline rate in main phase
         /// </summary>
-        public double MainPhaseDecline { get; set; }
+        private double MainPhaseDeclineValue;
+
+        public double MainPhaseDecline
+
+        {
+
+            get { return this.MainPhaseDeclineValue; }
+
+            set { SetProperty(ref MainPhaseDeclineValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -380,17 +1001,47 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Month number of inflection
         /// </summary>
-        public int Month { get; set; }
+        private int MonthValue;
+
+        public int Month
+
+        {
+
+            get { return this.MonthValue; }
+
+            set { SetProperty(ref MonthValue, value); }
+
+        }
 
         /// <summary>
         /// Date of inflection
         /// </summary>
-        public DateTime Date { get; set; }
+        private DateTime DateValue;
+
+        public DateTime Date
+
+        {
+
+            get { return this.DateValue; }
+
+            set { SetProperty(ref DateValue, value); }
+
+        }
 
         /// <summary>
         /// Production rate at inflection
         /// </summary>
-        public double Production { get; set; }
+        private double ProductionValue;
+
+        public double Production
+
+        {
+
+            get { return this.ProductionValue; }
+
+            set { SetProperty(ref ProductionValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -401,12 +1052,32 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Month of transition
         /// </summary>
-        public int Month { get; set; }
+        private int MonthValue;
+
+        public int Month
+
+        {
+
+            get { return this.MonthValue; }
+
+            set { SetProperty(ref MonthValue, value); }
+
+        }
 
         /// <summary>
         /// Change in decline rate
         /// </summary>
-        public double DeclineRateChange { get; set; }
+        private double DeclineRateChangeValue;
+
+        public double DeclineRateChange
+
+        {
+
+            get { return this.DeclineRateChangeValue; }
+
+            set { SetProperty(ref DeclineRateChangeValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -417,42 +1088,122 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Number of years in forecast
         /// </summary>
-        public int ForecastYears { get; set; }
+        private int ForecastYearsValue;
+
+        public int ForecastYears
+
+        {
+
+            get { return this.ForecastYearsValue; }
+
+            set { SetProperty(ref ForecastYearsValue, value); }
+
+        }
 
         /// <summary>
         /// Economic limit threshold (bbl/day)
         /// </summary>
-        public double EconomicLimitBblPerDay { get; set; }
+        private double EconomicLimitBblPerDayValue;
+
+        public double EconomicLimitBblPerDay
+
+        {
+
+            get { return this.EconomicLimitBblPerDayValue; }
+
+            set { SetProperty(ref EconomicLimitBblPerDayValue, value); }
+
+        }
 
         /// <summary>
         /// Date analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Monthly production forecast
         /// </summary>
-        public List<double> MonthlyProduction { get; set; } = new();
+        private List<double> MonthlyProductionValue = new();
+
+        public List<double> MonthlyProduction
+
+        {
+
+            get { return this.MonthlyProductionValue; }
+
+            set { SetProperty(ref MonthlyProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Total cumulative production
         /// </summary>
-        public double TotalCumulativeProduction { get; set; }
+        private double TotalCumulativeProductionValue;
+
+        public double TotalCumulativeProduction
+
+        {
+
+            get { return this.TotalCumulativeProductionValue; }
+
+            set { SetProperty(ref TotalCumulativeProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Average production rate
         /// </summary>
-        public double AverageProductionRate { get; set; }
+        private double AverageProductionRateValue;
+
+        public double AverageProductionRate
+
+        {
+
+            get { return this.AverageProductionRateValue; }
+
+            set { SetProperty(ref AverageProductionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Months until economic limit reached
         /// </summary>
-        public int MonthsToEconomicLimit { get; set; }
+        private int MonthsToEconomicLimitValue;
+
+        public int MonthsToEconomicLimit
+
+        {
+
+            get { return this.MonthsToEconomicLimitValue; }
+
+            set { SetProperty(ref MonthsToEconomicLimitValue, value); }
+
+        }
 
         /// <summary>
         /// Years until economic limit reached
         /// </summary>
-        public double YearsToEconomicLimit { get; set; }
+        private double YearsToEconomicLimitValue;
+
+        public double YearsToEconomicLimit
+
+        {
+
+            get { return this.YearsToEconomicLimitValue; }
+
+            set { SetProperty(ref YearsToEconomicLimitValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -463,37 +1214,107 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Date analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Reference date for analysis
         /// </summary>
-        public DateTime ReferenceDate { get; set; }
+        private DateTime ReferenceDateValue;
+
+        public DateTime ReferenceDate
+
+        {
+
+            get { return this.ReferenceDateValue; }
+
+            set { SetProperty(ref ReferenceDateValue, value); }
+
+        }
 
         /// <summary>
         /// Predicted end-of-life date
         /// </summary>
-        public DateTime PredictedEOLDate { get; set; }
+        private DateTime PredictedEOLDateValue;
+
+        public DateTime PredictedEOLDate
+
+        {
+
+            get { return this.PredictedEOLDateValue; }
+
+            set { SetProperty(ref PredictedEOLDateValue, value); }
+
+        }
 
         /// <summary>
         /// Economic limit threshold (bbl/day)
         /// </summary>
-        public double EconomicLimitBblPerDay { get; set; }
+        private double EconomicLimitBblPerDayValue;
+
+        public double EconomicLimitBblPerDay
+
+        {
+
+            get { return this.EconomicLimitBblPerDayValue; }
+
+            set { SetProperty(ref EconomicLimitBblPerDayValue, value); }
+
+        }
 
         /// <summary>
         /// Remaining well life in months
         /// </summary>
-        public int RemainingLifeMonths { get; set; }
+        private int RemainingLifeMonthsValue;
+
+        public int RemainingLifeMonths
+
+        {
+
+            get { return this.RemainingLifeMonthsValue; }
+
+            set { SetProperty(ref RemainingLifeMonthsValue, value); }
+
+        }
 
         /// <summary>
         /// Remaining well life in years
         /// </summary>
-        public double RemainingLifeYears { get; set; }
+        private double RemainingLifeYearsValue;
+
+        public double RemainingLifeYears
+
+        {
+
+            get { return this.RemainingLifeYearsValue; }
+
+            set { SetProperty(ref RemainingLifeYearsValue, value); }
+
+        }
 
         /// <summary>
         /// Estimated reserves to end-of-life
         /// </summary>
-        public double ReservesToEOL { get; set; }
+        private double ReservesToEOLValue;
+
+        public double ReservesToEOL
+
+        {
+
+            get { return this.ReservesToEOLValue; }
+
+            set { SetProperty(ref ReservesToEOLValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -504,37 +1325,107 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Number of data points used
         /// </summary>
-        public int DataPointsUsed { get; set; }
+        private int DataPointsUsedValue;
+
+        public int DataPointsUsed
+
+        {
+
+            get { return this.DataPointsUsedValue; }
+
+            set { SetProperty(ref DataPointsUsedValue, value); }
+
+        }
 
         /// <summary>
         /// Date optimization was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Initial production rate (bbl/day)
         /// </summary>
-        public double Qi { get; set; }
+        private double QiValue;
+
+        public double Qi
+
+        {
+
+            get { return this.QiValue; }
+
+            set { SetProperty(ref QiValue, value); }
+
+        }
 
         /// <summary>
         /// Initial decline rate (1/year)
         /// </summary>
-        public double Di { get; set; }
+        private double DiValue;
+
+        public double Di
+
+        {
+
+            get { return this.DiValue; }
+
+            set { SetProperty(ref DiValue, value); }
+
+        }
 
         /// <summary>
         /// Decline exponent (unitless)
         /// </summary>
-        public double B { get; set; }
+        private double BValue;
+
+        public double B
+
+        {
+
+            get { return this.BValue; }
+
+            set { SetProperty(ref BValue, value); }
+
+        }
 
         /// <summary>
         /// Goodness of fit (R²)
         /// </summary>
-        public double RSquared { get; set; }
+        private double RSquaredValue;
+
+        public double RSquared
+
+        {
+
+            get { return this.RSquaredValue; }
+
+            set { SetProperty(ref RSquaredValue, value); }
+
+        }
 
         /// <summary>
         /// Root mean square error
         /// </summary>
-        public double RMSE { get; set; }
+        private double RMSEValue;
+
+        public double RMSE
+
+        {
+
+            get { return this.RMSEValue; }
+
+            set { SetProperty(ref RMSEValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -545,47 +1436,137 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Date assessment was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Months of historical data available
         /// </summary>
-        public int HistoricalMonths { get; set; }
+        private int HistoricalMonthsValue;
+
+        public int HistoricalMonths
+
+        {
+
+            get { return this.HistoricalMonthsValue; }
+
+            set { SetProperty(ref HistoricalMonthsValue, value); }
+
+        }
 
         /// <summary>
         /// R² of the fitted model
         /// </summary>
-        public double ModelRSquared { get; set; }
+        private double ModelRSquaredValue;
+
+        public double ModelRSquared
+
+        {
+
+            get { return this.ModelRSquaredValue; }
+
+            set { SetProperty(ref ModelRSquaredValue, value); }
+
+        }
 
         /// <summary>
         /// Score component from R² (0-10)
         /// </summary>
-        public double R2ScoreComponent { get; set; }
+        private double R2ScoreComponentValue;
+
+        public double R2ScoreComponent
+
+        {
+
+            get { return this.R2ScoreComponentValue; }
+
+            set { SetProperty(ref R2ScoreComponentValue, value); }
+
+        }
 
         /// <summary>
         /// Score component from historical data span (0-10)
         /// </summary>
-        public double HistoryScoreComponent { get; set; }
+        private double HistoryScoreComponentValue;
+
+        public double HistoryScoreComponent
+
+        {
+
+            get { return this.HistoryScoreComponentValue; }
+
+            set { SetProperty(ref HistoryScoreComponentValue, value); }
+
+        }
 
         /// <summary>
         /// Score component from convergence (0-10)
         /// </summary>
-        public double ConvergenceScoreComponent { get; set; }
+        private double ConvergenceScoreComponentValue;
+
+        public double ConvergenceScoreComponent
+
+        {
+
+            get { return this.ConvergenceScoreComponentValue; }
+
+            set { SetProperty(ref ConvergenceScoreComponentValue, value); }
+
+        }
 
         /// <summary>
         /// Overall reliability score (0-10)
         /// </summary>
-        public double OverallReliabilityScore { get; set; }
+        private double OverallReliabilityScoreValue;
+
+        public double OverallReliabilityScore
+
+        {
+
+            get { return this.OverallReliabilityScoreValue; }
+
+            set { SetProperty(ref OverallReliabilityScoreValue, value); }
+
+        }
 
         /// <summary>
         /// Reliability assessment (Excellent, Good, Moderate, Poor)
         /// </summary>
-        public string ReliabilityAssessment { get; set; }
+        private string ReliabilityAssessmentValue;
+
+        public string ReliabilityAssessment
+
+        {
+
+            get { return this.ReliabilityAssessmentValue; }
+
+            set { SetProperty(ref ReliabilityAssessmentValue, value); }
+
+        }
 
         /// <summary>
         /// Recommendations for improving forecast
         /// </summary>
-        public List<string> Recommendations { get; set; } = new();
+        private List<string> RecommendationsValue = new();
+
+        public List<string> Recommendations
+
+        {
+
+            get { return this.RecommendationsValue; }
+
+            set { SetProperty(ref RecommendationsValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -596,12 +1577,32 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Number of wells analyzed
         /// </summary>
-        public int WellsAnalyzed { get; set; }
+        private int WellsAnalyzedValue;
+
+        public int WellsAnalyzed
+
+        {
+
+            get { return this.WellsAnalyzedValue; }
+
+            set { SetProperty(ref WellsAnalyzedValue, value); }
+
+        }
 
         /// <summary>
         /// Date analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Analysis results for each well
@@ -611,17 +1612,47 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Average initial production rate (qi) across portfolio
         /// </summary>
-        public double AverageQi { get; set; }
+        private double AverageQiValue;
+
+        public double AverageQi
+
+        {
+
+            get { return this.AverageQiValue; }
+
+            set { SetProperty(ref AverageQiValue, value); }
+
+        }
 
         /// <summary>
         /// Average initial decline rate (di) across portfolio
         /// </summary>
-        public double AverageDi { get; set; }
+        private double AverageDiValue;
+
+        public double AverageDi
+
+        {
+
+            get { return this.AverageDiValue; }
+
+            set { SetProperty(ref AverageDiValue, value); }
+
+        }
 
         /// <summary>
         /// Average R² across portfolio models
         /// </summary>
-        public double AverageRSquared { get; set; }
+        private double AverageRSquaredValue;
+
+        public double AverageRSquared
+
+        {
+
+            get { return this.AverageRSquaredValue; }
+
+            set { SetProperty(ref AverageRSquaredValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -632,37 +1663,560 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Well identifier
         /// </summary>
-        public string WellId { get; set; }
+        private string WellIdValue;
+
+        public string WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
 
         /// <summary>
         /// Number of data points for this well
         /// </summary>
-        public int DataPoints { get; set; }
+        private int DataPointsValue;
+
+        public int DataPoints
+
+        {
+
+            get { return this.DataPointsValue; }
+
+            set { SetProperty(ref DataPointsValue, value); }
+
+        }
 
         /// <summary>
         /// Initial production rate (bbl/day)
         /// </summary>
-        public double InitialProduction { get; set; }
+        private double InitialProductionValue;
+
+        public double InitialProduction
+
+        {
+
+            get { return this.InitialProductionValue; }
+
+            set { SetProperty(ref InitialProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Final production rate (bbl/day)
         /// </summary>
-        public double FinalProduction { get; set; }
+        private double FinalProductionValue;
+
+        public double FinalProduction
+
+        {
+
+            get { return this.FinalProductionValue; }
+
+            set { SetProperty(ref FinalProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Fitted qi parameter
         /// </summary>
-        public double Qi { get; set; }
+        private double QiValue;
+
+        public double Qi
+
+        {
+
+            get { return this.QiValue; }
+
+            set { SetProperty(ref QiValue, value); }
+
+        }
 
         /// <summary>
         /// Fitted di parameter
         /// </summary>
-        public double Di { get; set; }
+        private double DiValue;
+
+        public double Di
+
+        {
+
+            get { return this.DiValue; }
+
+            set { SetProperty(ref DiValue, value); }
+
+        }
 
         /// <summary>
         /// R² of model fit
         /// </summary>
-        public double RSquared { get; set; }
+        private double RSquaredValue;
+
+        public double RSquared
+
+        {
+
+            get { return this.RSquaredValue; }
+
+            set { SetProperty(ref RSquaredValue, value); }
+
+        }
+    }
+    /// <summary>
+    /// Request for Decline Curve Analysis calculation
+    /// </summary>
+    public class DCARequest : ModelEntityBase
+    {
+        private string? WellIdValue;
+
+        public string? WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? PoolIdValue;
+
+        public string? PoolId
+
+        {
+
+            get { return this.PoolIdValue; }
+
+            set { SetProperty(ref PoolIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string CalculationTypeValue = "DCA";
+
+        public string CalculationType
+
+        {
+
+            get { return this.CalculationTypeValue; }
+
+            set { SetProperty(ref CalculationTypeValue, value); }
+
+        } // DCA, DCA_EXPONENTIAL, DCA_HYPERBOLIC, DCA_HARMONIC
+        private DateTime? StartDateValue;
+
+        public DateTime? StartDate
+
+        {
+
+            get { return this.StartDateValue; }
+
+            set { SetProperty(ref StartDateValue, value); }
+
+        }
+        private DateTime? EndDateValue;
+
+        public DateTime? EndDate
+
+        {
+
+            get { return this.EndDateValue; }
+
+            set { SetProperty(ref EndDateValue, value); }
+
+        }
+        private string? ProductionFluidTypeValue;
+
+        public string? ProductionFluidType
+
+        {
+
+            get { return this.ProductionFluidTypeValue; }
+
+            set { SetProperty(ref ProductionFluidTypeValue, value); }
+
+        } // OIL, GAS, WATER
+        public Dictionary<string, object>? AdditionalParameters { get; set; }
+        private string? UserIdValue;
+
+        public string? UserId
+
+        {
+
+            get { return this.UserIdValue; }
+
+            set { SetProperty(ref UserIdValue, value); }
+
+        }
+    }
+
+    /// <summary>
+    /// Result of Decline Curve Analysis calculation
+    /// </summary>
+    public class DCAResult : ModelEntityBase
+    {
+        private string CalculationIdValue = string.Empty;
+
+        public string CalculationId
+
+        {
+
+            get { return this.CalculationIdValue; }
+
+            set { SetProperty(ref CalculationIdValue, value); }
+
+        }
+        private string? WellIdValue;
+
+        public string? WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? PoolIdValue;
+
+        public string? PoolId
+
+        {
+
+            get { return this.PoolIdValue; }
+
+            set { SetProperty(ref PoolIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string CalculationTypeValue = string.Empty;
+
+        public string CalculationType
+
+        {
+
+            get { return this.CalculationTypeValue; }
+
+            set { SetProperty(ref CalculationTypeValue, value); }
+
+        }
+        private DateTime CalculationDateValue;
+
+        public DateTime CalculationDate
+
+        {
+
+            get { return this.CalculationDateValue; }
+
+            set { SetProperty(ref CalculationDateValue, value); }
+
+        }
+        private string? ProductionFluidTypeValue;
+
+        public string? ProductionFluidType
+
+        {
+
+            get { return this.ProductionFluidTypeValue; }
+
+            set { SetProperty(ref ProductionFluidTypeValue, value); }
+
+        }
+        
+        // Decline curve parameters
+        private decimal? InitialRateValue;
+
+        public decimal? InitialRate
+
+        {
+
+            get { return this.InitialRateValue; }
+
+            set { SetProperty(ref InitialRateValue, value); }
+
+        }
+        private decimal? DeclineRateValue;
+
+        public decimal? DeclineRate
+
+        {
+
+            get { return this.DeclineRateValue; }
+
+            set { SetProperty(ref DeclineRateValue, value); }
+
+        }
+        private decimal? DeclineConstantValue;
+
+        public decimal? DeclineConstant
+
+        {
+
+            get { return this.DeclineConstantValue; }
+
+            set { SetProperty(ref DeclineConstantValue, value); }
+
+        }
+        private decimal? NominalDeclineRateValue;
+
+        public decimal? NominalDeclineRate
+
+        {
+
+            get { return this.NominalDeclineRateValue; }
+
+            set { SetProperty(ref NominalDeclineRateValue, value); }
+
+        }
+        private decimal? EffectiveDeclineRateValue;
+
+        public decimal? EffectiveDeclineRate
+
+        {
+
+            get { return this.EffectiveDeclineRateValue; }
+
+            set { SetProperty(ref EffectiveDeclineRateValue, value); }
+
+        }
+        private decimal? HyperbolicExponentValue;
+
+        public decimal? HyperbolicExponent
+
+        {
+
+            get { return this.HyperbolicExponentValue; }
+
+            set { SetProperty(ref HyperbolicExponentValue, value); }
+
+        }
+        
+        // Forecasted production
+        private List<DCAForecastPoint> ForecastPointsValue = new List<DCAForecastPoint>();
+
+        public List<DCAForecastPoint> ForecastPoints
+
+        {
+
+            get { return this.ForecastPointsValue; }
+
+            set { SetProperty(ref ForecastPointsValue, value); }
+
+        }
+        
+        // Statistical metrics
+        private decimal? RMSEValue;
+
+        public decimal? RMSE
+
+        {
+
+            get { return this.RMSEValue; }
+
+            set { SetProperty(ref RMSEValue, value); }
+
+        } // Root Mean Square Error
+        private decimal? R2Value;
+
+        public decimal? R2
+
+        {
+
+            get { return this.R2Value; }
+
+            set { SetProperty(ref R2Value, value); }
+
+        } // Coefficient of determination
+        private decimal? CorrelationCoefficientValue;
+
+        public decimal? CorrelationCoefficient
+
+        {
+
+            get { return this.CorrelationCoefficientValue; }
+
+            set { SetProperty(ref CorrelationCoefficientValue, value); }
+
+        }
+        
+        // Estimated reserves
+        private decimal? EstimatedEURValue;
+
+        public decimal? EstimatedEUR
+
+        {
+
+            get { return this.EstimatedEURValue; }
+
+            set { SetProperty(ref EstimatedEURValue, value); }
+
+        } // Estimated Ultimate Recovery
+        private decimal? RemainingReservesValue;
+
+        public decimal? RemainingReserves
+
+        {
+
+            get { return this.RemainingReservesValue; }
+
+            set { SetProperty(ref RemainingReservesValue, value); }
+
+        }
+        
+        // Additional metadata
+        public Dictionary<string, object>? AdditionalResults { get; set; }
+        private string? StatusValue;
+
+        public string? Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        } // SUCCESS, FAILED, PARTIAL
+        private string? ErrorMessageValue;
+
+        public string? ErrorMessage
+
+        {
+
+            get { return this.ErrorMessageValue; }
+
+            set { SetProperty(ref ErrorMessageValue, value); }
+
+        }
+        private string? UserIdValue;
+
+        public string? UserId
+
+        {
+
+            get { return this.UserIdValue; }
+
+            set { SetProperty(ref UserIdValue, value); }
+
+        }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
+        private string DeclineTypeValue;
+
+        public string DeclineType
+
+        {
+
+            get { return this.DeclineTypeValue; }
+
+            set { SetProperty(ref DeclineTypeValue, value); }
+
+        }
+        private List<decimal> ForecastedProductionValue;
+
+        public List<decimal> ForecastedProduction
+
+        {
+
+            get { return this.ForecastedProductionValue; }
+
+            set { SetProperty(ref ForecastedProductionValue, value); }
+
+        }
+        private bool IsSuccessfulValue;
+
+        public bool IsSuccessful
+
+        {
+
+            get { return this.IsSuccessfulValue; }
+
+            set { SetProperty(ref IsSuccessfulValue, value); }
+
+        }
+    }
+
+    /// <summary>
+    /// Forecast point for a specific date
+    /// </summary>
+    public class DCAForecastPoint : ModelEntityBase
+    {
+        private DateTime DateValue;
+
+        public DateTime Date
+
+        {
+
+            get { return this.DateValue; }
+
+            set { SetProperty(ref DateValue, value); }
+
+        }
+        private decimal? ProductionRateValue;
+
+        public decimal? ProductionRate
+
+        {
+
+            get { return this.ProductionRateValue; }
+
+            set { SetProperty(ref ProductionRateValue, value); }
+
+        }
+        private decimal? CumulativeProductionValue;
+
+        public decimal? CumulativeProduction
+
+        {
+
+            get { return this.CumulativeProductionValue; }
+
+            set { SetProperty(ref CumulativeProductionValue, value); }
+
+        }
+        private decimal? DeclineRateValue;
+
+        public decimal? DeclineRate
+
+        {
+
+            get { return this.DeclineRateValue; }
+
+            set { SetProperty(ref DeclineRateValue, value); }
+
+        }
     }
 }
+
+
+
 

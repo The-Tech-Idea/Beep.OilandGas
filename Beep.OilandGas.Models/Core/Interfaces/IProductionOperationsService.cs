@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ProductionOperations;
 
+using Beep.OilandGas.Models.Data.ProductionOperations;
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
     /// <summary>
@@ -40,31 +43,15 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// <summary>
     /// DTO for production data.
     /// </summary>
-    public class ProductionData
-    {
-        public string ProductionId { get; set; } = string.Empty;
-        public string WellUWI { get; set; } = string.Empty;
-        public string? FieldId { get; set; }
-        public DateTime ProductionDate { get; set; }
-        public decimal OilVolume { get; set; }
-        public decimal GasVolume { get; set; }
-        public decimal WaterVolume { get; set; }
-        public string? Status { get; set; }
-    }
+    
 
     /// <summary>
     /// DTO for production optimization recommendation.
     /// </summary>
-    public class ProductionOptimizationRecommendation
-    {
-        public string RecommendationId { get; set; } = string.Empty;
-        public string WellUWI { get; set; } = string.Empty;
-        public string RecommendationType { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public decimal ExpectedImprovement { get; set; }
-        public string Priority { get; set; } = "Medium";
-    }
+    
 }
+
+
 
 
 

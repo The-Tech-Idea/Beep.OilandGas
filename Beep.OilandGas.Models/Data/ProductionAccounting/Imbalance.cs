@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     // NOTE: Nomination, ActualDelivery, and ImbalanceAdjustment are defined in ImbalanceModelsDto.cs
@@ -12,11 +13,61 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class ProductionAvail : ModelEntityBase
     {
-        public string AvailId { get; set; } = string.Empty;
-        public string LeaseId { get; set; } = string.Empty;
-        public DateTime AvailDate { get; set; }
-        public decimal EstimatedVolume { get; set; }
-        public string? Notes { get; set; }
+        private string AvailIdValue = string.Empty;
+
+        public string AvailId
+
+        {
+
+            get { return this.AvailIdValue; }
+
+            set { SetProperty(ref AvailIdValue, value); }
+
+        }
+        private string LeaseIdValue = string.Empty;
+
+        public string LeaseId
+
+        {
+
+            get { return this.LeaseIdValue; }
+
+            set { SetProperty(ref LeaseIdValue, value); }
+
+        }
+        private DateTime AvailDateValue;
+
+        public DateTime AvailDate
+
+        {
+
+            get { return this.AvailDateValue; }
+
+            set { SetProperty(ref AvailDateValue, value); }
+
+        }
+        private decimal EstimatedVolumeValue;
+
+        public decimal EstimatedVolume
+
+        {
+
+            get { return this.EstimatedVolumeValue; }
+
+            set { SetProperty(ref EstimatedVolumeValue, value); }
+
+        }
+        private string? NotesValue;
+
+        public string? Notes
+
+        {
+
+            get { return this.NotesValue; }
+
+            set { SetProperty(ref NotesValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -24,15 +75,105 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class Imbalance : ModelEntityBase
     {
-        public string ImbalanceId { get; set; } = string.Empty;
-        public string LeaseId { get; set; } = string.Empty;
-        public DateTime ImbalanceDate { get; set; }
-        public decimal ProductionAvail { get; set; }
-        public decimal NominatedVolume { get; set; }
-        public decimal ActualDelivered { get; set; }
-        public decimal ImbalanceVolume { get; set; }
-        public string ImbalanceType { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
+        private string ImbalanceIdValue = string.Empty;
+
+        public string ImbalanceId
+
+        {
+
+            get { return this.ImbalanceIdValue; }
+
+            set { SetProperty(ref ImbalanceIdValue, value); }
+
+        }
+        private string LeaseIdValue = string.Empty;
+
+        public string LeaseId
+
+        {
+
+            get { return this.LeaseIdValue; }
+
+            set { SetProperty(ref LeaseIdValue, value); }
+
+        }
+        private DateTime ImbalanceDateValue;
+
+        public DateTime ImbalanceDate
+
+        {
+
+            get { return this.ImbalanceDateValue; }
+
+            set { SetProperty(ref ImbalanceDateValue, value); }
+
+        }
+        private decimal ProductionAvailValue;
+
+        public decimal ProductionAvail
+
+        {
+
+            get { return this.ProductionAvailValue; }
+
+            set { SetProperty(ref ProductionAvailValue, value); }
+
+        }
+        private decimal NominatedVolumeValue;
+
+        public decimal NominatedVolume
+
+        {
+
+            get { return this.NominatedVolumeValue; }
+
+            set { SetProperty(ref NominatedVolumeValue, value); }
+
+        }
+        private decimal ActualDeliveredValue;
+
+        public decimal ActualDelivered
+
+        {
+
+            get { return this.ActualDeliveredValue; }
+
+            set { SetProperty(ref ActualDeliveredValue, value); }
+
+        }
+        private decimal ImbalanceVolumeValue;
+
+        public decimal ImbalanceVolume
+
+        {
+
+            get { return this.ImbalanceVolumeValue; }
+
+            set { SetProperty(ref ImbalanceVolumeValue, value); }
+
+        }
+        private string ImbalanceTypeValue = string.Empty;
+
+        public string ImbalanceType
+
+        {
+
+            get { return this.ImbalanceTypeValue; }
+
+            set { SetProperty(ref ImbalanceTypeValue, value); }
+
+        }
+        private string StatusValue = string.Empty;
+
+        public string Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -40,15 +181,58 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class ReconcileImbalanceRequest : ModelEntityBase
     {
+        private string ImbalanceIdValue = string.Empty;
+
         [Required]
-        public string ImbalanceId { get; set; } = string.Empty;
+        public string ImbalanceId
+
+        {
+
+            get { return this.ImbalanceIdValue; }
+
+            set { SetProperty(ref ImbalanceIdValue, value); }
+
+        }
+        private List<ImbalanceAdjustment> AdjustmentsValue = new();
+
         [Required]
-        public List<ImbalanceAdjustment> Adjustments { get; set; } = new();
+        public List<ImbalanceAdjustment> Adjustments
+
+        {
+
+            get { return this.AdjustmentsValue; }
+
+            set { SetProperty(ref AdjustmentsValue, value); }
+
+        }
+        private string ReconciledByValue = string.Empty;
+
         [Required]
-        public string ReconciledBy { get; set; } = string.Empty;
-        public string? Notes { get; set; }
+        public string ReconciledBy
+
+        {
+
+            get { return this.ReconciledByValue; }
+
+            set { SetProperty(ref ReconciledByValue, value); }
+
+        }
+        private string? NotesValue;
+
+        public string? Notes
+
+        {
+
+            get { return this.NotesValue; }
+
+            set { SetProperty(ref NotesValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

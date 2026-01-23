@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using TheTechIdea.Beep.Editor;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
     /// Represents a sales statement.
     /// </summary>
-    public partial class SalesStatement : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class SalesStatement : ModelEntityBase
     {
         private System.String StatementIdValue;
         public System.String StatementId
@@ -70,7 +71,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Represents a sales summary.
     /// </summary>
-    public partial class SalesSummary : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class SalesSummary : ModelEntityBase
     {
         private System.Decimal TotalNetVolumeValue;
         public System.Decimal TotalNetVolume
@@ -120,7 +121,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Represents volume details.
     /// </summary>
-    public partial class VolumeDetail : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class VolumeDetail : ModelEntityBase
     {
         private System.DateTime DateValue;
         public System.DateTime Date
@@ -147,7 +148,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Represents pricing details.
     /// </summary>
-    public partial class PricingDetail : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class PricingDetail : ModelEntityBase
     {
         private System.DateTime DateValue;
         public System.DateTime Date

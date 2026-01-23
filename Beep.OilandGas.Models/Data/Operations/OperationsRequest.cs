@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Operations
 {
     /// <summary>
@@ -8,7 +9,17 @@ namespace Beep.OilandGas.Models.Data.Operations
     /// </summary>
     public class RankProspectsRequest : ModelEntityBase
     {
-        public List<string> ProspectIds { get; set; } = new();
+        private List<string> ProspectIdsValue = new();
+
+        public List<string> ProspectIds
+
+        {
+
+            get { return this.ProspectIdsValue; }
+
+            set { SetProperty(ref ProspectIdsValue, value); }
+
+        }
         public Dictionary<string, decimal> RankingCriteria { get; set; } = new();
     }
 
@@ -17,7 +28,17 @@ namespace Beep.OilandGas.Models.Data.Operations
     /// </summary>
     public class UpdateLeaseStatusRequest : ModelEntityBase
     {
-        public string Status { get; set; } = string.Empty;
+        private string StatusValue = string.Empty;
+
+        public string Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -25,8 +46,28 @@ namespace Beep.OilandGas.Models.Data.Operations
     /// </summary>
     public class AnalyzeEORRequest : ModelEntityBase
     {
-        public string FieldId { get; set; } = string.Empty;
-        public string EorMethod { get; set; } = string.Empty;
+        private string FieldIdValue = string.Empty;
+
+        public string FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string EorMethodValue = string.Empty;
+
+        public string EorMethod
+
+        {
+
+            get { return this.EorMethodValue; }
+
+            set { SetProperty(ref EorMethodValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -34,7 +75,17 @@ namespace Beep.OilandGas.Models.Data.Operations
     /// </summary>
     public class CalculateRecoveryFactorRequest : ModelEntityBase
     {
-        public string ProjectId { get; set; } = string.Empty;
+        private string ProjectIdValue = string.Empty;
+
+        public string ProjectId
+
+        {
+
+            get { return this.ProjectIdValue; }
+
+            set { SetProperty(ref ProjectIdValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -42,10 +93,33 @@ namespace Beep.OilandGas.Models.Data.Operations
     /// </summary>
     public class ManageInjectionRequest : ModelEntityBase
     {
-        public string InjectionWellId { get; set; } = string.Empty;
-        public decimal InjectionRate { get; set; }
+        private string InjectionWellIdValue = string.Empty;
+
+        public string InjectionWellId
+
+        {
+
+            get { return this.InjectionWellIdValue; }
+
+            set { SetProperty(ref InjectionWellIdValue, value); }
+
+        }
+        private decimal InjectionRateValue;
+
+        public decimal InjectionRate
+
+        {
+
+            get { return this.InjectionRateValue; }
+
+            set { SetProperty(ref InjectionRateValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

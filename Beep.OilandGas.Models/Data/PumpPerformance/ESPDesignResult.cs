@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.PumpPerformance
 {
     /// <summary>
@@ -11,74 +12,217 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
         /// <summary>
         /// Selected pump stage count
         /// </summary>
-        public int PumpStages { get; set; }
+        private int PumpStagesValue;
+
+        public int PumpStages
+
+        {
+
+            get { return this.PumpStagesValue; }
+
+            set { SetProperty(ref PumpStagesValue, value); }
+
+        }
 
         /// <summary>
         /// Required pump horsepower
         /// </summary>
-        public decimal RequiredHorsepower { get; set; }
+        private decimal RequiredHorsepowerValue;
+
+        public decimal RequiredHorsepower
+
+        {
+
+            get { return this.RequiredHorsepowerValue; }
+
+            set { SetProperty(ref RequiredHorsepowerValue, value); }
+
+        }
 
         /// <summary>
         /// Motor horsepower
         /// </summary>
-        public decimal MotorHorsepower { get; set; }
+        private decimal MotorHorsepowerValue;
+
+        public decimal MotorHorsepower
+
+        {
+
+            get { return this.MotorHorsepowerValue; }
+
+            set { SetProperty(ref MotorHorsepowerValue, value); }
+
+        }
 
         /// <summary>
         /// Motor voltage
         /// </summary>
-        public decimal MotorVoltage { get; set; }
+        private decimal MotorVoltageValue;
+
+        public decimal MotorVoltage
+
+        {
+
+            get { return this.MotorVoltageValue; }
+
+            set { SetProperty(ref MotorVoltageValue, value); }
+
+        }
 
         /// <summary>
         /// Motor current in amps
         /// </summary>
-        public decimal MotorCurrent { get; set; }
+        private decimal MotorCurrentValue;
+
+        public decimal MotorCurrent
+
+        {
+
+            get { return this.MotorCurrentValue; }
+
+            set { SetProperty(ref MotorCurrentValue, value); }
+
+        }
 
         /// <summary>
         /// Cable size in AWG
         /// </summary>
-        public int CableSize { get; set; }
+        private int CableSizeValue;
+
+        public int CableSize
+
+        {
+
+            get { return this.CableSizeValue; }
+
+            set { SetProperty(ref CableSizeValue, value); }
+
+        }
 
         /// <summary>
         /// Cable length in feet
         /// </summary>
-        public decimal CableLength { get; set; }
+        private decimal CableLengthValue;
+
+        public decimal CableLength
+
+        {
+
+            get { return this.CableLengthValue; }
+
+            set { SetProperty(ref CableLengthValue, value); }
+
+        }
 
         /// <summary>
         /// Total system efficiency
         /// </summary>
-        public decimal SystemEfficiency { get; set; }
+        private decimal SystemEfficiencyValue;
+
+        public decimal SystemEfficiency
+
+        {
+
+            get { return this.SystemEfficiencyValue; }
+
+            set { SetProperty(ref SystemEfficiencyValue, value); }
+
+        }
 
         /// <summary>
         /// Pump efficiency
         /// </summary>
-        public decimal PumpEfficiency { get; set; }
+        private decimal PumpEfficiencyValue;
+
+        public decimal PumpEfficiency
+
+        {
+
+            get { return this.PumpEfficiencyValue; }
+
+            set { SetProperty(ref PumpEfficiencyValue, value); }
+
+        }
 
         /// <summary>
         /// Motor efficiency
         /// </summary>
-        public decimal MotorEfficiency { get; set; }
+        private decimal MotorEfficiencyValue;
+
+        public decimal MotorEfficiency
+
+        {
+
+            get { return this.MotorEfficiencyValue; }
+
+            set { SetProperty(ref MotorEfficiencyValue, value); }
+
+        }
 
         /// <summary>
         /// Power consumption in kW
         /// </summary>
-        public decimal PowerConsumption { get; set; }
+        private decimal PowerConsumptionValue;
+
+        public decimal PowerConsumption
+
+        {
+
+            get { return this.PowerConsumptionValue; }
+
+            set { SetProperty(ref PowerConsumptionValue, value); }
+
+        }
 
         /// <summary>
         /// Operating flow rate in bbl/day
         /// </summary>
-        public decimal OperatingFlowRate { get; set; }
+        private decimal OperatingFlowRateValue;
+
+        public decimal OperatingFlowRate
+
+        {
+
+            get { return this.OperatingFlowRateValue; }
+
+            set { SetProperty(ref OperatingFlowRateValue, value); }
+
+        }
 
         /// <summary>
         /// Operating head in feet
         /// </summary>
-        public decimal OperatingHead { get; set; }
+        private decimal OperatingHeadValue;
+
+        public decimal OperatingHead
+
+        {
+
+            get { return this.OperatingHeadValue; }
+
+            set { SetProperty(ref OperatingHeadValue, value); }
+
+        }
 
         /// <summary>
         /// Pump performance points
         /// </summary>
-        public List<ESPPumpPoint> PerformancePoints { get; set; } = new();
+        private List<ESPPumpPoint> PerformancePointsValue = new();
+
+        public List<ESPPumpPoint> PerformancePoints
+
+        {
+
+            get { return this.PerformancePointsValue; }
+
+            set { SetProperty(ref PerformancePointsValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

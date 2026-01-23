@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
     /// GL Detail Report - All transactions for an account
     /// </summary>
-    public partial class GLDetailReport : AccountingEntityBase
+    public partial class GLDetailReport : ModelEntityBase
     {
         private System.String ReportNameValue = string.Empty;
         /// <summary>
@@ -133,7 +134,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// GL Entry Line - Single transaction
     /// </summary>
-    public partial class GLEntryLine : AccountingEntityBase
+    public partial class GLEntryLine : ModelEntityBase
     {
         private System.DateTime EntryDateValue;
         /// <summary>
@@ -209,7 +210,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// GL Summary Report - Account balances
     /// </summary>
-    public partial class GLSummaryReport : AccountingEntityBase
+    public partial class GLSummaryReport : ModelEntityBase
     {
         private System.String ReportNameValue = string.Empty;
         /// <summary>
@@ -285,7 +286,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// GL Summary Line - Account balance
     /// </summary>
-    public partial class GLSummaryLine : AccountingEntityBase
+    public partial class GLSummaryLine : ModelEntityBase
     {
         private System.String AccountNumberValue = string.Empty;
         /// <summary>
@@ -338,4 +339,5 @@ namespace Beep.OilandGas.Models.Data.Accounting
         }
     }
 }
+
 

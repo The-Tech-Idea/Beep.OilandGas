@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Trading
 {
     /// <summary>
     /// Represents an exchange statement.
     /// </summary>
-    public partial class ExchangeStatement : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class ExchangeStatement : ModelEntityBase
     {
         private System.String StatementIdValue;
         public System.String StatementId
@@ -70,7 +71,7 @@ namespace Beep.OilandGas.Models.Data.Trading
     /// <summary>
     /// Represents an exchange summary.
     /// </summary>
-    public partial class ExchangeSummary : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class ExchangeSummary : ModelEntityBase
     {
         private System.Decimal TotalVolumeValue;
         public System.Decimal TotalVolume
@@ -99,7 +100,7 @@ namespace Beep.OilandGas.Models.Data.Trading
     /// <summary>
     /// Represents exchange net position.
     /// </summary>
-    public partial class ExchangeNetPosition : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class ExchangeNetPosition : ModelEntityBase
     {
         private System.Decimal NetVolumeValue;
         public System.Decimal NetVolume
@@ -123,7 +124,7 @@ namespace Beep.OilandGas.Models.Data.Trading
     /// <summary>
     /// Represents an exchange transaction.
     /// </summary>
-    public partial class ExchangeTransaction : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class ExchangeTransaction : ModelEntityBase
     {
         private System.String TransactionIdValue;
         public System.String TransactionId
@@ -259,6 +260,7 @@ namespace Beep.OilandGas.Models.Data.Trading
         }
     }
 }
+
 
 
 

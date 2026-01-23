@@ -2,64 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
     /// Nomination status enumeration.
     /// </summary>
-    public enum NominationStatus
-    {
-        /// <summary>
-        /// Pending approval.
-        /// </summary>
-        Pending,
 
-        /// <summary>
-        /// Approved.
-        /// </summary>
-        Approved,
-
-        /// <summary>
-        /// Rejected.
-        /// </summary>
-        Rejected,
-
-        /// <summary>
-        /// Cancelled.
-        /// </summary>
-        Cancelled
-    }
 
     /// <summary>
     /// Imbalance status enumeration.
     /// </summary>
-    public enum ImbalanceStatus
-    {
-        /// <summary>
-        /// Balanced (within tolerance).
-        /// </summary>
-        Balanced,
 
-        /// <summary>
-        /// Over-delivered (actual > nominated).
-        /// </summary>
-        OverDelivered,
-
-        /// <summary>
-        /// Under-delivered (actual < nominated).
-        /// </summary>
-        UnderDelivered,
-
-        /// <summary>
-        /// Pending reconciliation.
-        /// </summary>
-        PendingReconciliation,
-
-        /// <summary>
-        /// Reconciled.
-        /// </summary>
-        Reconciled
-    }
 
     /// <summary>
     /// Represents production avails estimate (DTO for calculations/reporting).
@@ -69,32 +23,92 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the avails identifier.
         /// </summary>
-        public string AvailsId { get; set; } = string.Empty;
+        private string AvailsIdValue = string.Empty;
+
+        public string AvailsId
+
+        {
+
+            get { return this.AvailsIdValue; }
+
+            set { SetProperty(ref AvailsIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the period start date.
         /// </summary>
-        public DateTime PeriodStart { get; set; }
+        private DateTime PeriodStartValue;
+
+        public DateTime PeriodStart
+
+        {
+
+            get { return this.PeriodStartValue; }
+
+            set { SetProperty(ref PeriodStartValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the period end date.
         /// </summary>
-        public DateTime PeriodEnd { get; set; }
+        private DateTime PeriodEndValue;
+
+        public DateTime PeriodEnd
+
+        {
+
+            get { return this.PeriodEndValue; }
+
+            set { SetProperty(ref PeriodEndValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the estimated production in barrels.
         /// </summary>
-        public decimal EstimatedProduction { get; set; }
+        private decimal EstimatedProductionValue;
+
+        public decimal EstimatedProduction
+
+        {
+
+            get { return this.EstimatedProductionValue; }
+
+            set { SetProperty(ref EstimatedProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the available for delivery in barrels.
         /// </summary>
-        public decimal AvailableForDelivery { get; set; }
+        private decimal AvailableForDeliveryValue;
+
+        public decimal AvailableForDelivery
+
+        {
+
+            get { return this.AvailableForDeliveryValue; }
+
+            set { SetProperty(ref AvailableForDeliveryValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the allocations.
         /// </summary>
-        public List<AvailsAllocation> Allocations { get; set; } = new();
+        private List<AvailsAllocation> AllocationsValue = new();
+
+        public List<AvailsAllocation> Allocations
+
+        {
+
+            get { return this.AllocationsValue; }
+
+            set { SetProperty(ref AllocationsValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -105,17 +119,47 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the entity identifier (well, lease, etc.).
         /// </summary>
-        public string EntityId { get; set; } = string.Empty;
+        private string EntityIdValue = string.Empty;
+
+        public string EntityId
+
+        {
+
+            get { return this.EntityIdValue; }
+
+            set { SetProperty(ref EntityIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the allocated volume in barrels.
         /// </summary>
-        public decimal AllocatedVolume { get; set; }
+        private decimal AllocatedVolumeValue;
+
+        public decimal AllocatedVolume
+
+        {
+
+            get { return this.AllocatedVolumeValue; }
+
+            set { SetProperty(ref AllocatedVolumeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the allocation percentage (0-100).
         /// </summary>
-        public decimal AllocationPercentage { get; set; }
+        private decimal AllocationPercentageValue;
+
+        public decimal AllocationPercentage
+
+        {
+
+            get { return this.AllocationPercentageValue; }
+
+            set { SetProperty(ref AllocationPercentageValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -126,47 +170,137 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the nomination identifier.
         /// </summary>
-        public string NominationId { get; set; } = string.Empty;
+        private string NominationIdValue = string.Empty;
+
+        public string NominationId
+
+        {
+
+            get { return this.NominationIdValue; }
+
+            set { SetProperty(ref NominationIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the period start date.
         /// </summary>
-        public DateTime PeriodStart { get; set; }
+        private DateTime PeriodStartValue;
+
+        public DateTime PeriodStart
+
+        {
+
+            get { return this.PeriodStartValue; }
+
+            set { SetProperty(ref PeriodStartValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the period end date.
         /// </summary>
-        public DateTime PeriodEnd { get; set; }
+        private DateTime PeriodEndValue;
+
+        public DateTime PeriodEnd
+
+        {
+
+            get { return this.PeriodEndValue; }
+
+            set { SetProperty(ref PeriodEndValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the nominated volume in barrels.
         /// </summary>
-        public decimal NominatedVolume { get; set; }
+        private decimal NominatedVolumeValue;
+
+        public decimal NominatedVolume
+
+        {
+
+            get { return this.NominatedVolumeValue; }
+
+            set { SetProperty(ref NominatedVolumeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the delivery points.
         /// </summary>
-        public List<string> DeliveryPoints { get; set; } = new();
+        private List<string> DeliveryPointsValue = new();
+
+        public List<string> DeliveryPoints
+
+        {
+
+            get { return this.DeliveryPointsValue; }
+
+            set { SetProperty(ref DeliveryPointsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the status.
         /// </summary>
-        public NominationStatus Status { get; set; } = NominationStatus.Pending;
+        private NominationStatus StatusValue = NominationStatus.Pending;
+
+        public NominationStatus Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the submission date.
         /// </summary>
-        public DateTime SubmissionDate { get; set; } = DateTime.Now;
+        private DateTime SubmissionDateValue = DateTime.Now;
+
+        public DateTime SubmissionDate
+
+        {
+
+            get { return this.SubmissionDateValue; }
+
+            set { SetProperty(ref SubmissionDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the approval date.
         /// </summary>
-        public DateTime? ApprovalDate { get; set; }
+        private DateTime? ApprovalDateValue;
+
+        public DateTime? ApprovalDate
+
+        {
+
+            get { return this.ApprovalDateValue; }
+
+            set { SetProperty(ref ApprovalDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the approved by.
         /// </summary>
-        public string? ApprovedBy { get; set; }
+        private string? ApprovedByValue;
+
+        public string? ApprovedBy
+
+        {
+
+            get { return this.ApprovedByValue; }
+
+            set { SetProperty(ref ApprovedByValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -177,32 +311,92 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the delivery identifier.
         /// </summary>
-        public string DeliveryId { get; set; } = string.Empty;
+        private string DeliveryIdValue = string.Empty;
+
+        public string DeliveryId
+
+        {
+
+            get { return this.DeliveryIdValue; }
+
+            set { SetProperty(ref DeliveryIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the delivery date.
         /// </summary>
-        public DateTime DeliveryDate { get; set; }
+        private DateTime DeliveryDateValue;
+
+        public DateTime DeliveryDate
+
+        {
+
+            get { return this.DeliveryDateValue; }
+
+            set { SetProperty(ref DeliveryDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the actual volume delivered in barrels.
         /// </summary>
-        public decimal ActualVolume { get; set; }
+        private decimal ActualVolumeValue;
+
+        public decimal ActualVolume
+
+        {
+
+            get { return this.ActualVolumeValue; }
+
+            set { SetProperty(ref ActualVolumeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the delivery point.
         /// </summary>
-        public string DeliveryPoint { get; set; } = string.Empty;
+        private string DeliveryPointValue = string.Empty;
+
+        public string DeliveryPoint
+
+        {
+
+            get { return this.DeliveryPointValue; }
+
+            set { SetProperty(ref DeliveryPointValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the allocation method used.
         /// </summary>
-        public string AllocationMethod { get; set; } = string.Empty;
+        private string AllocationMethodValue = string.Empty;
+
+        public string AllocationMethod
+
+        {
+
+            get { return this.AllocationMethodValue; }
+
+            set { SetProperty(ref AllocationMethodValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the run ticket reference.
         /// </summary>
-        public string? RunTicketNumber { get; set; }
+        private string? RunTicketNumberValue;
+
+        public string? RunTicketNumber
+
+        {
+
+            get { return this.RunTicketNumberValue; }
+
+            set { SetProperty(ref RunTicketNumberValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -213,27 +407,77 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the imbalance identifier.
         /// </summary>
-        public string ImbalanceId { get; set; } = string.Empty;
+        private string ImbalanceIdValue = string.Empty;
+
+        public string ImbalanceId
+
+        {
+
+            get { return this.ImbalanceIdValue; }
+
+            set { SetProperty(ref ImbalanceIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the period start date.
         /// </summary>
-        public DateTime PeriodStart { get; set; }
+        private DateTime PeriodStartValue;
+
+        public DateTime PeriodStart
+
+        {
+
+            get { return this.PeriodStartValue; }
+
+            set { SetProperty(ref PeriodStartValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the period end date.
         /// </summary>
-        public DateTime PeriodEnd { get; set; }
+        private DateTime PeriodEndValue;
+
+        public DateTime PeriodEnd
+
+        {
+
+            get { return this.PeriodEndValue; }
+
+            set { SetProperty(ref PeriodEndValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the nominated volume in barrels.
         /// </summary>
-        public decimal NominatedVolume { get; set; }
+        private decimal NominatedVolumeValue;
+
+        public decimal NominatedVolume
+
+        {
+
+            get { return this.NominatedVolumeValue; }
+
+            set { SetProperty(ref NominatedVolumeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the actual volume in barrels.
         /// </summary>
-        public decimal ActualVolume { get; set; }
+        private decimal ActualVolumeValue;
+
+        public decimal ActualVolume
+
+        {
+
+            get { return this.ActualVolumeValue; }
+
+            set { SetProperty(ref ActualVolumeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the imbalance amount (actual - nominated).
@@ -250,12 +494,32 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the status.
         /// </summary>
-        public ImbalanceStatus Status { get; set; } = ImbalanceStatus.PendingReconciliation;
+        private ImbalanceStatus StatusValue = ImbalanceStatus.PendingReconciliation;
+
+        public ImbalanceStatus Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the tolerance percentage (0-100).
         /// </summary>
-        public decimal TolerancePercentage { get; set; } = 2.0m;
+        private decimal TolerancePercentageValue = 2.0m;
+
+        public decimal TolerancePercentage
+
+        {
+
+            get { return this.TolerancePercentageValue; }
+
+            set { SetProperty(ref TolerancePercentageValue, value); }
+
+        }
 
         /// <summary>
         /// Gets whether the imbalance is within tolerance.
@@ -271,37 +535,107 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the statement identifier.
         /// </summary>
-        public string StatementId { get; set; } = string.Empty;
+        private string StatementIdValue = string.Empty;
+
+        public string StatementId
+
+        {
+
+            get { return this.StatementIdValue; }
+
+            set { SetProperty(ref StatementIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the statement period start date.
         /// </summary>
-        public DateTime StatementPeriodStart { get; set; }
+        private DateTime StatementPeriodStartValue;
+
+        public DateTime StatementPeriodStart
+
+        {
+
+            get { return this.StatementPeriodStartValue; }
+
+            set { SetProperty(ref StatementPeriodStartValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the statement period end date.
         /// </summary>
-        public DateTime StatementPeriodEnd { get; set; }
+        private DateTime StatementPeriodEndValue;
+
+        public DateTime StatementPeriodEnd
+
+        {
+
+            get { return this.StatementPeriodEndValue; }
+
+            set { SetProperty(ref StatementPeriodEndValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the nominations summary.
         /// </summary>
-        public ImbalanceSummary Nominations { get; set; } = new();
+        private ImbalanceSummary NominationsValue = new();
+
+        public ImbalanceSummary Nominations
+
+        {
+
+            get { return this.NominationsValue; }
+
+            set { SetProperty(ref NominationsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the actuals summary.
         /// </summary>
-        public ImbalanceSummary Actuals { get; set; } = new();
+        private ImbalanceSummary ActualsValue = new();
+
+        public ImbalanceSummary Actuals
+
+        {
+
+            get { return this.ActualsValue; }
+
+            set { SetProperty(ref ActualsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the imbalances.
         /// </summary>
-        public List<OilImbalance> Imbalances { get; set; } = new();
+        private List<OilImbalance> ImbalancesValue = new();
+
+        public List<OilImbalance> Imbalances
+
+        {
+
+            get { return this.ImbalancesValue; }
+
+            set { SetProperty(ref ImbalancesValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the reconciliation details.
         /// </summary>
-        public ImbalanceReconciliation? Reconciliation { get; set; }
+        private ImbalanceReconciliation? ReconciliationValue;
+
+        public ImbalanceReconciliation? Reconciliation
+
+        {
+
+            get { return this.ReconciliationValue; }
+
+            set { SetProperty(ref ReconciliationValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -312,17 +646,47 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the total volume in barrels.
         /// </summary>
-        public decimal TotalVolume { get; set; }
+        private decimal TotalVolumeValue;
+
+        public decimal TotalVolume
+
+        {
+
+            get { return this.TotalVolumeValue; }
+
+            set { SetProperty(ref TotalVolumeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the number of transactions.
         /// </summary>
-        public int TransactionCount { get; set; }
+        private int TransactionCountValue;
+
+        public int TransactionCount
+
+        {
+
+            get { return this.TransactionCountValue; }
+
+            set { SetProperty(ref TransactionCountValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the average daily volume.
         /// </summary>
-        public decimal AverageDailyVolume { get; set; }
+        private decimal AverageDailyVolumeValue;
+
+        public decimal AverageDailyVolume
+
+        {
+
+            get { return this.AverageDailyVolumeValue; }
+
+            set { SetProperty(ref AverageDailyVolumeValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -333,22 +697,62 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the reconciliation identifier.
         /// </summary>
-        public string ReconciliationId { get; set; } = string.Empty;
+        private string ReconciliationIdValue = string.Empty;
+
+        public string ReconciliationId
+
+        {
+
+            get { return this.ReconciliationIdValue; }
+
+            set { SetProperty(ref ReconciliationIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the reconciliation date.
         /// </summary>
-        public DateTime ReconciliationDate { get; set; }
+        private DateTime ReconciliationDateValue;
+
+        public DateTime ReconciliationDate
+
+        {
+
+            get { return this.ReconciliationDateValue; }
+
+            set { SetProperty(ref ReconciliationDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the total imbalance before reconciliation.
         /// </summary>
-        public decimal TotalImbalanceBefore { get; set; }
+        private decimal TotalImbalanceBeforeValue;
+
+        public decimal TotalImbalanceBefore
+
+        {
+
+            get { return this.TotalImbalanceBeforeValue; }
+
+            set { SetProperty(ref TotalImbalanceBeforeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the adjustments made.
         /// </summary>
-        public List<ImbalanceAdjustment> Adjustments { get; set; } = new();
+        private List<ImbalanceAdjustment> AdjustmentsValue = new();
+
+        public List<ImbalanceAdjustment> Adjustments
+
+        {
+
+            get { return this.AdjustmentsValue; }
+
+            set { SetProperty(ref AdjustmentsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the total adjustments.
@@ -363,12 +767,32 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the reconciled by.
         /// </summary>
-        public string ReconciledBy { get; set; } = string.Empty;
+        private string ReconciledByValue = string.Empty;
+
+        public string ReconciledBy
+
+        {
+
+            get { return this.ReconciledByValue; }
+
+            set { SetProperty(ref ReconciledByValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets any notes.
         /// </summary>
-        public string? Notes { get; set; }
+        private string? NotesValue;
+
+        public string? Notes
+
+        {
+
+            get { return this.NotesValue; }
+
+            set { SetProperty(ref NotesValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -379,24 +803,67 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the adjustment identifier.
         /// </summary>
-        public string AdjustmentId { get; set; } = string.Empty;
+        private string AdjustmentIdValue = string.Empty;
+
+        public string AdjustmentId
+
+        {
+
+            get { return this.AdjustmentIdValue; }
+
+            set { SetProperty(ref AdjustmentIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the adjustment type.
         /// </summary>
-        public string AdjustmentType { get; set; } = string.Empty;
+        private string AdjustmentTypeValue = string.Empty;
+
+        public string AdjustmentType
+
+        {
+
+            get { return this.AdjustmentTypeValue; }
+
+            set { SetProperty(ref AdjustmentTypeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the adjustment amount in barrels.
         /// </summary>
-        public decimal AdjustmentAmount { get; set; }
+        private decimal AdjustmentAmountValue;
+
+        public decimal AdjustmentAmount
+
+        {
+
+            get { return this.AdjustmentAmountValue; }
+
+            set { SetProperty(ref AdjustmentAmountValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the reason for adjustment.
         /// </summary>
-        public string Reason { get; set; } = string.Empty;
+        private string ReasonValue = string.Empty;
+
+        public string Reason
+
+        {
+
+            get { return this.ReasonValue; }
+
+            set { SetProperty(ref ReasonValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

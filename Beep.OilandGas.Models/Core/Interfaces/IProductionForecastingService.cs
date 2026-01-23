@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Calc = Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.Models.Data.ProductionForecasting;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -39,3 +40,4 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task SaveForecastAsync(Calc.ProductionForecastResult forecast, string userId);
     }
 }
+

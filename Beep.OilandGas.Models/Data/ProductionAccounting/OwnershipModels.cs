@@ -1,32 +1,12 @@
 using System;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
     /// Division order status.
     /// </summary>
-    public enum DivisionOrderStatus
-    {
-        /// <summary>
-        /// Pending approval.
-        /// </summary>
-        Pending,
 
-        /// <summary>
-        /// Approved and active.
-        /// </summary>
-        Approved,
-
-        /// <summary>
-        /// Suspended.
-        /// </summary>
-        Suspended,
-
-        /// <summary>
-        /// Rejected.
-        /// </summary>
-        Rejected
-    }
 
     /// <summary>
     /// Represents a division order (DTO for calculations/reporting).
@@ -36,67 +16,197 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the division order identifier.
         /// </summary>
-        public string DivisionOrderId { get; set; } = string.Empty;
+        private string DivisionOrderIdValue = string.Empty;
+
+        public string DivisionOrderId
+
+        {
+
+            get { return this.DivisionOrderIdValue; }
+
+            set { SetProperty(ref DivisionOrderIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the property or lease identifier.
         /// </summary>
-        public string PropertyOrLeaseId { get; set; } = string.Empty;
+        private string PropertyOrLeaseIdValue = string.Empty;
+
+        public string PropertyOrLeaseId
+
+        {
+
+            get { return this.PropertyOrLeaseIdValue; }
+
+            set { SetProperty(ref PropertyOrLeaseIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the owner information.
         /// </summary>
-        public OwnerInformation Owner { get; set; } = new();
+        private OwnerInformation OwnerValue = new();
+
+        public OwnerInformation Owner
+
+        {
+
+            get { return this.OwnerValue; }
+
+            set { SetProperty(ref OwnerValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the working interest (decimal, 0-1).
         /// </summary>
-        public decimal WorkingInterest { get; set; }
+        private decimal WorkingInterestValue;
+
+        public decimal WorkingInterest
+
+        {
+
+            get { return this.WorkingInterestValue; }
+
+            set { SetProperty(ref WorkingInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the net revenue interest (decimal, 0-1).
         /// </summary>
-        public decimal NetRevenueInterest { get; set; }
+        private decimal NetRevenueInterestValue;
+
+        public decimal NetRevenueInterest
+
+        {
+
+            get { return this.NetRevenueInterestValue; }
+
+            set { SetProperty(ref NetRevenueInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the royalty interest (decimal, 0-1).
         /// </summary>
-        public decimal? RoyaltyInterest { get; set; }
+        private decimal? RoyaltyInterestValue;
+
+        public decimal? RoyaltyInterest
+
+        {
+
+            get { return this.RoyaltyInterestValue; }
+
+            set { SetProperty(ref RoyaltyInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the overriding royalty interest (decimal, 0-1).
         /// </summary>
-        public decimal? OverridingRoyaltyInterest { get; set; }
+        private decimal? OverridingRoyaltyInterestValue;
+
+        public decimal? OverridingRoyaltyInterest
+
+        {
+
+            get { return this.OverridingRoyaltyInterestValue; }
+
+            set { SetProperty(ref OverridingRoyaltyInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the effective date.
         /// </summary>
-        public DateTime EffectiveDate { get; set; }
+        private DateTime EffectiveDateValue;
+
+        public DateTime EffectiveDate
+
+        {
+
+            get { return this.EffectiveDateValue; }
+
+            set { SetProperty(ref EffectiveDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the expiration date.
         /// </summary>
-        public DateTime? ExpirationDate { get; set; }
+        private DateTime? ExpirationDateValue;
+
+        public DateTime? ExpirationDate
+
+        {
+
+            get { return this.ExpirationDateValue; }
+
+            set { SetProperty(ref ExpirationDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the status.
         /// </summary>
-        public DivisionOrderStatus Status { get; set; } = DivisionOrderStatus.Pending;
+        private DivisionOrderStatus StatusValue = DivisionOrderStatus.Pending;
+
+        public DivisionOrderStatus Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the approval date.
         /// </summary>
-        public DateTime? ApprovalDate { get; set; }
+        private DateTime? ApprovalDateValue;
+
+        public DateTime? ApprovalDate
+
+        {
+
+            get { return this.ApprovalDateValue; }
+
+            set { SetProperty(ref ApprovalDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the approved by.
         /// </summary>
-        public string? ApprovedBy { get; set; }
+        private string? ApprovedByValue;
+
+        public string? ApprovedBy
+
+        {
+
+            get { return this.ApprovedByValue; }
+
+            set { SetProperty(ref ApprovedByValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets any notes or comments.
         /// </summary>
-        public string? Notes { get; set; }
+        private string? NotesValue;
+
+        public string? Notes
+
+        {
+
+            get { return this.NotesValue; }
+
+            set { SetProperty(ref NotesValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -107,27 +217,77 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the owner identifier.
         /// </summary>
-        public string OwnerId { get; set; } = string.Empty;
+        private string OwnerIdValue = string.Empty;
+
+        public string OwnerId
+
+        {
+
+            get { return this.OwnerIdValue; }
+
+            set { SetProperty(ref OwnerIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the owner name.
         /// </summary>
-        public string OwnerName { get; set; } = string.Empty;
+        private string OwnerNameValue = string.Empty;
+
+        public string OwnerName
+
+        {
+
+            get { return this.OwnerNameValue; }
+
+            set { SetProperty(ref OwnerNameValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the tax identification number.
         /// </summary>
-        public string? TaxId { get; set; }
+        private string? TaxIdValue;
+
+        public string? TaxId
+
+        {
+
+            get { return this.TaxIdValue; }
+
+            set { SetProperty(ref TaxIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the address.
         /// </summary>
-        public Address? Address { get; set; }
+        private Address? AddressValue;
+
+        public Address? Address
+
+        {
+
+            get { return this.AddressValue; }
+
+            set { SetProperty(ref AddressValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the contact information.
         /// </summary>
-        public ContactInformation? Contact { get; set; }
+        private ContactInformation? ContactValue;
+
+        public ContactInformation? Contact
+
+        {
+
+            get { return this.ContactValue; }
+
+            set { SetProperty(ref ContactValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -138,27 +298,77 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the street address.
         /// </summary>
-        public string StreetAddress { get; set; } = string.Empty;
+        private string StreetAddressValue = string.Empty;
+
+        public string StreetAddress
+
+        {
+
+            get { return this.StreetAddressValue; }
+
+            set { SetProperty(ref StreetAddressValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the city.
         /// </summary>
-        public string City { get; set; } = string.Empty;
+        private string CityValue = string.Empty;
+
+        public string City
+
+        {
+
+            get { return this.CityValue; }
+
+            set { SetProperty(ref CityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the state.
         /// </summary>
-        public string State { get; set; } = string.Empty;
+        private string StateValue = string.Empty;
+
+        public string State
+
+        {
+
+            get { return this.StateValue; }
+
+            set { SetProperty(ref StateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the zip code.
         /// </summary>
-        public string ZipCode { get; set; } = string.Empty;
+        private string ZipCodeValue = string.Empty;
+
+        public string ZipCode
+
+        {
+
+            get { return this.ZipCodeValue; }
+
+            set { SetProperty(ref ZipCodeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the country.
         /// </summary>
-        public string Country { get; set; } = "USA";
+        private string CountryValue = "USA";
+
+        public string Country
+
+        {
+
+            get { return this.CountryValue; }
+
+            set { SetProperty(ref CountryValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -169,12 +379,32 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the phone number.
         /// </summary>
-        public string? PhoneNumber { get; set; }
+        private string? PhoneNumberValue;
+
+        public string? PhoneNumber
+
+        {
+
+            get { return this.PhoneNumberValue; }
+
+            set { SetProperty(ref PhoneNumberValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the email address.
         /// </summary>
-        public string? EmailAddress { get; set; }
+        private string? EmailAddressValue;
+
+        public string? EmailAddress
+
+        {
+
+            get { return this.EmailAddressValue; }
+
+            set { SetProperty(ref EmailAddressValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -185,47 +415,137 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the transfer order identifier.
         /// </summary>
-        public string TransferOrderId { get; set; } = string.Empty;
+        private string TransferOrderIdValue = string.Empty;
+
+        public string TransferOrderId
+
+        {
+
+            get { return this.TransferOrderIdValue; }
+
+            set { SetProperty(ref TransferOrderIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the property or lease identifier.
         /// </summary>
-        public string PropertyOrLeaseId { get; set; } = string.Empty;
+        private string PropertyOrLeaseIdValue = string.Empty;
+
+        public string PropertyOrLeaseId
+
+        {
+
+            get { return this.PropertyOrLeaseIdValue; }
+
+            set { SetProperty(ref PropertyOrLeaseIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the from owner.
         /// </summary>
-        public OwnerInformation FromOwner { get; set; } = new();
+        private OwnerInformation FromOwnerValue = new();
+
+        public OwnerInformation FromOwner
+
+        {
+
+            get { return this.FromOwnerValue; }
+
+            set { SetProperty(ref FromOwnerValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the to owner.
         /// </summary>
-        public OwnerInformation ToOwner { get; set; } = new();
+        private OwnerInformation ToOwnerValue = new();
+
+        public OwnerInformation ToOwner
+
+        {
+
+            get { return this.ToOwnerValue; }
+
+            set { SetProperty(ref ToOwnerValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the interest transferred (decimal, 0-1).
         /// </summary>
-        public decimal InterestTransferred { get; set; }
+        private decimal InterestTransferredValue;
+
+        public decimal InterestTransferred
+
+        {
+
+            get { return this.InterestTransferredValue; }
+
+            set { SetProperty(ref InterestTransferredValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the effective date.
         /// </summary>
-        public DateTime EffectiveDate { get; set; }
+        private DateTime EffectiveDateValue;
+
+        public DateTime EffectiveDate
+
+        {
+
+            get { return this.EffectiveDateValue; }
+
+            set { SetProperty(ref EffectiveDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the approval status.
         /// </summary>
-        public bool IsApproved { get; set; }
+        private bool IsApprovedValue;
+
+        public bool IsApproved
+
+        {
+
+            get { return this.IsApprovedValue; }
+
+            set { SetProperty(ref IsApprovedValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the approval date.
         /// </summary>
-        public DateTime? ApprovalDate { get; set; }
+        private DateTime? ApprovalDateValue;
+
+        public DateTime? ApprovalDate
+
+        {
+
+            get { return this.ApprovalDateValue; }
+
+            set { SetProperty(ref ApprovalDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the approved by.
         /// </summary>
-        public string? ApprovedBy { get; set; }
+        private string? ApprovedByValue;
+
+        public string? ApprovedBy
+
+        {
+
+            get { return this.ApprovedByValue; }
+
+            set { SetProperty(ref ApprovedByValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -236,54 +556,157 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the ownership identifier.
         /// </summary>
-        public string OwnershipId { get; set; } = string.Empty;
+        private string OwnershipIdValue = string.Empty;
+
+        public string OwnershipId
+
+        {
+
+            get { return this.OwnershipIdValue; }
+
+            set { SetProperty(ref OwnershipIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the owner identifier.
         /// </summary>
-        public string OwnerId { get; set; } = string.Empty;
+        private string OwnerIdValue = string.Empty;
+
+        public string OwnerId
+
+        {
+
+            get { return this.OwnerIdValue; }
+
+            set { SetProperty(ref OwnerIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the property or lease identifier.
         /// </summary>
-        public string PropertyOrLeaseId { get; set; } = string.Empty;
+        private string PropertyOrLeaseIdValue = string.Empty;
+
+        public string PropertyOrLeaseId
+
+        {
+
+            get { return this.PropertyOrLeaseIdValue; }
+
+            set { SetProperty(ref PropertyOrLeaseIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the working interest (decimal, 0-1).
         /// </summary>
-        public decimal WorkingInterest { get; set; }
+        private decimal WorkingInterestValue;
+
+        public decimal WorkingInterest
+
+        {
+
+            get { return this.WorkingInterestValue; }
+
+            set { SetProperty(ref WorkingInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the net revenue interest (decimal, 0-1).
         /// </summary>
-        public decimal NetRevenueInterest { get; set; }
+        private decimal NetRevenueInterestValue;
+
+        public decimal NetRevenueInterest
+
+        {
+
+            get { return this.NetRevenueInterestValue; }
+
+            set { SetProperty(ref NetRevenueInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the royalty interest (decimal, 0-1).
         /// </summary>
-        public decimal? RoyaltyInterest { get; set; }
+        private decimal? RoyaltyInterestValue;
+
+        public decimal? RoyaltyInterest
+
+        {
+
+            get { return this.RoyaltyInterestValue; }
+
+            set { SetProperty(ref RoyaltyInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the overriding royalty interest (decimal, 0-1).
         /// </summary>
-        public decimal? OverridingRoyaltyInterest { get; set; }
+        private decimal? OverridingRoyaltyInterestValue;
+
+        public decimal? OverridingRoyaltyInterest
+
+        {
+
+            get { return this.OverridingRoyaltyInterestValue; }
+
+            set { SetProperty(ref OverridingRoyaltyInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the effective start date.
         /// </summary>
-        public DateTime EffectiveStartDate { get; set; }
+        private DateTime EffectiveStartDateValue;
+
+        public DateTime EffectiveStartDate
+
+        {
+
+            get { return this.EffectiveStartDateValue; }
+
+            set { SetProperty(ref EffectiveStartDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the effective end date.
         /// </summary>
-        public DateTime? EffectiveEndDate { get; set; }
+        private DateTime? EffectiveEndDateValue;
+
+        public DateTime? EffectiveEndDate
+
+        {
+
+            get { return this.EffectiveEndDateValue; }
+
+            set { SetProperty(ref EffectiveEndDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the division order reference.
         /// </summary>
-        public string? DivisionOrderId { get; set; }
+        private string? DivisionOrderIdValue;
+
+        public string? DivisionOrderId
+
+        {
+
+            get { return this.DivisionOrderIdValue; }
+
+            set { SetProperty(ref DivisionOrderIdValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

@@ -9,34 +9,96 @@ namespace Beep.OilandGas.Models.Data.OilProperties
         /// <summary>
         /// Pressure in psia
         /// </summary>
-        public decimal Pressure { get; set; }
+        private decimal PressureValue;
+
+        public decimal Pressure
+
+        {
+
+            get { return this.PressureValue; }
+
+            set { SetProperty(ref PressureValue, value); }
+
+        }
 
         /// <summary>
         /// Temperature in Rankine
         /// </summary>
-        public decimal Temperature { get; set; }
+        private decimal TemperatureValue;
+
+        public decimal Temperature
+
+        {
+
+            get { return this.TemperatureValue; }
+
+            set { SetProperty(ref TemperatureValue, value); }
+
+        }
 
         /// <summary>
         /// Oil API gravity at standard conditions
         /// </summary>
-        public decimal ApiGravity { get; set; }
+        private decimal ApiGravityValue;
+
+        public decimal ApiGravity
+
+        {
+
+            get { return this.ApiGravityValue; }
+
+            set { SetProperty(ref ApiGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Gas specific gravity (relative to air)
         /// </summary>
-        public decimal GasSpecificGravity { get; set; } = 0.65m;
+        private decimal GasSpecificGravityValue = 0.65m;
+
+        public decimal GasSpecificGravity
+
+        {
+
+            get { return this.GasSpecificGravityValue; }
+
+            set { SetProperty(ref GasSpecificGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Solution gas-oil ratio in scf/STB (if known)
         /// </summary>
-        public decimal? SolutionGasOilRatio { get; set; }
+        private decimal? SolutionGasOilRatioValue;
+
+        public decimal? SolutionGasOilRatio
+
+        {
+
+            get { return this.SolutionGasOilRatioValue; }
+
+            set { SetProperty(ref SolutionGasOilRatioValue, value); }
+
+        }
 
         /// <summary>
         /// Bubble point pressure in psia (if known)
         /// </summary>
-        public decimal? BubblePointPressure { get; set; }
+        private decimal? BubblePointPressureValue;
+
+        public decimal? BubblePointPressure
+
+        {
+
+            get { return this.BubblePointPressureValue; }
+
+            set { SetProperty(ref BubblePointPressureValue, value); }
+
+        }
     }
 }
+
+
 
 
 

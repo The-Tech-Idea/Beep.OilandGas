@@ -116,7 +116,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             {
                 AnalysisId = _defaults.FormatIdForTable("RISK_ANALYSIS", Guid.NewGuid().ToString()),
                 CommercialSuccessProbability = 0,
-                RiskFactors = new List<RiskFactor>(),
+                RiskFactors = new List<Beep.OilandGas.Models.Data.Calculations.RiskFactor>(),
                 MitigationStrategies = new List<string>(),
                 RiskRating = "Unknown"
             };

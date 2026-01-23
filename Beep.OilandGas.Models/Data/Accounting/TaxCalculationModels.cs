@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
     /// Tax Provision
     /// </summary>
-    public partial class TaxProvision : AccountingEntityBase
+    public partial class TaxProvision : ModelEntityBase
     {
         private System.DateTime CalculatedDateValue;
         /// <summary>
@@ -143,7 +144,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Tax Deduction
     /// </summary>
-    public partial class TaxDeduction : AccountingEntityBase
+    public partial class TaxDeduction : ModelEntityBase
     {
         private System.String DescriptionValue = string.Empty;
         /// <summary>
@@ -169,7 +170,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Tax Credit
     /// </summary>
-    public partial class TaxCredit : AccountingEntityBase
+    public partial class TaxCredit : ModelEntityBase
     {
         private System.String DescriptionValue = string.Empty;
         /// <summary>
@@ -195,7 +196,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Quarterly Estimated Tax
     /// </summary>
-    public partial class QuarterlyEstimatedTax : AccountingEntityBase
+    public partial class QuarterlyEstimatedTax : ModelEntityBase
     {
         private System.Int32 TaxYearValue;
         /// <summary>
@@ -281,7 +282,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Quarterly Payment
     /// </summary>
-    public partial class QuarterlyPayment : AccountingEntityBase
+    public partial class QuarterlyPayment : ModelEntityBase
     {
         private System.Int32 QuarterValue;
         /// <summary>
@@ -337,7 +338,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Quarterly Adjustment
     /// </summary>
-    public partial class QuarterlyAdjustment : AccountingEntityBase
+    public partial class QuarterlyAdjustment : ModelEntityBase
     {
         private System.Int32 QuarterValue;
         /// <summary>
@@ -373,7 +374,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Tax Deferral Analysis
     /// </summary>
-    public partial class TaxDeferralAnalysis : AccountingEntityBase
+    public partial class TaxDeferralAnalysis : ModelEntityBase
     {
         private System.DateTime AnalysisDateValue;
         /// <summary>
@@ -439,7 +440,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Deferral Opportunity
     /// </summary>
-    public partial class DeferralOpportunity : AccountingEntityBase
+    public partial class DeferralOpportunity : ModelEntityBase
     {
         private System.String OpportunityTypeValue = string.Empty;
         /// <summary>
@@ -502,4 +503,5 @@ namespace Beep.OilandGas.Models.Data.Accounting
         }
     }
 }
+
 

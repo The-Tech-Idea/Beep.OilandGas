@@ -2,12 +2,16 @@ using System;
 using System.Collections.Generic;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
     /// Allocation Method
     /// </summary>
-    public enum AllocationMethod
+    /// <summary>
+    /// Cost Allocation Method
+    /// </summary>
+    public enum CostAllocationMethod
     {
         DirectAllocation,
         StepDown,
@@ -18,7 +22,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Cost Center
     /// </summary>
-    public partial class CostCenter : AccountingEntityBase
+    public partial class CostCenter : ModelEntityBase
     {
         private System.String CostCenterIdValue = string.Empty;
         /// <summary>
@@ -134,7 +138,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Allocation Base
     /// </summary>
-    public partial class AllocationBase : AccountingEntityBase
+    public partial class AllocationBase : ModelEntityBase
     {
         private System.String CostCenterIdValue = string.Empty;
         /// <summary>
@@ -178,9 +182,9 @@ namespace Beep.OilandGas.Models.Data.Accounting
     }
 
     /// <summary>
-    /// Allocation Result
+    /// Cost Allocation Result
     /// </summary>
-    public partial class AllocationResult : AccountingEntityBase
+    public partial class CostAllocationResult : ModelEntityBase
     {
         private System.DateTime AllocationDateValue;
         /// <summary>
@@ -192,11 +196,11 @@ namespace Beep.OilandGas.Models.Data.Accounting
             set { SetProperty(ref AllocationDateValue, value); }
         }
 
-        private AllocationMethod AllocationMethodValue;
+        private CostAllocationMethod AllocationMethodValue;
         /// <summary>
         /// Gets or sets allocation method.
         /// </summary>
-        public AllocationMethod AllocationMethod
+        public CostAllocationMethod AllocationMethod
         {
             get { return this.AllocationMethodValue; }
             set { SetProperty(ref AllocationMethodValue, value); }
@@ -266,7 +270,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Allocation Entry
     /// </summary>
-    public partial class AllocationEntry : AccountingEntityBase
+    public partial class AllocationEntry : ModelEntityBase
     {
         private System.String SourceCostCenterValue = string.Empty;
         /// <summary>
@@ -332,7 +336,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Departmental Profitability
     /// </summary>
-    public partial class DepartmentProfitability : AccountingEntityBase
+    public partial class DepartmentProfitability : ModelEntityBase
     {
         private System.String DepartmentIdValue = string.Empty;
         /// <summary>
@@ -438,7 +442,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Departmental Profitability Report
     /// </summary>
-    public partial class DepartmentalProfitabilityReport : AccountingEntityBase
+    public partial class DepartmentalProfitabilityReport : ModelEntityBase
     {
         private System.DateTime PeriodStartValue;
         /// <summary>
@@ -521,4 +525,5 @@ namespace Beep.OilandGas.Models.Data.Accounting
         }
     }
 }
+
 

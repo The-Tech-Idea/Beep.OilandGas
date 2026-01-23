@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
@@ -37,57 +38,167 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the lease identifier.
         /// </summary>
-        public string LeaseId { get; set; } = string.Empty;
+        private string LeaseIdValue = string.Empty;
+
+        public string LeaseId
+
+        {
+
+            get { return this.LeaseIdValue; }
+
+            set { SetProperty(ref LeaseIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the lease name or description.
         /// </summary>
-        public string LeaseName { get; set; } = string.Empty;
+        private string LeaseNameValue = string.Empty;
+
+        public string LeaseName
+
+        {
+
+            get { return this.LeaseNameValue; }
+
+            set { SetProperty(ref LeaseNameValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the lease type.
         /// </summary>
-        public LeaseType LeaseType { get; set; }
+        private LeaseType LeaseTypeValue;
+
+        public LeaseType LeaseType
+
+        {
+
+            get { return this.LeaseTypeValue; }
+
+            set { SetProperty(ref LeaseTypeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the effective date of the lease.
         /// </summary>
-        public DateTime EffectiveDate { get; set; }
+        private DateTime EffectiveDateValue;
+
+        public DateTime EffectiveDate
+
+        {
+
+            get { return this.EffectiveDateValue; }
+
+            set { SetProperty(ref EffectiveDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the expiration date of the lease.
         /// </summary>
-        public DateTime? ExpirationDate { get; set; }
+        private DateTime? ExpirationDateValue;
+
+        public DateTime? ExpirationDate
+
+        {
+
+            get { return this.ExpirationDateValue; }
+
+            set { SetProperty(ref ExpirationDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the primary term in months.
         /// </summary>
-        public int PrimaryTermMonths { get; set; }
+        private int PrimaryTermMonthsValue;
+
+        public int PrimaryTermMonths
+
+        {
+
+            get { return this.PrimaryTermMonthsValue; }
+
+            set { SetProperty(ref PrimaryTermMonthsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the working interest (decimal, 0-1).
         /// </summary>
-        public decimal WorkingInterest { get; set; }
+        private decimal WorkingInterestValue;
+
+        public decimal WorkingInterest
+
+        {
+
+            get { return this.WorkingInterestValue; }
+
+            set { SetProperty(ref WorkingInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the net revenue interest (decimal, 0-1).
         /// </summary>
-        public decimal NetRevenueInterest { get; set; }
+        private decimal NetRevenueInterestValue;
+
+        public decimal NetRevenueInterest
+
+        {
+
+            get { return this.NetRevenueInterestValue; }
+
+            set { SetProperty(ref NetRevenueInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the royalty rate (decimal, 0-1).
         /// </summary>
-        public decimal RoyaltyRate { get; set; }
+        private decimal RoyaltyRateValue;
+
+        public decimal RoyaltyRate
+
+        {
+
+            get { return this.RoyaltyRateValue; }
+
+            set { SetProperty(ref RoyaltyRateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the lease provisions.
         /// </summary>
-        public LeaseProvisions Provisions { get; set; } = new();
+        private LeaseProvisions ProvisionsValue = new();
+
+        public LeaseProvisions Provisions
+
+        {
+
+            get { return this.ProvisionsValue; }
+
+            set { SetProperty(ref ProvisionsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the location information.
         /// </summary>
-        public LeaseLocation Location { get; set; } = new();
+        private LeaseLocation LocationValue = new();
+
+        public LeaseLocation Location
+
+        {
+
+            get { return this.LocationValue; }
+
+            set { SetProperty(ref LocationValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -98,12 +209,32 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the mineral owner information.
         /// </summary>
-        public string MineralOwner { get; set; } = string.Empty;
+        private string MineralOwnerValue = string.Empty;
+
+        public string MineralOwner
+
+        {
+
+            get { return this.MineralOwnerValue; }
+
+            set { SetProperty(ref MineralOwnerValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the surface owner information.
         /// </summary>
-        public string? SurfaceOwner { get; set; }
+        private string? SurfaceOwnerValue;
+
+        public string? SurfaceOwner
+
+        {
+
+            get { return this.SurfaceOwnerValue; }
+
+            set { SetProperty(ref SurfaceOwnerValue, value); }
+
+        }
 
         public FeeMineralLease()
         {
@@ -119,22 +250,62 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the government agency (BLM, State, etc.).
         /// </summary>
-        public string GovernmentAgency { get; set; } = string.Empty;
+        private string GovernmentAgencyValue = string.Empty;
+
+        public string GovernmentAgency
+
+        {
+
+            get { return this.GovernmentAgencyValue; }
+
+            set { SetProperty(ref GovernmentAgencyValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the lease number assigned by the agency.
         /// </summary>
-        public string GovernmentLeaseNumber { get; set; } = string.Empty;
+        private string GovernmentLeaseNumberValue = string.Empty;
+
+        public string GovernmentLeaseNumber
+
+        {
+
+            get { return this.GovernmentLeaseNumberValue; }
+
+            set { SetProperty(ref GovernmentLeaseNumberValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether this is a federal lease.
         /// </summary>
-        public bool IsFederal { get; set; }
+        private bool IsFederalValue;
+
+        public bool IsFederal
+
+        {
+
+            get { return this.IsFederalValue; }
+
+            set { SetProperty(ref IsFederalValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether this is an Indian lease.
         /// </summary>
-        public bool IsIndian { get; set; }
+        private bool IsIndianValue;
+
+        public bool IsIndian
+
+        {
+
+            get { return this.IsIndianValue; }
+
+            set { SetProperty(ref IsIndianValue, value); }
+
+        }
 
         public GovernmentLease()
         {
@@ -150,12 +321,32 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the net profit interest percentage (decimal, 0-1).
         /// </summary>
-        public decimal NetProfitInterest { get; set; }
+        private decimal NetProfitInterestValue;
+
+        public decimal NetProfitInterest
+
+        {
+
+            get { return this.NetProfitInterestValue; }
+
+            set { SetProperty(ref NetProfitInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the cost recovery provisions.
         /// </summary>
-        public NetProfitCostRecovery CostRecovery { get; set; } = new();
+        private NetProfitCostRecovery CostRecoveryValue = new();
+
+        public NetProfitCostRecovery CostRecovery
+
+        {
+
+            get { return this.CostRecoveryValue; }
+
+            set { SetProperty(ref CostRecoveryValue, value); }
+
+        }
 
         public NetProfitLease()
         {
@@ -171,17 +362,47 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the operator company.
         /// </summary>
-        public string Operator { get; set; } = string.Empty;
+        private string OperatorValue = string.Empty;
+
+        public string Operator
+
+        {
+
+            get { return this.OperatorValue; }
+
+            set { SetProperty(ref OperatorValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the non-operator participants.
         /// </summary>
-        public List<JointInterestParticipant> Participants { get; set; } = new();
+        private List<JointInterestParticipant> ParticipantsValue = new();
+
+        public List<JointInterestParticipant> Participants
+
+        {
+
+            get { return this.ParticipantsValue; }
+
+            set { SetProperty(ref ParticipantsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the joint operating agreement reference.
         /// </summary>
-        public string JointOperatingAgreementId { get; set; } = string.Empty;
+        private string JointOperatingAgreementIdValue = string.Empty;
+
+        public string JointOperatingAgreementId
+
+        {
+
+            get { return this.JointOperatingAgreementIdValue; }
+
+            set { SetProperty(ref JointOperatingAgreementIdValue, value); }
+
+        }
 
         public JointInterestLease()
         {
@@ -197,47 +418,137 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the delay rental amount per acre per year.
         /// </summary>
-        public decimal? DelayRentalPerAcre { get; set; }
+        private decimal? DelayRentalPerAcreValue;
+
+        public decimal? DelayRentalPerAcre
+
+        {
+
+            get { return this.DelayRentalPerAcreValue; }
+
+            set { SetProperty(ref DelayRentalPerAcreValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the shut-in royalty amount.
         /// </summary>
-        public decimal? ShutInRoyalty { get; set; }
+        private decimal? ShutInRoyaltyValue;
+
+        public decimal? ShutInRoyalty
+
+        {
+
+            get { return this.ShutInRoyaltyValue; }
+
+            set { SetProperty(ref ShutInRoyaltyValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the minimum royalty amount.
         /// </summary>
-        public decimal? MinimumRoyalty { get; set; }
+        private decimal? MinimumRoyaltyValue;
+
+        public decimal? MinimumRoyalty
+
+        {
+
+            get { return this.MinimumRoyaltyValue; }
+
+            set { SetProperty(ref MinimumRoyaltyValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether pooling is allowed.
         /// </summary>
-        public bool AllowPooling { get; set; }
+        private bool AllowPoolingValue;
+
+        public bool AllowPooling
+
+        {
+
+            get { return this.AllowPoolingValue; }
+
+            set { SetProperty(ref AllowPoolingValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether unitization is allowed.
         /// </summary>
-        public bool AllowUnitization { get; set; }
+        private bool AllowUnitizationValue;
+
+        public bool AllowUnitization
+
+        {
+
+            get { return this.AllowUnitizationValue; }
+
+            set { SetProperty(ref AllowUnitizationValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the force majeure provisions.
         /// </summary>
-        public string? ForceMajeureProvisions { get; set; }
+        private string? ForceMajeureProvisionsValue;
+
+        public string? ForceMajeureProvisions
+
+        {
+
+            get { return this.ForceMajeureProvisionsValue; }
+
+            set { SetProperty(ref ForceMajeureProvisionsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the assignment provisions.
         /// </summary>
-        public string? AssignmentProvisions { get; set; }
+        private string? AssignmentProvisionsValue;
+
+        public string? AssignmentProvisions
+
+        {
+
+            get { return this.AssignmentProvisionsValue; }
+
+            set { SetProperty(ref AssignmentProvisionsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether the lease is held by production (HBP).
         /// </summary>
-        public bool IsHeldByProduction { get; set; }
+        private bool IsHeldByProductionValue;
+
+        public bool IsHeldByProduction
+
+        {
+
+            get { return this.IsHeldByProductionValue; }
+
+            set { SetProperty(ref IsHeldByProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the date the lease became HBP.
         /// </summary>
-        public DateTime? HeldByProductionDate { get; set; }
+        private DateTime? HeldByProductionDateValue;
+
+        public DateTime? HeldByProductionDate
+
+        {
+
+            get { return this.HeldByProductionDateValue; }
+
+            set { SetProperty(ref HeldByProductionDateValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -248,37 +559,107 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the state.
         /// </summary>
-        public string State { get; set; } = string.Empty;
+        private string StateValue = string.Empty;
+
+        public string State
+
+        {
+
+            get { return this.StateValue; }
+
+            set { SetProperty(ref StateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the county.
         /// </summary>
-        public string? County { get; set; }
+        private string? CountyValue;
+
+        public string? County
+
+        {
+
+            get { return this.CountyValue; }
+
+            set { SetProperty(ref CountyValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the township.
         /// </summary>
-        public string? Township { get; set; }
+        private string? TownshipValue;
+
+        public string? Township
+
+        {
+
+            get { return this.TownshipValue; }
+
+            set { SetProperty(ref TownshipValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the range.
         /// </summary>
-        public string? Range { get; set; }
+        private string? RangeValue;
+
+        public string? Range
+
+        {
+
+            get { return this.RangeValue; }
+
+            set { SetProperty(ref RangeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the section.
         /// </summary>
-        public string? Section { get; set; }
+        private string? SectionValue;
+
+        public string? Section
+
+        {
+
+            get { return this.SectionValue; }
+
+            set { SetProperty(ref SectionValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the number of acres.
         /// </summary>
-        public decimal? Acres { get; set; }
+        private decimal? AcresValue;
+
+        public decimal? Acres
+
+        {
+
+            get { return this.AcresValue; }
+
+            set { SetProperty(ref AcresValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the API number (if assigned).
         /// </summary>
-        public string? ApiNumber { get; set; }
+        private string? ApiNumberValue;
+
+        public string? ApiNumber
+
+        {
+
+            get { return this.ApiNumberValue; }
+
+            set { SetProperty(ref ApiNumberValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -289,17 +670,47 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets whether costs are recoverable.
         /// </summary>
-        public bool CostsRecoverable { get; set; }
+        private bool CostsRecoverableValue;
+
+        public bool CostsRecoverable
+
+        {
+
+            get { return this.CostsRecoverableValue; }
+
+            set { SetProperty(ref CostsRecoverableValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the recovery percentage (decimal, 0-1).
         /// </summary>
-        public decimal RecoveryPercentage { get; set; }
+        private decimal RecoveryPercentageValue;
+
+        public decimal RecoveryPercentage
+
+        {
+
+            get { return this.RecoveryPercentageValue; }
+
+            set { SetProperty(ref RecoveryPercentageValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the types of costs that are recoverable.
         /// </summary>
-        public List<string> RecoverableCostTypes { get; set; } = new();
+        private List<string> RecoverableCostTypesValue = new();
+
+        public List<string> RecoverableCostTypes
+
+        {
+
+            get { return this.RecoverableCostTypesValue; }
+
+            set { SetProperty(ref RecoverableCostTypesValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -310,24 +721,67 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the participant company name.
         /// </summary>
-        public string CompanyName { get; set; } = string.Empty;
+        private string CompanyNameValue = string.Empty;
+
+        public string CompanyName
+
+        {
+
+            get { return this.CompanyNameValue; }
+
+            set { SetProperty(ref CompanyNameValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the working interest (decimal, 0-1).
         /// </summary>
-        public decimal WorkingInterest { get; set; }
+        private decimal WorkingInterestValue;
+
+        public decimal WorkingInterest
+
+        {
+
+            get { return this.WorkingInterestValue; }
+
+            set { SetProperty(ref WorkingInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the net revenue interest (decimal, 0-1).
         /// </summary>
-        public decimal NetRevenueInterest { get; set; }
+        private decimal NetRevenueInterestValue;
+
+        public decimal NetRevenueInterest
+
+        {
+
+            get { return this.NetRevenueInterestValue; }
+
+            set { SetProperty(ref NetRevenueInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether this participant is the operator.
         /// </summary>
-        public bool IsOperator { get; set; }
+        private bool IsOperatorValue;
+
+        public bool IsOperator
+
+        {
+
+            get { return this.IsOperatorValue; }
+
+            set { SetProperty(ref IsOperatorValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

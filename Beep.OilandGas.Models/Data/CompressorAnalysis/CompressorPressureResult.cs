@@ -9,29 +9,80 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
         /// <summary>
         /// Required discharge pressure in psia
         /// </summary>
-        public decimal RequiredDischargePressure { get; set; }
+        private decimal RequiredDischargePressureValue;
+
+        public decimal RequiredDischargePressure
+
+        {
+
+            get { return this.RequiredDischargePressureValue; }
+
+            set { SetProperty(ref RequiredDischargePressureValue, value); }
+
+        }
 
         /// <summary>
         /// Compression ratio
         /// </summary>
-        public decimal CompressionRatio { get; set; }
+        private decimal CompressionRatioValue;
+
+        public decimal CompressionRatio
+
+        {
+
+            get { return this.CompressionRatioValue; }
+
+            set { SetProperty(ref CompressionRatioValue, value); }
+
+        }
 
         /// <summary>
         /// Required power in horsepower
         /// </summary>
-        public decimal RequiredPower { get; set; }
+        private decimal RequiredPowerValue;
+
+        public decimal RequiredPower
+
+        {
+
+            get { return this.RequiredPowerValue; }
+
+            set { SetProperty(ref RequiredPowerValue, value); }
+
+        }
 
         /// <summary>
         /// Discharge temperature in Rankine
         /// </summary>
-        public decimal DischargeTemperature { get; set; }
+        private decimal DischargeTemperatureValue;
+
+        public decimal DischargeTemperature
+
+        {
+
+            get { return this.DischargeTemperatureValue; }
+
+            set { SetProperty(ref DischargeTemperatureValue, value); }
+
+        }
 
         /// <summary>
         /// Whether the operation is feasible
         /// </summary>
-        public bool IsFeasible { get; set; }
+        private bool IsFeasibleValue;
+
+        public bool IsFeasible
+
+        {
+
+            get { return this.IsFeasibleValue; }
+
+            set { SetProperty(ref IsFeasibleValue, value); }
+
+        }
     }
 }
+
 
 
 

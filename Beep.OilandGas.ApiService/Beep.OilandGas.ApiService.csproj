@@ -7,21 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.13" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
-    <PackageReference Include="Microsoft.OpenApi" Version="3.1.1" />
+    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.16" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
+    <PackageReference Include="Microsoft.OpenApi" Version="3.3.1" />
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
-    <PackageReference Include="TheTechIdea.Beep.AssemblyLoader" Version="2.0.15" />
-    <PackageReference Include="TheTechIdea.Beep.Container" Version="1.0.0.93" />
+    <PackageReference Include="TheTechIdea.Beep.AssemblyLoader" Version="2.0.24" />
+    <PackageReference Include="TheTechIdea.Beep.Container" Version="1.0.0.94" />
     <PackageReference Include="TheTechIdea.Beep.Container.Model" Version="1.0.0.49" />
     <PackageReference Include="TheTechIdea.Beep.Container.Shared" Version="1.0.1" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.55" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.108" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.63" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.120" />
     <PackageReference Include="TheTechIdea.Beep.DMLogger" Version="2.0.3" />
     <PackageReference Include="TheTechIdea.Beep.DuckDBDataSourceCore" Version="1.0.45" />
     <PackageReference Include="TheTechIdea.Beep.JsonLoader" Version="2.0.4" />
@@ -29,8 +29,8 @@
     <PackageReference Include="TheTechIdea.Beep.MySqlDataSourceCore" Version="1.0.2" />
     <PackageReference Include="TheTechIdea.Beep.OracleDataSourceCore" Version="1.0.19" />
     <PackageReference Include="TheTechIdea.Beep.PostgreDataSourceCore" Version="1.0.2" />
-    <PackageReference Include="TheTechIdea.Beep.RDBDataSource" Version="2.0.9" />
-    <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.54" />
+    <PackageReference Include="TheTechIdea.Beep.RDBDataSource" Version="2.0.14" />
+    <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.55" />
     <PackageReference Include="TheTechIdea.Beep.SqlServerDataSourceCore" Version="1.0.1" />
     <PackageReference Include="TheTechIdea.Beep.TxtXlsCSVFileSourceCore" Version="1.0.13" />
   </ItemGroup>

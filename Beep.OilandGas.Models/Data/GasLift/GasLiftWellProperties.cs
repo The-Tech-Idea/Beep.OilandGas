@@ -10,124 +10,366 @@ namespace Beep.OilandGas.Models.Data.GasLift
         /// <summary>
         /// Well identifier (UWI - Unique Well Identifier)
         /// </summary>
-        public string WellUWI { get; set; } = string.Empty;
+        private string WellUWIValue = string.Empty;
+
+        public string WellUWI
+
+        {
+
+            get { return this.WellUWIValue; }
+
+            set { SetProperty(ref WellUWIValue, value); }
+
+        }
 
         /// <summary>
         /// Well depth (in feet or meters depending on units)
         /// </summary>
-        public decimal WellDepth { get; set; }
+        private decimal WellDepthValue;
+
+        public decimal WellDepth
+
+        {
+
+            get { return this.WellDepthValue; }
+
+            set { SetProperty(ref WellDepthValue, value); }
+
+        }
 
         /// <summary>
         /// Well type (Vertical, Deviated, Horizontal)
         /// </summary>
-        public string WellType { get; set; } = "Vertical";
+        private string WellTypeValue = "Vertical";
+
+        public string WellType
+
+        {
+
+            get { return this.WellTypeValue; }
+
+            set { SetProperty(ref WellTypeValue, value); }
+
+        }
 
         /// <summary>
         /// Wellhead pressure (in psia or kPa)
         /// </summary>
-        public decimal WellheadPressure { get; set; }
+        private decimal WellheadPressureValue;
+
+        public decimal WellheadPressure
+
+        {
+
+            get { return this.WellheadPressureValue; }
+
+            set { SetProperty(ref WellheadPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Bottom hole pressure (in psia or kPa)
         /// </summary>
-        public decimal BottomHolePressure { get; set; }
+        private decimal BottomHolePressureValue;
+
+        public decimal BottomHolePressure
+
+        {
+
+            get { return this.BottomHolePressureValue; }
+
+            set { SetProperty(ref BottomHolePressureValue, value); }
+
+        }
 
         /// <summary>
         /// Static reservoir pressure (in psia or kPa)
         /// </summary>
-        public decimal ReservoirPressure { get; set; }
+        private decimal ReservoirPressureValue;
+
+        public decimal ReservoirPressure
+
+        {
+
+            get { return this.ReservoirPressureValue; }
+
+            set { SetProperty(ref ReservoirPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Gas-oil ratio (scf/STB or m³/m³)
         /// </summary>
-        public decimal GasOilRatio { get; set; }
+        private decimal GasOilRatioValue;
+
+        public decimal GasOilRatio
+
+        {
+
+            get { return this.GasOilRatioValue; }
+
+            set { SetProperty(ref GasOilRatioValue, value); }
+
+        }
 
         /// <summary>
         /// Desired production rate (STB/day or m³/day)
         /// </summary>
-        public decimal DesiredProductionRate { get; set; }
+        private decimal DesiredProductionRateValue;
+
+        public decimal DesiredProductionRate
+
+        {
+
+            get { return this.DesiredProductionRateValue; }
+
+            set { SetProperty(ref DesiredProductionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Current production rate (STB/day or m³/day)
         /// </summary>
-        public decimal CurrentProductionRate { get; set; }
+        private decimal CurrentProductionRateValue;
+
+        public decimal CurrentProductionRate
+
+        {
+
+            get { return this.CurrentProductionRateValue; }
+
+            set { SetProperty(ref CurrentProductionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Oil gravity (API degrees)
         /// </summary>
-        public decimal OilGravity { get; set; }
+        private decimal OilGravityValue;
+
+        public decimal OilGravity
+
+        {
+
+            get { return this.OilGravityValue; }
+
+            set { SetProperty(ref OilGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Water cut (fraction, 0 to 1)
         /// </summary>
-        public decimal WaterCut { get; set; }
+        private decimal WaterCutValue;
+
+        public decimal WaterCut
+
+        {
+
+            get { return this.WaterCutValue; }
+
+            set { SetProperty(ref WaterCutValue, value); }
+
+        }
 
         /// <summary>
         /// Wellhead temperature (in °F or °C)
         /// </summary>
-        public decimal WellheadTemperature { get; set; }
+        private decimal WellheadTemperatureValue;
+
+        public decimal WellheadTemperature
+
+        {
+
+            get { return this.WellheadTemperatureValue; }
+
+            set { SetProperty(ref WellheadTemperatureValue, value); }
+
+        }
 
         /// <summary>
         /// Bottom hole temperature (in °F or °C)
         /// </summary>
-        public decimal BottomHoleTemperature { get; set; }
+        private decimal BottomHoleTemperatureValue;
+
+        public decimal BottomHoleTemperature
+
+        {
+
+            get { return this.BottomHoleTemperatureValue; }
+
+            set { SetProperty(ref BottomHoleTemperatureValue, value); }
+
+        }
 
         /// <summary>
         /// Gas specific gravity (relative to air)
         /// </summary>
-        public decimal GasSpecificGravity { get; set; }
+        private decimal GasSpecificGravityValue;
+
+        public decimal GasSpecificGravity
+
+        {
+
+            get { return this.GasSpecificGravityValue; }
+
+            set { SetProperty(ref GasSpecificGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Tubing diameter (in inches or mm)
         /// </summary>
-        public int TubingDiameter { get; set; }
+        private int TubingDiameterValue;
+
+        public int TubingDiameter
+
+        {
+
+            get { return this.TubingDiameterValue; }
+
+            set { SetProperty(ref TubingDiameterValue, value); }
+
+        }
 
         /// <summary>
         /// Tubing pressure rating (in psia or kPa)
         /// </summary>
-        public decimal TubingPressureRating { get; set; } = 5000m; // Default 5000 psia
+        private decimal TubingPressureRatingValue = 5000m;
+
+        public decimal TubingPressureRating
+
+        {
+
+            get { return this.TubingPressureRatingValue; }
+
+            set { SetProperty(ref TubingPressureRatingValue, value); }
+
+        } // Default 5000 psia
 
         /// <summary>
         /// Casing pressure rating (in psia or kPa)
         /// </summary>
-        public decimal CasingPressureRating { get; set; } = 3000m; // Default 3000 psia
+        private decimal CasingPressureRatingValue = 3000m;
+
+        public decimal CasingPressureRating
+
+        {
+
+            get { return this.CasingPressureRatingValue; }
+
+            set { SetProperty(ref CasingPressureRatingValue, value); }
+
+        } // Default 3000 psia
 
         /// <summary>
         /// Tubing ID (inner diameter in inches)
         /// </summary>
-        public decimal TubingID { get; set; }
+        private decimal TubingIDValue;
+
+        public decimal TubingID
+
+        {
+
+            get { return this.TubingIDValue; }
+
+            set { SetProperty(ref TubingIDValue, value); }
+
+        }
 
         /// <summary>
         /// Tubing wall thickness (in inches)
         /// </summary>
-        public decimal TubingThickness { get; set; }
+        private decimal TubingThicknessValue;
+
+        public decimal TubingThickness
+
+        {
+
+            get { return this.TubingThicknessValue; }
+
+            set { SetProperty(ref TubingThicknessValue, value); }
+
+        }
 
         /// <summary>
         /// CO2 content in producing gas (mole fraction, 0-1)
         /// </summary>
-        public decimal CO2Content { get; set; }
+        private decimal CO2ContentValue;
+
+        public decimal CO2Content
+
+        {
+
+            get { return this.CO2ContentValue; }
+
+            set { SetProperty(ref CO2ContentValue, value); }
+
+        }
 
         /// <summary>
         /// H2S content in producing gas (mole fraction, 0-1)
         /// </summary>
-        public decimal H2SContent { get; set; }
+        private decimal H2SContentValue;
+
+        public decimal H2SContent
+
+        {
+
+            get { return this.H2SContentValue; }
+
+            set { SetProperty(ref H2SContentValue, value); }
+
+        }
 
         /// <summary>
         /// Permeability of producing interval (in md)
         /// </summary>
-        public decimal Permeability { get; set; }
+        private decimal PermeabilityValue;
+
+        public decimal Permeability
+
+        {
+
+            get { return this.PermeabilityValue; }
+
+            set { SetProperty(ref PermeabilityValue, value); }
+
+        }
 
         /// <summary>
         /// Porosity of producing interval (fraction, 0-1)
         /// </summary>
-        public decimal Porosity { get; set; }
+        private decimal PorosityValue;
+
+        public decimal Porosity
+
+        {
+
+            get { return this.PorosityValue; }
+
+            set { SetProperty(ref PorosityValue, value); }
+
+        }
 
         /// <summary>
         /// Net pay thickness (in feet or meters)
         /// </summary>
-        public decimal NetPayThickness { get; set; }
+        private decimal NetPayThicknessValue;
+
+        public decimal NetPayThickness
+
+        {
+
+            get { return this.NetPayThicknessValue; }
+
+            set { SetProperty(ref NetPayThicknessValue, value); }
+
+        }
     }
 }
+
+
 
 
 

@@ -9,54 +9,155 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
         /// <summary>
         /// Net Present Value
         /// </summary>
-        public double NPV { get; set; }
+        private double NPVValue;
+
+        public double NPV
+
+        {
+
+            get { return this.NPVValue; }
+
+            set { SetProperty(ref NPVValue, value); }
+
+        }
 
         /// <summary>
         /// Internal Rate of Return (as decimal, e.g., 0.15 for 15%)
         /// </summary>
-        public double IRR { get; set; }
+        private double IRRValue;
+
+        public double IRR
+
+        {
+
+            get { return this.IRRValue; }
+
+            set { SetProperty(ref IRRValue, value); }
+
+        }
 
         /// <summary>
         /// Modified Internal Rate of Return
         /// </summary>
-        public double MIRR { get; set; }
+        private double MIRRValue;
+
+        public double MIRR
+
+        {
+
+            get { return this.MIRRValue; }
+
+            set { SetProperty(ref MIRRValue, value); }
+
+        }
 
         /// <summary>
         /// Profitability Index
         /// </summary>
-        public double ProfitabilityIndex { get; set; }
+        private double ProfitabilityIndexValue;
+
+        public double ProfitabilityIndex
+
+        {
+
+            get { return this.ProfitabilityIndexValue; }
+
+            set { SetProperty(ref ProfitabilityIndexValue, value); }
+
+        }
 
         /// <summary>
         /// Payback period (in periods)
         /// </summary>
-        public double PaybackPeriod { get; set; }
+        private double PaybackPeriodValue;
+
+        public double PaybackPeriod
+
+        {
+
+            get { return this.PaybackPeriodValue; }
+
+            set { SetProperty(ref PaybackPeriodValue, value); }
+
+        }
 
         /// <summary>
         /// Discounted payback period (in periods)
         /// </summary>
-        public double DiscountedPaybackPeriod { get; set; }
+        private double DiscountedPaybackPeriodValue;
+
+        public double DiscountedPaybackPeriod
+
+        {
+
+            get { return this.DiscountedPaybackPeriodValue; }
+
+            set { SetProperty(ref DiscountedPaybackPeriodValue, value); }
+
+        }
 
         /// <summary>
         /// Return on Investment (as percentage)
         /// </summary>
-        public double ROI { get; set; }
+        private double ROIValue;
+
+        public double ROI
+
+        {
+
+            get { return this.ROIValue; }
+
+            set { SetProperty(ref ROIValue, value); }
+
+        }
 
         /// <summary>
         /// Total cash flow
         /// </summary>
-        public double TotalCashFlow { get; set; }
+        private double TotalCashFlowValue;
+
+        public double TotalCashFlow
+
+        {
+
+            get { return this.TotalCashFlowValue; }
+
+            set { SetProperty(ref TotalCashFlowValue, value); }
+
+        }
 
         /// <summary>
         /// Present value
         /// </summary>
-        public double PresentValue { get; set; }
+        private double PresentValueValue;
+
+        public double PresentValue
+
+        {
+
+            get { return this.PresentValueValue; }
+
+            set { SetProperty(ref PresentValueValue, value); }
+
+        }
 
         /// <summary>
         /// Discount rate used for calculations
         /// </summary>
-        public double DiscountRate { get; set; }
+        private double DiscountRateValue;
+
+        public double DiscountRate
+
+        {
+
+            get { return this.DiscountRateValue; }
+
+            set { SetProperty(ref DiscountRateValue, value); }
+
+        }
     }
 }
+
 
 
 

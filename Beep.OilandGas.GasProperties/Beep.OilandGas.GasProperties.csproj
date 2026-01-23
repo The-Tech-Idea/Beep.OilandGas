@@ -1,6 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-	    <TargetFrameworks>net8.0</TargetFrameworks>
+	    <TargetFrameworks>net10.0</TargetFrameworks>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<LangVersion>Latest</LangVersion>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -19,7 +19,7 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.13" />
+		<PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.16" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
@@ -33,4 +33,5 @@
 	</Target>
 
 </Project>
+
 

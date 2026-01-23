@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Royalty;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -18,3 +19,4 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<bool> ValidateAsync(ROYALTY_CALCULATION royalty, string cn = "PPDM39");
     }
 }
+

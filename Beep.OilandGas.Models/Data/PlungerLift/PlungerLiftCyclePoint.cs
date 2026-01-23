@@ -9,34 +9,95 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         /// <summary>
         /// Time in minutes from cycle start
         /// </summary>
-        public decimal Time { get; set; }
+        private decimal TimeValue;
+
+        public decimal Time
+
+        {
+
+            get { return this.TimeValue; }
+
+            set { SetProperty(ref TimeValue, value); }
+
+        }
 
         /// <summary>
         /// Cycle phase
         /// </summary>
-        public PlungerLiftCyclePhase Phase { get; set; }
+        private PlungerLiftCyclePhase PhaseValue;
+
+        public PlungerLiftCyclePhase Phase
+
+        {
+
+            get { return this.PhaseValue; }
+
+            set { SetProperty(ref PhaseValue, value); }
+
+        }
 
         /// <summary>
         /// Plunger depth in feet
         /// </summary>
-        public decimal PlungerDepth { get; set; }
+        private decimal PlungerDepthValue;
+
+        public decimal PlungerDepth
+
+        {
+
+            get { return this.PlungerDepthValue; }
+
+            set { SetProperty(ref PlungerDepthValue, value); }
+
+        }
 
         /// <summary>
         /// Casing pressure in psia
         /// </summary>
-        public decimal CasingPressure { get; set; }
+        private decimal CasingPressureValue;
+
+        public decimal CasingPressure
+
+        {
+
+            get { return this.CasingPressureValue; }
+
+            set { SetProperty(ref CasingPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Tubing pressure in psia
         /// </summary>
-        public decimal TubingPressure { get; set; }
+        private decimal TubingPressureValue;
+
+        public decimal TubingPressure
+
+        {
+
+            get { return this.TubingPressureValue; }
+
+            set { SetProperty(ref TubingPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Liquid production rate in bbl/day
         /// </summary>
-        public decimal ProductionRate { get; set; }
+        private decimal ProductionRateValue;
+
+        public decimal ProductionRate
+
+        {
+
+            get { return this.ProductionRateValue; }
+
+            set { SetProperty(ref ProductionRateValue, value); }
+
+        }
     }
 }
+
 
 
 

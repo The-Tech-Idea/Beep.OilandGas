@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
     /// Presentation package for financial statements.
     /// </summary>
-    public partial class PresentationPackage : AccountingEntityBase
+    public partial class PresentationPackage : ModelEntityBase
     {
         private System.String EntityNameValue = string.Empty;
         /// <summary>
@@ -100,4 +101,5 @@ namespace Beep.OilandGas.Models.Data.Accounting
         }
     }
 }
+
 

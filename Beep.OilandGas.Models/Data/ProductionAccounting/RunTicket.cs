@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
@@ -8,31 +9,177 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class RunTicket : ModelEntityBase
     {
-        public string RunTicketNumber { get; set; } = string.Empty;
-        public DateTime TicketDateTime { get; set; }
-        public string LeaseId { get; set; } = string.Empty;
-        public string? WellId { get; set; }
-        public string? TankBatteryId { get; set; }
-        public decimal GrossVolume { get; set; }
-        public decimal BSWVolume { get; set; }
-        public decimal BSWPercentage { get; set; }
-        public decimal NetVolume { get; set; }
-        public decimal Temperature { get; set; }
-        public decimal? ApiGravity { get; set; }
-        public CrudeOilProperties? Properties { get; set; }
-        public DispositionType DispositionType { get; set; }
-        public string Purchaser { get; set; } = string.Empty;
-        public MeasurementMethod? MeasurementMethod { get; set; }
+        private string RunTicketNumberValue = string.Empty;
+
+        public string RunTicketNumber
+
+        {
+
+            get { return this.RunTicketNumberValue; }
+
+            set { SetProperty(ref RunTicketNumberValue, value); }
+
+        }
+        private DateTime TicketDateTimeValue;
+
+        public DateTime TicketDateTime
+
+        {
+
+            get { return this.TicketDateTimeValue; }
+
+            set { SetProperty(ref TicketDateTimeValue, value); }
+
+        }
+        private string LeaseIdValue = string.Empty;
+
+        public string LeaseId
+
+        {
+
+            get { return this.LeaseIdValue; }
+
+            set { SetProperty(ref LeaseIdValue, value); }
+
+        }
+        private string? WellIdValue;
+
+        public string? WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? TankBatteryIdValue;
+
+        public string? TankBatteryId
+
+        {
+
+            get { return this.TankBatteryIdValue; }
+
+            set { SetProperty(ref TankBatteryIdValue, value); }
+
+        }
+        private decimal GrossVolumeValue;
+
+        public decimal GrossVolume
+
+        {
+
+            get { return this.GrossVolumeValue; }
+
+            set { SetProperty(ref GrossVolumeValue, value); }
+
+        }
+        private decimal BSWVolumeValue;
+
+        public decimal BSWVolume
+
+        {
+
+            get { return this.BSWVolumeValue; }
+
+            set { SetProperty(ref BSWVolumeValue, value); }
+
+        }
+        private decimal BSWPercentageValue;
+
+        public decimal BSWPercentage
+
+        {
+
+            get { return this.BSWPercentageValue; }
+
+            set { SetProperty(ref BSWPercentageValue, value); }
+
+        }
+        private decimal NetVolumeValue;
+
+        public decimal NetVolume
+
+        {
+
+            get { return this.NetVolumeValue; }
+
+            set { SetProperty(ref NetVolumeValue, value); }
+
+        }
+        private decimal TemperatureValue;
+
+        public decimal Temperature
+
+        {
+
+            get { return this.TemperatureValue; }
+
+            set { SetProperty(ref TemperatureValue, value); }
+
+        }
+        private decimal? ApiGravityValue;
+
+        public decimal? ApiGravity
+
+        {
+
+            get { return this.ApiGravityValue; }
+
+            set { SetProperty(ref ApiGravityValue, value); }
+
+        }
+        private CrudeOilProperties? PropertiesValue;
+
+        public CrudeOilProperties? Properties
+
+        {
+
+            get { return this.PropertiesValue; }
+
+            set { SetProperty(ref PropertiesValue, value); }
+
+        }
+        private DispositionType DispositionTypeValue;
+
+        public DispositionType DispositionType
+
+        {
+
+            get { return this.DispositionTypeValue; }
+
+            set { SetProperty(ref DispositionTypeValue, value); }
+
+        }
+        private string PurchaserValue = string.Empty;
+
+        public string Purchaser
+
+        {
+
+            get { return this.PurchaserValue; }
+
+            set { SetProperty(ref PurchaserValue, value); }
+
+        }
+        private MeasurementMethod? MeasurementMethodValue;
+
+        public MeasurementMethod? MeasurementMethod
+
+        {
+
+            get { return this.MeasurementMethodValue; }
+
+            set { SetProperty(ref MeasurementMethodValue, value); }
+
+        }
     }
 
     /// <summary>
     /// DTO for measurement method
     /// </summary>
-    public class MeasurementMethod : ModelEntityBase
-    {
-        public string Method { get; set; } = string.Empty;
-        public string Standard { get; set; } = string.Empty;
-    }
+
 
     /// <summary>
     /// Type of disposition.
@@ -75,25 +222,148 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class CreateRunTicketRequest : ModelEntityBase
     {
+        private string LeaseIdValue = string.Empty;
+
         [Required]
-        public string LeaseId { get; set; } = string.Empty;
-        public string? WellId { get; set; }
-        public string? TankBatteryId { get; set; }
+        public string LeaseId
+
+        {
+
+            get { return this.LeaseIdValue; }
+
+            set { SetProperty(ref LeaseIdValue, value); }
+
+        }
+        private string? WellIdValue;
+
+        public string? WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? TankBatteryIdValue;
+
+        public string? TankBatteryId
+
+        {
+
+            get { return this.TankBatteryIdValue; }
+
+            set { SetProperty(ref TankBatteryIdValue, value); }
+
+        }
+        private decimal GrossVolumeValue;
+
         [Required]
-        public decimal GrossVolume { get; set; }
+        public decimal GrossVolume
+
+        {
+
+            get { return this.GrossVolumeValue; }
+
+            set { SetProperty(ref GrossVolumeValue, value); }
+
+        }
+        private decimal BSWPercentageValue;
+
         [Range(0, 100)]
-        public decimal BSWPercentage { get; set; }
-        public decimal Temperature { get; set; } = 60m;
-        public decimal? ApiGravity { get; set; }
-        public CrudeOilProperties? Properties { get; set; }
+        public decimal BSWPercentage
+
+        {
+
+            get { return this.BSWPercentageValue; }
+
+            set { SetProperty(ref BSWPercentageValue, value); }
+
+        }
+        private decimal TemperatureValue = 60m;
+
+        public decimal Temperature
+
+        {
+
+            get { return this.TemperatureValue; }
+
+            set { SetProperty(ref TemperatureValue, value); }
+
+        }
+        private decimal? ApiGravityValue;
+
+        public decimal? ApiGravity
+
+        {
+
+            get { return this.ApiGravityValue; }
+
+            set { SetProperty(ref ApiGravityValue, value); }
+
+        }
+        private CrudeOilProperties? PropertiesValue;
+
+        public CrudeOilProperties? Properties
+
+        {
+
+            get { return this.PropertiesValue; }
+
+            set { SetProperty(ref PropertiesValue, value); }
+
+        }
+        private DispositionType DispositionTypeValue;
+
         [Required]
-        public DispositionType DispositionType { get; set; }
+        public DispositionType DispositionType
+
+        {
+
+            get { return this.DispositionTypeValue; }
+
+            set { SetProperty(ref DispositionTypeValue, value); }
+
+        }
+        private string PurchaserValue = string.Empty;
+
         [Required]
-        public string Purchaser { get; set; } = string.Empty;
-        public DateTime? TicketDateTime { get; set; }
-        public MeasurementMethod MeasurementMethod { get; set; }
+        public string Purchaser
+
+        {
+
+            get { return this.PurchaserValue; }
+
+            set { SetProperty(ref PurchaserValue, value); }
+
+        }
+        private DateTime? TicketDateTimeValue;
+
+        public DateTime? TicketDateTime
+
+        {
+
+            get { return this.TicketDateTimeValue; }
+
+            set { SetProperty(ref TicketDateTimeValue, value); }
+
+        }
+        private MeasurementMethod MeasurementMethodValue;
+
+        public MeasurementMethod MeasurementMethod
+
+        {
+
+            get { return this.MeasurementMethodValue; }
+
+            set { SetProperty(ref MeasurementMethodValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

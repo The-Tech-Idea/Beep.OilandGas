@@ -5,12 +5,13 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Ownership
 {
     /// <summary>
     /// Represents an ownership tree node.
     /// </summary>
-    public partial class OwnershipTreeNode : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class OwnershipTreeNode : ModelEntityBase
     {
         private System.String OwnerIdValue = string.Empty;
         /// <summary>
@@ -66,17 +67,37 @@ namespace Beep.OilandGas.Models.Data.Ownership
     /// <summary>
     /// Represents an ownership tree for hierarchical ownership structures.
     /// </summary>
-    public class OwnershipTree
+    public class OwnershipTree : ModelEntityBase
     {
         /// <summary>
         /// Gets or sets the root node.
         /// </summary>
-        public OwnershipTreeNode Root { get; set; } = new();
+        private OwnershipTreeNode RootValue = new();
+
+        public OwnershipTreeNode Root
+
+        {
+
+            get { return this.RootValue; }
+
+            set { SetProperty(ref RootValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the property or lease identifier.
         /// </summary>
-        public string PropertyOrLeaseId { get; set; } = string.Empty;
+        private string PropertyOrLeaseIdValue = string.Empty;
+
+        public string PropertyOrLeaseId
+
+        {
+
+            get { return this.PropertyOrLeaseIdValue; }
+
+            set { SetProperty(ref PropertyOrLeaseIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets all leaf nodes (final owners).
@@ -213,6 +234,8 @@ namespace Beep.OilandGas.Models.Data.Ownership
         }
     }
 }
+
+
 
 
 

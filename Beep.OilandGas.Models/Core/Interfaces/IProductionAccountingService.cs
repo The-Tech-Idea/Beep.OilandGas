@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -19,16 +20,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// <summary>
     /// Accounting status data for reporting.
     /// </summary>
-    public class AccountingStatusData
-    {
-        public string FieldId { get; set; }
-        public DateTime? AsOfDate { get; set; }
-        public decimal TotalProduction { get; set; }
-        public decimal TotalRevenue { get; set; }
-        public decimal TotalRoyalty { get; set; }
-        public decimal TotalCosts { get; set; }
-        public decimal NetIncome { get; set; }
-        public string AccountingMethod { get; set; }
-        public string PeriodStatus { get; set; }
-    }
+    
 }
+

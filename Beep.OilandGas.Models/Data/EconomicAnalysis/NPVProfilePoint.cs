@@ -9,13 +9,43 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
         /// <summary>
         /// Discount rate for this point
         /// </summary>
-        public double Rate { get; set; }
+        private double RateValue;
+
+        public double Rate
+
+        {
+
+            get { return this.RateValue; }
+
+            set { SetProperty(ref RateValue, value); }
+
+        }
 
         /// <summary>
         /// NPV at this discount rate
         /// </summary>
-        public double NPV { get; set; }
-        public double DiscountRate { get; set; }
+        private double NPVValue;
+
+        public double NPV
+
+        {
+
+            get { return this.NPVValue; }
+
+            set { SetProperty(ref NPVValue, value); }
+
+        }
+        private double DiscountRateValue;
+
+        public double DiscountRate
+
+        {
+
+            get { return this.DiscountRateValue; }
+
+            set { SetProperty(ref DiscountRateValue, value); }
+
+        }
 
         /// <summary>
         /// Default constructor
@@ -34,6 +64,7 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
         }
     }
 }
+
 
 
 

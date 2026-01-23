@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
@@ -8,21 +9,91 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class AmortizationCalculationRequest : ModelEntityBase
     {
-        public string? PropertyId { get; set; }
+        private string? PropertyIdValue;
+
+        public string? PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+
+        private decimal NetCapitalizedCostsValue;
+
 
         [Required(ErrorMessage = "NetCapitalizedCosts is required")]
         [Range(0.01, double.MaxValue, ErrorMessage = "NetCapitalizedCosts must be greater than 0")]
-        public decimal NetCapitalizedCosts { get; set; }
+        public decimal NetCapitalizedCosts
+
+
+        {
+
+
+            get { return this.NetCapitalizedCostsValue; }
+
+
+            set { SetProperty(ref NetCapitalizedCostsValue, value); }
+
+
+        }
+
+        private decimal TotalProvedReservesBOEValue;
+
 
         [Required(ErrorMessage = "TotalProvedReservesBOE is required")]
         [Range(0.01, double.MaxValue, ErrorMessage = "TotalProvedReservesBOE must be greater than 0")]
-        public decimal TotalProvedReservesBOE { get; set; }
+        public decimal TotalProvedReservesBOE
+
+
+        {
+
+
+            get { return this.TotalProvedReservesBOEValue; }
+
+
+            set { SetProperty(ref TotalProvedReservesBOEValue, value); }
+
+
+        }
+
+        private decimal ProductionBOEValue;
+
 
         [Required(ErrorMessage = "ProductionBOE is required")]
         [Range(0, double.MaxValue, ErrorMessage = "ProductionBOE must be greater than or equal to 0")]
-        public decimal ProductionBOE { get; set; }
+        public decimal ProductionBOE
 
-        public DateTime? CalculationDate { get; set; }
+
+        {
+
+
+            get { return this.ProductionBOEValue; }
+
+
+            set { SetProperty(ref ProductionBOEValue, value); }
+
+
+        }
+
+        private DateTime? CalculationDateValue;
+
+
+        public DateTime? CalculationDate
+
+
+        {
+
+
+            get { return this.CalculationDateValue; }
+
+
+            set { SetProperty(ref CalculationDateValue, value); }
+
+
+        }
     }
 
     /// <summary>
@@ -30,19 +101,84 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class ImpairmentRequest : ModelEntityBase
     {
+        private string PropertyIdValue = string.Empty;
+
         [Required(ErrorMessage = "PropertyId is required")]
-        public string PropertyId { get; set; } = string.Empty;
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+
+        private decimal CarryingValueValue;
+
 
         [Required(ErrorMessage = "CarryingValue is required")]
         [Range(0, double.MaxValue, ErrorMessage = "CarryingValue must be greater than or equal to 0")]
-        public decimal CarryingValue { get; set; }
+        public decimal CarryingValue
+
+
+        {
+
+
+            get { return this.CarryingValueValue; }
+
+
+            set { SetProperty(ref CarryingValueValue, value); }
+
+
+        }
+
+        private decimal FairValueValue;
+
 
         [Required(ErrorMessage = "FairValue is required")]
         [Range(0, double.MaxValue, ErrorMessage = "FairValue must be greater than or equal to 0")]
-        public decimal FairValue { get; set; }
+        public decimal FairValue
 
-        public DateTime? ImpairmentDate { get; set; }
-        public string? Reason { get; set; }
+
+        {
+
+
+            get { return this.FairValueValue; }
+
+
+            set { SetProperty(ref FairValueValue, value); }
+
+
+        }
+
+        private DateTime? ImpairmentDateValue;
+
+
+        public DateTime? ImpairmentDate
+
+
+        {
+
+
+            get { return this.ImpairmentDateValue; }
+
+
+            set { SetProperty(ref ImpairmentDateValue, value); }
+
+
+        }
+        private string? ReasonValue;
+
+        public string? Reason
+
+        {
+
+            get { return this.ReasonValue; }
+
+            set { SetProperty(ref ReasonValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -50,15 +186,65 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class FullCostExplorationRequest : ModelEntityBase
     {
+        private string PropertyIdValue = string.Empty;
+
         [Required(ErrorMessage = "PropertyId is required")]
-        public string PropertyId { get; set; } = string.Empty;
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+
+        private decimal ExplorationCostValue;
+
 
         [Required(ErrorMessage = "ExplorationCost is required")]
         [Range(0.01, double.MaxValue, ErrorMessage = "ExplorationCost must be greater than 0")]
-        public decimal ExplorationCost { get; set; }
+        public decimal ExplorationCost
 
-        public DateTime? CostDate { get; set; }
-        public string? Description { get; set; }
+
+        {
+
+
+            get { return this.ExplorationCostValue; }
+
+
+            set { SetProperty(ref ExplorationCostValue, value); }
+
+
+        }
+
+        private DateTime? CostDateValue;
+
+
+        public DateTime? CostDate
+
+
+        {
+
+
+            get { return this.CostDateValue; }
+
+
+            set { SetProperty(ref CostDateValue, value); }
+
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -66,15 +252,65 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class FullCostDevelopmentRequest : ModelEntityBase
     {
+        private string PropertyIdValue = string.Empty;
+
         [Required(ErrorMessage = "PropertyId is required")]
-        public string PropertyId { get; set; } = string.Empty;
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+
+        private decimal DevelopmentCostValue;
+
 
         [Required(ErrorMessage = "DevelopmentCost is required")]
         [Range(0.01, double.MaxValue, ErrorMessage = "DevelopmentCost must be greater than 0")]
-        public decimal DevelopmentCost { get; set; }
+        public decimal DevelopmentCost
 
-        public DateTime? CostDate { get; set; }
-        public string? Description { get; set; }
+
+        {
+
+
+            get { return this.DevelopmentCostValue; }
+
+
+            set { SetProperty(ref DevelopmentCostValue, value); }
+
+
+        }
+
+        private DateTime? CostDateValue;
+
+
+        public DateTime? CostDate
+
+
+        {
+
+
+            get { return this.CostDateValue; }
+
+
+            set { SetProperty(ref CostDateValue, value); }
+
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -82,15 +318,65 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class FullCostAcquisitionRequest : ModelEntityBase
     {
+        private string PropertyIdValue = string.Empty;
+
         [Required(ErrorMessage = "PropertyId is required")]
-        public string PropertyId { get; set; } = string.Empty;
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+
+        private decimal AcquisitionCostValue;
+
 
         [Required(ErrorMessage = "AcquisitionCost is required")]
         [Range(0.01, double.MaxValue, ErrorMessage = "AcquisitionCost must be greater than 0")]
-        public decimal AcquisitionCost { get; set; }
+        public decimal AcquisitionCost
 
-        public DateTime? AcquisitionDate { get; set; }
-        public string? Description { get; set; }
+
+        {
+
+
+            get { return this.AcquisitionCostValue; }
+
+
+            set { SetProperty(ref AcquisitionCostValue, value); }
+
+
+        }
+
+        private DateTime? AcquisitionDateValue;
+
+
+        public DateTime? AcquisitionDate
+
+
+        {
+
+
+            get { return this.AcquisitionDateValue; }
+
+
+            set { SetProperty(ref AcquisitionDateValue, value); }
+
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -98,14 +384,62 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class CeilingTestRequest : ModelEntityBase
     {
-        [Required(ErrorMessage = "PropertyId is required")]
-        public string PropertyId { get; set; } = string.Empty;
+        private string PropertyIdValue = string.Empty;
 
-        public DateTime? TestDate { get; set; }
-        public decimal? OilPrice { get; set; }
-        public decimal? GasPrice { get; set; }
+        [Required(ErrorMessage = "PropertyId is required")]
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+
+        private DateTime? TestDateValue;
+
+
+        public DateTime? TestDate
+
+
+        {
+
+
+            get { return this.TestDateValue; }
+
+
+            set { SetProperty(ref TestDateValue, value); }
+
+
+        }
+        private decimal? OilPriceValue;
+
+        public decimal? OilPrice
+
+        {
+
+            get { return this.OilPriceValue; }
+
+            set { SetProperty(ref OilPriceValue, value); }
+
+        }
+        private decimal? GasPriceValue;
+
+        public decimal? GasPrice
+
+        {
+
+            get { return this.GasPriceValue; }
+
+            set { SetProperty(ref GasPriceValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionForecasting
 {
     /// <summary>
@@ -11,34 +12,97 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
         /// <summary>
         /// Forecast type
         /// </summary>
-        public ForecastType ForecastType { get; set; }
+        private ForecastType ForecastTypeValue;
+
+        public ForecastType ForecastType
+
+        {
+
+            get { return this.ForecastTypeValue; }
+
+            set { SetProperty(ref ForecastTypeValue, value); }
+
+        }
 
         /// <summary>
         /// Forecast points
         /// </summary>
-        public List<ForecastPoint> ForecastPoints { get; set; } = new();
+        private List<ForecastPoint> ForecastPointsValue = new();
+
+        public List<ForecastPoint> ForecastPoints
+
+        {
+
+            get { return this.ForecastPointsValue; }
+
+            set { SetProperty(ref ForecastPointsValue, value); }
+
+        }
 
         /// <summary>
         /// Total forecast duration in days
         /// </summary>
-        public decimal ForecastDuration { get; set; }
+        private decimal ForecastDurationValue;
+
+        public decimal ForecastDuration
+
+        {
+
+            get { return this.ForecastDurationValue; }
+
+            set { SetProperty(ref ForecastDurationValue, value); }
+
+        }
 
         /// <summary>
         /// Initial production rate
         /// </summary>
-        public decimal InitialProductionRate { get; set; }
+        private decimal InitialProductionRateValue;
+
+        public decimal InitialProductionRate
+
+        {
+
+            get { return this.InitialProductionRateValue; }
+
+            set { SetProperty(ref InitialProductionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Final production rate
         /// </summary>
-        public decimal FinalProductionRate { get; set; }
+        private decimal FinalProductionRateValue;
+
+        public decimal FinalProductionRate
+
+        {
+
+            get { return this.FinalProductionRateValue; }
+
+            set { SetProperty(ref FinalProductionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Total cumulative production
         /// </summary>
-        public decimal TotalCumulativeProduction { get; set; }
+        private decimal TotalCumulativeProductionValue;
+
+        public decimal TotalCumulativeProduction
+
+        {
+
+            get { return this.TotalCumulativeProductionValue; }
+
+            set { SetProperty(ref TotalCumulativeProductionValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

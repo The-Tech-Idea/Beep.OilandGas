@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.OilProperties;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -81,6 +82,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task SaveOilPropertyResultAsync(OilPropertyResult result, string userId);
     }
 }
+
 
 
 

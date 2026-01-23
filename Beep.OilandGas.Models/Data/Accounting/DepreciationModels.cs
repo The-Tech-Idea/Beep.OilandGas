@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
@@ -18,7 +19,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Fixed Asset
     /// </summary>
-    public partial class FixedAsset : AccountingEntityBase
+    public partial class FixedAsset : ModelEntityBase
     {
         private System.String AssetIdValue = string.Empty;
         /// <summary>
@@ -154,7 +155,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Depreciation Entry
     /// </summary>
-    public partial class DepreciationEntry : AccountingEntityBase
+    public partial class DepreciationEntry : ModelEntityBase
     {
         private System.Int32 YearValue;
         /// <summary>
@@ -210,7 +211,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Asset Depreciation Summary
     /// </summary>
-    public partial class AssetDepreciationSummary : AccountingEntityBase
+    public partial class AssetDepreciationSummary : ModelEntityBase
     {
         private System.DateTime AsOfDateValue;
         /// <summary>
@@ -276,7 +277,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Asset Summary Line
     /// </summary>
-    public partial class AssetSummaryLine : AccountingEntityBase
+    public partial class AssetSummaryLine : ModelEntityBase
     {
         private System.String AssetIdValue = string.Empty;
         /// <summary>
@@ -329,4 +330,5 @@ namespace Beep.OilandGas.Models.Data.Accounting
         }
     }
 }
+
 

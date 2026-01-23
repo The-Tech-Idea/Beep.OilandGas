@@ -1,5 +1,6 @@
 using System;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
@@ -42,52 +43,152 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the property identifier.
         /// </summary>
-        public string PropertyId { get; set; } = string.Empty;
+        private string PropertyIdValue = string.Empty;
+
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the property name or description.
         /// </summary>
-        public string PropertyName { get; set; } = string.Empty;
+        private string PropertyNameValue = string.Empty;
+
+        public string PropertyName
+
+        {
+
+            get { return this.PropertyNameValue; }
+
+            set { SetProperty(ref PropertyNameValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the acquisition cost.
         /// </summary>
-        public decimal AcquisitionCost { get; set; }
+        private decimal AcquisitionCostValue;
+
+        public decimal AcquisitionCost
+
+        {
+
+            get { return this.AcquisitionCostValue; }
+
+            set { SetProperty(ref AcquisitionCostValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the acquisition date.
         /// </summary>
-        public DateTime AcquisitionDate { get; set; }
+        private DateTime AcquisitionDateValue;
+
+        public DateTime AcquisitionDate
+
+        {
+
+            get { return this.AcquisitionDateValue; }
+
+            set { SetProperty(ref AcquisitionDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the property type (lease, concession, fee interest, etc.).
         /// </summary>
-        public PropertyType PropertyType { get; set; } = PropertyType.Lease;
+        private PropertyType PropertyTypeValue = PropertyType.Lease;
+
+        public PropertyType PropertyType
+
+        {
+
+            get { return this.PropertyTypeValue; }
+
+            set { SetProperty(ref PropertyTypeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the working interest percentage.
         /// </summary>
-        public decimal WorkingInterest { get; set; } = 1.0m;
+        private decimal WorkingInterestValue = 1.0m;
+
+        public decimal WorkingInterest
+
+        {
+
+            get { return this.WorkingInterestValue; }
+
+            set { SetProperty(ref WorkingInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the net revenue interest percentage.
         /// </summary>
-        public decimal NetRevenueInterest { get; set; } = 1.0m;
+        private decimal NetRevenueInterestValue = 1.0m;
+
+        public decimal NetRevenueInterest
+
+        {
+
+            get { return this.NetRevenueInterestValue; }
+
+            set { SetProperty(ref NetRevenueInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the accumulated impairment.
         /// </summary>
-        public decimal AccumulatedImpairment { get; set; }
+        private decimal AccumulatedImpairmentValue;
+
+        public decimal AccumulatedImpairment
+
+        {
+
+            get { return this.AccumulatedImpairmentValue; }
+
+            set { SetProperty(ref AccumulatedImpairmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether the property has been classified as proved.
         /// </summary>
-        public bool IsProved { get; set; }
+        private bool IsProvedValue;
+
+        public bool IsProved
+
+        {
+
+            get { return this.IsProvedValue; }
+
+            set { SetProperty(ref IsProvedValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the date when property was classified as proved.
         /// </summary>
-        public DateTime? ProvedDate { get; set; }
+        private DateTime? ProvedDateValue;
+
+        public DateTime? ProvedDate
+
+        {
+
+            get { return this.ProvedDateValue; }
+
+            set { SetProperty(ref ProvedDateValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -99,37 +200,107 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the property identifier.
         /// </summary>
-        public string PropertyId { get; set; } = string.Empty;
+        private string PropertyIdValue = string.Empty;
+
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the acquisition cost.
         /// </summary>
-        public decimal AcquisitionCost { get; set; }
+        private decimal AcquisitionCostValue;
+
+        public decimal AcquisitionCost
+
+        {
+
+            get { return this.AcquisitionCostValue; }
+
+            set { SetProperty(ref AcquisitionCostValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the exploration costs capitalized.
         /// </summary>
-        public decimal ExplorationCosts { get; set; }
+        private decimal ExplorationCostsValue;
+
+        public decimal ExplorationCosts
+
+        {
+
+            get { return this.ExplorationCostsValue; }
+
+            set { SetProperty(ref ExplorationCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the development costs capitalized.
         /// </summary>
-        public decimal DevelopmentCosts { get; set; }
+        private decimal DevelopmentCostsValue;
+
+        public decimal DevelopmentCosts
+
+        {
+
+            get { return this.DevelopmentCostsValue; }
+
+            set { SetProperty(ref DevelopmentCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the accumulated amortization.
         /// </summary>
-        public decimal AccumulatedAmortization { get; set; }
+        private decimal AccumulatedAmortizationValue;
+
+        public decimal AccumulatedAmortization
+
+        {
+
+            get { return this.AccumulatedAmortizationValue; }
+
+            set { SetProperty(ref AccumulatedAmortizationValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the proved reserves.
         /// </summary>
-        public ProvedReserves? Reserves { get; set; }
+        private ProvedReserves? ReservesValue;
+
+        public ProvedReserves? Reserves
+
+        {
+
+            get { return this.ReservesValue; }
+
+            set { SetProperty(ref ReservesValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the proved date.
         /// </summary>
-        public DateTime ProvedDate { get; set; }
+        private DateTime ProvedDateValue;
+
+        public DateTime ProvedDate
+
+        {
+
+            get { return this.ProvedDateValue; }
+
+            set { SetProperty(ref ProvedDateValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -140,44 +311,127 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the property identifier.
         /// </summary>
-        public string PropertyId { get; set; } = string.Empty;
+        private string PropertyIdValue = string.Empty;
+
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the property name.
         /// </summary>
-        public string PropertyName { get; set; } = string.Empty;
+        private string PropertyNameValue = string.Empty;
+
+        public string PropertyName
+
+        {
+
+            get { return this.PropertyNameValue; }
+
+            set { SetProperty(ref PropertyNameValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the acquisition cost.
         /// </summary>
-        public decimal AcquisitionCost { get; set; }
+        private decimal AcquisitionCostValue;
+
+        public decimal AcquisitionCost
+
+        {
+
+            get { return this.AcquisitionCostValue; }
+
+            set { SetProperty(ref AcquisitionCostValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the current accumulated impairment.
         /// </summary>
-        public decimal AccumulatedImpairment { get; set; }
+        private decimal AccumulatedImpairmentValue;
+
+        public decimal AccumulatedImpairment
+
+        {
+
+            get { return this.AccumulatedImpairmentValue; }
+
+            set { SetProperty(ref AccumulatedImpairmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the calculated impairment amount.
         /// </summary>
-        public decimal CalculatedImpairment { get; set; }
+        private decimal CalculatedImpairmentValue;
+
+        public decimal CalculatedImpairment
+
+        {
+
+            get { return this.CalculatedImpairmentValue; }
+
+            set { SetProperty(ref CalculatedImpairmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether impairment is required.
         /// </summary>
-        public bool ImpairmentRequired { get; set; }
+        private bool ImpairmentRequiredValue;
+
+        public bool ImpairmentRequired
+
+        {
+
+            get { return this.ImpairmentRequiredValue; }
+
+            set { SetProperty(ref ImpairmentRequiredValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the impairment reason.
         /// </summary>
-        public string ImpairmentReason { get; set; } = string.Empty;
+        private string ImpairmentReasonValue = string.Empty;
+
+        public string ImpairmentReason
+
+        {
+
+            get { return this.ImpairmentReasonValue; }
+
+            set { SetProperty(ref ImpairmentReasonValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the test date.
         /// </summary>
-        public DateTime TestDate { get; set; } = DateTime.UtcNow;
+        private DateTime TestDateValue = DateTime.UtcNow;
+
+        public DateTime TestDate
+
+        {
+
+            get { return this.TestDateValue; }
+
+            set { SetProperty(ref TestDateValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

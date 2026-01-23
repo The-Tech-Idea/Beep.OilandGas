@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.GasLift
 {
     /// <summary>
@@ -11,51 +12,154 @@ namespace Beep.OilandGas.Models.Data.GasLift
         /// <summary>
         /// Gets or sets the analysis date
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the user who performed the analysis
         /// </summary>
-        public string AnalyzedByUser { get; set; } = string.Empty;
+        private string AnalyzedByUserValue = string.Empty;
+
+        public string AnalyzedByUser
+
+        {
+
+            get { return this.AnalyzedByUserValue; }
+
+            set { SetProperty(ref AnalyzedByUserValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the well UWI
         /// </summary>
-        public string WellUWI { get; set; } = string.Empty;
+        private string WellUWIValue = string.Empty;
+
+        public string WellUWI
+
+        {
+
+            get { return this.WellUWIValue; }
+
+            set { SetProperty(ref WellUWIValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the tubing/casing stress risk (0-100%)
         /// </summary>
-        public decimal TubingCasingStressRisk { get; set; }
+        private decimal TubingCasingStressRiskValue;
+
+        public decimal TubingCasingStressRisk
+
+        {
+
+            get { return this.TubingCasingStressRiskValue; }
+
+            set { SetProperty(ref TubingCasingStressRiskValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the scale/corrosion risk (0-100%)
         /// </summary>
-        public decimal ScaleCorrosionRisk { get; set; }
+        private decimal ScaleCorrosionRiskValue;
+
+        public decimal ScaleCorrosionRisk
+
+        {
+
+            get { return this.ScaleCorrosionRiskValue; }
+
+            set { SetProperty(ref ScaleCorrosionRiskValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the valve reliability risk (0-100%)
         /// </summary>
-        public decimal ValveReliabilityRisk { get; set; }
+        private decimal ValveReliabilityRiskValue;
+
+        public decimal ValveReliabilityRisk
+
+        {
+
+            get { return this.ValveReliabilityRiskValue; }
+
+            set { SetProperty(ref ValveReliabilityRiskValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the gas supply interruption risk (0-100%)
         /// </summary>
-        public decimal GasSupplyInterruptionRisk { get; set; }
+        private decimal GasSupplyInterruptionRiskValue;
+
+        public decimal GasSupplyInterruptionRisk
+
+        {
+
+            get { return this.GasSupplyInterruptionRiskValue; }
+
+            set { SetProperty(ref GasSupplyInterruptionRiskValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the overall risk rating (0-100%)
         /// </summary>
-        public decimal OverallRiskRating { get; set; }
+        private decimal OverallRiskRatingValue;
+
+        public decimal OverallRiskRating
+
+        {
+
+            get { return this.OverallRiskRatingValue; }
+
+            set { SetProperty(ref OverallRiskRatingValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the risk level (Low, Medium, High, Critical)
         /// </summary>
-        public string RiskLevel { get; set; } = "Medium";
+        private string RiskLevelValue = "Medium";
+
+        public string RiskLevel
+
+        {
+
+            get { return this.RiskLevelValue; }
+
+            set { SetProperty(ref RiskLevelValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the recommended mitigation actions
         /// </summary>
-        public List<string> RecommendedMitigationActions { get; set; } = new();
+        private List<string> RecommendedMitigationActionsValue = new();
+
+        public List<string> RecommendedMitigationActions
+
+        {
+
+            get { return this.RecommendedMitigationActionsValue; }
+
+            set { SetProperty(ref RecommendedMitigationActionsValue, value); }
+
+        }
     }
 }
+
+
+

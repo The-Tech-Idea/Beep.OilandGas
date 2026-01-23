@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.GasLift
 {
     /// <summary>
@@ -11,47 +12,137 @@ namespace Beep.OilandGas.Models.Data.GasLift
         /// <summary>
         /// Gets or sets the analysis date
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the user who performed the analysis
         /// </summary>
-        public string AnalyzedByUser { get; set; } = string.Empty;
+        private string AnalyzedByUserValue = string.Empty;
+
+        public string AnalyzedByUser
+
+        {
+
+            get { return this.AnalyzedByUserValue; }
+
+            set { SetProperty(ref AnalyzedByUserValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the gas injection cost per Mscf
         /// </summary>
-        public decimal GasInjectionCostPerMscf { get; set; }
+        private decimal GasInjectionCostPerMscfValue;
+
+        public decimal GasInjectionCostPerMscf
+
+        {
+
+            get { return this.GasInjectionCostPerMscfValue; }
+
+            set { SetProperty(ref GasInjectionCostPerMscfValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the oil price per barrel
         /// </summary>
-        public decimal OilPricePerBarrel { get; set; }
+        private decimal OilPricePerBarrelValue;
+
+        public decimal OilPricePerBarrel
+
+        {
+
+            get { return this.OilPricePerBarrelValue; }
+
+            set { SetProperty(ref OilPricePerBarrelValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the list of economic analysis points
         /// </summary>
-        public List<GasLiftEconomicPoint> EconomicPoints { get; set; } = new();
+        private List<GasLiftEconomicPoint> EconomicPointsValue = new();
+
+        public List<GasLiftEconomicPoint> EconomicPoints
+
+        {
+
+            get { return this.EconomicPointsValue; }
+
+            set { SetProperty(ref EconomicPointsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the optimal gas injection rate
         /// </summary>
-        public decimal OptimalGasInjectionRate { get; set; }
+        private decimal OptimalGasInjectionRateValue;
+
+        public decimal OptimalGasInjectionRate
+
+        {
+
+            get { return this.OptimalGasInjectionRateValue; }
+
+            set { SetProperty(ref OptimalGasInjectionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the optimal production rate at economic optimum
         /// </summary>
-        public decimal OptimalProductionRate { get; set; }
+        private decimal OptimalProductionRateValue;
+
+        public decimal OptimalProductionRate
+
+        {
+
+            get { return this.OptimalProductionRateValue; }
+
+            set { SetProperty(ref OptimalProductionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the maximum annual net revenue
         /// </summary>
-        public decimal MaximumAnnualNetRevenue { get; set; }
+        private decimal MaximumAnnualNetRevenueValue;
+
+        public decimal MaximumAnnualNetRevenue
+
+        {
+
+            get { return this.MaximumAnnualNetRevenueValue; }
+
+            set { SetProperty(ref MaximumAnnualNetRevenueValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether the project is economically viable
         /// </summary>
-        public bool IsEconomicallyViable { get; set; }
+        private bool IsEconomicallyViableValue;
+
+        public bool IsEconomicallyViable
+
+        {
+
+            get { return this.IsEconomicallyViableValue; }
+
+            set { SetProperty(ref IsEconomicallyViableValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -62,31 +153,94 @@ namespace Beep.OilandGas.Models.Data.GasLift
         /// <summary>
         /// Gets or sets the gas injection rate for this scenario
         /// </summary>
-        public decimal GasInjectionRate { get; set; }
+        private decimal GasInjectionRateValue;
+
+        public decimal GasInjectionRate
+
+        {
+
+            get { return this.GasInjectionRateValue; }
+
+            set { SetProperty(ref GasInjectionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the production rate for this scenario
         /// </summary>
-        public decimal ProductionRate { get; set; }
+        private decimal ProductionRateValue;
+
+        public decimal ProductionRate
+
+        {
+
+            get { return this.ProductionRateValue; }
+
+            set { SetProperty(ref ProductionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the daily revenue
         /// </summary>
-        public decimal DailyRevenue { get; set; }
+        private decimal DailyRevenueValue;
+
+        public decimal DailyRevenue
+
+        {
+
+            get { return this.DailyRevenueValue; }
+
+            set { SetProperty(ref DailyRevenueValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the daily cost
         /// </summary>
-        public decimal DailyCost { get; set; }
+        private decimal DailyCostValue;
+
+        public decimal DailyCost
+
+        {
+
+            get { return this.DailyCostValue; }
+
+            set { SetProperty(ref DailyCostValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the net daily margin
         /// </summary>
-        public decimal NetDailyMargin { get; set; }
+        private decimal NetDailyMarginValue;
+
+        public decimal NetDailyMargin
+
+        {
+
+            get { return this.NetDailyMarginValue; }
+
+            set { SetProperty(ref NetDailyMarginValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the annual net revenue
         /// </summary>
-        public decimal AnnualNetRevenue { get; set; }
+        private decimal AnnualNetRevenueValue;
+
+        public decimal AnnualNetRevenue
+
+        {
+
+            get { return this.AnnualNetRevenueValue; }
+
+            set { SetProperty(ref AnnualNetRevenueValue, value); }
+
+        }
     }
 }
+
+
+

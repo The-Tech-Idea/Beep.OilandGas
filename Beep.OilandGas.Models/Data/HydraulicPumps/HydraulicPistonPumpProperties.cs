@@ -8,61 +8,182 @@ namespace Beep.OilandGas.Models.Data.HydraulicPumps
         /// <summary>
         /// Piston diameter in inches.
         /// </summary>
-        public decimal PistonDiameter { get; set; }
+        private decimal PistonDiameterValue;
+
+        public decimal PistonDiameter
+
+        {
+
+            get { return this.PistonDiameterValue; }
+
+            set { SetProperty(ref PistonDiameterValue, value); }
+
+        }
 
         /// <summary>
         /// Rod diameter in inches.
         /// </summary>
-        public decimal RodDiameter { get; set; }
+        private decimal RodDiameterValue;
+
+        public decimal RodDiameter
+
+        {
+
+            get { return this.RodDiameterValue; }
+
+            set { SetProperty(ref RodDiameterValue, value); }
+
+        }
 
         /// <summary>
         /// Stroke length in inches.
         /// </summary>
-        public decimal StrokeLength { get; set; }
+        private decimal StrokeLengthValue;
+
+        public decimal StrokeLength
+
+        {
+
+            get { return this.StrokeLengthValue; }
+
+            set { SetProperty(ref StrokeLengthValue, value); }
+
+        }
 
         /// <summary>
         /// Strokes per minute (pump speed).
         /// </summary>
-        public decimal StrokesPerMinute { get; set; }
+        private decimal StrokesPerMinuteValue;
+
+        public decimal StrokesPerMinute
+
+        {
+
+            get { return this.StrokesPerMinuteValue; }
+
+            set { SetProperty(ref StrokesPerMinuteValue, value); }
+
+        }
 
         /// <summary>
         /// Power fluid pressure in psia.
         /// </summary>
-        public decimal PowerFluidPressure { get; set; }
+        private decimal PowerFluidPressureValue;
+
+        public decimal PowerFluidPressure
+
+        {
+
+            get { return this.PowerFluidPressureValue; }
+
+            set { SetProperty(ref PowerFluidPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Power fluid rate in bbl/day.
         /// </summary>
-        public decimal PowerFluidRate { get; set; }
+        private decimal PowerFluidRateValue;
+
+        public decimal PowerFluidRate
+
+        {
+
+            get { return this.PowerFluidRateValue; }
+
+            set { SetProperty(ref PowerFluidRateValue, value); }
+
+        }
 
         /// <summary>
         /// Power fluid specific gravity (relative to water).
         /// </summary>
-        public decimal PowerFluidSpecificGravity { get; set; }
+        private decimal PowerFluidSpecificGravityValue;
+
+        public decimal PowerFluidSpecificGravity
+
+        {
+
+            get { return this.PowerFluidSpecificGravityValue; }
+
+            set { SetProperty(ref PowerFluidSpecificGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Pump displacement in cubic inches per stroke.
         /// </summary>
-        public decimal? Displacement { get; set; }
+        private decimal? DisplacementValue;
+
+        public decimal? Displacement
+
+        {
+
+            get { return this.DisplacementValue; }
+
+            set { SetProperty(ref DisplacementValue, value); }
+
+        }
 
         /// <summary>
         /// Pump volumetric efficiency (fraction 0-1).
         /// </summary>
-        public decimal VolumetricEfficiency { get; set; }
+        private decimal VolumetricEfficiencyValue;
+
+        public decimal VolumetricEfficiency
+
+        {
+
+            get { return this.VolumetricEfficiencyValue; }
+
+            set { SetProperty(ref VolumetricEfficiencyValue, value); }
+
+        }
 
         /// <summary>
         /// Pump mechanical efficiency (fraction 0-1).
         /// </summary>
-        public decimal MechanicalEfficiency { get; set; }
+        private decimal MechanicalEfficiencyValue;
+
+        public decimal MechanicalEfficiency
+
+        {
+
+            get { return this.MechanicalEfficiencyValue; }
+
+            set { SetProperty(ref MechanicalEfficiencyValue, value); }
+
+        }
 
         /// <summary>
         /// Pump manufacturer.
         /// </summary>
-        public string? Manufacturer { get; set; }
+        private string? ManufacturerValue;
+
+        public string? Manufacturer
+
+        {
+
+            get { return this.ManufacturerValue; }
+
+            set { SetProperty(ref ManufacturerValue, value); }
+
+        }
 
         /// <summary>
         /// Pump model/ID.
         /// </summary>
-        public string? PumpID { get; set; }
+        private string? PumpIDValue;
+
+        public string? PumpID
+
+        {
+
+            get { return this.PumpIDValue; }
+
+            set { SetProperty(ref PumpIDValue, value); }
+
+        }
     }
 }
+

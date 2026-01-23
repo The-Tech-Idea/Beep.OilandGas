@@ -31,7 +31,7 @@ namespace Beep.OilandGas.DataManager.Services
             DataManagerLogger? dataManagerLogger = null)
         {
             _logger = logger;
-            _scriptValidator = scriptValidator ?? new ScriptValidator(logger);
+            _scriptValidator = scriptValidator ?? new ScriptValidator(null);
             _dataManagerLogger = dataManagerLogger;
         }
 
@@ -558,34 +558,6 @@ namespace Beep.OilandGas.DataManager.Services
             return sorted;
         }
 
-        public Task<ModuleExecutionResult> ExecuteModuleAsync(IModuleData moduleData, IDataSource dataSource, ScriptExecutionOptions? options = null, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Dictionary<string, ModuleExecutionResult>> ExecuteModulesAsync(IEnumerable<IModuleData> modules, IDataSource dataSource, ScriptExecutionOptions? options = null, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<ScriptExecutionResult> ExecuteScriptAsync(ModuleScriptInfo scriptInfo, IDataSource dataSource, ScriptExecutionOptions? options = null, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<ModuleExecutionResult> ResumeModuleExecutionAsync(string executionId, IDataSource dataSource, ScriptExecutionOptions? options = null, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<ValidationResult> ValidateScriptsAsync(IModuleData moduleData, string databaseType, IDataSource? dataSource = null)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<ErrorCheckResult> CheckForErrorsAsync(string executionId, IDataSource dataSource)
-        {
-            throw new NotImplementedException();
-        }
+       
     }
 }

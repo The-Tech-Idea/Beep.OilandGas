@@ -5,6 +5,7 @@ using Beep.OilandGas.Models.Data.Calculations;
 using ProductionForecastResult = Beep.OilandGas.Models.Data.Calculations.ProductionForecastResult;
 using DeclineCurveAnalysis = Beep.OilandGas.Models.Data.Calculations.DeclineCurveAnalysis;
 using ProductionForecastPoint = Beep.OilandGas.Models.Data.Calculations.ProductionForecastPoint;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.ProductionForecasting.Services
 {

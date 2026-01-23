@@ -48,10 +48,10 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Perform cost allocation across cost centers
         /// </summary>
-        public async Task<AllocationResult> AllocateCostsAsync(
+        public async Task<CostAllocationResult> AllocateCostsAsync(
             List<CostCenter> costCenters,
             List<AllocationBase> allocationBases,
-            AllocationMethod method,
+            CostAllocationMethod method,
             DateTime allocationDate,
             string userId)
         {
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.Accounting.Services
                 if (!costCenters.Any())
                     throw new InvalidOperationException("Must provide at least one cost center");
 
-                var result = new AllocationResult
+                var result = new CostAllocationResult
                 {
                     AllocationDate = allocationDate,
                     AllocationMethod = method,
@@ -73,19 +73,19 @@ namespace Beep.OilandGas.Accounting.Services
 
                 switch (method)
                 {
-                    case AllocationMethod.DirectAllocation:
+                    case CostAllocationMethod.DirectAllocation:
                         await PerformDirectAllocationAsync(costCenters, allocationBases, result);
                         break;
 
-                    case AllocationMethod.StepDown:
+                    case CostAllocationMethod.StepDown:
                         await PerformStepDownAllocationAsync(costCenters, allocationBases, result);
                         break;
 
-                    case AllocationMethod.Reciprocal:
+                    case CostAllocationMethod.Reciprocal:
                         await PerformReciprocalAllocationAsync(costCenters, allocationBases, result);
                         break;
 
-                    case AllocationMethod.ActivityBasedCosting:
+                    case CostAllocationMethod.ActivityBasedCosting:
                         await PerformActivityBasedAllocationAsync(costCenters, allocationBases, result);
                         break;
 
@@ -115,7 +115,7 @@ namespace Beep.OilandGas.Accounting.Services
         private async Task PerformDirectAllocationAsync(
             List<CostCenter> costCenters,
             List<AllocationBase> bases,
-            AllocationResult result)
+            CostAllocationResult result)
         {
             _logger?.LogInformation("Performing direct allocation");
 
@@ -152,7 +152,7 @@ namespace Beep.OilandGas.Accounting.Services
         private async Task PerformStepDownAllocationAsync(
             List<CostCenter> costCenters,
             List<AllocationBase> bases,
-            AllocationResult result)
+            CostAllocationResult result)
         {
             _logger?.LogInformation("Performing step-down allocation");
 
@@ -198,7 +198,7 @@ namespace Beep.OilandGas.Accounting.Services
         private async Task PerformReciprocalAllocationAsync(
             List<CostCenter> costCenters,
             List<AllocationBase> bases,
-            AllocationResult result)
+            CostAllocationResult result)
         {
             _logger?.LogInformation("Performing reciprocal allocation");
 
@@ -340,7 +340,7 @@ namespace Beep.OilandGas.Accounting.Services
         private async Task PerformActivityBasedAllocationAsync(
             List<CostCenter> costCenters,
             List<AllocationBase> bases,
-            AllocationResult result)
+            CostAllocationResult result)
         {
             _logger?.LogInformation("Performing activity-based costing allocation");
 
@@ -439,7 +439,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// <summary>
         /// Export cost allocation as formatted text
         /// </summary>
-        public string ExportAllocationResultAsText(AllocationResult result)
+        public string ExportAllocationResultAsText(CostAllocationResult result)
         {
             _logger?.LogInformation("Exporting allocation result as text");
 

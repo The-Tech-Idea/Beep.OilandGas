@@ -9,69 +9,200 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         /// <summary>
         /// Well depth in feet
         /// </summary>
-        public decimal WellDepth { get; set; }
+        private decimal WellDepthValue;
+
+        public decimal WellDepth
+
+        {
+
+            get { return this.WellDepthValue; }
+
+            set { SetProperty(ref WellDepthValue, value); }
+
+        }
 
         /// <summary>
         /// Tubing diameter in inches
         /// </summary>
-        public decimal TubingDiameter { get; set; }
+        private decimal TubingDiameterValue;
+
+        public decimal TubingDiameter
+
+        {
+
+            get { return this.TubingDiameterValue; }
+
+            set { SetProperty(ref TubingDiameterValue, value); }
+
+        }
 
         /// <summary>
         /// Plunger diameter in inches
         /// </summary>
-        public decimal PlungerDiameter { get; set; }
+        private decimal PlungerDiameterValue;
+
+        public decimal PlungerDiameter
+
+        {
+
+            get { return this.PlungerDiameterValue; }
+
+            set { SetProperty(ref PlungerDiameterValue, value); }
+
+        }
 
         /// <summary>
         /// Wellhead pressure in psia
         /// </summary>
-        public decimal WellheadPressure { get; set; }
+        private decimal WellheadPressureValue;
+
+        public decimal WellheadPressure
+
+        {
+
+            get { return this.WellheadPressureValue; }
+
+            set { SetProperty(ref WellheadPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Casing pressure in psia
         /// </summary>
-        public decimal CasingPressure { get; set; }
+        private decimal CasingPressureValue;
+
+        public decimal CasingPressure
+
+        {
+
+            get { return this.CasingPressureValue; }
+
+            set { SetProperty(ref CasingPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Bottom hole pressure in psia
         /// </summary>
-        public decimal BottomHolePressure { get; set; }
+        private decimal BottomHolePressureValue;
+
+        public decimal BottomHolePressure
+
+        {
+
+            get { return this.BottomHolePressureValue; }
+
+            set { SetProperty(ref BottomHolePressureValue, value); }
+
+        }
 
         /// <summary>
         /// Wellhead temperature in Rankine
         /// </summary>
-        public decimal WellheadTemperature { get; set; }
+        private decimal WellheadTemperatureValue;
+
+        public decimal WellheadTemperature
+
+        {
+
+            get { return this.WellheadTemperatureValue; }
+
+            set { SetProperty(ref WellheadTemperatureValue, value); }
+
+        }
 
         /// <summary>
         /// Bottom hole temperature in Rankine
         /// </summary>
-        public decimal BottomHoleTemperature { get; set; }
+        private decimal BottomHoleTemperatureValue;
+
+        public decimal BottomHoleTemperature
+
+        {
+
+            get { return this.BottomHoleTemperatureValue; }
+
+            set { SetProperty(ref BottomHoleTemperatureValue, value); }
+
+        }
 
         /// <summary>
         /// Oil gravity in API
         /// </summary>
-        public decimal OilGravity { get; set; }
+        private decimal OilGravityValue;
+
+        public decimal OilGravity
+
+        {
+
+            get { return this.OilGravityValue; }
+
+            set { SetProperty(ref OilGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Water cut (fraction, 0-1)
         /// </summary>
-        public decimal WaterCut { get; set; }
+        private decimal WaterCutValue;
+
+        public decimal WaterCut
+
+        {
+
+            get { return this.WaterCutValue; }
+
+            set { SetProperty(ref WaterCutValue, value); }
+
+        }
 
         /// <summary>
         /// Gas-oil ratio in scf/bbl
         /// </summary>
-        public decimal GasOilRatio { get; set; }
+        private decimal GasOilRatioValue;
+
+        public decimal GasOilRatio
+
+        {
+
+            get { return this.GasOilRatioValue; }
+
+            set { SetProperty(ref GasOilRatioValue, value); }
+
+        }
 
         /// <summary>
         /// Gas specific gravity (relative to air)
         /// </summary>
-        public decimal GasSpecificGravity { get; set; }
+        private decimal GasSpecificGravityValue;
+
+        public decimal GasSpecificGravity
+
+        {
+
+            get { return this.GasSpecificGravityValue; }
+
+            set { SetProperty(ref GasSpecificGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Liquid production rate in bbl/day
         /// </summary>
-        public decimal LiquidProductionRate { get; set; }
+        private decimal LiquidProductionRateValue;
+
+        public decimal LiquidProductionRate
+
+        {
+
+            get { return this.LiquidProductionRateValue; }
+
+            set { SetProperty(ref LiquidProductionRateValue, value); }
+
+        }
     }
 }
+
 
 
 

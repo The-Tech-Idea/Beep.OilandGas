@@ -1,5 +1,6 @@
 using System;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting.Reporting
 {
     /// <summary>
@@ -7,8 +8,28 @@ namespace Beep.OilandGas.Models.Data.Accounting.Reporting
     /// </summary>
     public class GenerateOperationalReportRequest : ModelEntityBase
     {
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        private DateTime StartDateValue;
+
+        public DateTime StartDate
+
+        {
+
+            get { return this.StartDateValue; }
+
+            set { SetProperty(ref StartDateValue, value); }
+
+        }
+        private DateTime EndDateValue;
+
+        public DateTime EndDate
+
+        {
+
+            get { return this.EndDateValue; }
+
+            set { SetProperty(ref EndDateValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -16,11 +37,44 @@ namespace Beep.OilandGas.Models.Data.Accounting.Reporting
     /// </summary>
     public class GenerateLeaseReportRequest : ModelEntityBase
     {
-        public string LeaseId { get; set; } = string.Empty;
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        private string LeaseIdValue = string.Empty;
+
+        public string LeaseId
+
+        {
+
+            get { return this.LeaseIdValue; }
+
+            set { SetProperty(ref LeaseIdValue, value); }
+
+        }
+        private DateTime StartDateValue;
+
+        public DateTime StartDate
+
+        {
+
+            get { return this.StartDateValue; }
+
+            set { SetProperty(ref StartDateValue, value); }
+
+        }
+        private DateTime EndDateValue;
+
+        public DateTime EndDate
+
+        {
+
+            get { return this.EndDateValue; }
+
+            set { SetProperty(ref EndDateValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

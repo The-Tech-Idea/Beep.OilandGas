@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Setup
 {
     /// <summary>
@@ -10,30 +11,175 @@ namespace Beep.OilandGas.Models.Data.Setup
     /// </summary>
     public class UserRoleSetupData : ModelEntityBase
     {
-        [Required]
-        public string UserId { get; set; } = string.Empty; // BUSINESS_ASSOCIATE_ID
+        private string UserIdValue = string.Empty;
 
         [Required]
-        public string UserName { get; set; } = string.Empty;
+        public string UserId
+
+        {
+
+            get { return this.UserIdValue; }
+
+            set { SetProperty(ref UserIdValue, value); }
+
+        } // BUSINESS_ASSOCIATE_ID
+
+        private string UserNameValue = string.Empty;
+
+
+        [Required]
+        public string UserName
+
+
+        {
+
+
+            get { return this.UserNameValue; }
+
+
+            set { SetProperty(ref UserNameValue, value); }
+
+
+        }
+
+        private string EmailValue = string.Empty;
+
 
         [Required]
         [EmailAddress]
-        public string Email { get; set; } = string.Empty;
+        public string Email
+
+
+        {
+
+
+            get { return this.EmailValue; }
+
+
+            set { SetProperty(ref EmailValue, value); }
+
+
+        }
+
+        private string EmployerBaIdValue = string.Empty;
+
 
         [Required]
-        public string EmployerBaId { get; set; } = string.Empty; // Organization BUSINESS_ASSOCIATE_ID
+        public string EmployerBaId
 
-        public List<string> Roles { get; set; } = new List<string>();
 
-        public string? EmployeePosition { get; set; }
+        {
 
-        public string? Status { get; set; }
 
-        public DateTime? EffectiveDate { get; set; }
+            get { return this.EmployerBaIdValue; }
 
-        public DateTime? ExpiryDate { get; set; }
 
-        public bool Active { get; set; } = true;
+            set { SetProperty(ref EmployerBaIdValue, value); }
+
+
+        } // Organization BUSINESS_ASSOCIATE_ID
+
+        private List<string> RolesValue = new List<string>();
+
+
+        public List<string> Roles
+
+
+        {
+
+
+            get { return this.RolesValue; }
+
+
+            set { SetProperty(ref RolesValue, value); }
+
+
+        }
+
+        private string? EmployeePositionValue;
+
+
+        public string? EmployeePosition
+
+
+        {
+
+
+            get { return this.EmployeePositionValue; }
+
+
+            set { SetProperty(ref EmployeePositionValue, value); }
+
+
+        }
+
+        private string? StatusValue;
+
+
+        public string? Status
+
+
+        {
+
+
+            get { return this.StatusValue; }
+
+
+            set { SetProperty(ref StatusValue, value); }
+
+
+        }
+
+        private DateTime? EffectiveDateValue;
+
+
+        public DateTime? EffectiveDate
+
+
+        {
+
+
+            get { return this.EffectiveDateValue; }
+
+
+            set { SetProperty(ref EffectiveDateValue, value); }
+
+
+        }
+
+        private DateTime? ExpiryDateValue;
+
+
+        public DateTime? ExpiryDate
+
+
+        {
+
+
+            get { return this.ExpiryDateValue; }
+
+
+            set { SetProperty(ref ExpiryDateValue, value); }
+
+
+        }
+
+        private bool ActiveValue = true;
+
+
+        public bool Active
+
+
+        {
+
+
+            get { return this.ActiveValue; }
+
+
+            set { SetProperty(ref ActiveValue, value); }
+
+
+        }
     }
 
     /// <summary>
@@ -42,21 +188,109 @@ namespace Beep.OilandGas.Models.Data.Setup
     /// </summary>
     public class RoleAssignmentData : ModelEntityBase
     {
-        [Required]
-        public string BusinessAssociateId { get; set; } = string.Empty;
+        private string BusinessAssociateIdValue = string.Empty;
 
         [Required]
-        public string AuthorityId { get; set; } = string.Empty; // Role ID
+        public string BusinessAssociateId
 
-        public string? AuthorityType { get; set; }
+        {
 
-        public DateTime? EffectiveDate { get; set; }
+            get { return this.BusinessAssociateIdValue; }
 
-        public DateTime? ExpiryDate { get; set; }
+            set { SetProperty(ref BusinessAssociateIdValue, value); }
 
-        public bool Active { get; set; } = true;
+        }
+
+        private string AuthorityIdValue = string.Empty;
+
+
+        [Required]
+        public string AuthorityId
+
+
+        {
+
+
+            get { return this.AuthorityIdValue; }
+
+
+            set { SetProperty(ref AuthorityIdValue, value); }
+
+
+        } // Role ID
+
+        private string? AuthorityTypeValue;
+
+
+        public string? AuthorityType
+
+
+        {
+
+
+            get { return this.AuthorityTypeValue; }
+
+
+            set { SetProperty(ref AuthorityTypeValue, value); }
+
+
+        }
+
+        private DateTime? EffectiveDateValue;
+
+
+        public DateTime? EffectiveDate
+
+
+        {
+
+
+            get { return this.EffectiveDateValue; }
+
+
+            set { SetProperty(ref EffectiveDateValue, value); }
+
+
+        }
+
+        private DateTime? ExpiryDateValue;
+
+
+        public DateTime? ExpiryDate
+
+
+        {
+
+
+            get { return this.ExpiryDateValue; }
+
+
+            set { SetProperty(ref ExpiryDateValue, value); }
+
+
+        }
+
+        private bool ActiveValue = true;
+
+
+        public bool Active
+
+
+        {
+
+
+            get { return this.ActiveValue; }
+
+
+            set { SetProperty(ref ActiveValue, value); }
+
+
+        }
     }
 }
+
+
+
 
 
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -219,86 +220,32 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     #region Supporting DTOs
 
     /// <summary>DTO for multi-rate test data.</summary>
-    public class MultiRateTestData
-    {
-        public List<RateChange> RateChanges { get; set; } = new();
-        public List<PressureTimePoint> PressureData { get; set; } = new();
-    }
+    
 
     /// <summary>DTO for rate change event.</summary>
-    public class RateChange
-    {
-        public DateTime ChangeTime { get; set; }
-        public double NewFlowRate { get; set; }
-        public string? Reason { get; set; }
-    }
+    
 
     /// <summary>DTO for variable rate data.</summary>
-    public class VariableRateData
-    {
-        public List<ProductionHistory> ProductionHistory { get; set; } = new();
-        public List<PressureTimePoint> PressureData { get; set; } = new();
-    }
+    
 
     /// <summary>DTO for production history event.</summary>
-    public class ProductionHistory
-    {
-        public DateTime Date { get; set; }
-        public double FlowRate { get; set; }
-    }
+    
 
     /// <summary>DTO for type curve match result.</summary>
-    public class TypeCurveMatchResult
-    {
-        public string MatchId { get; set; } = string.Empty;
-        public string TypeCurveName { get; set; } = string.Empty;
-        public ReservoirModel ReservoirModel { get; set; } = new();
-        public double MatchQuality { get; set; }
-        public double Permeability { get; set; }
-        public double SkinFactor { get; set; }
-        public double InitialPressure { get; set; }
-        public List<string> ConfidenceIndicators { get; set; } = new();
-    }
+    
 
     /// <summary>DTO for well test analysis report.</summary>
-    public class WellTestAnalysisReport
-    {
-        public string ReportId { get; set; } = string.Empty;
-        public string WellUWI { get; set; } = string.Empty;
-        public DateTime GeneratedDate { get; set; }
-        public string GeneratedBy { get; set; } = string.Empty;
-        public List<WellTestAnalysisResult> AnalysisResults { get; set; } = new();
-        public string ExecutiveSummary { get; set; } = string.Empty;
-        public List<string> Recommendations { get; set; } = new();
-    }
+    
 
     /// <summary>DTO for test data validation result.</summary>
-    public class TestDataValidationResult
-    {
-        public bool IsValid { get; set; }
-        public List<string> Errors { get; set; } = new();
-        public List<string> Warnings { get; set; } = new();
-        public double DataQualityScore { get; set; }
-        public string DataQualityRating { get; set; } = string.Empty;
-    }
+    
 
     /// <summary>DTO for analysis comparison result.</summary>
-    public class AnalysisComparisonResult
-    {
-        public string ComparisonId { get; set; } = string.Empty;
-        public List<ComparisonEntry> Comparisons { get; set; } = new();
-        public string Conclusion { get; set; } = string.Empty;
-    }
+    
 
     /// <summary>DTO for individual comparison entry.</summary>
-    public class ComparisonEntry
-    {
-        public string Method1 { get; set; } = string.Empty;
-        public string Method2 { get; set; } = string.Empty;
-        public double PermeabilityDifference { get; set; }
-        public double SkinFactorDifference { get; set; }
-        public double ConfidenceLevel { get; set; }
-    }
+    
 
     #endregion
 }
+

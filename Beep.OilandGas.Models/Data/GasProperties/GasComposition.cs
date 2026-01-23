@@ -1,5 +1,6 @@
 using System;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.GasProperties
 {
     /// <summary>
@@ -11,57 +12,167 @@ namespace Beep.OilandGas.Models.Data.GasProperties
         /// <summary>
         /// Mole fraction of methane (C1)
         /// </summary>
-        public decimal MethaneFraction { get; set; }
+        private decimal MethaneFractionValue;
+
+        public decimal MethaneFraction
+
+        {
+
+            get { return this.MethaneFractionValue; }
+
+            set { SetProperty(ref MethaneFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Mole fraction of ethane (C2)
         /// </summary>
-        public decimal EthaneFraction { get; set; }
+        private decimal EthaneFractionValue;
+
+        public decimal EthaneFraction
+
+        {
+
+            get { return this.EthaneFractionValue; }
+
+            set { SetProperty(ref EthaneFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Mole fraction of propane (C3)
         /// </summary>
-        public decimal PropaneFraction { get; set; }
+        private decimal PropaneFractionValue;
+
+        public decimal PropaneFraction
+
+        {
+
+            get { return this.PropaneFractionValue; }
+
+            set { SetProperty(ref PropaneFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Mole fraction of i-butane (iC4)
         /// </summary>
-        public decimal IButaneFraction { get; set; }
+        private decimal IButaneFractionValue;
+
+        public decimal IButaneFraction
+
+        {
+
+            get { return this.IButaneFractionValue; }
+
+            set { SetProperty(ref IButaneFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Mole fraction of n-butane (nC4)
         /// </summary>
-        public decimal NButaneFraction { get; set; }
+        private decimal NButaneFractionValue;
+
+        public decimal NButaneFraction
+
+        {
+
+            get { return this.NButaneFractionValue; }
+
+            set { SetProperty(ref NButaneFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Mole fraction of i-pentane (iC5)
         /// </summary>
-        public decimal IPentaneFraction { get; set; }
+        private decimal IPentaneFractionValue;
+
+        public decimal IPentaneFraction
+
+        {
+
+            get { return this.IPentaneFractionValue; }
+
+            set { SetProperty(ref IPentaneFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Mole fraction of n-pentane (nC5)
         /// </summary>
-        public decimal NPentaneFraction { get; set; }
+        private decimal NPentaneFractionValue;
+
+        public decimal NPentaneFraction
+
+        {
+
+            get { return this.NPentaneFractionValue; }
+
+            set { SetProperty(ref NPentaneFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Mole fraction of hexane plus (C6+)
         /// </summary>
-        public decimal HexanePlusFraction { get; set; }
+        private decimal HexanePlusFractionValue;
+
+        public decimal HexanePlusFraction
+
+        {
+
+            get { return this.HexanePlusFractionValue; }
+
+            set { SetProperty(ref HexanePlusFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Mole fraction of nitrogen (N2)
         /// </summary>
-        public decimal NitrogenFraction { get; set; }
+        private decimal NitrogenFractionValue;
+
+        public decimal NitrogenFraction
+
+        {
+
+            get { return this.NitrogenFractionValue; }
+
+            set { SetProperty(ref NitrogenFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Mole fraction of carbon dioxide (CO2)
         /// </summary>
-        public decimal CarbonDioxideFraction { get; set; }
+        private decimal CarbonDioxideFractionValue;
+
+        public decimal CarbonDioxideFraction
+
+        {
+
+            get { return this.CarbonDioxideFractionValue; }
+
+            set { SetProperty(ref CarbonDioxideFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Mole fraction of hydrogen sulfide (H2S)
         /// </summary>
-        public decimal HydrogenSulfideFraction { get; set; }
+        private decimal HydrogenSulfideFractionValue;
+
+        public decimal HydrogenSulfideFraction
+
+        {
+
+            get { return this.HydrogenSulfideFractionValue; }
+
+            set { SetProperty(ref HydrogenSulfideFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Validates that all fractions sum to 1.0 (within tolerance)
@@ -77,6 +188,8 @@ namespace Beep.OilandGas.Models.Data.GasProperties
         }
     }
 }
+
+
 
 
 

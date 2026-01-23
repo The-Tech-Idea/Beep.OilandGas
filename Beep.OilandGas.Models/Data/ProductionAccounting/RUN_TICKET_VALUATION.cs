@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.PPDM.Models;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class RUN_TICKET_VALUATION : ModelEntityBase {
@@ -92,82 +93,10 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
 
         // Standard PPDM columns
-        private System.String ACTIVE_INDValue;
-        public System.String ACTIVE_IND
-        {
-            get { return this.ACTIVE_INDValue; }
-            set { SetProperty(ref ACTIVE_INDValue, value); }
-        }
-
-        private System.String PPDM_GUIDValue;
-        public System.String PPDM_GUID
-        {
-            get { return this.PPDM_GUIDValue; }
-            set { SetProperty(ref PPDM_GUIDValue, value); }
-        }
 
         private System.String REMARKValue;
-        public System.String REMARK
-        {
-            get { return this.REMARKValue; }
-            set { SetProperty(ref REMARKValue, value); }
-        }
 
         private System.String SOURCEValue;
-        public System.String SOURCE
-        {
-            get { return this.SOURCEValue; }
-            set { SetProperty(ref SOURCEValue, value); }
-        }
-
-        private System.String ROW_QUALITYValue;
-        public System.String ROW_QUALITY
-        {
-            get { return this.ROW_QUALITYValue; }
-            set { SetProperty(ref ROW_QUALITYValue, value); }
-        }
-
-        private System.String ROW_CREATED_BYValue;
-        public System.String ROW_CREATED_BY
-        {
-            get { return this.ROW_CREATED_BYValue; }
-            set { SetProperty(ref ROW_CREATED_BYValue, value); }
-        }
-
-        private System.DateTime? ROW_CREATED_DATEValue;
-        public System.DateTime? ROW_CREATED_DATE
-        {
-            get { return this.ROW_CREATED_DATEValue; }
-            set { SetProperty(ref ROW_CREATED_DATEValue, value); }
-        }
-
-        private System.String ROW_CHANGED_BYValue;
-        public System.String ROW_CHANGED_BY
-        {
-            get { return this.ROW_CHANGED_BYValue; }
-            set { SetProperty(ref ROW_CHANGED_BYValue, value); }
-        }
-
-        private System.DateTime? ROW_CHANGED_DATEValue;
-        public System.DateTime? ROW_CHANGED_DATE
-        {
-            get { return this.ROW_CHANGED_DATEValue; }
-            set { SetProperty(ref ROW_CHANGED_DATEValue, value); }
-        }
-
-        private System.DateTime? ROW_EFFECTIVE_DATEValue;
-        public System.DateTime? ROW_EFFECTIVE_DATE
-        {
-            get { return this.ROW_EFFECTIVE_DATEValue; }
-            set { SetProperty(ref ROW_EFFECTIVE_DATEValue, value); }
-        }
-
-        private System.DateTime? ROW_EXPIRY_DATEValue;
-        public System.DateTime? ROW_EXPIRY_DATE
-        {
-            get { return this.ROW_EXPIRY_DATEValue; }
-            set { SetProperty(ref ROW_EXPIRY_DATEValue, value); }
-        }
 
         private System.String ROW_IDValue;
         public System.String ROW_ID
@@ -176,17 +105,95 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref ROW_IDValue, value); }
         }
 
-        public decimal? API_GRAVITY_ADJUSTMENT { get; set; }
-        public decimal? SULFUR_ADJUSTMENT { get; set; }
-        public decimal? BSW_ADJUSTMENT { get; set; }
-        public decimal? LOCATION_DIFFERENTIAL { get; set; }
-        public decimal? OTHER_QUALITY_ADJUSTMENT { get; set; }
-        public decimal? TRANSPORTATION_ADJUSTMENT { get; set; }
-        public decimal? TIME_DIFFERENTIAL { get; set; }
-        public decimal? INTEREST_ADJUSTMENT { get; set; }
+        private decimal? API_GRAVITY_ADJUSTMENTValue;
+
+        public decimal? API_GRAVITY_ADJUSTMENT
+
+        {
+
+            get { return this.API_GRAVITY_ADJUSTMENTValue; }
+
+            set { SetProperty(ref API_GRAVITY_ADJUSTMENTValue, value); }
+
+        }
+        private decimal? SULFUR_ADJUSTMENTValue;
+
+        public decimal? SULFUR_ADJUSTMENT
+
+        {
+
+            get { return this.SULFUR_ADJUSTMENTValue; }
+
+            set { SetProperty(ref SULFUR_ADJUSTMENTValue, value); }
+
+        }
+        private decimal? BSW_ADJUSTMENTValue;
+
+        public decimal? BSW_ADJUSTMENT
+
+        {
+
+            get { return this.BSW_ADJUSTMENTValue; }
+
+            set { SetProperty(ref BSW_ADJUSTMENTValue, value); }
+
+        }
+        private decimal? LOCATION_DIFFERENTIALValue;
+
+        public decimal? LOCATION_DIFFERENTIAL
+
+        {
+
+            get { return this.LOCATION_DIFFERENTIALValue; }
+
+            set { SetProperty(ref LOCATION_DIFFERENTIALValue, value); }
+
+        }
+        private decimal? OTHER_QUALITY_ADJUSTMENTValue;
+
+        public decimal? OTHER_QUALITY_ADJUSTMENT
+
+        {
+
+            get { return this.OTHER_QUALITY_ADJUSTMENTValue; }
+
+            set { SetProperty(ref OTHER_QUALITY_ADJUSTMENTValue, value); }
+
+        }
+        private decimal? TRANSPORTATION_ADJUSTMENTValue;
+
+        public decimal? TRANSPORTATION_ADJUSTMENT
+
+        {
+
+            get { return this.TRANSPORTATION_ADJUSTMENTValue; }
+
+            set { SetProperty(ref TRANSPORTATION_ADJUSTMENTValue, value); }
+
+        }
+        private decimal? TIME_DIFFERENTIALValue;
+
+        public decimal? TIME_DIFFERENTIAL
+
+        {
+
+            get { return this.TIME_DIFFERENTIALValue; }
+
+            set { SetProperty(ref TIME_DIFFERENTIALValue, value); }
+
+        }
+        private decimal? INTEREST_ADJUSTMENTValue;
+
+        public decimal? INTEREST_ADJUSTMENT
+
+        {
+
+            get { return this.INTEREST_ADJUSTMENTValue; }
+
+            set { SetProperty(ref INTEREST_ADJUSTMENTValue, value); }
+
+        }
     }
 }
-
-
 
 

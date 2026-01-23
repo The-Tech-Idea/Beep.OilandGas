@@ -9,24 +9,66 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
         /// <summary>
         /// Rod diameter in inches
         /// </summary>
-        public decimal Diameter { get; set; }
+        private decimal DiameterValue;
+
+        public decimal Diameter
+
+        {
+
+            get { return this.DiameterValue; }
+
+            set { SetProperty(ref DiameterValue, value); }
+
+        }
 
         /// <summary>
         /// Section length in feet
         /// </summary>
-        public decimal Length { get; set; }
+        private decimal LengthValue;
+
+        public decimal Length
+
+        {
+
+            get { return this.LengthValue; }
+
+            set { SetProperty(ref LengthValue, value); }
+
+        }
 
         /// <summary>
         /// Rod material density in lb/ft³
         /// </summary>
-        public decimal Density { get; set; } = 490m; // Steel
+        private decimal DensityValue = 490m;
+
+        public decimal Density
+
+        {
+
+            get { return this.DensityValue; }
+
+            set { SetProperty(ref DensityValue, value); }
+
+        } // Steel
 
         /// <summary>
         /// Section weight in pounds
         /// </summary>
-        public decimal Weight { get; set; }
+        private decimal WeightValue;
+
+        public decimal Weight
+
+        {
+
+            get { return this.WeightValue; }
+
+            set { SetProperty(ref WeightValue, value); }
+
+        }
     }
 }
+
+
 
 
 

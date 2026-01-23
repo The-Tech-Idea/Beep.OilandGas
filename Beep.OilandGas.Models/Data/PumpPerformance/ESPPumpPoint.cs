@@ -9,24 +9,65 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
         /// <summary>
         /// Flow rate in bbl/day
         /// </summary>
-        public decimal FlowRate { get; set; }
+        private decimal FlowRateValue;
+
+        public decimal FlowRate
+
+        {
+
+            get { return this.FlowRateValue; }
+
+            set { SetProperty(ref FlowRateValue, value); }
+
+        }
 
         /// <summary>
         /// Head in feet
         /// </summary>
-        public decimal Head { get; set; }
+        private decimal HeadValue;
+
+        public decimal Head
+
+        {
+
+            get { return this.HeadValue; }
+
+            set { SetProperty(ref HeadValue, value); }
+
+        }
 
         /// <summary>
         /// Efficiency (0-1)
         /// </summary>
-        public decimal Efficiency { get; set; }
+        private decimal EfficiencyValue;
+
+        public decimal Efficiency
+
+        {
+
+            get { return this.EfficiencyValue; }
+
+            set { SetProperty(ref EfficiencyValue, value); }
+
+        }
 
         /// <summary>
         /// Horsepower
         /// </summary>
-        public decimal Horsepower { get; set; }
+        private decimal HorsepowerValue;
+
+        public decimal Horsepower
+
+        {
+
+            get { return this.HorsepowerValue; }
+
+            set { SetProperty(ref HorsepowerValue, value); }
+
+        }
     }
 }
+
 
 
 

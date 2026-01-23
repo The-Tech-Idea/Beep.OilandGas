@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
@@ -8,31 +9,161 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class CreateTankInventoryRequest : ModelEntityBase
     {
+        private string TankBatteryIdValue = string.Empty;
+
         [Required]
-        public string TankBatteryId { get; set; } = string.Empty;
+        public string TankBatteryId
+
+        {
+
+            get { return this.TankBatteryIdValue; }
+
+            set { SetProperty(ref TankBatteryIdValue, value); }
+
+        }
+        
+        private DateTime InventoryDateValue;
+
         
         [Required]
-        public DateTime InventoryDate { get; set; }
+        public DateTime InventoryDate
+
+        
+        {
+
+        
+            get { return this.InventoryDateValue; }
+
+        
+            set { SetProperty(ref InventoryDateValue, value); }
+
+        
+        }
+        
+        private decimal OpeningInventoryValue;
+
         
         [Required]
         [Range(0, double.MaxValue)]
-        public decimal OpeningInventory { get; set; }
+        public decimal OpeningInventory
+
+        
+        {
+
+        
+            get { return this.OpeningInventoryValue; }
+
+        
+            set { SetProperty(ref OpeningInventoryValue, value); }
+
+        
+        }
+        
+        private decimal ReceiptsValue;
+
         
         [Required]
         [Range(0, double.MaxValue)]
-        public decimal Receipts { get; set; }
+        public decimal Receipts
+
+        
+        {
+
+        
+            get { return this.ReceiptsValue; }
+
+        
+            set { SetProperty(ref ReceiptsValue, value); }
+
+        
+        }
+        
+        private decimal DeliveriesValue;
+
         
         [Required]
         [Range(0, double.MaxValue)]
-        public decimal Deliveries { get; set; }
+        public decimal Deliveries
+
         
-        public decimal Adjustments { get; set; }
+        {
+
         
-        public decimal Shrinkage { get; set; }
+            get { return this.DeliveriesValue; }
+
         
-        public decimal TheftLoss { get; set; }
+            set { SetProperty(ref DeliveriesValue, value); }
+
         
-        public decimal? ActualClosingInventory { get; set; }
+        }
+        
+        private decimal AdjustmentsValue;
+
+        
+        public decimal Adjustments
+
+        
+        {
+
+        
+            get { return this.AdjustmentsValue; }
+
+        
+            set { SetProperty(ref AdjustmentsValue, value); }
+
+        
+        }
+        
+        private decimal ShrinkageValue;
+
+        
+        public decimal Shrinkage
+
+        
+        {
+
+        
+            get { return this.ShrinkageValue; }
+
+        
+            set { SetProperty(ref ShrinkageValue, value); }
+
+        
+        }
+        
+        private decimal TheftLossValue;
+
+        
+        public decimal TheftLoss
+
+        
+        {
+
+        
+            get { return this.TheftLossValue; }
+
+        
+            set { SetProperty(ref TheftLossValue, value); }
+
+        
+        }
+        
+        private decimal? ActualClosingInventoryValue;
+
+        
+        public decimal? ActualClosingInventory
+
+        
+        {
+
+        
+            get { return this.ActualClosingInventoryValue; }
+
+        
+            set { SetProperty(ref ActualClosingInventoryValue, value); }
+
+        
+        }
     }
 
     /// <summary>
@@ -40,20 +171,143 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class TankInventoryResponse : ModelEntityBase
     {
-        public string InventoryId { get; set; } = string.Empty;
-        public string TankBatteryId { get; set; } = string.Empty;
-        public DateTime InventoryDate { get; set; }
-        public decimal OpeningInventory { get; set; }
-        public decimal Receipts { get; set; }
-        public decimal Deliveries { get; set; }
-        public decimal Adjustments { get; set; }
-        public decimal Shrinkage { get; set; }
-        public decimal TheftLoss { get; set; }
-        public decimal ClosingInventory { get; set; }
-        public decimal? ActualClosingInventory { get; set; }
-        public decimal? InventoryVariance { get; set; }
+        private string InventoryIdValue = string.Empty;
+
+        public string InventoryId
+
+        {
+
+            get { return this.InventoryIdValue; }
+
+            set { SetProperty(ref InventoryIdValue, value); }
+
+        }
+        private string TankBatteryIdValue = string.Empty;
+
+        public string TankBatteryId
+
+        {
+
+            get { return this.TankBatteryIdValue; }
+
+            set { SetProperty(ref TankBatteryIdValue, value); }
+
+        }
+        private DateTime InventoryDateValue;
+
+        public DateTime InventoryDate
+
+        {
+
+            get { return this.InventoryDateValue; }
+
+            set { SetProperty(ref InventoryDateValue, value); }
+
+        }
+        private decimal OpeningInventoryValue;
+
+        public decimal OpeningInventory
+
+        {
+
+            get { return this.OpeningInventoryValue; }
+
+            set { SetProperty(ref OpeningInventoryValue, value); }
+
+        }
+        private decimal ReceiptsValue;
+
+        public decimal Receipts
+
+        {
+
+            get { return this.ReceiptsValue; }
+
+            set { SetProperty(ref ReceiptsValue, value); }
+
+        }
+        private decimal DeliveriesValue;
+
+        public decimal Deliveries
+
+        {
+
+            get { return this.DeliveriesValue; }
+
+            set { SetProperty(ref DeliveriesValue, value); }
+
+        }
+        private decimal AdjustmentsValue;
+
+        public decimal Adjustments
+
+        {
+
+            get { return this.AdjustmentsValue; }
+
+            set { SetProperty(ref AdjustmentsValue, value); }
+
+        }
+        private decimal ShrinkageValue;
+
+        public decimal Shrinkage
+
+        {
+
+            get { return this.ShrinkageValue; }
+
+            set { SetProperty(ref ShrinkageValue, value); }
+
+        }
+        private decimal TheftLossValue;
+
+        public decimal TheftLoss
+
+        {
+
+            get { return this.TheftLossValue; }
+
+            set { SetProperty(ref TheftLossValue, value); }
+
+        }
+        private decimal ClosingInventoryValue;
+
+        public decimal ClosingInventory
+
+        {
+
+            get { return this.ClosingInventoryValue; }
+
+            set { SetProperty(ref ClosingInventoryValue, value); }
+
+        }
+        private decimal? ActualClosingInventoryValue;
+
+        public decimal? ActualClosingInventory
+
+        {
+
+            get { return this.ActualClosingInventoryValue; }
+
+            set { SetProperty(ref ActualClosingInventoryValue, value); }
+
+        }
+        private decimal? InventoryVarianceValue;
+
+        public decimal? InventoryVariance
+
+        {
+
+            get { return this.InventoryVarianceValue; }
+
+            set { SetProperty(ref InventoryVarianceValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

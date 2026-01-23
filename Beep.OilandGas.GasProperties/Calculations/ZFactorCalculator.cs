@@ -48,7 +48,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
 
             decimal zFactor = A + (1.0m - A) * (decimal)Math.Exp((double)(-B)) + C * (decimal)Math.Pow((double)pseudoReducedPressure, (double)D);
 
-            return Math.Max(0.1m, Math.Min(2.0m, zFactor)); // Clamp to reasonable range
+            return Clamp(zFactor, 0.1m, 2.0m); // Clamp to reasonable range
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
 
             decimal zFactor = A1 * pseudoReducedPressure / Y;
 
-            return Math.Max(0.1m, Math.Min(2.0m, zFactor)); // Clamp to reasonable range
+            return Clamp(zFactor, 0.1m, 2.0m); // Clamp to reasonable range
         }
 
         /// <summary>
@@ -207,7 +207,22 @@ namespace Beep.OilandGas.GasProperties.Calculations
 
             decimal zFactor = 0.27m * pseudoReducedPressure / (pseudoReducedTemperature * rhoR);
 
-            return Math.Max(0.1m, Math.Min(2.0m, zFactor)); // Clamp to reasonable range
+            return Clamp(zFactor, 0.1m, 2.0m); // Clamp to reasonable range
+        }
+
+        private static decimal Clamp(decimal value, decimal min, decimal max)
+        {
+            if (value < min)
+            {
+                return min;
+            }
+
+            if (value > max)
+            {
+                return max;
+            }
+
+            return value;
         }
 
         /// <summary>

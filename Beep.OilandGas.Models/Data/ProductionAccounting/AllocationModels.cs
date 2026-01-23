@@ -2,38 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
     /// Allocation method enumeration.
     /// </summary>
-    public enum AllocationMethod
-    {
-        /// <summary>
-        /// Equal allocation to all parties.
-        /// </summary>
-        Equal,
 
-        /// <summary>
-        /// Pro-rata allocation based on working interest.
-        /// </summary>
-        ProRataWorkingInterest,
-
-        /// <summary>
-        /// Pro-rata allocation based on net revenue interest.
-        /// </summary>
-        ProRataNetRevenueInterest,
-
-        /// <summary>
-        /// Measured allocation based on test data.
-        /// </summary>
-        Measured,
-
-        /// <summary>
-        /// Estimated allocation based on production history.
-        /// </summary>
-        Estimated
-    }
 
     /// <summary>
     /// Represents an allocation result (DTO for calculations/reporting).
@@ -43,27 +18,77 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the allocation identifier.
         /// </summary>
-        public string AllocationId { get; set; } = string.Empty;
+        private string AllocationIdValue = string.Empty;
+
+        public string AllocationId
+
+        {
+
+            get { return this.AllocationIdValue; }
+
+            set { SetProperty(ref AllocationIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the allocation date.
         /// </summary>
-        public DateTime AllocationDate { get; set; }
+        private DateTime AllocationDateValue;
+
+        public DateTime AllocationDate
+
+        {
+
+            get { return this.AllocationDateValue; }
+
+            set { SetProperty(ref AllocationDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the allocation method used.
         /// </summary>
-        public AllocationMethod Method { get; set; }
+        private AllocationMethod MethodValue;
+
+        public AllocationMethod Method
+
+        {
+
+            get { return this.MethodValue; }
+
+            set { SetProperty(ref MethodValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the total volume allocated.
         /// </summary>
-        public decimal TotalVolume { get; set; }
+        private decimal TotalVolumeValue;
+
+        public decimal TotalVolume
+
+        {
+
+            get { return this.TotalVolumeValue; }
+
+            set { SetProperty(ref TotalVolumeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the allocation details.
         /// </summary>
-        public List<AllocationDetail> Details { get; set; } = new();
+        private List<AllocationDetail> DetailsValue = new();
+
+        public List<AllocationDetail> Details
+
+        {
+
+            get { return this.DetailsValue; }
+
+            set { SetProperty(ref DetailsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the sum of all allocated volumes (should equal TotalVolume).
@@ -84,27 +109,77 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the entity identifier (well, lease, tract, etc.).
         /// </summary>
-        public string EntityId { get; set; } = string.Empty;
+        private string EntityIdValue = string.Empty;
+
+        public string EntityId
+
+        {
+
+            get { return this.EntityIdValue; }
+
+            set { SetProperty(ref EntityIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the entity name.
         /// </summary>
-        public string EntityName { get; set; } = string.Empty;
+        private string EntityNameValue = string.Empty;
+
+        public string EntityName
+
+        {
+
+            get { return this.EntityNameValue; }
+
+            set { SetProperty(ref EntityNameValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the allocated volume in barrels.
         /// </summary>
-        public decimal AllocatedVolume { get; set; }
+        private decimal AllocatedVolumeValue;
+
+        public decimal AllocatedVolume
+
+        {
+
+            get { return this.AllocatedVolumeValue; }
+
+            set { SetProperty(ref AllocatedVolumeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the allocation percentage (0-100).
         /// </summary>
-        public decimal AllocationPercentage { get; set; }
+        private decimal AllocationPercentageValue;
+
+        public decimal AllocationPercentage
+
+        {
+
+            get { return this.AllocationPercentageValue; }
+
+            set { SetProperty(ref AllocationPercentageValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the basis for allocation (working interest, net revenue interest, etc.).
         /// </summary>
-        public decimal AllocationBasis { get; set; }
+        private decimal AllocationBasisValue;
+
+        public decimal AllocationBasis
+
+        {
+
+            get { return this.AllocationBasisValue; }
+
+            set { SetProperty(ref AllocationBasisValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -115,32 +190,92 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the well identifier.
         /// </summary>
-        public string WellId { get; set; } = string.Empty;
+        private string WellIdValue = string.Empty;
+
+        public string WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the lease identifier.
         /// </summary>
-        public string LeaseId { get; set; } = string.Empty;
+        private string LeaseIdValue = string.Empty;
+
+        public string LeaseId
+
+        {
+
+            get { return this.LeaseIdValue; }
+
+            set { SetProperty(ref LeaseIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the working interest.
         /// </summary>
-        public decimal WorkingInterest { get; set; }
+        private decimal WorkingInterestValue;
+
+        public decimal WorkingInterest
+
+        {
+
+            get { return this.WorkingInterestValue; }
+
+            set { SetProperty(ref WorkingInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the net revenue interest.
         /// </summary>
-        public decimal NetRevenueInterest { get; set; }
+        private decimal NetRevenueInterestValue;
+
+        public decimal NetRevenueInterest
+
+        {
+
+            get { return this.NetRevenueInterestValue; }
+
+            set { SetProperty(ref NetRevenueInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the measured production (if available).
         /// </summary>
-        public decimal? MeasuredProduction { get; set; }
+        private decimal? MeasuredProductionValue;
+
+        public decimal? MeasuredProduction
+
+        {
+
+            get { return this.MeasuredProductionValue; }
+
+            set { SetProperty(ref MeasuredProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the estimated production (if measured not available).
         /// </summary>
-        public decimal? EstimatedProduction { get; set; }
+        private decimal? EstimatedProductionValue;
+
+        public decimal? EstimatedProduction
+
+        {
+
+            get { return this.EstimatedProductionValue; }
+
+            set { SetProperty(ref EstimatedProductionValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -151,22 +286,62 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the lease identifier.
         /// </summary>
-        public string LeaseId { get; set; } = string.Empty;
+        private string LeaseIdValue = string.Empty;
+
+        public string LeaseId
+
+        {
+
+            get { return this.LeaseIdValue; }
+
+            set { SetProperty(ref LeaseIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the working interest.
         /// </summary>
-        public decimal WorkingInterest { get; set; }
+        private decimal WorkingInterestValue;
+
+        public decimal WorkingInterest
+
+        {
+
+            get { return this.WorkingInterestValue; }
+
+            set { SetProperty(ref WorkingInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the net revenue interest.
         /// </summary>
-        public decimal NetRevenueInterest { get; set; }
+        private decimal NetRevenueInterestValue;
+
+        public decimal NetRevenueInterest
+
+        {
+
+            get { return this.NetRevenueInterestValue; }
+
+            set { SetProperty(ref NetRevenueInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the measured production (if available).
         /// </summary>
-        public decimal? MeasuredProduction { get; set; }
+        private decimal? MeasuredProductionValue;
+
+        public decimal? MeasuredProduction
+
+        {
+
+            get { return this.MeasuredProductionValue; }
+
+            set { SetProperty(ref MeasuredProductionValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -177,29 +352,82 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the tract identifier.
         /// </summary>
-        public string TractId { get; set; } = string.Empty;
+        private string TractIdValue = string.Empty;
+
+        public string TractId
+
+        {
+
+            get { return this.TractIdValue; }
+
+            set { SetProperty(ref TractIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the unit identifier.
         /// </summary>
-        public string UnitId { get; set; } = string.Empty;
+        private string UnitIdValue = string.Empty;
+
+        public string UnitId
+
+        {
+
+            get { return this.UnitIdValue; }
+
+            set { SetProperty(ref UnitIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the tract participation percentage.
         /// </summary>
-        public decimal TractParticipation { get; set; }
+        private decimal TractParticipationValue;
+
+        public decimal TractParticipation
+
+        {
+
+            get { return this.TractParticipationValue; }
+
+            set { SetProperty(ref TractParticipationValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the working interest.
         /// </summary>
-        public decimal WorkingInterest { get; set; }
+        private decimal WorkingInterestValue;
+
+        public decimal WorkingInterest
+
+        {
+
+            get { return this.WorkingInterestValue; }
+
+            set { SetProperty(ref WorkingInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the net revenue interest.
         /// </summary>
-        public decimal NetRevenueInterest { get; set; }
+        private decimal NetRevenueInterestValue;
+
+        public decimal NetRevenueInterest
+
+        {
+
+            get { return this.NetRevenueInterestValue; }
+
+            set { SetProperty(ref NetRevenueInterestValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

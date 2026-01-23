@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
     /// Period close readiness check result
     /// </summary>
-    public partial class PeriodCloseReadiness : AccountingEntityBase
+    public partial class PeriodCloseReadiness : ModelEntityBase
     {
         private System.DateTime PeriodEndDateValue;
         /// <summary>
@@ -63,7 +64,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Period close result
     /// </summary>
-    public partial class PeriodCloseResult : AccountingEntityBase
+    public partial class PeriodCloseResult : ModelEntityBase
     {
         private System.DateTime PeriodEndDateValue;
         /// <summary>
@@ -159,7 +160,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Individual closing entry
     /// </summary>
-    public partial class PeriodClosingEntry : AccountingEntityBase
+    public partial class PeriodClosingEntry : ModelEntityBase
     {
         private System.String SourceAccountValue = string.Empty;
         /// <summary>
@@ -215,7 +216,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Period closing checklist
     /// </summary>
-    public partial class ClosingChecklist : AccountingEntityBase
+    public partial class ClosingChecklist : ModelEntityBase
     {
         private System.DateTime PeriodEndDateValue;
         /// <summary>
@@ -261,7 +262,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Individual checklist item
     /// </summary>
-    public partial class ChecklistItem : AccountingEntityBase
+    public partial class ChecklistItem : ModelEntityBase
     {
         private System.String TaskValue = string.Empty;
         /// <summary>
@@ -294,4 +295,5 @@ namespace Beep.OilandGas.Models.Data.Accounting
         }
     }
 }
+
 

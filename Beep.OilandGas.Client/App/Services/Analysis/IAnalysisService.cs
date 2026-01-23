@@ -14,6 +14,7 @@ using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Data.PumpPerformance;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
+using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.Client.App.Services.Analysis
 {
@@ -45,7 +46,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
 
         #region Pipeline
 
-        Task<PipelineFlowAnalysisResult> AnalyzePipelineAsync(PipelineProperties request, CancellationToken cancellationToken = default);
+        Task<PipelineFlowAnalysisResult> AnalyzePipelineAsync(Beep.OilandGas.Models.Data.Calculations.AnalyzePipelineFlowRequest request, CancellationToken cancellationToken = default);
         Task<PIPELINE_FLOW_ANALYSIS_RESULT> CalculatePressureDropAsync(GAS_PIPELINE_FLOW_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<PIPELINE_CAPACITY_RESULT> GetFlowCapacityAsync(string pipelineId, CancellationToken cancellationToken = default);
         Task<PIPELINE_DESIGN> DesignPipelineAsync(PIPELINE_PROPERTIES request, CancellationToken cancellationToken = default);
@@ -55,8 +56,8 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
 
         #region WellTest
 
-        Task<WellTestAnalysisResult> AnalyzeBuildUpAsync(WellTestData request, CancellationToken cancellationToken = default);
-        Task<WellTestAnalysisResult> AnalyzeDrawdownAsync(WellTestData request, CancellationToken cancellationToken = default);
+        Task<Beep.OilandGas.Models.Data.WellTestAnalysis.WellTestAnalysisResult> AnalyzeBuildUpAsync(WellTestData request, CancellationToken cancellationToken = default);
+        Task<Beep.OilandGas.Models.Data.WellTestAnalysis.WellTestAnalysisResult> AnalyzeDrawdownAsync(WellTestData request, CancellationToken cancellationToken = default);
         Task<WELL_TEST_ANALYSIS_RESULT> GetDerivativeAnalysisAsync(WELL_TEST_DATA request, CancellationToken cancellationToken = default);
         Task<WELL_TEST_ANALYSIS_RESULT> InterpretWellTestAsync(WELL_TEST_DATA request, CancellationToken cancellationToken = default);
         Task<List<WELL_TEST_DATA>> GetWellTestHistoryAsync(string wellId, CancellationToken cancellationToken = default);
@@ -94,3 +95,4 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         #endregion
     }
 }
+

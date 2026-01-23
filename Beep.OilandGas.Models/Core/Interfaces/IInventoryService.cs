@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Inventory;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -17,3 +18,4 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<INVENTORY_REPORT_SUMMARY> GenerateReconciliationReportAsync(string inventoryItemId, DateTime periodStart, DateTime periodEnd, string userId, string cn = "PPDM39");
     }
 }
+

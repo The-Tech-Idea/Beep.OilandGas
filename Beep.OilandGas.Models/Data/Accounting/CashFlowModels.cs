@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
@@ -17,7 +18,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Cash flow statement.
     /// </summary>
-    public partial class CashFlowStatement : AccountingEntityBase
+    public partial class CashFlowStatement : ModelEntityBase
     {
         private System.DateTime PeriodStartValue;
         /// <summary>
@@ -213,7 +214,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Cash flow line.
     /// </summary>
-    public partial class CashFlowLine : AccountingEntityBase
+    public partial class CashFlowLine : ModelEntityBase
     {
         private System.String JournalEntryIdValue = string.Empty;
         /// <summary>
@@ -256,4 +257,5 @@ namespace Beep.OilandGas.Models.Data.Accounting
         }
     }
 }
+
 

@@ -3,9 +3,10 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Security
 {
-    public partial class ROLE_PERMISSION : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public partial class ROLE_PERMISSION : ModelEntityBase
     {
         private string ROLE_PERMISSION_IDValue = string.Empty;
         public string ROLE_PERMISSION_ID
@@ -29,6 +30,7 @@ namespace Beep.OilandGas.Models.Data.Security
         }
     }
 }
+
 
 
 

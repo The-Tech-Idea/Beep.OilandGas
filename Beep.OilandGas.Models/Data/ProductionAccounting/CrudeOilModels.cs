@@ -1,5 +1,6 @@
 using System;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
@@ -41,62 +42,182 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the API gravity at 60°F.
         /// </summary>
-        public decimal ApiGravity { get; set; }
+        private decimal ApiGravityValue;
+
+        public decimal ApiGravity
+
+        {
+
+            get { return this.ApiGravityValue; }
+
+            set { SetProperty(ref ApiGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the sulfur content as weight percentage.
         /// </summary>
-        public decimal SulfurContent { get; set; }
+        private decimal SulfurContentValue;
+
+        public decimal SulfurContent
+
+        {
+
+            get { return this.SulfurContentValue; }
+
+            set { SetProperty(ref SulfurContentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the viscosity in centipoise at standard temperature.
         /// </summary>
-        public decimal Viscosity { get; set; }
+        private decimal ViscosityValue;
+
+        public decimal Viscosity
+
+        {
+
+            get { return this.ViscosityValue; }
+
+            set { SetProperty(ref ViscosityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the pour point in degrees Fahrenheit.
         /// </summary>
-        public decimal PourPoint { get; set; }
+        private decimal PourPointValue;
+
+        public decimal PourPoint
+
+        {
+
+            get { return this.PourPointValue; }
+
+            set { SetProperty(ref PourPointValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the flash point in degrees Fahrenheit.
         /// </summary>
-        public decimal FlashPoint { get; set; }
+        private decimal FlashPointValue;
+
+        public decimal FlashPoint
+
+        {
+
+            get { return this.FlashPointValue; }
+
+            set { SetProperty(ref FlashPointValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the water content as volume percentage.
         /// </summary>
-        public decimal WaterContent { get; set; }
+        private decimal WaterContentValue;
+
+        public decimal WaterContent
+
+        {
+
+            get { return this.WaterContentValue; }
+
+            set { SetProperty(ref WaterContentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the BS&W (Basic Sediment and Water) as volume percentage.
         /// </summary>
-        public decimal BSW { get; set; }
+        private decimal BSWValue;
+
+        public decimal BSW
+
+        {
+
+            get { return this.BSWValue; }
+
+            set { SetProperty(ref BSWValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the salt content in pounds per thousand barrels (PTB).
         /// </summary>
-        public decimal SaltContent { get; set; }
+        private decimal SaltContentValue;
+
+        public decimal SaltContent
+
+        {
+
+            get { return this.SaltContentValue; }
+
+            set { SetProperty(ref SaltContentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the Reid Vapor Pressure (RVP) in psi.
         /// </summary>
-        public decimal? ReidVaporPressure { get; set; }
+        private decimal? ReidVaporPressureValue;
+
+        public decimal? ReidVaporPressure
+
+        {
+
+            get { return this.ReidVaporPressureValue; }
+
+            set { SetProperty(ref ReidVaporPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the density in pounds per gallon.
         /// </summary>
-        public decimal? Density { get; set; }
+        private decimal? DensityValue;
+
+        public decimal? Density
+
+        {
+
+            get { return this.DensityValue; }
+
+            set { SetProperty(ref DensityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the temperature at which properties were measured in degrees Fahrenheit.
         /// </summary>
-        public decimal MeasurementTemperature { get; set; } = 60m;
+        private decimal MeasurementTemperatureValue = 60m;
+
+        public decimal MeasurementTemperature
+
+        {
+
+            get { return this.MeasurementTemperatureValue; }
+
+            set { SetProperty(ref MeasurementTemperatureValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the date of measurement.
         /// </summary>
-        public DateTime MeasurementDate { get; set; } = DateTime.Now;
+        private DateTime MeasurementDateValue = DateTime.Now;
+
+        public DateTime MeasurementDate
+
+        {
+
+            get { return this.MeasurementDateValue; }
+
+            set { SetProperty(ref MeasurementDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the crude oil type based on API gravity.
@@ -123,37 +244,107 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the minimum API gravity.
         /// </summary>
-        public decimal? MinimumApiGravity { get; set; }
+        private decimal? MinimumApiGravityValue;
+
+        public decimal? MinimumApiGravity
+
+        {
+
+            get { return this.MinimumApiGravityValue; }
+
+            set { SetProperty(ref MinimumApiGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the maximum API gravity.
         /// </summary>
-        public decimal? MaximumApiGravity { get; set; }
+        private decimal? MaximumApiGravityValue;
+
+        public decimal? MaximumApiGravity
+
+        {
+
+            get { return this.MaximumApiGravityValue; }
+
+            set { SetProperty(ref MaximumApiGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the maximum sulfur content (weight %).
         /// </summary>
-        public decimal? MaximumSulfurContent { get; set; }
+        private decimal? MaximumSulfurContentValue;
+
+        public decimal? MaximumSulfurContent
+
+        {
+
+            get { return this.MaximumSulfurContentValue; }
+
+            set { SetProperty(ref MaximumSulfurContentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the maximum BS&W (volume %).
         /// </summary>
-        public decimal? MaximumBSW { get; set; }
+        private decimal? MaximumBSWValue;
+
+        public decimal? MaximumBSW
+
+        {
+
+            get { return this.MaximumBSWValue; }
+
+            set { SetProperty(ref MaximumBSWValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the maximum water content (volume %).
         /// </summary>
-        public decimal? MaximumWaterContent { get; set; }
+        private decimal? MaximumWaterContentValue;
+
+        public decimal? MaximumWaterContent
+
+        {
+
+            get { return this.MaximumWaterContentValue; }
+
+            set { SetProperty(ref MaximumWaterContentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the maximum salt content (PTB).
         /// </summary>
-        public decimal? MaximumSaltContent { get; set; }
+        private decimal? MaximumSaltContentValue;
+
+        public decimal? MaximumSaltContent
+
+        {
+
+            get { return this.MaximumSaltContentValue; }
+
+            set { SetProperty(ref MaximumSaltContentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the maximum viscosity (centipoise).
         /// </summary>
-        public decimal? MaximumViscosity { get; set; }
+        private decimal? MaximumViscosityValue;
+
+        public decimal? MaximumViscosity
+
+        {
+
+            get { return this.MaximumViscosityValue; }
+
+            set { SetProperty(ref MaximumViscosityValue, value); }
+
+        }
 
         /// <summary>
         /// Validates crude oil properties against specifications.
@@ -193,7 +384,17 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the crude oil type.
         /// </summary>
-        public CrudeOilType Type { get; set; }
+        private CrudeOilType TypeValue;
+
+        public CrudeOilType Type
+
+        {
+
+            get { return this.TypeValue; }
+
+            set { SetProperty(ref TypeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the API gravity range.
@@ -208,7 +409,17 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the description.
         /// </summary>
-        public string Description { get; set; } = string.Empty;
+        private string DescriptionValue = string.Empty;
+
+        public string Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
 
         /// <summary>
         /// Gets standard classifications.
@@ -251,6 +462,9 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
+
+
+
 
 
 

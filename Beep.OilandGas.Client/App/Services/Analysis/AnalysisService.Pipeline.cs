@@ -10,12 +10,35 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
     {
         #region Pipeline
 
-        public async Task<PipelineFlowAnalysisResult> AnalyzePipelineAsync(PipelineProperties request, CancellationToken cancellationToken = default)
+        public async Task<PipelineFlowAnalysisResult> AnalyzePipelineAsync(Beep.OilandGas.Models.Data.Calculations.AnalyzePipelineFlowRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
+
+            if (AccessMode == ServiceAccessMode.Local)
+            {
+                var service = GetLocalService<Beep.OilandGas.PipelineAnalysis.Services.IPipelineAnalysisService>();
+                var result = await service.AnalyzePipelineFlowAsync(request.PipelineId, request.FlowRate, request.InletPressure);
+
+                return new PipelineFlowAnalysisResult
+                {
+                    AnalysisId = result.AnalysisId,
+                    PipelineId = result.PipelineId,
+                    AnalysisDate = result.AnalysisDate,
+                    FlowRate = result.FlowRate,
+                    InletPressure = result.InletPressure,
+                    OutletPressure = result.OutletPressure,
+                    PressureDrop = result.PressureDrop,
+                    Velocity = result.Velocity,
+                    FlowRegime = result.FlowRegime,
+                    Status = result.Status,
+                    Recommendations = result.Recommendations
+                };
+            }
+
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<PipelineProperties, PipelineFlowAnalysisResult>("/api/pipeline/analyze", request, null, cancellationToken);
-            throw new InvalidOperationException("Local mode not yet implemented");
+                return await PostAsync<Beep.OilandGas.Models.Data.Calculations.AnalyzePipelineFlowRequest, PipelineFlowAnalysisResult>("/api/pipeline/analyze-flow", request, null, cancellationToken);
+            
+            throw new InvalidOperationException($"Untitled AccessMode: {AccessMode}");
         }
 
         public async Task<PIPELINE_FLOW_ANALYSIS_RESULT> CalculatePressureDropAsync(GAS_PIPELINE_FLOW_PROPERTIES request, CancellationToken cancellationToken = default)

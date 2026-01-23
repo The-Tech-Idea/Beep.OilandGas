@@ -55,7 +55,14 @@ namespace Beep.OilandGas.Client.App.Services
         /// <summary>
         /// Gets a service from the DI container (local mode only)
         /// </summary>
-        protected T? GetLocalService<T>() => _app.GetService<T>();
+        protected T GetLocalService<T>() where T : class
+        {
+            if (AccessMode != ServiceAccessMode.Local)
+                throw new InvalidOperationException($"Cannot resolve local service {typeof(T).Name} when AccessMode is {AccessMode}");
+
+            return _app.GetService<T>() 
+                ?? throw new InvalidOperationException($"Failed to resolve local service {typeof(T).Name}");
+        }
 
         #endregion
 

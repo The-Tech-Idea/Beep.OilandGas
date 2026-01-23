@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
     /// Bank Reconciliation Result
     /// </summary>
-    public partial class BankReconciliation : AccountingEntityBase
+    public partial class BankReconciliation : ModelEntityBase
     {
         private System.String ReportNameValue = string.Empty;
         /// <summary>
@@ -143,7 +144,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Outstanding Check
     /// </summary>
-    public partial class OutstandingCheck : AccountingEntityBase
+    public partial class OutstandingCheck : ModelEntityBase
     {
         private System.String CheckNumberValue = string.Empty;
         /// <summary>
@@ -179,7 +180,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Deposit In Transit
     /// </summary>
-    public partial class DepositInTransit : AccountingEntityBase
+    public partial class DepositInTransit : ModelEntityBase
     {
         private System.Decimal AmountValue;
         /// <summary>
@@ -205,7 +206,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Check Clearing Analysis
     /// </summary>
-    public partial class CheckClearingAnalysis : AccountingEntityBase
+    public partial class CheckClearingAnalysis : ModelEntityBase
     {
         private System.String AccountNumberValue = string.Empty;
         /// <summary>
@@ -291,7 +292,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Payment Type Analysis
     /// </summary>
-    public partial class PaymentTypeAnalysis : AccountingEntityBase
+    public partial class PaymentTypeAnalysis : ModelEntityBase
     {
         private System.String PaymentMethodValue = string.Empty;
         /// <summary>
@@ -337,7 +338,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Aged Outstanding Items Report
     /// </summary>
-    public partial class AgedItemsReport : AccountingEntityBase
+    public partial class AgedItemsReport : ModelEntityBase
     {
         private System.String AccountNumberValue = string.Empty;
         /// <summary>
@@ -463,7 +464,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Aged Item
     /// </summary>
-    public partial class AgedItem : AccountingEntityBase
+    public partial class AgedItem : ModelEntityBase
     {
         private System.DateTime EntryDateValue;
         /// <summary>
@@ -516,4 +517,5 @@ namespace Beep.OilandGas.Models.Data.Accounting
         }
     }
 }
+
 

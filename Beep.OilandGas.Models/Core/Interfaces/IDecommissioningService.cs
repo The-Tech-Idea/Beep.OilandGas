@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Decommissioning;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -22,3 +23,4 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string cn = "PPDM39");
     }
 }
+

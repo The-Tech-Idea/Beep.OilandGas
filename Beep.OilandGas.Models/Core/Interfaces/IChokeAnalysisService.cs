@@ -76,56 +76,5 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             (decimal Min, decimal Max) pressureRange,
             int numberOfPoints = 20);
     }
-
-    /// <summary>
-    /// Validation result for choke configuration.
-    /// </summary>
-    public class ChokeValidationResult
-    {
-        /// <summary>
-        /// Indicates if configuration is valid.
-        /// </summary>
-        public bool IsValid { get; set; }
-
-        /// <summary>
-        /// List of validation errors.
-        /// </summary>
-        public string[] Errors { get; set; } = Array.Empty<string>();
-
-        /// <summary>
-        /// List of warnings.
-        /// </summary>
-        public string[] Warnings { get; set; } = Array.Empty<string>();
-    }
-
-    /// <summary>
-    /// Choke performance curve data point.
-    /// </summary>
-    public class ChokePerformanceCurve
-    {
-        /// <summary>
-        /// Downstream pressure for this data point.
-        /// </summary>
-        public decimal DownstreamPressure { get; set; }
-
-        /// <summary>
-        /// Calculated flow rate at this condition.
-        /// </summary>
-        public decimal FlowRate { get; set; }
-
-        /// <summary>
-        /// Flow regime at this condition.
-        /// </summary>
-        public FlowRegime FlowRegime { get; set; }
-
-        /// <summary>
-        /// Pressure ratio (P2/P1) for this condition.
-        /// </summary>
-        public decimal PressureRatio { get; set; }
-
-        /// <summary>
-        /// Indicates if flow is critical at this condition.
-        /// </summary>
-        public bool IsCriticalFlow { get; set; }
-    }
 }
+

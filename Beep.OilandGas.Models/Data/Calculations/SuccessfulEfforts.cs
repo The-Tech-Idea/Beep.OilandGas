@@ -1,5 +1,6 @@
 using System;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Calculations
 {
     /// <summary>
@@ -10,22 +11,62 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Total construction in progress cost
         /// </summary>
-        public decimal ConstructionCost { get; set; }
+        private decimal ConstructionCostValue;
+
+        public decimal ConstructionCost
+
+        {
+
+            get { return this.ConstructionCostValue; }
+
+            set { SetProperty(ref ConstructionCostValue, value); }
+
+        }
 
         /// <summary>
         /// Period interest rate
         /// </summary>
-        public decimal InterestRate { get; set; }
+        private decimal InterestRateValue;
+
+        public decimal InterestRate
+
+        {
+
+            get { return this.InterestRateValue; }
+
+            set { SetProperty(ref InterestRateValue, value); }
+
+        }
 
         /// <summary>
         /// Number of periods to capitalize
         /// </summary>
-        public int Periods { get; set; }
+        private int PeriodsValue;
+
+        public int Periods
+
+        {
+
+            get { return this.PeriodsValue; }
+
+            set { SetProperty(ref PeriodsValue, value); }
+
+        }
 
         /// <summary>
         /// Weighted average cost of capital
         /// </summary>
-        public decimal WACC { get; set; }
+        private decimal WACCValue;
+
+        public decimal WACC
+
+        {
+
+            get { return this.WACCValue; }
+
+            set { SetProperty(ref WACCValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -36,32 +77,92 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Oil production in barrels
         /// </summary>
-        public decimal OilVolume { get; set; }
+        private decimal OilVolumeValue;
+
+        public decimal OilVolume
+
+        {
+
+            get { return this.OilVolumeValue; }
+
+            set { SetProperty(ref OilVolumeValue, value); }
+
+        }
 
         /// <summary>
         /// Gas production in Mcf
         /// </summary>
-        public decimal GasVolume { get; set; }
+        private decimal GasVolumeValue;
+
+        public decimal GasVolume
+
+        {
+
+            get { return this.GasVolumeValue; }
+
+            set { SetProperty(ref GasVolumeValue, value); }
+
+        }
 
         /// <summary>
         /// Water production in barrels
         /// </summary>
-        public decimal WaterVolume { get; set; }
+        private decimal WaterVolumeValue;
+
+        public decimal WaterVolume
+
+        {
+
+            get { return this.WaterVolumeValue; }
+
+            set { SetProperty(ref WaterVolumeValue, value); }
+
+        }
 
         /// <summary>
         /// Production period date
         /// </summary>
-        public DateTime PeriodDate { get; set; }
+        private DateTime PeriodDateValue;
+
+        public DateTime PeriodDate
+
+        {
+
+            get { return this.PeriodDateValue; }
+
+            set { SetProperty(ref PeriodDateValue, value); }
+
+        }
 
         /// <summary>
         /// Oil API gravity
         /// </summary>
-        public decimal? OilAPIGravity { get; set; }
+        private decimal? OilAPIGravityValue;
+
+        public decimal? OilAPIGravity
+
+        {
+
+            get { return this.OilAPIGravityValue; }
+
+            set { SetProperty(ref OilAPIGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Gas specific gravity
         /// </summary>
-        public decimal? GasSpecificGravity { get; set; }
+        private decimal? GasSpecificGravityValue;
+
+        public decimal? GasSpecificGravity
+
+        {
+
+            get { return this.GasSpecificGravityValue; }
+
+            set { SetProperty(ref GasSpecificGravityValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -72,27 +173,77 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Proved oil reserves in barrels
         /// </summary>
-        public decimal ProvedOilReserves { get; set; }
+        private decimal ProvedOilReservesValue;
+
+        public decimal ProvedOilReserves
+
+        {
+
+            get { return this.ProvedOilReservesValue; }
+
+            set { SetProperty(ref ProvedOilReservesValue, value); }
+
+        }
 
         /// <summary>
         /// Proved gas reserves in Mcf
         /// </summary>
-        public decimal ProvedGasReserves { get; set; }
+        private decimal ProvedGasReservesValue;
+
+        public decimal ProvedGasReserves
+
+        {
+
+            get { return this.ProvedGasReservesValue; }
+
+            set { SetProperty(ref ProvedGasReservesValue, value); }
+
+        }
 
         /// <summary>
         /// Proved reserves as of date
         /// </summary>
-        public DateTime AsOfDate { get; set; }
+        private DateTime AsOfDateValue;
+
+        public DateTime AsOfDate
+
+        {
+
+            get { return this.AsOfDateValue; }
+
+            set { SetProperty(ref AsOfDateValue, value); }
+
+        }
 
         /// <summary>
         /// Reserve estimation method (volumetric, performance, or analog)
         /// </summary>
-        public string EstimationMethod { get; set; } = "Volumetric";
+        private string EstimationMethodValue = "Volumetric";
+
+        public string EstimationMethod
+
+        {
+
+            get { return this.EstimationMethodValue; }
+
+            set { SetProperty(ref EstimationMethodValue, value); }
+
+        }
 
         /// <summary>
         /// Confidence level (1P, 2P, 3P)
         /// </summary>
-        public string ConfidenceLevel { get; set; } = "1P";
+        private string ConfidenceLevelValue = "1P";
+
+        public string ConfidenceLevel
+
+        {
+
+            get { return this.ConfidenceLevelValue; }
+
+            set { SetProperty(ref ConfidenceLevelValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -103,32 +254,92 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Well or project identifier
         /// </summary>
-        public string WellId { get; set; } = string.Empty;
+        private string WellIdValue = string.Empty;
+
+        public string WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
 
         /// <summary>
         /// Drilling and completion costs
         /// </summary>
-        public decimal DrillingCompletionCosts { get; set; }
+        private decimal DrillingCompletionCostsValue;
+
+        public decimal DrillingCompletionCosts
+
+        {
+
+            get { return this.DrillingCompletionCostsValue; }
+
+            set { SetProperty(ref DrillingCompletionCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Acquisition costs
         /// </summary>
-        public decimal AcquisitionCosts { get; set; }
+        private decimal AcquisitionCostsValue;
+
+        public decimal AcquisitionCosts
+
+        {
+
+            get { return this.AcquisitionCostsValue; }
+
+            set { SetProperty(ref AcquisitionCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Capitalized interest
         /// </summary>
-        public decimal CapitalizedInterest { get; set; }
+        private decimal CapitalizedInterestValue;
+
+        public decimal CapitalizedInterest
+
+        {
+
+            get { return this.CapitalizedInterestValue; }
+
+            set { SetProperty(ref CapitalizedInterestValue, value); }
+
+        }
 
         /// <summary>
         /// Total capitalized costs before amortization
         /// </summary>
-        public decimal TotalCapitalizedCosts { get; set; }
+        private decimal TotalCapitalizedCostsValue;
+
+        public decimal TotalCapitalizedCosts
+
+        {
+
+            get { return this.TotalCapitalizedCostsValue; }
+
+            set { SetProperty(ref TotalCapitalizedCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Date capitalized
         /// </summary>
-        public DateTime DateCapitalized { get; set; }
+        private DateTime DateCapitalizedValue;
+
+        public DateTime DateCapitalized
+
+        {
+
+            get { return this.DateCapitalizedValue; }
+
+            set { SetProperty(ref DateCapitalizedValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -139,27 +350,77 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Well identifier
         /// </summary>
-        public string WellId { get; set; } = string.Empty;
+        private string WellIdValue = string.Empty;
+
+        public string WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
 
         /// <summary>
         /// Total drilling and completion costs (to be expensed)
         /// </summary>
-        public decimal DrillingCompletionCosts { get; set; }
+        private decimal DrillingCompletionCostsValue;
+
+        public decimal DrillingCompletionCosts
+
+        {
+
+            get { return this.DrillingCompletionCostsValue; }
+
+            set { SetProperty(ref DrillingCompletionCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Acquisition costs
         /// </summary>
-        public decimal AcquisitionCosts { get; set; }
+        private decimal AcquisitionCostsValue;
+
+        public decimal AcquisitionCosts
+
+        {
+
+            get { return this.AcquisitionCostsValue; }
+
+            set { SetProperty(ref AcquisitionCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Date well determined unsuccessful
         /// </summary>
-        public DateTime DateDetermined { get; set; }
+        private DateTime DateDeterminedValue;
+
+        public DateTime DateDetermined
+
+        {
+
+            get { return this.DateDeterminedValue; }
+
+            set { SetProperty(ref DateDeterminedValue, value); }
+
+        }
 
         /// <summary>
         /// Reason well was unsuccessful
         /// </summary>
-        public string Reason { get; set; } = string.Empty;
+        private string ReasonValue = string.Empty;
+
+        public string Reason
+
+        {
+
+            get { return this.ReasonValue; }
+
+            set { SetProperty(ref ReasonValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -170,37 +431,110 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Property group identifier
         /// </summary>
-        public string PropertyGroupId { get; set; } = string.Empty;
+        private string PropertyGroupIdValue = string.Empty;
+
+        public string PropertyGroupId
+
+        {
+
+            get { return this.PropertyGroupIdValue; }
+
+            set { SetProperty(ref PropertyGroupIdValue, value); }
+
+        }
 
         /// <summary>
         /// Carrying amount (book value)
         /// </summary>
-        public decimal CarryingAmount { get; set; }
+        private decimal CarryingAmountValue;
+
+        public decimal CarryingAmount
+
+        {
+
+            get { return this.CarryingAmountValue; }
+
+            set { SetProperty(ref CarryingAmountValue, value); }
+
+        }
 
         /// <summary>
         /// Expected undiscounted future cash flows
         /// </summary>
-        public decimal UndiscountedCashFlows { get; set; }
+        private decimal UndiscountedCashFlowsValue;
+
+        public decimal UndiscountedCashFlows
+
+        {
+
+            get { return this.UndiscountedCashFlowsValue; }
+
+            set { SetProperty(ref UndiscountedCashFlowsValue, value); }
+
+        }
 
         /// <summary>
         /// Is impairment indicated?
         /// </summary>
-        public bool IsImpairmentIndicator { get; set; }
+        private bool IsImpairmentIndicatorValue;
+
+        public bool IsImpairmentIndicator
+
+        {
+
+            get { return this.IsImpairmentIndicatorValue; }
+
+            set { SetProperty(ref IsImpairmentIndicatorValue, value); }
+
+        }
 
         /// <summary>
         /// Fair value of asset (if impaired)
         /// </summary>
-        public decimal? FairValue { get; set; }
+        private decimal? FairValueValue;
+
+        public decimal? FairValue
+
+        {
+
+            get { return this.FairValueValue; }
+
+            set { SetProperty(ref FairValueValue, value); }
+
+        }
 
         /// <summary>
         /// Impairment charge (if applicable)
         /// </summary>
-        public decimal? ImpairmentCharge { get; set; }
+        private decimal? ImpairmentChargeValue;
+
+        public decimal? ImpairmentCharge
+
+        {
+
+            get { return this.ImpairmentChargeValue; }
+
+            set { SetProperty(ref ImpairmentChargeValue, value); }
+
+        }
 
         /// <summary>
         /// Analysis date
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
     }
 }
+
+
+
 

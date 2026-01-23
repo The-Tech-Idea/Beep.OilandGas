@@ -28,7 +28,11 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Estimated allocation based on production history.
         /// </summary>
-        Estimated
+        Estimated,
+        Reciprocal,
+        ActivityBasedCosting,
+        StepDown,
+        DirectAllocation
     }
 
     /// <summary>

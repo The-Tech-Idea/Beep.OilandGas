@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -167,31 +168,5 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// <summary>
     /// Validation result for permit applications.
     /// </summary>
-    public class PermitValidationResult
-    {
-        /// <summary>
-        /// Indicates if the application is valid.
-        /// </summary>
-        public bool IsValid { get; set; }
-
-        /// <summary>
-        /// List of validation errors.
-        /// </summary>
-        public List<string> Errors { get; set; } = new List<string>();
-
-        /// <summary>
-        /// List of validation warnings.
-        /// </summary>
-        public List<string> Warnings { get; set; } = new List<string>();
-
-        /// <summary>
-        /// List of required forms that are missing.
-        /// </summary>
-        public List<string> MissingForms { get; set; } = new List<string>();
-
-        /// <summary>
-        /// Completion percentage of the application.
-        /// </summary>
-        public decimal CompletionPercentage { get; set; }
-    }
+    
 }

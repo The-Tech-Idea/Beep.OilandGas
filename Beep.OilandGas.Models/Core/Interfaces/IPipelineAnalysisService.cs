@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -38,30 +40,15 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// <summary>
     /// DTO for pipeline analysis result.
     /// </summary>
-    public class PipelineAnalysisResult
-    {
-        public string AnalysisId { get; set; } = string.Empty;
-        public string PipelineId { get; set; } = string.Empty;
-        public System.DateTime AnalysisDate { get; set; }
-        public decimal FlowRate { get; set; }
-        public decimal InletPressure { get; set; }
-        public decimal OutletPressure { get; set; }
-        public decimal PressureDrop { get; set; }
-        public decimal Velocity { get; set; }
-        public string? Status { get; set; }
-    }
+    
 
     /// <summary>
     /// DTO for pressure drop result.
     /// </summary>
-    public class PressureDropResult
-    {
-        public decimal PressureDrop { get; set; }
-        public decimal FrictionFactor { get; set; }
-        public decimal ReynoldsNumber { get; set; }
-        public string FlowRegime { get; set; } = string.Empty;
-    }
+    
 }
+
+
 
 
 

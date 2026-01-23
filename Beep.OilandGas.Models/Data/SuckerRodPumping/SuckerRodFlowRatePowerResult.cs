@@ -9,54 +9,155 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
         /// <summary>
         /// Production rate in bbl/day
         /// </summary>
-        public decimal ProductionRate { get; set; }
+        private decimal ProductionRateValue;
+
+        public decimal ProductionRate
+
+        {
+
+            get { return this.ProductionRateValue; }
+
+            set { SetProperty(ref ProductionRateValue, value); }
+
+        }
 
         /// <summary>
         /// Pump displacement in bbl/day
         /// </summary>
-        public decimal PumpDisplacement { get; set; }
+        private decimal PumpDisplacementValue;
+
+        public decimal PumpDisplacement
+
+        {
+
+            get { return this.PumpDisplacementValue; }
+
+            set { SetProperty(ref PumpDisplacementValue, value); }
+
+        }
 
         /// <summary>
         /// Volumetric efficiency (0-1)
         /// </summary>
-        public decimal VolumetricEfficiency { get; set; }
+        private decimal VolumetricEfficiencyValue;
+
+        public decimal VolumetricEfficiency
+
+        {
+
+            get { return this.VolumetricEfficiencyValue; }
+
+            set { SetProperty(ref VolumetricEfficiencyValue, value); }
+
+        }
 
         /// <summary>
         /// Polished rod horsepower
         /// </summary>
-        public decimal PolishedRodHorsepower { get; set; }
+        private decimal PolishedRodHorsepowerValue;
+
+        public decimal PolishedRodHorsepower
+
+        {
+
+            get { return this.PolishedRodHorsepowerValue; }
+
+            set { SetProperty(ref PolishedRodHorsepowerValue, value); }
+
+        }
 
         /// <summary>
         /// Hydraulic horsepower
         /// </summary>
-        public decimal HydraulicHorsepower { get; set; }
+        private decimal HydraulicHorsepowerValue;
+
+        public decimal HydraulicHorsepower
+
+        {
+
+            get { return this.HydraulicHorsepowerValue; }
+
+            set { SetProperty(ref HydraulicHorsepowerValue, value); }
+
+        }
 
         /// <summary>
         /// Friction horsepower
         /// </summary>
-        public decimal FrictionHorsepower { get; set; }
+        private decimal FrictionHorsepowerValue;
+
+        public decimal FrictionHorsepower
+
+        {
+
+            get { return this.FrictionHorsepowerValue; }
+
+            set { SetProperty(ref FrictionHorsepowerValue, value); }
+
+        }
 
         /// <summary>
         /// Total horsepower required
         /// </summary>
-        public decimal TotalHorsepower { get; set; }
+        private decimal TotalHorsepowerValue;
+
+        public decimal TotalHorsepower
+
+        {
+
+            get { return this.TotalHorsepowerValue; }
+
+            set { SetProperty(ref TotalHorsepowerValue, value); }
+
+        }
 
         /// <summary>
         /// Motor horsepower
         /// </summary>
-        public decimal MotorHorsepower { get; set; }
+        private decimal MotorHorsepowerValue;
+
+        public decimal MotorHorsepower
+
+        {
+
+            get { return this.MotorHorsepowerValue; }
+
+            set { SetProperty(ref MotorHorsepowerValue, value); }
+
+        }
 
         /// <summary>
         /// System efficiency (0-1)
         /// </summary>
-        public decimal SystemEfficiency { get; set; }
+        private decimal SystemEfficiencyValue;
+
+        public decimal SystemEfficiency
+
+        {
+
+            get { return this.SystemEfficiencyValue; }
+
+            set { SetProperty(ref SystemEfficiencyValue, value); }
+
+        }
 
         /// <summary>
         /// Energy consumption in kWh/day
         /// </summary>
-        public decimal EnergyConsumption { get; set; }
+        private decimal EnergyConsumptionValue;
+
+        public decimal EnergyConsumption
+
+        {
+
+            get { return this.EnergyConsumptionValue; }
+
+            set { SetProperty(ref EnergyConsumptionValue, value); }
+
+        }
     }
 }
+
 
 
 

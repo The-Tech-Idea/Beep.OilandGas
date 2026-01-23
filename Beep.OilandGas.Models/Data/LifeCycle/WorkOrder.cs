@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.LifeCycle
 {
     /// <summary>
@@ -9,184 +10,1377 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
     
     public class WorkOrderCreationRequest : ModelEntityBase
     {
-        public string WorkOrderNumber { get; set; } = string.Empty;
-        public string WorkOrderType { get; set; } = string.Empty; // RIG_WORKOVER, RIGLESS_WORKOVER, WIRELINE_WORK, etc.
-        public string EntityType { get; set; } = string.Empty; // WELL, FACILITY, PIPELINE
-        public string EntityId { get; set; } = string.Empty; // WELL_ID, FACILITY_ID, or PIPELINE_ID
-        public string? FieldId { get; set; }
-        public string? PropertyId { get; set; }
-        public string? Instructions { get; set; }
-        public DateTime? RequestDate { get; set; }
-        public DateTime? DueDate { get; set; }
-        public decimal? EstimatedCost { get; set; }
-        public string? Description { get; set; }
+        private string WorkOrderNumberValue = string.Empty;
+
+        public string WorkOrderNumber
+
+        {
+
+            get { return this.WorkOrderNumberValue; }
+
+            set { SetProperty(ref WorkOrderNumberValue, value); }
+
+        }
+        private string WorkOrderTypeValue = string.Empty;
+
+        public string WorkOrderType
+
+        {
+
+            get { return this.WorkOrderTypeValue; }
+
+            set { SetProperty(ref WorkOrderTypeValue, value); }
+
+        } // RIG_WORKOVER, RIGLESS_WORKOVER, WIRELINE_WORK, etc.
+        private string EntityTypeValue = string.Empty;
+
+        public string EntityType
+
+        {
+
+            get { return this.EntityTypeValue; }
+
+            set { SetProperty(ref EntityTypeValue, value); }
+
+        } // WELL, FACILITY, PIPELINE
+        private string EntityIdValue = string.Empty;
+
+        public string EntityId
+
+        {
+
+            get { return this.EntityIdValue; }
+
+            set { SetProperty(ref EntityIdValue, value); }
+
+        } // WELL_ID, FACILITY_ID, or PIPELINE_ID
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string? PropertyIdValue;
+
+        public string? PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+        private string? InstructionsValue;
+
+        public string? Instructions
+
+        {
+
+            get { return this.InstructionsValue; }
+
+            set { SetProperty(ref InstructionsValue, value); }
+
+        }
+        private DateTime? RequestDateValue;
+
+        public DateTime? RequestDate
+
+        {
+
+            get { return this.RequestDateValue; }
+
+            set { SetProperty(ref RequestDateValue, value); }
+
+        }
+        private DateTime? DueDateValue;
+
+        public DateTime? DueDate
+
+        {
+
+            get { return this.DueDateValue; }
+
+            set { SetProperty(ref DueDateValue, value); }
+
+        }
+        private decimal? EstimatedCostValue;
+
+        public decimal? EstimatedCost
+
+        {
+
+            get { return this.EstimatedCostValue; }
+
+            set { SetProperty(ref EstimatedCostValue, value); }
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
         public Dictionary<string, object>? AdditionalProperties { get; set; }
     }
 
     public class WorkOrderUpdateRequest : ModelEntityBase
     {
-        public string WorkOrderId { get; set; } = string.Empty;
-        public string? Status { get; set; }
-        public string? Instructions { get; set; }
-        public DateTime? DueDate { get; set; }
-        public DateTime? CompleteDate { get; set; }
-        public decimal? EstimatedCost { get; set; }
-        public string? Description { get; set; }
+        private string WorkOrderIdValue = string.Empty;
+
+        public string WorkOrderId
+
+        {
+
+            get { return this.WorkOrderIdValue; }
+
+            set { SetProperty(ref WorkOrderIdValue, value); }
+
+        }
+        private string? StatusValue;
+
+        public string? Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
+        private string? InstructionsValue;
+
+        public string? Instructions
+
+        {
+
+            get { return this.InstructionsValue; }
+
+            set { SetProperty(ref InstructionsValue, value); }
+
+        }
+        private DateTime? DueDateValue;
+
+        public DateTime? DueDate
+
+        {
+
+            get { return this.DueDateValue; }
+
+            set { SetProperty(ref DueDateValue, value); }
+
+        }
+        private DateTime? CompleteDateValue;
+
+        public DateTime? CompleteDate
+
+        {
+
+            get { return this.CompleteDateValue; }
+
+            set { SetProperty(ref CompleteDateValue, value); }
+
+        }
+        private decimal? EstimatedCostValue;
+
+        public decimal? EstimatedCost
+
+        {
+
+            get { return this.EstimatedCostValue; }
+
+            set { SetProperty(ref EstimatedCostValue, value); }
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
         public Dictionary<string, object>? AdditionalProperties { get; set; }
     }
 
     public class WorkOrderCostRequest : ModelEntityBase
     {
-        public string WorkOrderId { get; set; } = string.Empty;
-        public string CostType { get; set; } = string.Empty; // WORKOVER, MAINTENANCE, REPAIR, etc.
-        public string CostCategory { get; set; } = string.Empty; // LABOR, MATERIALS, EQUIPMENT, etc.
-        public decimal Amount { get; set; }
-        public bool IsCapitalized { get; set; }
-        public bool IsExpensed { get; set; }
-        public DateTime? TransactionDate { get; set; }
-        public string? Description { get; set; }
+        private string WorkOrderIdValue = string.Empty;
+
+        public string WorkOrderId
+
+        {
+
+            get { return this.WorkOrderIdValue; }
+
+            set { SetProperty(ref WorkOrderIdValue, value); }
+
+        }
+        private string CostTypeValue = string.Empty;
+
+        public string CostType
+
+        {
+
+            get { return this.CostTypeValue; }
+
+            set { SetProperty(ref CostTypeValue, value); }
+
+        } // WORKOVER, MAINTENANCE, REPAIR, etc.
+        private string CostCategoryValue = string.Empty;
+
+        public string CostCategory
+
+        {
+
+            get { return this.CostCategoryValue; }
+
+            set { SetProperty(ref CostCategoryValue, value); }
+
+        } // LABOR, MATERIALS, EQUIPMENT, etc.
+        private decimal AmountValue;
+
+        public decimal Amount
+
+        {
+
+            get { return this.AmountValue; }
+
+            set { SetProperty(ref AmountValue, value); }
+
+        }
+        private bool IsCapitalizedValue;
+
+        public bool IsCapitalized
+
+        {
+
+            get { return this.IsCapitalizedValue; }
+
+            set { SetProperty(ref IsCapitalizedValue, value); }
+
+        }
+        private bool IsExpensedValue;
+
+        public bool IsExpensed
+
+        {
+
+            get { return this.IsExpensedValue; }
+
+            set { SetProperty(ref IsExpensedValue, value); }
+
+        }
+        private DateTime? TransactionDateValue;
+
+        public DateTime? TransactionDate
+
+        {
+
+            get { return this.TransactionDateValue; }
+
+            set { SetProperty(ref TransactionDateValue, value); }
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
     }
 
     public class WorkOrderResponse : ModelEntityBase
     {
-        public string WorkOrderId { get; set; } = string.Empty;
-        public string WorkOrderNumber { get; set; } = string.Empty;
-        public string WorkOrderType { get; set; } = string.Empty;
-        public string EntityType { get; set; } = string.Empty;
-        public string EntityId { get; set; } = string.Empty;
-        public string? FieldId { get; set; }
-        public string? PropertyId { get; set; }
-        public string? Status { get; set; }
-        public string? AfeId { get; set; }
-        public DateTime? RequestDate { get; set; }
-        public DateTime? DueDate { get; set; }
-        public DateTime? CompleteDate { get; set; }
-        public decimal? EstimatedCost { get; set; }
-        public decimal? ActualCost { get; set; }
+        private string WorkOrderIdValue = string.Empty;
+
+        public string WorkOrderId
+
+        {
+
+            get { return this.WorkOrderIdValue; }
+
+            set { SetProperty(ref WorkOrderIdValue, value); }
+
+        }
+        private string WorkOrderNumberValue = string.Empty;
+
+        public string WorkOrderNumber
+
+        {
+
+            get { return this.WorkOrderNumberValue; }
+
+            set { SetProperty(ref WorkOrderNumberValue, value); }
+
+        }
+        private string WorkOrderTypeValue = string.Empty;
+
+        public string WorkOrderType
+
+        {
+
+            get { return this.WorkOrderTypeValue; }
+
+            set { SetProperty(ref WorkOrderTypeValue, value); }
+
+        }
+        private string EntityTypeValue = string.Empty;
+
+        public string EntityType
+
+        {
+
+            get { return this.EntityTypeValue; }
+
+            set { SetProperty(ref EntityTypeValue, value); }
+
+        }
+        private string EntityIdValue = string.Empty;
+
+        public string EntityId
+
+        {
+
+            get { return this.EntityIdValue; }
+
+            set { SetProperty(ref EntityIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string? PropertyIdValue;
+
+        public string? PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+        private string? StatusValue;
+
+        public string? Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
+        private string? AfeIdValue;
+
+        public string? AfeId
+
+        {
+
+            get { return this.AfeIdValue; }
+
+            set { SetProperty(ref AfeIdValue, value); }
+
+        }
+        private DateTime? RequestDateValue;
+
+        public DateTime? RequestDate
+
+        {
+
+            get { return this.RequestDateValue; }
+
+            set { SetProperty(ref RequestDateValue, value); }
+
+        }
+        private DateTime? DueDateValue;
+
+        public DateTime? DueDate
+
+        {
+
+            get { return this.DueDateValue; }
+
+            set { SetProperty(ref DueDateValue, value); }
+
+        }
+        private DateTime? CompleteDateValue;
+
+        public DateTime? CompleteDate
+
+        {
+
+            get { return this.CompleteDateValue; }
+
+            set { SetProperty(ref CompleteDateValue, value); }
+
+        }
+        private decimal? EstimatedCostValue;
+
+        public decimal? EstimatedCost
+
+        {
+
+            get { return this.EstimatedCostValue; }
+
+            set { SetProperty(ref EstimatedCostValue, value); }
+
+        }
+        private decimal? ActualCostValue;
+
+        public decimal? ActualCost
+
+        {
+
+            get { return this.ActualCostValue; }
+
+            set { SetProperty(ref ActualCostValue, value); }
+
+        }
         public Dictionary<string, object>? Properties { get; set; }
     }
 
     // Well-specific workover DTOs
     public class RigWorkoverRequest : ModelEntityBase
     {
-        public string WellId { get; set; } = string.Empty;
-        public string? FieldId { get; set; }
-        public string? PropertyId { get; set; }
-        public string WorkOrderNumber { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public DateTime? RequestDate { get; set; }
-        public DateTime? DueDate { get; set; }
-        public decimal? EstimatedCost { get; set; }
-        public string? Instructions { get; set; }
+        private string WellIdValue = string.Empty;
+
+        public string WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string? PropertyIdValue;
+
+        public string? PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+        private string WorkOrderNumberValue = string.Empty;
+
+        public string WorkOrderNumber
+
+        {
+
+            get { return this.WorkOrderNumberValue; }
+
+            set { SetProperty(ref WorkOrderNumberValue, value); }
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        private DateTime? RequestDateValue;
+
+        public DateTime? RequestDate
+
+        {
+
+            get { return this.RequestDateValue; }
+
+            set { SetProperty(ref RequestDateValue, value); }
+
+        }
+        private DateTime? DueDateValue;
+
+        public DateTime? DueDate
+
+        {
+
+            get { return this.DueDateValue; }
+
+            set { SetProperty(ref DueDateValue, value); }
+
+        }
+        private decimal? EstimatedCostValue;
+
+        public decimal? EstimatedCost
+
+        {
+
+            get { return this.EstimatedCostValue; }
+
+            set { SetProperty(ref EstimatedCostValue, value); }
+
+        }
+        private string? InstructionsValue;
+
+        public string? Instructions
+
+        {
+
+            get { return this.InstructionsValue; }
+
+            set { SetProperty(ref InstructionsValue, value); }
+
+        }
         public Dictionary<string, object>? WorkoverData { get; set; }
     }
 
     public class RiglessWorkoverRequest : ModelEntityBase
     {
-        public string WellId { get; set; } = string.Empty;
-        public string? FieldId { get; set; }
-        public string? PropertyId { get; set; }
-        public string WorkOrderNumber { get; set; } = string.Empty;
-        public string WorkoverSubType { get; set; } = string.Empty; // WIRELINE, COILED_TUBING, SNUBBING, TESTING, STIMULATION, CLEANOUT
-        public string? Description { get; set; }
-        public DateTime? RequestDate { get; set; }
-        public DateTime? DueDate { get; set; }
-        public decimal? EstimatedCost { get; set; }
-        public string? Instructions { get; set; }
+        private string WellIdValue = string.Empty;
+
+        public string WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string? PropertyIdValue;
+
+        public string? PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+        private string WorkOrderNumberValue = string.Empty;
+
+        public string WorkOrderNumber
+
+        {
+
+            get { return this.WorkOrderNumberValue; }
+
+            set { SetProperty(ref WorkOrderNumberValue, value); }
+
+        }
+        private string WorkoverSubTypeValue = string.Empty;
+
+        public string WorkoverSubType
+
+        {
+
+            get { return this.WorkoverSubTypeValue; }
+
+            set { SetProperty(ref WorkoverSubTypeValue, value); }
+
+        } // WIRELINE, COILED_TUBING, SNUBBING, TESTING, STIMULATION, CLEANOUT
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        private DateTime? RequestDateValue;
+
+        public DateTime? RequestDate
+
+        {
+
+            get { return this.RequestDateValue; }
+
+            set { SetProperty(ref RequestDateValue, value); }
+
+        }
+        private DateTime? DueDateValue;
+
+        public DateTime? DueDate
+
+        {
+
+            get { return this.DueDateValue; }
+
+            set { SetProperty(ref DueDateValue, value); }
+
+        }
+        private decimal? EstimatedCostValue;
+
+        public decimal? EstimatedCost
+
+        {
+
+            get { return this.EstimatedCostValue; }
+
+            set { SetProperty(ref EstimatedCostValue, value); }
+
+        }
+        private string? InstructionsValue;
+
+        public string? Instructions
+
+        {
+
+            get { return this.InstructionsValue; }
+
+            set { SetProperty(ref InstructionsValue, value); }
+
+        }
         public Dictionary<string, object>? WorkoverData { get; set; }
     }
 
     public class WirelineWorkRequest : ModelEntityBase
     {
-        public string WellId { get; set; } = string.Empty;
-        public string? FieldId { get; set; }
-        public string? PropertyId { get; set; }
-        public string WorkOrderNumber { get; set; } = string.Empty;
-        public string WirelineOperation { get; set; } = string.Empty; // LOGGING, PERFORATING, FISHING, PLUG_SETTING
-        public string? Description { get; set; }
-        public DateTime? RequestDate { get; set; }
-        public DateTime? DueDate { get; set; }
-        public decimal? EstimatedCost { get; set; }
-        public string? Instructions { get; set; }
+        private string WellIdValue = string.Empty;
+
+        public string WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string? PropertyIdValue;
+
+        public string? PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+        private string WorkOrderNumberValue = string.Empty;
+
+        public string WorkOrderNumber
+
+        {
+
+            get { return this.WorkOrderNumberValue; }
+
+            set { SetProperty(ref WorkOrderNumberValue, value); }
+
+        }
+        private string WirelineOperationValue = string.Empty;
+
+        public string WirelineOperation
+
+        {
+
+            get { return this.WirelineOperationValue; }
+
+            set { SetProperty(ref WirelineOperationValue, value); }
+
+        } // LOGGING, PERFORATING, FISHING, PLUG_SETTING
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        private DateTime? RequestDateValue;
+
+        public DateTime? RequestDate
+
+        {
+
+            get { return this.RequestDateValue; }
+
+            set { SetProperty(ref RequestDateValue, value); }
+
+        }
+        private DateTime? DueDateValue;
+
+        public DateTime? DueDate
+
+        {
+
+            get { return this.DueDateValue; }
+
+            set { SetProperty(ref DueDateValue, value); }
+
+        }
+        private decimal? EstimatedCostValue;
+
+        public decimal? EstimatedCost
+
+        {
+
+            get { return this.EstimatedCostValue; }
+
+            set { SetProperty(ref EstimatedCostValue, value); }
+
+        }
+        private string? InstructionsValue;
+
+        public string? Instructions
+
+        {
+
+            get { return this.InstructionsValue; }
+
+            set { SetProperty(ref InstructionsValue, value); }
+
+        }
         public Dictionary<string, object>? OperationData { get; set; }
     }
 
     public class CoiledTubingWorkRequest : ModelEntityBase
     {
-        public string WellId { get; set; } = string.Empty;
-        public string? FieldId { get; set; }
-        public string? PropertyId { get; set; }
-        public string WorkOrderNumber { get; set; } = string.Empty;
-        public string OperationType { get; set; } = string.Empty; // CLEANOUT, STIMULATION, LOGGING, FISHING
-        public string? Description { get; set; }
-        public DateTime? RequestDate { get; set; }
-        public DateTime? DueDate { get; set; }
-        public decimal? EstimatedCost { get; set; }
-        public string? Instructions { get; set; }
+        private string WellIdValue = string.Empty;
+
+        public string WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string? PropertyIdValue;
+
+        public string? PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+        private string WorkOrderNumberValue = string.Empty;
+
+        public string WorkOrderNumber
+
+        {
+
+            get { return this.WorkOrderNumberValue; }
+
+            set { SetProperty(ref WorkOrderNumberValue, value); }
+
+        }
+        private string OperationTypeValue = string.Empty;
+
+        public string OperationType
+
+        {
+
+            get { return this.OperationTypeValue; }
+
+            set { SetProperty(ref OperationTypeValue, value); }
+
+        } // CLEANOUT, STIMULATION, LOGGING, FISHING
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        private DateTime? RequestDateValue;
+
+        public DateTime? RequestDate
+
+        {
+
+            get { return this.RequestDateValue; }
+
+            set { SetProperty(ref RequestDateValue, value); }
+
+        }
+        private DateTime? DueDateValue;
+
+        public DateTime? DueDate
+
+        {
+
+            get { return this.DueDateValue; }
+
+            set { SetProperty(ref DueDateValue, value); }
+
+        }
+        private decimal? EstimatedCostValue;
+
+        public decimal? EstimatedCost
+
+        {
+
+            get { return this.EstimatedCostValue; }
+
+            set { SetProperty(ref EstimatedCostValue, value); }
+
+        }
+        private string? InstructionsValue;
+
+        public string? Instructions
+
+        {
+
+            get { return this.InstructionsValue; }
+
+            set { SetProperty(ref InstructionsValue, value); }
+
+        }
         public Dictionary<string, object>? OperationData { get; set; }
     }
 
     public class WellTestRequest : ModelEntityBase
     {
-        public string WellId { get; set; } = string.Empty;
-        public string? FieldId { get; set; }
-        public string? PropertyId { get; set; }
-        public string WorkOrderNumber { get; set; } = string.Empty;
-        public string TestType { get; set; } = string.Empty; // PRODUCTION_TEST, PRESSURE_TEST, FLOW_TEST
-        public string? Description { get; set; }
-        public DateTime? RequestDate { get; set; }
-        public DateTime? DueDate { get; set; }
-        public decimal? EstimatedCost { get; set; }
-        public string? Instructions { get; set; }
+        private string WellIdValue = string.Empty;
+
+        public string WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string? PropertyIdValue;
+
+        public string? PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+        private string WorkOrderNumberValue = string.Empty;
+
+        public string WorkOrderNumber
+
+        {
+
+            get { return this.WorkOrderNumberValue; }
+
+            set { SetProperty(ref WorkOrderNumberValue, value); }
+
+        }
+        private string TestTypeValue = string.Empty;
+
+        public string TestType
+
+        {
+
+            get { return this.TestTypeValue; }
+
+            set { SetProperty(ref TestTypeValue, value); }
+
+        } // PRODUCTION_TEST, PRESSURE_TEST, FLOW_TEST
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        private DateTime? RequestDateValue;
+
+        public DateTime? RequestDate
+
+        {
+
+            get { return this.RequestDateValue; }
+
+            set { SetProperty(ref RequestDateValue, value); }
+
+        }
+        private DateTime? DueDateValue;
+
+        public DateTime? DueDate
+
+        {
+
+            get { return this.DueDateValue; }
+
+            set { SetProperty(ref DueDateValue, value); }
+
+        }
+        private decimal? EstimatedCostValue;
+
+        public decimal? EstimatedCost
+
+        {
+
+            get { return this.EstimatedCostValue; }
+
+            set { SetProperty(ref EstimatedCostValue, value); }
+
+        }
+        private string? InstructionsValue;
+
+        public string? Instructions
+
+        {
+
+            get { return this.InstructionsValue; }
+
+            set { SetProperty(ref InstructionsValue, value); }
+
+        }
         public Dictionary<string, object>? TestData { get; set; }
     }
 
     public class StimulationRequest : ModelEntityBase
     {
-        public string WellId { get; set; } = string.Empty;
-        public string? FieldId { get; set; }
-        public string? PropertyId { get; set; }
-        public string WorkOrderNumber { get; set; } = string.Empty;
-        public string StimulationType { get; set; } = string.Empty; // FRACTURING, ACIDIZING, MATRIX_STIMULATION
-        public string? Description { get; set; }
-        public DateTime? RequestDate { get; set; }
-        public DateTime? DueDate { get; set; }
-        public decimal? EstimatedCost { get; set; }
-        public string? Instructions { get; set; }
+        private string WellIdValue = string.Empty;
+
+        public string WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string? PropertyIdValue;
+
+        public string? PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+        private string WorkOrderNumberValue = string.Empty;
+
+        public string WorkOrderNumber
+
+        {
+
+            get { return this.WorkOrderNumberValue; }
+
+            set { SetProperty(ref WorkOrderNumberValue, value); }
+
+        }
+        private string StimulationTypeValue = string.Empty;
+
+        public string StimulationType
+
+        {
+
+            get { return this.StimulationTypeValue; }
+
+            set { SetProperty(ref StimulationTypeValue, value); }
+
+        } // FRACTURING, ACIDIZING, MATRIX_STIMULATION
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        private DateTime? RequestDateValue;
+
+        public DateTime? RequestDate
+
+        {
+
+            get { return this.RequestDateValue; }
+
+            set { SetProperty(ref RequestDateValue, value); }
+
+        }
+        private DateTime? DueDateValue;
+
+        public DateTime? DueDate
+
+        {
+
+            get { return this.DueDateValue; }
+
+            set { SetProperty(ref DueDateValue, value); }
+
+        }
+        private decimal? EstimatedCostValue;
+
+        public decimal? EstimatedCost
+
+        {
+
+            get { return this.EstimatedCostValue; }
+
+            set { SetProperty(ref EstimatedCostValue, value); }
+
+        }
+        private string? InstructionsValue;
+
+        public string? Instructions
+
+        {
+
+            get { return this.InstructionsValue; }
+
+            set { SetProperty(ref InstructionsValue, value); }
+
+        }
         public Dictionary<string, object>? StimulationData { get; set; }
     }
 
     public class CleanoutRequest : ModelEntityBase
     {
-        public string WellId { get; set; } = string.Empty;
-        public string? FieldId { get; set; }
-        public string? PropertyId { get; set; }
-        public string WorkOrderNumber { get; set; } = string.Empty;
-        public string CleanoutType { get; set; } = string.Empty; // SAND_CLEANOUT, SCALE_REMOVAL, DEBRIS_REMOVAL
-        public string? Description { get; set; }
-        public DateTime? RequestDate { get; set; }
-        public DateTime? DueDate { get; set; }
-        public decimal? EstimatedCost { get; set; }
-        public string? Instructions { get; set; }
+        private string WellIdValue = string.Empty;
+
+        public string WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string? PropertyIdValue;
+
+        public string? PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+        private string WorkOrderNumberValue = string.Empty;
+
+        public string WorkOrderNumber
+
+        {
+
+            get { return this.WorkOrderNumberValue; }
+
+            set { SetProperty(ref WorkOrderNumberValue, value); }
+
+        }
+        private string CleanoutTypeValue = string.Empty;
+
+        public string CleanoutType
+
+        {
+
+            get { return this.CleanoutTypeValue; }
+
+            set { SetProperty(ref CleanoutTypeValue, value); }
+
+        } // SAND_CLEANOUT, SCALE_REMOVAL, DEBRIS_REMOVAL
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        private DateTime? RequestDateValue;
+
+        public DateTime? RequestDate
+
+        {
+
+            get { return this.RequestDateValue; }
+
+            set { SetProperty(ref RequestDateValue, value); }
+
+        }
+        private DateTime? DueDateValue;
+
+        public DateTime? DueDate
+
+        {
+
+            get { return this.DueDateValue; }
+
+            set { SetProperty(ref DueDateValue, value); }
+
+        }
+        private decimal? EstimatedCostValue;
+
+        public decimal? EstimatedCost
+
+        {
+
+            get { return this.EstimatedCostValue; }
+
+            set { SetProperty(ref EstimatedCostValue, value); }
+
+        }
+        private string? InstructionsValue;
+
+        public string? Instructions
+
+        {
+
+            get { return this.InstructionsValue; }
+
+            set { SetProperty(ref InstructionsValue, value); }
+
+        }
         public Dictionary<string, object>? CleanoutData { get; set; }
     }
 
     // Facility-specific work order DTOs
     public class FacilityWorkOrderRequest : ModelEntityBase
     {
-        public string FacilityId { get; set; } = string.Empty;
-        public string? FieldId { get; set; }
-        public string? PropertyId { get; set; }
-        public string WorkOrderNumber { get; set; } = string.Empty;
-        public string WorkOrderType { get; set; } = string.Empty; // MAINTENANCE, REPAIR, UPGRADE, INSPECTION, EQUIPMENT_INSTALLATION, EQUIPMENT_REMOVAL, MODIFICATION
-        public string? Description { get; set; }
-        public DateTime? RequestDate { get; set; }
-        public DateTime? DueDate { get; set; }
-        public decimal? EstimatedCost { get; set; }
-        public string? Instructions { get; set; }
+        private string FacilityIdValue = string.Empty;
+
+        public string FacilityId
+
+        {
+
+            get { return this.FacilityIdValue; }
+
+            set { SetProperty(ref FacilityIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string? PropertyIdValue;
+
+        public string? PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+        private string WorkOrderNumberValue = string.Empty;
+
+        public string WorkOrderNumber
+
+        {
+
+            get { return this.WorkOrderNumberValue; }
+
+            set { SetProperty(ref WorkOrderNumberValue, value); }
+
+        }
+        private string WorkOrderTypeValue = string.Empty;
+
+        public string WorkOrderType
+
+        {
+
+            get { return this.WorkOrderTypeValue; }
+
+            set { SetProperty(ref WorkOrderTypeValue, value); }
+
+        } // MAINTENANCE, REPAIR, UPGRADE, INSPECTION, EQUIPMENT_INSTALLATION, EQUIPMENT_REMOVAL, MODIFICATION
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        private DateTime? RequestDateValue;
+
+        public DateTime? RequestDate
+
+        {
+
+            get { return this.RequestDateValue; }
+
+            set { SetProperty(ref RequestDateValue, value); }
+
+        }
+        private DateTime? DueDateValue;
+
+        public DateTime? DueDate
+
+        {
+
+            get { return this.DueDateValue; }
+
+            set { SetProperty(ref DueDateValue, value); }
+
+        }
+        private decimal? EstimatedCostValue;
+
+        public decimal? EstimatedCost
+
+        {
+
+            get { return this.EstimatedCostValue; }
+
+            set { SetProperty(ref EstimatedCostValue, value); }
+
+        }
+        private string? InstructionsValue;
+
+        public string? Instructions
+
+        {
+
+            get { return this.InstructionsValue; }
+
+            set { SetProperty(ref InstructionsValue, value); }
+
+        }
         public Dictionary<string, object>? WorkOrderData { get; set; }
     }
 }
+
+
+
 
 
 

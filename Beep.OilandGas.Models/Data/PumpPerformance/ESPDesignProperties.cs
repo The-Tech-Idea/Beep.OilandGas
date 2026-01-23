@@ -9,64 +9,185 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
         /// <summary>
         /// Desired flow rate in bbl/day
         /// </summary>
-        public decimal DesiredFlowRate { get; set; }
+        private decimal DesiredFlowRateValue;
+
+        public decimal DesiredFlowRate
+
+        {
+
+            get { return this.DesiredFlowRateValue; }
+
+            set { SetProperty(ref DesiredFlowRateValue, value); }
+
+        }
 
         /// <summary>
         /// Total dynamic head in feet
         /// </summary>
-        public decimal TotalDynamicHead { get; set; }
+        private decimal TotalDynamicHeadValue;
+
+        public decimal TotalDynamicHead
+
+        {
+
+            get { return this.TotalDynamicHeadValue; }
+
+            set { SetProperty(ref TotalDynamicHeadValue, value); }
+
+        }
 
         /// <summary>
         /// Well depth in feet
         /// </summary>
-        public decimal WellDepth { get; set; }
+        private decimal WellDepthValue;
+
+        public decimal WellDepth
+
+        {
+
+            get { return this.WellDepthValue; }
+
+            set { SetProperty(ref WellDepthValue, value); }
+
+        }
 
         /// <summary>
         /// Casing diameter in inches
         /// </summary>
-        public decimal CasingDiameter { get; set; }
+        private decimal CasingDiameterValue;
+
+        public decimal CasingDiameter
+
+        {
+
+            get { return this.CasingDiameterValue; }
+
+            set { SetProperty(ref CasingDiameterValue, value); }
+
+        }
 
         /// <summary>
         /// Tubing diameter in inches
         /// </summary>
-        public decimal TubingDiameter { get; set; }
+        private decimal TubingDiameterValue;
+
+        public decimal TubingDiameter
+
+        {
+
+            get { return this.TubingDiameterValue; }
+
+            set { SetProperty(ref TubingDiameterValue, value); }
+
+        }
 
         /// <summary>
         /// Oil gravity in API
         /// </summary>
-        public decimal OilGravity { get; set; }
+        private decimal OilGravityValue;
+
+        public decimal OilGravity
+
+        {
+
+            get { return this.OilGravityValue; }
+
+            set { SetProperty(ref OilGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Water cut (fraction, 0-1)
         /// </summary>
-        public decimal WaterCut { get; set; }
+        private decimal WaterCutValue;
+
+        public decimal WaterCut
+
+        {
+
+            get { return this.WaterCutValue; }
+
+            set { SetProperty(ref WaterCutValue, value); }
+
+        }
 
         /// <summary>
         /// Gas-oil ratio in scf/bbl
         /// </summary>
-        public decimal GasOilRatio { get; set; }
+        private decimal GasOilRatioValue;
+
+        public decimal GasOilRatio
+
+        {
+
+            get { return this.GasOilRatioValue; }
+
+            set { SetProperty(ref GasOilRatioValue, value); }
+
+        }
 
         /// <summary>
         /// Wellhead pressure in psia
         /// </summary>
-        public decimal WellheadPressure { get; set; }
+        private decimal WellheadPressureValue;
+
+        public decimal WellheadPressure
+
+        {
+
+            get { return this.WellheadPressureValue; }
+
+            set { SetProperty(ref WellheadPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Bottom hole temperature in Rankine
         /// </summary>
-        public decimal BottomHoleTemperature { get; set; }
+        private decimal BottomHoleTemperatureValue;
+
+        public decimal BottomHoleTemperature
+
+        {
+
+            get { return this.BottomHoleTemperatureValue; }
+
+            set { SetProperty(ref BottomHoleTemperatureValue, value); }
+
+        }
 
         /// <summary>
         /// Gas specific gravity (relative to air)
         /// </summary>
-        public decimal GasSpecificGravity { get; set; }
+        private decimal GasSpecificGravityValue;
+
+        public decimal GasSpecificGravity
+
+        {
+
+            get { return this.GasSpecificGravityValue; }
+
+            set { SetProperty(ref GasSpecificGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Pump setting depth in feet
         /// </summary>
-        public decimal PumpSettingDepth { get; set; }
+        private decimal PumpSettingDepthValue;
+
+        public decimal PumpSettingDepth
+
+        {
+
+            get { return this.PumpSettingDepthValue; }
+
+            set { SetProperty(ref PumpSettingDepthValue, value); }
+
+        }
     }
 }
+
 
 
 

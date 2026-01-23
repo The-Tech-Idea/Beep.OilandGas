@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Pumps;
+using Beep.OilandGas.Models.Data.SuckerRodPumping;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -34,6 +35,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task SavePumpDesignAsync(SuckerRodPumpDesign design, string userId);
     }
 }
+
 
 
 

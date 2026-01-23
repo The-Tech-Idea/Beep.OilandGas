@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
     /// <summary>
@@ -11,79 +12,232 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
         /// <summary>
         /// Gets or sets the time points in hours
         /// </summary>
-        public List<double> Time { get; set; } = new List<double>();
+        private List<double> TimeValue = new List<double>();
+
+        public List<double> Time
+
+        {
+
+            get { return this.TimeValue; }
+
+            set { SetProperty(ref TimeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the pressure points in psi
         /// </summary>
-        public List<double> Pressure { get; set; } = new List<double>();
+        private List<double> PressureValue = new List<double>();
+
+        public List<double> Pressure
+
+        {
+
+            get { return this.PressureValue; }
+
+            set { SetProperty(ref PressureValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the flow rate in BPD (for drawdown) or last flow rate before shut-in (for build-up)
         /// </summary>
-        public double FlowRate { get; set; }
+        private double FlowRateValue;
+
+        public double FlowRate
+
+        {
+
+            get { return this.FlowRateValue; }
+
+            set { SetProperty(ref FlowRateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the wellbore radius in feet
         /// </summary>
-        public double WellboreRadius { get; set; }
+        private double WellboreRadiusValue;
+
+        public double WellboreRadius
+
+        {
+
+            get { return this.WellboreRadiusValue; }
+
+            set { SetProperty(ref WellboreRadiusValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the formation thickness in feet
         /// </summary>
-        public double FormationThickness { get; set; }
+        private double FormationThicknessValue;
+
+        public double FormationThickness
+
+        {
+
+            get { return this.FormationThicknessValue; }
+
+            set { SetProperty(ref FormationThicknessValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the porosity (fraction)
         /// </summary>
-        public double Porosity { get; set; }
+        private double PorosityValue;
+
+        public double Porosity
+
+        {
+
+            get { return this.PorosityValue; }
+
+            set { SetProperty(ref PorosityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the total compressibility in psi^-1
         /// </summary>
-        public double TotalCompressibility { get; set; }
+        private double TotalCompressibilityValue;
+
+        public double TotalCompressibility
+
+        {
+
+            get { return this.TotalCompressibilityValue; }
+
+            set { SetProperty(ref TotalCompressibilityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the oil viscosity in cp
         /// </summary>
-        public double OilViscosity { get; set; }
+        private double OilViscosityValue;
+
+        public double OilViscosity
+
+        {
+
+            get { return this.OilViscosityValue; }
+
+            set { SetProperty(ref OilViscosityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the oil formation volume factor in RB/STB
         /// </summary>
-        public double OilFormationVolumeFactor { get; set; }
+        private double OilFormationVolumeFactorValue;
+
+        public double OilFormationVolumeFactor
+
+        {
+
+            get { return this.OilFormationVolumeFactorValue; }
+
+            set { SetProperty(ref OilFormationVolumeFactorValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the test type (BuildUp or Drawdown)
         /// </summary>
-        public WellTestType TestType { get; set; } = WellTestType.BuildUp;
+        private WellTestType TestTypeValue = WellTestType.BuildUp;
+
+        public WellTestType TestType
+
+        {
+
+            get { return this.TestTypeValue; }
+
+            set { SetProperty(ref TestTypeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the production time before shut-in (for build-up tests) in hours
         /// </summary>
-        public double ProductionTime { get; set; }
+        private double ProductionTimeValue;
+
+        public double ProductionTime
+
+        {
+
+            get { return this.ProductionTimeValue; }
+
+            set { SetProperty(ref ProductionTimeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether this is a gas well test
         /// </summary>
-        public bool IsGasWell { get; set; } = false;
+        private bool IsGasWellValue = false;
+
+        public bool IsGasWell
+
+        {
+
+            get { return this.IsGasWellValue; }
+
+            set { SetProperty(ref IsGasWellValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the gas specific gravity (for gas wells)
         /// </summary>
-        public double GasSpecificGravity { get; set; } = 0.65;
+        private double GasSpecificGravityValue = 0.65;
+
+        public double GasSpecificGravity
+
+        {
+
+            get { return this.GasSpecificGravityValue; }
+
+            set { SetProperty(ref GasSpecificGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the reservoir temperature in Fahrenheit
         /// </summary>
-        public double ReservoirTemperature { get; set; } = 150.0;
+        private double ReservoirTemperatureValue = 150.0;
+
+        public double ReservoirTemperature
+
+        {
+
+            get { return this.ReservoirTemperatureValue; }
+
+            set { SetProperty(ref ReservoirTemperatureValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the initial reservoir pressure in psi
         /// </summary>
-        public double InitialReservoirPressure { get; set; }
+        private double InitialReservoirPressureValue;
+
+        public double InitialReservoirPressure
+
+        {
+
+            get { return this.InitialReservoirPressureValue; }
+
+            set { SetProperty(ref InitialReservoirPressureValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

@@ -9,35 +9,107 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
         /// <summary>
         /// Operating conditions
         /// </summary>
-        public CompressorOperatingConditions OperatingConditions { get; set; } = new();
+        private CompressorOperatingConditions OperatingConditionsValue = new();
+
+        public CompressorOperatingConditions OperatingConditions
+
+        {
+
+            get { return this.OperatingConditionsValue; }
+
+            set { SetProperty(ref OperatingConditionsValue, value); }
+
+        }
 
         /// <summary>
         /// Cylinder diameter in inches
         /// </summary>
-        public decimal CylinderDiameter { get; set; }
+        private decimal CylinderDiameterValue;
+
+        public decimal CylinderDiameter
+
+        {
+
+            get { return this.CylinderDiameterValue; }
+
+            set { SetProperty(ref CylinderDiameterValue, value); }
+
+        }
 
         /// <summary>
         /// Stroke length in inches
         /// </summary>
-        public decimal StrokeLength { get; set; }
+        private decimal StrokeLengthValue;
+
+        public decimal StrokeLength
+
+        {
+
+            get { return this.StrokeLengthValue; }
+
+            set { SetProperty(ref StrokeLengthValue, value); }
+
+        }
 
         /// <summary>
         /// Rotational speed in RPM
         /// </summary>
-        public decimal RotationalSpeed { get; set; }
+        private decimal RotationalSpeedValue;
+
+        public decimal RotationalSpeed
+
+        {
+
+            get { return this.RotationalSpeedValue; }
+
+            set { SetProperty(ref RotationalSpeedValue, value); }
+
+        }
 
         /// <summary>
         /// Number of cylinders
         /// </summary>
-        public int NumberOfCylinders { get; set; } = 1;
+        private int NumberOfCylindersValue = 1;
+
+        public int NumberOfCylinders
+
+        {
+
+            get { return this.NumberOfCylindersValue; }
+
+            set { SetProperty(ref NumberOfCylindersValue, value); }
+
+        }
 
         /// <summary>
         /// Volumetric efficiency (0-1)
         /// </summary>
-        public decimal VolumetricEfficiency { get; set; } = 0.85m;
-        public int ClearanceFactor { get; set; }
+        private decimal VolumetricEfficiencyValue = 0.85m;
+
+        public decimal VolumetricEfficiency
+
+        {
+
+            get { return this.VolumetricEfficiencyValue; }
+
+            set { SetProperty(ref VolumetricEfficiencyValue, value); }
+
+        }
+        private int ClearanceFactorValue;
+
+        public int ClearanceFactor
+
+        {
+
+            get { return this.ClearanceFactorValue; }
+
+            set { SetProperty(ref ClearanceFactorValue, value); }
+
+        }
     }
 }
+
+
 
 
 

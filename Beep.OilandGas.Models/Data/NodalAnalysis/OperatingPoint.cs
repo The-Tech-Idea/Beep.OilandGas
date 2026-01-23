@@ -9,13 +9,43 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         /// <summary>
         /// Flow rate at operating point (STB/day or m³/day)
         /// </summary>
-        public double FlowRate { get; set; }
+        private double FlowRateValue;
+
+        public double FlowRate
+
+        {
+
+            get { return this.FlowRateValue; }
+
+            set { SetProperty(ref FlowRateValue, value); }
+
+        }
 
         /// <summary>
         /// Bottomhole pressure at operating point (psia or kPa)
         /// </summary>
-        public double BottomholePressure { get; set; }
-        public double WellheadPressure { get; set; }
+        private double BottomholePressureValue;
+
+        public double BottomholePressure
+
+        {
+
+            get { return this.BottomholePressureValue; }
+
+            set { SetProperty(ref BottomholePressureValue, value); }
+
+        }
+        private double WellheadPressureValue;
+
+        public double WellheadPressure
+
+        {
+
+            get { return this.WellheadPressureValue; }
+
+            set { SetProperty(ref WellheadPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Default constructor
@@ -34,6 +64,7 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         }
     }
 }
+
 
 
 

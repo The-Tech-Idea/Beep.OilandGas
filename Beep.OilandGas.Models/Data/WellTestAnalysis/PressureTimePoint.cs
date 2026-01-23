@@ -9,17 +9,47 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
         /// <summary>
         /// Gets or sets the time in hours
         /// </summary>
-        public double Time { get; set; }
+        private double TimeValue;
+
+        public double Time
+
+        {
+
+            get { return this.TimeValue; }
+
+            set { SetProperty(ref TimeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the pressure in psi
         /// </summary>
-        public double Pressure { get; set; }
+        private double PressureValue;
+
+        public double Pressure
+
+        {
+
+            get { return this.PressureValue; }
+
+            set { SetProperty(ref PressureValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the pressure derivative (for diagnostic plots)
         /// </summary>
-        public double? PressureDerivative { get; set; }
+        private double? PressureDerivativeValue;
+
+        public double? PressureDerivative
+
+        {
+
+            get { return this.PressureDerivativeValue; }
+
+            set { SetProperty(ref PressureDerivativeValue, value); }
+
+        }
 
         public PressureTimePoint() { }
 
@@ -30,6 +60,7 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
         }
     }
 }
+
 
 
 

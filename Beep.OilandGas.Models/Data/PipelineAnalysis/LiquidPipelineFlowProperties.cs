@@ -9,29 +9,81 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
         /// <summary>
         /// Pipeline properties
         /// </summary>
-        public PipelineProperties Pipeline { get; set; } = new();
+        private PipelineProperties PipelineValue = new();
+
+        public PipelineProperties Pipeline
+
+        {
+
+            get { return this.PipelineValue; }
+
+            set { SetProperty(ref PipelineValue, value); }
+
+        }
 
         /// <summary>
         /// Liquid flow rate in bbl/day
         /// </summary>
-        public decimal LiquidFlowRate { get; set; }
+        private decimal LiquidFlowRateValue;
+
+        public decimal LiquidFlowRate
+
+        {
+
+            get { return this.LiquidFlowRateValue; }
+
+            set { SetProperty(ref LiquidFlowRateValue, value); }
+
+        }
 
         /// <summary>
         /// Liquid specific gravity
         /// </summary>
-        public decimal LiquidSpecificGravity { get; set; }
+        private decimal LiquidSpecificGravityValue;
+
+        public decimal LiquidSpecificGravity
+
+        {
+
+            get { return this.LiquidSpecificGravityValue; }
+
+            set { SetProperty(ref LiquidSpecificGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Liquid viscosity in cp
         /// </summary>
-        public decimal LiquidViscosity { get; set; } = 1.0m;
+        private decimal LiquidViscosityValue = 1.0m;
+
+        public decimal LiquidViscosity
+
+        {
+
+            get { return this.LiquidViscosityValue; }
+
+            set { SetProperty(ref LiquidViscosityValue, value); }
+
+        }
 
         /// <summary>
         /// Liquid density
         /// </summary>
-        public decimal LiquidDensity { get; set; }
+        private decimal LiquidDensityValue;
+
+        public decimal LiquidDensity
+
+        {
+
+            get { return this.LiquidDensityValue; }
+
+            set { SetProperty(ref LiquidDensityValue, value); }
+
+        }
     }
 }
+
+
 
 
 

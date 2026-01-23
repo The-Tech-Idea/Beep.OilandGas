@@ -1,47 +1,118 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
     /// Represents run ticket valuation (DTO for calculations/reporting).
     /// </summary>
-    public class RUN_TICKET_VALUATION : ModelEntityBase
+    public class RunTicketValuationModel : ModelEntityBase
     {
         /// <summary>
         /// Gets or sets the valuation identifier.
         /// </summary>
-        public string ValuationId { get; set; } = string.Empty;
+        private string ValuationIdValue = string.Empty;
+
+        public string ValuationId
+
+        {
+
+            get { return this.ValuationIdValue; }
+
+            set { SetProperty(ref ValuationIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the run ticket reference.
         /// </summary>
-        public string RunTicketNumber { get; set; } = string.Empty;
+        private string RunTicketNumberValue = string.Empty;
+
+        public string RunTicketNumber
+
+        {
+
+            get { return this.RunTicketNumberValue; }
+
+            set { SetProperty(ref RunTicketNumberValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the valuation date.
         /// </summary>
-        public DateTime ValuationDate { get; set; }
+        private DateTime ValuationDateValue;
+
+        public DateTime ValuationDate
+
+        {
+
+            get { return this.ValuationDateValue; }
+
+            set { SetProperty(ref ValuationDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the base price per barrel.
         /// </summary>
-        public decimal BasePrice { get; set; }
+        private decimal BasePriceValue;
+
+        public decimal BasePrice
+
+        {
+
+            get { return this.BasePriceValue; }
+
+            set { SetProperty(ref BasePriceValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the quality adjustments.
         /// </summary>
-        public QualityAdjustments QualityAdjustments { get; set; } = new();
+        private QualityAdjustments QualityAdjustmentsValue = new();
+
+        public QualityAdjustments QualityAdjustments
+
+        {
+
+            get { return this.QualityAdjustmentsValue; }
+
+            set { SetProperty(ref QualityAdjustmentsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the location adjustments.
         /// </summary>
-        public LocationAdjustments LocationAdjustments { get; set; } = new();
+        private LocationAdjustments LocationAdjustmentsValue = new();
+
+        public LocationAdjustments LocationAdjustments
+
+        {
+
+            get { return this.LocationAdjustmentsValue; }
+
+            set { SetProperty(ref LocationAdjustmentsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the time adjustments.
         /// </summary>
-        public TimeAdjustments TimeAdjustments { get; set; } = new();
+        private TimeAdjustments TimeAdjustmentsValue = new();
+
+        public TimeAdjustments TimeAdjustments
+
+        {
+
+            get { return this.TimeAdjustmentsValue; }
+
+            set { SetProperty(ref TimeAdjustmentsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the total adjustments.
@@ -59,7 +130,17 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the net volume in barrels.
         /// </summary>
-        public decimal NetVolume { get; set; }
+        private decimal NetVolumeValue;
+
+        public decimal NetVolume
+
+        {
+
+            get { return this.NetVolumeValue; }
+
+            set { SetProperty(ref NetVolumeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the total value.
@@ -69,7 +150,17 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the pricing method used.
         /// </summary>
-        public PricingMethod PricingMethod { get; set; }
+        private PricingMethod PricingMethodValue;
+
+        public PricingMethod PricingMethod
+
+        {
+
+            get { return this.PricingMethodValue; }
+
+            set { SetProperty(ref PricingMethodValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -80,22 +171,62 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the API gravity adjustment.
         /// </summary>
-        public decimal ApiGravityAdjustment { get; set; }
+        private decimal ApiGravityAdjustmentValue;
+
+        public decimal ApiGravityAdjustment
+
+        {
+
+            get { return this.ApiGravityAdjustmentValue; }
+
+            set { SetProperty(ref ApiGravityAdjustmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the sulfur content adjustment.
         /// </summary>
-        public decimal SulfurAdjustment { get; set; }
+        private decimal SulfurAdjustmentValue;
+
+        public decimal SulfurAdjustment
+
+        {
+
+            get { return this.SulfurAdjustmentValue; }
+
+            set { SetProperty(ref SulfurAdjustmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the BS&W adjustment.
         /// </summary>
-        public decimal BSWAdjustment { get; set; }
+        private decimal BSWAdjustmentValue;
+
+        public decimal BSWAdjustment
+
+        {
+
+            get { return this.BSWAdjustmentValue; }
+
+            set { SetProperty(ref BSWAdjustmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets other quality adjustments.
         /// </summary>
-        public decimal OtherAdjustments { get; set; }
+        private decimal OtherAdjustmentsValue;
+
+        public decimal OtherAdjustments
+
+        {
+
+            get { return this.OtherAdjustmentsValue; }
+
+            set { SetProperty(ref OtherAdjustmentsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the total quality adjustment.
@@ -115,12 +246,32 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the location differential.
         /// </summary>
-        public decimal LocationDifferential { get; set; }
+        private decimal LocationDifferentialValue;
+
+        public decimal LocationDifferential
+
+        {
+
+            get { return this.LocationDifferentialValue; }
+
+            set { SetProperty(ref LocationDifferentialValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the transportation adjustment.
         /// </summary>
-        public decimal TransportationAdjustment { get; set; }
+        private decimal TransportationAdjustmentValue;
+
+        public decimal TransportationAdjustment
+
+        {
+
+            get { return this.TransportationAdjustmentValue; }
+
+            set { SetProperty(ref TransportationAdjustmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the total location adjustment.
@@ -138,12 +289,32 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the time differential.
         /// </summary>
-        public decimal TimeDifferential { get; set; }
+        private decimal TimeDifferentialValue;
+
+        public decimal TimeDifferential
+
+        {
+
+            get { return this.TimeDifferentialValue; }
+
+            set { SetProperty(ref TimeDifferentialValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the interest adjustment (if applicable).
         /// </summary>
-        public decimal InterestAdjustment { get; set; }
+        private decimal InterestAdjustmentValue;
+
+        public decimal InterestAdjustment
+
+        {
+
+            get { return this.InterestAdjustmentValue; }
+
+            set { SetProperty(ref InterestAdjustmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the total time adjustment.
@@ -162,37 +333,97 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the index identifier.
         /// </summary>
-        public string IndexId { get; set; } = string.Empty;
+        private string IndexIdValue = string.Empty;
+
+        public string IndexId
+
+        {
+
+            get { return this.IndexIdValue; }
+
+            set { SetProperty(ref IndexIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the index name (e.g., "WTI", "Brent", "LLS").
         /// </summary>
-        public string IndexName { get; set; } = string.Empty;
+        private string IndexNameValue = string.Empty;
+
+        public string IndexName
+
+        {
+
+            get { return this.IndexNameValue; }
+
+            set { SetProperty(ref IndexNameValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the pricing point.
         /// </summary>
-        public string PricingPoint { get; set; } = string.Empty;
+        private string PricingPointValue = string.Empty;
+
+        public string PricingPoint
+
+        {
+
+            get { return this.PricingPointValue; }
+
+            set { SetProperty(ref PricingPointValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the date.
         /// </summary>
-        public DateTime Date { get; set; }
+        private DateTime DateValue;
+
+        public DateTime Date
+
+        {
+
+            get { return this.DateValue; }
+
+            set { SetProperty(ref DateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the price per barrel.
         /// </summary>
-        public decimal Price { get; set; }
+        private decimal PriceValue;
+
+        public decimal Price
+
+        {
+
+            get { return this.PriceValue; }
+
+            set { SetProperty(ref PriceValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the unit of measurement.
         /// </summary>
-        public string Unit { get; set; } = "USD/Barrel";
+        private string UnitValue = "USD/Barrel";
+
+        public string Unit
+
+        {
+
+            get { return this.UnitValue; }
+
+            set { SetProperty(ref UnitValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the source of the price.
         /// </summary>
-        public string Source { get; set; } = string.Empty;
+
     }
 
     /// <summary>
@@ -204,42 +435,122 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the regulated price identifier.
         /// </summary>
-        public string RegulatedPriceId { get; set; } = string.Empty;
+        private string RegulatedPriceIdValue = string.Empty;
+
+        public string RegulatedPriceId
+
+        {
+
+            get { return this.RegulatedPriceIdValue; }
+
+            set { SetProperty(ref RegulatedPriceIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the regulatory authority.
         /// </summary>
-        public string RegulatoryAuthority { get; set; } = string.Empty;
+        private string RegulatoryAuthorityValue = string.Empty;
+
+        public string RegulatoryAuthority
+
+        {
+
+            get { return this.RegulatoryAuthorityValue; }
+
+            set { SetProperty(ref RegulatoryAuthorityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the price formula.
         /// </summary>
-        public string PriceFormula { get; set; } = string.Empty;
+        private string PriceFormulaValue = string.Empty;
+
+        public string PriceFormula
+
+        {
+
+            get { return this.PriceFormulaValue; }
+
+            set { SetProperty(ref PriceFormulaValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the effective start date.
         /// </summary>
-        public DateTime EffectiveStartDate { get; set; }
+        private DateTime EffectiveStartDateValue;
+
+        public DateTime EffectiveStartDate
+
+        {
+
+            get { return this.EffectiveStartDateValue; }
+
+            set { SetProperty(ref EffectiveStartDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the effective end date.
         /// </summary>
-        public DateTime? EffectiveEndDate { get; set; }
+        private DateTime? EffectiveEndDateValue;
+
+        public DateTime? EffectiveEndDate
+
+        {
+
+            get { return this.EffectiveEndDateValue; }
+
+            set { SetProperty(ref EffectiveEndDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the price cap per barrel.
         /// </summary>
-        public decimal? PriceCap { get; set; }
+        private decimal? PriceCapValue;
+
+        public decimal? PriceCap
+
+        {
+
+            get { return this.PriceCapValue; }
+
+            set { SetProperty(ref PriceCapValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the price floor per barrel.
         /// </summary>
-        public decimal? PriceFloor { get; set; }
+        private decimal? PriceFloorValue;
+
+        public decimal? PriceFloor
+
+        {
+
+            get { return this.PriceFloorValue; }
+
+            set { SetProperty(ref PriceFloorValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the base price per barrel.
         /// </summary>
-        public decimal BasePrice { get; set; }
+        private decimal BasePriceValue;
+
+        public decimal BasePrice
+
+        {
+
+            get { return this.BasePriceValue; }
+
+            set { SetProperty(ref BasePriceValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the adjustment factors.
@@ -247,8 +558,5 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         public Dictionary<string, decimal> AdjustmentFactors { get; set; } = new();
     }
 }
-
-
-
 
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data.GasProperties;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -54,6 +55,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<Beep.OilandGas.Models.Data.GasComposition?> GetGasCompositionAsync(string compositionId);
     }
 }
+
 
 
 

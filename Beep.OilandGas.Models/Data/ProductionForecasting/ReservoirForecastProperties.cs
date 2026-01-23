@@ -9,64 +9,185 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
         /// <summary>
         /// Initial reservoir pressure in psia
         /// </summary>
-        public decimal InitialPressure { get; set; }
+        private decimal InitialPressureValue;
+
+        public decimal InitialPressure
+
+        {
+
+            get { return this.InitialPressureValue; }
+
+            set { SetProperty(ref InitialPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Reservoir permeability in md
         /// </summary>
-        public decimal Permeability { get; set; }
+        private decimal PermeabilityValue;
+
+        public decimal Permeability
+
+        {
+
+            get { return this.PermeabilityValue; }
+
+            set { SetProperty(ref PermeabilityValue, value); }
+
+        }
 
         /// <summary>
         /// Reservoir thickness in feet
         /// </summary>
-        public decimal Thickness { get; set; }
+        private decimal ThicknessValue;
+
+        public decimal Thickness
+
+        {
+
+            get { return this.ThicknessValue; }
+
+            set { SetProperty(ref ThicknessValue, value); }
+
+        }
 
         /// <summary>
         /// Drainage radius in feet
         /// </summary>
-        public decimal DrainageRadius { get; set; }
+        private decimal DrainageRadiusValue;
+
+        public decimal DrainageRadius
+
+        {
+
+            get { return this.DrainageRadiusValue; }
+
+            set { SetProperty(ref DrainageRadiusValue, value); }
+
+        }
 
         /// <summary>
         /// Wellbore radius in feet
         /// </summary>
-        public decimal WellboreRadius { get; set; }
+        private decimal WellboreRadiusValue;
+
+        public decimal WellboreRadius
+
+        {
+
+            get { return this.WellboreRadiusValue; }
+
+            set { SetProperty(ref WellboreRadiusValue, value); }
+
+        }
 
         /// <summary>
         /// Formation volume factor in RB/STB
         /// </summary>
-        public decimal FormationVolumeFactor { get; set; }
+        private decimal FormationVolumeFactorValue;
+
+        public decimal FormationVolumeFactor
+
+        {
+
+            get { return this.FormationVolumeFactorValue; }
+
+            set { SetProperty(ref FormationVolumeFactorValue, value); }
+
+        }
 
         /// <summary>
         /// Oil viscosity in cp
         /// </summary>
-        public decimal OilViscosity { get; set; }
+        private decimal OilViscosityValue;
+
+        public decimal OilViscosity
+
+        {
+
+            get { return this.OilViscosityValue; }
+
+            set { SetProperty(ref OilViscosityValue, value); }
+
+        }
 
         /// <summary>
         /// Total compressibility in 1/psi
         /// </summary>
-        public decimal TotalCompressibility { get; set; }
+        private decimal TotalCompressibilityValue;
+
+        public decimal TotalCompressibility
+
+        {
+
+            get { return this.TotalCompressibilityValue; }
+
+            set { SetProperty(ref TotalCompressibilityValue, value); }
+
+        }
 
         /// <summary>
         /// Porosity (fraction)
         /// </summary>
-        public decimal Porosity { get; set; }
+        private decimal PorosityValue;
+
+        public decimal Porosity
+
+        {
+
+            get { return this.PorosityValue; }
+
+            set { SetProperty(ref PorosityValue, value); }
+
+        }
 
         /// <summary>
         /// Skin factor
         /// </summary>
-        public decimal SkinFactor { get; set; }
+        private decimal SkinFactorValue;
+
+        public decimal SkinFactor
+
+        {
+
+            get { return this.SkinFactorValue; }
+
+            set { SetProperty(ref SkinFactorValue, value); }
+
+        }
 
         /// <summary>
         /// Gas specific gravity (relative to air)
         /// </summary>
-        public decimal GasSpecificGravity { get; set; }
+        private decimal GasSpecificGravityValue;
+
+        public decimal GasSpecificGravity
+
+        {
+
+            get { return this.GasSpecificGravityValue; }
+
+            set { SetProperty(ref GasSpecificGravityValue, value); }
+
+        }
 
         /// <summary>
         /// Reservoir temperature in Rankine
         /// </summary>
-        public decimal Temperature { get; set; }
+        private decimal TemperatureValue;
+
+        public decimal Temperature
+
+        {
+
+            get { return this.TemperatureValue; }
+
+            set { SetProperty(ref TemperatureValue, value); }
+
+        }
     }
 }
+
 
 
 

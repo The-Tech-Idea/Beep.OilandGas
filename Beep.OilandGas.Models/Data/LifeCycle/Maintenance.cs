@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.LifeCycle
 {
     /// <summary>
@@ -9,58 +10,361 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
     
     public class MaintenanceScheduleRequest : ModelEntityBase
     {
-        public string EntityId { get; set; } = string.Empty;
-        public string EntityType { get; set; } = string.Empty; // WELL, FACILITY, PIPELINE, EQUIPMENT
-        public string MaintenanceType { get; set; } = string.Empty; // PREVENTIVE, CORRECTIVE, EMERGENCY
-        public DateTime ScheduledDate { get; set; }
-        public string? Description { get; set; }
-        public string? AssignedTo { get; set; }
-        public bool? CreateWorkOrder { get; set; } // Whether to create a work order for this maintenance
+        private string EntityIdValue = string.Empty;
+
+        public string EntityId
+
+        {
+
+            get { return this.EntityIdValue; }
+
+            set { SetProperty(ref EntityIdValue, value); }
+
+        }
+        private string EntityTypeValue = string.Empty;
+
+        public string EntityType
+
+        {
+
+            get { return this.EntityTypeValue; }
+
+            set { SetProperty(ref EntityTypeValue, value); }
+
+        } // WELL, FACILITY, PIPELINE, EQUIPMENT
+        private string MaintenanceTypeValue = string.Empty;
+
+        public string MaintenanceType
+
+        {
+
+            get { return this.MaintenanceTypeValue; }
+
+            set { SetProperty(ref MaintenanceTypeValue, value); }
+
+        } // PREVENTIVE, CORRECTIVE, EMERGENCY
+        private DateTime ScheduledDateValue;
+
+        public DateTime ScheduledDate
+
+        {
+
+            get { return this.ScheduledDateValue; }
+
+            set { SetProperty(ref ScheduledDateValue, value); }
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        private string? AssignedToValue;
+
+        public string? AssignedTo
+
+        {
+
+            get { return this.AssignedToValue; }
+
+            set { SetProperty(ref AssignedToValue, value); }
+
+        }
+        private bool? CreateWorkOrderValue;
+
+        public bool? CreateWorkOrder
+
+        {
+
+            get { return this.CreateWorkOrderValue; }
+
+            set { SetProperty(ref CreateWorkOrderValue, value); }
+
+        } // Whether to create a work order for this maintenance
         public Dictionary<string, object>? ScheduleData { get; set; }
     }
 
     public class MaintenanceExecutionRequest : ModelEntityBase
     {
-        public string MaintenanceId { get; set; } = string.Empty;
-        public DateTime ExecutionDate { get; set; }
-        public string? ExecutedBy { get; set; }
-        public string? WorkPerformed { get; set; }
-        public string? Status { get; set; }
+        private string MaintenanceIdValue = string.Empty;
+
+        public string MaintenanceId
+
+        {
+
+            get { return this.MaintenanceIdValue; }
+
+            set { SetProperty(ref MaintenanceIdValue, value); }
+
+        }
+        private DateTime ExecutionDateValue;
+
+        public DateTime ExecutionDate
+
+        {
+
+            get { return this.ExecutionDateValue; }
+
+            set { SetProperty(ref ExecutionDateValue, value); }
+
+        }
+        private string? ExecutedByValue;
+
+        public string? ExecutedBy
+
+        {
+
+            get { return this.ExecutedByValue; }
+
+            set { SetProperty(ref ExecutedByValue, value); }
+
+        }
+        private string? WorkPerformedValue;
+
+        public string? WorkPerformed
+
+        {
+
+            get { return this.WorkPerformedValue; }
+
+            set { SetProperty(ref WorkPerformedValue, value); }
+
+        }
+        private string? StatusValue;
+
+        public string? Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
         public Dictionary<string, object>? ExecutionData { get; set; }
     }
 
     public class MaintenanceRequest : ModelEntityBase
     {
-        public string EntityId { get; set; } = string.Empty;
-        public string EntityType { get; set; } = string.Empty;
-        public string MaintenanceType { get; set; } = string.Empty;
-        public string Priority { get; set; } = string.Empty; // LOW, MEDIUM, HIGH, URGENT
-        public string? Description { get; set; }
-        public string? RequestedBy { get; set; }
+        private string EntityIdValue = string.Empty;
+
+        public string EntityId
+
+        {
+
+            get { return this.EntityIdValue; }
+
+            set { SetProperty(ref EntityIdValue, value); }
+
+        }
+        private string EntityTypeValue = string.Empty;
+
+        public string EntityType
+
+        {
+
+            get { return this.EntityTypeValue; }
+
+            set { SetProperty(ref EntityTypeValue, value); }
+
+        }
+        private string MaintenanceTypeValue = string.Empty;
+
+        public string MaintenanceType
+
+        {
+
+            get { return this.MaintenanceTypeValue; }
+
+            set { SetProperty(ref MaintenanceTypeValue, value); }
+
+        }
+        private string PriorityValue = string.Empty;
+
+        public string Priority
+
+        {
+
+            get { return this.PriorityValue; }
+
+            set { SetProperty(ref PriorityValue, value); }
+
+        } // LOW, MEDIUM, HIGH, URGENT
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        private string? RequestedByValue;
+
+        public string? RequestedBy
+
+        {
+
+            get { return this.RequestedByValue; }
+
+            set { SetProperty(ref RequestedByValue, value); }
+
+        }
         public Dictionary<string, object>? RequestData { get; set; }
     }
 
     public class MaintenanceHistoryRequest : ModelEntityBase
     {
-        public string EntityId { get; set; } = string.Empty;
-        public string EntityType { get; set; } = string.Empty;
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        private string EntityIdValue = string.Empty;
+
+        public string EntityId
+
+        {
+
+            get { return this.EntityIdValue; }
+
+            set { SetProperty(ref EntityIdValue, value); }
+
+        }
+        private string EntityTypeValue = string.Empty;
+
+        public string EntityType
+
+        {
+
+            get { return this.EntityTypeValue; }
+
+            set { SetProperty(ref EntityTypeValue, value); }
+
+        }
+        private DateTime? StartDateValue;
+
+        public DateTime? StartDate
+
+        {
+
+            get { return this.StartDateValue; }
+
+            set { SetProperty(ref StartDateValue, value); }
+
+        }
+        private DateTime? EndDateValue;
+
+        public DateTime? EndDate
+
+        {
+
+            get { return this.EndDateValue; }
+
+            set { SetProperty(ref EndDateValue, value); }
+
+        }
     }
 
     public class MaintenanceResponse : ModelEntityBase
     {
-        public string MaintenanceId { get; set; } = string.Empty;
-        public string EntityId { get; set; } = string.Empty;
-        public string EntityType { get; set; } = string.Empty;
-        public string MaintenanceType { get; set; } = string.Empty;
-        public DateTime? ScheduledDate { get; set; }
-        public DateTime? CompletedDate { get; set; }
-        public string? Status { get; set; }
-        public string? WorkOrderId { get; set; } // Associated work order ID if created
+        private string MaintenanceIdValue = string.Empty;
+
+        public string MaintenanceId
+
+        {
+
+            get { return this.MaintenanceIdValue; }
+
+            set { SetProperty(ref MaintenanceIdValue, value); }
+
+        }
+        private string EntityIdValue = string.Empty;
+
+        public string EntityId
+
+        {
+
+            get { return this.EntityIdValue; }
+
+            set { SetProperty(ref EntityIdValue, value); }
+
+        }
+        private string EntityTypeValue = string.Empty;
+
+        public string EntityType
+
+        {
+
+            get { return this.EntityTypeValue; }
+
+            set { SetProperty(ref EntityTypeValue, value); }
+
+        }
+        private string MaintenanceTypeValue = string.Empty;
+
+        public string MaintenanceType
+
+        {
+
+            get { return this.MaintenanceTypeValue; }
+
+            set { SetProperty(ref MaintenanceTypeValue, value); }
+
+        }
+        private DateTime? ScheduledDateValue;
+
+        public DateTime? ScheduledDate
+
+        {
+
+            get { return this.ScheduledDateValue; }
+
+            set { SetProperty(ref ScheduledDateValue, value); }
+
+        }
+        private DateTime? CompletedDateValue;
+
+        public DateTime? CompletedDate
+
+        {
+
+            get { return this.CompletedDateValue; }
+
+            set { SetProperty(ref CompletedDateValue, value); }
+
+        }
+        private string? StatusValue;
+
+        public string? Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
+        private string? WorkOrderIdValue;
+
+        public string? WorkOrderId
+
+        {
+
+            get { return this.WorkOrderIdValue; }
+
+            set { SetProperty(ref WorkOrderIdValue, value); }
+
+        } // Associated work order ID if created
         public Dictionary<string, object>? MaintenanceData { get; set; }
     }
 }
+
+
+
 
 
 

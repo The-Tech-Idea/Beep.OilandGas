@@ -8,29 +8,80 @@ namespace Beep.OilandGas.Models.Data.DataManagement
         /// <summary>
         /// Storage path for demo SQLite databases
         /// </summary>
-        public string StoragePath { get; set; } = "./demos";
+        private string StoragePathValue = "./demos";
+
+        public string StoragePath
+
+        {
+
+            get { return this.StoragePathValue; }
+
+            set { SetProperty(ref StoragePathValue, value); }
+
+        }
 
         /// <summary>
         /// Number of days to retain demo databases before cleanup
         /// </summary>
-        public int RetentionDays { get; set; } = 7;
+        private int RetentionDaysValue = 7;
+
+        public int RetentionDays
+
+        {
+
+            get { return this.RetentionDaysValue; }
+
+            set { SetProperty(ref RetentionDaysValue, value); }
+
+        }
 
         /// <summary>
         /// Cron expression for cleanup schedule (default: daily at 2 AM)
         /// </summary>
-        public string CleanupSchedule { get; set; } = "0 2 * * *";
+        private string CleanupScheduleValue = "0 2 * * *";
+
+        public string CleanupSchedule
+
+        {
+
+            get { return this.CleanupScheduleValue; }
+
+            set { SetProperty(ref CleanupScheduleValue, value); }
+
+        }
 
         /// <summary>
         /// Whether demo database creation is enabled
         /// </summary>
-        public bool Enabled { get; set; } = true;
+        private bool EnabledValue = true;
+
+        public bool Enabled
+
+        {
+
+            get { return this.EnabledValue; }
+
+            set { SetProperty(ref EnabledValue, value); }
+
+        }
 
         /// <summary>
         /// Default seed data option for new demo databases
         /// </summary>
-        public string DefaultSeedOption { get; set; } = "reference-sample";
+        private string DefaultSeedOptionValue = "reference-sample";
+
+        public string DefaultSeedOption
+
+        {
+
+            get { return this.DefaultSeedOptionValue; }
+
+            set { SetProperty(ref DefaultSeedOptionValue, value); }
+
+        }
     }
 }
+
 
 
 

@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data.PlungerLift;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -36,42 +38,16 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// <summary>
     /// DTO for plunger lift design.
     /// </summary>
-    public class PlungerLiftDesign
-    {
-        public string DesignId { get; set; } = string.Empty;
-        public string WellUWI { get; set; } = string.Empty;
-        public System.DateTime DesignDate { get; set; }
-        public decimal PlungerType { get; set; }
-        public decimal OperatingPressure { get; set; }
-        public decimal CycleTime { get; set; }
-        public string? Status { get; set; }
-    }
+    
 
-    /// <summary>
-    /// DTO for plunger lift well properties.
-    /// </summary>
-    public class PlungerLiftWellProperties
-    {
-        public decimal WellDepth { get; set; }
-        public decimal TubingDiameter { get; set; }
-        public decimal WellheadPressure { get; set; }
-        public decimal BottomHolePressure { get; set; }
-        public decimal GasOilRatio { get; set; }
-    }
+
 
     /// <summary>
     /// DTO for plunger lift performance.
     /// </summary>
-    public class PlungerLiftPerformance
-    {
-        public string WellUWI { get; set; } = string.Empty;
-        public System.DateTime PerformanceDate { get; set; }
-        public decimal ProductionRate { get; set; }
-        public decimal CycleTime { get; set; }
-        public decimal Efficiency { get; set; }
-        public string? Status { get; set; }
-    }
+    
 }
+
 
 
 

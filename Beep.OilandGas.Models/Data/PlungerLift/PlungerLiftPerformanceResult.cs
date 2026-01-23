@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.PlungerLift
 {
     /// <summary>
@@ -11,29 +12,82 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         /// <summary>
         /// Cycle analysis results
         /// </summary>
-        public PlungerLiftCycleResult CycleResult { get; set; } = new();
+        private PlungerLiftCycleResult CycleResultValue = new();
+
+        public PlungerLiftCycleResult CycleResult
+
+        {
+
+            get { return this.CycleResultValue; }
+
+            set { SetProperty(ref CycleResultValue, value); }
+
+        }
 
         /// <summary>
         /// Gas requirements
         /// </summary>
-        public PlungerLiftGasRequirements GasRequirements { get; set; } = new();
+        private PlungerLiftGasRequirements GasRequirementsValue = new();
+
+        public PlungerLiftGasRequirements GasRequirements
+
+        {
+
+            get { return this.GasRequirementsValue; }
+
+            set { SetProperty(ref GasRequirementsValue, value); }
+
+        }
 
         /// <summary>
         /// System efficiency (0-1)
         /// </summary>
-        public decimal SystemEfficiency { get; set; }
+        private decimal SystemEfficiencyValue;
+
+        public decimal SystemEfficiency
+
+        {
+
+            get { return this.SystemEfficiencyValue; }
+
+            set { SetProperty(ref SystemEfficiencyValue, value); }
+
+        }
 
         /// <summary>
         /// Whether system is feasible
         /// </summary>
-        public bool IsFeasible { get; set; }
+        private bool IsFeasibleValue;
+
+        public bool IsFeasible
+
+        {
+
+            get { return this.IsFeasibleValue; }
+
+            set { SetProperty(ref IsFeasibleValue, value); }
+
+        }
 
         /// <summary>
         /// Feasibility reasons
         /// </summary>
-        public List<string> FeasibilityReasons { get; set; } = new();
+        private List<string> FeasibilityReasonsValue = new();
+
+        public List<string> FeasibilityReasons
+
+        {
+
+            get { return this.FeasibilityReasonsValue; }
+
+            set { SetProperty(ref FeasibilityReasonsValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

@@ -1,73 +1,408 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     public class JournalEntry : ModelEntityBase
     {
-        public string JournalEntryId { get; set; }
-        public string EntryNumber { get; set; }
-        public DateTime? EntryDate { get; set; }
-        public string EntryType { get; set; }
-        public string Status { get; set; }
-        public string Description { get; set; }
-        public string ReferenceNumber { get; set; }
-        public string SourceModule { get; set; }
-        public decimal? TotalDebit { get; set; }
-        public decimal? TotalCredit { get; set; }
-        public List<JournalEntryLine> Lines { get; set; } = new List<JournalEntryLine>();
+        private string JournalEntryIdValue;
+
+        public string JournalEntryId
+
+        {
+
+            get { return this.JournalEntryIdValue; }
+
+            set { SetProperty(ref JournalEntryIdValue, value); }
+
+        }
+        private string EntryNumberValue;
+
+        public string EntryNumber
+
+        {
+
+            get { return this.EntryNumberValue; }
+
+            set { SetProperty(ref EntryNumberValue, value); }
+
+        }
+        private DateTime? EntryDateValue;
+
+        public DateTime? EntryDate
+
+        {
+
+            get { return this.EntryDateValue; }
+
+            set { SetProperty(ref EntryDateValue, value); }
+
+        }
+        private string EntryTypeValue;
+
+        public string EntryType
+
+        {
+
+            get { return this.EntryTypeValue; }
+
+            set { SetProperty(ref EntryTypeValue, value); }
+
+        }
+        private string StatusValue;
+
+        public string Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
+        private string DescriptionValue;
+
+        public string Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        private string ReferenceNumberValue;
+
+        public string ReferenceNumber
+
+        {
+
+            get { return this.ReferenceNumberValue; }
+
+            set { SetProperty(ref ReferenceNumberValue, value); }
+
+        }
+        private string SourceModuleValue;
+
+        public string SourceModule
+
+        {
+
+            get { return this.SourceModuleValue; }
+
+            set { SetProperty(ref SourceModuleValue, value); }
+
+        }
+        private decimal? TotalDebitValue;
+
+        public decimal? TotalDebit
+
+        {
+
+            get { return this.TotalDebitValue; }
+
+            set { SetProperty(ref TotalDebitValue, value); }
+
+        }
+        private decimal? TotalCreditValue;
+
+        public decimal? TotalCredit
+
+        {
+
+            get { return this.TotalCreditValue; }
+
+            set { SetProperty(ref TotalCreditValue, value); }
+
+        }
+        private List<JournalEntryLine> LinesValue = new List<JournalEntryLine>();
+
+        public List<JournalEntryLine> Lines
+
+        {
+
+            get { return this.LinesValue; }
+
+            set { SetProperty(ref LinesValue, value); }
+
+        }
     }
 
     public class JournalEntryLine : ModelEntityBase
     {
-        public string JournalEntryLineId { get; set; }
-        public string JournalEntryId { get; set; }
-        public string GlAccountId { get; set; }
-        public int? LineNumber { get; set; }
-        public decimal? DebitAmount { get; set; }
-        public decimal? CreditAmount { get; set; }
-        public string Description { get; set; }
+        private string JournalEntryLineIdValue;
+
+        public string JournalEntryLineId
+
+        {
+
+            get { return this.JournalEntryLineIdValue; }
+
+            set { SetProperty(ref JournalEntryLineIdValue, value); }
+
+        }
+        private string JournalEntryIdValue;
+
+        public string JournalEntryId
+
+        {
+
+            get { return this.JournalEntryIdValue; }
+
+            set { SetProperty(ref JournalEntryIdValue, value); }
+
+        }
+        private string GlAccountIdValue;
+
+        public string GlAccountId
+
+        {
+
+            get { return this.GlAccountIdValue; }
+
+            set { SetProperty(ref GlAccountIdValue, value); }
+
+        }
+        private int? LineNumberValue;
+
+        public int? LineNumber
+
+        {
+
+            get { return this.LineNumberValue; }
+
+            set { SetProperty(ref LineNumberValue, value); }
+
+        }
+        private decimal? DebitAmountValue;
+
+        public decimal? DebitAmount
+
+        {
+
+            get { return this.DebitAmountValue; }
+
+            set { SetProperty(ref DebitAmountValue, value); }
+
+        }
+        private decimal? CreditAmountValue;
+
+        public decimal? CreditAmount
+
+        {
+
+            get { return this.CreditAmountValue; }
+
+            set { SetProperty(ref CreditAmountValue, value); }
+
+        }
+        private string DescriptionValue;
+
+        public string Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
     }
 
     public class CreateJournalEntryRequest : ModelEntityBase
     {
-        public string EntryNumber { get; set; }
-        public DateTime EntryDate { get; set; }
-        public string EntryType { get; set; }
-        public string Description { get; set; }
-        public string ReferenceNumber { get; set; }
-        public string SourceModule { get; set; }
-        public List<JournalEntryLineData> Lines { get; set; } = new List<JournalEntryLineData>();
+        private string EntryNumberValue;
+
+        public string EntryNumber
+
+        {
+
+            get { return this.EntryNumberValue; }
+
+            set { SetProperty(ref EntryNumberValue, value); }
+
+        }
+        private DateTime EntryDateValue;
+
+        public DateTime EntryDate
+
+        {
+
+            get { return this.EntryDateValue; }
+
+            set { SetProperty(ref EntryDateValue, value); }
+
+        }
+        private string EntryTypeValue;
+
+        public string EntryType
+
+        {
+
+            get { return this.EntryTypeValue; }
+
+            set { SetProperty(ref EntryTypeValue, value); }
+
+        }
+        private string DescriptionValue;
+
+        public string Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+        private string ReferenceNumberValue;
+
+        public string ReferenceNumber
+
+        {
+
+            get { return this.ReferenceNumberValue; }
+
+            set { SetProperty(ref ReferenceNumberValue, value); }
+
+        }
+        private string SourceModuleValue;
+
+        public string SourceModule
+
+        {
+
+            get { return this.SourceModuleValue; }
+
+            set { SetProperty(ref SourceModuleValue, value); }
+
+        }
+        private List<JournalEntryLineData> LinesValue = new List<JournalEntryLineData>();
+
+        public List<JournalEntryLineData> Lines
+
+        {
+
+            get { return this.LinesValue; }
+
+            set { SetProperty(ref LinesValue, value); }
+
+        }
     }
 
     public class JournalEntryLineData : ModelEntityBase
     {
-        public string GlAccountId { get; set; }
-        public decimal? DebitAmount { get; set; }
-        public decimal? CreditAmount { get; set; }
-        public string Description { get; set; }
+        private string GlAccountIdValue;
+
+        public string GlAccountId
+
+        {
+
+            get { return this.GlAccountIdValue; }
+
+            set { SetProperty(ref GlAccountIdValue, value); }
+
+        }
+        private decimal? DebitAmountValue;
+
+        public decimal? DebitAmount
+
+        {
+
+            get { return this.DebitAmountValue; }
+
+            set { SetProperty(ref DebitAmountValue, value); }
+
+        }
+        private decimal? CreditAmountValue;
+
+        public decimal? CreditAmount
+
+        {
+
+            get { return this.CreditAmountValue; }
+
+            set { SetProperty(ref CreditAmountValue, value); }
+
+        }
+        private string DescriptionValue;
+
+        public string Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
     }
 
-    public class PeriodClosingResult : ModelEntityBase
-    {
-        public string ClosingId { get; set; } = Guid.NewGuid().ToString();
-        public DateTime PeriodEndDate { get; set; }
-        public bool IsClosed { get; set; }
-        public string Status { get; set; }
-        public int JournalEntriesCreated { get; set; }
-        public string UserId { get; set; }
-        public DateTime ClosingDate { get; set; } = DateTime.UtcNow;
-    }
+
 
     public class JournalEntryApprovalResult : ModelEntityBase
     {
-        public string JournalEntryId { get; set; }
-        public bool IsApproved { get; set; }
-        public string ApproverId { get; set; }
-        public DateTime ApprovalDate { get; set; } = DateTime.UtcNow;
-        public string Status { get; set; }
+        private string JournalEntryIdValue;
+
+        public string JournalEntryId
+
+        {
+
+            get { return this.JournalEntryIdValue; }
+
+            set { SetProperty(ref JournalEntryIdValue, value); }
+
+        }
+        private bool IsApprovedValue;
+
+        public bool IsApproved
+
+        {
+
+            get { return this.IsApprovedValue; }
+
+            set { SetProperty(ref IsApprovedValue, value); }
+
+        }
+        private string ApproverIdValue;
+
+        public string ApproverId
+
+        {
+
+            get { return this.ApproverIdValue; }
+
+            set { SetProperty(ref ApproverIdValue, value); }
+
+        }
+        private DateTime ApprovalDateValue = DateTime.UtcNow;
+
+        public DateTime ApprovalDate
+
+        {
+
+            get { return this.ApprovalDateValue; }
+
+            set { SetProperty(ref ApprovalDateValue, value); }
+
+        }
+        private string StatusValue;
+
+        public string Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.ProductionForecasting.Services
@@ -28,8 +29,8 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             }
 
             var capSchedule = request.CapitalSchedule?.Select(c => (c.Date, c.Amount)).ToList();
-            var cashFlows = BuildCashFlowsFromForecast(forecast, request.OilPrice, request.GasPrice, request.OperatingCostPerBarrel, request.FixedOpexPerPeriod, capSchedule);
-            var npv = ComputeNPV(cashFlows, request.DiscountRate);
+            var cashFlows = BuildCashFlowsFromForecast(forecast, request.OilPrice.GetValueOrDefault(), request.GasPrice.GetValueOrDefault(), request.OperatingCostPerBarrel.GetValueOrDefault(10m), request.FixedOpexPerPeriod.GetValueOrDefault(), capSchedule);
+            var npv = ComputeNPV(cashFlows, (decimal)request.DiscountRate);
             var irr = ComputeIRR(cashFlows);
 
             decimal cumulative = 0m;

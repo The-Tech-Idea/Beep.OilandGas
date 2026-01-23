@@ -9,13 +9,39 @@ namespace Beep.OilandGas.Models.Data.AccessControl
     /// </summary>
     public class ValidateAccessRequest : ModelEntityBase
     {
+        private string UserIdValue = string.Empty;
+
         [Required(ErrorMessage = "UserId is required")]
-        public string UserId { get; set; } = string.Empty;
+        public string UserId
+
+        {
+
+            get { return this.UserIdValue; }
+
+            set { SetProperty(ref UserIdValue, value); }
+
+        }
+
+        private List<AssetHierarchyNode> AssetPathValue = new List<AssetHierarchyNode>();
+
 
         [Required(ErrorMessage = "AssetPath is required")]
-        public List<AssetHierarchyNode> AssetPath { get; set; } = new List<AssetHierarchyNode>();
+        public List<AssetHierarchyNode> AssetPath
+
+
+        {
+
+
+            get { return this.AssetPathValue; }
+
+
+            set { SetProperty(ref AssetPathValue, value); }
+
+
+        }
     }
 }
+
 
 
 

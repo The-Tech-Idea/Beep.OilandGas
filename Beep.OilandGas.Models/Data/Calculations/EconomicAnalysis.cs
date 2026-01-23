@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Calculations
 {
     /// <summary>
@@ -18,77 +19,227 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the analysis
         /// </summary>
-        public string AnalysisId { get; set; }
+        private string AnalysisIdValue;
+
+        public string AnalysisId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date and time the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Number of simulations performed
         /// </summary>
-        public int SimulationCount { get; set; }
+        private int SimulationCountValue;
+
+        public int SimulationCount
+
+        {
+
+            get { return this.SimulationCountValue; }
+
+            set { SetProperty(ref SimulationCountValue, value); }
+
+        }
 
         /// <summary>
         /// Distribution of NPV values from all simulations
         /// </summary>
-        public List<double> NPVDistribution { get; set; }
+        private List<double> NPVDistributionValue;
+
+        public List<double> NPVDistribution
+
+        {
+
+            get { return this.NPVDistributionValue; }
+
+            set { SetProperty(ref NPVDistributionValue, value); }
+
+        }
 
         /// <summary>
         /// Distribution of IRR values from all simulations
         /// </summary>
-        public List<double> IRRDistribution { get; set; }
+        private List<double> IRRDistributionValue;
+
+        public List<double> IRRDistribution
+
+        {
+
+            get { return this.IRRDistributionValue; }
+
+            set { SetProperty(ref IRRDistributionValue, value); }
+
+        }
 
         /// <summary>
         /// Mean (average) NPV across all simulations
         /// </summary>
-        public double MeanNPV { get; set; }
+        private double MeanNPVValue;
+
+        public double MeanNPV
+
+        {
+
+            get { return this.MeanNPVValue; }
+
+            set { SetProperty(ref MeanNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Mean (average) IRR across all simulations
         /// </summary>
-        public double MeanIRR { get; set; }
+        private double MeanIRRValue;
+
+        public double MeanIRR
+
+        {
+
+            get { return this.MeanIRRValue; }
+
+            set { SetProperty(ref MeanIRRValue, value); }
+
+        }
 
         /// <summary>
         /// Standard deviation of NPV distribution (volatility measure)
         /// </summary>
-        public double StdDevNPV { get; set; }
+        private double StdDevNPVValue;
+
+        public double StdDevNPV
+
+        {
+
+            get { return this.StdDevNPVValue; }
+
+            set { SetProperty(ref StdDevNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Standard deviation of IRR distribution (volatility measure)
         /// </summary>
-        public double StdDevIRR { get; set; }
+        private double StdDevIRRValue;
+
+        public double StdDevIRR
+
+        {
+
+            get { return this.StdDevIRRValue; }
+
+            set { SetProperty(ref StdDevIRRValue, value); }
+
+        }
 
         /// <summary>
         /// 10th percentile NPV (downside scenario)
         /// </summary>
-        public double P10NPV { get; set; }
+        private double P10NPVValue;
+
+        public double P10NPV
+
+        {
+
+            get { return this.P10NPVValue; }
+
+            set { SetProperty(ref P10NPVValue, value); }
+
+        }
 
         /// <summary>
         /// 50th percentile NPV (base case)
         /// </summary>
-        public double P50NPV { get; set; }
+        private double P50NPVValue;
+
+        public double P50NPV
+
+        {
+
+            get { return this.P50NPVValue; }
+
+            set { SetProperty(ref P50NPVValue, value); }
+
+        }
 
         /// <summary>
         /// 90th percentile NPV (upside scenario)
         /// </summary>
-        public double P90NPV { get; set; }
+        private double P90NPVValue;
+
+        public double P90NPV
+
+        {
+
+            get { return this.P90NPVValue; }
+
+            set { SetProperty(ref P90NPVValue, value); }
+
+        }
 
         /// <summary>
         /// Minimum NPV from all simulations
         /// </summary>
-        public double MinNPV { get; set; }
+        private double MinNPVValue;
+
+        public double MinNPV
+
+        {
+
+            get { return this.MinNPVValue; }
+
+            set { SetProperty(ref MinNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Maximum NPV from all simulations
         /// </summary>
-        public double MaxNPV { get; set; }
+        private double MaxNPVValue;
+
+        public double MaxNPV
+
+        {
+
+            get { return this.MaxNPVValue; }
+
+            set { SetProperty(ref MaxNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Probability of achieving negative NPV (risk of loss)
         /// </summary>
-        public double ProbabilityOfLoss { get; set; }
+        private double ProbabilityOfLossValue;
+
+        public double ProbabilityOfLoss
+
+        {
+
+            get { return this.ProbabilityOfLossValue; }
+
+            set { SetProperty(ref ProbabilityOfLossValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -99,47 +250,137 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the analysis
         /// </summary>
-        public string AnalysisId { get; set; }
+        private string AnalysisIdValue;
+
+        public string AnalysisId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date and time the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Initial project NPV without considering options
         /// </summary>
-        public double InitialNPV { get; set; }
+        private double InitialNPVValue;
+
+        public double InitialNPV
+
+        {
+
+            get { return this.InitialNPVValue; }
+
+            set { SetProperty(ref InitialNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Expected project life in years
         /// </summary>
-        public int ProjectLife { get; set; }
+        private int ProjectLifeValue;
+
+        public int ProjectLife
+
+        {
+
+            get { return this.ProjectLifeValue; }
+
+            set { SetProperty(ref ProjectLifeValue, value); }
+
+        }
 
         /// <summary>
         /// Cash flow volatility (used for option valuation)
         /// </summary>
-        public double Volatility { get; set; }
+        private double VolatilityValue;
+
+        public double Volatility
+
+        {
+
+            get { return this.VolatilityValue; }
+
+            set { SetProperty(ref VolatilityValue, value); }
+
+        }
 
         /// <summary>
         /// List of option valuations (expansion, abandonment, switching)
         /// </summary>
-        public List<OptionValuation> Options { get; set; }
+        private List<OptionValuation> OptionsValue;
+
+        public List<OptionValuation> Options
+
+        {
+
+            get { return this.OptionsValue; }
+
+            set { SetProperty(ref OptionsValue, value); }
+
+        }
 
         /// <summary>
         /// Total value of all strategic options combined
         /// </summary>
-        public double TotalOptionValue { get; set; }
+        private double TotalOptionValueValue;
+
+        public double TotalOptionValue
+
+        {
+
+            get { return this.TotalOptionValueValue; }
+
+            set { SetProperty(ref TotalOptionValueValue, value); }
+
+        }
 
         /// <summary>
         /// Project value including option values
         /// </summary>
-        public double ProjectValueWithOptions { get; set; }
+        private double ProjectValueWithOptionsValue;
+
+        public double ProjectValueWithOptions
+
+        {
+
+            get { return this.ProjectValueWithOptionsValue; }
+
+            set { SetProperty(ref ProjectValueWithOptionsValue, value); }
+
+        }
 
         /// <summary>
         /// Flexibility premium as percentage of initial NPV
         /// </summary>
-        public double FlexibilityPremium { get; set; }
+        private double FlexibilityPremiumValue;
+
+        public double FlexibilityPremium
+
+        {
+
+            get { return this.FlexibilityPremiumValue; }
+
+            set { SetProperty(ref FlexibilityPremiumValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -150,37 +391,107 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Type of option: Expansion, Abandonment, or Switching
         /// </summary>
-        public string OptionType { get; set; }
+        private string OptionTypeValue;
+
+        public string OptionType
+
+        {
+
+            get { return this.OptionTypeValue; }
+
+            set { SetProperty(ref OptionTypeValue, value); }
+
+        }
 
         /// <summary>
         /// Calculated value of the option
         /// </summary>
-        public double OptionValue { get; set; }
+        private double OptionValueValue;
+
+        public double OptionValue
+
+        {
+
+            get { return this.OptionValueValue; }
+
+            set { SetProperty(ref OptionValueValue, value); }
+
+        }
 
         /// <summary>
         /// Project value if the option scenario occurs
         /// </summary>
-        public double ScenarioValue { get; set; }
+        private double ScenarioValueValue;
+
+        public double ScenarioValue
+
+        {
+
+            get { return this.ScenarioValueValue; }
+
+            set { SetProperty(ref ScenarioValueValue, value); }
+
+        }
 
         /// <summary>
         /// Cost to exercise the expansion option
         /// </summary>
-        public double ExerciseCost { get; set; }
+        private double ExerciseCostValue;
+
+        public double ExerciseCost
+
+        {
+
+            get { return this.ExerciseCostValue; }
+
+            set { SetProperty(ref ExerciseCostValue, value); }
+
+        }
 
         /// <summary>
         /// Salvage value if abandonment option is exercised
         /// </summary>
-        public double SalvageValue { get; set; }
+        private double SalvageValueValue;
+
+        public double SalvageValue
+
+        {
+
+            get { return this.SalvageValueValue; }
+
+            set { SetProperty(ref SalvageValueValue, value); }
+
+        }
 
         /// <summary>
         /// NPV of alternative project if switching option is exercised
         /// </summary>
-        public double AlternativeNPV { get; set; }
+        private double AlternativeNPVValue;
+
+        public double AlternativeNPV
+
+        {
+
+            get { return this.AlternativeNPVValue; }
+
+            set { SetProperty(ref AlternativeNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Cost to switch to alternative project
         /// </summary>
-        public double SwitchingCost { get; set; }
+        private double SwitchingCostValue;
+
+        public double SwitchingCost
+
+        {
+
+            get { return this.SwitchingCostValue; }
+
+            set { SetProperty(ref SwitchingCostValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -191,52 +502,152 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the analysis
         /// </summary>
-        public string AnalysisId { get; set; }
+        private string AnalysisIdValue;
+
+        public string AnalysisId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date and time the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Initial capital investment required
         /// </summary>
-        public double InitialInvestment { get; set; }
+        private double InitialInvestmentValue;
+
+        public double InitialInvestment
+
+        {
+
+            get { return this.InitialInvestmentValue; }
+
+            set { SetProperty(ref InitialInvestmentValue, value); }
+
+        }
 
         /// <summary>
         /// Probability of success (0.0 to 1.0)
         /// </summary>
-        public double SuccessProbability { get; set; }
+        private double SuccessProbabilityValue;
+
+        public double SuccessProbability
+
+        {
+
+            get { return this.SuccessProbabilityValue; }
+
+            set { SetProperty(ref SuccessProbabilityValue, value); }
+
+        }
 
         /// <summary>
         /// Success scenario with NPV and IRR
         /// </summary>
-        public DecisionScenario SuccessScenario { get; set; }
+        private DecisionScenario SuccessScenarioValue;
+
+        public DecisionScenario SuccessScenario
+
+        {
+
+            get { return this.SuccessScenarioValue; }
+
+            set { SetProperty(ref SuccessScenarioValue, value); }
+
+        }
 
         /// <summary>
         /// Failure scenario with NPV and IRR
         /// </summary>
-        public DecisionScenario FailureScenario { get; set; }
+        private DecisionScenario FailureScenarioValue;
+
+        public DecisionScenario FailureScenario
+
+        {
+
+            get { return this.FailureScenarioValue; }
+
+            set { SetProperty(ref FailureScenarioValue, value); }
+
+        }
 
         /// <summary>
         /// Expected NPV across all scenarios (probability-weighted)
         /// </summary>
-        public double ExpectedNPV { get; set; }
+        private double ExpectedNPVValue;
+
+        public double ExpectedNPV
+
+        {
+
+            get { return this.ExpectedNPVValue; }
+
+            set { SetProperty(ref ExpectedNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Variance of NPV across scenarios (risk measure)
         /// </summary>
-        public double VarianceOfNPV { get; set; }
+        private double VarianceOfNPVValue;
+
+        public double VarianceOfNPV
+
+        {
+
+            get { return this.VarianceOfNPVValue; }
+
+            set { SetProperty(ref VarianceOfNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Standard deviation of NPV (volatility)
         /// </summary>
-        public double StandardDeviation { get; set; }
+        private double StandardDeviationValue;
+
+        public double StandardDeviation
+
+        {
+
+            get { return this.StandardDeviationValue; }
+
+            set { SetProperty(ref StandardDeviationValue, value); }
+
+        }
 
         /// <summary>
         /// Decision recommendation: "Proceed" or "Do Not Proceed"
         /// </summary>
-        public string Decision { get; set; }
+        private string DecisionValue;
+
+        public string Decision
+
+        {
+
+            get { return this.DecisionValue; }
+
+            set { SetProperty(ref DecisionValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -247,27 +658,77 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Name of the scenario (e.g., "Success", "Failure")
         /// </summary>
-        public string ScenarioName { get; set; }
+        private string ScenarioNameValue;
+
+        public string ScenarioName
+
+        {
+
+            get { return this.ScenarioNameValue; }
+
+            set { SetProperty(ref ScenarioNameValue, value); }
+
+        }
 
         /// <summary>
         /// Probability of this scenario occurring
         /// </summary>
-        public double Probability { get; set; }
+        private double ProbabilityValue;
+
+        public double Probability
+
+        {
+
+            get { return this.ProbabilityValue; }
+
+            set { SetProperty(ref ProbabilityValue, value); }
+
+        }
 
         /// <summary>
         /// Net Present Value of this scenario
         /// </summary>
-        public double NPV { get; set; }
+        private double NPVValue;
+
+        public double NPV
+
+        {
+
+            get { return this.NPVValue; }
+
+            set { SetProperty(ref NPVValue, value); }
+
+        }
 
         /// <summary>
         /// Internal Rate of Return for this scenario
         /// </summary>
-        public double IRR { get; set; }
+        private double IRRValue;
+
+        public double IRR
+
+        {
+
+            get { return this.IRRValue; }
+
+            set { SetProperty(ref IRRValue, value); }
+
+        }
 
         /// <summary>
         /// Cumulative cash flow across all periods in this scenario
         /// </summary>
-        public double CumulativeCashFlow { get; set; }
+        private double CumulativeCashFlowValue;
+
+        public double CumulativeCashFlow
+
+        {
+
+            get { return this.CumulativeCashFlowValue; }
+
+            set { SetProperty(ref CumulativeCashFlowValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -278,47 +739,137 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the analysis
         /// </summary>
-        public string AnalysisId { get; set; }
+        private string AnalysisIdValue;
+
+        public string AnalysisId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date and time the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Corporate tax rate applied (as decimal, e.g., 0.35 for 35%)
         /// </summary>
-        public double TaxRate { get; set; }
+        private double TaxRateValue;
+
+        public double TaxRate
+
+        {
+
+            get { return this.TaxRateValue; }
+
+            set { SetProperty(ref TaxRateValue, value); }
+
+        }
 
         /// <summary>
         /// NPV before considering tax impacts
         /// </summary>
-        public double PreTaxNPV { get; set; }
+        private double PreTaxNPVValue;
+
+        public double PreTaxNPV
+
+        {
+
+            get { return this.PreTaxNPVValue; }
+
+            set { SetProperty(ref PreTaxNPVValue, value); }
+
+        }
 
         /// <summary>
         /// NPV after tax deductions and depreciation benefits
         /// </summary>
-        public double AfterTaxNPV { get; set; }
+        private double AfterTaxNPVValue;
+
+        public double AfterTaxNPV
+
+        {
+
+            get { return this.AfterTaxNPVValue; }
+
+            set { SetProperty(ref AfterTaxNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Internal Rate of Return after tax adjustments
         /// </summary>
-        public double AfterTaxIRR { get; set; }
+        private double AfterTaxIRRValue;
+
+        public double AfterTaxIRR
+
+        {
+
+            get { return this.AfterTaxIRRValue; }
+
+            set { SetProperty(ref AfterTaxIRRValue, value); }
+
+        }
 
         /// <summary>
         /// Tax shield value from depreciation and deductions
         /// </summary>
-        public double TaxShield { get; set; }
+        private double TaxShieldValue;
+
+        public double TaxShield
+
+        {
+
+            get { return this.TaxShieldValue; }
+
+            set { SetProperty(ref TaxShieldValue, value); }
+
+        }
 
         /// <summary>
         /// Effective tax rate on the project
         /// </summary>
-        public double EffectiveTaxRate { get; set; }
+        private double EffectiveTaxRateValue;
+
+        public double EffectiveTaxRate
+
+        {
+
+            get { return this.EffectiveTaxRateValue; }
+
+            set { SetProperty(ref EffectiveTaxRateValue, value); }
+
+        }
 
         /// <summary>
         /// After-tax cash flows by period
         /// </summary>
-        public List<CashFlow> AfterTaxCashFlows { get; set; }
+        private List<CashFlow> AfterTaxCashFlowsValue;
+
+        public List<CashFlow> AfterTaxCashFlows
+
+        {
+
+            get { return this.AfterTaxCashFlowsValue; }
+
+            set { SetProperty(ref AfterTaxCashFlowsValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -329,52 +880,152 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the analysis
         /// </summary>
-        public string AnalysisId { get; set; }
+        private string AnalysisIdValue;
+
+        public string AnalysisId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date and time the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Terminal growth rate beyond explicit forecast period
         /// </summary>
-        public double TerminalGrowthRate { get; set; }
+        private double TerminalGrowthRateValue;
+
+        public double TerminalGrowthRate
+
+        {
+
+            get { return this.TerminalGrowthRateValue; }
+
+            set { SetProperty(ref TerminalGrowthRateValue, value); }
+
+        }
 
         /// <summary>
         /// Weighted Average Cost of Capital (discount rate)
         /// </summary>
-        public double WACC { get; set; }
+        private double WACCValue;
+
+        public double WACC
+
+        {
+
+            get { return this.WACCValue; }
+
+            set { SetProperty(ref WACCValue, value); }
+
+        }
 
         /// <summary>
         /// Present value components for each year of the forecast period
         /// </summary>
-        public List<PVComponent> PresentValueComponents { get; set; }
+        private List<PVComponent> PresentValueComponentsValue;
+
+        public List<PVComponent> PresentValueComponents
+
+        {
+
+            get { return this.PresentValueComponentsValue; }
+
+            set { SetProperty(ref PresentValueComponentsValue, value); }
+
+        }
 
         /// <summary>
         /// PV of explicit forecast period cash flows
         /// </summary>
-        public double ExplicitPeriodValue { get; set; }
+        private double ExplicitPeriodValueValue;
+
+        public double ExplicitPeriodValue
+
+        {
+
+            get { return this.ExplicitPeriodValueValue; }
+
+            set { SetProperty(ref ExplicitPeriodValueValue, value); }
+
+        }
 
         /// <summary>
         /// Terminal value of cash flows beyond forecast period
         /// </summary>
-        public double TerminalValue { get; set; }
+        private double TerminalValueValue;
+
+        public double TerminalValue
+
+        {
+
+            get { return this.TerminalValueValue; }
+
+            set { SetProperty(ref TerminalValueValue, value); }
+
+        }
 
         /// <summary>
         /// Present value of terminal value
         /// </summary>
-        public double PVTerminalValue { get; set; }
+        private double PVTerminalValueValue;
+
+        public double PVTerminalValue
+
+        {
+
+            get { return this.PVTerminalValueValue; }
+
+            set { SetProperty(ref PVTerminalValueValue, value); }
+
+        }
 
         /// <summary>
         /// Total enterprise value (sum of explicit period and terminal values)
         /// </summary>
-        public double EnterpriseValue { get; set; }
+        private double EnterpriseValueValue;
+
+        public double EnterpriseValue
+
+        {
+
+            get { return this.EnterpriseValueValue; }
+
+            set { SetProperty(ref EnterpriseValueValue, value); }
+
+        }
 
         /// <summary>
         /// Percentage of enterprise value attributable to terminal value
         /// </summary>
-        public double TerminalValuePercentage { get; set; }
+        private double TerminalValuePercentageValue;
+
+        public double TerminalValuePercentage
+
+        {
+
+            get { return this.TerminalValuePercentageValue; }
+
+            set { SetProperty(ref TerminalValuePercentageValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -385,22 +1036,62 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Forecast year number
         /// </summary>
-        public int Year { get; set; }
+        private int YearValue;
+
+        public int Year
+
+        {
+
+            get { return this.YearValue; }
+
+            set { SetProperty(ref YearValue, value); }
+
+        }
 
         /// <summary>
         /// Cash flow in this year (before discounting)
         /// </summary>
-        public double CashFlow { get; set; }
+        private double CashFlowValue;
+
+        public double CashFlow
+
+        {
+
+            get { return this.CashFlowValue; }
+
+            set { SetProperty(ref CashFlowValue, value); }
+
+        }
 
         /// <summary>
         /// Discount factor applied (1 / (1 + WACC)^year)
         /// </summary>
-        public double DiscountFactor { get; set; }
+        private double DiscountFactorValue;
+
+        public double DiscountFactor
+
+        {
+
+            get { return this.DiscountFactorValue; }
+
+            set { SetProperty(ref DiscountFactorValue, value); }
+
+        }
 
         /// <summary>
         /// Present value of the cash flow
         /// </summary>
-        public double PresentValue { get; set; }
+        private double PresentValueValue;
+
+        public double PresentValue
+
+        {
+
+            get { return this.PresentValueValue; }
+
+            set { SetProperty(ref PresentValueValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -411,47 +1102,137 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the analysis
         /// </summary>
-        public string AnalysisId { get; set; }
+        private string AnalysisIdValue;
+
+        public string AnalysisId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date and time the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Cost to purchase the asset
         /// </summary>
-        public double AssetCost { get; set; }
+        private double AssetCostValue;
+
+        public double AssetCost
+
+        {
+
+            get { return this.AssetCostValue; }
+
+            set { SetProperty(ref AssetCostValue, value); }
+
+        }
 
         /// <summary>
         /// Duration of lease in years
         /// </summary>
-        public int LeaseTerm { get; set; }
+        private int LeaseTermValue;
+
+        public int LeaseTerm
+
+        {
+
+            get { return this.LeaseTermValue; }
+
+            set { SetProperty(ref LeaseTermValue, value); }
+
+        }
 
         /// <summary>
         /// Residual value of asset at end of lease term
         /// </summary>
-        public double SalvageValue { get; set; }
+        private double SalvageValueValue;
+
+        public double SalvageValue
+
+        {
+
+            get { return this.SalvageValueValue; }
+
+            set { SetProperty(ref SalvageValueValue, value); }
+
+        }
 
         /// <summary>
         /// Net Present Value of buying option
         /// </summary>
-        public double BuyNPV { get; set; }
+        private double BuyNPVValue;
+
+        public double BuyNPV
+
+        {
+
+            get { return this.BuyNPVValue; }
+
+            set { SetProperty(ref BuyNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Net Present Value of leasing option
         /// </summary>
-        public double LeaseNPV { get; set; }
+        private double LeaseNPVValue;
+
+        public double LeaseNPV
+
+        {
+
+            get { return this.LeaseNPVValue; }
+
+            set { SetProperty(ref LeaseNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Net advantage of leasing vs buying (positive favors leasing)
         /// </summary>
-        public double NetAdvantageOfLeasing { get; set; }
+        private double NetAdvantageOfLeasingValue;
+
+        public double NetAdvantageOfLeasing
+
+        {
+
+            get { return this.NetAdvantageOfLeasingValue; }
+
+            set { SetProperty(ref NetAdvantageOfLeasingValue, value); }
+
+        }
 
         /// <summary>
         /// Recommendation: "Lease" or "Buy"
         /// </summary>
-        public string Recommendation { get; set; }
+        private string RecommendationValue;
+
+        public string Recommendation
+
+        {
+
+            get { return this.RecommendationValue; }
+
+            set { SetProperty(ref RecommendationValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -462,47 +1243,137 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the analysis
         /// </summary>
-        public string AnalysisId { get; set; }
+        private string AnalysisIdValue;
+
+        public string AnalysisId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date and time the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Unlevered (all-equity) firm value
         /// </summary>
-        public double UnleveredValue { get; set; }
+        private double UnleveredValueValue;
+
+        public double UnleveredValue
+
+        {
+
+            get { return this.UnleveredValueValue; }
+
+            set { SetProperty(ref UnleveredValueValue, value); }
+
+        }
 
         /// <summary>
         /// Corporate tax rate used in analysis
         /// </summary>
-        public double TaxRate { get; set; }
+        private double TaxRateValue;
+
+        public double TaxRate
+
+        {
+
+            get { return this.TaxRateValue; }
+
+            set { SetProperty(ref TaxRateValue, value); }
+
+        }
 
         /// <summary>
         /// Capital structure scenarios analyzed (different debt ratios)
         /// </summary>
-        public List<CapitalStructureScenario> Scenarios { get; set; }
+        private List<CapitalStructureScenario> ScenariosValue;
+
+        public List<CapitalStructureScenario> Scenarios
+
+        {
+
+            get { return this.ScenariosValue; }
+
+            set { SetProperty(ref ScenariosValue, value); }
+
+        }
 
         /// <summary>
         /// Optimal debt ratio that minimizes WACC
         /// </summary>
-        public double OptimalDebtRatio { get; set; }
+        private double OptimalDebtRatioValue;
+
+        public double OptimalDebtRatio
+
+        {
+
+            get { return this.OptimalDebtRatioValue; }
+
+            set { SetProperty(ref OptimalDebtRatioValue, value); }
+
+        }
 
         /// <summary>
         /// Weighted Average Cost of Capital at optimal capital structure
         /// </summary>
-        public double OptimalWACC { get; set; }
+        private double OptimalWACCValue;
+
+        public double OptimalWACC
+
+        {
+
+            get { return this.OptimalWACCValue; }
+
+            set { SetProperty(ref OptimalWACCValue, value); }
+
+        }
 
         /// <summary>
         /// Levered firm value at optimal capital structure
         /// </summary>
-        public double OptimalLeveredValue { get; set; }
+        private double OptimalLeveredValueValue;
+
+        public double OptimalLeveredValue
+
+        {
+
+            get { return this.OptimalLeveredValueValue; }
+
+            set { SetProperty(ref OptimalLeveredValueValue, value); }
+
+        }
 
         /// <summary>
         /// Value created by using optimal capital structure
         /// </summary>
-        public double ValueCreation { get; set; }
+        private double ValueCreationValue;
+
+        public double ValueCreation
+
+        {
+
+            get { return this.ValueCreationValue; }
+
+            set { SetProperty(ref ValueCreationValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -513,42 +1384,122 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Debt as percentage of total capital (0.0 to 1.0)
         /// </summary>
-        public double DebtRatio { get; set; }
+        private double DebtRatioValue;
+
+        public double DebtRatio
+
+        {
+
+            get { return this.DebtRatioValue; }
+
+            set { SetProperty(ref DebtRatioValue, value); }
+
+        }
 
         /// <summary>
         /// Equity as percentage of total capital (0.0 to 1.0)
         /// </summary>
-        public double EquityRatio { get; set; }
+        private double EquityRatioValue;
+
+        public double EquityRatio
+
+        {
+
+            get { return this.EquityRatioValue; }
+
+            set { SetProperty(ref EquityRatioValue, value); }
+
+        }
 
         /// <summary>
         /// Total market value of debt
         /// </summary>
-        public double DebtValue { get; set; }
+        private double DebtValueValue;
+
+        public double DebtValue
+
+        {
+
+            get { return this.DebtValueValue; }
+
+            set { SetProperty(ref DebtValueValue, value); }
+
+        }
 
         /// <summary>
         /// Total market value of equity
         /// </summary>
-        public double EquityValue { get; set; }
+        private double EquityValueValue;
+
+        public double EquityValue
+
+        {
+
+            get { return this.EquityValueValue; }
+
+            set { SetProperty(ref EquityValueValue, value); }
+
+        }
 
         /// <summary>
         /// Tax benefit from interest deductions
         /// </summary>
-        public double TaxShield { get; set; }
+        private double TaxShieldValue;
+
+        public double TaxShield
+
+        {
+
+            get { return this.TaxShieldValue; }
+
+            set { SetProperty(ref TaxShieldValue, value); }
+
+        }
 
         /// <summary>
         /// Levered firm value with this capital structure
         /// </summary>
-        public double LeveredValue { get; set; }
+        private double LeveredValueValue;
+
+        public double LeveredValue
+
+        {
+
+            get { return this.LeveredValueValue; }
+
+            set { SetProperty(ref LeveredValueValue, value); }
+
+        }
 
         /// <summary>
         /// Weighted Average Cost of Capital for this structure
         /// </summary>
-        public double WACC { get; set; }
+        private double WACCValue;
+
+        public double WACC
+
+        {
+
+            get { return this.WACCValue; }
+
+            set { SetProperty(ref WACCValue, value); }
+
+        }
 
         /// <summary>
         /// Financial risk classification: Low, Medium, or High
         /// </summary>
-        public string FinancialRisk { get; set; }
+        private string FinancialRiskValue;
+
+        public string FinancialRisk
+
+        {
+
+            get { return this.FinancialRiskValue; }
+
+            set { SetProperty(ref FinancialRiskValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -559,32 +1510,92 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the analysis
         /// </summary>
-        public string AnalysisId { get; set; }
+        private string AnalysisIdValue;
+
+        public string AnalysisId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date and time the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Base commodity price used in analysis
         /// </summary>
-        public double BasePrice { get; set; }
+        private double BasePriceValue;
+
+        public double BasePrice
+
+        {
+
+            get { return this.BasePriceValue; }
+
+            set { SetProperty(ref BasePriceValue, value); }
+
+        }
 
         /// <summary>
         /// Scenarios showing NPV and IRR at different price points
         /// </summary>
-        public List<PriceScenario> PriceScenarios { get; set; }
+        private List<PriceScenario> PriceScenariosValue;
+
+        public List<PriceScenario> PriceScenarios
+
+        {
+
+            get { return this.PriceScenariosValue; }
+
+            set { SetProperty(ref PriceScenariosValue, value); }
+
+        }
 
         /// <summary>
         /// Price at which project NPV breaks even (approximately zero)
         /// </summary>
-        public double BreakevenPrice { get; set; }
+        private double BreakevenPriceValue;
+
+        public double BreakevenPrice
+
+        {
+
+            get { return this.BreakevenPriceValue; }
+
+            set { SetProperty(ref BreakevenPriceValue, value); }
+
+        }
 
         /// <summary>
         /// NPV at base price point
         /// </summary>
-        public double BaseNPV { get; set; }
+        private double BaseNPVValue;
+
+        public double BaseNPV
+
+        {
+
+            get { return this.BaseNPVValue; }
+
+            set { SetProperty(ref BaseNPVValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -595,22 +1606,62 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Commodity price for this scenario
         /// </summary>
-        public double Price { get; set; }
+        private double PriceValue;
+
+        public double Price
+
+        {
+
+            get { return this.PriceValue; }
+
+            set { SetProperty(ref PriceValue, value); }
+
+        }
 
         /// <summary>
         /// Net Present Value at this price
         /// </summary>
-        public double NPV { get; set; }
+        private double NPVValue;
+
+        public double NPV
+
+        {
+
+            get { return this.NPVValue; }
+
+            set { SetProperty(ref NPVValue, value); }
+
+        }
 
         /// <summary>
         /// Internal Rate of Return at this price
         /// </summary>
-        public double IRR { get; set; }
+        private double IRRValue;
+
+        public double IRR
+
+        {
+
+            get { return this.IRRValue; }
+
+            set { SetProperty(ref IRRValue, value); }
+
+        }
 
         /// <summary>
         /// Indicates if this is the breakeven price point
         /// </summary>
-        public bool IsBreakeven { get; set; }
+        private bool IsBreakevenValue;
+
+        public bool IsBreakeven
+
+        {
+
+            get { return this.IsBreakevenValue; }
+
+            set { SetProperty(ref IsBreakevenValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -621,27 +1672,77 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the analysis
         /// </summary>
-        public string AnalysisId { get; set; }
+        private string AnalysisIdValue;
+
+        public string AnalysisId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Base case NPV
         /// </summary>
-        public double BaseNPV { get; set; }
+        private double BaseNPVValue;
+
+        public double BaseNPV
+
+        {
+
+            get { return this.BaseNPVValue; }
+
+            set { SetProperty(ref BaseNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Base case IRR
         /// </summary>
-        public double BaseIRR { get; set; }
+        private double BaseIRRValue;
+
+        public double BaseIRR
+
+        {
+
+            get { return this.BaseIRRValue; }
+
+            set { SetProperty(ref BaseIRRValue, value); }
+
+        }
 
         /// <summary>
         /// List of parameters tested for sensitivity
         /// </summary>
-        public List<SensitivityParameter> Parameters { get; set; }
+        private List<SensitivityParameter> ParametersValue;
+
+        public List<SensitivityParameter> Parameters
+
+        {
+
+            get { return this.ParametersValue; }
+
+            set { SetProperty(ref ParametersValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -652,32 +1753,92 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Name of the parameter being tested
         /// </summary>
-        public string ParameterName { get; set; }
+        private string ParameterNameValue;
+
+        public string ParameterName
+
+        {
+
+            get { return this.ParameterNameValue; }
+
+            set { SetProperty(ref ParameterNameValue, value); }
+
+        }
 
         /// <summary>
         /// Base value of the parameter
         /// </summary>
-        public double BaseValue { get; set; }
+        private double BaseValueValue;
+
+        public double BaseValue
+
+        {
+
+            get { return this.BaseValueValue; }
+
+            set { SetProperty(ref BaseValueValue, value); }
+
+        }
 
         /// <summary>
         /// NPV with parameter reduced by 10%
         /// </summary>
-        public double NegativeVariationNPV { get; set; }
+        private double NegativeVariationNPVValue;
+
+        public double NegativeVariationNPV
+
+        {
+
+            get { return this.NegativeVariationNPVValue; }
+
+            set { SetProperty(ref NegativeVariationNPVValue, value); }
+
+        }
 
         /// <summary>
         /// NPV with parameter increased by 10%
         /// </summary>
-        public double PositiveVariationNPV { get; set; }
+        private double PositiveVariationNPVValue;
+
+        public double PositiveVariationNPV
+
+        {
+
+            get { return this.PositiveVariationNPVValue; }
+
+            set { SetProperty(ref PositiveVariationNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Absolute impact on NPV from variation
         /// </summary>
-        public double NPVImpact { get; set; }
+        private double NPVImpactValue;
+
+        public double NPVImpact
+
+        {
+
+            get { return this.NPVImpactValue; }
+
+            set { SetProperty(ref NPVImpactValue, value); }
+
+        }
 
         /// <summary>
         /// Sensitivity index (percentage change in NPV per 1% change in parameter)
         /// </summary>
-        public double SensitivityIndex { get; set; }
+        private double SensitivityIndexValue;
+
+        public double SensitivityIndex
+
+        {
+
+            get { return this.SensitivityIndexValue; }
+
+            set { SetProperty(ref SensitivityIndexValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -688,47 +1849,137 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the analysis
         /// </summary>
-        public string AnalysisId { get; set; }
+        private string AnalysisIdValue;
+
+        public string AnalysisId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// NPV in base case scenario
         /// </summary>
-        public double BaseNPV { get; set; }
+        private double BaseNPVValue;
+
+        public double BaseNPV
+
+        {
+
+            get { return this.BaseNPVValue; }
+
+            set { SetProperty(ref BaseNPVValue, value); }
+
+        }
 
         /// <summary>
         /// NPV in best case scenario
         /// </summary>
-        public double BestCaseNPV { get; set; }
+        private double BestCaseNPVValue;
+
+        public double BestCaseNPV
+
+        {
+
+            get { return this.BestCaseNPVValue; }
+
+            set { SetProperty(ref BestCaseNPVValue, value); }
+
+        }
 
         /// <summary>
         /// NPV in worst case scenario
         /// </summary>
-        public double WorstCaseNPV { get; set; }
+        private double WorstCaseNPVValue;
+
+        public double WorstCaseNPV
+
+        {
+
+            get { return this.WorstCaseNPVValue; }
+
+            set { SetProperty(ref WorstCaseNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Probability-weighted expected NPV
         /// </summary>
-        public double ExpectedValueNPV { get; set; }
+        private double ExpectedValueNPVValue;
+
+        public double ExpectedValueNPV
+
+        {
+
+            get { return this.ExpectedValueNPVValue; }
+
+            set { SetProperty(ref ExpectedValueNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Standard deviation of NPV across scenarios
         /// </summary>
-        public double StandardDeviation { get; set; }
+        private double StandardDeviationValue;
+
+        public double StandardDeviation
+
+        {
+
+            get { return this.StandardDeviationValue; }
+
+            set { SetProperty(ref StandardDeviationValue, value); }
+
+        }
 
         /// <summary>
         /// Coefficient of variation (stdDev / mean)
         /// </summary>
-        public double CoefficientOfVariation { get; set; }
+        private double CoefficientOfVariationValue;
+
+        public double CoefficientOfVariation
+
+        {
+
+            get { return this.CoefficientOfVariationValue; }
+
+            set { SetProperty(ref CoefficientOfVariationValue, value); }
+
+        }
 
         /// <summary>
         /// Detailed results for each scenario
         /// </summary>
-        public List<ScenarioResult> Scenarios { get; set; }
+        private List<ScenarioResult> ScenariosValue;
+
+        public List<ScenarioResult> Scenarios
+
+        {
+
+            get { return this.ScenariosValue; }
+
+            set { SetProperty(ref ScenariosValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -739,27 +1990,77 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Name of the scenario (e.g., "Best Case", "Base Case", "Worst Case")
         /// </summary>
-        public string ScenarioName { get; set; }
+        private string ScenarioNameValue;
+
+        public string ScenarioName
+
+        {
+
+            get { return this.ScenarioNameValue; }
+
+            set { SetProperty(ref ScenarioNameValue, value); }
+
+        }
 
         /// <summary>
         /// Probability of this scenario occurring
         /// </summary>
-        public double Probability { get; set; }
+        private double ProbabilityValue;
+
+        public double Probability
+
+        {
+
+            get { return this.ProbabilityValue; }
+
+            set { SetProperty(ref ProbabilityValue, value); }
+
+        }
 
         /// <summary>
         /// Net Present Value for this scenario
         /// </summary>
-        public double NPV { get; set; }
+        private double NPVValue;
+
+        public double NPV
+
+        {
+
+            get { return this.NPVValue; }
+
+            set { SetProperty(ref NPVValue, value); }
+
+        }
 
         /// <summary>
         /// Internal Rate of Return for this scenario
         /// </summary>
-        public double IRR { get; set; }
+        private double IRRValue;
+
+        public double IRR
+
+        {
+
+            get { return this.IRRValue; }
+
+            set { SetProperty(ref IRRValue, value); }
+
+        }
 
         /// <summary>
         /// Payback period for this scenario (in years)
         /// </summary>
-        public double PaybackPeriod { get; set; }
+        private double PaybackPeriodValue;
+
+        public double PaybackPeriod
+
+        {
+
+            get { return this.PaybackPeriodValue; }
+
+            set { SetProperty(ref PaybackPeriodValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -770,52 +2071,152 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the metrics calculation
         /// </summary>
-        public string MetricsId { get; set; }
+        private string MetricsIdValue;
+
+        public string MetricsId
+
+        {
+
+            get { return this.MetricsIdValue; }
+
+            set { SetProperty(ref MetricsIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date the metrics were calculated
         /// </summary>
-        public DateTime CalculationDate { get; set; }
+        private DateTime CalculationDateValue;
+
+        public DateTime CalculationDate
+
+        {
+
+            get { return this.CalculationDateValue; }
+
+            set { SetProperty(ref CalculationDateValue, value); }
+
+        }
 
         /// <summary>
         /// Net Present Value
         /// </summary>
-        public double NPV { get; set; }
+        private double NPVValue;
+
+        public double NPV
+
+        {
+
+            get { return this.NPVValue; }
+
+            set { SetProperty(ref NPVValue, value); }
+
+        }
 
         /// <summary>
         /// Internal Rate of Return
         /// </summary>
-        public double IRR { get; set; }
+        private double IRRValue;
+
+        public double IRR
+
+        {
+
+            get { return this.IRRValue; }
+
+            set { SetProperty(ref IRRValue, value); }
+
+        }
 
         /// <summary>
         /// Payback period in years
         /// </summary>
-        public double PaybackPeriod { get; set; }
+        private double PaybackPeriodValue;
+
+        public double PaybackPeriod
+
+        {
+
+            get { return this.PaybackPeriodValue; }
+
+            set { SetProperty(ref PaybackPeriodValue, value); }
+
+        }
 
         /// <summary>
         /// Profitability Index (PV of future cash flows / Initial investment)
         /// </summary>
-        public double ProfitabilityIndex { get; set; }
+        private double ProfitabilityIndexValue;
+
+        public double ProfitabilityIndex
+
+        {
+
+            get { return this.ProfitabilityIndexValue; }
+
+            set { SetProperty(ref ProfitabilityIndexValue, value); }
+
+        }
 
         /// <summary>
         /// Return on Investment
         /// </summary>
-        public double ROI { get; set; }
+        private double ROIValue;
+
+        public double ROI
+
+        {
+
+            get { return this.ROIValue; }
+
+            set { SetProperty(ref ROIValue, value); }
+
+        }
 
         /// <summary>
         /// Modified Internal Rate of Return (accounts for financing and reinvestment)
         /// </summary>
-        public double ModifiedIRR { get; set; }
+        private double ModifiedIRRValue;
+
+        public double ModifiedIRR
+
+        {
+
+            get { return this.ModifiedIRRValue; }
+
+            set { SetProperty(ref ModifiedIRRValue, value); }
+
+        }
 
         /// <summary>
         /// Equivalent Annual Cost for comparing projects of different lifespans
         /// </summary>
-        public double EquivalentAnnualCost { get; set; }
+        private double EquivalentAnnualCostValue;
+
+        public double EquivalentAnnualCost
+
+        {
+
+            get { return this.EquivalentAnnualCostValue; }
+
+            set { SetProperty(ref EquivalentAnnualCostValue, value); }
+
+        }
 
         /// <summary>
         /// Vestigial value (remaining value after cost recovery)
         /// </summary>
-        public double VestigialValue { get; set; }
+        private double VestigialValueValue;
+
+        public double VestigialValue
+
+        {
+
+            get { return this.VestigialValueValue; }
+
+            set { SetProperty(ref VestigialValueValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -826,32 +2227,92 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the analysis
         /// </summary>
-        public string AnalysisId { get; set; }
+        private string AnalysisIdValue;
+
+        public string AnalysisId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Price or cost level at which NPV = 0 (breakeven point)
         /// </summary>
-        public double BreakevenPrice { get; set; }
+        private double BreakevenPriceValue;
+
+        public double BreakevenPrice
+
+        {
+
+            get { return this.BreakevenPriceValue; }
+
+            set { SetProperty(ref BreakevenPriceValue, value); }
+
+        }
 
         /// <summary>
         /// Margin of safety (distance from base case to breakeven)
         /// </summary>
-        public double MarginOfSafety { get; set; }
+        private double MarginOfSafetyValue;
+
+        public double MarginOfSafety
+
+        {
+
+            get { return this.MarginOfSafetyValue; }
+
+            set { SetProperty(ref MarginOfSafetyValue, value); }
+
+        }
 
         /// <summary>
         /// Contribution margin percentage
         /// </summary>
-        public double ContributionMargin { get; set; }
+        private double ContributionMarginValue;
+
+        public double ContributionMargin
+
+        {
+
+            get { return this.ContributionMarginValue; }
+
+            set { SetProperty(ref ContributionMarginValue, value); }
+
+        }
 
         /// <summary>
         /// Detailed breakeven points at various variable levels
         /// </summary>
-        public List<BreakevenPoint> BreakevenPoints { get; set; }
+        private List<BreakevenPoint> BreakevenPointsValue;
+
+        public List<BreakevenPoint> BreakevenPoints
+
+        {
+
+            get { return this.BreakevenPointsValue; }
+
+            set { SetProperty(ref BreakevenPointsValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -862,17 +2323,47 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Variable value at this point (multiplier or percentage)
         /// </summary>
-        public double Variable { get; set; }
+        private double VariableValue;
+
+        public double Variable
+
+        {
+
+            get { return this.VariableValue; }
+
+            set { SetProperty(ref VariableValue, value); }
+
+        }
 
         /// <summary>
         /// NPV calculated at this variable level
         /// </summary>
-        public double NPVAtVariable { get; set; }
+        private double NPVAtVariableValue;
+
+        public double NPVAtVariable
+
+        {
+
+            get { return this.NPVAtVariableValue; }
+
+            set { SetProperty(ref NPVAtVariableValue, value); }
+
+        }
 
         /// <summary>
         /// Indicates if this is (approximately) the breakeven point
         /// </summary>
-        public bool IsBreakevenPoint { get; set; }
+        private bool IsBreakevenPointValue;
+
+        public bool IsBreakevenPoint
+
+        {
+
+            get { return this.IsBreakevenPointValue; }
+
+            set { SetProperty(ref IsBreakevenPointValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -883,47 +2374,137 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the risk analysis
         /// </summary>
-        public string RiskAnalysisId { get; set; }
+        private string RiskAnalysisIdValue;
+
+        public string RiskAnalysisId
+
+        {
+
+            get { return this.RiskAnalysisIdValue; }
+
+            set { SetProperty(ref RiskAnalysisIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date the analysis was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Expected NPV across scenarios
         /// </summary>
-        public double ExpectedNPV { get; set; }
+        private double ExpectedNPVValue;
+
+        public double ExpectedNPV
+
+        {
+
+            get { return this.ExpectedNPVValue; }
+
+            set { SetProperty(ref ExpectedNPVValue, value); }
+
+        }
 
         /// <summary>
         /// Standard deviation of NPV distribution
         /// </summary>
-        public double StandardDeviation { get; set; }
+        private double StandardDeviationValue;
+
+        public double StandardDeviation
+
+        {
+
+            get { return this.StandardDeviationValue; }
+
+            set { SetProperty(ref StandardDeviationValue, value); }
+
+        }
 
         /// <summary>
         /// Variance of NPV distribution
         /// </summary>
-        public double Variance { get; set; }
+        private double VarianceValue;
+
+        public double Variance
+
+        {
+
+            get { return this.VarianceValue; }
+
+            set { SetProperty(ref VarianceValue, value); }
+
+        }
 
         /// <summary>
         /// Coefficient of variation (risk per unit of return)
         /// </summary>
-        public double CoefficientOfVariation { get; set; }
+        private double CoefficientOfVariationValue;
+
+        public double CoefficientOfVariation
+
+        {
+
+            get { return this.CoefficientOfVariationValue; }
+
+            set { SetProperty(ref CoefficientOfVariationValue, value); }
+
+        }
 
         /// <summary>
         /// Value at Risk at 95% confidence level (worst 5% of outcomes)
         /// </summary>
-        public double ValueAtRisk { get; set; }
+        private double ValueAtRiskValue;
+
+        public double ValueAtRisk
+
+        {
+
+            get { return this.ValueAtRiskValue; }
+
+            set { SetProperty(ref ValueAtRiskValue, value); }
+
+        }
 
         /// <summary>
         /// Conditional Value at Risk (average of worst 5% outcomes)
         /// </summary>
-        public double ConditionalVaR { get; set; }
+        private double ConditionalVaRValue;
+
+        public double ConditionalVaR
+
+        {
+
+            get { return this.ConditionalVaRValue; }
+
+            set { SetProperty(ref ConditionalVaRValue, value); }
+
+        }
 
         /// <summary>
         /// Probability of achieving negative NPV
         /// </summary>
-        public double ProbabilityOfLoss { get; set; }
+        private double ProbabilityOfLossValue;
+
+        public double ProbabilityOfLoss
+
+        {
+
+            get { return this.ProbabilityOfLossValue; }
+
+            set { SetProperty(ref ProbabilityOfLossValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -934,27 +2515,77 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Unique identifier for the comparison
         /// </summary>
-        public string ComparisonId { get; set; }
+        private string ComparisonIdValue;
+
+        public string ComparisonId
+
+        {
+
+            get { return this.ComparisonIdValue; }
+
+            set { SetProperty(ref ComparisonIdValue, value); }
+
+        }
 
         /// <summary>
         /// Date the comparison was performed
         /// </summary>
-        public DateTime AnalysisDate { get; set; }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
 
         /// <summary>
         /// Method used for ranking (NPV, IRR, PI, Payback)
         /// </summary>
-        public string RankingMethod { get; set; }
+        private string RankingMethodValue;
+
+        public string RankingMethod
+
+        {
+
+            get { return this.RankingMethodValue; }
+
+            set { SetProperty(ref RankingMethodValue, value); }
+
+        }
 
         /// <summary>
         /// List of projects with their metrics
         /// </summary>
-        public List<ProjectMetrics> Projects { get; set; }
+        private List<ProjectMetrics> ProjectsValue;
+
+        public List<ProjectMetrics> Projects
+
+        {
+
+            get { return this.ProjectsValue; }
+
+            set { SetProperty(ref ProjectsValue, value); }
+
+        }
 
         /// <summary>
         /// Name of the highest-ranked (recommended) project
         /// </summary>
-        public string RecommendedProject { get; set; }
+        private string RecommendedProjectValue;
+
+        public string RecommendedProject
+
+        {
+
+            get { return this.RecommendedProjectValue; }
+
+            set { SetProperty(ref RecommendedProjectValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -965,37 +2596,588 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Name or identifier of the project
         /// </summary>
-        public string ProjectName { get; set; }
+        private string ProjectNameValue;
+
+        public string ProjectName
+
+        {
+
+            get { return this.ProjectNameValue; }
+
+            set { SetProperty(ref ProjectNameValue, value); }
+
+        }
 
         /// <summary>
         /// Net Present Value
         /// </summary>
-        public double NPV { get; set; }
+        private double NPVValue;
+
+        public double NPV
+
+        {
+
+            get { return this.NPVValue; }
+
+            set { SetProperty(ref NPVValue, value); }
+
+        }
 
         /// <summary>
         /// Internal Rate of Return
         /// </summary>
-        public double IRR { get; set; }
+        private double IRRValue;
+
+        public double IRR
+
+        {
+
+            get { return this.IRRValue; }
+
+            set { SetProperty(ref IRRValue, value); }
+
+        }
 
         /// <summary>
         /// Payback period in years
         /// </summary>
-        public double PaybackPeriod { get; set; }
+        private double PaybackPeriodValue;
+
+        public double PaybackPeriod
+
+        {
+
+            get { return this.PaybackPeriodValue; }
+
+            set { SetProperty(ref PaybackPeriodValue, value); }
+
+        }
 
         /// <summary>
         /// Profitability Index
         /// </summary>
-        public double ProfitabilityIndex { get; set; }
+        private double ProfitabilityIndexValue;
+
+        public double ProfitabilityIndex
+
+        {
+
+            get { return this.ProfitabilityIndexValue; }
+
+            set { SetProperty(ref ProfitabilityIndexValue, value); }
+
+        }
 
         /// <summary>
         /// Rank among compared projects (1 = best)
         /// </summary>
-        public int Rank { get; set; }
+        private int RankValue;
+
+        public int Rank
+
+        {
+
+            get { return this.RankValue; }
+
+            set { SetProperty(ref RankValue, value); }
+
+        }
 
         /// <summary>
         /// Scoring points based on ranking
         /// </summary>
-        public double Score { get; set; }
+        private double ScoreValue;
+
+        public double Score
+
+        {
+
+            get { return this.ScoreValue; }
+
+            set { SetProperty(ref ScoreValue, value); }
+
+        }
+    }
+    public class EconomicAnalysisRequest : ModelEntityBase
+    {
+        private string? WellIdValue;
+
+        public string? WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? PoolIdValue;
+
+        public string? PoolId
+
+        {
+
+            get { return this.PoolIdValue; }
+
+            set { SetProperty(ref PoolIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string? ProjectIdValue;
+
+        public string? ProjectId
+
+        {
+
+            get { return this.ProjectIdValue; }
+
+            set { SetProperty(ref ProjectIdValue, value); }
+
+        }
+        private string AnalysisTypeValue = "NPV";
+
+        public string AnalysisType
+
+        {
+
+            get { return this.AnalysisTypeValue; }
+
+            set { SetProperty(ref AnalysisTypeValue, value); }
+
+        } // NPV, IRR, PAYBACK, ROI, BREAKEVEN
+        
+        // Economic parameters
+        private decimal? OilPriceValue;
+
+        public decimal? OilPrice
+
+        {
+
+            get { return this.OilPriceValue; }
+
+            set { SetProperty(ref OilPriceValue, value); }
+
+        }
+        private decimal? GasPriceValue;
+
+        public decimal? GasPrice
+
+        {
+
+            get { return this.GasPriceValue; }
+
+            set { SetProperty(ref GasPriceValue, value); }
+
+        }
+        private decimal DiscountRateValue;
+
+        public decimal DiscountRate
+
+        {
+
+            get { return this.DiscountRateValue; }
+
+            set { SetProperty(ref DiscountRateValue, value); }
+
+        }
+        private decimal? InflationRateValue;
+
+        public decimal? InflationRate
+
+        {
+
+            get { return this.InflationRateValue; }
+
+            set { SetProperty(ref InflationRateValue, value); }
+
+        }
+        private decimal? OperatingCostPerUnitValue;
+
+        public decimal? OperatingCostPerUnit
+
+        {
+
+            get { return this.OperatingCostPerUnitValue; }
+
+            set { SetProperty(ref OperatingCostPerUnitValue, value); }
+
+        }
+        private decimal? CapitalInvestmentValue;
+
+        public decimal? CapitalInvestment
+
+        {
+
+            get { return this.CapitalInvestmentValue; }
+
+            set { SetProperty(ref CapitalInvestmentValue, value); }
+
+        }
+        
+        // Production forecast
+        private List<EconomicProductionPoint>? ProductionForecastValue;
+
+        public List<EconomicProductionPoint>? ProductionForecast
+
+        {
+
+            get { return this.ProductionForecastValue; }
+
+            set { SetProperty(ref ProductionForecastValue, value); }
+
+        }
+        
+        // Time parameters
+        private DateTime? AnalysisStartDateValue;
+
+        public DateTime? AnalysisStartDate
+
+        {
+
+            get { return this.AnalysisStartDateValue; }
+
+            set { SetProperty(ref AnalysisStartDateValue, value); }
+
+        }
+        private DateTime? AnalysisEndDateValue;
+
+        public DateTime? AnalysisEndDate
+
+        {
+
+            get { return this.AnalysisEndDateValue; }
+
+            set { SetProperty(ref AnalysisEndDateValue, value); }
+
+        }
+        private int? AnalysisPeriodYearsValue;
+
+        public int? AnalysisPeriodYears
+
+        {
+
+            get { return this.AnalysisPeriodYearsValue; }
+
+            set { SetProperty(ref AnalysisPeriodYearsValue, value); }
+
+        }
+        
+        // Fiscal terms
+        private decimal? RoyaltyRateValue;
+
+        public decimal? RoyaltyRate
+
+        {
+
+            get { return this.RoyaltyRateValue; }
+
+            set { SetProperty(ref RoyaltyRateValue, value); }
+
+        }
+        private decimal? TaxRateValue;
+
+        public decimal? TaxRate
+
+        {
+
+            get { return this.TaxRateValue; }
+
+            set { SetProperty(ref TaxRateValue, value); }
+
+        }
+        private decimal? WorkingInterestValue;
+
+        public decimal? WorkingInterest
+
+        {
+
+            get { return this.WorkingInterestValue; }
+
+            set { SetProperty(ref WorkingInterestValue, value); }
+
+        }
+        
+        // Additional parameters
+        public Dictionary<string, object>? AdditionalParameters { get; set; }
+        private string? UserIdValue;
+
+        public string? UserId
+
+        {
+
+            get { return this.UserIdValue; }
+
+            set { SetProperty(ref UserIdValue, value); }
+
+        }
+        private string? ForecastIdValue;
+
+        public string? ForecastId
+
+        {
+
+            get { return this.ForecastIdValue; }
+
+            set { SetProperty(ref ForecastIdValue, value); }
+
+        }
+        private decimal? OperatingCostPerBarrelValue;
+
+        public decimal? OperatingCostPerBarrel
+
+        {
+
+            get { return this.OperatingCostPerBarrelValue; }
+
+            set { SetProperty(ref OperatingCostPerBarrelValue, value); }
+
+        }
+        private decimal? FixedOpexPerPeriodValue;
+
+        public decimal? FixedOpexPerPeriod
+
+        {
+
+            get { return this.FixedOpexPerPeriodValue; }
+
+            set { SetProperty(ref FixedOpexPerPeriodValue, value); }
+
+        }
+        private List<CapitalScheduleItem>? CapitalScheduleValue;
+
+        public List<CapitalScheduleItem>? CapitalSchedule
+
+        {
+
+            get { return this.CapitalScheduleValue; }
+
+            set { SetProperty(ref CapitalScheduleValue, value); }
+
+        }
+    }
+
+    public class EconomicProductionPoint : ModelEntityBase
+    {
+        private DateTime DateValue;
+
+        public DateTime Date
+
+        {
+
+            get { return this.DateValue; }
+
+            set { SetProperty(ref DateValue, value); }
+
+        }
+        private decimal? OilVolumeValue;
+
+        public decimal? OilVolume
+
+        {
+
+            get { return this.OilVolumeValue; }
+
+            set { SetProperty(ref OilVolumeValue, value); }
+
+        }
+        private decimal? GasVolumeValue;
+
+        public decimal? GasVolume
+
+        {
+
+            get { return this.GasVolumeValue; }
+
+            set { SetProperty(ref GasVolumeValue, value); }
+
+        }
+        private decimal? WaterVolumeValue;
+
+        public decimal? WaterVolume
+
+        {
+
+            get { return this.WaterVolumeValue; }
+
+            set { SetProperty(ref WaterVolumeValue, value); }
+
+        }
+        private decimal? OperatingCostValue;
+
+        public decimal? OperatingCost
+
+        {
+
+            get { return this.OperatingCostValue; }
+
+            set { SetProperty(ref OperatingCostValue, value); }
+
+        }
+        private decimal? RevenueValue;
+
+        public decimal? Revenue
+
+        {
+
+            get { return this.RevenueValue; }
+
+            set { SetProperty(ref RevenueValue, value); }
+
+        }
+    }
+
+    public class CapitalScheduleItem : ModelEntityBase
+    {
+        private DateTime DateValue;
+
+        public DateTime Date
+
+        {
+
+            get { return this.DateValue; }
+
+            set { SetProperty(ref DateValue, value); }
+
+        }
+        private decimal AmountValue;
+
+        public decimal Amount
+
+        {
+
+            get { return this.AmountValue; }
+
+            set { SetProperty(ref AmountValue, value); }
+
+        }
+    }
+
+    public class EconomicAnalysisResult : ModelEntityBase
+    {
+        private string AnalysisIdValue;
+
+        public string AnalysisId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
+        private DateTime AnalysisDateValue;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
+        private decimal NPVValue;
+
+        public decimal NPV
+
+        {
+
+            get { return this.NPVValue; }
+
+            set { SetProperty(ref NPVValue, value); }
+
+        }
+        private decimal IRRValue;
+
+        public decimal IRR
+
+        {
+
+            get { return this.IRRValue; }
+
+            set { SetProperty(ref IRRValue, value); }
+
+        }
+        private decimal PaybackPeriodValue;
+
+        public decimal PaybackPeriod
+
+        {
+
+            get { return this.PaybackPeriodValue; }
+
+            set { SetProperty(ref PaybackPeriodValue, value); }
+
+        }
+        private decimal ROIValue;
+
+        public decimal ROI
+
+        {
+
+            get { return this.ROIValue; }
+
+            set { SetProperty(ref ROIValue, value); }
+
+        }
+        private decimal BreakevenPriceValue;
+
+        public decimal BreakevenPrice
+
+        {
+
+            get { return this.BreakevenPriceValue; }
+
+            set { SetProperty(ref BreakevenPriceValue, value); }
+
+        }
+        private List<double> CashFlowsValue;
+
+        public List<double> CashFlows
+
+        {
+
+            get { return this.CashFlowsValue; }
+
+            set { SetProperty(ref CashFlowsValue, value); }
+
+        }
+        private string StatusValue;
+
+        public string Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        }
+        private string ErrorMessageValue;
+
+        public string ErrorMessage
+
+        {
+
+            get { return this.ErrorMessageValue; }
+
+            set { SetProperty(ref ErrorMessageValue, value); }
+
+        }
+        public Dictionary<string, object>? AdditionalResults { get; set; }
     }
 }
+
+
+
 

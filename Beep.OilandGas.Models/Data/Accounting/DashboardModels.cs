@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using TheTechIdea.Beep.Editor;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting
 {
     /// <summary>
     /// Financial Dashboard
     /// </summary>
-    public partial class FinancialDashboard : AccountingEntityBase
+    public partial class FinancialDashboard : ModelEntityBase
     {
         private System.DateTime AsOfDateValue;
         /// <summary>
@@ -43,7 +44,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Key Performance Indicator
     /// </summary>
-    public partial class KPI : AccountingEntityBase
+    public partial class KPI : ModelEntityBase
     {
         private System.String NameValue = string.Empty;
         /// <summary>
@@ -119,7 +120,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Executive Summary
     /// </summary>
-    public partial class ExecutiveSummary : AccountingEntityBase
+    public partial class ExecutiveSummary : ModelEntityBase
     {
         private System.DateTime PeriodStartValue;
         /// <summary>
@@ -225,7 +226,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Highlighted Metric
     /// </summary>
-    public partial class HighlightedMetric : AccountingEntityBase
+    public partial class HighlightedMetric : ModelEntityBase
     {
         private System.String LabelValue = string.Empty;
         /// <summary>
@@ -271,7 +272,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Trend Analysis
     /// </summary>
-    public partial class TrendAnalysis : AccountingEntityBase
+    public partial class TrendAnalysis : ModelEntityBase
     {
         private System.DateTime AnalysisStartValue;
         /// <summary>
@@ -337,7 +338,7 @@ namespace Beep.OilandGas.Models.Data.Accounting
     /// <summary>
     /// Trend Line
     /// </summary>
-    public partial class TrendLine : AccountingEntityBase
+    public partial class TrendLine : ModelEntityBase
     {
         private System.String MetricNameValue = string.Empty;
         /// <summary>
@@ -410,4 +411,5 @@ namespace Beep.OilandGas.Models.Data.Accounting
         }
     }
 }
+
 

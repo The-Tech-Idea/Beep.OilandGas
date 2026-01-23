@@ -9,32 +9,92 @@ namespace Beep.OilandGas.Models.Data.HeatMap
         /// <summary>
         /// X coordinate (normalized or screen coordinates)
         /// </summary>
-        public double X { get; set; }
+        private double XValue;
+
+        public double X
+
+        {
+
+            get { return this.XValue; }
+
+            set { SetProperty(ref XValue, value); }
+
+        }
 
         /// <summary>
         /// Y coordinate (normalized or screen coordinates)
         /// </summary>
-        public double Y { get; set; }
+        private double YValue;
+
+        public double Y
+
+        {
+
+            get { return this.YValue; }
+
+            set { SetProperty(ref YValue, value); }
+
+        }
 
         /// <summary>
         /// Original X coordinate (data space)
         /// </summary>
-        public double OriginalX { get; set; }
+        private double OriginalXValue;
+
+        public double OriginalX
+
+        {
+
+            get { return this.OriginalXValue; }
+
+            set { SetProperty(ref OriginalXValue, value); }
+
+        }
 
         /// <summary>
         /// Original Y coordinate (data space)
         /// </summary>
-        public double OriginalY { get; set; }
+        private double OriginalYValue;
+
+        public double OriginalY
+
+        {
+
+            get { return this.OriginalYValue; }
+
+            set { SetProperty(ref OriginalYValue, value); }
+
+        }
 
         /// <summary>
         /// Value at this point
         /// </summary>
-        public double Value { get; set; }
+        private double ValueValue;
+
+        public double Value
+
+        {
+
+            get { return this.ValueValue; }
+
+            set { SetProperty(ref ValueValue, value); }
+
+        }
 
         /// <summary>
         /// Optional label for this point
         /// </summary>
-        public string? Label { get; set; }
+        private string? LabelValue;
+
+        public string? Label
+
+        {
+
+            get { return this.LabelValue; }
+
+            set { SetProperty(ref LabelValue, value); }
+
+        }
 
         /// <summary>
         /// Default constructor
@@ -57,6 +117,7 @@ namespace Beep.OilandGas.Models.Data.HeatMap
         }
     }
 }
+
 
 
 

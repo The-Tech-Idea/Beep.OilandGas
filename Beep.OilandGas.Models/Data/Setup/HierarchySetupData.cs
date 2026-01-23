@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Setup
 {
     /// <summary>
@@ -10,12 +11,52 @@ namespace Beep.OilandGas.Models.Data.Setup
     /// </summary>
     public class HierarchySetupData : ModelEntityBase
     {
+        private string OrganizationIdValue = string.Empty;
+
         [Required]
-        public string OrganizationId { get; set; } = string.Empty;
+        public string OrganizationId
 
-        public List<HierarchyLevelConfig> HierarchyLevels { get; set; } = new List<HierarchyLevelConfig>();
+        {
 
-        public List<AreaConfiguration> AreaConfigurations { get; set; } = new List<AreaConfiguration>();
+            get { return this.OrganizationIdValue; }
+
+            set { SetProperty(ref OrganizationIdValue, value); }
+
+        }
+
+        private List<HierarchyLevelConfig> HierarchyLevelsValue = new List<HierarchyLevelConfig>();
+
+
+        public List<HierarchyLevelConfig> HierarchyLevels
+
+
+        {
+
+
+            get { return this.HierarchyLevelsValue; }
+
+
+            set { SetProperty(ref HierarchyLevelsValue, value); }
+
+
+        }
+
+        private List<AreaConfiguration> AreaConfigurationsValue = new List<AreaConfiguration>();
+
+
+        public List<AreaConfiguration> AreaConfigurations
+
+
+        {
+
+
+            get { return this.AreaConfigurationsValue; }
+
+
+            set { SetProperty(ref AreaConfigurationsValue, value); }
+
+
+        }
     }
 
     /// <summary>
@@ -23,18 +64,88 @@ namespace Beep.OilandGas.Models.Data.Setup
     /// </summary>
     public class HierarchyLevelConfig : ModelEntityBase
     {
-        [Required]
-        public int HierarchyLevel { get; set; }
+        private int HierarchyLevelValue;
 
         [Required]
-        public string LevelName { get; set; } = string.Empty;
+        public int HierarchyLevel
+
+        {
+
+            get { return this.HierarchyLevelValue; }
+
+            set { SetProperty(ref HierarchyLevelValue, value); }
+
+        }
+
+        private string LevelNameValue = string.Empty;
+
 
         [Required]
-        public string AssetType { get; set; } = string.Empty;
+        public string LevelName
 
-        public int? ParentLevel { get; set; }
 
-        public bool Active { get; set; } = true;
+        {
+
+
+            get { return this.LevelNameValue; }
+
+
+            set { SetProperty(ref LevelNameValue, value); }
+
+
+        }
+
+        private string AssetTypeValue = string.Empty;
+
+
+        [Required]
+        public string AssetType
+
+
+        {
+
+
+            get { return this.AssetTypeValue; }
+
+
+            set { SetProperty(ref AssetTypeValue, value); }
+
+
+        }
+
+        private int? ParentLevelValue;
+
+
+        public int? ParentLevel
+
+
+        {
+
+
+            get { return this.ParentLevelValue; }
+
+
+            set { SetProperty(ref ParentLevelValue, value); }
+
+
+        }
+
+        private bool ActiveValue = true;
+
+
+        public bool Active
+
+
+        {
+
+
+            get { return this.ActiveValue; }
+
+
+            set { SetProperty(ref ActiveValue, value); }
+
+
+        }
     }
 
     /// <summary>
@@ -42,21 +153,109 @@ namespace Beep.OilandGas.Models.Data.Setup
     /// </summary>
     public class AreaConfiguration : ModelEntityBase
     {
-        [Required]
-        public string AreaId { get; set; } = string.Empty;
+        private string AreaIdValue = string.Empty;
 
         [Required]
-        public string AreaName { get; set; } = string.Empty;
+        public string AreaId
 
-        public string? AreaType { get; set; }
+        {
 
-        public string? ParentAreaId { get; set; }
+            get { return this.AreaIdValue; }
 
-        public int HierarchyLevel { get; set; }
+            set { SetProperty(ref AreaIdValue, value); }
 
-        public bool Active { get; set; } = true;
+        }
+
+        private string AreaNameValue = string.Empty;
+
+
+        [Required]
+        public string AreaName
+
+
+        {
+
+
+            get { return this.AreaNameValue; }
+
+
+            set { SetProperty(ref AreaNameValue, value); }
+
+
+        }
+
+        private string? AreaTypeValue;
+
+
+        public string? AreaType
+
+
+        {
+
+
+            get { return this.AreaTypeValue; }
+
+
+            set { SetProperty(ref AreaTypeValue, value); }
+
+
+        }
+
+        private string? ParentAreaIdValue;
+
+
+        public string? ParentAreaId
+
+
+        {
+
+
+            get { return this.ParentAreaIdValue; }
+
+
+            set { SetProperty(ref ParentAreaIdValue, value); }
+
+
+        }
+
+        private int HierarchyLevelValue;
+
+
+        public int HierarchyLevel
+
+
+        {
+
+
+            get { return this.HierarchyLevelValue; }
+
+
+            set { SetProperty(ref HierarchyLevelValue, value); }
+
+
+        }
+
+        private bool ActiveValue = true;
+
+
+        public bool Active
+
+
+        {
+
+
+            get { return this.ActiveValue; }
+
+
+            set { SetProperty(ref ActiveValue, value); }
+
+
+        }
     }
 }
+
+
+
 
 
 

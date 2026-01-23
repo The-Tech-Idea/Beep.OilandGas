@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
@@ -9,17 +10,82 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class CreateJournalEntryRequest : ModelEntityBase
     {
-        public string? EntryNumber { get; set; }
+        private string? EntryNumberValue;
+
+        public string? EntryNumber
+
+        {
+
+            get { return this.EntryNumberValue; }
+
+            set { SetProperty(ref EntryNumberValue, value); }
+
+        }
+
+        private DateTime? EntryDateValue;
+
 
         [Required(ErrorMessage = "EntryDate is required")]
-        public DateTime? EntryDate { get; set; }
+        public DateTime? EntryDate
 
-        public string? EntryType { get; set; }
-        public string? Description { get; set; }
+
+        {
+
+
+            get { return this.EntryDateValue; }
+
+
+            set { SetProperty(ref EntryDateValue, value); }
+
+
+        }
+
+        private string? EntryTypeValue;
+
+
+        public string? EntryType
+
+
+        {
+
+
+            get { return this.EntryTypeValue; }
+
+
+            set { SetProperty(ref EntryTypeValue, value); }
+
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
+
+        private List<JournalEntryLineRequest> LinesValue = new();
+
 
         [Required(ErrorMessage = "At least one line is required")]
         [MinLength(1, ErrorMessage = "At least one journal entry line is required")]
-        public List<JournalEntryLineRequest> Lines { get; set; } = new();
+        public List<JournalEntryLineRequest> Lines
+
+
+        {
+
+
+            get { return this.LinesValue; }
+
+
+            set { SetProperty(ref LinesValue, value); }
+
+
+        }
     }
 
     /// <summary>
@@ -27,12 +93,57 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class JournalEntryLineRequest : ModelEntityBase
     {
-        [Required(ErrorMessage = "GlAccountId is required")]
-        public string GlAccountId { get; set; } = string.Empty;
+        private string GlAccountIdValue = string.Empty;
 
-        public decimal? DebitAmount { get; set; }
-        public decimal? CreditAmount { get; set; }
-        public string? Description { get; set; }
+        [Required(ErrorMessage = "GlAccountId is required")]
+        public string GlAccountId
+
+        {
+
+            get { return this.GlAccountIdValue; }
+
+            set { SetProperty(ref GlAccountIdValue, value); }
+
+        }
+
+        private decimal? DebitAmountValue;
+
+
+        public decimal? DebitAmount
+
+
+        {
+
+
+            get { return this.DebitAmountValue; }
+
+
+            set { SetProperty(ref DebitAmountValue, value); }
+
+
+        }
+        private decimal? CreditAmountValue;
+
+        public decimal? CreditAmount
+
+        {
+
+            get { return this.CreditAmountValue; }
+
+            set { SetProperty(ref CreditAmountValue, value); }
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -40,25 +151,128 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
     /// </summary>
     public class CreateInventoryTransactionRequest : ModelEntityBase
     {
+        private DateTime TransactionDateValue;
+
         [Required(ErrorMessage = "TransactionDate is required")]
-        public DateTime TransactionDate { get; set; }
+        public DateTime TransactionDate
+
+        {
+
+            get { return this.TransactionDateValue; }
+
+            set { SetProperty(ref TransactionDateValue, value); }
+
+        }
+
+        private string TransactionTypeValue = string.Empty;
+
 
         [Required(ErrorMessage = "TransactionType is required")]
-        public string TransactionType { get; set; } = string.Empty; // IN, OUT, ADJUSTMENT, etc.
+        public string TransactionType
+
+
+        {
+
+
+            get { return this.TransactionTypeValue; }
+
+
+            set { SetProperty(ref TransactionTypeValue, value); }
+
+
+        } // IN, OUT, ADJUSTMENT, etc.
+
+        private string ItemIdValue = string.Empty;
+
 
         [Required(ErrorMessage = "ItemId is required")]
-        public string ItemId { get; set; } = string.Empty;
+        public string ItemId
+
+
+        {
+
+
+            get { return this.ItemIdValue; }
+
+
+            set { SetProperty(ref ItemIdValue, value); }
+
+
+        }
+
+        private decimal QuantityValue;
+
 
         [Required(ErrorMessage = "Quantity is required")]
         [Range(0.01, double.MaxValue, ErrorMessage = "Quantity must be greater than 0")]
-        public decimal Quantity { get; set; }
+        public decimal Quantity
 
-        public decimal? UnitCost { get; set; }
-        public string? LocationId { get; set; }
-        public string? ReferenceNumber { get; set; }
-        public string? Description { get; set; }
+
+        {
+
+
+            get { return this.QuantityValue; }
+
+
+            set { SetProperty(ref QuantityValue, value); }
+
+
+        }
+
+        private decimal? UnitCostValue;
+
+
+        public decimal? UnitCost
+
+
+        {
+
+
+            get { return this.UnitCostValue; }
+
+
+            set { SetProperty(ref UnitCostValue, value); }
+
+
+        }
+        private string? LocationIdValue;
+
+        public string? LocationId
+
+        {
+
+            get { return this.LocationIdValue; }
+
+            set { SetProperty(ref LocationIdValue, value); }
+
+        }
+        private string? ReferenceNumberValue;
+
+        public string? ReferenceNumber
+
+        {
+
+            get { return this.ReferenceNumberValue; }
+
+            set { SetProperty(ref ReferenceNumberValue, value); }
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

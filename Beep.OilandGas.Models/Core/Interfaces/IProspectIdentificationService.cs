@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -44,14 +45,10 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// <summary>
     /// DTO for prospect ranking.
     /// </summary>
-    public class ProspectRanking
-    {
-        public string ProspectId { get; set; } = string.Empty;
-        public string ProspectName { get; set; } = string.Empty;
-        public int Rank { get; set; }
-        public decimal Score { get; set; }
-    }
+    
 }
+
+
 
 
 

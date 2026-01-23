@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.LifeCycle
 {
     /// <summary>
@@ -8,8 +9,28 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
     /// </summary>
     public class StartLeadToProspectRequest : ModelEntityBase
     {
-        public string LeadId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
+        private string LeadIdValue = string.Empty;
+
+        public string LeadId
+
+        {
+
+            get { return this.LeadIdValue; }
+
+            set { SetProperty(ref LeadIdValue, value); }
+
+        }
+        private string UserIdValue = string.Empty;
+
+        public string UserId
+
+        {
+
+            get { return this.UserIdValue; }
+
+            set { SetProperty(ref UserIdValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -17,9 +38,29 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
     /// </summary>
     public class EvaluateLeadRequest : ModelEntityBase
     {
-        public string InstanceId { get; set; } = string.Empty;
+        private string InstanceIdValue = string.Empty;
+
+        public string InstanceId
+
+        {
+
+            get { return this.InstanceIdValue; }
+
+            set { SetProperty(ref InstanceIdValue, value); }
+
+        }
         public Dictionary<string, object>? EvaluationData { get; set; }
-        public string UserId { get; set; } = string.Empty;
+        private string UserIdValue = string.Empty;
+
+        public string UserId
+
+        {
+
+            get { return this.UserIdValue; }
+
+            set { SetProperty(ref UserIdValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -27,8 +68,28 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
     /// </summary>
     public class ApproveLeadRequest : ModelEntityBase
     {
-        public string InstanceId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
+        private string InstanceIdValue = string.Empty;
+
+        public string InstanceId
+
+        {
+
+            get { return this.InstanceIdValue; }
+
+            set { SetProperty(ref InstanceIdValue, value); }
+
+        }
+        private string UserIdValue = string.Empty;
+
+        public string UserId
+
+        {
+
+            get { return this.UserIdValue; }
+
+            set { SetProperty(ref UserIdValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -36,8 +97,28 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
     /// </summary>
     public class StartProspectToDiscoveryRequest : ModelEntityBase
     {
-        public string ProspectId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
+        private string ProspectIdValue = string.Empty;
+
+        public string ProspectId
+
+        {
+
+            get { return this.ProspectIdValue; }
+
+            set { SetProperty(ref ProspectIdValue, value); }
+
+        }
+        private string UserIdValue = string.Empty;
+
+        public string UserId
+
+        {
+
+            get { return this.UserIdValue; }
+
+            set { SetProperty(ref UserIdValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -45,10 +126,32 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
     /// </summary>
     public class StartDiscoveryToDevelopmentRequest : ModelEntityBase
     {
-        public string DiscoveryId { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
+        private string DiscoveryIdValue = string.Empty;
+
+        public string DiscoveryId
+
+        {
+
+            get { return this.DiscoveryIdValue; }
+
+            set { SetProperty(ref DiscoveryIdValue, value); }
+
+        }
+        private string UserIdValue = string.Empty;
+
+        public string UserId
+
+        {
+
+            get { return this.UserIdValue; }
+
+            set { SetProperty(ref UserIdValue, value); }
+
+        }
     }
 }
+
+
 
 
 

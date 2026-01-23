@@ -2,7 +2,6 @@
 
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.Accounting;
-using Beep.OilandGas.Models.Data.Accounting;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -15,22 +14,22 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Creates a sales transaction.
         /// </summary>
-        Task<SALES_TRANSACTION> CreateSalesTransactionAsync(CreateSalesTransactionRequest request, string userId, string? connectionName = null);
+        Task<Data.ProductionAccounting.SalesTransaction> CreateSalesTransactionAsync(CreateSalesTransactionRequest request, string userId, string? connectionName = null);
 
         /// <summary>
         /// Gets a sales transaction by ID.
         /// </summary>
-        Task<SALES_TRANSACTION?> GetSalesTransactionAsync(string transactionId, string? connectionName = null);
+        Task<Data.ProductionAccounting.SalesTransaction?> GetSalesTransactionAsync(string transactionId, string? connectionName = null);
 
         /// <summary>
         /// Gets sales transactions within a date range.
         /// </summary>
-        Task<List<SALES_TRANSACTION>> GetSalesTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, string? connectionName = null);
+        Task<List<Data.ProductionAccounting.SalesTransaction>> GetSalesTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, string? connectionName = null);
 
         /// <summary>
         /// Gets sales transactions for a specific customer.
         /// </summary>
-        Task<List<SALES_TRANSACTION>> GetSalesTransactionsByCustomerAsync(string customerBaId, DateTime? startDate = null, DateTime? endDate = null, string? connectionName = null);
+        Task<List<Data.ProductionAccounting.SalesTransaction>> GetSalesTransactionsByCustomerAsync(string customerBaId, DateTime? startDate = null, DateTime? endDate = null, string? connectionName = null);
 
         /// <summary>
         /// Creates a receivable record.

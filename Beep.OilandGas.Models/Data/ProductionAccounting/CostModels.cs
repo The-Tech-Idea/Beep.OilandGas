@@ -1,5 +1,6 @@
 using System;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
@@ -10,22 +11,62 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the property identifier.
         /// </summary>
-        public string PropertyId { get; set; } = string.Empty;
+        private string PropertyIdValue = string.Empty;
+
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the production period.
         /// </summary>
-        public DateTime ProductionPeriod { get; set; }
+        private DateTime ProductionPeriodValue;
+
+        public DateTime ProductionPeriod
+
+        {
+
+            get { return this.ProductionPeriodValue; }
+
+            set { SetProperty(ref ProductionPeriodValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the oil production in barrels.
         /// </summary>
-        public decimal OilProduction { get; set; }
+        private decimal OilProductionValue;
+
+        public decimal OilProduction
+
+        {
+
+            get { return this.OilProductionValue; }
+
+            set { SetProperty(ref OilProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the gas production in MCF.
         /// </summary>
-        public decimal GasProduction { get; set; }
+        private decimal GasProductionValue;
+
+        public decimal GasProduction
+
+        {
+
+            get { return this.GasProductionValue; }
+
+            set { SetProperty(ref GasProductionValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the total production in BOE (barrels of oil equivalent).
@@ -41,17 +82,47 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the property identifier.
         /// </summary>
-        public string PropertyId { get; set; } = string.Empty;
+        private string PropertyIdValue = string.Empty;
+
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the beginning accumulated expenditures.
         /// </summary>
-        public decimal BeginningAccumulatedExpenditures { get; set; }
+        private decimal BeginningAccumulatedExpendituresValue;
+
+        public decimal BeginningAccumulatedExpenditures
+
+        {
+
+            get { return this.BeginningAccumulatedExpendituresValue; }
+
+            set { SetProperty(ref BeginningAccumulatedExpendituresValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the ending accumulated expenditures.
         /// </summary>
-        public decimal EndingAccumulatedExpenditures { get; set; }
+        private decimal EndingAccumulatedExpendituresValue;
+
+        public decimal EndingAccumulatedExpenditures
+
+        {
+
+            get { return this.EndingAccumulatedExpendituresValue; }
+
+            set { SetProperty(ref EndingAccumulatedExpendituresValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the average accumulated expenditures.
@@ -62,17 +133,47 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the interest rate (as decimal, e.g., 0.10 for 10%).
         /// </summary>
-        public decimal InterestRate { get; set; }
+        private decimal InterestRateValue;
+
+        public decimal InterestRate
+
+        {
+
+            get { return this.InterestRateValue; }
+
+            set { SetProperty(ref InterestRateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the capitalization period in months.
         /// </summary>
-        public decimal CapitalizationPeriodMonths { get; set; }
+        private decimal CapitalizationPeriodMonthsValue;
+
+        public decimal CapitalizationPeriodMonths
+
+        {
+
+            get { return this.CapitalizationPeriodMonthsValue; }
+
+            set { SetProperty(ref CapitalizationPeriodMonthsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the actual interest costs incurred.
         /// </summary>
-        public decimal ActualInterestCosts { get; set; }
+        private decimal ActualInterestCostsValue;
+
+        public decimal ActualInterestCosts
+
+        {
+
+            get { return this.ActualInterestCostsValue; }
+
+            set { SetProperty(ref ActualInterestCostsValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -83,17 +184,47 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the property identifier.
         /// </summary>
-        public string PropertyId { get; set; } = string.Empty;
+        private string PropertyIdValue = string.Empty;
+
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the proved developed oil reserves in barrels.
         /// </summary>
-        public decimal ProvedDevelopedOilReserves { get; set; }
+        private decimal ProvedDevelopedOilReservesValue;
+
+        public decimal ProvedDevelopedOilReserves
+
+        {
+
+            get { return this.ProvedDevelopedOilReservesValue; }
+
+            set { SetProperty(ref ProvedDevelopedOilReservesValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the proved undeveloped oil reserves in barrels.
         /// </summary>
-        public decimal ProvedUndevelopedOilReserves { get; set; }
+        private decimal ProvedUndevelopedOilReservesValue;
+
+        public decimal ProvedUndevelopedOilReserves
+
+        {
+
+            get { return this.ProvedUndevelopedOilReservesValue; }
+
+            set { SetProperty(ref ProvedUndevelopedOilReservesValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the total proved oil reserves in barrels.
@@ -103,12 +234,32 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the proved developed gas reserves in MCF.
         /// </summary>
-        public decimal ProvedDevelopedGasReserves { get; set; }
+        private decimal ProvedDevelopedGasReservesValue;
+
+        public decimal ProvedDevelopedGasReserves
+
+        {
+
+            get { return this.ProvedDevelopedGasReservesValue; }
+
+            set { SetProperty(ref ProvedDevelopedGasReservesValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the proved undeveloped gas reserves in MCF.
         /// </summary>
-        public decimal ProvedUndevelopedGasReserves { get; set; }
+        private decimal ProvedUndevelopedGasReservesValue;
+
+        public decimal ProvedUndevelopedGasReserves
+
+        {
+
+            get { return this.ProvedUndevelopedGasReservesValue; }
+
+            set { SetProperty(ref ProvedUndevelopedGasReservesValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the total proved gas reserves in MCF.
@@ -118,18 +269,58 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the reserve date.
         /// </summary>
-        public DateTime ReserveDate { get; set; }
+        private DateTime ReserveDateValue;
+
+        public DateTime ReserveDate
+
+        {
+
+            get { return this.ReserveDateValue; }
+
+            set { SetProperty(ref ReserveDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the oil price used for reserve valuation ($/barrel).
         /// </summary>
-        public decimal OilPrice { get; set; }
+        private decimal OilPriceValue;
+
+        public decimal OilPrice
+
+        {
+
+            get { return this.OilPriceValue; }
+
+            set { SetProperty(ref OilPriceValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the gas price used for reserve valuation ($/MCF).
         /// </summary>
-        public decimal GasPrice { get; set; }
-        public object TotalProvedReservesBOE { get; set; }
+        private decimal GasPriceValue;
+
+        public decimal GasPrice
+
+        {
+
+            get { return this.GasPriceValue; }
+
+            set { SetProperty(ref GasPriceValue, value); }
+
+        }
+        private object TotalProvedReservesBOEValue;
+
+        public object TotalProvedReservesBOE
+
+        {
+
+            get { return this.TotalProvedReservesBOEValue; }
+
+            set { SetProperty(ref TotalProvedReservesBOEValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -141,52 +332,152 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the exploration cost identifier.
         /// </summary>
-        public string ExplorationCostId { get; set; } = string.Empty;
+        private string ExplorationCostIdValue = string.Empty;
+
+        public string ExplorationCostId
+
+        {
+
+            get { return this.ExplorationCostIdValue; }
+
+            set { SetProperty(ref ExplorationCostIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the property identifier.
         /// </summary>
-        public string PropertyId { get; set; } = string.Empty;
+        private string PropertyIdValue = string.Empty;
+
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the geological and geophysical (G&G) costs.
         /// </summary>
-        public decimal GeologicalGeophysicalCosts { get; set; }
+        private decimal GeologicalGeophysicalCostsValue;
+
+        public decimal GeologicalGeophysicalCosts
+
+        {
+
+            get { return this.GeologicalGeophysicalCostsValue; }
+
+            set { SetProperty(ref GeologicalGeophysicalCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the exploratory drilling costs (intangible drilling costs - IDC).
         /// </summary>
-        public decimal ExploratoryDrillingCosts { get; set; }
+        private decimal ExploratoryDrillingCostsValue;
+
+        public decimal ExploratoryDrillingCosts
+
+        {
+
+            get { return this.ExploratoryDrillingCostsValue; }
+
+            set { SetProperty(ref ExploratoryDrillingCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the exploratory well equipment costs.
         /// </summary>
-        public decimal ExploratoryWellEquipment { get; set; }
+        private decimal ExploratoryWellEquipmentValue;
+
+        public decimal ExploratoryWellEquipment
+
+        {
+
+            get { return this.ExploratoryWellEquipmentValue; }
+
+            set { SetProperty(ref ExploratoryWellEquipmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the cost date.
         /// </summary>
-        public DateTime CostDate { get; set; }
+        private DateTime CostDateValue;
+
+        public DateTime CostDate
+
+        {
+
+            get { return this.CostDateValue; }
+
+            set { SetProperty(ref CostDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the well identifier (if applicable).
         /// </summary>
-        public string WellId { get; set; } = string.Empty;
+        private string WellIdValue = string.Empty;
+
+        public string WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether this is a dry hole.
         /// </summary>
-        public bool IsDryHole { get; set; }
+        private bool IsDryHoleValue;
+
+        public bool IsDryHole
+
+        {
+
+            get { return this.IsDryHoleValue; }
+
+            set { SetProperty(ref IsDryHoleValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether the well found proved reserves.
         /// </summary>
-        public bool FoundProvedReserves { get; set; }
+        private bool FoundProvedReservesValue;
+
+        public bool FoundProvedReserves
+
+        {
+
+            get { return this.FoundProvedReservesValue; }
+
+            set { SetProperty(ref FoundProvedReservesValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether classification is deferred.
         /// </summary>
-        public bool IsDeferredClassification { get; set; }
+        private bool IsDeferredClassificationValue;
+
+        public bool IsDeferredClassification
+
+        {
+
+            get { return this.IsDeferredClassificationValue; }
+
+            set { SetProperty(ref IsDeferredClassificationValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the total exploration costs.
@@ -204,37 +495,107 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the development cost identifier.
         /// </summary>
-        public string DevelopmentCostId { get; set; } = string.Empty;
+        private string DevelopmentCostIdValue = string.Empty;
+
+        public string DevelopmentCostId
+
+        {
+
+            get { return this.DevelopmentCostIdValue; }
+
+            set { SetProperty(ref DevelopmentCostIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the property identifier.
         /// </summary>
-        public string PropertyId { get; set; } = string.Empty;
+        private string PropertyIdValue = string.Empty;
+
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the development well drilling costs (IDC).
         /// </summary>
-        public decimal DevelopmentWellDrillingCosts { get; set; }
+        private decimal DevelopmentWellDrillingCostsValue;
+
+        public decimal DevelopmentWellDrillingCosts
+
+        {
+
+            get { return this.DevelopmentWellDrillingCostsValue; }
+
+            set { SetProperty(ref DevelopmentWellDrillingCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the development well equipment costs.
         /// </summary>
-        public decimal DevelopmentWellEquipment { get; set; }
+        private decimal DevelopmentWellEquipmentValue;
+
+        public decimal DevelopmentWellEquipment
+
+        {
+
+            get { return this.DevelopmentWellEquipmentValue; }
+
+            set { SetProperty(ref DevelopmentWellEquipmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the support equipment and facilities costs.
         /// </summary>
-        public decimal SupportEquipmentAndFacilities { get; set; }
+        private decimal SupportEquipmentAndFacilitiesValue;
+
+        public decimal SupportEquipmentAndFacilities
+
+        {
+
+            get { return this.SupportEquipmentAndFacilitiesValue; }
+
+            set { SetProperty(ref SupportEquipmentAndFacilitiesValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the service well costs.
         /// </summary>
-        public decimal ServiceWellCosts { get; set; }
+        private decimal ServiceWellCostsValue;
+
+        public decimal ServiceWellCosts
+
+        {
+
+            get { return this.ServiceWellCostsValue; }
+
+            set { SetProperty(ref ServiceWellCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the cost date.
         /// </summary>
-        public DateTime CostDate { get; set; }
+        private DateTime CostDateValue;
+
+        public DateTime CostDate
+
+        {
+
+            get { return this.CostDateValue; }
+
+            set { SetProperty(ref CostDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the total development costs.
@@ -253,32 +614,92 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the production cost identifier.
         /// </summary>
-        public string ProductionCostId { get; set; } = string.Empty;
+        private string ProductionCostIdValue = string.Empty;
+
+        public string ProductionCostId
+
+        {
+
+            get { return this.ProductionCostIdValue; }
+
+            set { SetProperty(ref ProductionCostIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the property identifier.
         /// </summary>
-        public string PropertyId { get; set; } = string.Empty;
+        private string PropertyIdValue = string.Empty;
+
+        public string PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the operating costs.
         /// </summary>
-        public decimal OperatingCosts { get; set; }
+        private decimal OperatingCostsValue;
+
+        public decimal OperatingCosts
+
+        {
+
+            get { return this.OperatingCostsValue; }
+
+            set { SetProperty(ref OperatingCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the workover costs.
         /// </summary>
-        public decimal WorkoverCosts { get; set; }
+        private decimal WorkoverCostsValue;
+
+        public decimal WorkoverCosts
+
+        {
+
+            get { return this.WorkoverCostsValue; }
+
+            set { SetProperty(ref WorkoverCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the maintenance costs.
         /// </summary>
-        public decimal MaintenanceCosts { get; set; }
+        private decimal MaintenanceCostsValue;
+
+        public decimal MaintenanceCosts
+
+        {
+
+            get { return this.MaintenanceCostsValue; }
+
+            set { SetProperty(ref MaintenanceCostsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the cost period.
         /// </summary>
-        public DateTime CostPeriod { get; set; }
+        private DateTime CostPeriodValue;
+
+        public DateTime CostPeriod
+
+        {
+
+            get { return this.CostPeriodValue; }
+
+            set { SetProperty(ref CostPeriodValue, value); }
+
+        }
 
         /// <summary>
         /// Gets the total production costs.
@@ -287,6 +708,9 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             OperatingCosts + WorkoverCosts + MaintenanceCosts;
     }
 }
+
+
+
 
 
 

@@ -1,82 +1,350 @@
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
+    using System;
+
+using Beep.OilandGas.Models.Data;    using System.Collections.Generic;
     /// <summary>
     /// Represents the result of a well test analysis
     /// DTO for calculations - Entity class: WELL_TEST_ANALYSIS_RESULT
     /// </summary>
     public class WellTestAnalysisResult : ModelEntityBase
     {
-        /// <summary>
-        /// Gets or sets the unique analysis identifier
-        /// </summary>
-        public string AnalysisId { get; set; } = string.Empty;
+        private string AnalysisIdValue = string.Empty;
 
-        /// <summary>
-        /// Gets or sets the well UWI (Unique Well Identifier)
-        /// </summary>
-        public string WellUWI { get; set; } = string.Empty;
+        public string AnalysisId
 
-        /// <summary>
-        /// Gets or sets the analysis date/time
-        /// </summary>
-        public DateTime AnalysisDate { get; set; } = DateTime.UtcNow;
+        {
 
-        /// <summary>
-        /// Gets or sets the user who performed the analysis
-        /// </summary>
-        public string AnalysisByUser { get; set; } = string.Empty;
+            get { return this.AnalysisIdValue; }
 
-        /// <summary>
-        /// Gets or sets the calculated permeability in md
-        /// </summary>
-        public double Permeability { get; set; }
+            set { SetProperty(ref AnalysisIdValue, value); }
 
-        /// <summary>
-        /// Gets or sets the skin factor (dimensionless)
-        /// </summary>
-        public double SkinFactor { get; set; }
+        }
+        private string CalculationIdValue = string.Empty;
 
-        /// <summary>
-        /// Gets or sets the reservoir pressure in psi
-        /// </summary>
-        public double ReservoirPressure { get; set; }
+        public string CalculationId
 
-        /// <summary>
-        /// Gets or sets the productivity index in BPD/psi
-        /// </summary>
-        public double ProductivityIndex { get; set; }
+        {
 
-        /// <summary>
-        /// Gets or sets the flow efficiency (dimensionless)
-        /// </summary>
-        public double FlowEfficiency { get; set; }
+            get { return this.CalculationIdValue; }
 
-        /// <summary>
-        /// Gets or sets the damage ratio (dimensionless)
-        /// </summary>
-        public double DamageRatio { get; set; }
+            set { SetProperty(ref CalculationIdValue, value); }
 
-        /// <summary>
-        /// Gets or sets the radius of investigation in feet
-        /// </summary>
-        public double RadiusOfInvestigation { get; set; }
+        } // Added from Calculations.cs
+        private string? WellIdValue;
 
-        /// <summary>
-        /// Gets or sets the identified reservoir model
-        /// </summary>
-        public ReservoirModel IdentifiedModel { get; set; } = ReservoirModel.InfiniteActing;
+        public string? WellId
 
-        /// <summary>
-        /// Gets or sets the R-squared value for the analysis
-        /// </summary>
-        public double RSquared { get; set; }
+        {
 
-        /// <summary>
-        /// Gets or sets the analysis method used
-        /// </summary>
-        public string AnalysisMethod { get; set; } = string.Empty;
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        } // Matches Calculations.cs (nullable there)
+        private string WellUWIValue = string.Empty;
+
+        public string WellUWI
+
+        {
+
+            get { return this.WellUWIValue; }
+
+            set { SetProperty(ref WellUWIValue, value); }
+
+        }
+        private string? TestIdValue;
+
+        public string? TestId
+
+        {
+
+            get { return this.TestIdValue; }
+
+            set { SetProperty(ref TestIdValue, value); }
+
+        } // Added from Calculations.cs
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        } // Added from Calculations.cs
+        private DateTime AnalysisDateValue = DateTime.UtcNow;
+
+        public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
+        private DateTime CalculationDateValue;
+
+        public DateTime CalculationDate
+
+        {
+
+            get { return this.CalculationDateValue; }
+
+            set { SetProperty(ref CalculationDateValue, value); }
+
+        } // Added from Calculations.cs
+        private string AnalysisByUserValue = string.Empty;
+
+        public string AnalysisByUser
+
+        {
+
+            get { return this.AnalysisByUserValue; }
+
+            set { SetProperty(ref AnalysisByUserValue, value); }
+
+        }
+
+        private double PermeabilityValue;
+
+
+        public double Permeability
+
+
+        {
+
+
+            get { return this.PermeabilityValue; }
+
+
+            set { SetProperty(ref PermeabilityValue, value); }
+
+
+        } // double vs decimal in Calculations.cs - sticking to double as it's more common for technical analysis, or change to decimal if Money/Financial? Engineering usually uses double. Calculations used decimal. Let's support decimal? No, usually heavy math like this uses double. But the other file used decimal. I'll stick to double for now but maybe I should standardize.
+        // Actually, Calculations.cs used decimal. Models usually use decimal for financial, double for scientific.
+        // Let's keep existing types here (double) but add the extra fields.
+
+        private double SkinFactorValue;
+
+
+        public double SkinFactor
+
+
+        {
+
+
+            get { return this.SkinFactorValue; }
+
+
+            set { SetProperty(ref SkinFactorValue, value); }
+
+
+        }
+        private double ReservoirPressureValue;
+
+        public double ReservoirPressure
+
+        {
+
+            get { return this.ReservoirPressureValue; }
+
+            set { SetProperty(ref ReservoirPressureValue, value); }
+
+        }
+        private double ProductivityIndexValue;
+
+        public double ProductivityIndex
+
+        {
+
+            get { return this.ProductivityIndexValue; }
+
+            set { SetProperty(ref ProductivityIndexValue, value); }
+
+        }
+        private double FlowEfficiencyValue;
+
+        public double FlowEfficiency
+
+        {
+
+            get { return this.FlowEfficiencyValue; }
+
+            set { SetProperty(ref FlowEfficiencyValue, value); }
+
+        }
+        private double DamageRatioValue;
+
+        public double DamageRatio
+
+        {
+
+            get { return this.DamageRatioValue; }
+
+            set { SetProperty(ref DamageRatioValue, value); }
+
+        }
+        private double RadiusOfInvestigationValue;
+
+        public double RadiusOfInvestigation
+
+        {
+
+            get { return this.RadiusOfInvestigationValue; }
+
+            set { SetProperty(ref RadiusOfInvestigationValue, value); }
+
+        }
+
+        private ReservoirModel IdentifiedModelValue = ReservoirModel.InfiniteActing;
+
+
+        public ReservoirModel IdentifiedModel
+
+
+        {
+
+
+            get { return this.IdentifiedModelValue; }
+
+
+            set { SetProperty(ref IdentifiedModelValue, value); }
+
+
+        }
+        private string IdentifiedModelStringValue = "INFINITE_ACTING";
+
+        public string IdentifiedModelString
+
+        {
+
+            get { return this.IdentifiedModelStringValue; }
+
+            set { SetProperty(ref IdentifiedModelStringValue, value); }
+
+        } // For compatibility if needed
+
+        private double RSquaredValue;
+
+
+        public double RSquared
+
+
+        {
+
+
+            get { return this.RSquaredValue; }
+
+
+            set { SetProperty(ref RSquaredValue, value); }
+
+
+        }
+        private string AnalysisMethodValue = string.Empty;
+
+        public string AnalysisMethod
+
+        {
+
+            get { return this.AnalysisMethodValue; }
+
+            set { SetProperty(ref AnalysisMethodValue, value); }
+
+        }
+        private string AnalysisTypeValue = string.Empty;
+
+        public string AnalysisType
+
+        {
+
+            get { return this.AnalysisTypeValue; }
+
+            set { SetProperty(ref AnalysisTypeValue, value); }
+
+        } // Added from Calculations.cs
+
+        private List<WellTestDataPoint>? DiagnosticPointsValue;
+
+
+        public List<WellTestDataPoint>? DiagnosticPoints
+
+
+        {
+
+
+            get { return this.DiagnosticPointsValue; }
+
+
+            set { SetProperty(ref DiagnosticPointsValue, value); }
+
+
+        } // Added from Calculations.cs
+        private List<WellTestDataPoint>? DerivativePointsValue;
+
+        public List<WellTestDataPoint>? DerivativePoints
+
+        {
+
+            get { return this.DerivativePointsValue; }
+
+            set { SetProperty(ref DerivativePointsValue, value); }
+
+        } // Added from Calculations.cs
+        
+        public Dictionary<string, object>? AdditionalResults { get; set; } // Added from Calculations.cs
+        private string? StatusValue;
+
+        public string? Status
+
+        {
+
+            get { return this.StatusValue; }
+
+            set { SetProperty(ref StatusValue, value); }
+
+        } // Added from Calculations.cs
+        private string? ErrorMessageValue;
+
+        public string? ErrorMessage
+
+        {
+
+            get { return this.ErrorMessageValue; }
+
+            set { SetProperty(ref ErrorMessageValue, value); }
+
+        } // Added from Calculations.cs
+        private string? UserIdValue;
+
+        public string? UserId
+
+        {
+
+            get { return this.UserIdValue; }
+
+            set { SetProperty(ref UserIdValue, value); }
+
+        } // Added from Calculations.cs
+        private bool IsSuccessfulValue;
+
+        public bool IsSuccessful
+
+        {
+
+            get { return this.IsSuccessfulValue; }
+
+            set { SetProperty(ref IsSuccessfulValue, value); }
+
+        } // Added from Calculations.cs
     }
 }
+
+
+
 
 
 

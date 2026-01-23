@@ -1,5 +1,6 @@
 using System;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.Accounting.Traditional
 {
     /// <summary>
@@ -7,14 +8,77 @@ namespace Beep.OilandGas.Models.Data.Accounting.Traditional
     /// </summary>
     public class CreateInventoryTransactionRequest : ModelEntityBase
     {
-        public string InventoryItemId { get; set; } = string.Empty;
-        public string TransactionType { get; set; } = string.Empty; // Receipt, Issue, Adjustment
-        public DateTime? TransactionDate { get; set; }
-        public decimal Quantity { get; set; }
-        public decimal? UnitCost { get; set; }
-        public string? Description { get; set; }
+        private string InventoryItemIdValue = string.Empty;
+
+        public string InventoryItemId
+
+        {
+
+            get { return this.InventoryItemIdValue; }
+
+            set { SetProperty(ref InventoryItemIdValue, value); }
+
+        }
+        private string TransactionTypeValue = string.Empty;
+
+        public string TransactionType
+
+        {
+
+            get { return this.TransactionTypeValue; }
+
+            set { SetProperty(ref TransactionTypeValue, value); }
+
+        } // Receipt, Issue, Adjustment
+        private DateTime? TransactionDateValue;
+
+        public DateTime? TransactionDate
+
+        {
+
+            get { return this.TransactionDateValue; }
+
+            set { SetProperty(ref TransactionDateValue, value); }
+
+        }
+        private decimal QuantityValue;
+
+        public decimal Quantity
+
+        {
+
+            get { return this.QuantityValue; }
+
+            set { SetProperty(ref QuantityValue, value); }
+
+        }
+        private decimal? UnitCostValue;
+
+        public decimal? UnitCost
+
+        {
+
+            get { return this.UnitCostValue; }
+
+            set { SetProperty(ref UnitCostValue, value); }
+
+        }
+        private string? DescriptionValue;
+
+        public string? Description
+
+        {
+
+            get { return this.DescriptionValue; }
+
+            set { SetProperty(ref DescriptionValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

@@ -1,33 +1,12 @@
 using System;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     /// <summary>
     /// Pricing method enumeration.
     /// </summary>
-    public enum PricingMethod
-    {
-        /// <summary>
-        /// Fixed price per barrel.
-        /// </summary>
-        Fixed,
 
-        /// <summary>
-        /// Index-based pricing (WTI, Brent, etc.).
-        /// </summary>
-        IndexBased,
-
-        /// <summary>
-        /// Posted price.
-        /// </summary>
-        PostedPrice,
-
-        /// <summary>
-        /// Spot price.
-        /// </summary>
-        SpotPrice,
-        Regulated
-    }
 
     /// <summary>
     /// Represents an oil sales agreement (DTO for calculations/reporting).
@@ -37,62 +16,182 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the agreement identifier.
         /// </summary>
-        public string AgreementId { get; set; } = string.Empty;
+        private string AgreementIdValue = string.Empty;
+
+        public string AgreementId
+
+        {
+
+            get { return this.AgreementIdValue; }
+
+            set { SetProperty(ref AgreementIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the agreement name or description.
         /// </summary>
-        public string AgreementName { get; set; } = string.Empty;
+        private string AgreementNameValue = string.Empty;
+
+        public string AgreementName
+
+        {
+
+            get { return this.AgreementNameValue; }
+
+            set { SetProperty(ref AgreementNameValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the seller (producer).
         /// </summary>
-        public string Seller { get; set; } = string.Empty;
+        private string SellerValue = string.Empty;
+
+        public string Seller
+
+        {
+
+            get { return this.SellerValue; }
+
+            set { SetProperty(ref SellerValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the purchaser.
         /// </summary>
-        public string Purchaser { get; set; } = string.Empty;
+        private string PurchaserValue = string.Empty;
+
+        public string Purchaser
+
+        {
+
+            get { return this.PurchaserValue; }
+
+            set { SetProperty(ref PurchaserValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the effective date.
         /// </summary>
-        public DateTime EffectiveDate { get; set; }
+        private DateTime EffectiveDateValue;
+
+        public DateTime EffectiveDate
+
+        {
+
+            get { return this.EffectiveDateValue; }
+
+            set { SetProperty(ref EffectiveDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the expiration date.
         /// </summary>
-        public DateTime? ExpirationDate { get; set; }
+        private DateTime? ExpirationDateValue;
+
+        public DateTime? ExpirationDate
+
+        {
+
+            get { return this.ExpirationDateValue; }
+
+            set { SetProperty(ref ExpirationDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the pricing terms.
         /// </summary>
-        public PricingTerms PricingTerms { get; set; } = new();
+        private PricingTerms PricingTermsValue = new();
+
+        public PricingTerms PricingTerms
+
+        {
+
+            get { return this.PricingTermsValue; }
+
+            set { SetProperty(ref PricingTermsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the delivery terms.
         /// </summary>
-        public DeliveryTerms DeliveryTerms { get; set; } = new();
+        private DeliveryTerms DeliveryTermsValue = new();
+
+        public DeliveryTerms DeliveryTerms
+
+        {
+
+            get { return this.DeliveryTermsValue; }
+
+            set { SetProperty(ref DeliveryTermsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the quality specifications.
         /// </summary>
-        public CrudeOilSpecifications? QualitySpecifications { get; set; }
+        private CrudeOilSpecifications? QualitySpecificationsValue;
+
+        public CrudeOilSpecifications? QualitySpecifications
+
+        {
+
+            get { return this.QualitySpecificationsValue; }
+
+            set { SetProperty(ref QualitySpecificationsValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the minimum volume commitment (barrels).
         /// </summary>
-        public decimal? MinimumVolumeCommitment { get; set; }
+        private decimal? MinimumVolumeCommitmentValue;
+
+        public decimal? MinimumVolumeCommitment
+
+        {
+
+            get { return this.MinimumVolumeCommitmentValue; }
+
+            set { SetProperty(ref MinimumVolumeCommitmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the maximum volume commitment (barrels).
         /// </summary>
-        public decimal? MaximumVolumeCommitment { get; set; }
+        private decimal? MaximumVolumeCommitmentValue;
+
+        public decimal? MaximumVolumeCommitment
+
+        {
+
+            get { return this.MaximumVolumeCommitmentValue; }
+
+            set { SetProperty(ref MaximumVolumeCommitmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the payment terms (days).
         /// </summary>
-        public int PaymentTermsDays { get; set; } = 30;
+        private int PaymentTermsDaysValue = 30;
+
+        public int PaymentTermsDays
+
+        {
+
+            get { return this.PaymentTermsDaysValue; }
+
+            set { SetProperty(ref PaymentTermsDaysValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -103,37 +202,107 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the pricing method.
         /// </summary>
-        public PricingMethod PricingMethod { get; set; }
+        private PricingMethod PricingMethodValue;
+
+        public PricingMethod PricingMethod
+
+        {
+
+            get { return this.PricingMethodValue; }
+
+            set { SetProperty(ref PricingMethodValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the base price (if fixed).
         /// </summary>
-        public decimal? BasePrice { get; set; }
+        private decimal? BasePriceValue;
+
+        public decimal? BasePrice
+
+        {
+
+            get { return this.BasePriceValue; }
+
+            set { SetProperty(ref BasePriceValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the price index (if index-based).
         /// </summary>
-        public string? PriceIndex { get; set; }
+        private string? PriceIndexValue;
+
+        public string? PriceIndex
+
+        {
+
+            get { return this.PriceIndexValue; }
+
+            set { SetProperty(ref PriceIndexValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the differential (premium or discount).
         /// </summary>
-        public decimal Differential { get; set; }
+        private decimal DifferentialValue;
+
+        public decimal Differential
+
+        {
+
+            get { return this.DifferentialValue; }
+
+            set { SetProperty(ref DifferentialValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the API gravity differential per degree.
         /// </summary>
-        public decimal? ApiGravityDifferential { get; set; }
+        private decimal? ApiGravityDifferentialValue;
+
+        public decimal? ApiGravityDifferential
+
+        {
+
+            get { return this.ApiGravityDifferentialValue; }
+
+            set { SetProperty(ref ApiGravityDifferentialValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the sulfur content differential per 0.1%.
         /// </summary>
-        public decimal? SulfurDifferential { get; set; }
+        private decimal? SulfurDifferentialValue;
+
+        public decimal? SulfurDifferential
+
+        {
+
+            get { return this.SulfurDifferentialValue; }
+
+            set { SetProperty(ref SulfurDifferentialValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the location differential.
         /// </summary>
-        public decimal? LocationDifferential { get; set; }
+        private decimal? LocationDifferentialValue;
+
+        public decimal? LocationDifferential
+
+        {
+
+            get { return this.LocationDifferentialValue; }
+
+            set { SetProperty(ref LocationDifferentialValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -144,22 +313,62 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the delivery point.
         /// </summary>
-        public string DeliveryPoint { get; set; } = string.Empty;
+        private string DeliveryPointValue = string.Empty;
+
+        public string DeliveryPoint
+
+        {
+
+            get { return this.DeliveryPointValue; }
+
+            set { SetProperty(ref DeliveryPointValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the delivery method (pipeline, truck, etc.).
         /// </summary>
-        public string DeliveryMethod { get; set; } = string.Empty;
+        private string DeliveryMethodValue = string.Empty;
+
+        public string DeliveryMethod
+
+        {
+
+            get { return this.DeliveryMethodValue; }
+
+            set { SetProperty(ref DeliveryMethodValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the delivery frequency.
         /// </summary>
-        public string DeliveryFrequency { get; set; } = "Daily";
+        private string DeliveryFrequencyValue = "Daily";
+
+        public string DeliveryFrequency
+
+        {
+
+            get { return this.DeliveryFrequencyValue; }
+
+            set { SetProperty(ref DeliveryFrequencyValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets whether title transfers at delivery point.
         /// </summary>
-        public bool TitleTransferAtDeliveryPoint { get; set; } = true;
+        private bool TitleTransferAtDeliveryPointValue = true;
+
+        public bool TitleTransferAtDeliveryPoint
+
+        {
+
+            get { return this.TitleTransferAtDeliveryPointValue; }
+
+            set { SetProperty(ref TitleTransferAtDeliveryPointValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -170,47 +379,137 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the agreement identifier.
         /// </summary>
-        public string AgreementId { get; set; } = string.Empty;
+        private string AgreementIdValue = string.Empty;
+
+        public string AgreementId
+
+        {
+
+            get { return this.AgreementIdValue; }
+
+            set { SetProperty(ref AgreementIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the carrier or pipeline company.
         /// </summary>
-        public string Carrier { get; set; } = string.Empty;
+        private string CarrierValue = string.Empty;
+
+        public string Carrier
+
+        {
+
+            get { return this.CarrierValue; }
+
+            set { SetProperty(ref CarrierValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the origin point.
         /// </summary>
-        public string OriginPoint { get; set; } = string.Empty;
+        private string OriginPointValue = string.Empty;
+
+        public string OriginPoint
+
+        {
+
+            get { return this.OriginPointValue; }
+
+            set { SetProperty(ref OriginPointValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the destination point.
         /// </summary>
-        public string DestinationPoint { get; set; } = string.Empty;
+        private string DestinationPointValue = string.Empty;
+
+        public string DestinationPoint
+
+        {
+
+            get { return this.DestinationPointValue; }
+
+            set { SetProperty(ref DestinationPointValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the effective date.
         /// </summary>
-        public DateTime EffectiveDate { get; set; }
+        private DateTime EffectiveDateValue;
+
+        public DateTime EffectiveDate
+
+        {
+
+            get { return this.EffectiveDateValue; }
+
+            set { SetProperty(ref EffectiveDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the expiration date.
         /// </summary>
-        public DateTime? ExpirationDate { get; set; }
+        private DateTime? ExpirationDateValue;
+
+        public DateTime? ExpirationDate
+
+        {
+
+            get { return this.ExpirationDateValue; }
+
+            set { SetProperty(ref ExpirationDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the tariff rate per barrel.
         /// </summary>
-        public decimal TariffRate { get; set; }
+        private decimal TariffRateValue;
+
+        public decimal TariffRate
+
+        {
+
+            get { return this.TariffRateValue; }
+
+            set { SetProperty(ref TariffRateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the minimum volume commitment (barrels).
         /// </summary>
-        public decimal? MinimumVolumeCommitment { get; set; }
+        private decimal? MinimumVolumeCommitmentValue;
+
+        public decimal? MinimumVolumeCommitment
+
+        {
+
+            get { return this.MinimumVolumeCommitmentValue; }
+
+            set { SetProperty(ref MinimumVolumeCommitmentValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the maximum volume capacity (barrels per day).
         /// </summary>
-        public decimal? MaximumCapacity { get; set; }
+        private decimal? MaximumCapacityValue;
+
+        public decimal? MaximumCapacity
+
+        {
+
+            get { return this.MaximumCapacityValue; }
+
+            set { SetProperty(ref MaximumCapacityValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -221,32 +520,92 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the agreement identifier.
         /// </summary>
-        public string AgreementId { get; set; } = string.Empty;
+        private string AgreementIdValue = string.Empty;
+
+        public string AgreementId
+
+        {
+
+            get { return this.AgreementIdValue; }
+
+            set { SetProperty(ref AgreementIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the processor company.
         /// </summary>
-        public string Processor { get; set; } = string.Empty;
+        private string ProcessorValue = string.Empty;
+
+        public string Processor
+
+        {
+
+            get { return this.ProcessorValue; }
+
+            set { SetProperty(ref ProcessorValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the processing facility.
         /// </summary>
-        public string ProcessingFacility { get; set; } = string.Empty;
+        private string ProcessingFacilityValue = string.Empty;
+
+        public string ProcessingFacility
+
+        {
+
+            get { return this.ProcessingFacilityValue; }
+
+            set { SetProperty(ref ProcessingFacilityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the effective date.
         /// </summary>
-        public DateTime EffectiveDate { get; set; }
+        private DateTime EffectiveDateValue;
+
+        public DateTime EffectiveDate
+
+        {
+
+            get { return this.EffectiveDateValue; }
+
+            set { SetProperty(ref EffectiveDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the processing fee per barrel.
         /// </summary>
-        public decimal ProcessingFee { get; set; }
+        private decimal ProcessingFeeValue;
+
+        public decimal ProcessingFee
+
+        {
+
+            get { return this.ProcessingFeeValue; }
+
+            set { SetProperty(ref ProcessingFeeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the processing percentage (if percentage-based).
         /// </summary>
-        public decimal? ProcessingPercentage { get; set; }
+        private decimal? ProcessingPercentageValue;
+
+        public decimal? ProcessingPercentage
+
+        {
+
+            get { return this.ProcessingPercentageValue; }
+
+            set { SetProperty(ref ProcessingPercentageValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -257,29 +616,82 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the agreement identifier.
         /// </summary>
-        public string AgreementId { get; set; } = string.Empty;
+        private string AgreementIdValue = string.Empty;
+
+        public string AgreementId
+
+        {
+
+            get { return this.AgreementIdValue; }
+
+            set { SetProperty(ref AgreementIdValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the storage facility.
         /// </summary>
-        public string StorageFacility { get; set; } = string.Empty;
+        private string StorageFacilityValue = string.Empty;
+
+        public string StorageFacility
+
+        {
+
+            get { return this.StorageFacilityValue; }
+
+            set { SetProperty(ref StorageFacilityValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the effective date.
         /// </summary>
-        public DateTime EffectiveDate { get; set; }
+        private DateTime EffectiveDateValue;
+
+        public DateTime EffectiveDate
+
+        {
+
+            get { return this.EffectiveDateValue; }
+
+            set { SetProperty(ref EffectiveDateValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the storage fee per barrel per month.
         /// </summary>
-        public decimal StorageFee { get; set; }
+        private decimal StorageFeeValue;
+
+        public decimal StorageFee
+
+        {
+
+            get { return this.StorageFeeValue; }
+
+            set { SetProperty(ref StorageFeeValue, value); }
+
+        }
 
         /// <summary>
         /// Gets or sets the reserved capacity (barrels).
         /// </summary>
-        public decimal? ReservedCapacity { get; set; }
+        private decimal? ReservedCapacityValue;
+
+        public decimal? ReservedCapacity
+
+        {
+
+            get { return this.ReservedCapacityValue; }
+
+            set { SetProperty(ref ReservedCapacityValue, value); }
+
+        }
     }
 }
+
+
+
 
 
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.FlashCalculations
 {
     /// <summary>
@@ -11,17 +12,47 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
         /// <summary>
         /// Pressure (in specified units)
         /// </summary>
-        public decimal Pressure { get; set; }
+        private decimal PressureValue;
+
+        public decimal Pressure
+
+        {
+
+            get { return this.PressureValue; }
+
+            set { SetProperty(ref PressureValue, value); }
+
+        }
 
         /// <summary>
         /// Temperature (in specified units)
         /// </summary>
-        public decimal Temperature { get; set; }
+        private decimal TemperatureValue;
+
+        public decimal Temperature
+
+        {
+
+            get { return this.TemperatureValue; }
+
+            set { SetProperty(ref TemperatureValue, value); }
+
+        }
 
         /// <summary>
         /// Feed composition (component mole fractions)
         /// </summary>
-        public List<FlashComponent> FeedComposition { get; set; } = new List<FlashComponent>();
+        private List<FlashComponent> FeedCompositionValue = new List<FlashComponent>();
+
+        public List<FlashComponent> FeedComposition
+
+        {
+
+            get { return this.FeedCompositionValue; }
+
+            set { SetProperty(ref FeedCompositionValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -33,32 +64,92 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
         /// <summary>
         /// Component name
         /// </summary>
-        public string Name { get; set; } = string.Empty;
+        private string NameValue = string.Empty;
+
+        public string Name
+
+        {
+
+            get { return this.NameValue; }
+
+            set { SetProperty(ref NameValue, value); }
+
+        }
 
         /// <summary>
         /// Mole fraction in feed
         /// </summary>
-        public decimal MoleFraction { get; set; }
+        private decimal MoleFractionValue;
+
+        public decimal MoleFraction
+
+        {
+
+            get { return this.MoleFractionValue; }
+
+            set { SetProperty(ref MoleFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Critical temperature
         /// </summary>
-        public decimal CriticalTemperature { get; set; }
+        private decimal CriticalTemperatureValue;
+
+        public decimal CriticalTemperature
+
+        {
+
+            get { return this.CriticalTemperatureValue; }
+
+            set { SetProperty(ref CriticalTemperatureValue, value); }
+
+        }
 
         /// <summary>
         /// Critical pressure
         /// </summary>
-        public decimal CriticalPressure { get; set; }
+        private decimal CriticalPressureValue;
+
+        public decimal CriticalPressure
+
+        {
+
+            get { return this.CriticalPressureValue; }
+
+            set { SetProperty(ref CriticalPressureValue, value); }
+
+        }
 
         /// <summary>
         /// Acentric factor
         /// </summary>
-        public decimal AcentricFactor { get; set; }
+        private decimal AcentricFactorValue;
+
+        public decimal AcentricFactor
+
+        {
+
+            get { return this.AcentricFactorValue; }
+
+            set { SetProperty(ref AcentricFactorValue, value); }
+
+        }
 
         /// <summary>
         /// Molecular weight
         /// </summary>
-        public decimal MolecularWeight { get; set; }
+        private decimal MolecularWeightValue;
+
+        public decimal MolecularWeight
+
+        {
+
+            get { return this.MolecularWeightValue; }
+
+            set { SetProperty(ref MolecularWeightValue, value); }
+
+        }
     }
 
     /// <summary>
@@ -68,6 +159,9 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
     {
     }
 }
+
+
+
 
 
 

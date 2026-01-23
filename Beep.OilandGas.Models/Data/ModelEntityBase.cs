@@ -3,7 +3,7 @@ using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public abstract class ModelEntityBase : Entity, Beep.OilandGas.PPDM.Models.IPPDMEntity
+    public abstract class ModelEntityBase : Entity, IPPDMEntity
     {
         private string ACTIVE_INDValue = "Y";
         public string ACTIVE_IND { get => ACTIVE_INDValue; set => SetProperty(ref ACTIVE_INDValue, value); }
@@ -31,5 +31,45 @@ namespace Beep.OilandGas.Models.Data
 
         private string PPDM_GUIDValue = string.Empty;
         public string PPDM_GUID { get => PPDM_GUIDValue; set => SetProperty(ref PPDM_GUIDValue, value); }
+        private System.DateTime? EXPIRY_DATEValue;
+        public System.DateTime? EXPIRY_DATE
+        {
+            get
+            {
+                return this.EXPIRY_DATEValue;
+            }
+
+            set { SetProperty(ref EXPIRY_DATEValue, value); }
+        }
+        private System.DateTime? EFFECTIVE_DATEValue;
+        public System.DateTime? EFFECTIVE_DATE
+        {
+            get
+            {
+                return this.EFFECTIVE_DATEValue;
+            }
+
+            set { SetProperty(ref EFFECTIVE_DATEValue, value); }
+        }
+        private System.String REMARKValue;
+        public System.String REMARK
+        {
+            get
+            {
+                return this.REMARKValue;
+            }
+
+            set { SetProperty(ref REMARKValue, value); }
+        }
+        private System.String SOURCEValue;
+        public System.String SOURCE
+        {
+            get
+            {
+                return this.SOURCEValue;
+            }
+
+            set { SetProperty(ref SOURCEValue, value); }
+        }
     }
 }

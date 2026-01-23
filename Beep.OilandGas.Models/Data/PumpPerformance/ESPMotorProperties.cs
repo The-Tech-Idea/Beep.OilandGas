@@ -9,24 +9,66 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
         /// <summary>
         /// Motor horsepower
         /// </summary>
-        public decimal Horsepower { get; set; }
+        private decimal HorsepowerValue;
+
+        public decimal Horsepower
+
+        {
+
+            get { return this.HorsepowerValue; }
+
+            set { SetProperty(ref HorsepowerValue, value); }
+
+        }
 
         /// <summary>
         /// Motor voltage
         /// </summary>
-        public decimal Voltage { get; set; }
+        private decimal VoltageValue;
+
+        public decimal Voltage
+
+        {
+
+            get { return this.VoltageValue; }
+
+            set { SetProperty(ref VoltageValue, value); }
+
+        }
 
         /// <summary>
         /// Motor efficiency (0-1)
         /// </summary>
-        public decimal Efficiency { get; set; } = 0.9m;
+        private decimal EfficiencyValue = 0.9m;
+
+        public decimal Efficiency
+
+        {
+
+            get { return this.EfficiencyValue; }
+
+            set { SetProperty(ref EfficiencyValue, value); }
+
+        }
 
         /// <summary>
         /// Power factor
         /// </summary>
-        public decimal PowerFactor { get; set; } = 0.85m;
+        private decimal PowerFactorValue = 0.85m;
+
+        public decimal PowerFactor
+
+        {
+
+            get { return this.PowerFactorValue; }
+
+            set { SetProperty(ref PowerFactorValue, value); }
+
+        }
     }
 }
+
+
 
 
 

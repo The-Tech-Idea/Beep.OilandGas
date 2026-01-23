@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.FlashCalculations
 {
     /// <summary>
@@ -11,27 +12,77 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
         /// <summary>
         /// Vapor fraction (0 to 1)
         /// </summary>
-        public decimal VaporFraction { get; set; }
+        private decimal VaporFractionValue;
+
+        public decimal VaporFraction
+
+        {
+
+            get { return this.VaporFractionValue; }
+
+            set { SetProperty(ref VaporFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Liquid fraction (0 to 1)
         /// </summary>
-        public decimal LiquidFraction { get; set; }
+        private decimal LiquidFractionValue;
+
+        public decimal LiquidFraction
+
+        {
+
+            get { return this.LiquidFractionValue; }
+
+            set { SetProperty(ref LiquidFractionValue, value); }
+
+        }
 
         /// <summary>
         /// Number of iterations required for convergence
         /// </summary>
-        public int Iterations { get; set; }
+        private int IterationsValue;
+
+        public int Iterations
+
+        {
+
+            get { return this.IterationsValue; }
+
+            set { SetProperty(ref IterationsValue, value); }
+
+        }
 
         /// <summary>
         /// Whether the calculation converged
         /// </summary>
-        public bool Converged { get; set; }
+        private bool ConvergedValue;
+
+        public bool Converged
+
+        {
+
+            get { return this.ConvergedValue; }
+
+            set { SetProperty(ref ConvergedValue, value); }
+
+        }
 
         /// <summary>
         /// Convergence error
         /// </summary>
-        public decimal ConvergenceError { get; set; }
+        private decimal ConvergenceErrorValue;
+
+        public decimal ConvergenceError
+
+        {
+
+            get { return this.ConvergenceErrorValue; }
+
+            set { SetProperty(ref ConvergenceErrorValue, value); }
+
+        }
 
         /// <summary>
         /// K-values for each component
@@ -49,6 +100,8 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
         public Dictionary<string, decimal> LiquidComposition { get; set; } = new Dictionary<string, decimal>();
     }
 }
+
+
 
 
 

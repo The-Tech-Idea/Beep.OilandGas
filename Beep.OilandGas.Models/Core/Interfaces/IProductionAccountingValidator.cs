@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -55,11 +56,6 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// <summary>
     /// Result of validation operation.
     /// </summary>
-    public class ValidationResult
-    {
-        public bool IsValid { get; set; }
-        public List<string> Errors { get; set; } = new();
-        public List<string> Warnings { get; set; } = new();
-        public Dictionary<string, object> ValidationData { get; set; } = new();
-    }
+    
 }
+
