@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
 namespace Beep.OilandGas.Models.Data.Calculations
 {
     /// <summary>
@@ -1076,71 +1077,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         }
     }
 
-    /// <summary>
-    /// Risk factor DTO
-    /// </summary>
-    public class RiskFactor : ModelEntityBase
-    {
-        /// <summary>
-        /// Risk factor description
-        /// </summary>
-        private string DescriptionValue = string.Empty;
-
-        public string Description
-
-        {
-
-            get { return this.DescriptionValue; }
-
-            set { SetProperty(ref DescriptionValue, value); }
-
-        }
-
-        /// <summary>
-        /// Risk probability (%)
-        /// </summary>
-        private decimal ProbabilityValue;
-
-        public decimal Probability
-
-        {
-
-            get { return this.ProbabilityValue; }
-
-            set { SetProperty(ref ProbabilityValue, value); }
-
-        }
-
-        /// <summary>
-        /// Risk impact (High, Medium, Low)
-        /// </summary>
-        private string ImpactValue = string.Empty;
-
-        public string Impact
-
-        {
-
-            get { return this.ImpactValue; }
-
-            set { SetProperty(ref ImpactValue, value); }
-
-        }
-
-        /// <summary>
-        /// Risk category
-        /// </summary>
-        private string CategoryValue = string.Empty;
-
-        public string Category
-
-        {
-
-            get { return this.CategoryValue; }
-
-            set { SetProperty(ref CategoryValue, value); }
-
-        }
-    }
+   
 
     /// <summary>
     /// Economic analysis result DTO

@@ -49,11 +49,6 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref CALCULATED_BYValue, value); }
         }
 
-        // Standard PPDM columns
-
-        private System.String REMARKValue;
-
-        private System.String SOURCEValue;
 
     }
 }

@@ -64,5 +64,39 @@ namespace Beep.OilandGas.Models.Data.ProspectIdentification
             set { SetProperty(ref MitigationValue, value); }
 
         }
+      
+
+        /// <summary>
+        /// Risk probability (%)
+        /// </summary>
+        private decimal ProbabilityValue;
+
+        public decimal Probability
+
+        {
+
+            get { return this.ProbabilityValue; }
+
+            set { SetProperty(ref ProbabilityValue, value); }
+
+        }
+
+        /// <summary>
+        /// Risk impact (High, Medium, Low)
+        /// </summary>
+        private string ImpactValue = string.Empty;
+
+        public string Impact
+
+        {
+
+            get { return this.ImpactValue; }
+
+            set { SetProperty(ref ImpactValue, value); }
+
+        }
+
+        /// <summary>
+       
     }
 }
