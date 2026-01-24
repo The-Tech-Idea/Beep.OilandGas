@@ -20,7 +20,7 @@ namespace Beep.OilandGas.Client.App.Services.Lease
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/lease/acquisition", request, null, cancellationToken);
+                return await PostAsync<object, object>("/api/lease/acquisition", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -28,7 +28,7 @@ namespace Beep.OilandGas.Client.App.Services.Lease
         {
             if (string.IsNullOrEmpty(leaseId)) throw new ArgumentException("Lease ID is required", nameof(leaseId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/terms", null, cancellationToken);
+                return await GetAsync<object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/terms", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -36,7 +36,7 @@ namespace Beep.OilandGas.Client.App.Services.Lease
         {
             if (string.IsNullOrEmpty(leaseId)) throw new ArgumentException("Lease ID is required", nameof(leaseId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/royalty-obligations", null, cancellationToken);
+                return await GetAsync<object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/royalty-obligations", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.Client.App.Services.Lease
         {
             if (string.IsNullOrEmpty(leaseId)) throw new ArgumentException("Lease ID is required", nameof(leaseId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/status", null, cancellationToken);
+                return await GetAsync<object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/status", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -53,7 +53,7 @@ namespace Beep.OilandGas.Client.App.Services.Lease
             if (string.IsNullOrEmpty(leaseId)) throw new ArgumentException("Lease ID is required", nameof(leaseId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PutAsync<object, object>($"/api/lease/{Uri.EscapeDataString(leaseId)}", request, null, cancellationToken);
+                return await PutAsync<object, object>($"/api/lease/{Uri.EscapeDataString(leaseId)}", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -61,7 +61,7 @@ namespace Beep.OilandGas.Client.App.Services.Lease
         {
             if (string.IsNullOrEmpty(operatorId)) throw new ArgumentException("Operator ID is required", nameof(operatorId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<object>>($"/api/lease/operator/{Uri.EscapeDataString(operatorId)}", null, cancellationToken);
+                return await GetAsync<List<object>>($"/api/lease/operator/{Uri.EscapeDataString(operatorId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -69,7 +69,7 @@ namespace Beep.OilandGas.Client.App.Services.Lease
         {
             if (string.IsNullOrEmpty(leaseId)) throw new ArgumentException("Lease ID is required", nameof(leaseId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/expiration", null, cancellationToken);
+                return await GetAsync<object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/expiration", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -78,7 +78,7 @@ namespace Beep.OilandGas.Client.App.Services.Lease
             if (string.IsNullOrEmpty(leaseId)) throw new ArgumentException("Lease ID is required", nameof(leaseId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/renew", request, null, cancellationToken);
+                return await PostAsync<object, object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/renew", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.Client.App.Services.Lease
             if (string.IsNullOrEmpty(leaseId)) throw new ArgumentException("Lease ID is required", nameof(leaseId));
             if (transferRequest == null) throw new ArgumentNullException(nameof(transferRequest));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/transfer", transferRequest, null, cancellationToken);
+                return await PostAsync<object, object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/transfer", transferRequest, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -95,7 +95,7 @@ namespace Beep.OilandGas.Client.App.Services.Lease
         {
             if (string.IsNullOrEmpty(leaseId)) throw new ArgumentException("Lease ID is required", nameof(leaseId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<object>>($"/api/lease/{Uri.EscapeDataString(leaseId)}/payments", null, cancellationToken);
+                return await GetAsync<List<object>>($"/api/lease/{Uri.EscapeDataString(leaseId)}/payments", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -103,7 +103,7 @@ namespace Beep.OilandGas.Client.App.Services.Lease
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/lease/bonus/calculate", request, null, cancellationToken);
+                return await PostAsync<object, object>("/api/lease/bonus/calculate", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -111,7 +111,7 @@ namespace Beep.OilandGas.Client.App.Services.Lease
         {
             if (string.IsNullOrEmpty(leaseId)) throw new ArgumentException("Lease ID is required", nameof(leaseId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/geometry", null, cancellationToken);
+                return await GetAsync<object>($"/api/lease/{Uri.EscapeDataString(leaseId)}/geometry", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
     }

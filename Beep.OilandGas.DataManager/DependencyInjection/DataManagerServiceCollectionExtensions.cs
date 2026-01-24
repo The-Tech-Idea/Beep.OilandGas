@@ -23,7 +23,7 @@ namespace Beep.OilandGas.DataManager.DependencyInjection
             configure?.Invoke(options);
 
             // Register core services
-            services.AddScoped<IDataManager, DataManager>();
+            services.AddScoped<IDataManager, Beep.OilandGas.DataManager.Services.DataManager>();
             services.AddScoped<ScriptValidator>();
 
             // Register all IModuleData implementations
@@ -77,7 +77,7 @@ namespace Beep.OilandGas.DataManager.DependencyInjection
             var options = new DataManagerOptions();
             configure?.Invoke(options);
 
-            services.AddScoped<IDataManager, DataManager>();
+            services.AddScoped<IDataManager, Beep.OilandGas.DataManager.Services.DataManager>();
             services.AddScoped<ScriptValidator>();
 
             services.AddScoped<IExecutionStateStore>(sp =>

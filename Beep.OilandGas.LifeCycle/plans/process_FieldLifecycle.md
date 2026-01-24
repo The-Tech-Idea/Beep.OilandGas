@@ -109,7 +109,8 @@ Task<bool> StartExplorationPhaseAsync(string fieldId, string userId);
 Task<bool> StartDevelopmentPhaseAsync(string fieldId, string userId);
 Task<bool> StartProductionPhaseAsync(string fieldId, string userId);
 Task<bool> StartDeclinePhaseAsync(string fieldId, string userId);
-Task<bool> StartDecommissioningPhaseAsync(string fieldId, string userId);
+Task<bool> Start
+Async(string fieldId, string userId);
 
 // Phase Validation
 Task<ValidationResult> ValidatePhaseTransitionAsync(string fieldId, string fromPhase, string toPhase);

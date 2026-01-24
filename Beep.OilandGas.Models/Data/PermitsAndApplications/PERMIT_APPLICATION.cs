@@ -77,6 +77,7 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref DECISION_DATEValue, value); }
         }
 
+
         private String DECISIONValue;
         public String DECISION
         {

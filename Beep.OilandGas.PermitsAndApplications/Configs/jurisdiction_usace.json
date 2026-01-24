@@ -1,0 +1,28 @@
+{
+  "authority": "USACE",
+  "name": "US Army Corps of Engineers",
+  "country": "UnitedStates",
+  "templates": [
+    {
+      "formCode": "USACE_WATERWAY_PERMIT",
+      "formName": "USACE Waterway Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    },
+    {
+      "formCode": "USACE_WETLANDS",
+      "formName": "USACE Wetlands Authorization",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

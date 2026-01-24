@@ -18,7 +18,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             {
                 var queryParams = new Dictionary<string, string> { ["userId"] = userId };
                 var endpoint = BuildRequestUriWithParams($"/api/ppdm39workflow/{Uri.EscapeDataString(workflowType)}/start", queryParams);
-                return await PostAsync<object, object>(endpoint, request, null, cancellationToken);
+                return await PostAsync<object, object>(endpoint, request, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -27,7 +27,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         {
             if (string.IsNullOrEmpty(workflowId)) throw new ArgumentException("Workflow ID is required", nameof(workflowId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/ppdm39workflow/{Uri.EscapeDataString(workflowId)}/status", null, cancellationToken);
+                return await GetAsync<object>($"/api/ppdm39workflow/{Uri.EscapeDataString(workflowId)}/status", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -40,7 +40,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             {
                 var queryParams = new Dictionary<string, string> { ["userId"] = userId };
                 var endpoint = BuildRequestUriWithParams($"/api/ppdm39workflow/{Uri.EscapeDataString(workflowId)}/advance", queryParams);
-                return await PostAsync<object, object>(endpoint, action, null, cancellationToken);
+                return await PostAsync<object, object>(endpoint, action, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -52,7 +52,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
                 var endpoint = BuildRequestUriWithParams("/api/ppdm39workflow/pending", queryParams);
-                return await GetAsync<List<object>>(endpoint, null, cancellationToken);
+                return await GetAsync<List<object>>(endpoint, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }

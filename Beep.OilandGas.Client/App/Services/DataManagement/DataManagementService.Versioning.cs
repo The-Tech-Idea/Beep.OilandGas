@@ -19,7 +19,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 var queryParams = new Dictionary<string, string> { ["userId"] = userId };
                 if (!string.IsNullOrEmpty(versionLabel)) queryParams["versionLabel"] = versionLabel;
                 var endpoint = BuildRequestUriWithParams($"/api/ppdm39versioning/{Uri.EscapeDataString(tableName)}/version", queryParams);
-                return await PostAsync<object, object>(endpoint, entity, null, cancellationToken);
+                return await PostAsync<object, object>(endpoint, entity, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -29,7 +29,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("Table name is required", nameof(tableName));
             if (entityId == null) throw new ArgumentNullException(nameof(entityId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<object>>($"/api/ppdm39versioning/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(entityId.ToString()!)}/versions", null, cancellationToken);
+                return await GetAsync<List<object>>($"/api/ppdm39versioning/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(entityId.ToString()!)}/versions", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("Table name is required", nameof(tableName));
             if (entityId == null) throw new ArgumentNullException(nameof(entityId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/ppdm39versioning/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(entityId.ToString()!)}/version/{versionNumber}", null, cancellationToken);
+                return await GetAsync<object>($"/api/ppdm39versioning/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(entityId.ToString()!)}/version/{versionNumber}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -47,7 +47,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("Table name is required", nameof(tableName));
             if (entityId == null) throw new ArgumentNullException(nameof(entityId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/ppdm39versioning/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(entityId.ToString()!)}/compare/{version1}/{version2}", null, cancellationToken);
+                return await GetAsync<object>($"/api/ppdm39versioning/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(entityId.ToString()!)}/compare/{version1}/{version2}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -60,7 +60,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             {
                 var queryParams = new Dictionary<string, string> { ["userId"] = userId };
                 var endpoint = BuildRequestUriWithParams($"/api/ppdm39versioning/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(entityId.ToString()!)}/rollback/{versionNumber}", queryParams);
-                return await PostAsync<object, object>(endpoint, new { }, null, cancellationToken);
+                return await PostAsync<object, object>(endpoint, new { }, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }

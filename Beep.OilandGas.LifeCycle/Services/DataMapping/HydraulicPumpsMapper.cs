@@ -1,6 +1,6 @@
 using System;
 using Beep.OilandGas.PPDM39.Models;
-using Beep.OilandGas.HydraulicPumps.Models;
+using Beep.OilandGas.Models.Data.HydraulicPumps;
 
 namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 {

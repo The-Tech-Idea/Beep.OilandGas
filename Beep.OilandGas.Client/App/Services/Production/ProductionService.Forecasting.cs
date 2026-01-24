@@ -16,7 +16,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<ReservoirForecastProperties, ProductionForecast>("/api/production/forecast/create", request, null, cancellationToken);
+                return await PostAsync<ReservoirForecastProperties, ProductionForecast>("/api/production/forecast/create", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<DCA_FIT_RESULT>($"/api/production/decline-curve/{Uri.EscapeDataString(wellId)}", null, cancellationToken);
+                return await GetAsync<DCA_FIT_RESULT>($"/api/production/decline-curve/{Uri.EscapeDataString(wellId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -32,7 +32,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<RESERVOIR_FORECAST_PROPERTIES, PRODUCTION_FORECAST>("/api/production/analyze", request, null, cancellationToken);
+                return await PostAsync<RESERVOIR_FORECAST_PROPERTIES, PRODUCTION_FORECAST>("/api/production/analyze", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -40,7 +40,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<PRODUCTION_FORECAST>>($"/api/production/forecast/history/{Uri.EscapeDataString(wellId)}", null, cancellationToken);
+                return await GetAsync<List<PRODUCTION_FORECAST>>($"/api/production/forecast/history/{Uri.EscapeDataString(wellId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -48,7 +48,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (string.IsNullOrEmpty(fieldId)) throw new ArgumentNullException(nameof(fieldId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<PRODUCTION_FORECAST>($"/api/production/type-well/{Uri.EscapeDataString(fieldId)}", null, cancellationToken);
+                return await GetAsync<PRODUCTION_FORECAST>($"/api/production/type-well/{Uri.EscapeDataString(fieldId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -56,7 +56,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<RESERVOIR_FORECAST_PROPERTIES, DCA_FIT_RESULT>("/api/production/dca/run", request, null, cancellationToken);
+                return await PostAsync<RESERVOIR_FORECAST_PROPERTIES, DCA_FIT_RESULT>("/api/production/dca/run", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

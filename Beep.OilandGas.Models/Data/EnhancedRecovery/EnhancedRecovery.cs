@@ -140,6 +140,8 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref InjectionWellsValue, value); }
 
         }
+
+        public string? EorMethod { get; set; }
     }
 
     /// <summary>
@@ -659,6 +661,9 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref InjectionRateUnitValue, value); }
 
         }
+
+        public string? EorMethod { get; set; }
+        public DateTime? StartDate { get; set; }
     }
 }
 

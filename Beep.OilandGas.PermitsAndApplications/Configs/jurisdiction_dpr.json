@@ -1,0 +1,30 @@
+{
+  "authority": "DPR",
+  "name": "Nigeria Department of Petroleum Resources",
+  "country": "Nigeria",
+  "templates": [
+    {
+      "formCode": "DPR_DRILLING_PERMIT",
+      "formName": "DPR Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "DPR_ENV_PERMIT",
+      "formName": "DPR Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

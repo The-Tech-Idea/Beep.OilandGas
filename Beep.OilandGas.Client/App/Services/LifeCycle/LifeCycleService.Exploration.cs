@@ -14,7 +14,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<EXPLORATION_PROGRAM, EXPLORATION_PROGRAM>("/api/lifecycle/exploration/create", request, null, cancellationToken);
+                return await PostAsync<EXPLORATION_PROGRAM, EXPLORATION_PROGRAM>("/api/lifecycle/exploration/create", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -22,7 +22,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
         {
             if (string.IsNullOrEmpty(areaId)) throw new ArgumentNullException(nameof(areaId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<PROSPECT>>($"/api/lifecycle/exploration/prospects/{Uri.EscapeDataString(areaId)}", null, cancellationToken);
+                return await GetAsync<List<PROSPECT>>($"/api/lifecycle/exploration/prospects/{Uri.EscapeDataString(areaId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<PROSPECT_SEIS_SURVEY, PROSPECT_SEIS_SURVEY>("/api/lifecycle/exploration/seismic", request, null, cancellationToken);
+                return await PostAsync<PROSPECT_SEIS_SURVEY, PROSPECT_SEIS_SURVEY>("/api/lifecycle/exploration/seismic", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
         {
             if (string.IsNullOrEmpty(projectId)) throw new ArgumentNullException(nameof(projectId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<EXPLORATION_PROGRAM>($"/api/lifecycle/exploration/{Uri.EscapeDataString(projectId)}/status", null, cancellationToken);
+                return await GetAsync<EXPLORATION_PROGRAM>($"/api/lifecycle/exploration/{Uri.EscapeDataString(projectId)}/status", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -50,7 +50,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
                 var endpoint = BuildRequestUriWithParams("/api/lifecycle/exploration/result", queryParams);
-                return await PostAsync<EXPLORATION_PROGRAM, EXPLORATION_PROGRAM>(endpoint, result, null, cancellationToken);
+                return await PostAsync<EXPLORATION_PROGRAM, EXPLORATION_PROGRAM>(endpoint, result, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }

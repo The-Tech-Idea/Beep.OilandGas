@@ -431,6 +431,16 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
             set { SetProperty(ref UserIdValue, value); }
 
         }
+
+        public decimal ProductionRate { get; set; }
+        public decimal CycleTime { get; set; }
+        public object? GasFlowRate { get; set; }
+        public decimal PlungerVelocity { get; set; }
+        public decimal OptimalGasFlowRate { get; set; }
+        public decimal MaximumProductionRate { get; set; }
+        public decimal FallTime { get; set; }
+        public decimal RiseTime { get; set; }
+        public decimal ShutInTime { get; set; }
     }
 }
 

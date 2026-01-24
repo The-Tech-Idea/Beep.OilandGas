@@ -19,6 +19,7 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
 
 namespace Beep.OilandGas.LifeCycle.Services
 {
@@ -758,7 +759,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                     if (facilityRecord is FACILITY f)
                     {
                         facilityId = f.FACILITY_ID;
-                        facilityName = f.FACILITY_NAME;
+                        facilityName = f.FACILITY_LONG_NAME;
                         startDate = GetDateProperty(f, "FACILITY_START_DATE") ?? GetDateProperty(f, "START_DATE");
                         endDate = GetDateProperty(f, "FACILITY_END_DATE") ?? GetDateProperty(f, "END_DATE");
                     }
@@ -1364,7 +1365,7 @@ namespace Beep.OilandGas.LifeCycle.Services
             {
                 var value = prop.GetValue(obj);
                 if (value is DateTime dt) return dt;
-                if (value is DateTime? dtNullable) return dtNullable;
+                if (value is DateTime dtNullable) return dtNullable;
             }
             return null;
         }
@@ -1378,19 +1379,19 @@ namespace Beep.OilandGas.LifeCycle.Services
             
             // Try Entity object first (using reflection)
             var prop = obj.GetType().GetProperty(propertyName);
-using Beep.OilandGas.Models.Data.ProspectIdentification;
+
             if (prop != null)
             {
                 var value = prop.GetValue(obj);
                 if (value is DateTime dt) return dt;
-                if (value is DateTime? dtNullable) return dtNullable;
+                if (value is DateTime dtNullable) return dtNullable;
             }
             
             // Fallback to Dictionary for backward compatibility (will be removed when all services are updated)
             if (obj is IDictionary<string, object> dict && dict.TryGetValue(propertyName, out var dictValue))
             {
                 if (dictValue is DateTime dt) return dt;
-                if (dictValue is DateTime? dtNullable) return dtNullable;
+                if (dictValue is DateTime dtNullable) return dtNullable;
                 if (DateTime.TryParse(dictValue?.ToString(), out var parsed)) return parsed;
             }
             

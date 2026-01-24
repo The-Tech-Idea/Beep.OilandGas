@@ -92,6 +92,15 @@ This library provides support for the complete field lifecycle from prospect ide
 - GAU Oil & Gas Waste Disposal Well Letter
 - GAU Determination for a Seismic Survey
 
+## Services
+
+- `PermitApplicationLifecycleService` - Domain-level application lifecycle (create/update/submit/decision).
+- `PermitStatusHistoryService` - Status transitions and audit history.
+- `PermitAttachmentService` - Attachment ingestion and lifecycle.
+- `PermitComplianceCheckService` - Jurisdiction-aware compliance checks and config-based rules.
+- `PermitComplianceReportService` - Expiry monitoring and compliance reporting.
+- `PermitApplicationWorkflowService` - End-to-end workflows across PPDM entities and form payloads.
+
 ## Core Models
 
 ### PermitApplication
@@ -105,7 +114,7 @@ Base class for all permit applications with common properties:
 ### DrillingPermitApplication
 Extends `PermitApplication` with drilling-specific properties:
 - Well UWI
-- Legal description
+- Well location (legal description)
 - Target formation
 - Proposed depth
 - Drilling method
@@ -126,10 +135,10 @@ Extends `PermitApplication` with injection-specific properties:
 - Injection type
 - Injection zone
 - Injection fluid
-- Maximum injection pressure and rate
-- MIT (Mechanical Integrity Test) results
+- MIT results
 - Monitoring requirements
-- CO2/Gas storage flags
+- CO2/gas storage flags
+- Maximum injection pressure and rate
 
 ## PPDM39 Integration
 
@@ -145,7 +154,7 @@ The library provides complete mapping to PPDM39 entities:
 ## Usage Example
 
 ```csharp
-using Beep.OilandGas.PermitsAndApplications.Models;
+using Beep.OilandGas.Models.Data.PermitsAndApplications;
 using Beep.OilandGas.PermitsAndApplications.DataMapping;
 
 // Create a drilling permit application

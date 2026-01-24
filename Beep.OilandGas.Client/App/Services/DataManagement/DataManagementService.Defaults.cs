@@ -60,7 +60,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     description
                 };
 
-                await PostAsync<object, object>("/api/datamanagement/defaults/value", request, (Dictionary<string, string>?)null, cancellationToken);
+                await PostAsync<object, object>("/api/datamanagement/defaults/value", request, (Dictionary<string, string>?)cancellationToken);
             }
             else
             {
@@ -128,7 +128,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     userId
                 };
 
-                await PostAsync<object, object>("/api/datamanagement/defaults/initialize", request, (Dictionary<string, string>?)null, cancellationToken);
+                await PostAsync<object, object>("/api/datamanagement/defaults/initialize", request, (Dictionary<string, string>?)cancellationToken);
             }
             else
             {
@@ -151,7 +151,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     userId
                 };
 
-                await PostAsync<object, object>("/api/datamanagement/defaults/reset", request, (Dictionary<string, string>?)null, cancellationToken);
+                await PostAsync<object, object>("/api/datamanagement/defaults/reset", request, (Dictionary<string, string>?)cancellationToken);
             }
             else
             {

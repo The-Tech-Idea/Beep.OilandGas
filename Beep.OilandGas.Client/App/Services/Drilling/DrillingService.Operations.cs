@@ -14,7 +14,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<DRILLING_OPERATION, DRILLING_OPERATION>("/api/drilling/program/create", request, null, cancellationToken);
+                return await PostAsync<DRILLING_OPERATION, DRILLING_OPERATION>("/api/drilling/program/create", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -22,7 +22,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<DRILLING_OPERATION>($"/api/drilling/{Uri.EscapeDataString(wellId)}/status", null, cancellationToken);
+                return await GetAsync<DRILLING_OPERATION>($"/api/drilling/{Uri.EscapeDataString(wellId)}/status", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<WELL_CONSTRUCTION>($"/api/drilling/{Uri.EscapeDataString(wellId)}/bha", null, cancellationToken);
+                return await GetAsync<WELL_CONSTRUCTION>($"/api/drilling/{Uri.EscapeDataString(wellId)}/bha", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<DRILLING_REPORT>($"/api/drilling/{Uri.EscapeDataString(wellId)}/mud", null, cancellationToken);
+                return await GetAsync<DRILLING_REPORT>($"/api/drilling/{Uri.EscapeDataString(wellId)}/mud", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -47,7 +47,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (progress == null) throw new ArgumentNullException(nameof(progress));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PutAsync<DRILLING_REPORT, DRILLING_OPERATION>($"/api/drilling/{Uri.EscapeDataString(wellId)}/progress", progress, null, cancellationToken);
+                return await PutAsync<DRILLING_REPORT, DRILLING_OPERATION>($"/api/drilling/{Uri.EscapeDataString(wellId)}/progress", progress, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<DRILLING_REPORT>>($"/api/drilling/{Uri.EscapeDataString(wellId)}/history", null, cancellationToken);
+                return await GetAsync<List<DRILLING_REPORT>>($"/api/drilling/{Uri.EscapeDataString(wellId)}/history", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -63,7 +63,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<CASING_STRING>>($"/api/drilling/{Uri.EscapeDataString(wellId)}/casing", null, cancellationToken);
+                return await GetAsync<List<CASING_STRING>>($"/api/drilling/{Uri.EscapeDataString(wellId)}/casing", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -71,7 +71,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<COMPLETION_STRING>>($"/api/drilling/{Uri.EscapeDataString(wellId)}/cementing", null, cancellationToken);
+                return await GetAsync<List<COMPLETION_STRING>>($"/api/drilling/{Uri.EscapeDataString(wellId)}/cementing", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

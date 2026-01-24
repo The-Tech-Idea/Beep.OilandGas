@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Beep.OilandGas.Models.Data.PermitsAndApplications;
 
 namespace Beep.OilandGas.Models.Data
 {
@@ -486,122 +487,122 @@ namespace Beep.OilandGas.Models.Data
         }
     }
 
-    /// <summary>
-    /// DTO for permit application (simplified from PermitsAndApplications).
-    /// </summary>
-    public class PermitApplication : ModelEntityBase
-    {
-        private string ApplicationIdValue = string.Empty;
+    ///// <summary>
+    ///// DTO for permit application (simplified from PermitsAndApplications).
+    ///// </summary>
+    //public class PermitApplication : ModelEntityBase
+    //{
+    //    private string ApplicationIdValue = string.Empty;
 
-        public string ApplicationId
+    //    public string ApplicationId
 
-        {
+    //    {
 
-            get { return this.ApplicationIdValue; }
+    //        get { return this.ApplicationIdValue; }
 
-            set { SetProperty(ref ApplicationIdValue, value); }
+    //        set { SetProperty(ref ApplicationIdValue, value); }
 
-        }
-        private string ApplicationTypeValue = string.Empty;
+    //    }
+    //    private string ApplicationTypeValue = string.Empty;
 
-        public string ApplicationType
+    //    public string ApplicationType
 
-        {
+    //    {
 
-            get { return this.ApplicationTypeValue; }
+    //        get { return this.ApplicationTypeValue; }
 
-            set { SetProperty(ref ApplicationTypeValue, value); }
+    //        set { SetProperty(ref ApplicationTypeValue, value); }
 
-        }
-        private string StatusValue = string.Empty;
+    //    }
+    //    private string StatusValue = string.Empty;
 
-        public string Status
+    //    public string Status
 
-        {
+    //    {
 
-            get { return this.StatusValue; }
+    //        get { return this.StatusValue; }
 
-            set { SetProperty(ref StatusValue, value); }
+    //        set { SetProperty(ref StatusValue, value); }
 
-        }
-        private string? CountryValue;
+    //    }
+    //    private string? CountryValue;
 
-        public string? Country
+    //    public string? Country
 
-        {
+    //    {
 
-            get { return this.CountryValue; }
+    //        get { return this.CountryValue; }
 
-            set { SetProperty(ref CountryValue, value); }
+    //        set { SetProperty(ref CountryValue, value); }
 
-        }
-        private string? StateProvinceValue;
+    //    }
+    //    private string? StateProvinceValue;
 
-        public string? StateProvince
+    //    public string? StateProvince
 
-        {
+    //    {
 
-            get { return this.StateProvinceValue; }
+    //        get { return this.StateProvinceValue; }
 
-            set { SetProperty(ref StateProvinceValue, value); }
+    //        set { SetProperty(ref StateProvinceValue, value); }
 
-        }
-        private string? RegulatoryAuthorityValue;
+    //    }
+    //    private string? RegulatoryAuthorityValue;
 
-        public string? RegulatoryAuthority
+    //    public string? RegulatoryAuthority
 
-        {
+    //    {
 
-            get { return this.RegulatoryAuthorityValue; }
+    //        get { return this.RegulatoryAuthorityValue; }
 
-            set { SetProperty(ref RegulatoryAuthorityValue, value); }
+    //        set { SetProperty(ref RegulatoryAuthorityValue, value); }
 
-        }
-        private DateTime? SubmittedDateValue;
+    //    }
+    //    private DateTime? SubmittedDateValue;
 
-        public DateTime? SubmittedDate
+    //    public DateTime? SubmittedDate
 
-        {
+    //    {
 
-            get { return this.SubmittedDateValue; }
+    //        get { return this.SubmittedDateValue; }
 
-            set { SetProperty(ref SubmittedDateValue, value); }
+    //        set { SetProperty(ref SubmittedDateValue, value); }
 
-        }
-        private DateTime? DecisionDateValue;
+    //    }
+    //    private DateTime? DecisionDateValue;
 
-        public DateTime? DecisionDate
+    //    public DateTime? DecisionDate
 
-        {
+    //    {
 
-            get { return this.DecisionDateValue; }
+    //        get { return this.DecisionDateValue; }
 
-            set { SetProperty(ref DecisionDateValue, value); }
+    //        set { SetProperty(ref DecisionDateValue, value); }
 
-        }
-        private string? DecisionValue;
+    //    }
+    //    private string? DecisionValue;
 
-        public string? Decision
+    //    public string? Decision
 
-        {
+    //    {
 
-            get { return this.DecisionValue; }
+    //        get { return this.DecisionValue; }
 
-            set { SetProperty(ref DecisionValue, value); }
+    //        set { SetProperty(ref DecisionValue, value); }
 
-        }
-        private DateTime? ExpiryDateValue;
+    //    }
+    //    private DateTime? ExpiryDateValue;
 
-        public DateTime? ExpiryDate
+    //    public DateTime? ExpiryDate
 
-        {
+    //    {
 
-            get { return this.ExpiryDateValue; }
+    //        get { return this.ExpiryDateValue; }
 
-            set { SetProperty(ref ExpiryDateValue, value); }
+    //        set { SetProperty(ref ExpiryDateValue, value); }
 
-        }
-    }
+    //    }
+    //}
 
     /// <summary>
     /// DTO for creating a development plan.

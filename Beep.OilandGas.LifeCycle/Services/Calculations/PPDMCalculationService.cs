@@ -10,8 +10,7 @@ using Beep.OilandGas.LifeCycle.Services.Production;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.DCA;
 using Beep.OilandGas.DCA.Results;
-using Beep.OilandGas.ProductionForecasting.Calculations;
-using Beep.OilandGas.ProductionForecasting.Models;
+
 using Beep.OilandGas.EconomicAnalysis;
 using Beep.OilandGas.EconomicAnalysis.Calculations;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
@@ -19,13 +18,13 @@ using Beep.OilandGas.NodalAnalysis;
 using Beep.OilandGas.NodalAnalysis.Calculations;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
 using Beep.OilandGas.WellTestAnalysis;
-using Beep.OilandGas.WellTestAnalysis.Models;
+
 using Beep.OilandGas.FlashCalculations;
 using Beep.OilandGas.FlashCalculations.Calculations;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.ChokeAnalysis;
 using Beep.OilandGas.ChokeAnalysis.Calculations;
-using Beep.OilandGas.ChokeAnalysis.Models;
+
 using Beep.OilandGas.GasLift;
 using Beep.OilandGas.GasLift.Calculations;
 using Beep.OilandGas.Models.Data.GasLift;
@@ -33,26 +32,39 @@ using Beep.OilandGas.PumpPerformance;
 using Beep.OilandGas.PumpPerformance.Calculations;
 using Beep.OilandGas.SuckerRodPumping;
 using Beep.OilandGas.SuckerRodPumping.Calculations;
-using Beep.OilandGas.SuckerRodPumping.Models;
+
 using Beep.OilandGas.CompressorAnalysis;
 using Beep.OilandGas.CompressorAnalysis.Calculations;
-using Beep.OilandGas.CompressorAnalysis.Models;
+
 using Beep.OilandGas.PipelineAnalysis;
 using Beep.OilandGas.PipelineAnalysis.Calculations;
-using Beep.OilandGas.PipelineAnalysis.Models;
+
 using Beep.OilandGas.PlungerLift;
 using Beep.OilandGas.PlungerLift.Calculations;
-using Beep.OilandGas.PlungerLift.Models;
+
 using Beep.OilandGas.HydraulicPumps;
 using Beep.OilandGas.HydraulicPumps.Calculations;
-using Beep.OilandGas.HydraulicPumps.Models;
+
 using Beep.OilandGas.LifeCycle.Services.DataMapping;
+using Beep.OilandGas.Models.Data.SuckerRodPumping;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using System.Text.Json;
 using Beep.OilandGas.PPDM39.Core.Metadata;
-using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ChokeAnalysis;
+using Beep.OilandGas.Models.Data.Pumps;
+using Beep.OilandGas.Models.Data.ProductionForecasting;
+using Beep.OilandGas.Models.Data.PlungerLift;
+using Beep.OilandGas.Models.Data.CompressorAnalysis;
+using Beep.OilandGas.Models.Data.HydraulicPumps;
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
+using Beep.OilandGas.Models.Data.WellTestAnalysis;
+using Beep.OilandGas.Models.Data.Calculations;
+using EconomicAnalysisResult = Beep.OilandGas.Models.Data.Calculations.EconomicAnalysisResult;
+using Beep.OilandGas.ProductionForecasting.Calculations;
+using Beep.OilandGas.Drawing.DataLoaders.Implementations;
+
 
 namespace Beep.OilandGas.LifeCycle.Services.Calculations
 {
@@ -804,7 +816,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
 
                 // Step 4: Generate NPV profile if requested
-                List<NPVProfilePoint>? npvProfile = null;
+                List<NPV_PROFILE_POINT>? npvProfile = null;
                 if (request.AdditionalParameters?.ContainsKey("GenerateNPVProfile") == true &&
                     Convert.ToBoolean(request.AdditionalParameters["GenerateNPVProfile"]))
                 {
@@ -884,13 +896,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             try
             {
                 // Validate request
-                if (string.IsNullOrEmpty(request.WellId) && string.IsNullOrEmpty(request.WellboreId))
+                if (string.IsNullOrEmpty(request.WellUWI) && string.IsNullOrEmpty(request.WellUWI))
                 {
                     throw new ArgumentException("At least one of WellId or WellboreId must be provided");
                 }
 
                 _logger?.LogInformation("Starting Nodal Analysis for WellId: {WellId}, WellboreId: {WellboreId}",
-                    request.WellId, request.WellboreId);
+                    request.WellUWI, request.WellUWI);
 
                 // Step 1: Build reservoir properties from request or PPDM data
                 ReservoirProperties reservoirProperties;
@@ -1033,8 +1045,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 var errorResult = new NodalAnalysisResult
                 {
                     CalculationId = Guid.NewGuid().ToString(),
-                    WellId = request.WellId,
-                    WellboreId = request.WellboreId,
+                    WellId = request.WellUWI,
+                    WellboreId = request.WellUWI,
                     FieldId = request.FieldId,
                     AnalysisType = request.AnalysisType,
                     CalculationDate = DateTime.UtcNow,
@@ -1345,7 +1357,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             EconomicResult economicResult,
             EconomicAnalysisRequest request,
             CashFlow[] cashFlows,
-            List<NPVProfilePoint>? npvProfile)
+            List<NPV_PROFILE_POINT>? npvProfile)
         {
             var result = new EconomicAnalysisResult
             {
@@ -1738,8 +1750,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             var result = new NodalAnalysisResult
             {
                 CalculationId = Guid.NewGuid().ToString(),
-                WellId = request.WellId,
-                WellboreId = request.WellboreId,
+                WellId = request.WellUWI,
+                WellboreId = request.WellUWI,
                 FieldId = request.FieldId,
                 AnalysisType = request.AnalysisType,
                 CalculationDate = DateTime.UtcNow,
@@ -1839,7 +1851,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// <returns>Well test analysis result with permeability, skin factor, reservoir pressure, productivity index, and diagnostic data</returns>
         /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
         /// <exception cref="InvalidOperationException">Thrown when well test data is unavailable or calculation fails</exception>
-        public async Task<Beep.OilandGas.Models.Data.WellTestAnalysisResult> PerformWellTestAnalysisAsync(WellTestAnalysisCalculationRequest request)
+        public async Task<WellTestAnalysisResult> PerformWellTestAnalysisAsync(WellTestAnalysisCalculationRequest request)
         {
             try
             {
@@ -1883,7 +1895,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
 
                 // Step 2: Perform well test analysis
-                WellTestAnalysis.Models.WellTestAnalysisResult analysisResult;
+                WellTestAnalysisResult analysisResult;
                 string analysisMethod = request.AnalysisMethod?.ToUpper() ?? "HORNER";
 
                 if (request.AnalysisType.ToUpper() == "BUILDUP")
@@ -2176,14 +2188,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 {
                     var downstreamPressure = GasChokeCalculator.CalculateDownstreamPressure(
                         chokeProperties, gasChokeProperties, request.FlowRate.Value);
-                    calculationResult = new ChokeFlowResult
+                    calculationResult = new CHOKE_FLOW_RESULT
                     {
-                        FlowRate = request.FlowRate.Value,
-                        DownstreamPressure = downstreamPressure,
-                        UpstreamPressure = gasChokeProperties.UpstreamPressure,
-                        PressureRatio = downstreamPressure / gasChokeProperties.UpstreamPressure,
-                        FlowRegime = FlowRegime.Subsonic, // Will be determined by pressure ratio
-                        CriticalPressureRatio = 0.546m // Approximate for natural gas
+                        FLOW_RATE = request.FlowRate.Value,
+                        DOWNSTREAM_PRESSURE = downstreamPressure,
+                        UPSTREAM_PRESSURE = gasChokeProperties.UpstreamPressure,
+                        PRESSURE_RATIO = downstreamPressure / gasChokeProperties.UpstreamPressure,
+                        FLOW_REGIME = FlowRegime.Subsonic, // Will be determined by pressure ratio
+                        CRITICAL_PRESSURE_RATIO = 0.546m // Approximate for natural gas
                     };
                 }
                 else if (request.AnalysisType.ToUpper() == "SIZING" && request.FlowRate.HasValue)
@@ -3169,7 +3181,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// <returns>Pipeline analysis result with flow rate, pressure drop, and capacity</returns>
         /// <exception cref="ArgumentException">Thrown when request validation fails</exception>
         /// <exception cref="InvalidOperationException">Thrown when pipeline data is unavailable</exception>
-        public async Task<PipelineAnalysisResult> PerformPipelineAnalysisAsync(PipelineAnalysisRequest request)
+        public async Task<PIPELINE_ANALYSIS_RESULT> PerformPipelineAnalysisAsync(PipelineAnalysisRequest request)
         {
             try
             {
@@ -3190,31 +3202,31 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
 
                 // Step 2: Build pipeline properties from request or PPDM data
-                var pipelineProperties = new PipelineProperties
+                var pipelineProperties = new PIPELINE_PROPERTIES
                 {
-                    Length = request.Length ?? (decimal)(GetPropertyValueMultiple(pipeline, "LENGTH", "TOTAL_LENGTH") ?? 10m), // miles
-                    Diameter = request.Diameter ?? (decimal)(GetPropertyValueMultiple(pipeline, "DIAMETER", "OUTER_DIAMETER") ?? 12m), // inches
-                    Roughness = request.Roughness ?? 0.00018m, // inches (absolute roughness)
-                    InletPressure = request.InletPressure ?? 1000m, // psia
-                    OutletPressure = request.OutletPressure ?? 500m, // psia
-                    AverageTemperature = request.Temperature ?? 520m // Rankine
+                    LENGTH = request.Length ?? (decimal)(GetPropertyValueMultiple(pipeline, "LENGTH", "TOTAL_LENGTH") ?? 10m), // miles
+                    DIAMETER = request.Diameter ?? (decimal)(GetPropertyValueMultiple(pipeline, "DIAMETER", "OUTER_DIAMETER") ?? 12m), // inches
+                    ROUGHNESS = request.Roughness ?? 0.00018m, // inches (absolute roughness)
+                    INLET_PRESSURE = request.InletPressure ?? 1000m, // psia
+                    OUTLET_PRESSURE = request.OutletPressure ?? 500m, // psia
+                    AVERAGE_TEMPERATURE = request.Temperature ?? 520m // Rankine
                 };
 
                 // Step 3: Perform calculation using PipelineAnalysis library
-                PipelineAnalysisResult result;
+                PIPELINE_ANALYSIS_RESULT result;
                 if (request.PipelineType.ToUpper() == "LIQUID")
                 {
-                    var liquidProperties = new LiquidPipelineFlowProperties
+                    var liquidProperties = new LIQUID_PIPELINE_FLOW_PROPERTIES
                     {
-                        Pipeline = pipelineProperties,
-                        LiquidDensity = request.LiquidDensity ?? 50m, // lb/ft³
-                        LiquidViscosity = request.LiquidViscosity ?? 1.0m, // cP
-                        LiquidFlowRate = request.FlowRate ?? 1000m // bbl/day
+                        PIPELINE_PROPERTIES = pipelineProperties,
+                        LIQUID_DENSITY = request.LiquidDensity ?? 50m, // lb/ft³
+                        LIQUID_VISCOSITY = request.LiquidViscosity ?? 1.0m, // cP
+                        LIQUID_FLOW_RATE = request.FlowRate ?? 1000m // bbl/day
                     };
 
                     var capacityResult = PipelineCapacityCalculator.CalculateLiquidPipelineCapacity(liquidProperties);
 
-                    result = new PipelineAnalysisResult
+                    result = new PIPELINE_ANALYSIS_RESULT
                     {
                         CalculationId = Guid.NewGuid().ToString(),
                         PipelineId = request.PipelineId,
@@ -3222,18 +3234,18 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                         AnalysisType = request.AnalysisType,
                         CalculationDate = DateTime.UtcNow,
                         FlowRate = capacityResult.MaximumFlowRate,
-                        InletPressure = pipelineProperties.InletPressure,
+                        InletPressure = pipelineProperties.INLET_PRESSURE,
                         OutletPressure = capacityResult.OutletPressure,
                         PressureDrop = capacityResult.PressureDrop,
-                        AveragePressure = (pipelineProperties.InletPressure + capacityResult.OutletPressure) / 2m,
+                        AveragePressure = (pipelineProperties.INLET_PRESSURE + capacityResult.OutletPressure) / 2m,
                         MaximumCapacity = capacityResult.MaximumFlowRate,
                         Utilization = request.FlowRate.HasValue ? (request.FlowRate.Value / capacityResult.MaximumFlowRate) : 0m,
                         ReynoldsNumber = capacityResult.ReynoldsNumber,
                         FrictionFactor = capacityResult.FrictionFactor,
                         FlowRegime = capacityResult.ReynoldsNumber < 2100 ? "LAMINAR" : "TURBULENT",
-                        Length = pipelineProperties.Length,
-                        Diameter = pipelineProperties.Diameter,
-                        Roughness = pipelineProperties.Roughness,
+                        Length = pipelineProperties.LENGTH,
+                        Diameter = pipelineProperties.DIAMETER,
+                        Roughness = pipelineProperties.ROUGHNESS,
                         Status = "SUCCESS",
                         UserId = request.UserId
                     };
@@ -3241,42 +3253,42 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 else
                 {
                     // Default to gas
-                    var gasProperties = new GasPipelineFlowProperties
+                    var gasProperties = new GAS_PIPELINE_FLOW_PROPERTIES
                     {
-                        Pipeline = pipelineProperties,
-                        GasSpecificGravity = request.GasSpecificGravity ?? 0.65m,
-                        GasFlowRate = request.FlowRate ?? 1000m, // Mscf/day
-                        BaseTemperature = 520m, // Rankine
-                        BasePressure = 14.7m // psia
+                        PIPELINE_PROPERTIES = pipelineProperties,
+                        GAS_SPECIFIC_GRAVITY = request.GasSpecificGravity ?? 0.65m,
+                        GAS_FLOW_RATE = request.FlowRate ?? 1000m, // Mscf/day
+                        BASE_TEMPERATURE = 520m, // Rankine
+                        BASE_PRESSURE = 14.7m // psia
                     };
 
                     if (request.ZFactor.HasValue)
                     {
-                        gasProperties.ZFactor = request.ZFactor.Value;
+                        gasProperties.Z_FACTOR = request.ZFactor.Value;
                     }
 
                     var capacityResult = PipelineCapacityCalculator.CalculateGasPipelineCapacity(gasProperties);
 
-                    result = new PipelineAnalysisResult
+                    result = new PIPELINE_ANALYSIS_RESULT
                     {
                         CalculationId = Guid.NewGuid().ToString(),
                         PipelineId = request.PipelineId,
                         PipelineType = request.PipelineType,
                         AnalysisType = request.AnalysisType,
                         CalculationDate = DateTime.UtcNow,
-                        FlowRate = capacityResult.MaximumFlowRate,
-                        InletPressure = pipelineProperties.InletPressure,
-                        OutletPressure = capacityResult.OutletPressure,
-                        PressureDrop = capacityResult.PressureDrop,
-                        AveragePressure = (pipelineProperties.InletPressure + capacityResult.OutletPressure) / 2m,
-                        MaximumCapacity = capacityResult.MaximumFlowRate,
-                        Utilization = request.FlowRate.HasValue ? (request.FlowRate.Value / capacityResult.MaximumFlowRate) : 0m,
-                        ReynoldsNumber = capacityResult.ReynoldsNumber,
-                        FrictionFactor = capacityResult.FrictionFactor,
-                        FlowRegime = capacityResult.ReynoldsNumber < 2100 ? "LAMINAR" : "TURBULENT",
-                        Length = pipelineProperties.Length,
-                        Diameter = pipelineProperties.Diameter,
-                        Roughness = pipelineProperties.Roughness,
+                        FlowRate = capacityResult.MAXIMUM_FLOW_RATE,
+                        InletPressure = pipelineProperties.INLET_PRESSURE,
+                        OutletPressure = capacityResult.OUTLET_PRESSURE,
+                        PressureDrop = capacityResult.PRESSURE_DROP,
+                        AveragePressure = (pipelineProperties.INLET_PRESSURE + capacityResult.OUTLET_PRESSURE) / 2m,
+                        MaximumCapacity = capacityResult.MAXIMUM_FLOW_RATE,
+                        Utilization = request.FlowRate.HasValue ? (request.FlowRate.Value / capacityResult.MAXIMUM_FLOW_RATE) : 0m,
+                        ReynoldsNumber = capacityResult.REYNOLDS_NUMBER,
+                        FrictionFactor = capacityResult.FRICTION_FACTOR,
+                        FlowRegime = capacityResult.REYNOLDS_NUMBER < 2100 ? "LAMINAR" : "TURBULENT",
+                        Length = pipelineProperties.LENGTH,
+                        Diameter = pipelineProperties.DIAMETER,
+                        Roughness = pipelineProperties.ROUGHNESS,
                         Status = "SUCCESS",
                         UserId = request.UserId
                     };
@@ -3394,25 +3406,25 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
 
                 // Step 2: Map to domain models
-                var wellProperties = new PlungerLiftWellProperties
+                var wellProperties = new PLUNGER_LIFT_WELL_PROPERTIES
                 {
                     WellDepth = request.WellDepth ?? (decimal)(GetPropertyValueMultiple(well, "TOTAL_DEPTH", "DEPTH") ?? 5000m),
-                    TubingDiameter = request.TubingDiameter ?? (decimal)(GetTubularInnerDiameterAsync(request.WellId, "TUBING").Result ?? 2.875m),
-                    PlungerDiameter = request.PlungerDiameter ?? 2.25m,
-                    WellheadPressure = request.WellheadPressure ?? (decimal)(GetPropertyValueMultiple(wellPressure, "PRESSURE", "WELLHEAD_PRESSURE") ?? 100m),
-                    CasingPressure = request.AdditionalParameters?.ContainsKey("CasingPressure") == true
+                    TUBING_DIAMETER = request.TubingDiameter ?? (decimal)(GetTubularInnerDiameterAsync(request.WellId, "TUBING").Result ?? 2.875m),
+                    PLUNGER_DIAMETER = request.PlungerDiameter ?? 2.25m,
+                    WELLHEAD_PRESSURE = request.WellheadPressure ?? (decimal)(GetPropertyValueMultiple(wellPressure, "PRESSURE", "WELLHEAD_PRESSURE") ?? 100m),
+                    CASING_PRESSURE = request.AdditionalParameters?.ContainsKey("CasingPressure") == true
                         ? Convert.ToDecimal(request.AdditionalParameters["CasingPressure"])
                         : 200m,
-                    BottomHolePressure = request.BottomHolePressure ?? (decimal)(GetPropertyValueMultiple(wellPressure, "RESERVOIR_PRESSURE", "BOTTOM_HOLE_PRESSURE") ?? 2000m),
-                    WellheadTemperature = request.WellheadTemperature ?? (decimal)(GetPropertyValueMultiple(wellPressure, "TEMPERATURE", "WELLHEAD_TEMPERATURE") ?? 520m),
-                    BottomHoleTemperature = request.BottomHoleTemperature ?? (decimal)(GetPropertyValueMultiple(wellPressure, "BOTTOM_HOLE_TEMPERATURE") ?? 580m),
-                    OilGravity = request.OilGravity ?? 35m,
-                    WaterCut = request.WaterCut ?? 0.2m,
+                    BOTTOM_HOLE_PRESSURE = request.BottomHolePressure ?? (decimal)(GetPropertyValueMultiple(wellPressure, "RESERVOIR_PRESSURE", "BOTTOM_HOLE_PRESSURE") ?? 2000m),
+                    WELLHEAD_TEMPERATURE = request.WellheadTemperature ?? (decimal)(GetPropertyValueMultiple(wellPressure, "TEMPERATURE", "WELLHEAD_TEMPERATURE") ?? 520m),
+                    BOTTOM_HOLE_TEMPERATURE = request.BottomHoleTemperature ?? (decimal)(GetPropertyValueMultiple(wellPressure, "BOTTOM_HOLE_TEMPERATURE") ?? 580m),
+                    OIL_GRAVITY = request.OilGravity ?? 35m,
+                    WATER_CUT = request.WaterCut ?? 0.2m,
                     GasOilRatio = request.AdditionalParameters?.ContainsKey("GasOilRatio") == true
                         ? Convert.ToDecimal(request.AdditionalParameters["GasOilRatio"])
                         : 500m,
-                    GasSpecificGravity = request.GasSpecificGravity ?? 0.65m,
-                    LiquidProductionRate = request.LiquidProductionRate ?? 50m
+                    GAS_SPECIFIC_GRAVITY = request.GasSpecificGravity ?? 0.65m,
+                    LIQUID_PRODUCTION_RATE = request.LiquidProductionRate ?? 50m
                 };
 
                 // Step 3: Perform calculation using PlungerLift library
@@ -3688,8 +3700,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             // For now, return a basic structure that will need data from request
             return new WellTestData
             {
-                Time = new List<double>(),
-                Pressure = new List<double>(),
+                TestTime = new List<double>(),
+                FlowingPressure = new List<double>(),
                 FlowRate = 0.0,
                 WellboreRadius = 0.25,
                 FormationThickness = 50.0,
@@ -3704,13 +3716,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// <summary>
         /// Maps WellTestAnalysisResult from library to WellTestAnalysisResult DTO
         /// </summary>
-        private Beep.OilandGas.Models.Data.WellTestAnalysisResult MapWellTestResultToDTO(
-            WellTestAnalysis.Models.WellTestAnalysisResult analysisResult,
+        private WELL_TEST_ANALYSIS_RESULT MapWellTestResultToDTO(
+            WellTestAnalysisResult analysisResult,
             WellTestAnalysisCalculationRequest request,
             ReservoirModel identifiedModel,
-            List<PressureTimePoint> derivativePoints)
+            List<PRESSURE_TIME_POINT> derivativePoints)
         {
-            var result = new Beep.OilandGas.Models.Data.WellTestAnalysisResult
+            var result = new WellTestAnalysisResult
             {
                 CalculationId = Guid.NewGuid().ToString(),
                 WellId = request.WellId,
@@ -3720,20 +3732,20 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 CalculationDate = DateTime.UtcNow,
                 Status = "SUCCESS",
                 UserId = request.UserId,
-                Permeability = (decimal)analysisResult.Permeability,
-                SkinFactor = (decimal)analysisResult.SkinFactor,
-                ReservoirPressure = (decimal)analysisResult.ReservoirPressure,
-                ProductivityIndex = (decimal)analysisResult.ProductivityIndex,
-                FlowEfficiency = (decimal)analysisResult.FlowEfficiency,
-                DamageRatio = (decimal)analysisResult.DamageRatio,
-                RadiusOfInvestigation = (decimal)analysisResult.RadiusOfInvestigation,
-                IdentifiedModel = identifiedModel.ToString(),
-                RSquared = (decimal)analysisResult.RSquared,
+                Permeability = analysisResult.Permeability,
+                SkinFactor = analysisResult.SkinFactor,
+                ReservoirPressure =analysisResult.ReservoirPressure,
+                ProductivityIndex = analysisResult.ProductivityIndex,
+                FlowEfficiency = analysisResult.FlowEfficiency,
+                DamageRatio = analysisResult.DamageRatio,
+                RadiusOfInvestigation = analysisResult.RadiusOfInvestigation,
+                IdentifiedModel = identifiedModel,
+                RSquared = analysisResult.RSquared,
                 DiagnosticPoints = request.PressureTimeData,
                 DerivativePoints = derivativePoints.Select(p => new WellTestDataPoint
                 {
-                    Time = p.Time,
-                    Pressure = p.Pressure
+                    Time = p.TIME,
+                    Pressure = p.PRESSURE
                 }).ToList(),
                 AdditionalResults = new Dictionary<string, object>()
             };
@@ -3753,7 +3765,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// <summary>
         /// Retrieves flash conditions from PPDM for a well or facility
         /// </summary>
-        private async Task<FlashConditions> GetFlashConditionsFromPPDMAsync(string wellId, string facilityId)
+        private async Task<FLASH_CONDITIONS> GetFlashConditionsFromPPDMAsync(string wellId, string facilityId)
         {
             _logger?.LogWarning("Retrieving flash conditions from PPDM - using simplified implementation. " +
                 "For full functionality, provide Pressure, Temperature, and FeedComposition in request or implement comprehensive PPDM data retrieval.");
@@ -3765,11 +3777,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             // 3. Build comprehensive flash conditions
 
             // For now, return a basic structure that will need data from request
-            return new FlashConditions
+            return new FLASH_CONDITIONS
             {
-                Pressure = 500m,
-                Temperature = 540m,
-                FeedComposition = new List<Component>()
+                PRESSURE = 500m,
+                TEMPERATURE = 540m,
+                FEED_COMPOSITION = new List<FLASH_COMPONENT>()
             };
         }
 
@@ -3779,8 +3791,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         private FlashCalculationResult MapFlashResultToDTO(
             FlashResult flashResult,
             FlashCalculationRequest request,
-            PhaseProperties vaporProperties,
-            PhaseProperties liquidProperties)
+            PhasePropertiesData vaporProperties,
+            PhasePropertiesData liquidProperties)
         {
             var result = new FlashCalculationResult
             {
@@ -4055,7 +4067,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     : 0m;
 
                 // Step 3: Perform physics-based forecast
-                ProductionForecast forecast;
+                PRODUCTION_FORECAST forecast;
                 
                 switch (forecastType?.ToUpperInvariant())
                 {
@@ -6444,7 +6456,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         public async Task<decimal?> GetCustomFieldValueAsync(string mappingKey, string entityId)
         {
             var mapping = await _fieldMappingService.GetFieldMappingAsync(mappingKey);
-using Beep.OilandGas.Models.Data.PipelineAnalysis;
+
             if (mapping == null || !mapping.IsActive || string.IsNullOrEmpty(mapping.TableName))
                 return null;
 
@@ -6511,7 +6523,7 @@ using Beep.OilandGas.Models.Data.PipelineAnalysis;
         /// - WELL_TEST_PRESSURE: pressure measurements
         /// For custom/extension fields, use FieldMappingConfig via GetCustomFieldValueAsync()
         /// </summary>
-        private async Task<ReservoirForecastProperties?> GetReservoirPropertiesForForecastAsync(DCARequest request)
+        private async Task<RESERVOIR_FORECAST_PROPERTIES?> GetReservoirPropertiesForForecastAsync(DCARequest request)
         {
             if (string.IsNullOrEmpty(request.WellId) && string.IsNullOrEmpty(request.PoolId))
             {
@@ -6540,33 +6552,33 @@ using Beep.OilandGas.Models.Data.PipelineAnalysis;
 
             // Use KNOWN PPDM fields from standard tables
             // POOL data - static reservoir properties (don't change over time)
-            var reservoirProps = new ReservoirForecastProperties
+            var reservoirProps = new RESERVOIR_FORECAST_PROPERTIES
             {
                 // From POOL table - known PPDM 3.9 fields
-                InitialPressure = await GetPoolInitialPressureAsync(poolId, 3000m),
-                Permeability = await GetPoolPermeabilityAsync(poolId, 100m),
-                Thickness = await GetPoolThicknessAsync(poolId, 50m),
-                Porosity = await GetPoolPorosityAsync(poolId, 0.2m),
-                Temperature = await GetPoolTemperatureAsync(poolId, 560m),
-                TotalCompressibility = await GetPoolCompressibilityAsync(poolId, 0.00001m),
-                DrainageRadius = await GetPoolDrainageRadiusAsync(poolId, 1000m),
-                FormationVolumeFactor = await GetPoolFormationVolumeFactorAsync(poolId, 1.2m),
-                OilViscosity = await GetPoolOilViscosityAsync(poolId, 1.0m),
-                GasSpecificGravity = await GetPoolGasGravityAsync(poolId, 0.65m),
+                INITIAL_PRESSURE = await GetPoolInitialPressureAsync(poolId, 3000m),
+                PERMEABILITY = await GetPoolPermeabilityAsync(poolId, 100m),
+                THICKNESS = await GetPoolThicknessAsync(poolId, 50m),
+                POROSITY = await GetPoolPorosityAsync(poolId, 0.2m),
+                TEMPERATURE = await GetPoolTemperatureAsync(poolId, 560m),
+                TOTAL_COMPRESSIBILITY = await GetPoolCompressibilityAsync(poolId, 0.00001m),
+                DRAINAGE_RADIUS = await GetPoolDrainageRadiusAsync(poolId, 1000m),
+                FORMATION_VOLUME_FACTOR = await GetPoolFormationVolumeFactorAsync(poolId, 1.2m),
+                OIL_VISCOSITY = await GetPoolOilViscosityAsync(poolId, 1.0m),
+                GAS_SPECIFIC_GRAVITY = await GetPoolGasGravityAsync(poolId, 0.65m),
                 
                 // Wellbore radius - not standard PPDM field, use custom mapping
-                WellboreRadius = await GetWellboreRadiusAsync(wellId, 0.25m),
+                WELLBORE_RADIUS = await GetWellboreRadiusAsync(wellId, 0.25m),
                 
                 // Skin factor from WELL_TEST_ANALYSIS - get latest or by specific test/date
                 // null testId = get latest test automatically
-                SkinFactor = await GetWellTestSkinAsync(wellId, testId, asOfDate) ?? 0m
+                SKIN_FACTOR = await GetWellTestSkinAsync(wellId, testId, asOfDate) ?? 0m
             };
 
             // Override pool permeability with test-derived permeability if available
             // This is more accurate as it comes from actual well test analysis
             var testPerm = await GetWellTestPermeabilityAsync(wellId, testId, asOfDate);
             if (testPerm.HasValue)
-                reservoirProps.Permeability = testPerm.Value;
+                reservoirProps.PERMEABILITY = testPerm.Value;
 
             return reservoirProps;
         }
@@ -6598,7 +6610,9 @@ using Beep.OilandGas.Models.Data.PipelineAnalysis;
         /// <summary>
         /// Maps ProductionForecast from ProductionForecasting library to DCAResult DTO
         /// </summary>
-        private DCAResult MapProductionForecastToDCAResult(ProductionForecast forecast, DCARequest request)
+        private DCAResult MapProductionForecastToDCAResult(
+            PRODUCTION_FORECAST forecast,
+            DCARequest request)
         {
             var result = new DCAResult
             {
@@ -6616,23 +6630,23 @@ using Beep.OilandGas.Models.Data.PipelineAnalysis;
             };
 
             // Map forecast parameters
-            result.InitialRate = forecast.InitialProductionRate;
-            result.EstimatedEUR = forecast.TotalCumulativeProduction;
-            var forecastPointsList = forecast.ForecastPoints?.ToList() ?? new List<Beep.OilandGas.ProductionForecasting.Models.ForecastPoint>();
+            result.InitialRate = forecast.INITIAL_PRODUCTION_RATE;
+            result.EstimatedEUR = forecast.TOTAL_CUMULATIVE_PRODUCTION;
+            var forecastPointsList = forecast.FORECAST_POINTS?.ToList() ?? new List<FORECAST_POINT>();
             result.DeclineRate = forecastPointsList.Count > 1
-                ? (forecast.InitialProductionRate - forecast.FinalProductionRate) / 
-                  (forecast.InitialProductionRate * (forecast.ForecastDuration / 365.25m))
+                ? (forecast.INITIAL_PRODUCTION_RATE - forecast.FINAL_PRODUCTION_RATE) / 
+                  (forecast.INITIAL_PRODUCTION_RATE * (forecast.FORECAST_DURATION / 365.25m))
                 : null;
 
             // Map forecast points (convert time in days to actual dates)
             var startDate = request.StartDate ?? DateTime.UtcNow;
-            foreach (var point in forecast.ForecastPoints)
+            foreach (var point in forecast.FORECAST_POINTS)
             {
                 result.ForecastPoints.Add(new DCAForecastPoint
                 {
-                    Date = startDate.AddDays((double)point.Time),
-                    ProductionRate = point.ProductionRate,
-                    CumulativeProduction = point.CumulativeProduction,
+                    Date = startDate.AddDays((double)point.TIME),
+                    ProductionRate = point.PRODUCTION_RATE,
+                    CumulativeProduction = point.CUMULATIVE_PRODUCTION,
                     DeclineRate = null // Not calculated for physics-based forecasts
                 });
             }

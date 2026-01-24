@@ -73,6 +73,11 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+        public object? Value { get; set; }
+        public int SequenceNumber { get; set; }
+        public object Description { get; set; }
+        public string? ComponentType { get; set; }
+        public string ComponentId { get; set; }
     }
 }
 

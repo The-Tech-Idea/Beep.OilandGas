@@ -1,0 +1,30 @@
+{
+  "authority": "COGCC",
+  "name": "Colorado Oil and Gas Conservation Commission",
+  "country": "UnitedStates",
+  "templates": [
+    {
+      "formCode": "COGCC_DRILLING_PERMIT",
+      "formName": "COGCC Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "COGCC_ENV_PERMIT",
+      "formName": "COGCC Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

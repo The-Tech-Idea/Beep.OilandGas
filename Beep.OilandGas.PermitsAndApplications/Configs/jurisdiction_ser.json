@@ -1,0 +1,30 @@
+{
+  "authority": "SER",
+  "name": "Saskatchewan Energy and Resources",
+  "country": "Canada",
+  "templates": [
+    {
+      "formCode": "SER_DRILLING_PERMIT",
+      "formName": "SER Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "SER_ENV_PERMIT",
+      "formName": "SER Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

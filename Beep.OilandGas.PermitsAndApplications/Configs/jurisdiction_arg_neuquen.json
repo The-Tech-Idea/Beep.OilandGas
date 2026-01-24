@@ -1,0 +1,30 @@
+{
+  "authority": "ARG_NEUQUEN",
+  "name": "Argentina Neuquen",
+  "country": "Argentina",
+  "templates": [
+    {
+      "formCode": "NEUQUEN_DRILLING_PERMIT",
+      "formName": "Neuquen Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "NEUQUEN_ENV_PERMIT",
+      "formName": "Neuquen Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "authority": "AOGCC",
+  "name": "Alaska Oil and Gas Conservation Commission",
+  "country": "UnitedStates",
+  "templates": [
+    {
+      "formCode": "AOGCC_DRILLING_PERMIT",
+      "formName": "AOGCC Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "AOGCC_ENV_PERMIT",
+      "formName": "AOGCC Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

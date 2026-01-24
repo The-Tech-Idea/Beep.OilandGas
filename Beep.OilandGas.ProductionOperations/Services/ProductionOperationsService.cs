@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.ProductionOperations;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -187,7 +188,19 @@ namespace Beep.OilandGas.ProductionOperations.Services
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
             _logger?.LogInformation("Getting well status for {WellUWI}", wellUWI);
-            return await Task.FromResult(new WellStatus { Status = "Active" });
+            return await Task.FromResult(new WellStatus
+            {
+                WellUWI = wellUWI,
+                StatusDate = DateTime.UtcNow,
+                OperationalStatus = "Active",
+                WellType = "Horizontal",
+                CurrentOilRate = 1250m,
+                CurrentGasRate = 950m,
+                CurrentWaterRate = 220m,
+                WellheadPressure = 1500m,
+                CasingPressure = 1200m,
+                CurrentIssues = new List<WellIssue>()
+            });
         }
 
         public async Task UpdateWellParametersAsync(string wellUWI, WellParameters parameters, string userId)
@@ -228,7 +241,18 @@ namespace Beep.OilandGas.ProductionOperations.Services
         {
             if (string.IsNullOrWhiteSpace(equipmentId)) throw new ArgumentException("Equipment ID required", nameof(equipmentId));
             _logger?.LogInformation("Calculating reliability for {EquipmentId}", equipmentId);
-            return await Task.FromResult(new EquipmentReliability { ReliabilityScore = 90.0m });
+            return await Task.FromResult(new EquipmentReliability
+            {
+                EquipmentId = equipmentId,
+                StartDate = startDate,
+                EndDate = endDate,
+                MeanTimeBetweenFailures = 120m,
+                MeanTimeToRepair = 8m,
+                AvailabilityPercentage = 98m,
+                TotalFailures = 0,
+                TotalMaintenanceEvents = 2,
+                TotalDowntimeHours = 16m
+            });
         }
 
         public async Task RecordFacilityProductionAsync(FacilityProduction productionData, string userId)
@@ -256,7 +280,14 @@ namespace Beep.OilandGas.ProductionOperations.Services
         {
             if (string.IsNullOrWhiteSpace(facilityId)) throw new ArgumentException("Facility ID required", nameof(facilityId));
             _logger?.LogInformation("Getting facility status for {FacilityId}", facilityId);
-            return await Task.FromResult(new FacilityStatus { Status = "Operational" });
+            return await Task.FromResult(new FacilityStatus
+            {
+                FacilityId = facilityId,
+                StatusDate = DateTime.UtcNow,
+                OperationalStatus = "Operational",
+                CapacityUtilization = 0.78m,
+                ProcessingEfficiency = 0.82m
+            });
         }
 
         public async Task RecordSafetyIncidentAsync(SafetyIncident incident, string userId)
@@ -282,7 +313,19 @@ namespace Beep.OilandGas.ProductionOperations.Services
         public async Task<SafetyKPIs> CalculateSafetyKPIsAsync(DateTime startDate, DateTime endDate)
         {
             _logger?.LogInformation("Calculating safety KPIs");
-            return await Task.FromResult(new SafetyKPIs { TotalIncidents = 0 });
+            return await Task.FromResult(new SafetyKPIs
+            {
+                StartDate = startDate,
+                EndDate = endDate,
+                TotalRecordableIncidents = 0,
+                TRIR = 0m,
+                LostTimeIncidents = 0,
+                LTIR = 0m,
+                DaysAwayFromWork = 0,
+                DART = 0m,
+                NearMisses = 0,
+                SafetyRating = "Excellent"
+            });
         }
 
         public async Task RecordEnvironmentalDataAsync(EnvironmentalData data, string userId)
@@ -328,13 +371,48 @@ namespace Beep.OilandGas.ProductionOperations.Services
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
             _logger?.LogInformation("Calculating cost analysis for {WellUWI}", wellUWI);
-            return await Task.FromResult(new CostAnalysis { TotalCost = 0 });
+            return await Task.FromResult(new CostAnalysis
+            {
+                WellUWI = wellUWI,
+                StartDate = startDate,
+                EndDate = endDate,
+                TotalOperatingCosts = 0m,
+                TotalProductionVolume = 0m,
+                CostPerBOE = 0m,
+                CostPerBarrel = 0m
+            });
         }
 
-        public async Task<byte[]> GenerateOperationsReportAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null)
+        public async Task<OperationsReport> GenerateOperationsReportAsync(DateTime startDate, DateTime endDate, string? wellUWI = null, string? facilityId = null)
         {
-            _logger?.LogInformation("Generating operations report");
-            return await Task.FromResult(Array.Empty<byte>());
+            _logger?.LogInformation("Generating operations report for {StartDate}-{EndDate}", startDate, endDate);
+            return await Task.FromResult(new OperationsReport
+            {
+                ReportId = Guid.NewGuid().ToString(),
+                GeneratedDate = DateTime.UtcNow,
+                StartDate = startDate,
+                EndDate = endDate,
+                Summary = new ProductionOperationsSummary
+                {
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    TotalWells = 0,
+                    ActiveWells = 0,
+                    Facilities = 0,
+                    TotalOilProduction = 0m,
+                    TotalGasProduction = 0m,
+                    TotalWaterProduction = 0m,
+                    AverageUptime = 0m,
+                    SafetyIncidents = 0,
+                    TotalOperatingCosts = 0m
+                },
+                SafetyMetrics = new SafetyKPIs
+                {
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    SafetyRating = "Not Rated"
+                }
+            });
         }
 
         public async Task<List<OptimizationOpportunity>> IdentifyOptimizationOpportunitiesAsync(string wellUWI)
@@ -344,38 +422,70 @@ namespace Beep.OilandGas.ProductionOperations.Services
             return await Task.FromResult(new List<OptimizationOpportunity>());
         }
 
-        public async Task ImplementOptimizationAsync(string wellUWI, string optimizationId)
+        public async Task ImplementOptimizationAsync(string opportunityId, string userId)
         {
-            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
-            _logger?.LogInformation("Implementing optimization for {WellUWI}", wellUWI);
+            if (string.IsNullOrWhiteSpace(opportunityId)) throw new ArgumentException("Opportunity ID required", nameof(opportunityId));
+            if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("User ID required", nameof(userId));
+            _logger?.LogInformation("Implementing optimization {OpportunityId} by user {UserId}", opportunityId, userId);
             await Task.CompletedTask;
         }
 
-        public async Task<OptimizationEffectiveness> MonitorOptimizationEffectivenessAsync(string wellUWI)
+        public async Task<OptimizationEffectiveness> MonitorOptimizationEffectivenessAsync(string opportunityId)
         {
-            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
-            _logger?.LogInformation("Monitoring optimization effectiveness for {WellUWI}", wellUWI);
-            return await Task.FromResult(new OptimizationEffectiveness { EffectivenessScore = 85.0m });
+            if (string.IsNullOrWhiteSpace(opportunityId)) throw new ArgumentException("Opportunity ID required", nameof(opportunityId));
+            _logger?.LogInformation("Monitoring optimization effectiveness for opportunity {OpportunityId}", opportunityId);
+            return await Task.FromResult(new OptimizationEffectiveness
+            {
+                OpportunityId = opportunityId,
+                ImplementationDate = DateTime.UtcNow.AddDays(-30),
+                BaselinePerformance = 100m,
+                CurrentPerformance = 105m,
+                PerformanceImprovement = 5m,
+                ActualGain = 5000m,
+                ActualCost = 2500m,
+                ROI = 1m,
+                EffectivenessRating = "Positive"
+            });
         }
 
         public async Task<ProductionOperationsSummary> GetProductionOperationsSummaryAsync(DateTime startDate, DateTime endDate)
         {
             _logger?.LogInformation("Getting production operations summary");
-            return await Task.FromResult(new ProductionOperationsSummary { TotalWells = 0 });
+            return await Task.FromResult(new ProductionOperationsSummary
+            {
+                StartDate = startDate,
+                EndDate = endDate,
+                TotalWells = 0,
+                ActiveWells = 0,
+                Facilities = 0,
+                TotalOilProduction = 0m,
+                TotalGasProduction = 0m,
+                TotalWaterProduction = 0m,
+                AverageUptime = 0m,
+                SafetyIncidents = 0,
+                TotalOperatingCosts = 0m
+            });
         }
 
-        public async Task<byte[]> ExportOperationsDataAsync(string wellUWI, DateTime startDate, DateTime endDate, string format)
+        public async Task<byte[]> ExportOperationsDataAsync(string dataType, DateTime startDate, DateTime endDate, string format)
         {
-            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
-            _logger?.LogInformation("Exporting operations data for {WellUWI} in {Format}", wellUWI, format);
+            if (string.IsNullOrWhiteSpace(dataType)) throw new ArgumentException("Data type required", nameof(dataType));
+            _logger?.LogInformation("Exporting {DataType} data from {StartDate} to {EndDate} as {Format}", dataType, startDate, endDate, format);
             return await Task.FromResult(Array.Empty<byte>());
         }
 
-        public async Task<DataValidationResult> ValidateOperationsDataAsync(string wellUWI, DateTime startDate, DateTime endDate)
+        public async Task<DataValidationResult> ValidateOperationsDataAsync(string dataType, DateTime startDate, DateTime endDate)
         {
-            if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentException("Well UWI required", nameof(wellUWI));
-            _logger?.LogInformation("Validating operations data for {WellUWI}", wellUWI);
-            return await Task.FromResult(new DataValidationResult { IsValid = true });
+            if (string.IsNullOrWhiteSpace(dataType)) throw new ArgumentException("Data type required", nameof(dataType));
+            _logger?.LogInformation("Validating {DataType} data from {StartDate} to {EndDate}", dataType, startDate, endDate);
+            return await Task.FromResult(new DataValidationResult
+            {
+                DataType = dataType,
+                IsValid = true,
+                TotalRecords = 0,
+                ValidRecords = 0,
+                InvalidRecords = 0
+            });
         }
     }
 }

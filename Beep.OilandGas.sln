@@ -71,8 +71,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{51C10D3E-1C4
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UI_GFX", "UI_GFX", "{14594FE3-EC7D-4E99-B93C-31B31E7612FE}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plans", "Plans", "{FE6E879C-A241-42C8-9B5A-5E9817F48FC4}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Processes", "Processes", "{0D710E10-2EE0-4A71-9D15-872BB5216FA0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Beep.OilandGas.DevelopmentPlanning", "Beep.OilandGas.DevelopmentPlanning\Beep.OilandGas.DevelopmentPlanning.csproj", "{C491CA6D-5902-3C2C-7797-3137D235E0A9}"
@@ -94,6 +92,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Beep.OilandGas.DataManager", "Beep.OilandGas.DataManager\Beep.OilandGas.DataManager.csproj", "{E220A51D-04D0-F9DD-7730-5B1EF11E3876}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Beep.OilandGas.Accounting", "Beep.OilandGas.Accounting\Beep.OilandGas.Accounting.csproj", "{023F1561-B60C-1E07-BA47-44C3181D94F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Beep.OilandGas.PermitsAndApplications.Pdf.Wkhtmltopdf", "Beep.OilandGas.PermitsAndApplications.Pdf.Wkhtmltopdf\Beep.OilandGas.PermitsAndApplications.Pdf.Wkhtmltopdf.csproj", "{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -573,6 +573,18 @@ Global
 		{023F1561-B60C-1E07-BA47-44C3181D94F6}.Release|x64.Build.0 = Release|Any CPU
 		{023F1561-B60C-1E07-BA47-44C3181D94F6}.Release|x86.ActiveCfg = Release|Any CPU
 		{023F1561-B60C-1E07-BA47-44C3181D94F6}.Release|x86.Build.0 = Release|Any CPU
+		{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}.Debug|x64.Build.0 = Debug|Any CPU
+		{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}.Debug|x86.Build.0 = Debug|Any CPU
+		{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}.Release|x64.ActiveCfg = Release|Any CPU
+		{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}.Release|x64.Build.0 = Release|Any CPU
+		{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}.Release|x86.ActiveCfg = Release|Any CPU
+		{BFD6C9F7-99F2-4BA1-B149-C9CFBF26A86B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

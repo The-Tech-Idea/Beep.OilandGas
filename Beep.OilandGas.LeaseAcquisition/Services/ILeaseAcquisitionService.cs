@@ -552,7 +552,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         public string LeaseId { get; set; } = string.Empty;
         public bool IsExecuted { get; set; }
         public DateTime? ExecutionDate { get; set; }
-        public string ExecutionStatus { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
         public List<string> SignatoryStatus { get; set; } = new();
     }
 

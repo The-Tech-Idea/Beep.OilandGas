@@ -690,13 +690,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             {
                 if (_reserveAccountingService != null)
                 {
-                    var reserves = await _reserveAccountingService.GetLatestReservesAsync(assetId, DateTime.UtcNow, cn);
-                    if (reserves != null)
+                    var latestReserves = await _reserveAccountingService.GetLatestReservesAsync(assetId, DateTime.UtcNow, cn);
+                    if (latestReserves != null)
                     {
-                        return (reserves.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
-                               (reserves.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0) +
-                               (reserves.PROVED_DEVELOPED_GAS_RESERVES ?? 0) +
-                               (reserves.PROVED_UNDEVELOPED_GAS_RESERVES ?? 0);
+                        return (latestReserves.PROVED_DEVELOPED_OIL_RESERVES ?? 0) +
+                               (latestReserves.PROVED_UNDEVELOPED_OIL_RESERVES ?? 0) +
+                               (latestReserves.PROVED_DEVELOPED_GAS_RESERVES ?? 0) +
+                               (latestReserves.PROVED_UNDEVELOPED_GAS_RESERVES ?? 0);
                     }
                 }
 

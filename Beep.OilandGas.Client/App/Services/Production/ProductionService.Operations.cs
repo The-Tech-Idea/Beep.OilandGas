@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<PRODUCTION_COSTS, PRODUCTION_COSTS>("/api/production/operations/create", request, null, cancellationToken);
+                return await PostAsync<PRODUCTION_COSTS, PRODUCTION_COSTS>("/api/production/operations/create", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -23,7 +23,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (string.IsNullOrEmpty(operationId)) throw new ArgumentNullException(nameof(operationId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<PRODUCTION_COSTS>($"/api/production/operations/{Uri.EscapeDataString(operationId)}", null, cancellationToken);
+                return await GetAsync<PRODUCTION_COSTS>($"/api/production/operations/{Uri.EscapeDataString(operationId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -32,7 +32,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
             if (string.IsNullOrEmpty(operationId)) throw new ArgumentNullException(nameof(operationId));
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PutAsync<PRODUCTION_COSTS, PRODUCTION_COSTS>($"/api/production/operations/{Uri.EscapeDataString(operationId)}", request, null, cancellationToken);
+                return await PutAsync<PRODUCTION_COSTS, PRODUCTION_COSTS>($"/api/production/operations/{Uri.EscapeDataString(operationId)}", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -40,7 +40,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<PRODUCTION_ALLOCATION>($"/api/production/data/{Uri.EscapeDataString(wellId)}", null, cancellationToken);
+                return await GetAsync<PRODUCTION_ALLOCATION>($"/api/production/data/{Uri.EscapeDataString(wellId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -49,7 +49,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (dateRange == null) throw new ArgumentNullException(nameof(dateRange));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<DateRangeRequest, List<PRODUCTION_ALLOCATION>>($"/api/production/history/{Uri.EscapeDataString(wellId)}", dateRange, null, cancellationToken);
+                return await PostAsync<DateRangeRequest, List<PRODUCTION_ALLOCATION>>($"/api/production/history/{Uri.EscapeDataString(wellId)}", dateRange, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -61,7 +61,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
                 var endpoint = BuildRequestUriWithParams("/api/production/record", queryParams);
-                return await PostAsync<PRODUCTION_ALLOCATION, PRODUCTION_ALLOCATION>(endpoint, productionRecord, null, cancellationToken);
+                return await PostAsync<PRODUCTION_ALLOCATION, PRODUCTION_ALLOCATION>(endpoint, productionRecord, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }

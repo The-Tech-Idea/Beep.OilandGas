@@ -1,8 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
-using Beep.OilandGas.Models.Data.PipelineAnalysis;
+
 
 namespace Beep.OilandGas.Client.App.Services.Analysis
 {
@@ -16,7 +18,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
 
             if (AccessMode == ServiceAccessMode.Local)
             {
-                var service = GetLocalService<Beep.OilandGas.PipelineAnalysis.Services.IPipelineAnalysisService>();
+                var service = GetLocalService<IPipelineAnalysisService>();
                 var result = await service.AnalyzePipelineFlowAsync(request.PipelineId, request.FlowRate, request.InletPressure);
 
                 return new PipelineFlowAnalysisResult
@@ -36,7 +38,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
             }
 
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<Beep.OilandGas.Models.Data.Calculations.AnalyzePipelineFlowRequest, PipelineFlowAnalysisResult>("/api/pipeline/analyze-flow", request, null, cancellationToken);
+                return await PostAsync<AnalyzePipelineFlowRequest, PipelineFlowAnalysisResult>("/api/pipeline/analyze-flow", request, cancellationToken);
             
             throw new InvalidOperationException($"Untitled AccessMode: {AccessMode}");
         }
@@ -45,7 +47,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GAS_PIPELINE_FLOW_PROPERTIES, PIPELINE_FLOW_ANALYSIS_RESULT>("/api/pipeline/pressure-drop", request, null, cancellationToken);
+                return await PostAsync<GAS_PIPELINE_FLOW_PROPERTIES, PIPELINE_FLOW_ANALYSIS_RESULT>("/api/pipeline/pressure-drop", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -53,7 +55,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (string.IsNullOrEmpty(pipelineId)) throw new ArgumentNullException(nameof(pipelineId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<PIPELINE_CAPACITY_RESULT>($"/api/pipeline/{pipelineId}/capacity", null, cancellationToken);
+                return await GetAsync<PIPELINE_CAPACITY_RESULT>($"/api/pipeline/{pipelineId}/capacity", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -61,7 +63,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<PIPELINE_PROPERTIES, PIPELINE_DESIGN>("/api/pipeline/design", request, null, cancellationToken);
+                return await PostAsync<PIPELINE_PROPERTIES, PIPELINE_DESIGN>("/api/pipeline/design", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -69,7 +71,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (string.IsNullOrEmpty(pipelineId)) throw new ArgumentNullException(nameof(pipelineId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<PIPELINE_RISK_ASSESSMENT>($"/api/pipeline/{pipelineId}/integrity", null, cancellationToken);
+                return await GetAsync<PIPELINE_RISK_ASSESSMENT>($"/api/pipeline/{pipelineId}/integrity", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

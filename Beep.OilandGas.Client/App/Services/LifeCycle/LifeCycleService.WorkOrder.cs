@@ -13,7 +13,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<WorkOrderEntity, WorkOrderEntity>("/api/lifecycle/workorder/create", request, null, cancellationToken);
+                return await PostAsync<WorkOrderEntity, WorkOrderEntity>("/api/lifecycle/workorder/create", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -21,7 +21,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
         {
             if (string.IsNullOrEmpty(assetId)) throw new ArgumentNullException(nameof(assetId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<WorkOrderEntity>>($"/api/lifecycle/workorder/asset/{Uri.EscapeDataString(assetId)}", null, cancellationToken);
+                return await GetAsync<List<WorkOrderEntity>>($"/api/lifecycle/workorder/asset/{Uri.EscapeDataString(assetId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
             if (string.IsNullOrEmpty(workOrderId)) throw new ArgumentNullException(nameof(workOrderId));
             if (status == null) throw new ArgumentNullException(nameof(status));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PutAsync<WorkOrderEntity, WorkOrderEntity>($"/api/lifecycle/workorder/{Uri.EscapeDataString(workOrderId)}/status", status, null, cancellationToken);
+                return await PutAsync<WorkOrderEntity, WorkOrderEntity>($"/api/lifecycle/workorder/{Uri.EscapeDataString(workOrderId)}/status", status, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
         {
             if (string.IsNullOrEmpty(workOrderId)) throw new ArgumentNullException(nameof(workOrderId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<WorkOrderEntity>($"/api/lifecycle/workorder/{Uri.EscapeDataString(workOrderId)}", null, cancellationToken);
+                return await GetAsync<WorkOrderEntity>($"/api/lifecycle/workorder/{Uri.EscapeDataString(workOrderId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -47,7 +47,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
             if (string.IsNullOrEmpty(workOrderId)) throw new ArgumentNullException(nameof(workOrderId));
             if (assignment == null) throw new ArgumentNullException(nameof(assignment));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PutAsync<WorkOrderEntity, WorkOrderEntity>($"/api/lifecycle/workorder/{Uri.EscapeDataString(workOrderId)}/assign", assignment, null, cancellationToken);
+                return await PutAsync<WorkOrderEntity, WorkOrderEntity>($"/api/lifecycle/workorder/{Uri.EscapeDataString(workOrderId)}/assign", assignment, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.Data.OilProperties;
-using Beep.OilandGas.Models.Data.GasProperties;
-using Beep.OilandGas.Models.Data.HeatMap;
-using Beep.OilandGas.Models.Data.OilProperties;
-using Beep.OilandGas.Models.Data.GasProperties;
-using Beep.OilandGas.Models.Data.HeatMap;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Common;
+using Beep.OilandGas.Models.Data.GasProperties;
+using Beep.OilandGas.Models.Data.HeatMap;
+using Beep.OilandGas.Models.Data.OilProperties;
+using GasComposition = Beep.OilandGas.Models.Data.GasProperties.GasComposition;
 
 namespace Beep.OilandGas.Client.App.Services.Properties
 {

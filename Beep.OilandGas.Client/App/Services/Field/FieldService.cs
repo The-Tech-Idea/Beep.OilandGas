@@ -20,7 +20,7 @@ namespace Beep.OilandGas.Client.App.Services.Field
             if (string.IsNullOrEmpty(fieldId)) throw new ArgumentException("Field ID is required", nameof(fieldId));
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                await PostAsync<object, object>($"/api/fieldorchestrator/current/{Uri.EscapeDataString(fieldId)}", null!, null, cancellationToken);
+                await PostAsync<object, object>($"/api/fieldorchestrator/current/{Uri.EscapeDataString(fieldId)}", null!, cancellationToken);
                 return;
             }
             var localService = GetLocalService<IFieldLocalService>();
@@ -31,7 +31,7 @@ namespace Beep.OilandGas.Client.App.Services.Field
         public async Task<string?> GetCurrentFieldAsync(CancellationToken cancellationToken = default)
         {
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<string>("/api/fieldorchestrator/current", null, cancellationToken);
+                return await GetAsync<string>("/api/fieldorchestrator/current", cancellationToken);
             var localService = GetLocalService<IFieldLocalService>();
             if (localService == null) throw new InvalidOperationException("IFieldLocalService not available");
             return await localService.GetCurrentFieldAsync();
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.Client.App.Services.Field
         {
             if (string.IsNullOrEmpty(fieldId)) throw new ArgumentException("Field ID is required", nameof(fieldId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/fieldorchestrator/field/{Uri.EscapeDataString(fieldId)}", null, cancellationToken);
+                return await GetAsync<object>($"/api/fieldorchestrator/field/{Uri.EscapeDataString(fieldId)}", cancellationToken);
             var localService = GetLocalService<IFieldLocalService>();
             if (localService == null) throw new InvalidOperationException("IFieldLocalService not available");
             return await localService.GetFieldDetailsAsync(fieldId);
@@ -51,7 +51,7 @@ namespace Beep.OilandGas.Client.App.Services.Field
         {
             if (string.IsNullOrEmpty(fieldId)) throw new ArgumentException("Field ID is required", nameof(fieldId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/fieldorchestrator/field/{Uri.EscapeDataString(fieldId)}/wells", null, cancellationToken);
+                return await GetAsync<object>($"/api/fieldorchestrator/field/{Uri.EscapeDataString(fieldId)}/wells", cancellationToken);
             var localService = GetLocalService<IFieldLocalService>();
             if (localService == null) throw new InvalidOperationException("IFieldLocalService not available");
             return await localService.GetFieldWellsAsync(fieldId);
@@ -61,7 +61,7 @@ namespace Beep.OilandGas.Client.App.Services.Field
         {
             if (string.IsNullOrEmpty(fieldId)) throw new ArgumentException("Field ID is required", nameof(fieldId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/fieldorchestrator/field/{Uri.EscapeDataString(fieldId)}/production-summary", null, cancellationToken);
+                return await GetAsync<object>($"/api/fieldorchestrator/field/{Uri.EscapeDataString(fieldId)}/production-summary", cancellationToken);
             var localService = GetLocalService<IFieldLocalService>();
             if (localService == null) throw new InvalidOperationException("IFieldLocalService not available");
             return await localService.GetFieldProductionSummaryAsync(fieldId);

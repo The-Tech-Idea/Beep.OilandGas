@@ -103,7 +103,7 @@ namespace Beep.OilandGas.Client.App.Services.{ServiceName}
         {
             if (string.IsNullOrEmpty(id)) throw new ArgumentNullException(nameof(id));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<EntityResult>($"/api/{endpoint}/{Uri.EscapeDataString(id)}", null, cancellationToken);
+                return await GetAsync<EntityResult>($"/api/{endpoint}/{Uri.EscapeDataString(id)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -111,7 +111,7 @@ namespace Beep.OilandGas.Client.App.Services.{ServiceName}
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<EntityRequest, EntityResult>("/api/{endpoint}/create", request, null, cancellationToken);
+                return await PostAsync<EntityRequest, EntityResult>("/api/{endpoint}/create", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -120,7 +120,7 @@ namespace Beep.OilandGas.Client.App.Services.{ServiceName}
             if (string.IsNullOrEmpty(id)) throw new ArgumentNullException(nameof(id));
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PutAsync<EntityRequest, EntityResult>($"/api/{endpoint}/{Uri.EscapeDataString(id)}", request, null, cancellationToken);
+                return await PutAsync<EntityRequest, EntityResult>($"/api/{endpoint}/{Uri.EscapeDataString(id)}", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -128,7 +128,7 @@ namespace Beep.OilandGas.Client.App.Services.{ServiceName}
         {
             if (string.IsNullOrEmpty(parentId)) throw new ArgumentNullException(nameof(parentId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<EntityResult>>($"/api/{endpoint}/parent/{Uri.EscapeDataString(parentId)}", null, cancellationToken);
+                return await GetAsync<List<EntityResult>>($"/api/{endpoint}/parent/{Uri.EscapeDataString(parentId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -140,7 +140,7 @@ namespace Beep.OilandGas.Client.App.Services.{ServiceName}
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
                 var endpoint = BuildRequestUriWithParams("/api/{endpoint}/save", queryParams);
-                return await PostAsync<EntityResult, EntityResult>(endpoint, entity, null, cancellationToken);
+                return await PostAsync<EntityResult, EntityResult>(endpoint, entity, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -248,7 +248,7 @@ var endpoint = BuildRequestUriWithParams("/api/{endpoint}", queryParams);
 ### Access Mode Check
 ```csharp
 if (AccessMode == ServiceAccessMode.Remote)
-    return await GetAsync<EntityType>("/api/endpoint", null, cancellationToken);
+    return await GetAsync<EntityType>("/api/endpoint", cancellationToken);
 // For local mode, inject and call the actual service
 throw new InvalidOperationException("Local mode not yet implemented");
 ```

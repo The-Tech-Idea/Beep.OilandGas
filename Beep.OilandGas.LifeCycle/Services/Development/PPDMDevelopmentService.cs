@@ -15,14 +15,16 @@ using Beep.OilandGas.GasLift.Calculations;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.PipelineAnalysis;
 using Beep.OilandGas.PipelineAnalysis.Calculations;
-using Beep.OilandGas.PipelineAnalysis.Models;
-using Beep.OilandGas.CompressorAnalysis;
+
 using Beep.OilandGas.CompressorAnalysis.Calculations;
-using Beep.OilandGas.CompressorAnalysis.Models;
+
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
+using Beep.OilandGas.Models.Data.CompressorAnalysis;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.LifeCycle.Services.Development
 {
@@ -1660,7 +1662,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             try
             {
                 _logger?.LogInformation("Constructing facility: {FacilityId} in field: {FieldId}", facilityId, fieldId);
-using Beep.OilandGas.Models.Data.PipelineAnalysis;
+
 
                 // Use existing CreateFacilityForFieldAsync method
                 return await CreateFacilityForFieldAsync(fieldId, facilityData, userId);

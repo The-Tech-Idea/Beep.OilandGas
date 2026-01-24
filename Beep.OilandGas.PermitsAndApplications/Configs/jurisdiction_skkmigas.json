@@ -1,0 +1,30 @@
+{
+  "authority": "SKKMigas",
+  "name": "Indonesia SKK Migas",
+  "country": "Indonesia",
+  "templates": [
+    {
+      "formCode": "SKKMIGAS_DRILLING_PERMIT",
+      "formName": "SKK Migas Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "SKKMIGAS_ENV_PERMIT",
+      "formName": "SKK Migas Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

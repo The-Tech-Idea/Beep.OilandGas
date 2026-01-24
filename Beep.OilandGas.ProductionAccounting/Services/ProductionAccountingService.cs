@@ -79,7 +79,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _fcService = fcService ?? throw new ArgumentNullException(nameof(fcService));
             _amortizationService = amortizationService ?? throw new ArgumentNullException(nameof(amortizationService));
             _accountingServices = accountingServices;
-            _glService = _accountingServices?.JournalEntries ?? glService ?? throw new ArgumentNullException(nameof(glService));
+            _glService = glService ?? throw new ArgumentNullException(nameof(glService));
             _revenueService = revenueService ?? throw new ArgumentNullException(nameof(revenueService));
             _measurementService = measurementService ?? throw new ArgumentNullException(nameof(measurementService));
             _pricingService = pricingService ?? throw new ArgumentNullException(nameof(pricingService));

@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
 
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ProductionForecasting
 {
     public partial class PRODUCTION_FORECAST : ModelEntityBase {
@@ -21,8 +22,8 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
             set { SetProperty(ref RESERVOIR_FORECAST_PROPERTIES_IDValue, value); }
         }
 
-        private String FORECAST_TYPEValue;
-        public String FORECAST_TYPE
+        private ForecastType FORECAST_TYPEValue;
+        public ForecastType FORECAST_TYPE
         {
             get { return this.FORECAST_TYPEValue; }
             set { SetProperty(ref FORECAST_TYPEValue, value); }
@@ -135,6 +136,16 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
             set { SetProperty(ref FORECAST_START_DATEValue, value); }
 
         }
+        private List<FORECAST_POINT>? ForecastPointsValue = new List<FORECAST_POINT>();
+
+        public List<FORECAST_POINT>? FORECAST_POINTS
+        {
+            get { return this.ForecastPointsValue; }
+            set { SetProperty(ref ForecastPointsValue, value); }
+        }
+
+      
+        
     }
 }
 

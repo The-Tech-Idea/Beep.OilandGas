@@ -14,7 +14,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<CompressorOperatingConditions, CompressorPowerResult>("/api/compressor/analyze", request, null, cancellationToken);
+                return await PostAsync<CompressorOperatingConditions, CompressorPowerResult>("/api/compressor/analyze", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -22,7 +22,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<CENTRIFUGAL_COMPRESSOR_PROPERTIES, COMPRESSOR_POWER_RESULT>("/api/compressor/design/centrifugal", request, null, cancellationToken);
+                return await PostAsync<CENTRIFUGAL_COMPRESSOR_PROPERTIES, COMPRESSOR_POWER_RESULT>("/api/compressor/design/centrifugal", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<RECIPROCATING_COMPRESSOR_PROPERTIES, COMPRESSOR_POWER_RESULT>("/api/compressor/design/reciprocating", request, null, cancellationToken);
+                return await PostAsync<RECIPROCATING_COMPRESSOR_PROPERTIES, COMPRESSOR_POWER_RESULT>("/api/compressor/design/reciprocating", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (string.IsNullOrEmpty(compressorId)) throw new ArgumentNullException(nameof(compressorId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<COMPRESSOR_OPERATING_CONDITIONS>($"/api/compressor/{compressorId}/performance", null, cancellationToken);
+                return await GetAsync<COMPRESSOR_OPERATING_CONDITIONS>($"/api/compressor/{compressorId}/performance", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -46,7 +46,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<CompressorOperatingConditions, CompressorPowerResult>("/api/compressor/power", request, null, cancellationToken);
+                return await PostAsync<CompressorOperatingConditions, CompressorPowerResult>("/api/compressor/power", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

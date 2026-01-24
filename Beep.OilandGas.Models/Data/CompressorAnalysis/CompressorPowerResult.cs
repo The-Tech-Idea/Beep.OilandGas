@@ -140,6 +140,11 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
             set { SetProperty(ref OverallEfficiencyValue, value); }
 
         }
+
+        public decimal PolytropicEfficiency { get; set; }
+        public decimal AdiabaticEfficiency { get; set; }
+        public decimal? CylinderDisplacement { get; set; }
+        public decimal? VolumetricEfficiency { get; set; }
     }
 }
 

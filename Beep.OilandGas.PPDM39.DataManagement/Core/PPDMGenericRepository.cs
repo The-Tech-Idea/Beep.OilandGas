@@ -14,6 +14,7 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.Core
 {
@@ -2644,6 +2645,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
             }
 
             return value;
+        }
+
+        public async Task InsertAsync(NodalAnalysisResult result, object value)
+        {
+            throw new NotImplementedException();
         }
 
         #endregion

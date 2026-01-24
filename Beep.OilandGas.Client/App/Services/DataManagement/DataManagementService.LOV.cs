@@ -13,7 +13,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         {
             if (string.IsNullOrEmpty(lovType)) throw new ArgumentException("LOV type is required", nameof(lovType));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<object>>($"/api/ppdm39lov/{Uri.EscapeDataString(lovType)}", null, cancellationToken);
+                return await GetAsync<List<object>>($"/api/ppdm39lov/{Uri.EscapeDataString(lovType)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -21,7 +21,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         {
             if (string.IsNullOrEmpty(lovType)) throw new ArgumentException("LOV type is required", nameof(lovType));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<object>>($"/api/ppdm39lov/type/{Uri.EscapeDataString(lovType)}", null, cancellationToken);
+                return await GetAsync<List<object>>($"/api/ppdm39lov/type/{Uri.EscapeDataString(lovType)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             if (string.IsNullOrEmpty(lovType)) throw new ArgumentException("LOV type is required", nameof(lovType));
             if (string.IsNullOrEmpty(code)) throw new ArgumentException("Code is required", nameof(code));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/ppdm39lov/{Uri.EscapeDataString(lovType)}/{Uri.EscapeDataString(code)}", null, cancellationToken);
+                return await GetAsync<object>($"/api/ppdm39lov/{Uri.EscapeDataString(lovType)}/{Uri.EscapeDataString(code)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             {
                 var queryParams = new Dictionary<string, string> { ["userId"] = userId };
                 var endpoint = BuildRequestUriWithParams("/api/ppdm39lov", queryParams);
-                return await PostAsync<object, object>(endpoint, lovEntry, null, cancellationToken);
+                return await PostAsync<object, object>(endpoint, lovEntry, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -54,7 +54,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             {
                 var queryParams = new Dictionary<string, string> { ["userId"] = userId };
                 var endpoint = BuildRequestUriWithParams($"/api/ppdm39lov/{Uri.EscapeDataString(lovId)}", queryParams);
-                return await PutAsync<object, object>(endpoint, lovEntry, null, cancellationToken);
+                return await PutAsync<object, object>(endpoint, lovEntry, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -66,7 +66,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             {
                 var queryParams = new Dictionary<string, string> { ["userId"] = userId };
                 var endpoint = BuildRequestUriWithParams($"/api/ppdm39lov/{Uri.EscapeDataString(lovId)}", queryParams);
-                return await DeleteAsync<object>(endpoint, null, cancellationToken);
+                return await DeleteAsync<object>(endpoint, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -75,7 +75,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         {
             if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("Table name is required", nameof(tableName));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<object>>($"/api/ppdm39lov/reference/{Uri.EscapeDataString(tableName)}", null, cancellationToken);
+                return await GetAsync<List<object>>($"/api/ppdm39lov/reference/{Uri.EscapeDataString(tableName)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

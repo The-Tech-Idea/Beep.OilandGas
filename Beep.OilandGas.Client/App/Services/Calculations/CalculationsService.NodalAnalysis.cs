@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<ReservoirProperties, OperatingPoint>("/api/nodalanalysis/analyze", request, null, cancellationToken);
+                return await PostAsync<ReservoirProperties, OperatingPoint>("/api/nodalanalysis/analyze", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -23,7 +23,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<NODAL_RESERVOIR_PROPERTIES, NODAL_ANALYSIS_RESULT>("/api/nodalanalysis/optimize", request, null, cancellationToken);
+                return await PostAsync<NODAL_RESERVOIR_PROPERTIES, NODAL_ANALYSIS_RESULT>("/api/nodalanalysis/optimize", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -35,7 +35,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
                 var endpoint = BuildRequestUriWithParams("/api/nodalanalysis/result", queryParams);
-                return await PostAsync<NODAL_ANALYSIS_RESULT, NODAL_ANALYSIS_RESULT>(endpoint, result, null, cancellationToken);
+                return await PostAsync<NODAL_ANALYSIS_RESULT, NODAL_ANALYSIS_RESULT>(endpoint, result, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentException("Well ID is required", nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<NODAL_ANALYSIS_RESULT>>($"/api/nodalanalysis/history/{Uri.EscapeDataString(wellId)}", null, cancellationToken);
+                return await GetAsync<List<NODAL_ANALYSIS_RESULT>>($"/api/nodalanalysis/history/{Uri.EscapeDataString(wellId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

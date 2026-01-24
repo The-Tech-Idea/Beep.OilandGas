@@ -152,5 +152,8 @@ namespace Beep.OilandGas.Models.Data.ProspectIdentification
             set { SetProperty(ref RiskFactorsValue, value); }
 
         }
+
+        public string Potential { get; set; }
+        public string FieldId { get; set; }
     }
 }

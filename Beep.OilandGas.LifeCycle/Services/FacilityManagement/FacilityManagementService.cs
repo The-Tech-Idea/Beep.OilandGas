@@ -14,6 +14,9 @@ using Beep.OilandGas.LifeCycle.Services.Integration;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.Models.Data.Pumps;
 
 namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
 {
@@ -67,13 +70,13 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                     entityType, _connectionName, "FACILITY", null);
 
-                var facility = new FACILITY();
-                facility.FACILITY_NAME = request.FacilityName;
-                facility.FIELD_ID = _defaults.FormatIdForTable("FACILITY", request.FieldId);
-                facility.FACILITY_TYPE = request.FacilityType;
-                facility.FACILITY_PURPOSE = request.FacilityPurpose;
-                if (request.Capacity.HasValue)
-                    facility.CAPACITY = request.Capacity.Value;
+                var facility = new FACILITY
+                {
+                    FACILITY_SHORT_NAME = request.FacilityName,
+                    PRIMARY_FIELD_ID = _defaults.FormatIdForTable("FACILITY", request.FieldId),
+                    FACILITY_TYPE = request.FacilityType,
+                    FACILITY_FUNCTION = request.FacilityPurpose
+                };
                 facility.ACTIVE_IND = "Y";
 
                 if (facility is IPPDMEntity entity)
@@ -81,13 +84,18 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                 var result = await repo.InsertAsync(facility, userId);
                 var createdFacility = result as FACILITY ?? throw new InvalidOperationException("Failed to create facility");
 
+                if (!string.IsNullOrWhiteSpace(request.FieldId))
+                {
+                    await InsertFacilityFieldLinkAsync(createdFacility.FACILITY_ID ?? string.Empty, request.FieldId, createdFacility.FACILITY_TYPE ?? request.FacilityType ?? string.Empty, userId);
+                }
+
                 _logger?.LogInformation("Facility created: {FacilityId}, Name: {FacilityName}", createdFacility.FACILITY_ID, createdFacility.FACILITY_NAME);
 
                 return new FacilityResponse
                 {
                     FacilityId = createdFacility.FACILITY_ID,
-                    FacilityName = createdFacility.FACILITY_NAME ?? string.Empty,
-                    FieldId = createdFacility.FIELD_ID ?? string.Empty,
+                    FacilityName = createdFacility.FACILITY_SHORT_NAME ?? string.Empty,
+                    FieldId = request.FieldId ?? string.Empty,
                     Status = "ACTIVE",
                     Properties = new Dictionary<string, object>
                     {
@@ -121,8 +129,8 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                 return new FacilityResponse
                 {
                     FacilityId = facilityEntity.FACILITY_ID,
-                    FacilityName = facilityEntity.FACILITY_NAME ?? string.Empty,
-                    FieldId = facilityEntity.FIELD_ID ?? string.Empty,
+                    FacilityName = facilityEntity.FACILITY_SHORT_NAME ?? string.Empty,
+                    FieldId = facilityEntity.PRIMARY_FIELD_ID ?? string.Empty,
                     Status = facilityEntity.ACTIVE_IND == "Y" ? "ACTIVE" : "INACTIVE",
                     Properties = new Dictionary<string, object>
                     {
@@ -251,27 +259,75 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                     throw new InvalidOperationException($"Facility not found: {request.FacilityId}");
                 }
 
-                // Store equipment data in FACILITY_EQUIPMENT table
-                var metadata = await _metadata.GetTableMetadataAsync("FACILITY_EQUIPMENT");
-                if (metadata != null)
+                var equipmentMetadata = await _metadata.GetTableMetadataAsync("EQUIPMENT");
+                if (equipmentMetadata == null)
                 {
-                    var entityType = typeof(FACILITY_EQUIPMENT);
-                    var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                        entityType, _connectionName, "FACILITY_EQUIPMENT", null);
-
-                    var equipment = new FACILITY_EQUIPMENT();
-                    equipment.FACILITY_ID = _defaults.FormatIdForTable("FACILITY_EQUIPMENT", request.FacilityId);
-                    equipment.EQUIPMENT_TYPE = request.EquipmentType;
-                    equipment.EQUIPMENT_NAME = request.EquipmentName;
-                    equipment.MANUFACTURER = request.Manufacturer;
-                    equipment.MODEL = request.Model;
-                    if (request.InstallationDate.HasValue)
-                        equipment.INSTALLATION_DATE = request.InstallationDate.Value;
-
-                    if (equipment is IPPDMEntity equipmentEntity)
-                        _commonColumnHandler.PrepareForInsert(equipmentEntity, userId);
-                    await repo.InsertAsync(equipment, userId);
+                    throw new InvalidOperationException("EQUIPMENT table metadata not found");
                 }
+
+                var facilityEquipmentMetadata = await _metadata.GetTableMetadataAsync("FACILITY_EQUIPMENT");
+                if (facilityEquipmentMetadata == null)
+                {
+                    throw new InvalidOperationException("FACILITY_EQUIPMENT table metadata not found");
+                }
+
+                var formattedFacilityId = _defaults.FormatIdForTable("FACILITY_EQUIPMENT", request.FacilityId);
+                var facilityType = facility.Properties != null &&
+                                   facility.Properties.TryGetValue("FacilityType", out var facilityTypeValue)
+                    ? facilityTypeValue?.ToString()
+                    : null;
+
+                var equipmentId = Guid.NewGuid().ToString();
+                var formattedEquipmentId = _defaults.FormatIdForTable("EQUIPMENT", equipmentId);
+
+                // Create equipment record
+                var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(EQUIPMENT), _connectionName, "EQUIPMENT", null);
+
+                var equipment = new EQUIPMENT
+                {
+                    EQUIPMENT_ID = formattedEquipmentId,
+                    EQUIPMENT_TYPE = request.EquipmentType,
+                    EQUIPMENT_NAME = request.EquipmentName ?? request.EquipmentType
+                };
+                equipment.ACTIVE_IND = _defaults.GetActiveIndicatorYes();
+
+                var descriptionParts = new List<string>();
+                if (!string.IsNullOrWhiteSpace(request.Manufacturer))
+                    descriptionParts.Add($"Manufacturer: {request.Manufacturer}");
+                if (!string.IsNullOrWhiteSpace(request.Model))
+                    descriptionParts.Add($"Model: {request.Model}");
+                if (descriptionParts.Count > 0)
+                    equipment.DESCRIPTION = string.Join("; ", descriptionParts);
+
+                if (equipment is IPPDMEntity equipmentEntity)
+                    _commonColumnHandler.PrepareForInsert(equipmentEntity, userId);
+                await equipmentRepo.InsertAsync(equipment, userId);
+
+                // Link equipment to facility
+                var facilityEquipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(FACILITY_EQUIPMENT), _connectionName, "FACILITY_EQUIPMENT", null);
+
+                var installObsNo = await GetNextFacilityInstallObsNoAsync(formattedFacilityId, formattedEquipmentId);
+
+                var facilityEquipment = new FACILITY_EQUIPMENT
+                {
+                    FACILITY_ID = formattedFacilityId,
+                    FACILITY_TYPE = facilityType ?? string.Empty,
+                    EQUIPMENT_ID = formattedEquipmentId,
+                    INSTALL_OBS_NO = installObsNo,
+                    INSTALL_DATE = request.InstallationDate,
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                    EQUIPMENT_TYPE = request.EquipmentType,
+                    EQUIPMENT_NAME = request.EquipmentName,
+                    MANUFACTURER = request.Manufacturer,
+                    MODEL = request.Model,
+                    INSTALLATION_DATE = request.InstallationDate
+                };
+
+                if (facilityEquipment is IPPDMEntity facilityEquipmentEntity)
+                    _commonColumnHandler.PrepareForInsert(facilityEquipmentEntity, userId);
+                await facilityEquipmentRepo.InsertAsync(facilityEquipment, userId);
 
                 _logger?.LogInformation("Facility equipment recorded for facility: {FacilityId}, Type: {EquipmentType}", 
                     request.FacilityId, request.EquipmentType);
@@ -287,6 +343,26 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
         #endregion
 
         #region Facility Performance
+
+        private async Task<decimal> GetNextFacilityInstallObsNoAsync(string formattedFacilityId, string formattedEquipmentId)
+        {
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(FACILITY_EQUIPMENT), _connectionName, "FACILITY_EQUIPMENT", null);
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = formattedFacilityId },
+                new AppFilter { FieldName = "EQUIPMENT_ID", Operator = "=", FilterValue = formattedEquipmentId }
+            };
+
+            var matches = await repo.GetEntitiesWithFiltersAsync(typeof(FACILITY_EQUIPMENT), "FACILITY_EQUIPMENT", filters);
+            var maxObsNo = matches.OfType<FACILITY_EQUIPMENT>()
+                .Select(m => m.INSTALL_OBS_NO)
+                .DefaultIfEmpty(0m)
+                .Max();
+
+            return maxObsNo + 1m;
+        }
 
         public async Task<FacilityPerformanceResponse> GetFacilityPerformanceAsync(string facilityId, DateTime? startDate = null, DateTime? endDate = null)
         {
@@ -442,7 +518,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
         /// <summary>
         /// Runs compressor analysis for a facility using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.Data.CompressorAnalysisResult> AnalyzeCompressorAsync(
+        public async Task<CompressorAnalysisResult> AnalyzeCompressorAsync(
             string facilityId,
             string userId = "system",
             string? equipmentId = null,
@@ -471,7 +547,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
         /// <summary>
         /// Runs pump performance analysis for a facility using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.Data.PumpAnalysisResult> AnalyzeFacilityPumpAsync(
+        public async Task<PumpAnalysisResult> AnalyzeFacilityPumpAsync(
             string facilityId,
             string userId = "system",
             string? equipmentId = null,

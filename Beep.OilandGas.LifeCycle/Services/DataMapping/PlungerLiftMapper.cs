@@ -1,6 +1,6 @@
 using System;
 using Beep.OilandGas.PPDM39.Models;
-using Beep.OilandGas.PlungerLift.Models;
+using Beep.OilandGas.Models.Data.PlungerLift;
 
 namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 {

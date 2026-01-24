@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
 
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.FlashCalculations
 {
     public partial class FLASH_CONDITIONS : ModelEntityBase {
@@ -58,7 +59,13 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
             get { return this.BUSINESS_ASSOCIATE_IDValue; }
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
-
+        private List<FLASH_COMPONENT> FeedCompositionValue;
+        public List<FLASH_COMPONENT> FEED_COMPOSITION
+        {
+            get { return this.FeedCompositionValue; }
+            set { SetProperty(ref FeedCompositionValue, value); }
+        }
+       
     }
 }
 

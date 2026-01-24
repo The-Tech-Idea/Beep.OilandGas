@@ -2,6 +2,12 @@ using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Services.Calculations;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.Models.Data.HydraulicPumps;
+using Beep.OilandGas.Models.Data.PlungerLift;
+using Beep.OilandGas.Models.Data.Pumps;
+using Beep.OilandGas.Models.Data.SuckerRodPumping;
+using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.LifeCycle.Services.Integration
@@ -107,7 +113,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
         /// <param name="userId">The user ID performing the analysis.</param>
         /// <param name="additionalParameters">Optional additional parameters for the analysis.</param>
         /// <returns>The well test analysis results.</returns>
-        public async Task<Beep.OilandGas.Models.Data.WellTestAnalysisResult> RunWellTestAnalysisAsync(
+        public async Task<WellTestAnalysisResult> RunWellTestAnalysisAsync(
             string wellId,
             string? testId = null,
             string userId = "system",
@@ -118,7 +124,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
 
             _logger?.LogInformation("Running well test analysis for well: {WellId}, TestId: {TestId}", wellId, testId);
 
-            var request = new WellTestAnalysisRequest
+            var request = new WellTestAnalysisCalculationRequest
             {
                 WellId = wellId,
                 TestId = testId,

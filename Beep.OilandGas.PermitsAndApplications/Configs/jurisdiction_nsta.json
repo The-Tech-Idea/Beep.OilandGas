@@ -1,0 +1,30 @@
+{
+  "authority": "NSTA",
+  "name": "UK North Sea Transition Authority",
+  "country": "UnitedKingdom",
+  "templates": [
+    {
+      "formCode": "NSTA_WELL_CONSENT",
+      "formName": "NSTA Well Consent",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "NSTA_ENV_STATEMENT",
+      "formName": "NSTA Environmental Statement",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

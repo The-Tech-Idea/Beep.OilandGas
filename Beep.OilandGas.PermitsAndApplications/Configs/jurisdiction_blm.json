@@ -1,0 +1,30 @@
+{
+  "authority": "BLM",
+  "name": "US Bureau of Land Management",
+  "country": "UnitedStates",
+  "templates": [
+    {
+      "formCode": "BLM_DRILLING_PERMIT",
+      "formName": "BLM Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "BLM_ENV_ASSESSMENT",
+      "formName": "BLM Environmental Assessment",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

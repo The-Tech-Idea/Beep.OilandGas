@@ -2834,6 +2834,789 @@ namespace Beep.OilandGas.Models.Data
     }
 
     #endregion
+
+    #region Decommissioning Advanced DTOs
+
+    public class WellPluggingPlan : ModelEntityBase
+    {
+        private string WellUWIValue = string.Empty;
+        public string WellUWI
+        {
+            get { return this.WellUWIValue; }
+            set { SetProperty(ref WellUWIValue, value); }
+        }
+
+        private double WellDepthValue;
+        public double WellDepth
+        {
+            get { return this.WellDepthValue; }
+            set { SetProperty(ref WellDepthValue, value); }
+        }
+
+        private int ZonesIdentifiedValue;
+        public int ZonesIdentified
+        {
+            get { return this.ZonesIdentifiedValue; }
+            set { SetProperty(ref ZonesIdentifiedValue, value); }
+        }
+
+        private double FreshwaterAquiferDepthValue;
+        public double FreshwaterAquiferDepth
+        {
+            get { return this.FreshwaterAquiferDepthValue; }
+            set { SetProperty(ref FreshwaterAquiferDepthValue, value); }
+        }
+
+        private DateTime AnalysisDateValue = DateTime.UtcNow;
+        public DateTime AnalysisDate
+        {
+            get { return this.AnalysisDateValue; }
+            set { SetProperty(ref AnalysisDateValue, value); }
+        }
+
+        private List<string> CriticalZonesValue = new();
+        public List<string> CriticalZones
+        {
+            get { return this.CriticalZonesValue; }
+            set { SetProperty(ref CriticalZonesValue, value); }
+        }
+
+        private string PluggingStrategyValue = string.Empty;
+        public string PluggingStrategy
+        {
+            get { return this.PluggingStrategyValue; }
+            set { SetProperty(ref PluggingStrategyValue, value); }
+        }
+
+        private double CementRequirementsValue;
+        public double CementRequirements
+        {
+            get { return this.CementRequirementsValue; }
+            set { SetProperty(ref CementRequirementsValue, value); }
+        }
+
+        private List<string> PlugSpecificationsValue = new();
+        public List<string> PlugSpecifications
+        {
+            get { return this.PlugSpecificationsValue; }
+            set { SetProperty(ref PlugSpecificationsValue, value); }
+        }
+
+        private int EstimatedDaysRequiredValue;
+        public int EstimatedDaysRequired
+        {
+            get { return this.EstimatedDaysRequiredValue; }
+            set { SetProperty(ref EstimatedDaysRequiredValue, value); }
+        }
+
+        private List<string> PotentialIssuesValue = new();
+        public List<string> PotentialIssues
+        {
+            get { return this.PotentialIssuesValue; }
+            set { SetProperty(ref PotentialIssuesValue, value); }
+        }
+    }
+
+    public class DecommissioningCostAnalysis : ModelEntityBase
+    {
+        private string WellUWIValue = string.Empty;
+        public string WellUWI
+        {
+            get { return this.WellUWIValue; }
+            set { SetProperty(ref WellUWIValue, value); }
+        }
+
+        private double WellDepthValue;
+        public double WellDepth
+        {
+            get { return this.WellDepthValue; }
+            set { SetProperty(ref WellDepthValue, value); }
+        }
+
+        private string WellTypeValue = string.Empty;
+        public string WellType
+        {
+            get { return this.WellTypeValue; }
+            set { SetProperty(ref WellTypeValue, value); }
+        }
+
+        private string LocationValue = string.Empty;
+        public string Location
+        {
+            get { return this.LocationValue; }
+            set { SetProperty(ref LocationValue, value); }
+        }
+
+        private DateTime AnalysisDateValue = DateTime.UtcNow;
+        public DateTime AnalysisDate
+        {
+            get { return this.AnalysisDateValue; }
+            set { SetProperty(ref AnalysisDateValue, value); }
+        }
+
+        private double WellPluggingCostValue;
+        public double WellPluggingCost
+        {
+            get { return this.WellPluggingCostValue; }
+            set { SetProperty(ref WellPluggingCostValue, value); }
+        }
+
+        private double WellheadRemovalCostValue;
+        public double WellheadRemovalCost
+        {
+            get { return this.WellheadRemovalCostValue; }
+            set { SetProperty(ref WellheadRemovalCostValue, value); }
+        }
+
+        private double SiteRestorationCostValue;
+        public double SiteRestorationCost
+        {
+            get { return this.SiteRestorationCostValue; }
+            set { SetProperty(ref SiteRestorationCostValue, value); }
+        }
+
+        private double EnvironmentalRemediationCostValue;
+        public double EnvironmentalRemediationCost
+        {
+            get { return this.EnvironmentalRemediationCostValue; }
+            set { SetProperty(ref EnvironmentalRemediationCostValue, value); }
+        }
+
+        private double AbandonmentBondCostValue;
+        public double AbandonmentBondCost
+        {
+            get { return this.AbandonmentBondCostValue; }
+            set { SetProperty(ref AbandonmentBondCostValue, value); }
+        }
+
+        private double TotalEstimatedCostValue;
+        public double TotalEstimatedCost
+        {
+            get { return this.TotalEstimatedCostValue; }
+            set { SetProperty(ref TotalEstimatedCostValue, value); }
+        }
+
+        private double PluggingCostPercentageValue;
+        public double PluggingCostPercentage
+        {
+            get { return this.PluggingCostPercentageValue; }
+            set { SetProperty(ref PluggingCostPercentageValue, value); }
+        }
+
+        private double WellheadRemovalPercentageValue;
+        public double WellheadRemovalPercentage
+        {
+            get { return this.WellheadRemovalPercentageValue; }
+            set { SetProperty(ref WellheadRemovalPercentageValue, value); }
+        }
+
+        private double SiteRestorationPercentageValue;
+        public double SiteRestorationPercentage
+        {
+            get { return this.SiteRestorationPercentageValue; }
+            set { SetProperty(ref SiteRestorationPercentageValue, value); }
+        }
+
+        private double ContingencyAmountValue;
+        public double ContingencyAmount
+        {
+            get { return this.ContingencyAmountValue; }
+            set { SetProperty(ref ContingencyAmountValue, value); }
+        }
+
+        private double TotalWithContingencyValue;
+        public double TotalWithContingency
+        {
+            get { return this.TotalWithContingencyValue; }
+            set { SetProperty(ref TotalWithContingencyValue, value); }
+        }
+    }
+
+    public class EnvironmentalRemediationAnalysis : ModelEntityBase
+    {
+        private string WellUWIValue = string.Empty;
+        public string WellUWI
+        {
+            get { return this.WellUWIValue; }
+            set { SetProperty(ref WellUWIValue, value); }
+        }
+
+        private string LocationValue = string.Empty;
+        public string Location
+        {
+            get { return this.LocationValue; }
+            set { SetProperty(ref LocationValue, value); }
+        }
+
+        private DateTime AnalysisDateValue = DateTime.UtcNow;
+        public DateTime AnalysisDate
+        {
+            get { return this.AnalysisDateValue; }
+            set { SetProperty(ref AnalysisDateValue, value); }
+        }
+
+        private List<string> PotentialContaminantsValue = new();
+        public List<string> PotentialContaminants
+        {
+            get { return this.PotentialContaminantsValue; }
+            set { SetProperty(ref PotentialContaminantsValue, value); }
+        }
+
+        private string EnvironmentalRiskLevelValue = string.Empty;
+        public string EnvironmentalRiskLevel
+        {
+            get { return this.EnvironmentalRiskLevelValue; }
+            set { SetProperty(ref EnvironmentalRiskLevelValue, value); }
+        }
+
+        private List<string> RemediationActivitiesValue = new();
+        public List<string> RemediationActivities
+        {
+            get { return this.RemediationActivitiesValue; }
+            set { SetProperty(ref RemediationActivitiesValue, value); }
+        }
+
+        private int EstimatedRemediationMonthsValue;
+        public int EstimatedRemediationMonths
+        {
+            get { return this.EstimatedRemediationMonthsValue; }
+            set { SetProperty(ref EstimatedRemediationMonthsValue, value); }
+        }
+
+        private int MonitoringPeriodYearsValue;
+        public int MonitoringPeriodYears
+        {
+            get { return this.MonitoringPeriodYearsValue; }
+            set { SetProperty(ref MonitoringPeriodYearsValue, value); }
+        }
+
+        private double LongTermLiabilityCostValue;
+        public double LongTermLiabilityCost
+        {
+            get { return this.LongTermLiabilityCostValue; }
+            set { SetProperty(ref LongTermLiabilityCostValue, value); }
+        }
+
+        private List<string> RegulatoryRequirementsValue = new();
+        public List<string> RegulatoryRequirements
+        {
+            get { return this.RegulatoryRequirementsValue; }
+            set { SetProperty(ref RegulatoryRequirementsValue, value); }
+        }
+    }
+
+    public class RegulatoryComplianceAnalysis : ModelEntityBase
+    {
+        private string WellUWIValue = string.Empty;
+        public string WellUWI
+        {
+            get { return this.WellUWIValue; }
+            set { SetProperty(ref WellUWIValue, value); }
+        }
+
+        private string JurisdictionValue = string.Empty;
+        public string Jurisdiction
+        {
+            get { return this.JurisdictionValue; }
+            set { SetProperty(ref JurisdictionValue, value); }
+        }
+
+        private string WellClassValue = string.Empty;
+        public string WellClass
+        {
+            get { return this.WellClassValue; }
+            set { SetProperty(ref WellClassValue, value); }
+        }
+
+        private DateTime AbandonmentDateValue;
+        public DateTime AbandonmentDate
+        {
+            get { return this.AbandonmentDateValue; }
+            set { SetProperty(ref AbandonmentDateValue, value); }
+        }
+
+        private DateTime AnalysisDateValue = DateTime.UtcNow;
+        public DateTime AnalysisDate
+        {
+            get { return this.AnalysisDateValue; }
+            set { SetProperty(ref AnalysisDateValue, value); }
+        }
+
+        private List<string> ApplicableRegulationsValue = new();
+        public List<string> ApplicableRegulations
+        {
+            get { return this.ApplicableRegulationsValue; }
+            set { SetProperty(ref ApplicableRegulationsValue, value); }
+        }
+
+        private List<string> ComplianceRequirementsValue = new();
+        public List<string> ComplianceRequirements
+        {
+            get { return this.ComplianceRequirementsValue; }
+            set { SetProperty(ref ComplianceRequirementsValue, value); }
+        }
+
+        private DateTime ComplianceDeadlineDateValue;
+        public DateTime ComplianceDeadlineDate
+        {
+            get { return this.ComplianceDeadlineDateValue; }
+            set { SetProperty(ref ComplianceDeadlineDateValue, value); }
+        }
+
+        private List<string> RequiredDocumentationValue = new();
+        public List<string> RequiredDocumentation
+        {
+            get { return this.RequiredDocumentationValue; }
+            set { SetProperty(ref RequiredDocumentationValue, value); }
+        }
+
+        private string BondingRequirementsValue = string.Empty;
+        public string BondingRequirements
+        {
+            get { return this.BondingRequirementsValue; }
+            set { SetProperty(ref BondingRequirementsValue, value); }
+        }
+
+        private List<string> InspectionRequirementsValue = new();
+        public List<string> InspectionRequirements
+        {
+            get { return this.InspectionRequirementsValue; }
+            set { SetProperty(ref InspectionRequirementsValue, value); }
+        }
+
+        private double ComplianceCostEstimateValue;
+        public double ComplianceCostEstimate
+        {
+            get { return this.ComplianceCostEstimateValue; }
+            set { SetProperty(ref ComplianceCostEstimateValue, value); }
+        }
+    }
+
+    public class SalvageValueAnalysis : ModelEntityBase
+    {
+        private string WellUWIValue = string.Empty;
+        public string WellUWI
+        {
+            get { return this.WellUWIValue; }
+            set { SetProperty(ref WellUWIValue, value); }
+        }
+
+        private string WellTypeValue = string.Empty;
+        public string WellType
+        {
+            get { return this.WellTypeValue; }
+            set { SetProperty(ref WellTypeValue, value); }
+        }
+
+        private double WellDepthValue;
+        public double WellDepth
+        {
+            get { return this.WellDepthValue; }
+            set { SetProperty(ref WellDepthValue, value); }
+        }
+
+        private DateTime AnalysisDateValue = DateTime.UtcNow;
+        public DateTime AnalysisDate
+        {
+            get { return this.AnalysisDateValue; }
+            set { SetProperty(ref AnalysisDateValue, value); }
+        }
+
+        private double EquipmentSalvageValueValue;
+        public double EquipmentSalvageValue
+        {
+            get { return this.EquipmentSalvageValueValue; }
+            set { SetProperty(ref EquipmentSalvageValueValue, value); }
+        }
+
+        private double MetalScrapValueValue;
+        public double MetalScrapValue
+        {
+            get { return this.MetalScrapValueValue; }
+            set { SetProperty(ref MetalScrapValueValue, value); }
+        }
+
+        private double WellheadEquipmentValueValue;
+        public double WellheadEquipmentValue
+        {
+            get { return this.WellheadEquipmentValueValue; }
+            set { SetProperty(ref WellheadEquipmentValueValue, value); }
+        }
+
+        private double TotalSalvageValueValue;
+        public double TotalSalvageValue
+        {
+            get { return this.TotalSalvageValueValue; }
+            set { SetProperty(ref TotalSalvageValueValue, value); }
+        }
+
+        private double SalvageValuePercentageOfDecomCostValue;
+        public double SalvageValuePercentageOfDecomCost
+        {
+            get { return this.SalvageValuePercentageOfDecomCostValue; }
+            set { SetProperty(ref SalvageValuePercentageOfDecomCostValue, value); }
+        }
+
+        private List<string> SalvageableItemsValue = new();
+        public List<string> SalvageableItems
+        {
+            get { return this.SalvageableItemsValue; }
+            set { SetProperty(ref SalvageableItemsValue, value); }
+        }
+
+        private double TransportationCostValue;
+        public double TransportationCost
+        {
+            get { return this.TransportationCostValue; }
+            set { SetProperty(ref TransportationCostValue, value); }
+        }
+
+        private double NetSalvageValueValue;
+        public double NetSalvageValue
+        {
+            get { return this.NetSalvageValueValue; }
+            set { SetProperty(ref NetSalvageValueValue, value); }
+        }
+    }
+
+    public class DecommissioningSchedule : ModelEntityBase
+    {
+        private string WellUWIValue = string.Empty;
+        public string WellUWI
+        {
+            get { return this.WellUWIValue; }
+            set { SetProperty(ref WellUWIValue, value); }
+        }
+
+        private double WellDepthValue;
+        public double WellDepth
+        {
+            get { return this.WellDepthValue; }
+            set { SetProperty(ref WellDepthValue, value); }
+        }
+
+        private int PriorityLevelValue;
+        public int PriorityLevel
+        {
+            get { return this.PriorityLevelValue; }
+            set { SetProperty(ref PriorityLevelValue, value); }
+        }
+
+        private DateTime PlannedStartDateValue;
+        public DateTime PlannedStartDate
+        {
+            get { return this.PlannedStartDateValue; }
+            set { SetProperty(ref PlannedStartDateValue, value); }
+        }
+
+        private DateTime AnalysisDateValue = DateTime.UtcNow;
+        public DateTime AnalysisDate
+        {
+            get { return this.AnalysisDateValue; }
+            set { SetProperty(ref AnalysisDateValue, value); }
+        }
+
+        private List<DecommissioningPhase> ProjectPhasesValue = new();
+        public List<DecommissioningPhase> ProjectPhases
+        {
+            get { return this.ProjectPhasesValue; }
+            set { SetProperty(ref ProjectPhasesValue, value); }
+        }
+
+        private int EstimatedTotalDaysValue;
+        public int EstimatedTotalDays
+        {
+            get { return this.EstimatedTotalDaysValue; }
+            set { SetProperty(ref EstimatedTotalDaysValue, value); }
+        }
+
+        private DateTime EstimatedCompletionDateValue;
+        public DateTime EstimatedCompletionDate
+        {
+            get { return this.EstimatedCompletionDateValue; }
+            set { SetProperty(ref EstimatedCompletionDateValue, value); }
+        }
+
+        private List<string> CriticalPathItemsValue = new();
+        public List<string> CriticalPathItems
+        {
+            get { return this.CriticalPathItemsValue; }
+            set { SetProperty(ref CriticalPathItemsValue, value); }
+        }
+
+        private string ScheduleRiskLevelValue = string.Empty;
+        public string ScheduleRiskLevel
+        {
+            get { return this.ScheduleRiskLevelValue; }
+            set { SetProperty(ref ScheduleRiskLevelValue, value); }
+        }
+
+        private int ContingencyDaysValue;
+        public int ContingencyDays
+        {
+            get { return this.ContingencyDaysValue; }
+            set { SetProperty(ref ContingencyDaysValue, value); }
+        }
+
+        private DateTime FinalEstimatedDateValue;
+        public DateTime FinalEstimatedDate
+        {
+            get { return this.FinalEstimatedDateValue; }
+            set { SetProperty(ref FinalEstimatedDateValue, value); }
+        }
+
+        private int EstimatedCrewSizeValue;
+        public int EstimatedCrewSize
+        {
+            get { return this.EstimatedCrewSizeValue; }
+            set { SetProperty(ref EstimatedCrewSizeValue, value); }
+        }
+
+        private List<string> EstimatedEquipmentNeedsValue = new();
+        public List<string> EstimatedEquipmentNeeds
+        {
+            get { return this.EstimatedEquipmentNeedsValue; }
+            set { SetProperty(ref EstimatedEquipmentNeedsValue, value); }
+        }
+    }
+
+    public class DecommissioningPhase : ModelEntityBase
+    {
+        private string PhaseValue = string.Empty;
+        public string Phase
+        {
+            get { return this.PhaseValue; }
+            set { SetProperty(ref PhaseValue, value); }
+        }
+
+        private int DurationValue;
+        public int Duration
+        {
+            get { return this.DurationValue; }
+            set { SetProperty(ref DurationValue, value); }
+        }
+    }
+
+    public class AbandonmentFeasibility : ModelEntityBase
+    {
+        private string WellUWIValue = string.Empty;
+        public string WellUWI
+        {
+            get { return this.WellUWIValue; }
+            set { SetProperty(ref WellUWIValue, value); }
+        }
+
+        private double WellDepthValue;
+        public double WellDepth
+        {
+            get { return this.WellDepthValue; }
+            set { SetProperty(ref WellDepthValue, value); }
+        }
+
+        private string WellStatusValue = string.Empty;
+        public string WellStatus
+        {
+            get { return this.WellStatusValue; }
+            set { SetProperty(ref WellStatusValue, value); }
+        }
+
+        private DateTime LastProductionDateValue;
+        public DateTime LastProductionDate
+        {
+            get { return this.LastProductionDateValue; }
+            set { SetProperty(ref LastProductionDateValue, value); }
+        }
+
+        private DateTime AnalysisDateValue = DateTime.UtcNow;
+        public DateTime AnalysisDate
+        {
+            get { return this.AnalysisDateValue; }
+            set { SetProperty(ref AnalysisDateValue, value); }
+        }
+
+        private string WellConditionStatusValue = string.Empty;
+        public string WellConditionStatus
+        {
+            get { return this.WellConditionStatusValue; }
+            set { SetProperty(ref WellConditionStatusValue, value); }
+        }
+
+        private bool AbandonmentFeasibleValue;
+        public bool AbandonmentFeasible
+        {
+            get { return this.AbandonmentFeasibleValue; }
+            set { SetProperty(ref AbandonmentFeasibleValue, value); }
+        }
+
+        private List<string> AbandonmentChallengesValue = new();
+        public List<string> AbandonmentChallenges
+        {
+            get { return this.AbandonmentChallengesValue; }
+            set { SetProperty(ref AbandonmentChallengesValue, value); }
+        }
+
+        private string RecommendedApproachValue = string.Empty;
+        public string RecommendedApproach
+        {
+            get { return this.RecommendedApproachValue; }
+            set { SetProperty(ref RecommendedApproachValue, value); }
+        }
+
+        private bool CanAbandonWithin12MonthsValue;
+        public bool CanAbandonWithin12Months
+        {
+            get { return this.CanAbandonWithin12MonthsValue; }
+            set { SetProperty(ref CanAbandonWithin12MonthsValue, value); }
+        }
+
+        private double AbandonmentBenefitValue;
+        public double AbandonmentBenefit
+        {
+            get { return this.AbandonmentBenefitValue; }
+            set { SetProperty(ref AbandonmentBenefitValue, value); }
+        }
+
+        private double AbandonmentCostValue;
+        public double AbandonmentCost
+        {
+            get { return this.AbandonmentCostValue; }
+            set { SetProperty(ref AbandonmentCostValue, value); }
+        }
+
+        private double NetBenefitValue;
+        public double NetBenefit
+        {
+            get { return this.NetBenefitValue; }
+            set { SetProperty(ref NetBenefitValue, value); }
+        }
+
+        private string AbandonmentRiskLevelValue = string.Empty;
+        public string AbandonmentRiskLevel
+        {
+            get { return this.AbandonmentRiskLevelValue; }
+            set { SetProperty(ref AbandonmentRiskLevelValue, value); }
+        }
+    }
+
+    public class PortfolioDecommissioningAnalysis : ModelEntityBase
+    {
+        private string FieldIdValue = string.Empty;
+        public string FieldId
+        {
+            get { return this.FieldIdValue; }
+            set { SetProperty(ref FieldIdValue, value); }
+        }
+
+        private int WellsToDecommissionValue;
+        public int WellsToDecommission
+        {
+            get { return this.WellsToDecommissionValue; }
+            set { SetProperty(ref WellsToDecommissionValue, value); }
+        }
+
+        private DateTime AnalysisDateValue = DateTime.UtcNow;
+        public DateTime AnalysisDate
+        {
+            get { return this.AnalysisDateValue; }
+            set { SetProperty(ref AnalysisDateValue, value); }
+        }
+
+        private List<PortfolioWellDecommissioning> WellAnalysesValue = new();
+        public List<PortfolioWellDecommissioning> WellAnalyses
+        {
+            get { return this.WellAnalysesValue; }
+            set { SetProperty(ref WellAnalysesValue, value); }
+        }
+
+        private double TotalEstimatedCostValue;
+        public double TotalEstimatedCost
+        {
+            get { return this.TotalEstimatedCostValue; }
+            set { SetProperty(ref TotalEstimatedCostValue, value); }
+        }
+
+        private int TotalEstimatedDaysValue;
+        public int TotalEstimatedDays
+        {
+            get { return this.TotalEstimatedDaysValue; }
+            set { SetProperty(ref TotalEstimatedDaysValue, value); }
+        }
+
+        private double AverageCostPerWellValue;
+        public double AverageCostPerWell
+        {
+            get { return this.AverageCostPerWellValue; }
+            set { SetProperty(ref AverageCostPerWellValue, value); }
+        }
+
+        private double AverageDaysPerWellValue;
+        public double AverageDaysPerWell
+        {
+            get { return this.AverageDaysPerWellValue; }
+            set { SetProperty(ref AverageDaysPerWellValue, value); }
+        }
+
+        private int PhaseCountValue;
+        public int PhaseCount
+        {
+            get { return this.PhaseCountValue; }
+            set { SetProperty(ref PhaseCountValue, value); }
+        }
+
+        private int WellsPerPhaseValue;
+        public int WellsPerPhase
+        {
+            get { return this.WellsPerPhaseValue; }
+            set { SetProperty(ref WellsPerPhaseValue, value); }
+        }
+
+        private double ContingencyPercentageValue;
+        public double ContingencyPercentage
+        {
+            get { return this.ContingencyPercentageValue; }
+            set { SetProperty(ref ContingencyPercentageValue, value); }
+        }
+
+        private double TotalWithContingencyValue;
+        public double TotalWithContingency
+        {
+            get { return this.TotalWithContingencyValue; }
+            set { SetProperty(ref TotalWithContingencyValue, value); }
+        }
+    }
+
+    public class PortfolioWellDecommissioning : ModelEntityBase
+    {
+        private string WellUWIValue = string.Empty;
+        public string WellUWI
+        {
+            get { return this.WellUWIValue; }
+            set { SetProperty(ref WellUWIValue, value); }
+        }
+
+        private double WellDepthValue;
+        public double WellDepth
+        {
+            get { return this.WellDepthValue; }
+            set { SetProperty(ref WellDepthValue, value); }
+        }
+
+        private double EstimatedCostValue;
+        public double EstimatedCost
+        {
+            get { return this.EstimatedCostValue; }
+            set { SetProperty(ref EstimatedCostValue, value); }
+        }
+
+        private int EstimatedDaysValue;
+        public int EstimatedDays
+        {
+            get { return this.EstimatedDaysValue; }
+            set { SetProperty(ref EstimatedDaysValue, value); }
+        }
+    }
+
+    #endregion
 }
 
 

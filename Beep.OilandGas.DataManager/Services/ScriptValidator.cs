@@ -1,10 +1,11 @@
-using System.Text.RegularExpressions;
+using Beep.OilandGas.DataManager.Core.Exceptions;
 using Beep.OilandGas.DataManager.Core.Interfaces;
 using Beep.OilandGas.DataManager.Core.Models;
-using Beep.OilandGas.DataManager.Core.Exceptions;
 using Microsoft.Extensions.Logging;
-using TheTechIdea.Beep.Editor;
+using System.Data.Common;
+using System.Text.RegularExpressions;
 using TheTechIdea.Beep;
+using TheTechIdea.Beep.Editor;
 
 namespace Beep.OilandGas.DataManager.Services
 {
@@ -367,26 +368,26 @@ namespace Beep.OilandGas.DataManager.Services
         {
             try
             {
-                var dbType = dataSource.DatasourceEntity?.DatabaseType?.ToLower() ?? "sqlserver";
+               
                 var paramDelim = dataSource.ParameterDelimiter;
                 string sql;
 
-                switch (dbType)
+                switch (dataSource.Dataconnection.ConnectionProp.DatabaseType)
                 {
-                    case "sqlserver":
+                    case TheTechIdea.Beep.Utilities.DataSourceType.SqlServer:
                         sql = $"SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = {paramDelim}tableName";
                         break;
-                    case "postgresql":
+                    case TheTechIdea.Beep.Utilities.DataSourceType.Postgre:
                         sql = $"SELECT COUNT(*) FROM information_schema.tables WHERE table_name = {paramDelim}tableName";
                         break;
-                    case "oracle":
+                    case TheTechIdea.Beep.Utilities.DataSourceType.Oracle:
                         sql = $"SELECT COUNT(*) FROM user_tables WHERE table_name = UPPER({paramDelim}tableName)";
                         break;
-                    case "mysql":
-                    case "mariadb":
+                    case TheTechIdea.Beep.Utilities.DataSourceType.Mysql:
+                    case TheTechIdea.Beep.Utilities.DataSourceType.MariaDB:
                         sql = $"SELECT COUNT(*) FROM information_schema.tables WHERE table_name = {paramDelim}tableName";
                         break;
-                    case "sqlite":
+                    case TheTechIdea.Beep.Utilities.DataSourceType.SqlLite:
                         sql = $"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name = {paramDelim}tableName";
                         break;
                     default:
@@ -394,7 +395,7 @@ namespace Beep.OilandGas.DataManager.Services
                         break;
                 }
 
-                var count = dataSource.GetScalar(sql, new Dictionary<string, object> { { "tableName", tableName } });
+                var count = dataSource.GetScalar(sql);
                 return count > 0;
             }
             catch (Exception ex)

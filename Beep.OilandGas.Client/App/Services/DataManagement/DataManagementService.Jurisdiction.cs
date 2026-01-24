@@ -12,7 +12,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         public async Task<List<object>> GetJurisdictionsAsync(CancellationToken cancellationToken = default)
         {
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<object>>("/api/ppdm39jurisdiction", null, cancellationToken);
+                return await GetAsync<List<object>>("/api/ppdm39jurisdiction", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -20,7 +20,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         {
             if (string.IsNullOrEmpty(jurisdictionId)) throw new ArgumentException("Jurisdiction ID is required", nameof(jurisdictionId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/ppdm39jurisdiction/{Uri.EscapeDataString(jurisdictionId)}", null, cancellationToken);
+                return await GetAsync<object>($"/api/ppdm39jurisdiction/{Uri.EscapeDataString(jurisdictionId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -29,7 +29,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             if (string.IsNullOrEmpty(jurisdictionId)) throw new ArgumentException("Jurisdiction ID is required", nameof(jurisdictionId));
             if (string.IsNullOrEmpty(entityType)) throw new ArgumentException("Entity type is required", nameof(entityType));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/ppdm39jurisdiction/{Uri.EscapeDataString(jurisdictionId)}/requirements/{Uri.EscapeDataString(entityType)}", null, cancellationToken);
+                return await GetAsync<object>($"/api/ppdm39jurisdiction/{Uri.EscapeDataString(jurisdictionId)}/requirements/{Uri.EscapeDataString(entityType)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

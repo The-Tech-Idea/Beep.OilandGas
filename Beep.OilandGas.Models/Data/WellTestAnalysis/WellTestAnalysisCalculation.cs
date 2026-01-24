@@ -222,9 +222,9 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
     /// </summary>
     public class WellTestDataPoint : ModelEntityBase
     {
-        private double TimeValue;
+        private decimal? TimeValue;
 
-        public double Time
+        public decimal? Time
 
         {
 
@@ -233,9 +233,9 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             set { SetProperty(ref TimeValue, value); }
 
         } // hours
-        private double PressureValue;
+        private decimal? PressureValue;
 
-        public double Pressure
+        public decimal? Pressure
 
         {
 

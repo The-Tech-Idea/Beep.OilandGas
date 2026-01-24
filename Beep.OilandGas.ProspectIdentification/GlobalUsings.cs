@@ -12,8 +12,6 @@ global using TheTechIdea.Beep.Editor;
 global using TheTechIdea.Beep.DataBase;
 
 // Resolve ambiguous type references - use DTO types from Models.DTOs namespace
-global using Prospect = Beep.OilandGas.Models.Data.Prospect;
-global using ProspectEvaluation = Beep.OilandGas.Models.Data.ProspectEvaluation;
-global using ProspectRanking = Beep.OilandGas.Models.Core.Interfaces.ProspectRanking;
+
 global using TheTechIdea.Beep.Report;
 

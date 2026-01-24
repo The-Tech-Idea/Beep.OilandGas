@@ -1,0 +1,30 @@
+{
+  "authority": "EPA",
+  "name": "US Environmental Protection Agency",
+  "country": "UnitedStates",
+  "templates": [
+    {
+      "formCode": "EPA_DISCHARGE_PERMIT",
+      "formName": "EPA Discharge Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION",
+        "NORM_INVOLVED_IND"
+      ]
+    },
+    {
+      "formCode": "EPA_AIR_PERMIT",
+      "formName": "EPA Air Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

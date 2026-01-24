@@ -19,7 +19,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
         public static decimal CalculateBrillBeggs(
             decimal pressure,
             decimal temperature,
-            decimal specificGravity)
+            decimal? specificGravity)
         {
             if (pressure <= 0)
                 throw new ArgumentException("Pressure must be greater than zero.", nameof(pressure));

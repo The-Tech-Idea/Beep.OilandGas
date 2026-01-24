@@ -883,6 +883,24 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var netIncome = grossRevenue - totalRoyalty;
                 var entryDescription = $"Period close summary for {periodEnd:MMMM yyyy} (Gross={grossRevenue}, Royalty={totalRoyalty})";
 
+                var closingEntry = new JOURNAL_ENTRY
+                {
+                    JOURNAL_ENTRY_ID = Guid.NewGuid().ToString(),
+                    ENTRY_NUMBER = entryNumber,
+                    ENTRY_DATE = periodEnd,
+                    ENTRY_TYPE = "PERIOD_CLOSE",
+                    STATUS = "Posted",
+                    DESCRIPTION = entryDescription,
+                    SOURCE_MODULE = "PERIOD_CLOSING",
+                    REFERENCE_NUMBER = referenceNumber,
+                    TOTAL_DEBIT = 0m,
+                    TOTAL_CREDIT = 0m,
+                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
+                    PPDM_GUID = Guid.NewGuid().ToString(),
+                    ROW_CREATED_BY = userId,
+                    ROW_CREATED_DATE = DateTime.UtcNow
+                };
+
                 var lines = new List<JOURNAL_ENTRY_LINE>();
                 var lineNumber = 1;
 
@@ -959,25 +977,6 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         entry.JOURNAL_ENTRY_ID, fieldId, periodEnd.ToShortDateString());
                     return;
                 }
-
-                // Create closing entry (fallback to direct repository operations)
-                var closingEntry = new JOURNAL_ENTRY
-                {
-                    JOURNAL_ENTRY_ID = Guid.NewGuid().ToString(),
-                    ENTRY_NUMBER = entryNumber,
-                    ENTRY_DATE = periodEnd,
-                    ENTRY_TYPE = "PERIOD_CLOSE",
-                    STATUS = "Posted",
-                    DESCRIPTION = entryDescription,
-                    SOURCE_MODULE = "PERIOD_CLOSING",
-                    REFERENCE_NUMBER = referenceNumber,
-                    TOTAL_DEBIT = 0m,
-                    TOTAL_CREDIT = 0m,
-                    ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                    PPDM_GUID = Guid.NewGuid().ToString(),
-                    ROW_CREATED_BY = userId,
-                    ROW_CREATED_DATE = DateTime.UtcNow
-                };
 
                 await repo.InsertAsync(closingEntry, userId);
 

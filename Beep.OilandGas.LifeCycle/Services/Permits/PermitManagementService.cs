@@ -9,11 +9,12 @@ using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.PermitsAndApplications.Models;
+
 using Beep.OilandGas.PermitsAndApplications.DataMapping;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.PermitsAndApplications;
 
 namespace Beep.OilandGas.LifeCycle.Services.Permits
 {

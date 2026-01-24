@@ -536,6 +536,11 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref UserIdValue, value); }
 
         }
+
+        public object AnalysisId { get; set; }
+        public object AnalysisDate { get; set; }
+        public object Velocity { get; set; }
+        public object Recommendations { get; set; }
     }
     public class PressureDropResult : ModelEntityBase
     {

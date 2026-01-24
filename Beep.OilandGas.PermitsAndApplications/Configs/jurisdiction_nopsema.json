@@ -1,0 +1,31 @@
+{
+  "authority": "NOPSEMA",
+  "name": "Australia NOPSEMA",
+  "country": "Australia",
+  "templates": [
+    {
+      "formCode": "NOPSEMA_WELL_OPERATIONS",
+      "formName": "NOPSEMA Well Operations",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "NOPSEMA_ENV_PLAN",
+      "formName": "NOPSEMA Environment Plan",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION",
+        "NORM_INVOLVED_IND"
+      ]
+    }
+  ]
+}

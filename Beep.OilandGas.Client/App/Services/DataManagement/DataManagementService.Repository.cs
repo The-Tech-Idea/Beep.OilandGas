@@ -36,7 +36,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     batchSize
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/batch/insert", request, null, cancellationToken);
+                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/batch/insert", request, cancellationToken);
                 return result is List<object> list ? list : new List<object>();
             }
 
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     batchSize
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/batch/update", request, null, cancellationToken);
+                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/batch/update", request, cancellationToken);
                 return result is List<object> list ? list : new List<object>();
             }
 
@@ -89,7 +89,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     batchSize
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/batch/delete", request, null, cancellationToken);
+                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/batch/delete", request, cancellationToken);
                 if (result is Dictionary<string, object> dict && dict.ContainsKey("deletedCount"))
                 {
                     return Convert.ToInt32(dict["deletedCount"]);
@@ -119,7 +119,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     batchSize
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/batch/upsert", request, null, cancellationToken);
+                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/batch/upsert", request, cancellationToken);
                 return result is List<object> list ? list : new List<object>();
             }
 
@@ -153,7 +153,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     validateForeignKeys
                 };
 
-                return await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/import/csv", request, null, cancellationToken);
+                return await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/import/csv", request, cancellationToken);
             }
 
             throw new InvalidOperationException("Local mode not yet implemented");
@@ -176,7 +176,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     includeHeaders
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/export/csv", request, null, cancellationToken);
+                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/export/csv", request, cancellationToken);
                 if (result is Dictionary<string, object> dict && dict.ContainsKey("exportedCount"))
                 {
                     return Convert.ToInt32(dict["exportedCount"]);
@@ -231,7 +231,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     filters = filters ?? new List<object>()
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/count", request, null, cancellationToken);
+                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/count", request, cancellationToken);
                 if (result is Dictionary<string, object> dict && dict.ContainsKey("count"))
                 {
                     return Convert.ToInt64(dict["count"]);
@@ -260,7 +260,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     filters = filters ?? new List<object>()
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/aggregate", request, null, cancellationToken);
+                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/aggregate", request, cancellationToken);
                 if (result is Dictionary<string, object> dict && dict.ContainsKey("value"))
                 {
                     var value = dict["value"];
@@ -294,7 +294,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     filters = filters ?? new List<object>()
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/grouped-aggregate", request, null, cancellationToken);
+                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/grouped-aggregate", request, cancellationToken);
                 if (result is Dictionary<string, object> dict)
                 {
                     var grouped = new Dictionary<string, decimal?>();
@@ -328,7 +328,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     filters = filters ?? new List<object>()
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/distinct", request, null, cancellationToken);
+                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/distinct", request, cancellationToken);
                 return result is List<object> list ? list.Cast<object?>().ToList() : new List<object?>();
             }
 

@@ -16,6 +16,7 @@ using Calc = Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.ProductionForecasting.Calculations;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
 
 namespace Beep.OilandGas.ProductionForecasting.Services
 {
@@ -116,7 +117,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             {
                 AnalysisId = _defaults.FormatIdForTable("RISK_ANALYSIS", Guid.NewGuid().ToString()),
                 CommercialSuccessProbability = 0,
-                RiskFactors = new List<Beep.OilandGas.Models.Data.Calculations.RiskFactor>(),
+                RiskFactors = new List<RiskFactor>(),
                 MitigationStrategies = new List<string>(),
                 RiskRating = "Unknown"
             };

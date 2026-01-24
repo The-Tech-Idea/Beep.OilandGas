@@ -39,6 +39,24 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref AnalysisParametersValue, value); }
 
         }
+
+        public decimal? ReservoirPressure { get; set; }
+        public decimal? ProductivityIndex { get; set; }
+        public decimal? WaterCut { get; set; }
+        public decimal? GasOilRatio { get; set; }
+        public decimal? OilGravity { get; set; }
+        public decimal? WellDepth { get; set; }
+        public decimal? TubingDiameter { get; set; }
+        public decimal? WellheadPressure { get; set; }
+        public decimal? GasGravity { get; set; }
+        public decimal? Temperature { get; set; }
+        public string? IPRModel { get; set; }
+        public int? NumberOfPoints { get; set; }
+        public decimal? FlowRateRangeMax { get; set; }
+        public string? UserId { get; set; }
+        public string AnalysisType { get; set; }
+        public string FieldId { get; set; }
+        public string? VLPModel { get; set; }
     }
 
     /// <summary>
@@ -113,6 +131,8 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref CurveTypeValue, value); }
 
         } // IPR or VLP
+
+        public decimal FlowRate { get; set; }
     }
 
     public class NodalOperatingPoint : ModelEntityBase
@@ -254,6 +274,21 @@ namespace Beep.OilandGas.Models.Data.Calculations
 
         }
         public Dictionary<string, object>? AdditionalResults { get; set; }
+        public decimal OperatingFlowRate { get; set; }
+        public string CalculationId { get; set; }
+        public string WellId { get; set; }
+        public string WellboreId { get; set; }
+        public string FieldId { get; set; }
+        public string AnalysisType { get; set; }
+        public DateTime CalculationDate { get; set; }
+        public string? UserId { get; set; }
+        public List<string> Recommendations { get; set; }
+        public decimal? OperatingTemperature { get; set; }
+        public decimal? MaximumFlowRate { get; set; }
+        public decimal MinimumFlowRate { get; set; }
+        public decimal OptimalFlowRate { get; set; }
+        public decimal PressureDrop { get; set; }
+        public decimal SystemEfficiency { get; set; }
     }
 }
 

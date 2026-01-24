@@ -37,7 +37,8 @@ namespace Beep.OilandGas.DataManager.Core.Implementations
         public virtual async Task<IEnumerable<ModuleScriptInfo>> GetScriptsAsync(string databaseType)
         {
             var scripts = new List<ModuleScriptInfo>();
-            var scriptsPath = Path.Combine(_scriptsBasePath, databaseType, ScriptBasePath);
+            var normalizedDatabaseType = DatabaseTypeNormalizer.Normalize(databaseType);
+            var scriptsPath = Path.Combine(_scriptsBasePath, normalizedDatabaseType, ScriptBasePath);
 
             if (!Directory.Exists(scriptsPath))
             {

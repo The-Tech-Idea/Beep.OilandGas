@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
-using Beep.OilandGas.Models.Data.PermitsAndApplications;
 using Beep.OilandGas.PPDM39.Models;
-using APPLICATION_COMPONENT = Beep.OilandGas.Models.Data.PermitsAndApplications.APPLICATION_COMPONENT;
+using DomainApplicationComponent = Beep.OilandGas.Models.Data.PermitsAndApplications.APPLICATION_COMPONENT;
+using PpdmApplicationComponent = Beep.OilandGas.PPDM39.Models.APPLICATION_COMPONENT;
 
 namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 {
@@ -21,11 +21,11 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
         /// <param name="areas">Optional list of APPLIC_AREA entities.</param>
         /// <param name="components">Optional list of APPLICATION_COMPONENT entities.</param>
         /// <returns>The mapped PermitApplication.</returns>
-        public PERMIT_APPLICATION MapToDomain(
+        public PermitApplication MapToDomain(
             APPLICATION ppdmApplication,
             IEnumerable<APPLIC_ATTACH>? attachments = null,
             IEnumerable<APPLIC_AREA>? areas = null,
-            IEnumerable<APPLICATION_COMPONENT>? components = null)
+            IEnumerable<PpdmApplicationComponent>? components = null)
         {
             if (ppdmApplication == null)
                 throw new ArgumentNullException(nameof(ppdmApplication));
@@ -34,27 +34,27 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             var regulatoryAuthority = MapRegulatoryAuthority(ppdmApplication.SUBMITTED_TO);
             var (country, stateProvince) = InferJurisdiction(regulatoryAuthority, ppdmApplication);
 
-            var application = new PERMIT_APPLICATION
+            var application = new PermitApplication
             {
-                APPLICANT_ID = ppdmApplication.APPLICATION_ID ?? string.Empty,
-                APPLICATION_TYPE = MapApplicationType(ppdmApplication.APPLICATION_TYPE),
-                STATUS = MapApplicationStatus(ppdmApplication.CURRENT_STATUS),
-                COUNTRY = country,
-                STATE_PROVINCE = stateProvince,
-                REGULATORY_AUTHORITY = regulatoryAuthority,
-                CREATED_DATE = ppdmApplication.ROW_CREATED_DATE,
-                SUBMITTED_DATE = ppdmApplication.SUBMITTED_DATE,
-                RECEIVED_DATE = ppdmApplication.RECEIVED_DATE,
-                DECISION_DATE = ppdmApplication.DECISION_DATE,
-                EFFECTIVE_DATE = ppdmApplication.EFFECTIVE_DATE,
-                EXPIRY_DATE = ppdmApplication.EXPIRY_DATE,
-                DECISION = ppdmApplication.DECISION,
-                REFERENCE_NUMBER = ppdmApplication.REFERENCE_NUM,
-                FEES_DESCRIPTION = ppdmApplication.FEES_DESC,
-                FEES_PAID_IND = ppdmApplication.FEES_PAID_IND == "Y",
-                REMARKS = ppdmApplication.REMARK,
-                SUBMISSION_COMPLETE_IND = ppdmApplication.SUBMISSION_COMPLETE_IND == "Y",
-                SUBMISSION_DESCRIPTION = ppdmApplication.SUBMISSION_DESC
+                ApplicationId = ppdmApplication.APPLICATION_ID ?? string.Empty,
+                ApplicationType = MapApplicationType(ppdmApplication.APPLICATION_TYPE),
+                Status = MapApplicationStatus(ppdmApplication.CURRENT_STATUS),
+                Country = country,
+                StateProvince = stateProvince,
+                RegulatoryAuthority = regulatoryAuthority,
+                CreatedDate = ppdmApplication.ROW_CREATED_DATE ?? ppdmApplication.ROW_CREATED_DATE,
+                SubmittedDate = ppdmApplication.SUBMITTED_DATE,
+                ReceivedDate = ppdmApplication.RECEIVED_DATE,
+                DecisionDate = ppdmApplication.DECISION_DATE,
+                EffectiveDate = ppdmApplication.EFFECTIVE_DATE,
+                ExpiryDate = ppdmApplication.EXPIRY_DATE,
+                Decision = ppdmApplication.DECISION,
+                ReferenceNumber = ppdmApplication.REFERENCE_NUM,
+                FeesDescription = ppdmApplication.FEES_DESC,
+                FeesPaid = string.Equals(ppdmApplication.FEES_PAID_IND, "Y", StringComparison.OrdinalIgnoreCase),
+                Remarks = ppdmApplication.REMARK,
+                SubmissionComplete = string.Equals(ppdmApplication.SUBMISSION_COMPLETE_IND, "Y", StringComparison.OrdinalIgnoreCase),
+                SubmissionDescription = ppdmApplication.SUBMISSION_DESC
             };
 
             // Map attachments
@@ -62,34 +62,36 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             {
                 application.Attachments = attachments.Select(a => new APPLICATION_ATTACHMENT
                 {
-                    AttachmentId = a.ATTACHMENT_ID ?? string.Empty,
-                    FileName = a.PHYSICAL_ITEM_ID ?? string.Empty, // Physical item ID may contain file reference
-                    FileType = a.ATTACHMENT_TYPE,
-                    FileSize = null, // Not available in APPLIC_ATTACH
-                    UploadDate = a.ROW_CREATED_DATE,
-                    Description = a.ATTACHMENT_DESCRIPTION,
-                    DocumentType = a.ATTACHMENT_TYPE
+                    APPLICATION_ATTACHMENT_ID = a.ATTACHMENT_ID ?? Guid.NewGuid().ToString(),
+                    PERMIT_APPLICATION_ID = ppdmApplication.APPLICATION_ID ?? string.Empty,
+                    FILE_NAME = a.PHYSICAL_ITEM_ID,
+                    FILE_TYPE = a.ATTACHMENT_TYPE,
+                    FILE_SIZE = null,
+                    UPLOAD_DATE = a.ROW_CREATED_DATE,
+                    DESCRIPTION = a.ATTACHMENT_DESCRIPTION,
+                    DOCUMENT_TYPE = a.ATTACHMENT_TYPE,
+                    ACTIVE_IND = a.ACTIVE_IND
                 }).ToList();
             }
 
             // Map areas
             if (areas != null)
             {
-                application.Areas = areas.Select(a => new ApplicationArea
+                application.Areas = areas.Select(a => new APPLICATION_AREA
                 {
-                    AreaId = a.AREA_ID ?? string.Empty,
-                    AreaName = a.DESCRIPTION, // Use DESCRIPTION as area name
-                    AreaType = a.AREA_TYPE,
-                    LegalDescription = a.REMARK // Use REMARK for legal description
+                    AREA_ID = a.AREA_ID ?? string.Empty,
+                    AREA_NAME = a.AREA_ID ?? a.DESCRIPTION,
+                    AREA_TYPE = a.AREA_TYPE,
+                    LEGAL_DESCRIPTION = a.DESCRIPTION ?? a.REMARK
                 }).ToList();
             }
 
             // Map components
             if (components != null)
-            {
+            {           
                 application.Components = components
                     .Where(c => !string.IsNullOrEmpty(c.APPLICATION_COMPONENT_TYPE))
-                    .Select((c, index) => new APPLICATION_COMPONENT
+                    .Select((c, index) => new DomainApplicationComponent
                     {
                         ComponentId = $"{c.APPLICATION_ID}_{c.COMPONENT_OBS_NO}",
                         ComponentType = c.APPLICATION_COMPONENT_TYPE ?? string.Empty,
@@ -158,7 +160,7 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             {
                 ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nTarget Formation: {application.TargetFormation}";
             }
-            if (application.ProposedDepth.HasValue)
+            if (application.ProposedDepth > 0m)
             {
                 ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nProposed Depth: {application.ProposedDepth} ft";
             }
@@ -188,19 +190,19 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
         /// Maps InjectionPermitApplication to PPDM39 APPLICATION.
         /// </summary>
         public APPLICATION MapInjectionPermitToPPDM39(
-            INJECTION_PERMIT_APPLICATION application,
+            InjectionPermitApplication application,
             APPLICATION? existingApplication = null)
         {
             var ppdmApplication = MapToPPDM39(application, existingApplication);
             
             // Add injection-specific information
-            if (!string.IsNullOrEmpty(application.INJECTION_TYPE))
+            if (!string.IsNullOrEmpty(application.InjectionType))
             {
-                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nInjection Type: {application.INJECTION_TYPE}";
+                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nInjection Type: {application.InjectionType}";
             }
-            if (!string.IsNullOrEmpty(application.INJECTION_ZONE))
+            if (!string.IsNullOrEmpty(application.InjectionZone))
             {
-                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nInjection Zone: {application.INJECTION_ZONE}";
+                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nInjection Zone: {application.InjectionZone}";
             }
 
             return ppdmApplication;

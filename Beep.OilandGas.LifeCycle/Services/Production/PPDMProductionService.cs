@@ -12,14 +12,15 @@ using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.ChokeAnalysis;
 using Beep.OilandGas.ChokeAnalysis.Calculations;
-using Beep.OilandGas.ChokeAnalysis.Models;
-using Beep.OilandGas.SuckerRodPumping;
+
 using Beep.OilandGas.SuckerRodPumping.Calculations;
-using Beep.OilandGas.SuckerRodPumping.Models;
+
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using Beep.OilandGas.Models.Data.ChokeAnalysis;
+using Beep.OilandGas.Models.Data.SuckerRodPumping;
 
 namespace Beep.OilandGas.LifeCycle.Services.Production
 {
@@ -1179,7 +1180,6 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             try
             {
                 _logger?.LogInformation("Executing enhanced recovery operation: {OperationId} for field: {FieldId}", operationId, fieldId);
-using Beep.OilandGas.Models.Data.ProductionForecasting;
 
                 // Update EOR operation status to EXECUTING
                 // In full implementation, would use EnhancedRecoveryService

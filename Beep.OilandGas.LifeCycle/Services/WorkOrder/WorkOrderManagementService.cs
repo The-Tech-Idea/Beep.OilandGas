@@ -13,6 +13,8 @@ using Beep.OilandGas.Models.Data;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
 namespace Beep.OilandGas.LifeCycle.Services.WorkOrder
 {
@@ -118,8 +120,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder
             try
             {
                 var metadata = await _metadata.GetTableMetadataAsync("WORK_ORDER_XREF");
-using Beep.OilandGas.Models.Data.PipelineAnalysis;
-using Beep.OilandGas.Models.Data.ProductionAccounting;
+
                 if (metadata == null)
                 {
                     throw new InvalidOperationException("WORK_ORDER_XREF table metadata not found");
@@ -224,12 +225,12 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 
                 var filter = new AppFilter
                 {
-                    FilterName = "WORK_ORDER_ID",
+                    FieldName = "WORK_ORDER_ID",
                     FilterValue = workOrderId,
-                    FilterOperator = "="
+                    Operator = "="
                 };
 
-                var xrefs = await xrefRepo.GetEntityAsync(new List<AppFilter> { filter });
+                var xrefs = await xrefRepo.GetEntityAsync("WORK_ORDER_XREF",new List<AppFilter> { filter });
                 var xref = xrefs?.FirstOrDefault() as WORK_ORDER_XREF;
 
                 // Get AFE actual cost and ID if AFE exists
@@ -285,9 +286,9 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FilterName = "WO_XREF_TYPE", FilterValue = entityType, FilterOperator = "=" },
-                    new AppFilter { FilterName = "REFERENCE_ID", FilterValue = entityId, FilterOperator = "=" },
-                    new AppFilter { FilterName = "ACTIVE_IND", FilterValue = "Y", FilterOperator = "=" }
+                    new AppFilter { FieldName = "WO_XREF_TYPE", FilterValue = entityType, Operator = "=" },
+                    new AppFilter { FieldName = "REFERENCE_ID", FilterValue = entityId, Operator = "=" },
+                    new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
                 };
 
                 var xrefs = await xrefRepo.GetEntityAsync(filters);

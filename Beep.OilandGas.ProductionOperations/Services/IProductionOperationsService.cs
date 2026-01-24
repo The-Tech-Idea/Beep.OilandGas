@@ -504,6 +504,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
         public decimal CostPerBarrel { get; set; }
         public Dictionary<string, decimal> CostByCategory { get; set; } = new();
         public decimal CostTrend { get; set; } // Percentage change
+        public int TotalCost { get; internal set; }
     }
 
     /// <summary>

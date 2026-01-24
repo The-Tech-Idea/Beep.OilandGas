@@ -13,7 +13,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<DECOMMISSIONING_STATUS, DECOMMISSIONING_STATUS>("/api/lifecycle/decommissioning/create", request, null, cancellationToken);
+                return await PostAsync<DECOMMISSIONING_STATUS, DECOMMISSIONING_STATUS>("/api/lifecycle/decommissioning/create", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -21,7 +21,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<ABANDONMENT_STATUS>($"/api/lifecycle/decommissioning/plugging/{Uri.EscapeDataString(wellId)}", null, cancellationToken);
+                return await GetAsync<ABANDONMENT_STATUS>($"/api/lifecycle/decommissioning/plugging/{Uri.EscapeDataString(wellId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -29,7 +29,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
         {
             if (string.IsNullOrEmpty(assetId)) throw new ArgumentNullException(nameof(assetId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<DECOMMISSIONING_STATUS>($"/api/lifecycle/decommissioning/environmental/{Uri.EscapeDataString(assetId)}", null, cancellationToken);
+                return await GetAsync<DECOMMISSIONING_STATUS>($"/api/lifecycle/decommissioning/environmental/{Uri.EscapeDataString(assetId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
             if (string.IsNullOrEmpty(planId)) throw new ArgumentNullException(nameof(planId));
             if (status == null) throw new ArgumentNullException(nameof(status));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PutAsync<DECOMMISSIONING_STATUS, DECOMMISSIONING_STATUS>($"/api/lifecycle/decommissioning/{Uri.EscapeDataString(planId)}/status", status, null, cancellationToken);
+                return await PutAsync<DECOMMISSIONING_STATUS, DECOMMISSIONING_STATUS>($"/api/lifecycle/decommissioning/{Uri.EscapeDataString(planId)}/status", status, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -46,7 +46,7 @@ namespace Beep.OilandGas.Client.App.Services.LifeCycle
         {
             if (string.IsNullOrEmpty(assetId)) throw new ArgumentNullException(nameof(assetId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<DECOMMISSIONING_STATUS>($"/api/lifecycle/decommissioning/cost/{Uri.EscapeDataString(assetId)}", null, cancellationToken);
+                return await GetAsync<DECOMMISSIONING_STATUS>($"/api/lifecycle/decommissioning/cost/{Uri.EscapeDataString(assetId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

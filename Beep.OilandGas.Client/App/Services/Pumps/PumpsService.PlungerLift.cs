@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Client.App.Services.Pumps
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<PlungerLiftWellProperties, PlungerLiftPerformanceResult>("/api/plungerlift/design", request, null, cancellationToken);
+                return await PostAsync<PlungerLiftWellProperties, PlungerLiftPerformanceResult>("/api/plungerlift/design", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -23,7 +23,7 @@ namespace Beep.OilandGas.Client.App.Services.Pumps
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<PLUNGER_LIFT_WELL_PROPERTIES, PlungerLiftCycleResult>("/api/plungerlift/analyze-performance", request, null, cancellationToken);
+                return await PostAsync<PLUNGER_LIFT_WELL_PROPERTIES, PlungerLiftCycleResult>("/api/plungerlift/analyze-performance", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -35,7 +35,7 @@ namespace Beep.OilandGas.Client.App.Services.Pumps
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
                 var endpoint = BuildRequestUriWithParams("/api/plungerlift/design/save", queryParams);
-                return await PostAsync<PLUNGER_LIFT_CYCLE_RESULT, PLUNGER_LIFT_CYCLE_RESULT>(endpoint, design, null, cancellationToken);
+                return await PostAsync<PLUNGER_LIFT_CYCLE_RESULT, PLUNGER_LIFT_CYCLE_RESULT>(endpoint, design, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }

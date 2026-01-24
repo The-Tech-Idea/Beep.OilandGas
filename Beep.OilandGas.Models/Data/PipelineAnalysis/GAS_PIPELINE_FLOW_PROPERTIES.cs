@@ -62,7 +62,12 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
             get { return this.Z_FACTORValue; }
             set { SetProperty(ref Z_FACTORValue, value); }
         }
-
+        private PIPELINE_PROPERTIES pIPELINE_PROPERTIESValue;
+        public PIPELINE_PROPERTIES PIPELINE_PROPERTIES
+        {
+            get { return this.pIPELINE_PROPERTIESValue; }
+            set { SetProperty(ref pIPELINE_PROPERTIESValue, value); }
+        }
         // Standard PPDM columns
 
     }

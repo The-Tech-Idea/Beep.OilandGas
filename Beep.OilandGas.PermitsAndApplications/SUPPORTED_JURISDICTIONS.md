@@ -165,6 +165,12 @@ To add support for a new jurisdiction:
    - `GetStateProvince()`
    - `IsValidJurisdiction()`
 
+## Related Services
+
+- `PermitComplianceCheckService` - Applies jurisdiction rules to validate applications.
+- `PermitApplicationWorkflowService` - Generates jurisdiction-specific form payloads.
+- `PermitComplianceReportService` - Reports compliance status by authority.
+
 ## References
 
 - [RRC Texas Forms](https://www.rrc.texas.gov/oil-and-gas/oil-and-gas-forms/)

@@ -14,7 +14,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasLiftWellProperties, GasLiftValveDesignResult>("/api/gaslift/design", request, null, cancellationToken);
+                return await PostAsync<GasLiftWellProperties, GasLiftValveDesignResult>("/api/gaslift/design", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -22,7 +22,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasLiftWellProperties, GasLiftPotentialResult>("/api/gaslift/optimize", request, null, cancellationToken);
+                return await PostAsync<GasLiftWellProperties, GasLiftPotentialResult>("/api/gaslift/optimize", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GAS_LIFT_WELL_PROPERTIES, GAS_LIFT_VALVE_DESIGN_RESULT>("/api/gaslift/valve-spacing", request, null, cancellationToken);
+                return await PostAsync<GAS_LIFT_WELL_PROPERTIES, GAS_LIFT_VALVE_DESIGN_RESULT>("/api/gaslift/valve-spacing", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<GAS_LIFT_PERFORMANCE>($"/api/gaslift/{wellId}/performance", null, cancellationToken);
+                return await GetAsync<GAS_LIFT_PERFORMANCE>($"/api/gaslift/{wellId}/performance", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -46,7 +46,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GAS_LIFT_WELL_PROPERTIES, GAS_LIFT_DESIGN>("/api/gaslift/troubleshoot", request, null, cancellationToken);
+                return await PostAsync<GAS_LIFT_WELL_PROPERTIES, GAS_LIFT_DESIGN>("/api/gaslift/troubleshoot", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

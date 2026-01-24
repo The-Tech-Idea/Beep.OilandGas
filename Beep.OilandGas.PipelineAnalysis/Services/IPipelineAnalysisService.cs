@@ -788,7 +788,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     public class GasLossRate
     {
         public string PipelineId { get; set; } = string.Empty;
-        public decimal GasLossRate { get; set; }
+        public decimal LossRate { get; set; }
         public string Unit { get; set; } = "SCFH";
         public decimal DailyLoss { get; set; }
         public decimal AnnualLoss { get; set; }

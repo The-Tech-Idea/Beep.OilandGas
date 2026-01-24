@@ -14,7 +14,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<PROSPECT, PROSPECT>("/api/prospect/identify", request, null, cancellationToken);
+                return await PostAsync<PROSPECT, PROSPECT>("/api/prospect/identify", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -22,7 +22,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<PROSPECT, PROSPECT_RISK_ASSESSMENT>("/api/prospect/risk", request, null, cancellationToken);
+                return await PostAsync<PROSPECT, PROSPECT_RISK_ASSESSMENT>("/api/prospect/risk", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (string.IsNullOrEmpty(prospectId)) throw new ArgumentNullException(nameof(prospectId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<PROSPECT_VOLUME_ESTIMATE>($"/api/prospect/{prospectId}/volumetrics", null, cancellationToken);
+                return await GetAsync<PROSPECT_VOLUME_ESTIMATE>($"/api/prospect/{prospectId}/volumetrics", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<PROSPECT_PORTFOLIO, PROSPECT_RANKING>("/api/prospect/rank", request, null, cancellationToken);
+                return await PostAsync<PROSPECT_PORTFOLIO, PROSPECT_RANKING>("/api/prospect/rank", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -46,7 +46,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (string.IsNullOrEmpty(basinId)) throw new ArgumentNullException(nameof(basinId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<PROSPECT>>($"/api/prospect/portfolio/{basinId}", null, cancellationToken);
+                return await GetAsync<List<PROSPECT>>($"/api/prospect/portfolio/{basinId}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

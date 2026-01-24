@@ -1,0 +1,30 @@
+{
+  "authority": "QLD_DNRME",
+  "name": "Queensland DNRME",
+  "country": "Australia",
+  "templates": [
+    {
+      "formCode": "QLD_DRILLING_PERMIT",
+      "formName": "QLD Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "QLD_ENV_PERMIT",
+      "formName": "QLD Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

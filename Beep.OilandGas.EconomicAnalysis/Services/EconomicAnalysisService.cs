@@ -14,8 +14,8 @@ using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
-using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Beep.OilandGas.PPDM.Models;
+using EconomicSensitivityAnalysis = Beep.OilandGas.Models.Data.Calculations.SensitivityAnalysis;
 
 namespace Beep.OilandGas.EconomicAnalysis.Services
 {
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
         /// <summary>
         /// Performs sensitivity analysis on key variables affecting NPV.
         /// </summary>
-        public async Task<SensitivityAnalysis> PerformSensitivityAnalysisAsync(CashFlow[] cashFlows, double discountRate)
+        public async Task<EconomicSensitivityAnalysis> PerformSensitivityAnalysisAsync(CashFlow[] cashFlows, double discountRate)
         {
             if (cashFlows == null || cashFlows.Length == 0)
                 throw new ArgumentException("Cash flows cannot be null or empty", nameof(cashFlows));
@@ -170,7 +170,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
             _logger?.LogInformation("Performing sensitivity analysis for {Count} cash flows", cashFlows.Length);
 
             var baseNPV = CalculateNPV(cashFlows, discountRate);
-            var result = new SensitivityAnalysis
+            var result = new EconomicSensitivityAnalysis
             {
                 AnalysisId = _defaults.FormatIdForTable("SENSITIVITY", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,

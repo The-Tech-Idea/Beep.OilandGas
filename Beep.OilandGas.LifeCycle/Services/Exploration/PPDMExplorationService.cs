@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Lease;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -13,6 +14,8 @@ using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.LifeCycle.Services.Exploration
 {
@@ -481,30 +484,30 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
                     throw new InvalidOperationException("LEASE table metadata not found");
                 }
 
-                var entityType = typeof(LEASE);
+                var entityType = typeof(Lease);
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                     entityType, _connectionName, "LEASE", null);
 
-                var lease = new LEASE();
-                lease.LEASE_NAME = leaseData.LeaseNumber ?? string.Empty;
-                lease.FIELD_ID = _defaults.FormatIdForTable("LEASE", fieldId);
+                var lease = new Lease();
+                lease.LeaseNumber = leaseData.LeaseNumber ?? string.Empty;
+                lease.FieldId = _defaults.FormatIdForTable("LEASE", fieldId);
                 if (leaseData.StartDate.HasValue)
-                    lease.LEASE_EFF_DATE = leaseData.StartDate.Value;
+                    lease.EFFECTIVE_DATE = leaseData.StartDate.Value;
                 if (leaseData.EndDate.HasValue)
-                    lease.LEASE_EXPIRY_DATE = leaseData.EndDate.Value;
+                    lease.ExpirationDate = leaseData.EndDate.Value;
                 lease.ACTIVE_IND = "Y";
-
+    
                 if (lease is IPPDMEntity entity)
                     _commonColumnHandler.PrepareForInsert(entity, userId);
                 var result = await repo.InsertAsync(lease, userId);
-                var createdLease = result as LEASE ?? throw new InvalidOperationException("Failed to create lease");
+                var createdLease = result as Lease ?? throw new InvalidOperationException("Failed to create lease");
 
-                _logger?.LogInformation("Lease acquired: {LeaseId}, Name: {LeaseName}", createdLease.LEASE_ID, createdLease.LEASE_NAME);
+                _logger?.LogInformation("Lease acquired: {LeaseId}, Name: {LeaseName}", createdLease.LeaseId, createdLease.LeaseName);
 
                 return new Lease
                 {
-                    LeaseId = createdLease.LEASE_ID ?? string.Empty,
-                    LeaseName = createdLease.LEASE_NAME ?? string.Empty,
+                    LeaseId = createdLease.LeaseId ?? string.Empty,
+                    LeaseName = createdLease.LeaseName ?? string.Empty,
                     FieldId = fieldId,
                     StartDate = leaseData.StartDate,
                     EndDate = leaseData.EndDate,
@@ -526,7 +529,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
             try
             {
                 _logger?.LogInformation("Managing lease: {LeaseId} for field: {FieldId}", leaseId, fieldId);
-using Beep.OilandGas.Models.Data.ProspectIdentification;
+
 
                 var metadata = await _metadata.GetTableMetadataAsync("LEASE");
                 if (metadata == null)
@@ -534,7 +537,7 @@ using Beep.OilandGas.Models.Data.ProspectIdentification;
                     throw new InvalidOperationException("LEASE table metadata not found");
                 }
 
-                var entityType = typeof(LEASE);
+                var entityType = typeof(Lease);
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                     entityType, _connectionName, "LEASE", null);
 
@@ -545,7 +548,7 @@ using Beep.OilandGas.Models.Data.ProspectIdentification;
                 };
 
                 var leases = await repo.GetAsync(filters);
-                var lease = leases.FirstOrDefault() as LEASE;
+                var lease = leases.FirstOrDefault() as Lease;
                 if (lease == null)
                 {
                     throw new InvalidOperationException($"Lease {leaseId} not found for field {fieldId}");
@@ -554,9 +557,9 @@ using Beep.OilandGas.Models.Data.ProspectIdentification;
                 // Update lease properties
                 // Note: UpdateLease doesn't have LeaseName, only status and dates
                 if (updateData.StartDate.HasValue)
-                    lease.LEASE_EFF_DATE = updateData.StartDate.Value;
+                    lease.EffectiveDate = updateData.StartDate.Value;
                 if (updateData.EndDate.HasValue)
-                    lease.LEASE_EXPIRY_DATE = updateData.EndDate.Value;
+                    lease.ExpirationDate = updateData.EndDate.Value;
 
                 if (lease is IPPDMEntity entity)
                     _commonColumnHandler.PrepareForUpdate(entity, userId);
@@ -564,11 +567,11 @@ using Beep.OilandGas.Models.Data.ProspectIdentification;
 
                 return new Lease
                 {
-                    LeaseId = lease.LEASE_ID ?? string.Empty,
-                    LeaseName = lease.LEASE_NAME ?? string.Empty,
+                    LeaseId = lease.LeaseId ?? string.Empty,
+                    LeaseName = lease.LesseeName ?? string.Empty,
                     FieldId = fieldId,
-                    StartDate = lease.LEASE_EFF_DATE,
-                    EndDate = lease.LEASE_EXPIRY_DATE,
+                    StartDate = lease.EffectiveDate,
+                    EndDate = lease.ExpirationDate,
                     Status = "ACTIVE"
                 };
             }

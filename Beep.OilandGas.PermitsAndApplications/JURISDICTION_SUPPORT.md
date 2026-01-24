@@ -63,6 +63,7 @@ var albertaApplication = new DrillingPermitApplication
 };
 
 // Using JurisdictionHelper
+using Beep.OilandGas.PermitsAndApplications.DataMapping;
 var authority = JurisdictionHelper.GetDefaultRegulatoryAuthority(
     Country.UnitedStates, 
     StateProvince.Texas);
@@ -109,4 +110,10 @@ This allows retrieval of jurisdiction information when mapping from PPDM39 to do
 - Jurisdiction-specific validation rules
 - Jurisdiction-specific form templates
 - Multi-jurisdiction reporting and compliance tracking
+
+## Related Services
+
+- `PermitComplianceCheckService` - Enforces jurisdiction rules and template requirements.
+- `PermitApplicationWorkflowService` - Produces jurisdiction-specific form payloads.
+- `PermitComplianceReportService` - Aggregates compliance status by authority.
 

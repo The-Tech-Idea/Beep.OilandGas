@@ -9,6 +9,7 @@ using TheTechIdea.Beep.Editor.UOW;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.ConfigUtil;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
 
 namespace Beep.OilandGas.ProspectIdentification.Services
 {

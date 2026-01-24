@@ -154,7 +154,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             try
             {
                 _logger?.LogInformation("Generating drilling program for field {FieldId}, wells={Total}, duration={Months}months, types={Types}",
-                    fieldId, totalWellsPlanned, phaseDuration, string.Join(",", wellTypeDistribution?.Keys ?? Array.Empty<string>()));
+                    fieldId, totalWellsPlanned, phaseDuration, string.Join(",", wellTypeDistribution?.Keys ?? Enumerable.Empty<string>()));
 
                 ValidateDrillingInputs(fieldId, totalWellsPlanned, phaseDuration);
 
@@ -624,9 +624,10 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
                     currentDate = phase.EndDate.AddMonths(1);
                 }
 
-                schedule.TotalProjectDuration = (int)(schedule.Phases.Last().EndDate - developmentStartDate).TotalMonths;
+                var completionDate = schedule.Phases.Last().EndDate;
+                schedule.TotalProjectDuration = CalculateMonthDifference(developmentStartDate, completionDate);
                 schedule.CriticalPath = IdentifyCriticalPath(schedule.Phases);
-                schedule.ProjectCompletion = schedule.Phases.Last().EndDate;
+                schedule.ProjectCompletion = completionDate;
 
                 _logger?.LogInformation("Development phase schedule created for field {FieldId}: completion={Completion:yyyy-MM-dd}, duration={Duration}months",
                     fieldId, schedule.ProjectCompletion, schedule.TotalProjectDuration);
@@ -1364,6 +1365,18 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
         private int CalculatePhaseDuration(int phaseNum, int totalPhases)
         {
             return 18 + (phaseNum * 2);  // Increasing duration per phase
+        }
+
+        private static int CalculateMonthDifference(DateTime start, DateTime end)
+        {
+            if (end < start)
+                return 0;
+
+            var months = (end.Year - start.Year) * 12 + end.Month - start.Month;
+            if (end.Day < start.Day)
+                months--;
+
+            return Math.Max(months, 0);
         }
 
         private List<string> GeneratePhaseMilestones(int phase, DateTime start)

@@ -227,11 +227,13 @@ All data is mapped to PPDM39 data model with jurisdiction-specific support.
    - `PermitApplicationMapper` - Maps application models to PPDM39
 
 ### Phase 2: Application Management
+**Status**: Implemented (PermitApplicationLifecycleService, PermitStatusHistoryService, PermitAttachmentService, PermitComplianceCheckService, PermitApplicationWorkflowService).
 1. **Services**:
-   - `PermitApplicationService` - Create, update, submit applications
-   - `PermitStatusService` - Track status and workflow
-   - `DocumentManagementService` - Handle attachments
-   - `ComplianceService` - Check compliance requirements
+   - `PermitApplicationLifecycleService` - Create, update, submit applications
+   - `PermitStatusHistoryService` - Track status and workflow
+   - `PermitAttachmentService` - Handle attachments
+   - `PermitComplianceCheckService` - Check compliance requirements
+   - `PermitApplicationWorkflowService` - End-to-end workflows and payload generation
 
 2. **Workflow**:
    - Application creation
@@ -241,6 +243,7 @@ All data is mapped to PPDM39 data model with jurisdiction-specific support.
    - Renewal process
 
 ### Phase 3: Jurisdiction-Specific Requirements
+**Status**: Partially implemented (RRC/TCEQ/AER rule checks added to PermitComplianceCheckService; full form validation pending).
 
 #### Texas (RRC/TCEQ) Requirements:
 1. **Drilling Permit Requirements**:
@@ -292,6 +295,7 @@ All data is mapped to PPDM39 data model with jurisdiction-specific support.
    - Surface disturbance permits
 
 ### Phase 4: Compliance & Reporting
+**Status**: Implemented (PermitComplianceReportService + report models).
 1. **Compliance Tracking**:
    - Permit expiration monitoring
    - Renewal reminders
@@ -314,6 +318,59 @@ All data is mapped to PPDM39 data model with jurisdiction-specific support.
    - Integration with prospect identification
    - Integration with drilling operations
    - Integration with production operations
+
+### Phase 6: Jurisdiction Validation & Form Generation
+**Status**: Pending
+1. **Validation Ruleset Library**:
+   - Shared validation primitives (required fields, date ranges, cross-field checks)
+   - Jurisdiction overlays (RRC/TCEQ/AER) with per-form rule sets
+   - Validation error taxonomy (blocking vs warning)
+
+2. **Form Templates & Rendering**:
+   - RRC form templates (drilling, environmental, injection)
+   - AER directive form templates (well licence, water act)
+   - Output formats (PDF/JSON) with traceable field mapping
+
+3. **Submission Readiness**:
+   - Completeness checks per permit type
+   - Document/attachment requirements
+   - Fee calculations and payment status validation
+
+### Phase 7: PPDM39 Coverage & Data Quality
+**Status**: Pending
+1. **PPDM39 Entity Expansion**:
+   - APPLIC_BA (applicant/operator roles)
+   - APPLIC_DESC (long-form descriptions)
+   - APPLIC_REMARK (regulatory notes)
+   - BA_PERMIT and FACILITY_LICENSE mappings
+   - WELL_PERMIT_TYPE mapping for permitted activities
+
+2. **Audit & Status History**:
+   - PERMIT_STATUS_HISTORY persistence
+   - Change tracking for application status and decisions
+   - Status transition validation
+
+3. **Data Quality Checks**:
+   - Required keys and lookup validations
+   - Referential integrity (well/facility linkage)
+   - Consistency between application type and permit subtype
+
+### Phase 8: Integration & Automation
+**Status**: Pending
+1. **Inter-Module Hooks**:
+   - Lifecycle events for drilling, production, and decommissioning
+   - Compliance alerts to operations modules
+   - Permit-driven scheduling constraints
+
+2. **Notification Workflows**:
+   - Renewal reminders with lead-time rules
+   - Expiration alerts and escalation
+   - Missing information and resubmission notifications
+
+3. **Automation & Imports**:
+   - Regulatory portal ingestion (CSV/XML/JSON)
+   - Batch updates for status and decisions
+   - Scheduled compliance snapshots
 
 ## Data Model Structure
 
@@ -387,4 +444,21 @@ InjectionPermitApplication : PermitApplication
 - ✅ Document management
 - ✅ Integration with field lifecycle stages
 - ✅ Regulatory reporting capabilities
+
+## Enhancement Backlog (Targeted)
+
+1. **Jurisdiction Coverage**
+   - Add more US state regulators beyond current enum set
+   - Expand Canada coverage (BC, SK, NL) with form-specific validation
+   - Add federal offshore (BOEM/BSEE) submission packages
+
+2. **Testing & QA**
+   - Unit tests for all mappers with PPDM fixtures
+   - Validation rule tests per jurisdiction/permit type
+   - Golden-file tests for form outputs
+
+3. **Documentation**
+   - Sample application walkthroughs
+   - Jurisdiction-specific data dictionaries
+   - Integration guide for other modules
 

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.PermitsAndApplications;
+using Beep.OilandGas.PermitsAndApplications.DataMapping;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Editor.UOW;
@@ -246,16 +248,8 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             var units = await applicationUow.Get(filters);
             List<APPLICATION> allApplications = ConvertToList<APPLICATION>(units);
 
-            return allApplications.Select(app => new PermitApplication
-            {
-                ApplicationId = app.APPLICATION_ID ?? string.Empty,
-                ApplicationType = app.APPLICATION_TYPE ?? string.Empty,
-                Status = app.CURRENT_STATUS ?? string.Empty,
-                SubmittedDate = app.EFFECTIVE_DATE,
-                DecisionDate = app.DECISION_DATE,
-                Decision = app.DECISION,
-                ExpiryDate = app.EXPIRY_DATE
-            }).ToList();
+            var mapper = new ApplicationMapper();
+            return allApplications.Select(app => mapper.MapToDomain(app)).ToList();
         }
 
         private async Task<DevelopmentPlan> MapToDevelopmentPlanDtoAsync(APPLICATION application)

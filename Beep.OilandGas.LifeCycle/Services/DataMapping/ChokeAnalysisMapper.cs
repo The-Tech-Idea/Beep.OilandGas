@@ -1,6 +1,6 @@
 using System;
 using Beep.OilandGas.PPDM39.Models;
-using Beep.OilandGas.ChokeAnalysis.Models;
+using Beep.OilandGas.Models.Data.ChokeAnalysis;
 
 namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 {

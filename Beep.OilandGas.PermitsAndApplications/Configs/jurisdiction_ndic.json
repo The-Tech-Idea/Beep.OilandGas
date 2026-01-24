@@ -1,0 +1,31 @@
+{
+  "authority": "NDIC",
+  "name": "North Dakota Industrial Commission",
+  "country": "UnitedStates",
+  "templates": [
+    {
+      "formCode": "NDIC_DRILLING_PERMIT",
+      "formName": "NDIC Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "NDIC_INJECTION_PERMIT",
+      "formName": "NDIC Injection Permit",
+      "applicationType": "INJECTION",
+      "fieldKeys": [
+        "INJECTION_TYPE",
+        "INJECTION_ZONE",
+        "INJECTION_FLUID",
+        "MAXIMUM_INJECTION_PRESSURE",
+        "MAXIMUM_INJECTION_RATE"
+      ]
+    }
+  ]
+}

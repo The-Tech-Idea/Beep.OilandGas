@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Client.App.Services.Properties
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasComposition, decimal>("/api/gasproperties/zfactor", request, null, cancellationToken);
+                return await PostAsync<GasComposition, decimal>("/api/gasproperties/zfactor", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -23,7 +23,7 @@ namespace Beep.OilandGas.Client.App.Services.Properties
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasComposition, decimal>("/api/gasproperties/density", request, null, cancellationToken);
+                return await PostAsync<GasComposition, decimal>("/api/gasproperties/density", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -31,7 +31,7 @@ namespace Beep.OilandGas.Client.App.Services.Properties
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasComposition, decimal>("/api/gasproperties/fvf", request, null, cancellationToken);
+                return await PostAsync<GasComposition, decimal>("/api/gasproperties/fvf", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -43,7 +43,7 @@ namespace Beep.OilandGas.Client.App.Services.Properties
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
                 var endpoint = BuildRequestUriWithParams("/api/gasproperties/composition/save", queryParams);
-                return await PostAsync<GAS_COMPOSITION, GAS_COMPOSITION>(endpoint, composition, null, cancellationToken);
+                return await PostAsync<GAS_COMPOSITION, GAS_COMPOSITION>(endpoint, composition, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -52,7 +52,7 @@ namespace Beep.OilandGas.Client.App.Services.Properties
         {
             if (string.IsNullOrEmpty(compositionId)) throw new ArgumentNullException(nameof(compositionId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<GAS_COMPOSITION>($"/api/gasproperties/composition/{Uri.EscapeDataString(compositionId)}", null, cancellationToken);
+                return await GetAsync<GAS_COMPOSITION>($"/api/gasproperties/composition/{Uri.EscapeDataString(compositionId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

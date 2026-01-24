@@ -1,0 +1,43 @@
+{
+  "authority": "CNH",
+  "name": "Mexico CNH",
+  "country": "Mexico",
+  "templates": [
+    {
+      "formCode": "CNH_DRILLING_REQUEST",
+      "formName": "CNH Drilling Request",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "CNH_ENV_PERMIT",
+      "formName": "CNH Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "WASTE_TYPE",
+        "WASTE_VOLUME",
+        "DISPOSAL_METHOD",
+        "MONITORING_PLAN"
+      ]
+    },
+    {
+      "formCode": "CNH_INJECTION_NOTICE",
+      "formName": "CNH Injection Notice",
+      "applicationType": "INJECTION",
+      "fieldKeys": [
+        "INJECTION_TYPE",
+        "INJECTION_ZONE",
+        "INJECTION_FLUID",
+        "MAXIMUM_INJECTION_PRESSURE",
+        "MAXIMUM_INJECTION_RATE"
+      ]
+    }
+  ]
+}

@@ -43,6 +43,14 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref StagesValue, value); }
 
         }
+
+        public string? WellId { get; set; }
+        public string? FacilityId { get; set; }
+        public List<Component>? FeedComposition { get; set; }
+        public decimal? Pressure { get; set; }
+        public decimal? Temperature { get; set; }
+        public string CalculationType { get; set; }
+        public string UserId { get; set; }
     }
 
     /// <summary>

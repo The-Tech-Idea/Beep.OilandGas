@@ -13,7 +13,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             if (string.IsNullOrEmpty(sourceTable)) throw new ArgumentException("Source table is required", nameof(sourceTable));
             if (string.IsNullOrEmpty(targetTable)) throw new ArgumentException("Target table is required", nameof(targetTable));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/ppdm39mapping/{Uri.EscapeDataString(sourceTable)}/{Uri.EscapeDataString(targetTable)}", null, cancellationToken);
+                return await GetAsync<object>($"/api/ppdm39mapping/{Uri.EscapeDataString(sourceTable)}/{Uri.EscapeDataString(targetTable)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             {
                 var queryParams = new System.Collections.Generic.Dictionary<string, string> { ["userId"] = userId };
                 var endpoint = BuildRequestUriWithParams("/api/ppdm39mapping", queryParams);
-                return await PostAsync<object, object>(endpoint, mapping, null, cancellationToken);
+                return await PostAsync<object, object>(endpoint, mapping, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -34,7 +34,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             if (string.IsNullOrEmpty(mappingId)) throw new ArgumentException("Mapping ID is required", nameof(mappingId));
             if (sourceEntity == null) throw new ArgumentNullException(nameof(sourceEntity));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>($"/api/ppdm39mapping/{Uri.EscapeDataString(mappingId)}/apply", sourceEntity, null, cancellationToken);
+                return await PostAsync<object, object>($"/api/ppdm39mapping/{Uri.EscapeDataString(mappingId)}/apply", sourceEntity, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

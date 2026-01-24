@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<WellTestData, WellTestAnalysisResult>("/api/welltest/buildup", request, null, cancellationToken);
+                return await PostAsync<WellTestData, WellTestAnalysisResult>("/api/welltest/buildup", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -23,7 +23,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<WellTestData, WellTestAnalysisResult>("/api/welltest/drawdown", request, null, cancellationToken);
+                return await PostAsync<WellTestData, WellTestAnalysisResult>("/api/welltest/drawdown", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -31,7 +31,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<WELL_TEST_DATA, WELL_TEST_ANALYSIS_RESULT>("/api/welltest/derivative", request, null, cancellationToken);
+                return await PostAsync<WELL_TEST_DATA, WELL_TEST_ANALYSIS_RESULT>("/api/welltest/derivative", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<WELL_TEST_DATA, WELL_TEST_ANALYSIS_RESULT>("/api/welltest/interpret", request, null, cancellationToken);
+                return await PostAsync<WELL_TEST_DATA, WELL_TEST_ANALYSIS_RESULT>("/api/welltest/interpret", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -47,7 +47,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<WELL_TEST_DATA>>($"/api/welltest/{wellId}/history", null, cancellationToken);
+                return await GetAsync<List<WELL_TEST_DATA>>($"/api/welltest/{wellId}/history", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

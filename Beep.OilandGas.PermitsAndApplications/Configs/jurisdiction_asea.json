@@ -1,0 +1,29 @@
+{
+  "authority": "ASEA",
+  "name": "Mexico ASEA",
+  "country": "Mexico",
+  "templates": [
+    {
+      "formCode": "ASEA_ENV_PERMIT",
+      "formName": "ASEA Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION",
+        "NORM_INVOLVED_IND"
+      ]
+    },
+    {
+      "formCode": "ASEA_SAFETY_PLAN",
+      "formName": "ASEA Safety Plan",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

@@ -49,6 +49,12 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
             set { SetProperty(ref LIQUID_DENSITYValue, value); }
         }
 
+        private PIPELINE_PROPERTIES pIPELINE_PROPERTIESValue;
+        public PIPELINE_PROPERTIES PIPELINE_PROPERTIES
+        {
+            get { return this.pIPELINE_PROPERTIESValue; }
+            set { SetProperty(ref pIPELINE_PROPERTIESValue, value); }
+        }
         // Standard PPDM columns
 
     }

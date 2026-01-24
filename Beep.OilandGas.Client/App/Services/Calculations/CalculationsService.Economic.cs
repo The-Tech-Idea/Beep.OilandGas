@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<List<CashFlow>, decimal>("/api/economicanalysis/npv", request, null, cancellationToken);
+                return await PostAsync<List<CashFlow>, decimal>("/api/economicanalysis/npv", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -23,7 +23,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<List<CashFlow>, decimal>("/api/economicanalysis/irr", request, null, cancellationToken);
+                return await PostAsync<List<CashFlow>, decimal>("/api/economicanalysis/irr", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -31,7 +31,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<List<CashFlow>, EconomicResult>("/api/economicanalysis/analyze", request, null, cancellationToken);
+                return await PostAsync<List<CashFlow>, EconomicResult>("/api/economicanalysis/analyze", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<List<ECONOMIC_CASH_FLOW>, List<NPVProfilePoint>>("/api/economicanalysis/npv-profile", request, null, cancellationToken);
+                return await PostAsync<List<ECONOMIC_CASH_FLOW>, List<NPVProfilePoint>>("/api/economicanalysis/npv-profile", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -51,7 +51,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
                 var endpoint = BuildRequestUriWithParams("/api/economicanalysis/result", queryParams);
-                return await PostAsync<ECONOMIC_ANALYSIS_RESULT, ECONOMIC_ANALYSIS_RESULT>(endpoint, result, null, cancellationToken);
+                return await PostAsync<ECONOMIC_ANALYSIS_RESULT, ECONOMIC_ANALYSIS_RESULT>(endpoint, result, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -60,7 +60,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         {
             if (string.IsNullOrEmpty(resultId)) throw new ArgumentException("Result ID is required", nameof(resultId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<ECONOMIC_ANALYSIS_RESULT>($"/api/economicanalysis/result/{Uri.EscapeDataString(resultId)}", null, cancellationToken);
+                return await GetAsync<ECONOMIC_ANALYSIS_RESULT>($"/api/economicanalysis/result/{Uri.EscapeDataString(resultId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

@@ -1,0 +1,30 @@
+{
+  "authority": "WA_DMIRS",
+  "name": "Western Australia DMIRS",
+  "country": "Australia",
+  "templates": [
+    {
+      "formCode": "WA_DRILLING_PERMIT",
+      "formName": "WA Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "WA_ENV_PERMIT",
+      "formName": "WA Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

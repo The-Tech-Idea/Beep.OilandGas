@@ -12,21 +12,21 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         {
             if (setupOptions == null) throw new ArgumentNullException(nameof(setupOptions));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/ppdm39setup/initialize", setupOptions, null, cancellationToken);
+                return await PostAsync<object, object>("/api/ppdm39setup/initialize", setupOptions, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
         public async Task<object> GetDatabaseStatusAsync(CancellationToken cancellationToken = default)
         {
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>("/api/ppdm39setup/status", null, cancellationToken);
+                return await GetAsync<object>("/api/ppdm39setup/status", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
         public async Task<object> RunMigrationsAsync(CancellationToken cancellationToken = default)
         {
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/ppdm39setup/migrations", new { }, null, cancellationToken);
+                return await PostAsync<object, object>("/api/ppdm39setup/migrations", new { }, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -34,7 +34,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         {
             if (string.IsNullOrEmpty(seedType)) throw new ArgumentException("Seed type is required", nameof(seedType));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>($"/api/ppdm39setup/seed/{Uri.EscapeDataString(seedType)}", new { }, null, cancellationToken);
+                return await PostAsync<object, object>($"/api/ppdm39setup/seed/{Uri.EscapeDataString(seedType)}", new { }, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -46,7 +46,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         {
             if (options == null) throw new ArgumentNullException(nameof(options));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/ppdm39demo/create", options, null, cancellationToken);
+                return await PostAsync<object, object>("/api/ppdm39demo/create", options, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -54,7 +54,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         {
             if (string.IsNullOrEmpty(demoId)) throw new ArgumentException("Demo ID is required", nameof(demoId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await DeleteAsync<object>($"/api/ppdm39demo/{Uri.EscapeDataString(demoId)}", null, cancellationToken);
+                return await DeleteAsync<object>($"/api/ppdm39demo/{Uri.EscapeDataString(demoId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         {
             if (string.IsNullOrEmpty(demoId)) throw new ArgumentException("Demo ID is required", nameof(demoId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/ppdm39demo/{Uri.EscapeDataString(demoId)}/status", null, cancellationToken);
+                return await GetAsync<object>($"/api/ppdm39demo/{Uri.EscapeDataString(demoId)}/status", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

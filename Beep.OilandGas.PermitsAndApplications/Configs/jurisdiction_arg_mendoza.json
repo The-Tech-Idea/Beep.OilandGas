@@ -1,0 +1,30 @@
+{
+  "authority": "ARG_MENDOZA",
+  "name": "Argentina Mendoza",
+  "country": "Argentina",
+  "templates": [
+    {
+      "formCode": "MENDOZA_DRILLING_PERMIT",
+      "formName": "Mendoza Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "MENDOZA_ENV_PERMIT",
+      "formName": "Mendoza Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

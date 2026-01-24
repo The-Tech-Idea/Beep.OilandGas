@@ -1,0 +1,30 @@
+{
+  "authority": "NLDET",
+  "name": "Newfoundland and Labrador Department of Industry, Energy and Technology",
+  "country": "Canada",
+  "templates": [
+    {
+      "formCode": "NLDET_DRILLING_PERMIT",
+      "formName": "NLDET Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "NLDET_ENV_PERMIT",
+      "formName": "NLDET Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

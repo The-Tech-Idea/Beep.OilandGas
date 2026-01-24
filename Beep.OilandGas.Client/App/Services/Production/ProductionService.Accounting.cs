@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
             if (string.IsNullOrEmpty(wellId)) throw new ArgumentNullException(nameof(wellId));
             if (dateRange == null) throw new ArgumentNullException(nameof(dateRange));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<DateRangeRequest, PRODUCTION_ALLOCATION>($"/api/production/volumes/{Uri.EscapeDataString(wellId)}", dateRange, null, cancellationToken);
+                return await PostAsync<DateRangeRequest, PRODUCTION_ALLOCATION>($"/api/production/volumes/{Uri.EscapeDataString(wellId)}", dateRange, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -23,7 +23,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<ROYALTY_INTEREST, ROYALTY_CALCULATION>("/api/production/royalties/calculate", request, null, cancellationToken);
+                return await PostAsync<ROYALTY_INTEREST, ROYALTY_CALCULATION>("/api/production/royalties/calculate", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -31,7 +31,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (string.IsNullOrEmpty(entityId)) throw new ArgumentNullException(nameof(entityId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<COST_ALLOCATION>($"/api/production/costs/{Uri.EscapeDataString(entityId)}", null, cancellationToken);
+                return await GetAsync<COST_ALLOCATION>($"/api/production/costs/{Uri.EscapeDataString(entityId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (string.IsNullOrEmpty(entityId)) throw new ArgumentNullException(nameof(entityId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<REVENUE_DISTRIBUTION>($"/api/production/revenue/{Uri.EscapeDataString(entityId)}", null, cancellationToken);
+                return await GetAsync<REVENUE_DISTRIBUTION>($"/api/production/revenue/{Uri.EscapeDataString(entityId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -47,7 +47,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<PRODUCTION_ALLOCATION, ALLOCATION_RESULT>("/api/production/allocation", request, null, cancellationToken);
+                return await PostAsync<PRODUCTION_ALLOCATION, ALLOCATION_RESULT>("/api/production/allocation", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -59,7 +59,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
                 var endpoint = BuildRequestUriWithParams("/api/production/allocation/save", queryParams);
-                return await PostAsync<ALLOCATION_RESULT, ALLOCATION_RESULT>(endpoint, allocation, null, cancellationToken);
+                return await PostAsync<ALLOCATION_RESULT, ALLOCATION_RESULT>(endpoint, allocation, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }

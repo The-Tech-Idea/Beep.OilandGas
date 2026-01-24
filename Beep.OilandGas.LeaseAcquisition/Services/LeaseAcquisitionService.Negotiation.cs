@@ -218,7 +218,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                     LeaseId = leaseId,
                     IsExecuted = true,
                     ExecutionDate = details.ExecutionDate,
-                    ExecutionStatus = "EXECUTED",
+                    Status = "EXECUTED",
                     SignatoryStatus = new List<string>
                     {
                         "Company - Signed",

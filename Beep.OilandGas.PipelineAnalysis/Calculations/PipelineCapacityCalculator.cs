@@ -15,25 +15,25 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
         /// </summary>
         /// <param name="flowProperties">Gas pipeline flow properties.</param>
         /// <returns>Pipeline capacity results.</returns>
-        public static PipelineCapacityResult CalculateGasPipelineCapacity(
-            GasPipelineFlowProperties flowProperties)
+        public static PIPELINE_CAPACITY_RESULT CalculateGasPipelineCapacity(
+            GAS_PIPELINE_FLOW_PROPERTIES flowProperties)
         {
             if (flowProperties == null)
                 throw new ArgumentNullException(nameof(flowProperties));
 
-            if (flowProperties.Pipeline == null)
-                throw new ArgumentNullException(nameof(flowProperties.Pipeline));
+            if (flowProperties.PIPELINE_PROPERTIES == null)
+                throw new ArgumentNullException(nameof(flowProperties.PIPELINE_PROPERTIES));
 
-            var result = new PipelineCapacityResult();
+            var result = new PIPELINE_CAPACITY_RESULT();
 
-            var pipeline = flowProperties.Pipeline;
+            var pipeline = flowProperties.PIPELINE_PROPERTIES;
 
             // Calculate average pressure
-            decimal averagePressure = (pipeline.InletPressure + pipeline.OutletPressure) / 2m;
+            decimal averagePressure = (pipeline.INLET_PRESSURE + pipeline.OUTLET_PRESSURE) / 2m;
 
             // Calculate Z-factor at average conditions
             decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                averagePressure, pipeline.AverageTemperature, flowProperties.GasSpecificGravity);
+                averagePressure, pipeline.AVERAGE_TEMPERATURE, flowProperties.GAS_SPECIFIC_GRAVITY);
 
             // Calculate pipeline capacity using Weymouth equation
             // Q = (433.5 * Tb / Pb) * (1 / sqrt(f)) * D^2.667 * sqrt((P1^2 - P2^2) / (L * T * Z * SG))
@@ -41,7 +41,8 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
 
             decimal diameterFt = pipeline.Diameter / 12m; // feet
             decimal pressureDifferenceSquared = pipeline.InletPressure * pipeline.InletPressure -
-                                               pipeline.OutletPressure * pipeline.OutletPressure;
+                                               pipeline.
+                                               OutletPressure * pipeline.OutletPressure;
 
             if (pressureDifferenceSquared <= 0)
             {

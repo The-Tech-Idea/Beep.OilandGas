@@ -14,7 +14,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<ESPDesignProperties, ESPDesignResult>("/api/pump/analyze", request, null, cancellationToken);
+                return await PostAsync<ESPDesignProperties, ESPDesignResult>("/api/pump/analyze", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -22,7 +22,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<ESP_DESIGN_PROPERTIES, ESP_DESIGN_RESULT>("/api/pump/system-curve", request, null, cancellationToken);
+                return await PostAsync<ESP_DESIGN_PROPERTIES, ESP_DESIGN_RESULT>("/api/pump/system-curve", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<ESP_DESIGN_PROPERTIES, ESP_DESIGN_RESULT>("/api/pump/optimize", request, null, cancellationToken);
+                return await PostAsync<ESP_DESIGN_PROPERTIES, ESP_DESIGN_RESULT>("/api/pump/optimize", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<ESP_DESIGN_PROPERTIES, ESP_DESIGN_RESULT>("/api/pump/select", request, null, cancellationToken);
+                return await PostAsync<ESP_DESIGN_PROPERTIES, ESP_DESIGN_RESULT>("/api/pump/select", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -46,7 +46,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (string.IsNullOrEmpty(pumpId)) throw new ArgumentNullException(nameof(pumpId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<ESP_PUMP_POINT>($"/api/pump/{pumpId}/efficiency", null, cancellationToken);
+                return await GetAsync<ESP_PUMP_POINT>($"/api/pump/{pumpId}/efficiency", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

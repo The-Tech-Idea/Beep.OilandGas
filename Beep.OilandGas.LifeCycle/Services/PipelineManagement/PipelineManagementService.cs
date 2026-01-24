@@ -14,6 +14,9 @@ using Beep.OilandGas.LifeCycle.Services.Integration;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
+using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.LifeCycle.Services.PipelineManagement
 {
@@ -530,7 +533,7 @@ namespace Beep.OilandGas.LifeCycle.Services.PipelineManagement
         /// <summary>
         /// Runs pipeline analysis for a pipeline using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.Data.PipelineAnalysisResult> AnalyzePipelineAsync(
+        public async Task<PipelineAnalysisResult> AnalyzePipelineAsync(
             string pipelineId,
             string userId = "system",
             string pipelineType = "GAS",
@@ -540,7 +543,7 @@ namespace Beep.OilandGas.LifeCycle.Services.PipelineManagement
             if (_dataFlowService == null)
             {
                 throw new InvalidOperationException("DataFlowService is not available. Inject DataFlowService in constructor to use analysis features.");
-using Beep.OilandGas.Models.Data.PipelineAnalysis;
+
             }
 
             try

@@ -12,7 +12,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<EORAnalysisRequest, EORAnalysisResult>("/api/drilling/eor/analyze", request, null, cancellationToken);
+                return await PostAsync<EORAnalysisRequest, EORAnalysisResult>("/api/drilling/eor/analyze", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -20,7 +20,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (string.IsNullOrEmpty(fieldId)) throw new ArgumentNullException(nameof(fieldId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<InjectionPlan>($"/api/drilling/eor/injection/{Uri.EscapeDataString(fieldId)}", null, cancellationToken);
+                return await GetAsync<InjectionPlan>($"/api/drilling/eor/injection/{Uri.EscapeDataString(fieldId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -28,7 +28,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (string.IsNullOrEmpty(reservoirId)) throw new ArgumentNullException(nameof(reservoirId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<RecoveryFactor>($"/api/drilling/eor/recovery/{Uri.EscapeDataString(reservoirId)}", null, cancellationToken);
+                return await GetAsync<RecoveryFactor>($"/api/drilling/eor/recovery/{Uri.EscapeDataString(reservoirId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -36,7 +36,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<WaterfloodDesign, WaterfloodDesign>("/api/drilling/eor/waterflood", request, null, cancellationToken);
+                return await PostAsync<WaterfloodDesign, WaterfloodDesign>("/api/drilling/eor/waterflood", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasInjectionDesign, GasInjectionDesign>("/api/drilling/eor/gasinjection", request, null, cancellationToken);
+                return await PostAsync<GasInjectionDesign, GasInjectionDesign>("/api/drilling/eor/gasinjection", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -52,7 +52,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (string.IsNullOrEmpty(projectId)) throw new ArgumentNullException(nameof(projectId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<EORPerformance>($"/api/drilling/eor/performance/{Uri.EscapeDataString(projectId)}", null, cancellationToken);
+                return await GetAsync<EORPerformance>($"/api/drilling/eor/performance/{Uri.EscapeDataString(projectId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -60,7 +60,7 @@ namespace Beep.OilandGas.Client.App.Services.Drilling
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<InjectionPattern, InjectionPattern>("/api/drilling/eor/optimize", request, null, cancellationToken);
+                return await PostAsync<InjectionPattern, InjectionPattern>("/api/drilling/eor/optimize", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

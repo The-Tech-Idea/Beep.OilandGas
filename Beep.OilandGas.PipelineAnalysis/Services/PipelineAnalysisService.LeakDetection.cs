@@ -191,7 +191,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
                 var result = new GasLossRate
                 {
                     PipelineId = pipelineId,
-                    GasLossRate = gasLossRate,
+                    LossRate = gasLossRate,
                     Unit = "SCFH",
                     DailyLoss = dailyLoss,
                     AnnualLoss = annualLoss,

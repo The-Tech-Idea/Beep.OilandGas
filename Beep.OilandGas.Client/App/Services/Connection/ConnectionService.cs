@@ -19,7 +19,7 @@ namespace Beep.OilandGas.Client.App.Services.Connection
         public async Task<List<object>> GetAllConnectionsAsync(CancellationToken cancellationToken = default)
         {
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<object>>("/api/connection/connections", null, cancellationToken);
+                return await GetAsync<List<object>>("/api/connection/connections", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -27,7 +27,7 @@ namespace Beep.OilandGas.Client.App.Services.Connection
         {
             if (string.IsNullOrEmpty(connectionName)) throw new ArgumentException("Connection name is required", nameof(connectionName));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/connection/connections/{Uri.EscapeDataString(connectionName)}", null, cancellationToken);
+                return await GetAsync<object>($"/api/connection/connections/{Uri.EscapeDataString(connectionName)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -35,14 +35,14 @@ namespace Beep.OilandGas.Client.App.Services.Connection
         {
             if (string.IsNullOrEmpty(connectionName)) throw new ArgumentException("Connection name is required", nameof(connectionName));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/connection/connections/{Uri.EscapeDataString(connectionName)}/test", null, cancellationToken);
+                return await GetAsync<object>($"/api/connection/connections/{Uri.EscapeDataString(connectionName)}/test", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
         public async Task<object> GetCurrentConnectionAsync(CancellationToken cancellationToken = default)
         {
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>("/api/connection/current", null, cancellationToken);
+                return await GetAsync<object>("/api/connection/current", cancellationToken);
             return new { ConnectionName = CurrentConnectionName };
         }
 
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.Client.App.Services.Connection
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
                 var endpoint = BuildRequestUriWithParams($"/api/connection/current/{Uri.EscapeDataString(connectionName)}", queryParams);
-                return await PostAsync<object, object>(endpoint, null!, null, cancellationToken);
+                return await PostAsync<object, object>(endpoint, null!, cancellationToken);
             }
             return new { Success = true, Message = $"Current connection set to '{connectionName}'" };
         }
@@ -64,7 +64,7 @@ namespace Beep.OilandGas.Client.App.Services.Connection
         {
             if (string.IsNullOrEmpty(connectionName)) throw new ArgumentException("Connection name is required", nameof(connectionName));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>($"/api/connection/connections/{Uri.EscapeDataString(connectionName)}/create", null!, null, cancellationToken);
+                return await PostAsync<object, object>($"/api/connection/connections/{Uri.EscapeDataString(connectionName)}/create", null!, cancellationToken);
             throw new InvalidOperationException("Local mode not supported for creating connections");
         }
     }

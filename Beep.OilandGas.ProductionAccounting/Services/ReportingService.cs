@@ -9,6 +9,13 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.Royalty;
 using Beep.OilandGas.Models.Data.Reporting;
+using OperationalReportRequest = Beep.OilandGas.Models.Data.Reporting.GenerateOperationalReportRequest;
+using FinancialReportRequest = Beep.OilandGas.Models.Data.Reporting.GenerateFinancialReportRequest;
+using RoyaltyStatementRequest = Beep.OilandGas.Models.Data.Reporting.GenerateRoyaltyStatementRequest;
+using JIBStatementRequest = Beep.OilandGas.Models.Data.Reporting.GenerateJIBStatementRequest;
+using ReportingScheduleRequest = Beep.OilandGas.Models.Data.Reporting.ScheduleReportRequest;
+using ReportDistributionRequestAlias = Beep.OilandGas.Models.Data.Reporting.ReportDistributionRequest;
+using HistoricalReport = Beep.OilandGas.Models.Data.Reporting.ReportHistory;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -46,7 +53,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             _logger = logger;
         }
 
-        public async Task<ReportResult> GenerateOperationalReportAsync(GenerateOperationalReportRequest request, string userId, string? connectionName = null)
+        public async Task<ReportResult> GenerateOperationalReportAsync(OperationalReportRequest request, string userId, string? connectionName = null)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -80,7 +87,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             };
         }
 
-        public async Task<ReportResult> GenerateFinancialReportAsync(GenerateFinancialReportRequest request, string userId, string? connectionName = null)
+        public async Task<ReportResult> GenerateFinancialReportAsync(FinancialReportRequest request, string userId, string? connectionName = null)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -154,7 +161,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             };
         }
 
-        public async Task<ReportResult> GenerateRoyaltyStatementAsync(GenerateRoyaltyStatementRequest request, string userId, string? connectionName = null)
+        public async Task<ReportResult> GenerateRoyaltyStatementAsync(RoyaltyStatementRequest request, string userId, string? connectionName = null)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -203,7 +210,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             };
         }
 
-        public async Task<ReportResult> GenerateJIBStatementAsync(GenerateJIBStatementRequest request, string userId, string? connectionName = null)
+        public async Task<ReportResult> GenerateJIBStatementAsync(JIBStatementRequest request, string userId, string? connectionName = null)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -222,7 +229,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             };
         }
 
-        public Task<ReportSchedule> ScheduleReportAsync(ScheduleReportRequest request, string userId, string? connectionName = null)
+        public Task<ReportSchedule> ScheduleReportAsync(ReportingScheduleRequest request, string userId, string? connectionName = null)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -253,7 +260,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return Task.FromResult(new List<ReportSchedule>());
         }
 
-        public Task<ReportDistributionResult> DistributeReportAsync(string reportId, ReportDistributionRequest request, string userId, string? connectionName = null)
+        public Task<ReportDistributionResult> DistributeReportAsync(string reportId, ReportDistributionRequestAlias request, string userId, string? connectionName = null)
         {
             if (string.IsNullOrWhiteSpace(reportId))
                 throw new ArgumentNullException(nameof(reportId));
@@ -270,14 +277,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return Task.FromResult(result);
         }
 
-        public async Task<List<ReportHistory>> GetReportHistoryAsync(string? reportType, DateTime? startDate, DateTime? endDate, string? connectionName = null)
+        public async Task<List<HistoricalReport>> GetReportHistoryAsync(string? reportType, DateTime? startDate, DateTime? endDate, string? connectionName = null)
         {
             var histories = new List<ReportHistory>();
 
             if (string.IsNullOrWhiteSpace(reportType) || string.Equals(reportType, "OPERATIONAL", StringComparison.OrdinalIgnoreCase))
             {
                 var operational = await GetOperationalReportsAsync(startDate, endDate, connectionName);
-                histories.AddRange(operational.Select(r => new ReportHistory
+                histories.AddRange(operational.Select(r => new HistoricalReport
                 {
                     ReportId = r.OPERATIONAL_REPORT_ID,
                     ReportType = r.REPORT_TYPE,
@@ -292,7 +299,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (string.IsNullOrWhiteSpace(reportType) || string.Equals(reportType, "FINANCIAL", StringComparison.OrdinalIgnoreCase))
             {
                 var financial = await GetFinancialReportsAsync(startDate, endDate, connectionName);
-                histories.AddRange(financial.Select(r => new ReportHistory
+                histories.AddRange(financial.Select(r => new HistoricalReport
                 {
                     ReportId = r.FINANCIAL_REPORT_ID,
                     ReportType = r.REPORT_TYPE,

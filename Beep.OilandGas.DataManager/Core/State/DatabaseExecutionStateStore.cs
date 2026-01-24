@@ -1,5 +1,6 @@
 using System.Data;
 using System.Text.Json;
+using Beep.OilandGas.DataManager.Core.Exceptions;
 using Beep.OilandGas.DataManager.Core.Models;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep;
@@ -39,7 +40,7 @@ namespace Beep.OilandGas.DataManager.Core.State
 
                 // Check if state exists
                 var checkSql = $"SELECT COUNT(*) FROM {TableName} WHERE EXECUTION_ID = {paramDelim}executionId";
-                var exists = _dataSource.GetScalar(checkSql, new Dictionary<string, object> { { "executionId", state.ExecutionId } }) > 0;
+                var exists = _dataSource.GetScalar(checkSql) > 0;
 
                 if (exists)
                 {
@@ -71,7 +72,7 @@ namespace Beep.OilandGas.DataManager.Core.State
                         { "updatedDate", DateTime.UtcNow }
                     };
 
-                    _dataSource.ExecuteSql(updateSql, updateParams);
+                    _dataSource.ExecuteSql(updateSql);
                 }
                 else
                 {
@@ -99,7 +100,7 @@ namespace Beep.OilandGas.DataManager.Core.State
                         { "updatedDate", DateTime.UtcNow }
                     };
 
-                    _dataSource.ExecuteSql(insertSql, insertParams);
+                    _dataSource.ExecuteSql(insertSql);
                 }
 
                 _logger?.LogDebug("Saved execution state to database: {ExecutionId}", state.ExecutionId);
@@ -117,7 +118,7 @@ namespace Beep.OilandGas.DataManager.Core.State
             {
                 var paramDelim = _dataSource.ParameterDelimiter;
                 var sql = $"SELECT STATE_JSON FROM {TableName} WHERE EXECUTION_ID = {paramDelim}executionId";
-                var result = _dataSource.RunQuery(sql, new Dictionary<string, object> { { "executionId", executionId } });
+                var result = _dataSource.RunQuery(sql);
 
                 var row = result.FirstOrDefault();
                 if (row == null)
@@ -162,7 +163,7 @@ namespace Beep.OilandGas.DataManager.Core.State
             {
                 var paramDelim = _dataSource.ParameterDelimiter;
                 var sql = $"DELETE FROM {TableName} WHERE EXECUTION_ID = {paramDelim}executionId";
-                _dataSource.ExecuteSql(sql, new Dictionary<string, object> { { "executionId", executionId } });
+                _dataSource.ExecuteSql(sql);
                 _logger?.LogDebug("Deleted execution state from database: {ExecutionId}", executionId);
             }
             catch (Exception ex)
@@ -244,23 +245,22 @@ namespace Beep.OilandGas.DataManager.Core.State
 
         private string GetCheckTableExistsSql()
         {
-            var dbType = _dataSource.DatasourceEntity?.DatabaseType?.ToLower() ?? "sqlserver";
-            return dbType switch
+
+            return _dataSource.Dataconnection.ConnectionProp.DatabaseType switch
             {
-                "sqlserver" or "sqlite" => "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'EXECUTION_STATE'",
-                "postgresql" => "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'execution_state'",
-                "oracle" => "SELECT COUNT(*) FROM user_tables WHERE table_name = 'EXECUTION_STATE'",
-                "mysql" or "mariadb" => "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'EXECUTION_STATE'",
+                 TheTechIdea.Beep.Utilities.DataSourceType.SqlServer or TheTechIdea.Beep.Utilities.DataSourceType.SqlLite => "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'EXECUTION_STATE'",
+                TheTechIdea.Beep.Utilities.DataSourceType.Postgre => "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'execution_state'",
+                TheTechIdea.Beep.Utilities.DataSourceType.Oracle=> "SELECT COUNT(*) FROM user_tables WHERE table_name = 'EXECUTION_STATE'",
+               TheTechIdea.Beep.Utilities.DataSourceType.Mysql or  TheTechIdea.Beep.Utilities.DataSourceType.MariaDB => "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'EXECUTION_STATE'",
                 _ => "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'EXECUTION_STATE'"
             };
         }
 
         private string GetCreateTableSql()
         {
-            var dbType = _dataSource.DatasourceEntity?.DatabaseType?.ToLower() ?? "sqlserver";
-            return dbType switch
+            return _dataSource.Dataconnection.ConnectionProp.DatabaseType switch
             {
-                "sqlserver" => @"
+               TheTechIdea.Beep.Utilities.DataSourceType.SqlServer => @"
                     CREATE TABLE EXECUTION_STATE (
                         EXECUTION_ID NVARCHAR(100) PRIMARY KEY,
                         MODULE_NAME NVARCHAR(100) NOT NULL,
@@ -274,7 +274,7 @@ namespace Beep.OilandGas.DataManager.Core.State
                         CREATED_DATE DATETIME NOT NULL DEFAULT GETDATE(),
                         UPDATED_DATE DATETIME NOT NULL DEFAULT GETDATE()
                     )",
-                "sqlite" => @"
+                TheTechIdea.Beep.Utilities.DataSourceType.SqlLite => @"
                     CREATE TABLE EXECUTION_STATE (
                         EXECUTION_ID TEXT PRIMARY KEY,
                         MODULE_NAME TEXT NOT NULL,
@@ -288,7 +288,7 @@ namespace Beep.OilandGas.DataManager.Core.State
                         CREATED_DATE TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         UPDATED_DATE TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
                     )",
-                "postgresql" => @"
+                TheTechIdea.Beep.Utilities.DataSourceType.Postgre => @"
                     CREATE TABLE execution_state (
                         execution_id VARCHAR(100) PRIMARY KEY,
                         module_name VARCHAR(100) NOT NULL,
@@ -302,7 +302,7 @@ namespace Beep.OilandGas.DataManager.Core.State
                         created_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         updated_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     )",
-                "oracle" => @"
+               TheTechIdea.Beep.Utilities.DataSourceType.Oracle => @"
                     CREATE TABLE execution_state (
                         execution_id VARCHAR2(100) PRIMARY KEY,
                         module_name VARCHAR2(100) NOT NULL,
@@ -316,7 +316,7 @@ namespace Beep.OilandGas.DataManager.Core.State
                         created_date DATE NOT NULL DEFAULT SYSDATE,
                         updated_date DATE NOT NULL DEFAULT SYSDATE
                     )",
-                "mysql" or "mariadb" => @"
+                TheTechIdea.Beep.Utilities.DataSourceType.Mysql or TheTechIdea.Beep.Utilities.DataSourceType.MariaDB => @"
                     CREATE TABLE EXECUTION_STATE (
                         EXECUTION_ID VARCHAR(100) PRIMARY KEY,
                         MODULE_NAME VARCHAR(100) NOT NULL,

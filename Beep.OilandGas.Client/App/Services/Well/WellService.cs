@@ -20,7 +20,7 @@ namespace Beep.OilandGas.Client.App.Services.Well
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/well/compare", request, null, cancellationToken);
+                return await PostAsync<object, object>("/api/well/compare", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -28,14 +28,14 @@ namespace Beep.OilandGas.Client.App.Services.Well
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/well/compare-multi-source", request, null, cancellationToken);
+                return await PostAsync<object, object>("/api/well/compare-multi-source", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
         public async Task<List<object>> GetComparisonFieldsAsync(CancellationToken cancellationToken = default)
         {
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<object>>("/api/well/comparison-fields", null, cancellationToken);
+                return await GetAsync<List<object>>("/api/well/comparison-fields", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
     }

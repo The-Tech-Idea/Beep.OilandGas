@@ -1,0 +1,30 @@
+{
+  "authority": "WOGCC",
+  "name": "Wyoming Oil and Gas Conservation Commission",
+  "country": "UnitedStates",
+  "templates": [
+    {
+      "formCode": "WOGCC_DRILLING_PERMIT",
+      "formName": "WOGCC Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "WOGCC_ENV_PERMIT",
+      "formName": "WOGCC Environmental Permit",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

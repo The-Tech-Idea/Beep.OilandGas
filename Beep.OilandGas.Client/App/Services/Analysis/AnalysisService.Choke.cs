@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
-using Beep.OilandGas.Models.Data.ChokeAnalysis;
 
 namespace Beep.OilandGas.Client.App.Services.Analysis
 {
@@ -14,7 +13,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasChokeProperties, ChokeFlowResult>("/api/choke/downhole/flow", request, null, cancellationToken);
+                return await PostAsync<GasChokeProperties, ChokeFlowResult>("/api/choke/downhole/flow", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -22,7 +21,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasChokeProperties, ChokeFlowResult>("/api/choke/uphole/flow", request, null, cancellationToken);
+                return await PostAsync<GasChokeProperties, ChokeFlowResult>("/api/choke/uphole/flow", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -30,7 +29,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasChokeProperties, ChokeFlowResult>("/api/choke/downstream-pressure", request, null, cancellationToken);
+                return await PostAsync<GasChokeProperties, ChokeFlowResult>("/api/choke/downstream-pressure", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -38,7 +37,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasChokeProperties, ChokeFlowResult>("/api/choke/size", request, null, cancellationToken);
+                return await PostAsync<GasChokeProperties, ChokeFlowResult>("/api/choke/size", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -46,7 +45,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<CHOKE_PROPERTIES, CHOKE_FLOW_RESULT>("/api/choke/performance", request, null, cancellationToken);
+                return await PostAsync<CHOKE_PROPERTIES, CHOKE_FLOW_RESULT>("/api/choke/performance", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

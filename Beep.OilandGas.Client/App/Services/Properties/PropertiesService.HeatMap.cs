@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Client.App.Services.Properties
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<HEAT_MAP_CONFIGURATION, List<HeatMapDataPoint>>("/api/heatmap/generate", request, null, cancellationToken);
+                return await PostAsync<HEAT_MAP_CONFIGURATION, List<HeatMapDataPoint>>("/api/heatmap/generate", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -27,7 +27,7 @@ namespace Beep.OilandGas.Client.App.Services.Properties
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
                 var endpoint = BuildRequestUriWithParams("/api/heatmap/configuration/save", queryParams);
-                return await PostAsync<HEAT_MAP_CONFIGURATION, HEAT_MAP_CONFIGURATION>(endpoint, configuration, null, cancellationToken);
+                return await PostAsync<HEAT_MAP_CONFIGURATION, HEAT_MAP_CONFIGURATION>(endpoint, configuration, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -36,7 +36,7 @@ namespace Beep.OilandGas.Client.App.Services.Properties
         {
             if (string.IsNullOrEmpty(heatMapId)) throw new ArgumentNullException(nameof(heatMapId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<HEAT_MAP_CONFIGURATION>($"/api/heatmap/configuration/{Uri.EscapeDataString(heatMapId)}", null, cancellationToken);
+                return await GetAsync<HEAT_MAP_CONFIGURATION>($"/api/heatmap/configuration/{Uri.EscapeDataString(heatMapId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.Client.App.Services.Properties
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<HEAT_MAP_CONFIGURATION, List<HEAT_MAP_DATA_POINT>>("/api/heatmap/production", request, null, cancellationToken);
+                return await PostAsync<HEAT_MAP_CONFIGURATION, List<HEAT_MAP_DATA_POINT>>("/api/heatmap/production", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

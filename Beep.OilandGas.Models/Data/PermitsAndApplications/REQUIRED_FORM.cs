@@ -87,6 +87,8 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+        public string REQUIRED_IND { get; set; }
+        public string FORM_CODE { get; set; }
     }
 }
 

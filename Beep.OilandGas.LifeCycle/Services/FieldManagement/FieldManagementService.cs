@@ -14,6 +14,8 @@ using Beep.OilandGas.LifeCycle.Services.Integration;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.PPDM.Models;
 
 namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
 {
@@ -320,7 +322,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
         /// <summary>
         /// Runs DCA (Decline Curve Analysis) for a field using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.Data.DCAResult> RunFieldDCAAsync(
+        public async Task<DCAResult> RunFieldDCAAsync(
             string fieldId,
             string userId,
             string calculationType = "Hyperbolic",
@@ -346,7 +348,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
         /// <summary>
         /// Runs DCA (Decline Curve Analysis) for a pool using DataFlowService
         /// </summary>
-        public async Task<Beep.OilandGas.Models.Data.DCAResult> RunPoolDCAAsync(
+        public async Task<DCAResult> RunPoolDCAAsync(
             string poolId,
             string userId,
             string calculationType = "Hyperbolic",

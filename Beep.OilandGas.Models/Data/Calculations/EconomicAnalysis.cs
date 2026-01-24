@@ -3175,6 +3175,10 @@ namespace Beep.OilandGas.Models.Data.Calculations
 
         }
         public Dictionary<string, object>? AdditionalResults { get; set; }
+        public List<EconomicCashFlowPoint> CashFlowPoints { get; set; } = new List<EconomicCashFlowPoint>();
+        public decimal? TotalRevenue { get; set; }
+        public decimal? TotalOperatingCosts { get; set; }
+        public decimal? NetCashFlow { get; set; }
     }
 }
 

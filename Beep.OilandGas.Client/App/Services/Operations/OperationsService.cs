@@ -19,7 +19,7 @@ namespace Beep.OilandGas.Client.App.Services.Operations
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/drillingoperation/create", request, null, cancellationToken);
+                return await PostAsync<object, object>("/api/drillingoperation/create", request, cancellationToken);
             var localService = GetLocalService<IOperationsLocalService>();
             if (localService == null) throw new InvalidOperationException("IOperationsLocalService not available");
             return await localService.CreateDrillingOperationAsync(request);
@@ -29,7 +29,7 @@ namespace Beep.OilandGas.Client.App.Services.Operations
         {
             if (string.IsNullOrEmpty(operationId)) throw new ArgumentException("Operation ID is required", nameof(operationId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/drillingoperation/{Uri.EscapeDataString(operationId)}", null, cancellationToken);
+                return await GetAsync<object>($"/api/drillingoperation/{Uri.EscapeDataString(operationId)}", cancellationToken);
             var localService = GetLocalService<IOperationsLocalService>();
             if (localService == null) throw new InvalidOperationException("IOperationsLocalService not available");
             return await localService.GetDrillingOperationAsync(operationId);
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.Client.App.Services.Operations
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/productionoperations/create", request, null, cancellationToken);
+                return await PostAsync<object, object>("/api/productionoperations/create", request, cancellationToken);
             var localService = GetLocalService<IOperationsLocalService>();
             if (localService == null) throw new InvalidOperationException("IOperationsLocalService not available");
             return await localService.CreateProductionOperationAsync(request);
@@ -49,7 +49,7 @@ namespace Beep.OilandGas.Client.App.Services.Operations
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/enhancedrecovery/analyze", request, null, cancellationToken);
+                return await PostAsync<object, object>("/api/enhancedrecovery/analyze", request, cancellationToken);
             var localService = GetLocalService<IOperationsLocalService>();
             if (localService == null) throw new InvalidOperationException("IOperationsLocalService not available");
             return await localService.AnalyzeEnhancedRecoveryAsync(request);

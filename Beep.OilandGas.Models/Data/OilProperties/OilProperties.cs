@@ -214,6 +214,10 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref CorrelationMethodValue, value); }
 
         }
+
+        public decimal ApiGravity { get; set; }
+        public decimal SpecificGravity { get; set; }
+        public decimal SolutionGasOilRatio { get; set; }
     }
 
     /// <summary>

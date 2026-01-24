@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.GasLift;
+using GasLiftValveDto = Beep.OilandGas.Models.Data.GasLift.GasLiftValve;
 using Beep.OilandGas.GasProperties.Calculations;
 
 namespace Beep.OilandGas.GasLift.Calculations
@@ -81,7 +82,7 @@ namespace Beep.OilandGas.GasLift.Calculations
                 decimal gasInjectionRate = CalculateValveGasInjectionRate(
                     portSize, openingPressure, gasInjectionPressure, zFactor, valveTemperature, wellProperties.GasSpecificGravity);
 
-                var valve = new GasLiftValve
+                var valve = new GasLiftValveDto
                 {
                     Depth = valveDepth,
                     PortSize = portSize,

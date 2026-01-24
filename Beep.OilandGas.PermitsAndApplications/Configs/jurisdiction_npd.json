@@ -1,0 +1,30 @@
+{
+  "authority": "NPD",
+  "name": "Norwegian Petroleum Directorate",
+  "country": "Norway",
+  "templates": [
+    {
+      "formCode": "NPD_DRILLING_PERMIT",
+      "formName": "NPD Drilling Permit",
+      "applicationType": "DRILLING",
+      "fieldKeys": [
+        "WELL_UWI",
+        "LEGAL_DESCRIPTION",
+        "TARGET_FORMATION",
+        "PROPOSED_DEPTH",
+        "DRILLING_METHOD"
+      ]
+    },
+    {
+      "formCode": "NPD_ENV_STATEMENT",
+      "formName": "NPD Environmental Statement",
+      "applicationType": "ENVIRONMENTAL",
+      "fieldKeys": [
+        "ENVIRONMENTAL_PERMIT_TYPE",
+        "ENVIRONMENTAL_IMPACT",
+        "MONITORING_PLAN",
+        "FACILITY_LOCATION"
+      ]
+    }
+  ]
+}

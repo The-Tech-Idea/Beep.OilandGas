@@ -17,8 +17,8 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// <param name="forecastDuration">Forecast duration in days.</param>
         /// <param name="timeSteps">Number of time steps.</param>
         /// <returns>Production forecast.</returns>
-        public static ProductionForecast GenerateSinglePhaseForecast(
-            ReservoirForecastProperties reservoir,
+        public static PRODUCTION_FORECAST GenerateSinglePhaseForecast(
+            RESERVOIR_FORECAST_PROPERTIES reservoir,
             decimal bottomHolePressure,
             decimal forecastDuration,
             int timeSteps = 100)
@@ -32,10 +32,10 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             if (forecastDuration <= 0)
                 throw new ArgumentException("Forecast duration must be greater than zero.", nameof(forecastDuration));
 
-            var forecast = new ProductionForecast
+            var forecast = new PRODUCTION_FORECAST
             {
-                ForecastType = ForecastType.PseudoSteadyStateSinglePhase,
-                ForecastDuration = forecastDuration
+                FORECAST_TYPE = ForecastType.PseudoSteadyStateSinglePhase,
+                FORECAST_DURATION = forecastDuration
             };
 
             decimal timeStep = forecastDuration / timeSteps;

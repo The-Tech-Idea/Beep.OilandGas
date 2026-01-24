@@ -314,9 +314,12 @@ private  System.String LENGTH_OUOMValue;
             }  
 
           set { SetProperty(ref  LENGTH_OUOMValue, value); }
-        } 
+        }
 
-    public PIPELINE () { }
+        public string? MATERIAL { get; set; }
+        public string FIELD_ID { get; set; }
+
+        public PIPELINE () { }
 
   }
 }

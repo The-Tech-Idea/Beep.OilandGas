@@ -31,7 +31,7 @@ namespace Beep.OilandGas.Client.App.Services.AccessControl
                     ["assetType"] = assetType
                 };
                 var endpoint = BuildRequestUriWithParams("/api/accesscontrol/check-access", queryParams);
-                return await GetAsync<bool>(endpoint, null, cancellationToken);
+                return await GetAsync<bool>(endpoint, cancellationToken);
             }
             var localService = GetLocalService<IAccessControlLocalService>();
             if (localService == null) throw new InvalidOperationException("IAccessControlLocalService not available");
@@ -47,7 +47,7 @@ namespace Beep.OilandGas.Client.App.Services.AccessControl
                 var queryParams = new Dictionary<string, string> { ["userId"] = userId };
                 if (!string.IsNullOrEmpty(assetType)) queryParams["assetType"] = assetType;
                 var endpoint = BuildRequestUriWithParams("/api/accesscontrol/accessible-assets", queryParams);
-                return await GetAsync<List<object>>(endpoint, null, cancellationToken);
+                return await GetAsync<List<object>>(endpoint, cancellationToken);
             }
             var localService = GetLocalService<IAccessControlLocalService>();
             if (localService == null) throw new InvalidOperationException("IAccessControlLocalService not available");
@@ -59,7 +59,7 @@ namespace Beep.OilandGas.Client.App.Services.AccessControl
             if (string.IsNullOrEmpty(userId)) throw new ArgumentException("User ID is required", nameof(userId));
 
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<string>>($"/api/accesscontrol/user/{Uri.EscapeDataString(userId)}/roles", null, cancellationToken);
+                return await GetAsync<List<string>>($"/api/accesscontrol/user/{Uri.EscapeDataString(userId)}/roles", cancellationToken);
             var localService = GetLocalService<IAccessControlLocalService>();
             if (localService == null) throw new InvalidOperationException("IAccessControlLocalService not available");
             return await localService.GetUserRolesAsync(userId);
@@ -78,7 +78,7 @@ namespace Beep.OilandGas.Client.App.Services.AccessControl
                     ["permission"] = permission
                 };
                 var endpoint = BuildRequestUriWithParams("/api/accesscontrol/has-permission", queryParams);
-                return await GetAsync<bool>(endpoint, null, cancellationToken);
+                return await GetAsync<bool>(endpoint, cancellationToken);
             }
             var localService = GetLocalService<IAccessControlLocalService>();
             if (localService == null) throw new InvalidOperationException("IAccessControlLocalService not available");
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.Client.App.Services.AccessControl
             if (string.IsNullOrEmpty(userId)) throw new ArgumentException("User ID is required", nameof(userId));
 
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/userprofile/{Uri.EscapeDataString(userId)}", null, cancellationToken);
+                return await GetAsync<object>($"/api/userprofile/{Uri.EscapeDataString(userId)}", cancellationToken);
             var localService = GetLocalService<IAccessControlLocalService>();
             if (localService == null) throw new InvalidOperationException("IAccessControlLocalService not available");
             return await localService.GetUserProfileAsync(userId);

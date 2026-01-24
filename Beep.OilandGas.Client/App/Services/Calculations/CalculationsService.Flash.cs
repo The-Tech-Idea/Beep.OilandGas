@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<FlashConditions, FlashResult>("/api/flashcalculation/isothermal", request, null, cancellationToken);
+                return await PostAsync<FlashConditions, FlashResult>("/api/flashcalculation/isothermal", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -23,7 +23,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<FlashConditions, List<FlashResult>>("/api/flashcalculation/multistage", request, null, cancellationToken);
+                return await PostAsync<FlashConditions, List<FlashResult>>("/api/flashcalculation/multistage", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -35,7 +35,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
                 var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(userId)) queryParams["userId"] = userId;
                 var endpoint = BuildRequestUriWithParams("/api/flashcalculation/result", queryParams);
-                return await PostAsync<FLASH_CALCULATION_RESULT, FLASH_CALCULATION_RESULT>(endpoint, result, null, cancellationToken);
+                return await PostAsync<FLASH_CALCULATION_RESULT, FLASH_CALCULATION_RESULT>(endpoint, result, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         {
             if (string.IsNullOrEmpty(compositionId)) throw new ArgumentException("Composition ID is required", nameof(compositionId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<FLASH_CALCULATION_RESULT>>($"/api/flashcalculation/history/{Uri.EscapeDataString(compositionId)}", null, cancellationToken);
+                return await GetAsync<List<FLASH_CALCULATION_RESULT>>($"/api/flashcalculation/history/{Uri.EscapeDataString(compositionId)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

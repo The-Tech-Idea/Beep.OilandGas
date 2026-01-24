@@ -4,6 +4,7 @@ using System.Linq;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.GasProperties.Calculations;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.FlashCalculations.Calculations
 {
