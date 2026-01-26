@@ -2908,7 +2908,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         }
         
         // Additional parameters
-        public Dictionary<string, object>? AdditionalParameters { get; set; }
+        public EconomicAnalysisOptions? AdditionalParameters { get; set; }
         private string? UserIdValue;
 
         public string? UserId
@@ -3075,9 +3075,82 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref AnalysisIdValue, value); }
 
         }
+        public string CalculationId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
+        private string? WellIdValue;
+
+        public string? WellId
+
+        {
+
+            get { return this.WellIdValue; }
+
+            set { SetProperty(ref WellIdValue, value); }
+
+        }
+        private string? PoolIdValue;
+
+        public string? PoolId
+
+        {
+
+            get { return this.PoolIdValue; }
+
+            set { SetProperty(ref PoolIdValue, value); }
+
+        }
+        private string? FieldIdValue;
+
+        public string? FieldId
+
+        {
+
+            get { return this.FieldIdValue; }
+
+            set { SetProperty(ref FieldIdValue, value); }
+
+        }
+        private string? ProjectIdValue;
+
+        public string? ProjectId
+
+        {
+
+            get { return this.ProjectIdValue; }
+
+            set { SetProperty(ref ProjectIdValue, value); }
+
+        }
+        private string AnalysisTypeValue = "NPV";
+
+        public string AnalysisType
+
+        {
+
+            get { return this.AnalysisTypeValue; }
+
+            set { SetProperty(ref AnalysisTypeValue, value); }
+
+        }
         private DateTime AnalysisDateValue;
 
         public DateTime AnalysisDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
+        public DateTime CalculationDate
 
         {
 
@@ -3097,9 +3170,27 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref NPVValue, value); }
 
         }
+        public decimal NetPresentValue
+
+        {
+
+            get { return this.NPVValue; }
+
+            set { SetProperty(ref NPVValue, value); }
+
+        }
         private decimal IRRValue;
 
         public decimal IRR
+
+        {
+
+            get { return this.IRRValue; }
+
+            set { SetProperty(ref IRRValue, value); }
+
+        }
+        public decimal InternalRateOfReturn
 
         {
 
@@ -3128,6 +3219,26 @@ namespace Beep.OilandGas.Models.Data.Calculations
             get { return this.ROIValue; }
 
             set { SetProperty(ref ROIValue, value); }
+
+        }
+        public decimal ReturnOnInvestment
+
+        {
+
+            get { return this.ROIValue; }
+
+            set { SetProperty(ref ROIValue, value); }
+
+        }
+        private decimal ProfitabilityIndexValue;
+
+        public decimal ProfitabilityIndex
+
+        {
+
+            get { return this.ProfitabilityIndexValue; }
+
+            set { SetProperty(ref ProfitabilityIndexValue, value); }
 
         }
         private decimal BreakevenPriceValue;
@@ -3163,6 +3274,17 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref StatusValue, value); }
 
         }
+        private string? UserIdValue;
+
+        public string? UserId
+
+        {
+
+            get { return this.UserIdValue; }
+
+            set { SetProperty(ref UserIdValue, value); }
+
+        }
         private string ErrorMessageValue;
 
         public string ErrorMessage
@@ -3174,12 +3296,13 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref ErrorMessageValue, value); }
 
         }
-        public Dictionary<string, object>? AdditionalResults { get; set; }
+        public EconomicAnalysisAdditionalResults? AdditionalResults { get; set; }
         public List<EconomicCashFlowPoint> CashFlowPoints { get; set; } = new List<EconomicCashFlowPoint>();
         public decimal? TotalRevenue { get; set; }
         public decimal? TotalOperatingCosts { get; set; }
         public decimal? NetCashFlow { get; set; }
     }
+
 }
 
 

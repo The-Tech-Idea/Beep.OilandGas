@@ -205,7 +205,7 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
         } // fraction 0-1
         
         // Additional parameters
-        public Dictionary<string, object>? AdditionalParameters { get; set; }
+        public SuckerRodAnalysisOptions? AdditionalParameters { get; set; }
         private string? UserIdValue;
 
         public string? UserId
@@ -452,6 +452,18 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
             set { SetProperty(ref PumpCardValue, value); }
 
         }
+
+        private string? PumpCardJsonValue;
+
+        public string? PumpCardJson
+
+        {
+
+            get { return this.PumpCardJsonValue; }
+
+            set { SetProperty(ref PumpCardJsonValue, value); }
+
+        }
         
         // Optimization results
         private decimal? RecommendedStrokeLengthValue;
@@ -489,7 +501,7 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
         } // inches
         
         // Additional metadata
-        public Dictionary<string, object>? AdditionalResults { get; set; }
+        public SuckerRodAnalysisAdditionalResults? AdditionalResults { get; set; }
         private string? StatusValue;
 
         public string? Status

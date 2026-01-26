@@ -58,9 +58,9 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// <summary>
         /// Initializes K-values using Wilson correlation.
         /// </summary>
-        private static Dictionary<string, decimal> InitializeKValues(FlashConditions conditions)
+        private static List<FlashComponentKValue> InitializeKValues(FlashConditions conditions)
         {
-            var kValues = new Dictionary<string, decimal>();
+            var kValues = new List<FlashComponentKValue>();
 
             foreach (var component in conditions.FeedComposition)
             {
@@ -69,7 +69,11 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
                                (decimal)Math.Exp((double)(5.37m * (1.0m + component.AcentricFactor) *
                                                           (1.0m - component.CriticalTemperature / conditions.Temperature)));
 
-                kValues[component.Name] = Math.Max(0.001m, Math.Min(1000m, kValue));
+                kValues.Add(new FlashComponentKValue
+                {
+                    ComponentName = component.Name,
+                    KValue = Math.Max(0.001m, Math.Min(1000m, kValue))
+                });
             }
 
             return kValues;
@@ -80,7 +84,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// </summary>
         private static decimal SolveRachfordRice(
             FlashConditions conditions,
-            Dictionary<string, decimal> kValues,
+            List<FlashComponentKValue> kValues,
             FlashResult result)
         {
             // Rachford-Rice: Σ(zi * (Ki - 1) / (1 + V * (Ki - 1))) = 0
@@ -102,7 +106,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
 
                 foreach (var component in conditions.FeedComposition)
                 {
-                    decimal kValue = kValues[component.Name];
+                    decimal kValue = GetKValue(kValues, component.Name);
                     decimal zi = component.MoleFraction;
                     decimal denominator = 1.0m + vaporFraction * (kValue - 1.0m);
 
@@ -148,7 +152,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// </summary>
         private static void UpdateKValues(
             FlashConditions conditions,
-            Dictionary<string, decimal> kValues,
+            List<FlashComponentKValue> kValues,
             decimal vaporFraction)
         {
             // Simplified K-value update
@@ -162,8 +166,9 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
                                                           (1.0m - component.CriticalTemperature / conditions.Temperature)));
 
                 // Blend with existing K-value
-                kValues[component.Name] = 0.7m * kValues[component.Name] + 0.3m * kValue;
-                kValues[component.Name] = Math.Max(0.001m, Math.Min(1000m, kValues[component.Name]));
+                var existing = GetKValue(kValues, component.Name);
+                var updated = 0.7m * existing + 0.3m * kValue;
+                SetKValue(kValues, component.Name, Math.Max(0.001m, Math.Min(1000m, updated)));
             }
         }
 
@@ -172,14 +177,17 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// </summary>
         private static void CalculatePhaseCompositions(
             FlashConditions conditions,
-            Dictionary<string, decimal> kValues,
+            List<FlashComponentKValue> kValues,
             decimal vaporFraction,
             FlashResult result)
         {
+            result.LiquidComposition ??= new List<FlashComponentFraction>();
+            result.VaporComposition ??= new List<FlashComponentFraction>();
+
             foreach (var component in conditions.FeedComposition)
             {
                 decimal zi = component.MoleFraction;
-                decimal ki = kValues[component.Name];
+                decimal ki = GetKValue(kValues, component.Name);
 
                 // Liquid composition: xi = zi / (1 + V * (Ki - 1))
                 decimal denominator = 1.0m + vaporFraction * (ki - 1.0m);
@@ -191,8 +199,8 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
                 // Vapor composition: yi = Ki * xi
                 decimal yi = ki * xi;
 
-                result.LiquidComposition[component.Name] = Math.Max(0m, Math.Min(1m, xi));
-                result.VaporComposition[component.Name] = Math.Max(0m, Math.Min(1m, yi));
+                SetCompositionFraction(result.LiquidComposition, component.Name, Math.Max(0m, Math.Min(1m, xi)));
+                SetCompositionFraction(result.VaporComposition, component.Name, Math.Max(0m, Math.Min(1m, yi)));
             }
 
             // Normalize compositions
@@ -203,16 +211,73 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// <summary>
         /// Normalizes a composition to sum to 1.0.
         /// </summary>
-        private static void NormalizeComposition(Dictionary<string, decimal> composition)
+        private static void NormalizeComposition(List<FlashComponentFraction> composition)
         {
-            decimal sum = composition.Values.Sum();
+            decimal sum = composition.Sum(c => c.Fraction);
             if (sum > 0m)
             {
-                var keys = composition.Keys.ToList();
-                foreach (var key in keys)
+                foreach (var component in composition)
                 {
-                    composition[key] /= sum;
+                    component.Fraction /= sum;
                 }
+            }
+        }
+
+        private static decimal GetKValue(List<FlashComponentKValue> kValues, string componentName)
+        {
+            var entry = kValues.FirstOrDefault(k =>
+                string.Equals(k.ComponentName, componentName, StringComparison.OrdinalIgnoreCase));
+            return entry?.KValue ?? 1m;
+        }
+
+        private static void SetKValue(List<FlashComponentKValue> kValues, string componentName, decimal value)
+        {
+            var entry = kValues.FirstOrDefault(k =>
+                string.Equals(k.ComponentName, componentName, StringComparison.OrdinalIgnoreCase));
+            if (entry == null)
+            {
+                kValues.Add(new FlashComponentKValue
+                {
+                    ComponentName = componentName,
+                    KValue = value
+                });
+            }
+            else
+            {
+                entry.KValue = value;
+            }
+        }
+
+        private static decimal GetCompositionFraction(List<FlashComponentFraction>? composition, string componentName)
+        {
+            if (composition == null)
+            {
+                return 0m;
+            }
+
+            var entry = composition.FirstOrDefault(c =>
+                string.Equals(c.ComponentName, componentName, StringComparison.OrdinalIgnoreCase));
+            return entry?.Fraction ?? 0m;
+        }
+
+        private static void SetCompositionFraction(
+            List<FlashComponentFraction> composition,
+            string componentName,
+            decimal fraction)
+        {
+            var entry = composition.FirstOrDefault(c =>
+                string.Equals(c.ComponentName, componentName, StringComparison.OrdinalIgnoreCase));
+            if (entry == null)
+            {
+                composition.Add(new FlashComponentFraction
+                {
+                    ComponentName = componentName,
+                    Fraction = fraction
+                });
+            }
+            else
+            {
+                entry.Fraction = fraction;
             }
         }
 
@@ -229,9 +294,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             decimal molecularWeight = 0m;
             foreach (var component in conditions.FeedComposition)
             {
-                decimal yi = flashResult.VaporComposition.ContainsKey(component.Name)
-                    ? flashResult.VaporComposition[component.Name]
-                    : 0m;
+                decimal yi = GetCompositionFraction(flashResult.VaporComposition, component.Name);
                 molecularWeight += yi * component.MolecularWeight;
             }
 
@@ -262,9 +325,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             decimal molecularWeight = 0m;
             foreach (var component in conditions.FeedComposition)
             {
-                decimal xi = flashResult.LiquidComposition.ContainsKey(component.Name)
-                    ? flashResult.LiquidComposition[component.Name]
-                    : 0m;
+                decimal xi = GetCompositionFraction(flashResult.LiquidComposition, component.Name);
                 molecularWeight += xi * component.MolecularWeight;
             }
 
@@ -277,9 +338,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
 
             foreach (var component in conditions.FeedComposition)
             {
-                decimal xi = flashResult.LiquidComposition.ContainsKey(component.Name)
-                    ? flashResult.LiquidComposition[component.Name]
-                    : 0m;
+                decimal xi = GetCompositionFraction(flashResult.LiquidComposition, component.Name);
                 averageCriticalTemperature += xi * component.CriticalTemperature;
                 averageCriticalPressure += xi * component.CriticalPressure;
             }

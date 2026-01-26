@@ -87,17 +87,17 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
         /// <summary>
         /// K-values for each component
         /// </summary>
-        public Dictionary<string, decimal> KValues { get; set; } = new Dictionary<string, decimal>();
+        public List<FlashComponentKValue> KValues { get; set; } = new();
 
         /// <summary>
         /// Vapor phase composition (mole fractions)
         /// </summary>
-        public Dictionary<string, decimal> VaporComposition { get; set; } = new Dictionary<string, decimal>();
+        public List<FlashComponentFraction> VaporComposition { get; set; } = new();
 
         /// <summary>
         /// Liquid phase composition (mole fractions)
         /// </summary>
-        public Dictionary<string, decimal> LiquidComposition { get; set; } = new Dictionary<string, decimal>();
+        public List<FlashComponentFraction> LiquidComposition { get; set; } = new();
     }
 }
 

@@ -5,6 +5,13 @@ using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
     public partial class NODAL_ANALYSIS_RESULT : ModelEntityBase {
+        private string NODAL_ANALYSIS_RESULT_IDValue;
+        public string NODAL_ANALYSIS_RESULT_ID
+        {
+            get { return this.NODAL_ANALYSIS_RESULT_IDValue; }
+            set { SetProperty(ref NODAL_ANALYSIS_RESULT_IDValue, value); }
+        }
+
         private string ANALYSIS_IDValue;
         public string ANALYSIS_ID
         {

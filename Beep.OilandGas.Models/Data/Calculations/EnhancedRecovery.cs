@@ -778,7 +778,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref AnalysisDateValue, value); }
 
         }
-        public Dictionary<string, EORMethodScore> MethodScores { get; set; } = new();
+        public List<EORMethodScore> MethodScores { get; set; } = new();
         private List<RankedEORMethod> RankedMethodsValue = new();
 
         public List<RankedEORMethod> RankedMethods

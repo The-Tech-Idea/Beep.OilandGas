@@ -203,7 +203,7 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
         } // psi
         
         // Additional parameters
-        public Dictionary<string, object>? AdditionalParameters { get; set; }
+        public WellTestAnalysisOptions? AdditionalParameters { get; set; }
         private string? UserIdValue;
 
         public string? UserId

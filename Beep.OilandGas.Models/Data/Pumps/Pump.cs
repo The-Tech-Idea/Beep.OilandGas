@@ -1306,7 +1306,7 @@ namespace Beep.OilandGas.Models.Data.Pumps
         } // cP
         
         // Additional parameters
-        public Dictionary<string, object>? AdditionalParameters { get; set; }
+        public PumpAnalysisOptions? AdditionalParameters { get; set; }
         private string? UserIdValue;
 
         public string? UserId
@@ -1472,6 +1472,18 @@ namespace Beep.OilandGas.Models.Data.Pumps
             set { SetProperty(ref PerformanceCurveValue, value); }
 
         }
+
+        private string? PerformanceCurveJsonValue;
+
+        public string? PerformanceCurveJson
+
+        {
+
+            get { return this.PerformanceCurveJsonValue; }
+
+            set { SetProperty(ref PerformanceCurveJsonValue, value); }
+
+        }
         
         // System analysis
         private decimal? OperatingPointFlowRateValue;
@@ -1555,7 +1567,7 @@ namespace Beep.OilandGas.Models.Data.Pumps
         } // horsepower
         
         // Additional metadata
-        public Dictionary<string, object>? AdditionalResults { get; set; }
+        public PumpAnalysisAdditionalResults? AdditionalResults { get; set; }
         private string? StatusValue;
 
         public string? Status

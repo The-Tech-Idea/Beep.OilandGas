@@ -433,7 +433,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref PhaseDurationValue, value); }
 
         }
-        public Dictionary<string, int> WellTypeDistribution { get; set; }
+        public List<DevelopmentWellTypeDistributionEntry> WellTypeDistribution { get; set; } = new();
         private int RigsRequiredValue;
 
         public int RigsRequired
@@ -953,7 +953,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref AnnualOpexValue, value); }
 
         }
-        public Dictionary<string, double> CostEscalationFactors { get; set; }
+        public List<DevelopmentCostEscalationFactorEntry> CostEscalationFactors { get; set; } = new();
         private double ContingencyAllowanceValue;
 
         public double ContingencyAllowance

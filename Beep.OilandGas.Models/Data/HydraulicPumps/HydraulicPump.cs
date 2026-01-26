@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Beep.OilandGas.Models.Data.HydraulicPumps;
 
 namespace Beep.OilandGas.Models.Data
 {
@@ -2700,7 +2701,7 @@ namespace Beep.OilandGas.Models.Data
         } // scf/bbl
         
         // Additional parameters
-        public Dictionary<string, object>? AdditionalParameters { get; set; }
+        public HydraulicPumpAnalysisOptions? AdditionalParameters { get; set; }
         private string? UserIdValue;
 
         public string? UserId
@@ -2903,7 +2904,7 @@ namespace Beep.OilandGas.Models.Data
         } // bbl/day
         
         // Additional metadata
-        public Dictionary<string, object>? AdditionalResults { get; set; }
+        public HydraulicPumpAnalysisAdditionalResults? AdditionalResults { get; set; }
         private string? StatusValue;
 
         public string? Status

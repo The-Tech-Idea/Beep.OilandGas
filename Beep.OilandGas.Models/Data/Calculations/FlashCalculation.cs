@@ -49,6 +49,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         public List<Component>? FeedComposition { get; set; }
         public decimal? Pressure { get; set; }
         public decimal? Temperature { get; set; }
+        public FlashCalculationOptions? AdditionalParameters { get; set; }
         public string CalculationType { get; set; }
         public string UserId { get; set; }
     }
@@ -347,8 +348,8 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref BubblePointPressureValue, value); }
 
         }
-        public Dictionary<string, decimal> LiquidComposition { get; set; } = new();
-        public Dictionary<string, decimal> KValues { get; set; } = new();
+        public List<FlashComponentFraction> LiquidComposition { get; set; } = new();
+        public List<FlashComponentKValue> KValues { get; set; } = new();
         private int IterationsValue;
 
         public int Iterations
@@ -455,8 +456,8 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref DewPointPressureValue, value); }
 
         }
-        public Dictionary<string, decimal> VaporComposition { get; set; } = new();
-        public Dictionary<string, decimal> KValues { get; set; } = new();
+        public List<FlashComponentFraction> VaporComposition { get; set; } = new();
+        public List<FlashComponentKValue> KValues { get; set; } = new();
         private int IterationsValue;
 
         public int Iterations
@@ -574,9 +575,9 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref LiquidFractionValue, value); }
 
         }
-        public Dictionary<string, decimal> VaporComposition { get; set; } = new();
-        public Dictionary<string, decimal> LiquidComposition { get; set; } = new();
-        public Dictionary<string, decimal> KValues { get; set; } = new();
+        public List<FlashComponentFraction> VaporComposition { get; set; } = new();
+        public List<FlashComponentFraction> LiquidComposition { get; set; } = new();
+        public List<FlashComponentKValue> KValues { get; set; } = new();
         private int IterationsValue;
 
         public int Iterations
@@ -1030,7 +1031,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref StabilityStatusValue, value); }
 
         } // Stable, Unstable, Critical
-        public Dictionary<string, decimal> CriticalComposition { get; set; } = new();
+        public List<FlashComponentFraction> CriticalComposition { get; set; } = new();
     }
 
     /// <summary>
@@ -1093,7 +1094,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref TemperatureValue, value); }
 
         }
-        public Dictionary<string, decimal> KValues { get; set; } = new();
+        public List<FlashComponentKValue> KValues { get; set; } = new();
         private string CorrelationMethodValue = string.Empty;
 
         public string CorrelationMethod
@@ -1200,6 +1201,15 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref CalculationIdValue, value); }
 
         }
+        public string FlashCalculationResultId
+
+        {
+
+            get { return this.CalculationIdValue; }
+
+            set { SetProperty(ref CalculationIdValue, value); }
+
+        }
         private string? WellIdValue;
 
         public string? WellId
@@ -1244,6 +1254,39 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref CalculationTypeValue, value); }
 
         }
+        private decimal? PressureValue;
+
+        public decimal? Pressure
+
+        {
+
+            get { return this.PressureValue; }
+
+            set { SetProperty(ref PressureValue, value); }
+
+        }
+        private decimal? TemperatureValue;
+
+        public decimal? Temperature
+
+        {
+
+            get { return this.TemperatureValue; }
+
+            set { SetProperty(ref TemperatureValue, value); }
+
+        }
+        private List<Component>? FeedCompositionValue;
+
+        public List<Component>? FeedComposition
+
+        {
+
+            get { return this.FeedCompositionValue; }
+
+            set { SetProperty(ref FeedCompositionValue, value); }
+
+        }
         private DateTime CalculationDateValue;
 
         public DateTime CalculationDate
@@ -1281,11 +1324,56 @@ namespace Beep.OilandGas.Models.Data.Calculations
         } // 0-1
         
         // Phase compositions (mole fractions)
-        public Dictionary<string, decimal> VaporComposition { get; set; } = new Dictionary<string, decimal>();
-        public Dictionary<string, decimal> LiquidComposition { get; set; } = new Dictionary<string, decimal>();
+        public List<FlashComponentFraction> VaporComposition { get; set; } = new();
+        public List<FlashComponentFraction> LiquidComposition { get; set; } = new();
         
         // K-values (equilibrium ratios)
-        public Dictionary<string, decimal> KValues { get; set; } = new Dictionary<string, decimal>();
+        public List<FlashComponentKValue> KValues { get; set; } = new();
+
+        private string? FeedCompositionJsonValue;
+
+        public string? FeedCompositionJson
+
+        {
+
+            get { return this.FeedCompositionJsonValue; }
+
+            set { SetProperty(ref FeedCompositionJsonValue, value); }
+
+        }
+        private string? VaporCompositionJsonValue;
+
+        public string? VaporCompositionJson
+
+        {
+
+            get { return this.VaporCompositionJsonValue; }
+
+            set { SetProperty(ref VaporCompositionJsonValue, value); }
+
+        }
+        private string? LiquidCompositionJsonValue;
+
+        public string? LiquidCompositionJson
+
+        {
+
+            get { return this.LiquidCompositionJsonValue; }
+
+            set { SetProperty(ref LiquidCompositionJsonValue, value); }
+
+        }
+        private string? KValuesJsonValue;
+
+        public string? KValuesJson
+
+        {
+
+            get { return this.KValuesJsonValue; }
+
+            set { SetProperty(ref KValuesJsonValue, value); }
+
+        }
         
         // Phase properties
         private PhasePropertiesData? VaporPropertiesValue;
@@ -1347,7 +1435,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         }
         
         // Additional metadata
-        public Dictionary<string, object>? AdditionalResults { get; set; }
+        public FlashCalculationAdditionalResults? AdditionalResults { get; set; }
         private string? StatusValue;
 
         public string? Status

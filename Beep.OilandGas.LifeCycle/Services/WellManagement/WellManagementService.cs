@@ -21,6 +21,7 @@ using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.Models.Data.Pumps;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
 using Beep.OilandGas.Models.Data.PlungerLift;
+using Beep.OilandGas.Models.Data.HydraulicPumps;
 
 namespace Beep.OilandGas.LifeCycle.Services.WellManagement
 {
@@ -639,7 +640,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         public async Task<NodalAnalysisResult> RunWellNodalAnalysisAsync(
             string wellId,
             string userId,
-            Dictionary<string, object>? additionalParameters = null)
+            NodalAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -665,7 +666,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string wellId,
             string userId,
             string calculationType = "Hyperbolic",
-            Dictionary<string, object>? additionalParameters = null)
+            DcaAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -691,7 +692,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string wellId,
             string? testId = null,
             string userId = "system",
-            Dictionary<string, object>? additionalParameters = null)
+            WellTestAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -718,7 +719,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string userId = "system",
             string? equipmentId = null,
             string analysisType = "DOWNHOLE",
-            Dictionary<string, object>? additionalParameters = null)
+            ChokeAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -744,7 +745,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string wellId,
             string userId = "system",
             string analysisType = "POTENTIAL",
-            Dictionary<string, object>? additionalParameters = null)
+            GasLiftAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -772,7 +773,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string? equipmentId = null,
             string pumpType = "ESP",
             string analysisType = "PERFORMANCE",
-            Dictionary<string, object>? additionalParameters = null)
+            PumpAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -799,7 +800,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string userId = "system",
             string? equipmentId = null,
             string analysisType = "LOAD",
-            Dictionary<string, object>? additionalParameters = null)
+            SuckerRodAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -826,7 +827,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string userId = "system",
             string? equipmentId = null,
             string analysisType = "PERFORMANCE",
-            Dictionary<string, object>? additionalParameters = null)
+            PlungerLiftAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -853,7 +854,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string userId = "system",
             string? equipmentId = null,
             string analysisType = "PERFORMANCE",
-            Dictionary<string, object>? additionalParameters = null)
+            HydraulicPumpAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {

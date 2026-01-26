@@ -50,7 +50,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref ResultValue, value); }
 
         }
-        public Dictionary<string, object> InputParameters { get; set; } = new();
+        public List<CalculationInputParameter> InputParameters { get; set; } = new();
     }
 
     public class CalculateDeclineRateRequest : ModelEntityBase

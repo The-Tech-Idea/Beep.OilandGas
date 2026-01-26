@@ -6,6 +6,7 @@ using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.HydraulicPumps;
 using Beep.OilandGas.Models.Data.PlungerLift;
 using Beep.OilandGas.Models.Data.Pumps;
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Microsoft.Extensions.Logging;
@@ -37,27 +38,27 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
         /// <param name="additionalParameters">Optional additional parameters for the analysis.</param>
         /// <returns>The nodal analysis results including operating point and curves.</returns>
         public async Task<NodalAnalysisResult> RunNodalAnalysisAsync(
-            string wellId,
+            string wellUwi,
             string userId,
-            System.Collections.Generic.Dictionary<string, object>? additionalParameters = null)
+            NodalAnalysisOptions? additionalParameters = null)
         {
-            if (string.IsNullOrEmpty(wellId))
-                throw new ArgumentException("Well ID cannot be null or empty.", nameof(wellId));
+            if (string.IsNullOrEmpty(wellUwi))
+                throw new ArgumentException("Well UWI cannot be null or empty.", nameof(wellUwi));
 
-            _logger?.LogInformation("Running nodal analysis for well: {WellId}", wellId);
+            _logger?.LogInformation("Running nodal analysis for well UWI: {WellUwi}", wellUwi);
 
             var request = new NodalAnalysisRequest
             {
-                WellId = wellId,
+                WellUWI = wellUwi,
                 UserId = userId,
-                AdditionalParameters = additionalParameters ?? new System.Collections.Generic.Dictionary<string, object>()
+                AdditionalParameters = additionalParameters
             };
 
             // Use PPDMCalculationService to perform the analysis
             var result = await _calculationService.PerformNodalAnalysisAsync(request);
 
-            _logger?.LogInformation("Nodal analysis completed for well: {WellId}, Operating Flow Rate: {FlowRate} BPD", 
-                wellId, result.OperatingPoint?.FlowRate);
+            _logger?.LogInformation("Nodal analysis completed for well UWI: {WellUwi}, Operating Flow Rate: {FlowRate} BPD", 
+                wellUwi, result.OperatingFlowRate);
 
             return result;
         }
@@ -78,7 +79,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             string? fieldId = null,
             string userId = "system",
             string calculationType = "Hyperbolic",
-            System.Collections.Generic.Dictionary<string, object>? additionalParameters = null)
+            DcaAnalysisOptions? additionalParameters = null)
         {
             if (string.IsNullOrEmpty(wellId) && string.IsNullOrEmpty(poolId) && string.IsNullOrEmpty(fieldId))
                 throw new ArgumentException("At least one of WellId, PoolId, or FieldId must be provided.");
@@ -93,7 +94,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 FieldId = fieldId,
                 UserId = userId,
                 CalculationType = calculationType,
-                AdditionalParameters = additionalParameters ?? new System.Collections.Generic.Dictionary<string, object>()
+                AdditionalParameters = additionalParameters
             };
 
             // Use PPDMCalculationService to perform the analysis
@@ -117,7 +118,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             string wellId,
             string? testId = null,
             string userId = "system",
-            System.Collections.Generic.Dictionary<string, object>? additionalParameters = null)
+            WellTestAnalysisOptions? additionalParameters = null)
         {
             if (string.IsNullOrEmpty(wellId))
                 throw new ArgumentException("Well ID cannot be null or empty.", nameof(wellId));
@@ -129,7 +130,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 WellId = wellId,
                 TestId = testId,
                 UserId = userId,
-                AdditionalParameters = additionalParameters ?? new System.Collections.Generic.Dictionary<string, object>()
+                AdditionalParameters = additionalParameters
             };
 
             // Use PPDMCalculationService to perform the analysis
@@ -152,7 +153,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             string? wellId = null,
             string? facilityId = null,
             string userId = "system",
-            System.Collections.Generic.Dictionary<string, object>? additionalParameters = null)
+            FlashCalculationOptions? additionalParameters = null)
         {
             if (string.IsNullOrEmpty(wellId) && string.IsNullOrEmpty(facilityId))
                 throw new ArgumentException("At least one of WellId or FacilityId must be provided.");
@@ -164,7 +165,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 WellId = wellId,
                 FacilityId = facilityId,
                 UserId = userId,
-                AdditionalParameters = additionalParameters ?? new System.Collections.Generic.Dictionary<string, object>()
+                AdditionalParameters = additionalParameters
             };
 
             // Use PPDMCalculationService to perform the calculation
@@ -189,7 +190,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             string userId = "system",
             string? equipmentId = null,
             string analysisType = "DOWNHOLE",
-            System.Collections.Generic.Dictionary<string, object>? additionalParameters = null)
+            ChokeAnalysisOptions? additionalParameters = null)
         {
             if (string.IsNullOrEmpty(wellId))
                 throw new ArgumentException("Well ID cannot be null or empty.", nameof(wellId));
@@ -202,7 +203,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 EquipmentId = equipmentId,
                 AnalysisType = analysisType,
                 UserId = userId,
-                AdditionalParameters = additionalParameters ?? new System.Collections.Generic.Dictionary<string, object>()
+                AdditionalParameters = additionalParameters
             };
 
             var result = await _calculationService.PerformChokeAnalysisAsync(request);
@@ -225,7 +226,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             string wellId,
             string userId = "system",
             string analysisType = "POTENTIAL",
-            System.Collections.Generic.Dictionary<string, object>? additionalParameters = null)
+            GasLiftAnalysisOptions? additionalParameters = null)
         {
             if (string.IsNullOrEmpty(wellId))
                 throw new ArgumentException("Well ID cannot be null or empty.", nameof(wellId));
@@ -237,7 +238,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 WellId = wellId,
                 AnalysisType = analysisType,
                 UserId = userId,
-                AdditionalParameters = additionalParameters ?? new System.Collections.Generic.Dictionary<string, object>()
+                AdditionalParameters = additionalParameters
             };
 
             var result = await _calculationService.PerformGasLiftAnalysisAsync(request);
@@ -266,7 +267,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             string userId = "system",
             string pumpType = "ESP",
             string analysisType = "PERFORMANCE",
-            System.Collections.Generic.Dictionary<string, object>? additionalParameters = null)
+            PumpAnalysisOptions? additionalParameters = null)
         {
             if (string.IsNullOrEmpty(wellId) && string.IsNullOrEmpty(facilityId))
                 throw new ArgumentException("At least one of WellId or FacilityId must be provided.");
@@ -282,7 +283,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 PumpType = pumpType,
                 AnalysisType = analysisType,
                 UserId = userId,
-                AdditionalParameters = additionalParameters ?? new System.Collections.Generic.Dictionary<string, object>()
+                AdditionalParameters = additionalParameters
             };
 
             var result = await _calculationService.PerformPumpAnalysisAsync(request);
@@ -307,7 +308,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             string userId = "system",
             string? equipmentId = null,
             string analysisType = "LOAD",
-            System.Collections.Generic.Dictionary<string, object>? additionalParameters = null)
+            SuckerRodAnalysisOptions? additionalParameters = null)
         {
             if (string.IsNullOrEmpty(wellId))
                 throw new ArgumentException("Well ID cannot be null or empty.", nameof(wellId));
@@ -320,7 +321,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 EquipmentId = equipmentId,
                 AnalysisType = analysisType,
                 UserId = userId,
-                AdditionalParameters = additionalParameters ?? new System.Collections.Generic.Dictionary<string, object>()
+                AdditionalParameters = additionalParameters
             };
 
             var result = await _calculationService.PerformSuckerRodAnalysisAsync(request);
@@ -347,7 +348,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             string? equipmentId = null,
             string compressorType = "CENTRIFUGAL",
             string analysisType = "POWER",
-            System.Collections.Generic.Dictionary<string, object>? additionalParameters = null)
+            CompressorAnalysisOptions? additionalParameters = null)
         {
             if (string.IsNullOrEmpty(facilityId))
                 throw new ArgumentException("Facility ID cannot be null or empty.", nameof(facilityId));
@@ -362,7 +363,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 CompressorType = compressorType,
                 AnalysisType = analysisType,
                 UserId = userId,
-                AdditionalParameters = additionalParameters ?? new System.Collections.Generic.Dictionary<string, object>()
+                AdditionalParameters = additionalParameters
             };
 
             var result = await _calculationService.PerformCompressorAnalysisAsync(request);
@@ -382,12 +383,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
         /// <param name="analysisType">Analysis type: CAPACITY, FLOW_RATE, or PRESSURE_DROP.</param>
         /// <param name="additionalParameters">Optional additional parameters for the analysis.</param>
         /// <returns>The pipeline analysis results.</returns>
-        public async Task<PipelineAnalysisResult> RunPipelineAnalysisAsync(
+        public async Task<PIPELINE_ANALYSIS_RESULT> RunPipelineAnalysisAsync(
             string pipelineId,
             string userId = "system",
             string pipelineType = "GAS",
             string analysisType = "CAPACITY",
-            System.Collections.Generic.Dictionary<string, object>? additionalParameters = null)
+            PipelineAnalysisOptions? additionalParameters = null)
         {
             if (string.IsNullOrEmpty(pipelineId))
                 throw new ArgumentException("Pipeline ID cannot be null or empty.", nameof(pipelineId));
@@ -401,7 +402,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 PipelineType = pipelineType,
                 AnalysisType = analysisType,
                 UserId = userId,
-                AdditionalParameters = additionalParameters ?? new System.Collections.Generic.Dictionary<string, object>()
+                AdditionalParameters = additionalParameters
             };
 
             var result = await _calculationService.PerformPipelineAnalysisAsync(request);
@@ -426,7 +427,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             string userId = "system",
             string? equipmentId = null,
             string analysisType = "PERFORMANCE",
-            System.Collections.Generic.Dictionary<string, object>? additionalParameters = null)
+            PlungerLiftAnalysisOptions? additionalParameters = null)
         {
             if (string.IsNullOrEmpty(wellId))
                 throw new ArgumentException("Well ID cannot be null or empty.", nameof(wellId));
@@ -439,7 +440,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 EquipmentId = equipmentId,
                 AnalysisType = analysisType,
                 UserId = userId,
-                AdditionalParameters = additionalParameters ?? new System.Collections.Generic.Dictionary<string, object>()
+                AdditionalParameters = additionalParameters
             };
 
             var result = await _calculationService.PerformPlungerLiftAnalysisAsync(request);
@@ -464,7 +465,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             string userId = "system",
             string? equipmentId = null,
             string analysisType = "PERFORMANCE",
-            System.Collections.Generic.Dictionary<string, object>? additionalParameters = null)
+            HydraulicPumpAnalysisOptions? additionalParameters = null)
         {
             if (string.IsNullOrEmpty(wellId))
                 throw new ArgumentException("Well ID cannot be null or empty.", nameof(wellId));
@@ -477,7 +478,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 EquipmentId = equipmentId,
                 AnalysisType = analysisType,
                 UserId = userId,
-                AdditionalParameters = additionalParameters ?? new System.Collections.Generic.Dictionary<string, object>()
+                AdditionalParameters = additionalParameters
             };
 
             var result = await _calculationService.PerformHydraulicPumpAnalysisAsync(request);

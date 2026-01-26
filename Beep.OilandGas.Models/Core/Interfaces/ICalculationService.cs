@@ -45,7 +45,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Gets all calculation results for a well, pool, or field
         /// </summary>
-        Task<List<object>> GetCalculationResultsAsync(string? wellId = null, string? poolId = null, string? fieldId = null, string? calculationType = null);
+        Task<CalculationResultsResponse> GetCalculationResultsAsync(string? wellId = null, string? poolId = null, string? fieldId = null, string? calculationType = null);
     }
 }
 

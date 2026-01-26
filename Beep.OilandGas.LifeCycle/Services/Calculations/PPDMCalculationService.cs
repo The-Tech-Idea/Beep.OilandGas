@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -63,7 +66,7 @@ using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.Models.Data.Calculations;
 using EconomicAnalysisResult = Beep.OilandGas.Models.Data.Calculations.EconomicAnalysisResult;
 using Beep.OilandGas.ProductionForecasting.Calculations;
-using Beep.OilandGas.Drawing.DataLoaders.Implementations;
+using Beep.OilandGas.PPDM.Models;
 
 
 namespace Beep.OilandGas.LifeCycle.Services.Calculations
@@ -109,7 +112,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
         /// <summary>
         /// Gets or creates repository for DCA results
-        /// Note: Uses dynamic entity type from metadata, falling back to dictionary if needed
+        /// Note: Uses metadata to resolve entity type and table name
         /// </summary>
         private async Task<PPDMGenericRepository> GetDCAResultRepositoryAsync()
         {
@@ -117,16 +120,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             {
                 // Try to get entity type from metadata
                 var metadata = await _metadata.GetTableMetadataAsync("DCA_CALCULATION");
-                Type entityType = typeof(Dictionary<string, object>);
-                
-                if (metadata != null && !string.IsNullOrEmpty(metadata.EntityTypeName))
-                {
-                    var resolvedType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                    if (resolvedType != null)
-                    {
-                        entityType = resolvedType;
-                    }
-                }
+                var tableName = metadata?.TableName ?? "DCA_CALCULATION";
+                var entityType = ResolvePPDMEntityType(metadata?.EntityTypeName, tableName);
 
                 _dcaResultRepository = new PPDMGenericRepository(
                     _editor,
@@ -135,7 +130,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     _metadata,
                     entityType,
                     _connectionName,
-                    "DCA_CALCULATION",
+                    tableName,
                     null);
             }
             return _dcaResultRepository;
@@ -149,16 +144,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             if (_economicResultRepository == null)
             {
                 var metadata = await _metadata.GetTableMetadataAsync("ECONOMIC_ANALYSIS");
-                Type entityType = typeof(Dictionary<string, object>);
-                
-                if (metadata != null && !string.IsNullOrEmpty(metadata.EntityTypeName))
-                {
-                    var resolvedType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                    if (resolvedType != null)
-                    {
-                        entityType = resolvedType;
-                    }
-                }
+                var tableName = metadata?.TableName ?? "ECONOMIC_ANALYSIS";
+                var entityType = ResolvePPDMEntityType(metadata?.EntityTypeName, tableName);
 
                 _economicResultRepository = new PPDMGenericRepository(
                     _editor,
@@ -167,7 +154,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     _metadata,
                     entityType,
                     _connectionName,
-                    "ECONOMIC_ANALYSIS",
+                    tableName,
                     null);
             }
             return _economicResultRepository;
@@ -181,16 +168,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             if (_nodalResultRepository == null)
             {
                 var metadata = await _metadata.GetTableMetadataAsync("NODAL_ANALYSIS");
-                Type entityType = typeof(Dictionary<string, object>);
-                
-                if (metadata != null && !string.IsNullOrEmpty(metadata.EntityTypeName))
-                {
-                    var resolvedType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                    if (resolvedType != null)
-                    {
-                        entityType = resolvedType;
-                    }
-                }
+                var tableName = metadata?.TableName ?? "NODAL_ANALYSIS";
+                var entityType = ResolvePPDMEntityType(metadata?.EntityTypeName, tableName);
 
                 _nodalResultRepository = new PPDMGenericRepository(
                     _editor,
@@ -199,7 +178,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     _metadata,
                     entityType,
                     _connectionName,
-                    "NODAL_ANALYSIS",
+                    tableName,
                     null);
             }
             return _nodalResultRepository;
@@ -213,16 +192,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             if (_wellTestResultRepository == null)
             {
                 var metadata = await _metadata.GetTableMetadataAsync("WELL_TEST");
-                Type entityType = typeof(Dictionary<string, object>);
-                
-                if (metadata != null && !string.IsNullOrEmpty(metadata.EntityTypeName))
-                {
-                    var resolvedType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                    if (resolvedType != null)
-                    {
-                        entityType = resolvedType;
-                    }
-                }
+                var tableName = metadata?.TableName ?? "WELL_TEST";
+                var entityType = ResolvePPDMEntityType(metadata?.EntityTypeName, tableName);
 
                 _wellTestResultRepository = new PPDMGenericRepository(
                     _editor,
@@ -231,7 +202,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     _metadata,
                     entityType,
                     _connectionName,
-                    "WELL_TEST",
+                    tableName,
                     null);
             }
             return _wellTestResultRepository;
@@ -245,16 +216,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             if (_flashResultRepository == null)
             {
                 var metadata = await _metadata.GetTableMetadataAsync("FLASH_CALCULATION");
-                Type entityType = typeof(Dictionary<string, object>);
-                
-                if (metadata != null && !string.IsNullOrEmpty(metadata.EntityTypeName))
-                {
-                    var resolvedType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                    if (resolvedType != null)
-                    {
-                        entityType = resolvedType;
-                    }
-                }
+                var tableName = metadata?.TableName ?? "FLASH_CALCULATION";
+                var entityType = ResolvePPDMEntityType(metadata?.EntityTypeName, tableName);
 
                 _flashResultRepository = new PPDMGenericRepository(
                     _editor,
@@ -263,10 +226,281 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     _metadata,
                     entityType,
                     _connectionName,
-                    "FLASH_CALCULATION",
+                    tableName,
                     null);
             }
             return _flashResultRepository;
+        }
+        private static readonly ConcurrentDictionary<Type, IReadOnlyDictionary<string, PropertyInfo>> EntityPropertyCache =
+            new ConcurrentDictionary<Type, IReadOnlyDictionary<string, PropertyInfo>>();
+        private static readonly ConcurrentDictionary<Type, IReadOnlyDictionary<string, PropertyInfo>> ResultPropertyCache =
+            new ConcurrentDictionary<Type, IReadOnlyDictionary<string, PropertyInfo>>();
+
+        private static Type? FindEntityTypeByName(string? entityTypeName)
+        {
+            if (string.IsNullOrWhiteSpace(entityTypeName))
+            {
+                return null;
+            }
+
+            var ppdmAssembly = typeof(ANL_ANALYSIS_REPORT).Assembly;
+            var modelAssembly = typeof(ModelEntityBase).Assembly;
+
+            return FindEntityTypeInAssembly(ppdmAssembly, entityTypeName)
+                ?? FindEntityTypeInAssembly(modelAssembly, entityTypeName);
+        }
+
+        private static Type? FindEntityTypeInAssembly(Assembly assembly, string entityTypeName)
+        {
+            var ppdmQualified = assembly.GetType($"Beep.OilandGas.PPDM39.Models.{entityTypeName}", false, true);
+            if (ppdmQualified != null && typeof(IPPDMEntity).IsAssignableFrom(ppdmQualified))
+            {
+                return ppdmQualified;
+            }
+
+            var modelQualified = assembly.GetType($"Beep.OilandGas.Models.Data.{entityTypeName}", false, true);
+            if (modelQualified != null && typeof(IPPDMEntity).IsAssignableFrom(modelQualified))
+            {
+                return modelQualified;
+            }
+
+            var normalizedTarget = NormalizePropertyName(entityTypeName);
+            Type[] types;
+            try
+            {
+                types = assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                types = ex.Types.Where(type => type != null).ToArray()!;
+            }
+
+            return types.FirstOrDefault(type =>
+                type != null &&
+                typeof(IPPDMEntity).IsAssignableFrom(type) &&
+                NormalizePropertyName(type.Name).Equals(normalizedTarget, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static Type ResolvePPDMEntityType(string? entityTypeName, string tableName)
+        {
+            var resolvedType = FindEntityTypeByName(entityTypeName)
+                ?? FindEntityTypeByName(tableName);
+
+            if (resolvedType == null)
+            {
+                throw new InvalidOperationException(
+                    $"Entity type not found for table {tableName} (entity type {entityTypeName ?? "unknown"}).");
+            }
+
+            return resolvedType;
+        }
+
+        private static string NormalizePropertyName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return string.Empty;
+            }
+
+            var sanitized = name.Where(char.IsLetterOrDigit).ToArray();
+            return new string(sanitized).ToUpperInvariant();
+        }
+
+        private static IReadOnlyDictionary<string, PropertyInfo> GetEntityPropertyMap(Type entityType)
+        {
+            return EntityPropertyCache.GetOrAdd(entityType, type =>
+                type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(prop => prop.CanWrite)
+                    .ToDictionary(prop => NormalizePropertyName(prop.Name), prop => prop));
+        }
+
+        private static IReadOnlyDictionary<string, PropertyInfo> GetReadablePropertyMap(Type resultType)
+        {
+            return ResultPropertyCache.GetOrAdd(resultType, type =>
+                type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(prop => prop.CanRead)
+                    .ToDictionary(prop => NormalizePropertyName(prop.Name), prop => prop));
+        }
+
+        private static bool TryResolveResultPropertyAlias(
+            string normalizedEntityProperty,
+            IReadOnlyDictionary<string, PropertyInfo> resultPropertyMap,
+            out PropertyInfo resultProperty)
+        {
+            resultProperty = null!;
+
+            if (normalizedEntityProperty.EndsWith("ANALYSISID", StringComparison.OrdinalIgnoreCase) ||
+                normalizedEntityProperty.EndsWith("CALCULATIONID", StringComparison.OrdinalIgnoreCase) ||
+                normalizedEntityProperty.EndsWith("RESULTID", StringComparison.OrdinalIgnoreCase))
+            {
+                if (resultPropertyMap.TryGetValue("CALCULATIONID", out resultProperty) ||
+                    resultPropertyMap.TryGetValue("ANALYSISID", out resultProperty) ||
+                    resultPropertyMap.TryGetValue("RESULTID", out resultProperty))
+                {
+                    return true;
+                }
+            }
+
+            if (normalizedEntityProperty.Equals("WELLTESTID", StringComparison.OrdinalIgnoreCase))
+            {
+                if (resultPropertyMap.TryGetValue("CALCULATIONID", out resultProperty) ||
+                    resultPropertyMap.TryGetValue("ANALYSISID", out resultProperty))
+                {
+                    return true;
+                }
+            }
+
+            if (normalizedEntityProperty.EndsWith("ANALYSISDATE", StringComparison.OrdinalIgnoreCase) ||
+                normalizedEntityProperty.EndsWith("CALCULATIONDATE", StringComparison.OrdinalIgnoreCase))
+            {
+                if (resultPropertyMap.TryGetValue("CALCULATIONDATE", out resultProperty) ||
+                    resultPropertyMap.TryGetValue("ANALYSISDATE", out resultProperty))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private object CreateEntityFromResult(PPDMGenericRepository repository, object result)
+        {
+            if (repository == null)
+            {
+                throw new ArgumentNullException(nameof(repository));
+            }
+
+            if (result == null)
+            {
+                throw new ArgumentNullException(nameof(result));
+            }
+
+            var entityType = repository.EntityType;
+            if (entityType.IsAssignableFrom(result.GetType()))
+            {
+                return result;
+            }
+
+            var entity = Activator.CreateInstance(entityType)
+                ?? throw new InvalidOperationException($"Unable to create entity of type {entityType.Name}.");
+
+            var propertyMap = GetEntityPropertyMap(entityType);
+            var resultPropertyMap = GetReadablePropertyMap(result.GetType());
+
+            foreach (var entityProperty in propertyMap)
+            {
+                if (!resultPropertyMap.TryGetValue(entityProperty.Key, out var resultProperty))
+                {
+                    if (!TryResolveResultPropertyAlias(entityProperty.Key, resultPropertyMap, out resultProperty))
+                    {
+                        continue;
+                    }
+                }
+
+                var value = resultProperty.GetValue(result);
+                TrySetPropertyValue(entity, entityProperty.Value, value);
+            }
+
+            return entity;
+        }
+
+        private bool TrySetPropertyValue(object entity, PropertyInfo property, object? value)
+        {
+            try
+            {
+                if (value == null || value == DBNull.Value)
+                {
+                    property.SetValue(entity, null);
+                    return true;
+                }
+
+                if (value is JsonElement jsonElement)
+                {
+                    value = jsonElement.ValueKind == JsonValueKind.String
+                        ? jsonElement.GetString()
+                        : jsonElement.ToString();
+                }
+
+                var targetType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+                if (value is Enum enumValue && targetType == typeof(string))
+                {
+                    value = enumValue.ToString();
+                }
+                else if (targetType.IsEnum && value is string enumText)
+                {
+                    value = Enum.Parse(targetType, enumText, true);
+                }
+                else if (targetType.IsEnum && value != null && !targetType.IsInstanceOfType(value))
+                {
+                    value = Enum.ToObject(targetType, value);
+                }
+
+                if (!targetType.IsInstanceOfType(value))
+                {
+                    value = Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
+                }
+
+                property.SetValue(entity, value);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(
+                    ex,
+                    "Failed to set {PropertyName} on {EntityType}",
+                    property.Name,
+                    entity.GetType().Name);
+                return false;
+            }
+        }
+
+        private async Task InsertAnalysisResultAsync(
+            PPDMGenericRepository repository,
+            object result,
+            string? userId)
+        {
+            if (repository == null)
+            {
+                throw new ArgumentNullException(nameof(repository));
+            }
+
+            var entity = CreateEntityFromResult(repository, result);
+            var effectiveUserId = string.IsNullOrWhiteSpace(userId) ? "SYSTEM" : userId;
+            await repository.InsertAsync(entity, effectiveUserId);
+        }
+
+        private async Task<PPDMGenericRepository> CreateAnalysisResultRepositoryAsync(
+            string primaryTableName,
+            string fallbackTableName = "ANL_ANALYSIS_REPORT")
+        {
+            if (string.IsNullOrWhiteSpace(primaryTableName))
+            {
+                throw new ArgumentException("Primary table name must be provided", nameof(primaryTableName));
+            }
+
+            var metadata = await _metadata.GetTableMetadataAsync(primaryTableName);
+            if (metadata == null && !string.IsNullOrWhiteSpace(fallbackTableName))
+            {
+                metadata = await _metadata.GetTableMetadataAsync(fallbackTableName);
+            }
+
+            if (metadata == null)
+            {
+                throw new InvalidOperationException($"{primaryTableName} or {fallbackTableName} table not found");
+            }
+
+            var tableName = string.IsNullOrWhiteSpace(metadata.TableName) ? primaryTableName : metadata.TableName;
+            var entityType = ResolvePPDMEntityType(metadata.EntityTypeName, tableName);
+
+            return new PPDMGenericRepository(
+                _editor,
+                _commonColumnHandler,
+                _defaults,
+                _metadata,
+                entityType,
+                _connectionName,
+                tableName,
+                null);
         }
 
       
@@ -292,15 +526,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     request.WellId, request.PoolId, request.FieldId);
 
                 // Check if this is a physics-based forecast (uses reservoir properties instead of historical data)
-                var isPhysicsBased = false;
-                if (request.AdditionalParameters?.ContainsKey("ForecastType") == true)
-                {
-                    var forecastTypeStr = request.AdditionalParameters["ForecastType"]?.ToString() ?? string.Empty;
-                    isPhysicsBased = forecastTypeStr.StartsWith("PHYSICS", StringComparison.OrdinalIgnoreCase) ||
-                                     forecastTypeStr.Equals("PSEUDO_STEADY_STATE", StringComparison.OrdinalIgnoreCase) ||
-                                     forecastTypeStr.Equals("TRANSIENT", StringComparison.OrdinalIgnoreCase) ||
-                                     forecastTypeStr.Equals("GAS_WELL", StringComparison.OrdinalIgnoreCase);
-                }
+                var forecastTypeStr = request.AdditionalParameters?.ForecastType ?? string.Empty;
+                var isPhysicsBased = !string.IsNullOrEmpty(forecastTypeStr) &&
+                    (forecastTypeStr.StartsWith("PHYSICS", StringComparison.OrdinalIgnoreCase) ||
+                     forecastTypeStr.Equals("PSEUDO_STEADY_STATE", StringComparison.OrdinalIgnoreCase) ||
+                     forecastTypeStr.Equals("TRANSIENT", StringComparison.OrdinalIgnoreCase) ||
+                     forecastTypeStr.Equals("GAS_WELL", StringComparison.OrdinalIgnoreCase));
 
                 if (isPhysicsBased)
                 {
@@ -327,26 +558,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 var dcaManager = new DCAManager();
                 
                 // Get initial estimates from request or use defaults
-                var initialQi = request.AdditionalParameters?.ContainsKey("InitialQi") == true 
-                    ? Convert.ToDouble(request.AdditionalParameters["InitialQi"]) 
-                    : productionRates.Max(); // Use max production rate as initial estimate
-                var initialDi = request.AdditionalParameters?.ContainsKey("InitialDi") == true 
-                    ? Convert.ToDouble(request.AdditionalParameters["InitialDi"]) 
-                    : 0.1; // Default 10% decline rate
+                var initialQi = request.AdditionalParameters?.InitialQi ?? productionRates.Max();
+                var initialDi = request.AdditionalParameters?.InitialDi ?? 0.1;
 
                 DCAFitResult fitResult;
                 
                 // Use async analysis if available, otherwise use synchronous with statistics
-                if (request.AdditionalParameters?.ContainsKey("UseAsync") == true && 
-                    Convert.ToBoolean(request.AdditionalParameters["UseAsync"]))
+                if (request.AdditionalParameters?.UseAsync == true)
                 {
                     fitResult = await dcaManager.AnalyzeAsync(productionRates, timeData, initialQi, initialDi);
                 }
                 else
                 {
-                    var confidenceLevel = request.AdditionalParameters?.ContainsKey("ConfidenceLevel") == true 
-                        ? Convert.ToDouble(request.AdditionalParameters["ConfidenceLevel"]) 
-                        : 0.95;
+                    var confidenceLevel = request.AdditionalParameters?.ConfidenceLevel ?? 0.95;
                     fitResult = dcaManager.AnalyzeWithStatistics(productionRates, timeData, initialQi, initialDi, confidenceLevel);
                 }
 
@@ -354,12 +578,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 var result = MapDCAFitResultToDCAResult(fitResult, request, productionRates, timeData);
 
                 // Step 5: Generate forecast points if requested
-                if (request.AdditionalParameters?.ContainsKey("GenerateForecast") == true && 
-                    Convert.ToBoolean(request.AdditionalParameters["GenerateForecast"]))
+                if (request.AdditionalParameters?.GenerateForecast == true)
                 {
-                    var forecastMonths = request.AdditionalParameters?.ContainsKey("ForecastMonths") == true 
-                        ? Convert.ToInt32(request.AdditionalParameters["ForecastMonths"]) 
-                        : 60; // Default 5 years
+                    var forecastMonths = request.AdditionalParameters?.ForecastMonths ?? 60;
                     result.ForecastPoints = GenerateForecastPoints(fitResult, timeData, forecastMonths);
                 }
 
@@ -391,7 +612,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     ErrorMessage = ex.Message,
                     UserId = request.UserId,
                     ForecastPoints = new List<DCAForecastPoint>(),
-                    AdditionalResults = new Dictionary<string, object>()
+                    AdditionalResults = new DcaAdditionalResults()
                 };
 
                 // Try to store error result
@@ -641,7 +862,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 Status = fitResult.Converged ? "SUCCESS" : "PARTIAL",
                 UserId = request.UserId,
                 ForecastPoints = new List<DCAForecastPoint>(),
-                AdditionalResults = new Dictionary<string, object>()
+                AdditionalResults = new DcaAdditionalResults()
             };
 
             // Map decline curve parameters
@@ -674,15 +895,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             result.CorrelationCoefficient = (decimal)Math.Sqrt(fitResult.RSquared); // Approximate correlation coefficient
 
             // Store additional metrics in AdditionalResults
-            result.AdditionalResults = new Dictionary<string, object>
+            result.AdditionalResults = new DcaAdditionalResults
             {
-                ["AdjustedRSquared"] = fitResult.AdjustedRSquared,
-                ["MAE"] = fitResult.MAE,
-                ["AIC"] = fitResult.AIC,
-                ["BIC"] = fitResult.BIC,
-                ["Iterations"] = fitResult.Iterations,
-                ["Converged"] = fitResult.Converged,
-                ["DataPointCount"] = productionRates.Count
+                AdjustedRSquared = fitResult.AdjustedRSquared,
+                Mae = fitResult.MAE,
+                Aic = fitResult.AIC,
+                Bic = fitResult.BIC,
+                Iterations = fitResult.Iterations,
+                Converged = fitResult.Converged,
+                DataPointCount = productionRates.Count
             };
 
             // Calculate estimated EUR (Estimated Ultimate Recovery) - simplified calculation
@@ -796,13 +1017,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
 
                 // Step 3: Perform economic analysis
-                double financeRate = request.AdditionalParameters?.ContainsKey("FinanceRate") == true
-                    ? Convert.ToDouble(request.AdditionalParameters["FinanceRate"]) / 100.0
-                    : 0.08; // Default 8%
+                double financeRate = request.AdditionalParameters?.FinanceRate != null
+                    ? request.AdditionalParameters.FinanceRate.Value / 100.0
+                    : 0.08;
 
-                double reinvestRate = request.AdditionalParameters?.ContainsKey("ReinvestRate") == true
-                    ? Convert.ToDouble(request.AdditionalParameters["ReinvestRate"]) / 100.0
-                    : 0.12; // Default 12%
+                double reinvestRate = request.AdditionalParameters?.ReinvestRate != null
+                    ? request.AdditionalParameters.ReinvestRate.Value / 100.0
+                    : 0.12;
 
                 EconomicResult economicResult;
                 try
@@ -816,19 +1037,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
 
                 // Step 4: Generate NPV profile if requested
-                List<NPV_PROFILE_POINT>? npvProfile = null;
-                if (request.AdditionalParameters?.ContainsKey("GenerateNPVProfile") == true &&
-                    Convert.ToBoolean(request.AdditionalParameters["GenerateNPVProfile"]))
+                List<NPVProfilePoint>? npvProfile = null;
+                if (request.AdditionalParameters?.GenerateNpvProfile == true)
                 {
-                    double minRate = request.AdditionalParameters?.ContainsKey("NPVProfileMinRate") == true
-                        ? Convert.ToDouble(request.AdditionalParameters["NPVProfileMinRate"]) / 100.0
+                    double minRate = request.AdditionalParameters?.NpvProfileMinRate != null
+                        ? request.AdditionalParameters.NpvProfileMinRate.Value / 100.0
                         : 0.0;
-                    double maxRate = request.AdditionalParameters?.ContainsKey("NPVProfileMaxRate") == true
-                        ? Convert.ToDouble(request.AdditionalParameters["NPVProfileMaxRate"]) / 100.0
+                    double maxRate = request.AdditionalParameters?.NpvProfileMaxRate != null
+                        ? request.AdditionalParameters.NpvProfileMaxRate.Value / 100.0
                         : 0.5;
-                    int points = request.AdditionalParameters?.ContainsKey("NPVProfilePoints") == true
-                        ? Convert.ToInt32(request.AdditionalParameters["NPVProfilePoints"])
-                        : 50;
+                    int points = request.AdditionalParameters?.NpvProfilePoints ?? 50;
 
                     npvProfile = EconomicAnalyzer.GenerateNPVProfile(cashFlows, minRate, maxRate, points);
                 }
@@ -864,7 +1082,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     ErrorMessage = ex.Message,
                     UserId = request.UserId,
                     CashFlowPoints = new List<EconomicCashFlowPoint>(),
-                    AdditionalResults = new Dictionary<string, object>()
+                    AdditionalResults = new EconomicAnalysisAdditionalResults()
                 };
 
                 // Try to store error result
@@ -893,16 +1111,24 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// <exception cref="InvalidOperationException">Thrown when reservoir/wellbore properties are unavailable or calculation fails</exception>
         public async Task<NodalAnalysisResult> PerformNodalAnalysisAsync(NodalAnalysisRequest request)
         {
+            string? resolvedWellId = null;
+
             try
             {
                 // Validate request
-                if (string.IsNullOrEmpty(request.WellUWI) && string.IsNullOrEmpty(request.WellUWI))
+                if (string.IsNullOrEmpty(request.WellUWI))
                 {
-                    throw new ArgumentException("At least one of WellId or WellboreId must be provided");
+                    throw new ArgumentException("WellUWI must be provided");
                 }
 
-                _logger?.LogInformation("Starting Nodal Analysis for WellId: {WellId}, WellboreId: {WellboreId}",
-                    request.WellUWI, request.WellUWI);
+                resolvedWellId = await GetWellIdByUwiAsync(request.WellUWI);
+                if (string.IsNullOrEmpty(resolvedWellId))
+                {
+                    throw new InvalidOperationException($"Well not found for UWI: {request.WellUWI}");
+                }
+
+                _logger?.LogInformation("Starting Nodal Analysis for WellUWI: {WellUWI}, WellId: {WellId}",
+                    request.WellUWI, resolvedWellId);
 
                 // Step 1: Build reservoir properties from request or PPDM data
                 ReservoirProperties reservoirProperties;
@@ -912,9 +1138,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     reservoirProperties = new ReservoirProperties
                     {
                         ReservoirPressure = (double)request.ReservoirPressure.Value,
-                        BubblePointPressure = request.AdditionalParameters?.ContainsKey("BubblePointPressure") == true
-                            ? Convert.ToDouble(request.AdditionalParameters["BubblePointPressure"])
-                            : (double)(request.ReservoirPressure.Value * 0.8m), // Default 80% of reservoir pressure
+                        BubblePointPressure = request.AdditionalParameters?.BubblePointPressure != null
+                            ? (double)request.AdditionalParameters.BubblePointPressure.Value
+                            : (double)(request.ReservoirPressure.Value * 0.8m),
                         ProductivityIndex = (double)request.ProductivityIndex.Value,
                         WaterCut = request.WaterCut.HasValue ? (double)request.WaterCut.Value / 100.0 : 0.0,
                         GasOilRatio = request.GasOilRatio.HasValue ? (double)request.GasOilRatio.Value : 0.0,
@@ -924,7 +1150,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 else
                 {
                     // Retrieve from PPDM data
-                    reservoirProperties = await GetReservoirPropertiesForWellAsync(request.WellId ?? request.WellboreId ?? string.Empty);
+                    reservoirProperties = await GetReservoirPropertiesForWellAsync(resolvedWellId);
                     
                     if (reservoirProperties == null || reservoirProperties.ReservoirPressure <= 0)
                     {
@@ -953,7 +1179,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 else
                 {
                     // Retrieve from PPDM data
-                    wellboreProperties = await GetWellborePropertiesForWellAsync(request.WellId ?? request.WellboreId ?? string.Empty);
+                    wellboreProperties = await GetWellborePropertiesForWellAsync(resolvedWellId);
                     
                     if (wellboreProperties == null || wellboreProperties.TubingDiameter <= 0)
                     {
@@ -1025,7 +1251,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 // Step 7: Map results to NodalAnalysisResult DTO
                 var result = MapNodalAnalysisResultToDTO(
-                    request, iprCurve, vlpCurve, operatingPoint, reservoirProperties, wellboreProperties);
+                    resolvedWellId, request, iprCurve, vlpCurve, operatingPoint, reservoirProperties, wellboreProperties);
 
                 // Step 8: Store result in database
                 var repository = await GetNodalResultRepositoryAsync();
@@ -1045,8 +1271,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 var errorResult = new NodalAnalysisResult
                 {
                     CalculationId = Guid.NewGuid().ToString(),
-                    WellId = request.WellUWI,
-                    WellboreId = request.WellUWI,
+                    WellId = resolvedWellId ?? string.Empty,
+                    WellboreId = resolvedWellId ?? string.Empty,
                     FieldId = request.FieldId,
                     AnalysisType = request.AnalysisType,
                     CalculationDate = DateTime.UtcNow,
@@ -1056,7 +1282,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     IPRCurve = new List<NodalCurvePoint>(),
                     VLPCurve = new List<NodalCurvePoint>(),
                     Recommendations = new List<string>(),
-                    AdditionalResults = new Dictionary<string, object>()
+                    AdditionalResults = new NodalAnalysisAdditionalResults
+                    {
+                        WellUwi = request.WellUWI
+                    }
                 };
 
                 // Try to store error result
@@ -1357,7 +1586,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             EconomicResult economicResult,
             EconomicAnalysisRequest request,
             CashFlow[] cashFlows,
-            List<NPV_PROFILE_POINT>? npvProfile)
+            List<NPVProfilePoint>? npvProfile)
         {
             var result = new EconomicAnalysisResult
             {
@@ -1376,7 +1605,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 ReturnOnInvestment = (decimal)economicResult.ROI,
                 ProfitabilityIndex = (decimal)economicResult.ProfitabilityIndex,
                 CashFlowPoints = new List<EconomicCashFlowPoint>(),
-                AdditionalResults = new Dictionary<string, object>()
+                AdditionalResults = new EconomicAnalysisAdditionalResults()
             };
 
             // Map cash flows to cash flow points
@@ -1412,18 +1641,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             // Add NPV profile to additional results if available
             if (npvProfile != null && npvProfile.Count > 0)
             {
-                result.AdditionalResults["NPVProfile"] = npvProfile.Select(p => new
-                {
-                    DiscountRate = p.DiscountRate * 100.0, // Convert to percentage
-                    NPV = p.NPV
-                }).ToList();
+                result.AdditionalResults.NpvProfile = npvProfile;
             }
 
             // Add MIRR and discounted payback period
-            result.AdditionalResults["MIRR"] = economicResult.MIRR * 100.0; // Convert to percentage
-            result.AdditionalResults["DiscountedPaybackPeriod"] = economicResult.DiscountedPaybackPeriod;
-            result.AdditionalResults["TotalCashFlow"] = economicResult.TotalCashFlow;
-            result.AdditionalResults["PresentValue"] = economicResult.PresentValue;
+            result.AdditionalResults.Mirr = economicResult.MIRR * 100.0;
+            result.AdditionalResults.DiscountedPaybackPeriod = economicResult.DiscountedPaybackPeriod;
+            result.AdditionalResults.TotalCashFlow = economicResult.TotalCashFlow;
+            result.AdditionalResults.PresentValue = economicResult.PresentValue;
 
             return result;
         }
@@ -1740,6 +1965,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// Maps NodalAnalysis results to NodalAnalysisResult DTO
         /// </summary>
         private NodalAnalysisResult MapNodalAnalysisResultToDTO(
+            string wellId,
             NodalAnalysisRequest request,
             List<IPRPoint> iprCurve,
             List<VLPPoint> vlpCurve,
@@ -1750,8 +1976,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             var result = new NodalAnalysisResult
             {
                 CalculationId = Guid.NewGuid().ToString(),
-                WellId = request.WellUWI,
-                WellboreId = request.WellUWI,
+                WellId = wellId,
+                WellboreId = wellId,
                 FieldId = request.FieldId,
                 AnalysisType = request.AnalysisType,
                 CalculationDate = DateTime.UtcNow,
@@ -1763,7 +1989,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 IPRCurve = new List<NodalCurvePoint>(),
                 VLPCurve = new List<NodalCurvePoint>(),
                 Recommendations = new List<string>(),
-                AdditionalResults = new Dictionary<string, object>()
+                AdditionalResults = new NodalAnalysisAdditionalResults
+                {
+                    WellUwi = request.WellUWI
+                }
             };
 
             // Map IPR curve points
@@ -1828,13 +2057,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             }
 
             // Add additional results
-            result.AdditionalResults["ReservoirPressure"] = reservoirProperties.ReservoirPressure;
-            result.AdditionalResults["ProductivityIndex"] = reservoirProperties.ProductivityIndex;
-            result.AdditionalResults["TubingDiameter"] = wellboreProperties.TubingDiameter;
-            result.AdditionalResults["TubingLength"] = wellboreProperties.TubingLength;
-            result.AdditionalResults["WellheadPressure"] = wellboreProperties.WellheadPressure;
-            result.AdditionalResults["IPRMethod"] = request.IPRModel ?? "VOGEL";
-            result.AdditionalResults["VLPModel"] = request.VLPModel ?? "HAGEDORN_BROWN";
+            result.AdditionalResults.ReservoirPressure = (decimal)reservoirProperties.ReservoirPressure;
+            result.AdditionalResults.ProductivityIndex = (decimal)reservoirProperties.ProductivityIndex;
+            result.AdditionalResults.TubingDiameter = (decimal)wellboreProperties.TubingDiameter;
+            result.AdditionalResults.TubingLength = (decimal)wellboreProperties.TubingLength;
+            result.AdditionalResults.WellheadPressure = (decimal)wellboreProperties.WellheadPressure;
+            result.AdditionalResults.IprMethod = request.IPRModel ?? "VOGEL";
+            result.AdditionalResults.VlpModel = request.VLPModel ?? "HAGEDORN_BROWN";
 
             return result;
         }
@@ -1930,25 +2159,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetWellTestResultRepositoryAsync();
-                    var resultDict = new Dictionary<string, object>
-                    {
-                        ["WELL_TEST_ID"] = result.CalculationId,
-                        ["WELL_ID"] = result.WellId ?? string.Empty,
-                        ["TEST_ID"] = result.TestId ?? string.Empty,
-                        ["ANALYSIS_DATE"] = result.CalculationDate,
-                        ["ANALYSIS_METHOD"] = result.AnalysisMethod,
-                        ["PERMEABILITY"] = result.Permeability,
-                        ["SKIN_FACTOR"] = result.SkinFactor,
-                        ["RESERVOIR_PRESSURE"] = result.ReservoirPressure,
-                        ["PRODUCTIVITY_INDEX"] = result.ProductivityIndex,
-                        ["FLOW_EFFICIENCY"] = result.FlowEfficiency,
-                        ["R_SQUARED"] = result.RSquared,
-                        ["IDENTIFIED_MODEL"] = result.IdentifiedModel,
-                        ["DIAGNOSTIC_DATA_JSON"] = JsonSerializer.Serialize(result.DiagnosticPoints ?? new List<WellTestDataPoint>()),
-                        ["DERIVATIVE_DATA_JSON"] = JsonSerializer.Serialize(result.DerivativePoints ?? new List<WellTestDataPoint>())
-                    };
+                    result.DiagnosticDataJson = JsonSerializer.Serialize(result.DiagnosticPoints ?? new List<WellTestDataPoint>());
+                    result.DerivativeDataJson = JsonSerializer.Serialize(result.DerivativePoints ?? new List<WellTestDataPoint>());
 
-                    await repository.InsertAsync(resultDict, request.UserId ?? "SYSTEM");
+                    await InsertAnalysisResultAsync(repository, result, request.UserId);
                     _logger?.LogInformation("Stored Well Test Analysis result with ID: {CalculationId}", result.CalculationId);
                 }
                 catch (Exception storeEx)
@@ -1968,16 +2182,18 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetWellTestResultRepositoryAsync();
-                    var errorDict = new Dictionary<string, object>
+                    var errorResult = new WellTestAnalysisResult
                     {
-                        ["WELL_TEST_ID"] = Guid.NewGuid().ToString(),
-                        ["WELL_ID"] = request.WellId ?? string.Empty,
-                        ["TEST_ID"] = request.TestId ?? string.Empty,
-                        ["ANALYSIS_DATE"] = DateTime.UtcNow,
-                        ["STATUS"] = "FAILED",
-                        ["ERROR_MESSAGE"] = ex.Message
+                        CalculationId = Guid.NewGuid().ToString(),
+                        WellId = request.WellId,
+                        TestId = request.TestId,
+                        AnalysisType = request.AnalysisType,
+                        AnalysisMethod = request.AnalysisMethod ?? "HORNER",
+                        CalculationDate = DateTime.UtcNow,
+                        Status = "FAILED",
+                        ErrorMessage = ex.Message
                     };
-                    await repository.InsertAsync(errorDict, request.UserId ?? "SYSTEM");
+                    await InsertAnalysisResultAsync(repository, errorResult, request.UserId);
                 }
                 catch (Exception storeEx)
                 {
@@ -2058,26 +2274,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetFlashResultRepositoryAsync();
-                    var resultDict = new Dictionary<string, object>
-                    {
-                        ["FLASH_CALCULATION_ID"] = result.CalculationId,
-                        ["WELL_ID"] = result.WellId ?? string.Empty,
-                        ["FACILITY_ID"] = result.FacilityId ?? string.Empty,
-                        ["CALCULATION_DATE"] = result.CalculationDate,
-                        ["PRESSURE"] = flashConditions.Pressure,
-                        ["TEMPERATURE"] = flashConditions.Temperature,
-                        ["VAPOR_FRACTION"] = result.VaporFraction,
-                        ["LIQUID_FRACTION"] = result.LiquidFraction,
-                        ["FEED_COMPOSITION_JSON"] = JsonSerializer.Serialize(flashConditions.FeedComposition),
-                        ["VAPOR_COMPOSITION_JSON"] = JsonSerializer.Serialize(result.VaporComposition),
-                        ["LIQUID_COMPOSITION_JSON"] = JsonSerializer.Serialize(result.LiquidComposition),
-                        ["K_VALUES_JSON"] = JsonSerializer.Serialize(result.KValues),
-                        ["ITERATIONS"] = result.Iterations,
-                        ["CONVERGED"] = result.Converged,
-                        ["CONVERGENCE_ERROR"] = result.ConvergenceError
-                    };
+                    result.Pressure = flashConditions.Pressure;
+                    result.Temperature = flashConditions.Temperature;
+                    result.FeedCompositionJson = JsonSerializer.Serialize(flashConditions.FeedComposition);
+                    result.VaporCompositionJson = JsonSerializer.Serialize(result.VaporComposition);
+                    result.LiquidCompositionJson = JsonSerializer.Serialize(result.LiquidComposition);
+                    result.KValuesJson = JsonSerializer.Serialize(result.KValues);
 
-                    await repository.InsertAsync(resultDict, request.UserId ?? "SYSTEM");
+                    await InsertAnalysisResultAsync(repository, result, request.UserId);
                     _logger?.LogInformation("Stored Flash Calculation result with ID: {CalculationId}", result.CalculationId);
                 }
                 catch (Exception storeEx)
@@ -2097,16 +2301,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetFlashResultRepositoryAsync();
-                    var errorDict = new Dictionary<string, object>
+                    var errorResult = new FlashCalculationResult
                     {
-                        ["FLASH_CALCULATION_ID"] = Guid.NewGuid().ToString(),
-                        ["WELL_ID"] = request.WellId ?? string.Empty,
-                        ["FACILITY_ID"] = request.FacilityId ?? string.Empty,
-                        ["CALCULATION_DATE"] = DateTime.UtcNow,
-                        ["STATUS"] = "FAILED",
-                        ["ERROR_MESSAGE"] = ex.Message
+                        CalculationId = Guid.NewGuid().ToString(),
+                        WellId = request.WellId,
+                        FacilityId = request.FacilityId,
+                        CalculationDate = DateTime.UtcNow,
+                        Status = "FAILED",
+                        ErrorMessage = ex.Message
                     };
-                    await repository.InsertAsync(errorDict, request.UserId ?? "SYSTEM");
+                    await InsertAnalysisResultAsync(repository, errorResult, request.UserId);
                 }
                 catch (Exception storeEx)
                 {
@@ -2247,26 +2451,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetChokeAnalysisResultRepositoryAsync();
-                    var resultEntity = new Dictionary<string, object>
-                    {
-                        ["CHOKE_ANALYSIS_ID"] = result.CalculationId,
-                        ["WELL_ID"] = result.WellId ?? string.Empty,
-                        ["EQUIPMENT_ID"] = result.EquipmentId ?? string.Empty,
-                        ["ANALYSIS_TYPE"] = result.AnalysisType,
-                        ["CALCULATION_DATE"] = result.CalculationDate,
-                        ["CHOKE_DIAMETER"] = result.ChokeDiameter,
-                        ["CHOKE_TYPE"] = result.ChokeType,
-                        ["DISCHARGE_COEFFICIENT"] = result.DischargeCoefficient,
-                        ["FLOW_RATE"] = result.FlowRate,
-                        ["UPSTREAM_PRESSURE"] = result.UpstreamPressure,
-                        ["DOWNSTREAM_PRESSURE"] = result.DownstreamPressure,
-                        ["PRESSURE_RATIO"] = result.PressureRatio,
-                        ["FLOW_REGIME"] = result.FlowRegime,
-                        ["CRITICAL_PRESSURE_RATIO"] = result.CriticalPressureRatio,
-                        ["STATUS"] = result.Status
-                    };
-
-                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    await InsertAnalysisResultAsync(repository, result, request.UserId);
                     _logger?.LogInformation("Stored Choke Analysis result with ID: {CalculationId}", result.CalculationId);
                 }
                 catch (Exception storeEx)
@@ -2291,18 +2476,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("CHOKE_ANALYSIS_RESULT");
-                if (metadata == null)
-                {
-                    // Use ANL_ANALYSIS_REPORT as fallback
-                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
-                    if (metadata == null)
-                    {
-                        throw new InvalidOperationException("CHOKE_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
-                    }
-                }
-
-                return new PPDMGenericRepository(_dataSource, metadata);
+                return await CreateAnalysisResultRepositoryAsync("CHOKE_ANALYSIS_RESULT");
             }
             catch (Exception ex)
             {
@@ -2318,6 +2492,36 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             var entity = await GetEntityAsync("WELL", wellId, "WELL_ID");
             return entity as WELL;
+        }
+
+        private async Task<string?> GetWellIdByUwiAsync(string wellUwi)
+        {
+            if (string.IsNullOrWhiteSpace(wellUwi))
+            {
+                return null;
+            }
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter
+                {
+                    FieldName = "WELL_UWI",
+                    Operator = "=",
+                    FilterValue = wellUwi
+                }
+            };
+
+            var entities = await GetEntitiesAsync("WELL", filters, "ROW_CHANGED_DATE", DataRetrievalMode.Latest);
+            var well = entities.FirstOrDefault() as WELL;
+
+            if (well != null)
+            {
+                return well.WELL_ID;
+            }
+
+            var entity = entities.FirstOrDefault();
+            var wellIdValue = GetPropertyValue(entity, "WELL_ID");
+            return wellIdValue?.ToString();
         }
 
         /// <summary>
@@ -2415,12 +2619,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 if (request.AnalysisType.ToUpper() == "VALVE_DESIGN")
                 {
                     // Valve design analysis
-                    var gasInjectionPressure = request.AdditionalParameters?.ContainsKey("GasInjectionPressure") == true
-                        ? Convert.ToDecimal(request.AdditionalParameters["GasInjectionPressure"])
-                        : wellProperties.WellheadPressure * 1.5m;
-                    var numberOfValves = request.AdditionalParameters?.ContainsKey("NumberOfValves") == true
-                        ? Convert.ToInt32(request.AdditionalParameters["NumberOfValves"])
-                        : 5;
+                    var gasInjectionPressure = request.AdditionalParameters?.GasInjectionPressure
+                        ?? wellProperties.WellheadPressure * 1.5m;
+                    var numberOfValves = request.AdditionalParameters?.NumberOfValves ?? 5;
 
                     var designResult = GasLiftValveDesignCalculator.DesignValvesUS(wellProperties, gasInjectionPressure, numberOfValves);
                     
@@ -2452,12 +2653,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     // Valve spacing analysis
                     var spacingResult = GasLiftValveSpacingCalculator.CalculateEqualPressureDropSpacing(
                         wellProperties,
-                        request.AdditionalParameters?.ContainsKey("GasInjectionPressure") == true
-                            ? Convert.ToDecimal(request.AdditionalParameters["GasInjectionPressure"])
-                            : wellProperties.WellheadPressure * 1.5m,
-                        request.AdditionalParameters?.ContainsKey("NumberOfValves") == true
-                            ? Convert.ToInt32(request.AdditionalParameters["NumberOfValves"])
-                            : 5);
+                        request.AdditionalParameters?.GasInjectionPressure
+                            ?? wellProperties.WellheadPressure * 1.5m,
+                        request.AdditionalParameters?.NumberOfValves ?? 5);
 
                     result = new GasLiftAnalysisResult
                     {
@@ -2508,25 +2706,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetGasLiftAnalysisResultRepositoryAsync();
-                    var resultEntity = new Dictionary<string, object>
-                    {
-                        ["GAS_LIFT_ANALYSIS_ID"] = result.CalculationId,
-                        ["WELL_ID"] = result.WellId ?? string.Empty,
-                        ["ANALYSIS_TYPE"] = result.AnalysisType,
-                        ["CALCULATION_DATE"] = result.CalculationDate,
-                        ["OPTIMAL_GAS_INJECTION_RATE"] = result.OptimalGasInjectionRate,
-                        ["MAXIMUM_PRODUCTION_RATE"] = result.MaximumProductionRate,
-                        ["OPTIMAL_GAS_LIQUID_RATIO"] = result.OptimalGasLiquidRatio,
-                        ["PERFORMANCE_POINTS_JSON"] = JsonSerializer.Serialize(result.PerformancePoints),
-                        ["STATUS"] = result.Status
-                    };
+                    result.PerformancePointsJson = JsonSerializer.Serialize(result.PerformancePoints);
+                    result.ValvesJson = result.Valves == null ? null : JsonSerializer.Serialize(result.Valves);
+                    result.ValveDepthsJson = result.ValveDepths == null ? null : JsonSerializer.Serialize(result.ValveDepths);
 
-                    if (result.Valves != null)
-                        resultEntity["VALVES_JSON"] = JsonSerializer.Serialize(result.Valves);
-                    if (result.ValveDepths != null)
-                        resultEntity["VALVE_DEPTHS_JSON"] = JsonSerializer.Serialize(result.ValveDepths);
-
-                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    await InsertAnalysisResultAsync(repository, result, request.UserId);
                     _logger?.LogInformation("Stored Gas Lift Analysis result with ID: {CalculationId}", result.CalculationId);
                 }
                 catch (Exception storeEx)
@@ -2551,18 +2735,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("GAS_LIFT_ANALYSIS_RESULT");
-                if (metadata == null)
-                {
-                    // Use ANL_ANALYSIS_REPORT as fallback
-                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
-                    if (metadata == null)
-                    {
-                        throw new InvalidOperationException("GAS_LIFT_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
-                    }
-                }
-
-                return new PPDMGenericRepository(_dataSource, metadata);
+                return await CreateAnalysisResultRepositoryAsync("GAS_LIFT_ANALYSIS_RESULT");
             }
             catch (Exception ex)
             {
@@ -2615,17 +2788,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 // Step 2: Build pump properties from request or PPDM data
                 // For simplicity, we'll use request values if provided, otherwise use defaults
-                var flowRates = request.AdditionalParameters?.ContainsKey("FlowRates") == true
-                    ? ((double[])request.AdditionalParameters["FlowRates"])
-                    : new double[] { 100, 200, 300, 400, 500 }; // Default flow rates in GPM
+                var flowRates = request.AdditionalParameters?.FlowRates?.ToArray()
+                    ?? new double[] { 100, 200, 300, 400, 500 };
 
-                var heads = request.AdditionalParameters?.ContainsKey("Heads") == true
-                    ? ((double[])request.AdditionalParameters["Heads"])
-                    : new double[] { 100, 90, 75, 60, 45 }; // Default heads in feet
+                var heads = request.AdditionalParameters?.Heads?.ToArray()
+                    ?? new double[] { 100, 90, 75, 60, 45 };
 
-                var powers = request.AdditionalParameters?.ContainsKey("Powers") == true
-                    ? ((double[])request.AdditionalParameters["Powers"])
-                    : new double[] { 80, 150, 230, 310, 380 }; // Default powers in HP
+                var powers = request.AdditionalParameters?.Powers?.ToArray()
+                    ?? new double[] { 80, 150, 230, 310, 380 };
 
                 var specificGravity = request.FluidDensity.HasValue
                     ? (double)(request.FluidDensity.Value / 62.4m) // Convert lb/ft³ to specific gravity
@@ -2643,9 +2813,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 if (request.SuctionPressure.HasValue && request.FluidDensity.HasValue)
                 {
-                    var vaporPressure = request.AdditionalParameters?.ContainsKey("VaporPressure") == true
-                        ? Convert.ToDouble(request.AdditionalParameters["VaporPressure"])
-                        : 0.5; // Default vapor pressure in psia
+                    var vaporPressure = request.AdditionalParameters?.VaporPressure ?? 0.5;
 
                     npshAvailable = NPSHCalculations.CalculateNPSHAvailable(
                         (double)request.SuctionPressure.Value,
@@ -2690,32 +2858,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetPumpAnalysisResultRepositoryAsync();
-                    var resultEntity = new Dictionary<string, object>
-                    {
-                        ["PUMP_ANALYSIS_ID"] = result.CalculationId,
-                        ["WELL_ID"] = result.WellId ?? string.Empty,
-                        ["FACILITY_ID"] = result.FacilityId ?? string.Empty,
-                        ["EQUIPMENT_ID"] = result.EquipmentId ?? string.Empty,
-                        ["PUMP_TYPE"] = result.PumpType,
-                        ["ANALYSIS_TYPE"] = result.AnalysisType,
-                        ["CALCULATION_DATE"] = result.CalculationDate,
-                        ["FLOW_RATE"] = result.FlowRate ?? 0m,
-                        ["HEAD"] = result.Head ?? 0m,
-                        ["POWER"] = result.Power ?? 0m,
-                        ["EFFICIENCY"] = result.Efficiency ?? 0m,
-                        ["BEST_EFFICIENCY_POINT"] = result.BestEfficiencyPoint ?? 0m,
-                        ["PERFORMANCE_CURVE_JSON"] = JsonSerializer.Serialize(result.PerformanceCurve),
-                        ["STATUS"] = result.Status
-                    };
+                    result.PerformanceCurveJson = JsonSerializer.Serialize(result.PerformanceCurve);
 
-                    if (result.NPSHAvailable.HasValue)
-                        resultEntity["NPSH_AVAILABLE"] = result.NPSHAvailable.Value;
-                    if (result.NPSHRequired.HasValue)
-                        resultEntity["NPSH_REQUIRED"] = result.NPSHRequired.Value;
-                    if (result.CavitationRisk.HasValue)
-                        resultEntity["CAVITATION_RISK"] = result.CavitationRisk.Value;
-
-                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    await InsertAnalysisResultAsync(repository, result, request.UserId);
                     _logger?.LogInformation("Stored Pump Analysis result with ID: {CalculationId}", result.CalculationId);
                 }
                 catch (Exception storeEx)
@@ -2741,17 +2886,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("PUMP_ANALYSIS_RESULT");
-                if (metadata == null)
-                {
-                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
-                    if (metadata == null)
-                    {
-                        throw new InvalidOperationException("PUMP_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
-                    }
-                }
-
-                return new PPDMGenericRepository(_dataSource, metadata);
+                return await CreateAnalysisResultRepositoryAsync("PUMP_ANALYSIS_RESULT");
             }
             catch (Exception ex)
             {
@@ -2805,27 +2940,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 {
                     WellDepth = request.WellDepth ?? (decimal)(GetPropertyValueMultiple(well, "TOTAL_DEPTH", "DEPTH") ?? 5000m),
                     TubingDiameter = request.TubingDiameter ?? (decimal)(GetTubularInnerDiameterAsync(request.WellId, "TUBING").Result ?? 2.875m),
-                    RodDiameter = request.AdditionalParameters?.ContainsKey("RodDiameter") == true
-                        ? Convert.ToDecimal(request.AdditionalParameters["RodDiameter"])
-                        : 0.875m, // Default rod diameter
+                    RodDiameter = request.AdditionalParameters?.RodDiameter ?? 0.875m,
                     PumpDiameter = request.PumpDiameter ?? 2.5m,
                     StrokeLength = request.StrokeLength ?? 84m, // inches
-                    StrokesPerMinute = request.AdditionalParameters?.ContainsKey("StrokesPerMinute") == true
-                        ? Convert.ToDecimal(request.AdditionalParameters["StrokesPerMinute"])
-                        : 12m, // Default SPM
-                    WellheadPressure = request.AdditionalParameters?.ContainsKey("WellheadPressure") == true
-                        ? Convert.ToDecimal(request.AdditionalParameters["WellheadPressure"])
-                        : (decimal)(GetPropertyValueMultiple(wellPressure, "PRESSURE", "WELLHEAD_PRESSURE") ?? 100m),
-                    BottomHolePressure = request.AdditionalParameters?.ContainsKey("BottomHolePressure") == true
-                        ? Convert.ToDecimal(request.AdditionalParameters["BottomHolePressure"])
-                        : (decimal)(GetPropertyValueMultiple(wellPressure, "RESERVOIR_PRESSURE", "BOTTOM_HOLE_PRESSURE") ?? 2000m),
+                    StrokesPerMinute = request.AdditionalParameters?.StrokesPerMinute ?? 12m,
+                    WellheadPressure = request.AdditionalParameters?.WellheadPressure
+                        ?? (decimal)(GetPropertyValueMultiple(wellPressure, "PRESSURE", "WELLHEAD_PRESSURE") ?? 100m),
+                    BottomHolePressure = request.AdditionalParameters?.BottomHolePressure
+                        ?? (decimal)(GetPropertyValueMultiple(wellPressure, "RESERVOIR_PRESSURE", "BOTTOM_HOLE_PRESSURE") ?? 2000m),
                     FluidLevel = request.FluidLevel ?? 4000m,
                     FluidDensity = request.FluidDensity ?? 50m, // lb/ft³
                     OilGravity = request.OilGravity ?? 35m, // API
                     WaterCut = request.WaterCut ?? 0.2m,
-                    GasOilRatio = request.AdditionalParameters?.ContainsKey("GasOilRatio") == true
-                        ? Convert.ToDecimal(request.AdditionalParameters["GasOilRatio"])
-                        : 500m // scf/bbl
+                    GasOilRatio = request.AdditionalParameters?.GasOilRatio ?? 500m
                 };
 
                 // Build rod string (simplified - single section)
@@ -2887,32 +3014,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetSuckerRodAnalysisResultRepositoryAsync();
-                    var resultEntity = new Dictionary<string, object>
-                    {
-                        ["SUCKER_ROD_ANALYSIS_ID"] = result.CalculationId,
-                        ["WELL_ID"] = result.WellId ?? string.Empty,
-                        ["EQUIPMENT_ID"] = result.EquipmentId ?? string.Empty,
-                        ["ANALYSIS_TYPE"] = result.AnalysisType,
-                        ["CALCULATION_DATE"] = result.CalculationDate,
-                        ["PEAK_LOAD"] = result.PeakLoad,
-                        ["MINIMUM_LOAD"] = result.MinimumLoad,
-                        ["ROD_STRING_WEIGHT"] = result.RodStringWeight,
-                        ["FLUID_LOAD"] = result.FluidLoad,
-                        ["DYNAMIC_LOAD"] = result.DynamicLoad,
-                        ["MAXIMUM_STRESS"] = result.MaximumStress,
-                        ["SAFETY_FACTOR"] = result.SafetyFactor,
-                        ["POLISHED_ROD_HP"] = result.PolishedRodHorsepower,
-                        ["HYDRAULIC_HP"] = result.HydraulicHorsepower,
-                        ["FRICTION_HP"] = result.FrictionHorsepower,
-                        ["TOTAL_POWER"] = result.TotalPowerRequired,
-                        ["PRODUCTION_RATE"] = result.ProductionRate,
-                        ["PUMP_DISPLACEMENT"] = result.PumpDisplacement,
-                        ["VOLUMETRIC_EFFICIENCY"] = result.VolumetricEfficiency,
-                        ["PUMP_CARD_JSON"] = JsonSerializer.Serialize(result.PumpCard),
-                        ["STATUS"] = result.Status
-                    };
+                    result.PumpCardJson = JsonSerializer.Serialize(result.PumpCard);
 
-                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    await InsertAnalysisResultAsync(repository, result, request.UserId);
                     _logger?.LogInformation("Stored Sucker Rod Analysis result with ID: {CalculationId}", result.CalculationId);
                 }
                 catch (Exception storeEx)
@@ -2937,17 +3041,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("SUCKER_ROD_ANALYSIS_RESULT");
-                if (metadata == null)
-                {
-                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
-                    if (metadata == null)
-                    {
-                        throw new InvalidOperationException("SUCKER_ROD_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
-                    }
-                }
-
-                return new PPDMGenericRepository(_dataSource, metadata);
+                return await CreateAnalysisResultRepositoryAsync("SUCKER_ROD_ANALYSIS_RESULT");
             }
             catch (Exception ex)
             {
@@ -3013,15 +3107,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     var reciprocatingProperties = new ReciprocatingCompressorProperties
                     {
                         OperatingConditions = operatingConditions,
-                        CylinderDiameter = request.AdditionalParameters?.ContainsKey("CylinderDiameter") == true
-                            ? Convert.ToDecimal(request.AdditionalParameters["CylinderDiameter"])
-                            : 8.0m,
-                        StrokeLength = request.AdditionalParameters?.ContainsKey("StrokeLength") == true
-                            ? Convert.ToDecimal(request.AdditionalParameters["StrokeLength"])
-                            : 12.0m,
-                        RotationalSpeed = request.AdditionalParameters?.ContainsKey("RotationalSpeed") == true
-                            ? Convert.ToDecimal(request.AdditionalParameters["RotationalSpeed"])
-                            : 300m,
+                        CylinderDiameter = request.AdditionalParameters?.CylinderDiameter ?? 8.0m,
+                        StrokeLength = request.AdditionalParameters?.StrokeLength ?? 12.0m,
+                        RotationalSpeed = request.AdditionalParameters?.RotationalSpeed ?? 300m,
                         NumberOfCylinders = request.NumberOfCylinders ?? 2,
                         VolumetricEfficiency = request.VolumetricEfficiency ?? 0.85m,
                         ClearanceFactor = 0.05m
@@ -3063,9 +3151,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                         PolytropicEfficiency = request.PolytropicEfficiency ?? 0.75m,
                         SpecificHeatRatio = 1.3m,
                         NumberOfStages = request.NumberOfStages ?? 1,
-                        Speed = request.AdditionalParameters?.ContainsKey("Speed") == true
-                            ? Convert.ToDecimal(request.AdditionalParameters["Speed"])
-                            : 3600m
+                        Speed = request.AdditionalParameters?.Speed ?? 3600m
                     };
 
                     var calcResult = CentrifugalCompressorCalculator.CalculatePower(centrifugalProperties, useSIUnits: false);
@@ -3098,34 +3184,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetCompressorAnalysisResultRepositoryAsync();
-                    var resultEntity = new Dictionary<string, object>
-                    {
-                        ["COMPRESSOR_ANALYSIS_ID"] = result.CalculationId,
-                        ["FACILITY_ID"] = result.FacilityId ?? string.Empty,
-                        ["EQUIPMENT_ID"] = result.EquipmentId ?? string.Empty,
-                        ["COMPRESSOR_TYPE"] = result.CompressorType,
-                        ["ANALYSIS_TYPE"] = result.AnalysisType,
-                        ["CALCULATION_DATE"] = result.CalculationDate,
-                        ["POWER_REQUIRED"] = result.PowerRequired,
-                        ["POLYTROPIC_HEAD"] = result.PolytropicHead,
-                        ["ADIABATIC_HEAD"] = result.AdiabaticHead,
-                        ["DISCHARGE_TEMPERATURE"] = result.DischargeTemperature,
-                        ["POLYTROPIC_EFFICIENCY"] = result.PolytropicEfficiency,
-                        ["ADIABATIC_EFFICIENCY"] = result.AdiabaticEfficiency,
-                        ["OVERALL_EFFICIENCY"] = result.OverallEfficiency,
-                        ["SUCTION_PRESSURE"] = result.SuctionPressure,
-                        ["DISCHARGE_PRESSURE"] = result.DischargePressure,
-                        ["COMPRESSION_RATIO"] = result.CompressionRatio,
-                        ["FLOW_RATE"] = result.FlowRate,
-                        ["STATUS"] = result.Status
-                    };
-
-                    if (result.CylinderDisplacement.HasValue)
-                        resultEntity["CYLINDER_DISPLACEMENT"] = result.CylinderDisplacement.Value;
-                    if (result.VolumetricEfficiency.HasValue)
-                        resultEntity["VOLUMETRIC_EFFICIENCY"] = result.VolumetricEfficiency.Value;
-
-                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    await InsertAnalysisResultAsync(repository, result, request.UserId);
                     _logger?.LogInformation("Stored Compressor Analysis result with ID: {CalculationId}", result.CalculationId);
                 }
                 catch (Exception storeEx)
@@ -3150,17 +3209,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("COMPRESSOR_ANALYSIS_RESULT");
-                if (metadata == null)
-                {
-                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
-                    if (metadata == null)
-                    {
-                        throw new InvalidOperationException("COMPRESSOR_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
-                    }
-                }
-
-                return new PPDMGenericRepository(_dataSource, metadata);
+                return await CreateAnalysisResultRepositoryAsync("COMPRESSOR_ANALYSIS_RESULT");
             }
             catch (Exception ex)
             {
@@ -3298,30 +3347,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetPipelineAnalysisResultRepositoryAsync();
-                    var resultEntity = new Dictionary<string, object>
-                    {
-                        ["PIPELINE_ANALYSIS_ID"] = result.CalculationId,
-                        ["PIPELINE_ID"] = result.PipelineId ?? string.Empty,
-                        ["PIPELINE_TYPE"] = result.PipelineType,
-                        ["ANALYSIS_TYPE"] = result.AnalysisType,
-                        ["CALCULATION_DATE"] = result.CalculationDate,
-                        ["FLOW_RATE"] = result.FlowRate,
-                        ["INLET_PRESSURE"] = result.InletPressure,
-                        ["OUTLET_PRESSURE"] = result.OutletPressure,
-                        ["PRESSURE_DROP"] = result.PressureDrop,
-                        ["AVERAGE_PRESSURE"] = result.AveragePressure,
-                        ["MAXIMUM_CAPACITY"] = result.MaximumCapacity,
-                        ["UTILIZATION"] = result.Utilization,
-                        ["REYNOLDS_NUMBER"] = result.ReynoldsNumber,
-                        ["FRICTION_FACTOR"] = result.FrictionFactor,
-                        ["FLOW_REGIME"] = result.FlowRegime,
-                        ["LENGTH"] = result.Length,
-                        ["DIAMETER"] = result.Diameter,
-                        ["ROUGHNESS"] = result.Roughness,
-                        ["STATUS"] = result.Status
-                    };
-
-                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    await InsertAnalysisResultAsync(repository, result, request.UserId);
                     _logger?.LogInformation("Stored Pipeline Analysis result with ID: {CalculationId}", result.CalculationId);
                 }
                 catch (Exception storeEx)
@@ -3346,17 +3372,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("PIPELINE_ANALYSIS_RESULT");
-                if (metadata == null)
-                {
-                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
-                    if (metadata == null)
-                    {
-                        throw new InvalidOperationException("PIPELINE_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
-                    }
-                }
-
-                return new PPDMGenericRepository(_dataSource, metadata);
+                return await CreateAnalysisResultRepositoryAsync("PIPELINE_ANALYSIS_RESULT");
             }
             catch (Exception ex)
             {
@@ -3412,17 +3428,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     TUBING_DIAMETER = request.TubingDiameter ?? (decimal)(GetTubularInnerDiameterAsync(request.WellId, "TUBING").Result ?? 2.875m),
                     PLUNGER_DIAMETER = request.PlungerDiameter ?? 2.25m,
                     WELLHEAD_PRESSURE = request.WellheadPressure ?? (decimal)(GetPropertyValueMultiple(wellPressure, "PRESSURE", "WELLHEAD_PRESSURE") ?? 100m),
-                    CASING_PRESSURE = request.AdditionalParameters?.ContainsKey("CasingPressure") == true
-                        ? Convert.ToDecimal(request.AdditionalParameters["CasingPressure"])
-                        : 200m,
+                    CASING_PRESSURE = request.AdditionalParameters?.CasingPressure ?? 200m,
                     BOTTOM_HOLE_PRESSURE = request.BottomHolePressure ?? (decimal)(GetPropertyValueMultiple(wellPressure, "RESERVOIR_PRESSURE", "BOTTOM_HOLE_PRESSURE") ?? 2000m),
                     WELLHEAD_TEMPERATURE = request.WellheadTemperature ?? (decimal)(GetPropertyValueMultiple(wellPressure, "TEMPERATURE", "WELLHEAD_TEMPERATURE") ?? 520m),
                     BOTTOM_HOLE_TEMPERATURE = request.BottomHoleTemperature ?? (decimal)(GetPropertyValueMultiple(wellPressure, "BOTTOM_HOLE_TEMPERATURE") ?? 580m),
                     OIL_GRAVITY = request.OilGravity ?? 35m,
                     WATER_CUT = request.WaterCut ?? 0.2m,
-                    GasOilRatio = request.AdditionalParameters?.ContainsKey("GasOilRatio") == true
-                        ? Convert.ToDecimal(request.AdditionalParameters["GasOilRatio"])
-                        : 500m,
+                    GasOilRatio = request.AdditionalParameters?.GasOilRatio ?? 500m,
                     GAS_SPECIFIC_GRAVITY = request.GasSpecificGravity ?? 0.65m,
                     LIQUID_PRODUCTION_RATE = request.LiquidProductionRate ?? 50m
                 };
@@ -3456,27 +3468,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetPlungerLiftAnalysisResultRepositoryAsync();
-                    var resultEntity = new Dictionary<string, object>
-                    {
-                        ["PLUNGER_LIFT_ANALYSIS_ID"] = result.CalculationId,
-                        ["WELL_ID"] = result.WellId ?? string.Empty,
-                        ["EQUIPMENT_ID"] = result.EquipmentId ?? string.Empty,
-                        ["ANALYSIS_TYPE"] = result.AnalysisType,
-                        ["CALCULATION_DATE"] = result.CalculationDate,
-                        ["PRODUCTION_RATE"] = result.ProductionRate,
-                        ["CYCLE_TIME"] = result.CycleTime,
-                        ["GAS_FLOW_RATE"] = result.GasFlowRate,
-                        ["PLUNGER_VELOCITY"] = result.PlungerVelocity,
-                        ["OPTIMAL_CYCLE_TIME"] = result.OptimalCycleTime ?? result.CycleTime,
-                        ["OPTIMAL_GAS_FLOW_RATE"] = result.OptimalGasFlowRate ?? result.GasFlowRate,
-                        ["MAXIMUM_PRODUCTION_RATE"] = result.MaximumProductionRate,
-                        ["FALL_TIME"] = result.FallTime,
-                        ["RISE_TIME"] = result.RiseTime,
-                        ["SHUT_IN_TIME"] = result.ShutInTime,
-                        ["STATUS"] = result.Status
-                    };
-
-                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    await InsertAnalysisResultAsync(repository, result, request.UserId);
                     _logger?.LogInformation("Stored Plunger Lift Analysis result with ID: {CalculationId}", result.CalculationId);
                 }
                 catch (Exception storeEx)
@@ -3501,17 +3493,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("PLUNGER_LIFT_ANALYSIS_RESULT");
-                if (metadata == null)
-                {
-                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
-                    if (metadata == null)
-                    {
-                        throw new InvalidOperationException("PLUNGER_LIFT_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
-                    }
-                }
-
-                return new PPDMGenericRepository(_dataSource, metadata);
+                return await CreateAnalysisResultRepositoryAsync("PLUNGER_LIFT_ANALYSIS_RESULT");
             }
             catch (Exception ex)
             {
@@ -3612,28 +3594,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetHydraulicPumpAnalysisResultRepositoryAsync();
-                    var resultEntity = new Dictionary<string, object>
-                    {
-                        ["HYDRAULIC_PUMP_ANALYSIS_ID"] = result.CalculationId,
-                        ["WELL_ID"] = result.WellId ?? string.Empty,
-                        ["EQUIPMENT_ID"] = result.EquipmentId ?? string.Empty,
-                        ["ANALYSIS_TYPE"] = result.AnalysisType,
-                        ["CALCULATION_DATE"] = result.CalculationDate,
-                        ["PRODUCTION_RATE"] = result.ProductionRate,
-                        ["POWER_FLUID_RATE"] = result.PowerFluidRate,
-                        ["POWER_FLUID_PRESSURE"] = result.PowerFluidPressure,
-                        ["DISCHARGE_PRESSURE"] = result.DischargePressure,
-                        ["SUCTION_PRESSURE"] = result.SuctionPressure,
-                        ["HYDRAULIC_EFFICIENCY"] = result.HydraulicEfficiency,
-                        ["OVERALL_EFFICIENCY"] = result.OverallEfficiency,
-                        ["POWER_REQUIRED"] = result.PowerRequired,
-                        ["RECOMMENDED_NOZZLE_SIZE"] = result.RecommendedNozzleSize ?? 0m,
-                        ["RECOMMENDED_THROAT_SIZE"] = result.RecommendedThroatSize ?? 0m,
-                        ["RECOMMENDED_POWER_FLUID_RATE"] = result.RecommendedPowerFluidRate ?? 0m,
-                        ["STATUS"] = result.Status
-                    };
-
-                    await repository.InsertAsync(resultEntity, request.UserId ?? "SYSTEM");
+                    await InsertAnalysisResultAsync(repository, result, request.UserId);
                     _logger?.LogInformation("Stored Hydraulic Pump Analysis result with ID: {CalculationId}", result.CalculationId);
                 }
                 catch (Exception storeEx)
@@ -3658,17 +3619,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("HYDRAULIC_PUMP_ANALYSIS_RESULT");
-                if (metadata == null)
-                {
-                    metadata = await _metadata.GetTableMetadataAsync("ANL_ANALYSIS_REPORT");
-                    if (metadata == null)
-                    {
-                        throw new InvalidOperationException("HYDRAULIC_PUMP_ANALYSIS_RESULT or ANL_ANALYSIS_REPORT table not found");
-                    }
-                }
-
-                return new PPDMGenericRepository(_dataSource, metadata);
+                return await CreateAnalysisResultRepositoryAsync("HYDRAULIC_PUMP_ANALYSIS_RESULT");
             }
             catch (Exception ex)
             {
@@ -3684,39 +3635,20 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// <summary>
         /// Retrieves well test data from PPDM for a well
         /// </summary>
-        private async Task<WellTestData> GetWellTestDataFromPPDMAsync(string wellId, string testId)
+        private Task<WellTestData> GetWellTestDataFromPPDMAsync(string wellId, string testId)
         {
-            _logger?.LogWarning("Retrieving well test data from PPDM - using simplified implementation. " +
-                "For full functionality, provide PressureTimeData in request or implement comprehensive PPDM data retrieval.");
+            _logger?.LogWarning("Well test data retrieval from PPDM is not implemented. " +
+                "Provide PressureTimeData and well properties in the request.");
 
-            // This is a simplified implementation
-            // In a full implementation, you would:
-            // 1. Retrieve well test data from WELL_TEST table
-            // 2. Retrieve pressure-time data from WELL_TEST_FLOW or related table
-            // 3. Retrieve well properties from WELL table
-            // 4. Retrieve reservoir properties from RESERVOIR table
-            // 5. Build comprehensive well test data
-
-            // For now, return a basic structure that will need data from request
-            return new WellTestData
-            {
-                TestTime = new List<double>(),
-                FlowingPressure = new List<double>(),
-                FlowRate = 0.0,
-                WellboreRadius = 0.25,
-                FormationThickness = 50.0,
-                Porosity = 0.2,
-                TotalCompressibility = 1e-5,
-                OilViscosity = 1.5,
-                OilFormationVolumeFactor = 1.2,
-                TestType = WellTestType.BuildUp
-            };
+            return Task.FromException<WellTestData>(new InvalidOperationException(
+                "Well test data retrieval from PPDM is not implemented. " +
+                "Provide PressureTimeData and well properties in the request."));
         }
 
         /// <summary>
         /// Maps WellTestAnalysisResult from library to WellTestAnalysisResult DTO
         /// </summary>
-        private WELL_TEST_ANALYSIS_RESULT MapWellTestResultToDTO(
+        private WellTestAnalysisResult MapWellTestResultToDTO(
             WellTestAnalysisResult analysisResult,
             WellTestAnalysisCalculationRequest request,
             ReservoirModel identifiedModel,
@@ -3747,13 +3679,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     Time = p.TIME,
                     Pressure = p.PRESSURE
                 }).ToList(),
-                AdditionalResults = new Dictionary<string, object>()
+                AdditionalResults = new WellTestAnalysisAdditionalResults()
             };
 
-            result.AdditionalResults["AnalysisMethod"] = analysisResult.AnalysisMethod;
-            result.AdditionalResults["FlowRate"] = request.FlowRate ?? 0.0m;
-            result.AdditionalResults["WellboreRadius"] = request.WellboreRadius ?? 0.25m;
-            result.AdditionalResults["FormationThickness"] = request.FormationThickness ?? 50.0m;
+            result.AdditionalResults.AnalysisMethod = analysisResult.AnalysisMethod;
+            result.AdditionalResults.FlowRate = request.FlowRate ?? 0.0m;
+            result.AdditionalResults.WellboreRadius = request.WellboreRadius ?? 0.25m;
+            result.AdditionalResults.FormationThickness = request.FormationThickness ?? 50.0m;
 
             return result;
         }
@@ -3765,24 +3697,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// <summary>
         /// Retrieves flash conditions from PPDM for a well or facility
         /// </summary>
-        private async Task<FLASH_CONDITIONS> GetFlashConditionsFromPPDMAsync(string wellId, string facilityId)
+        private Task<FLASH_CONDITIONS> GetFlashConditionsFromPPDMAsync(string wellId, string facilityId)
         {
-            _logger?.LogWarning("Retrieving flash conditions from PPDM - using simplified implementation. " +
-                "For full functionality, provide Pressure, Temperature, and FeedComposition in request or implement comprehensive PPDM data retrieval.");
+            _logger?.LogWarning("Flash conditions retrieval from PPDM is not implemented. " +
+                "Provide Pressure, Temperature, and FeedComposition in the request.");
 
-            // This is a simplified implementation
-            // In a full implementation, you would:
-            // 1. Retrieve pressure and temperature from well/facility data
-            // 2. Retrieve fluid composition from production data or fluid analysis
-            // 3. Build comprehensive flash conditions
-
-            // For now, return a basic structure that will need data from request
-            return new FLASH_CONDITIONS
-            {
-                PRESSURE = 500m,
-                TEMPERATURE = 540m,
-                FEED_COMPOSITION = new List<FLASH_COMPONENT>()
-            };
+            return Task.FromException<FLASH_CONDITIONS>(new InvalidOperationException(
+                "Flash conditions retrieval from PPDM is not implemented. " +
+                "Provide Pressure, Temperature, and FeedComposition in the request."));
         }
 
         /// <summary>
@@ -3825,12 +3747,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     SpecificGravity = liquidProperties.SpecificGravity,
                     Volume = liquidProperties.Volume
                 },
-                AdditionalResults = new Dictionary<string, object>()
+                AdditionalResults = new FlashCalculationAdditionalResults()
             };
 
-            result.AdditionalResults["Pressure"] = request.Pressure ?? 0.0m;
-            result.AdditionalResults["Temperature"] = request.Temperature ?? 0.0m;
-            result.AdditionalResults["ComponentCount"] = request.FeedComposition?.Count ?? 0;
+            result.AdditionalResults.Pressure = request.Pressure ?? 0.0m;
+            result.AdditionalResults.Temperature = request.Temperature ?? 0.0m;
+            result.AdditionalResults.ComponentCount = request.FeedComposition?.Count ?? 0;
 
             return result;
         }
@@ -4046,25 +3968,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
 
                 // Step 2: Determine forecast type and parameters
-                var forecastType = request.AdditionalParameters?.ContainsKey("ForecastType") == true
-                    ? request.AdditionalParameters["ForecastType"]?.ToString()
-                    : "PSEUDO_STEADY_STATE_SINGLE_PHASE";
+                var forecastType = request.AdditionalParameters?.ForecastType
+                    ?? "PSEUDO_STEADY_STATE_SINGLE_PHASE";
 
-                var bottomHolePressure = request.AdditionalParameters?.ContainsKey("BottomHolePressure") == true
-                    ? Convert.ToDecimal(request.AdditionalParameters["BottomHolePressure"])
-                    : 1000m; // Default 1000 psia
-
-                var forecastDuration = request.AdditionalParameters?.ContainsKey("ForecastDuration") == true
-                    ? Convert.ToDecimal(request.AdditionalParameters["ForecastDuration"])
-                    : 1825m; // Default 5 years in days
-
-                var timeSteps = request.AdditionalParameters?.ContainsKey("TimeSteps") == true
-                    ? Convert.ToInt32(request.AdditionalParameters["TimeSteps"])
-                    : 100;
-
-                var bubblePointPressure = request.AdditionalParameters?.ContainsKey("BubblePointPressure") == true
-                    ? Convert.ToDecimal(request.AdditionalParameters["BubblePointPressure"])
-                    : 0m;
+                var bottomHolePressure = request.AdditionalParameters?.BottomHolePressure ?? 1000m;
+                var forecastDuration = request.AdditionalParameters?.ForecastDuration ?? 1825m;
+                var timeSteps = request.AdditionalParameters?.TimeSteps ?? 100;
+                var bubblePointPressure = request.AdditionalParameters?.BubblePointPressure ?? 0m;
 
                 // Step 3: Perform physics-based forecast
                 PRODUCTION_FORECAST forecast;
@@ -4132,7 +4042,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     ErrorMessage = ex.Message,
                     UserId = request.UserId,
                     ForecastPoints = new List<DCAForecastPoint>(),
-                    AdditionalResults = new Dictionary<string, object>()
+                    AdditionalResults = new DcaAdditionalResults()
                 };
 
                 // Try to store error result
@@ -6538,16 +6448,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             var wellId = request.WellId ?? string.Empty;
             
             // Optional: Get specific test by ID, or get data as of a specific date
-            var testId = request.AdditionalParameters?.ContainsKey("TestId") == true
-                ? request.AdditionalParameters["TestId"]?.ToString()
-                : null;
+            var testId = request.AdditionalParameters?.TestId;
             
             DateTime? asOfDate = null;
-            if (request.AdditionalParameters?.ContainsKey("AsOfDate") == true)
+            if (request.AdditionalParameters?.AsOfDate != null)
             {
-                var dateStr = request.AdditionalParameters["AsOfDate"]?.ToString();
-                if (DateTime.TryParse(dateStr, out var parsedDate))
-                    asOfDate = parsedDate;
+                asOfDate = request.AdditionalParameters.AsOfDate.Value;
             }
 
             // Use KNOWN PPDM fields from standard tables
@@ -6626,7 +6532,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 Status = "SUCCESS",
                 UserId = request.UserId,
                 ForecastPoints = new List<DCAForecastPoint>(),
-                AdditionalResults = new Dictionary<string, object>()
+                AdditionalResults = new DcaAdditionalResults()
             };
 
             // Map forecast parameters
@@ -6652,14 +6558,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             }
 
             // Store additional forecast metadata
-            result.AdditionalResults = new Dictionary<string, object>
+            result.AdditionalResults = new DcaAdditionalResults
             {
-                ["ForecastType"] = forecast.ForecastType.ToString(),
-                ["ForecastDuration"] = forecast.ForecastDuration,
-                ["InitialProductionRate"] = forecast.InitialProductionRate,
-                ["FinalProductionRate"] = forecast.FinalProductionRate,
-                ["TotalCumulativeProduction"] = forecast.TotalCumulativeProduction,
-                ["ForecastPointCount"] = forecast.ForecastPoints?.Count ?? 0
+                ForecastType = forecast.FORECAST_TYPE.ToString(),
+                ForecastDuration = forecast.FORECAST_DURATION,
+                InitialProductionRate = forecast.INITIAL_PRODUCTION_RATE,
+                FinalProductionRate = forecast.FINAL_PRODUCTION_RATE,
+                TotalCumulativeProduction = forecast.TOTAL_CUMULATIVE_PRODUCTION,
+                ForecastPointCount = forecast.FORECAST_POINTS?.Count ?? 0
             };
 
             return result;

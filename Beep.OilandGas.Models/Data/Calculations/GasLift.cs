@@ -343,7 +343,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         } // for performance curve
         
         // Additional parameters
-        public Dictionary<string, object>? AdditionalParameters { get; set; }
+        public GasLiftAnalysisOptions? AdditionalParameters { get; set; }
         private string? UserIdValue;
 
         public string? UserId
@@ -454,6 +454,18 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref PerformancePointsValue, value); }
 
         }
+
+        private string? PerformancePointsJsonValue;
+
+        public string? PerformancePointsJson
+
+        {
+
+            get { return this.PerformancePointsJsonValue; }
+
+            set { SetProperty(ref PerformancePointsJsonValue, value); }
+
+        }
         
         // Valve design results (if AnalysisType is VALVE_DESIGN)
         private List<GasLiftValveData>? ValvesValue;
@@ -465,6 +477,18 @@ namespace Beep.OilandGas.Models.Data.Calculations
             get { return this.ValvesValue; }
 
             set { SetProperty(ref ValvesValue, value); }
+
+        }
+
+        private string? ValvesJsonValue;
+
+        public string? ValvesJson
+
+        {
+
+            get { return this.ValvesJsonValue; }
+
+            set { SetProperty(ref ValvesJsonValue, value); }
 
         }
         private decimal? TotalGasInjectionRateValue;
@@ -513,6 +537,18 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref ValveDepthsValue, value); }
 
         } // feet
+
+        private string? ValveDepthsJsonValue;
+
+        public string? ValveDepthsJson
+
+        {
+
+            get { return this.ValveDepthsJsonValue; }
+
+            set { SetProperty(ref ValveDepthsJsonValue, value); }
+
+        }
         private List<decimal>? OpeningPressuresValue;
 
         public List<decimal>? OpeningPressures
@@ -548,7 +584,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         } // feet
         
         // Additional metadata
-        public Dictionary<string, object>? AdditionalResults { get; set; }
+        public GasLiftAnalysisAdditionalResults? AdditionalResults { get; set; }
         private string? StatusValue;
 
         public string? Status

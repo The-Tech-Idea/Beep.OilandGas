@@ -75,11 +75,11 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 {
                     Pressure = currentFeed.Pressure,
                     Temperature = currentFeed.Temperature,
-                    FeedComposition = firstStageResult.LiquidComposition.Select(kvp => 
+                    FeedComposition = firstStageResult.LiquidComposition.Select(component => 
                         new FlashComponent
                         {
-                            Name = kvp.Key,
-                            MoleFraction = kvp.Value
+                            Name = component.ComponentName,
+                            MoleFraction = component.Fraction
                         }).ToList()
                 };
 
@@ -154,9 +154,9 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 Iterations = entity.ITERATIONS ?? 0,
                 Converged = entity.CONVERGED == "Y",
                 ConvergenceError = entity.CONVERGENCE_ERROR ?? 0,
-                VaporComposition = new Dictionary<string, decimal>(),
-                LiquidComposition = new Dictionary<string, decimal>(),
-                KValues = new Dictionary<string, decimal>()
+                VaporComposition = new List<FlashComponentFraction>(),
+                LiquidComposition = new List<FlashComponentFraction>(),
+                KValues = new List<FlashComponentKValue>()
             }).ToList();
 
             _logger?.LogInformation("Retrieved {Count} flash calculation results", results.Count);
@@ -238,8 +238,8 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 AnalysisId = _defaults.FormatIdForTable("BUBBLE_POINT", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,
                 Pressure = pressure,
-                LiquidComposition = new Dictionary<string, decimal>(),
-                KValues = new Dictionary<string, decimal>()
+                LiquidComposition = new List<FlashComponentFraction>(),
+                KValues = new List<FlashComponentKValue>()
             };
 
             // Iterative bubble point calculation
@@ -258,7 +258,8 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 };
 
                 var flashResult = PerformIsothermalFlash(conditions);
-                var sumKx = composition.Sum(c => c.MoleFraction * (flashResult.KValues.ContainsKey(c.Name) ? flashResult.KValues[c.Name] : 1m));
+                var sumKx = composition.Sum(c => c.MoleFraction *
+                    (flashResult.KValues.FirstOrDefault(k => string.Equals(k.ComponentName, c.Name, StringComparison.OrdinalIgnoreCase))?.KValue ?? 1m));
 
                 var convergenceError = Math.Abs(sumKx - 1m);
                 if (convergenceError < tolerance)
@@ -268,7 +269,11 @@ namespace Beep.OilandGas.FlashCalculations.Services
                     result.Temperature = temperature;
                     result.BubblePointPressure = pressure;
                     result.KValues = flashResult.KValues;
-                    result.LiquidComposition = composition.ToDictionary(c => c.Name, c => c.MoleFraction);
+                    result.LiquidComposition = composition.Select(c => new FlashComponentFraction
+                    {
+                        ComponentName = c.Name,
+                        Fraction = c.MoleFraction
+                    }).ToList();
                     break;
                 }
 
@@ -297,8 +302,8 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 AnalysisId = _defaults.FormatIdForTable("DEW_POINT", Guid.NewGuid().ToString()),
                 AnalysisDate = DateTime.UtcNow,
                 Pressure = pressure,
-                VaporComposition = new Dictionary<string, decimal>(),
-                KValues = new Dictionary<string, decimal>()
+                VaporComposition = new List<FlashComponentFraction>(),
+                KValues = new List<FlashComponentKValue>()
             };
 
             // Iterative dew point calculation
@@ -317,7 +322,8 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 };
 
                 var flashResult = PerformIsothermalFlash(conditions);
-                var sumYoverK = composition.Sum(c => c.MoleFraction / (flashResult.KValues.ContainsKey(c.Name) ? flashResult.KValues[c.Name] : 1m));
+                var sumYoverK = composition.Sum(c => c.MoleFraction /
+                    (flashResult.KValues.FirstOrDefault(k => string.Equals(k.ComponentName, c.Name, StringComparison.OrdinalIgnoreCase))?.KValue ?? 1m));
 
                 var convergenceError = Math.Abs(sumYoverK - 1m);
                 if (convergenceError < tolerance)
@@ -327,7 +333,11 @@ namespace Beep.OilandGas.FlashCalculations.Services
                     result.Temperature = temperature;
                     result.DewPointPressure = pressure;
                     result.KValues = flashResult.KValues;
-                    result.VaporComposition = composition.ToDictionary(c => c.Name, c => c.MoleFraction);
+                    result.VaporComposition = composition.Select(c => new FlashComponentFraction
+                    {
+                        ComponentName = c.Name,
+                        Fraction = c.MoleFraction
+                    }).ToList();
                     break;
                 }
 
@@ -481,7 +491,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 AnalysisDate = DateTime.UtcNow,
                 Pressure = pressure,
                 Temperature = temperature,
-                CriticalComposition = new Dictionary<string, decimal>()
+                CriticalComposition = new List<FlashComponentFraction>()
             };
 
             // Perform flash to get K-values
@@ -500,7 +510,11 @@ namespace Beep.OilandGas.FlashCalculations.Services
             // Store critical composition
             foreach (var component in composition)
             {
-                result.CriticalComposition[component.Name] = component.MoleFraction;
+                result.CriticalComposition.Add(new FlashComponentFraction
+                {
+                    ComponentName = component.Name,
+                    Fraction = component.MoleFraction
+                });
             }
 
             _logger?.LogInformation("Stability analysis complete: Status={Status}, TPD={TPD}", result.StabilityStatus, result.TangentPlaneDistance);

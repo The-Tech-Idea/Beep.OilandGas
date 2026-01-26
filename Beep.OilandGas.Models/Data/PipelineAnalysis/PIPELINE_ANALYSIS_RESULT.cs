@@ -262,7 +262,7 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
         } // inches
 
         // Additional metadata
-        public Dictionary<string, object>? AdditionalResults { get; set; }
+        public Beep.OilandGas.Models.Data.Calculations.PipelineAnalysisAdditionalResults? AdditionalResults { get; set; }
         private string? StatusValue;
 
         public string? Status

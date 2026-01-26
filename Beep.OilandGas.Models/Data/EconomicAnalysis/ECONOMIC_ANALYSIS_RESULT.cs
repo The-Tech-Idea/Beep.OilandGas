@@ -6,6 +6,13 @@ using Beep.OilandGas.Models.Data;
 namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 {
     public partial class ECONOMIC_ANALYSIS_RESULT : ModelEntityBase {
+        private System.String ECONOMIC_ANALYSIS_RESULT_IDValue;
+        public System.String ECONOMIC_ANALYSIS_RESULT_ID
+        {
+            get { return this.ECONOMIC_ANALYSIS_RESULT_IDValue; }
+            set { SetProperty(ref ECONOMIC_ANALYSIS_RESULT_IDValue, value); }
+        }
+
         private System.String ANALYSIS_IDValue;
         public System.String ANALYSIS_ID
         {
@@ -47,10 +54,6 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
             get { return this.DISCOUNT_RATEValue; }
             set { SetProperty(ref DISCOUNT_RATEValue, value); }
         }
-
-        private System.String REMARKValue;
-
-        private System.String SOURCEValue;
 
     }
 }

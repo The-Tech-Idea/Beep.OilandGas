@@ -31,6 +31,15 @@ using Beep.OilandGas.Models.Data;    using System.Collections.Generic;
             set { SetProperty(ref CalculationIdValue, value); }
 
         } // Added from Calculations.cs
+        public string WellTestAnalysisResultId
+
+        {
+
+            get { return this.CalculationIdValue; }
+
+            set { SetProperty(ref CalculationIdValue, value); }
+
+        }
         private string? WellIdValue;
 
         public string? WellId
@@ -64,6 +73,17 @@ using Beep.OilandGas.Models.Data;    using System.Collections.Generic;
             set { SetProperty(ref TestIdValue, value); }
 
         } // Added from Calculations.cs
+        private string? WellTestDataIdValue;
+
+        public string? WellTestDataId
+
+        {
+
+            get { return this.WellTestDataIdValue; }
+
+            set { SetProperty(ref WellTestDataIdValue, value); }
+
+        }
         private string? FieldIdValue;
 
         public string? FieldId
@@ -266,6 +286,138 @@ using Beep.OilandGas.Models.Data;    using System.Collections.Generic;
             set { SetProperty(ref AnalysisTypeValue, value); }
 
         } // Added from Calculations.cs
+        private double FlowRateValue;
+
+        public double FlowRate
+
+        {
+
+            get { return this.FlowRateValue; }
+
+            set { SetProperty(ref FlowRateValue, value); }
+
+        }
+        private double WellboreRadiusValue;
+
+        public double WellboreRadius
+
+        {
+
+            get { return this.WellboreRadiusValue; }
+
+            set { SetProperty(ref WellboreRadiusValue, value); }
+
+        }
+        private double FormationThicknessValue;
+
+        public double FormationThickness
+
+        {
+
+            get { return this.FormationThicknessValue; }
+
+            set { SetProperty(ref FormationThicknessValue, value); }
+
+        }
+        private double PorosityValue;
+
+        public double Porosity
+
+        {
+
+            get { return this.PorosityValue; }
+
+            set { SetProperty(ref PorosityValue, value); }
+
+        }
+        private double TotalCompressibilityValue;
+
+        public double TotalCompressibility
+
+        {
+
+            get { return this.TotalCompressibilityValue; }
+
+            set { SetProperty(ref TotalCompressibilityValue, value); }
+
+        }
+        private double OilViscosityValue;
+
+        public double OilViscosity
+
+        {
+
+            get { return this.OilViscosityValue; }
+
+            set { SetProperty(ref OilViscosityValue, value); }
+
+        }
+        private double OilFormationVolumeFactorValue;
+
+        public double OilFormationVolumeFactor
+
+        {
+
+            get { return this.OilFormationVolumeFactorValue; }
+
+            set { SetProperty(ref OilFormationVolumeFactorValue, value); }
+
+        }
+        private double ProductionTimeValue;
+
+        public double ProductionTime
+
+        {
+
+            get { return this.ProductionTimeValue; }
+
+            set { SetProperty(ref ProductionTimeValue, value); }
+
+        }
+        private bool IsGasWellValue;
+
+        public bool IsGasWell
+
+        {
+
+            get { return this.IsGasWellValue; }
+
+            set { SetProperty(ref IsGasWellValue, value); }
+
+        }
+        private double GasSpecificGravityValue;
+
+        public double GasSpecificGravity
+
+        {
+
+            get { return this.GasSpecificGravityValue; }
+
+            set { SetProperty(ref GasSpecificGravityValue, value); }
+
+        }
+        private double ReservoirTemperatureValue;
+
+        public double ReservoirTemperature
+
+        {
+
+            get { return this.ReservoirTemperatureValue; }
+
+            set { SetProperty(ref ReservoirTemperatureValue, value); }
+
+        }
+        private double InitialReservoirPressureValue;
+
+        public double InitialReservoirPressure
+
+        {
+
+            get { return this.InitialReservoirPressureValue; }
+
+            set { SetProperty(ref InitialReservoirPressureValue, value); }
+
+        }
 
         private List<WellTestDataPoint>? DiagnosticPointsValue;
 
@@ -294,8 +446,31 @@ using Beep.OilandGas.Models.Data;    using System.Collections.Generic;
             set { SetProperty(ref DerivativePointsValue, value); }
 
         } // Added from Calculations.cs
-        
-        public Dictionary<string, object>? AdditionalResults { get; set; } // Added from Calculations.cs
+
+        private string? DiagnosticDataJsonValue;
+
+        public string? DiagnosticDataJson
+
+        {
+
+            get { return this.DiagnosticDataJsonValue; }
+
+            set { SetProperty(ref DiagnosticDataJsonValue, value); }
+
+        }
+        private string? DerivativeDataJsonValue;
+
+        public string? DerivativeDataJson
+
+        {
+
+            get { return this.DerivativeDataJsonValue; }
+
+            set { SetProperty(ref DerivativeDataJsonValue, value); }
+
+        }
+
+        public WellTestAnalysisAdditionalResults? AdditionalResults { get; set; } // Added from Calculations.cs
         private string? StatusValue;
 
         public string? Status

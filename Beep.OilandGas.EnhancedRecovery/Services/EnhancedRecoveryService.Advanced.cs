@@ -317,17 +317,17 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
                 foreach (var method in methodsToEvaluate)
                 {
                     var score = CalculateEORMethodScore(method, reservoirProperties);
-                    result.MethodScores.Add(method, score);
+                    result.MethodScores.Add(score);
                 }
 
                 // Rank methods
                 result.RankedMethods = result.MethodScores
-                    .OrderByDescending(x => x.Value.OverallScore)
+                    .OrderByDescending(x => x.OverallScore)
                     .Select((x, index) => new RankedEORMethod
                     {
                         Rank = index + 1,
-                        MethodName = x.Key,
-                        Score = x.Value
+                        MethodName = x.Method,
+                        Score = x
                     }).ToList();
 
                 result.RecommendedMethod = result.RankedMethods.First().MethodName;
@@ -850,7 +850,7 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
             return score;
         }
 
-        private double CalculateEORSynergyPotential(List<string> methods, Dictionary<string, EORMethodScore> scores)
+        private double CalculateEORSynergyPotential(List<string> methods, List<EORMethodScore> scores)
         {
             // Synergy: combining methods can have greater effect than individual
             if (methods.Count < 2) return 0;

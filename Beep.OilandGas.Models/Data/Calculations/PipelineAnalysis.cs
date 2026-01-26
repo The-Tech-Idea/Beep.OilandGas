@@ -275,7 +275,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         } // for gas pipelines
         
         // Additional parameters
-        public Dictionary<string, object>? AdditionalParameters { get; set; }
+        public PipelineAnalysisOptions? AdditionalParameters { get; set; }
         private string? UserIdValue;
 
         public string? UserId
@@ -502,7 +502,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         } // inches
         
         // Additional metadata
-        public Dictionary<string, object>? AdditionalResults { get; set; }
+        public PipelineAnalysisAdditionalResults? AdditionalResults { get; set; }
         private string? StatusValue;
 
         public string? Status

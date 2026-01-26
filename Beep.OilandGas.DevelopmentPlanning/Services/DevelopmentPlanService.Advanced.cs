@@ -149,12 +149,12 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             string fieldId,
             int totalWellsPlanned,
             int phaseDuration,
-            Dictionary<string, int> wellTypeDistribution)
+            List<DevelopmentWellTypeDistributionEntry> wellTypeDistribution)
         {
             try
             {
                 _logger?.LogInformation("Generating drilling program for field {FieldId}, wells={Total}, duration={Months}months, types={Types}",
-                    fieldId, totalWellsPlanned, phaseDuration, string.Join(",", wellTypeDistribution?.Keys ?? Enumerable.Empty<string>()));
+                    fieldId, totalWellsPlanned, phaseDuration, string.Join(",", wellTypeDistribution?.Select(entry => entry.WellType) ?? Enumerable.Empty<string>()));
 
                 ValidateDrillingInputs(fieldId, totalWellsPlanned, phaseDuration);
 
@@ -164,7 +164,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
                     ProgramDate = DateTime.UtcNow,
                     TotalWellsPlanned = totalWellsPlanned,
                     PhaseDuration = phaseDuration,
-                    WellTypeDistribution = wellTypeDistribution ?? new Dictionary<string, int>()
+                    WellTypeDistribution = wellTypeDistribution ?? new List<DevelopmentWellTypeDistributionEntry>()
                 };
 
                 // Calculate drilling capacity and schedule
@@ -1043,15 +1043,15 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             return capex * 0.05;  // 5% of capex
         }
 
-        private Dictionary<string, double> CalculateCostEscalation()
+        private List<DevelopmentCostEscalationFactorEntry> CalculateCostEscalation()
         {
-            return new Dictionary<string, double>
+            return new List<DevelopmentCostEscalationFactorEntry>
             {
-                { "Year1", 1.0 },
-                { "Year2", 1.03 },
-                { "Year3", 1.06 },
-                { "Year4", 1.09 },
-                { "Year5", 1.12 }
+                new DevelopmentCostEscalationFactorEntry { CostCategory = "Year1", Factor = 1.0 },
+                new DevelopmentCostEscalationFactorEntry { CostCategory = "Year2", Factor = 1.03 },
+                new DevelopmentCostEscalationFactorEntry { CostCategory = "Year3", Factor = 1.06 },
+                new DevelopmentCostEscalationFactorEntry { CostCategory = "Year4", Factor = 1.09 },
+                new DevelopmentCostEscalationFactorEntry { CostCategory = "Year5", Factor = 1.12 }
             };
         }
 

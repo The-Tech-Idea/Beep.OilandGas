@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
@@ -147,7 +148,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 }
 
                 var results = await _calculationService.GetCalculationResultsAsync(wellId, poolId, fieldId, "DCA");
-                return Ok(results.Cast<DCAResult>().ToList());
+                return Ok(results.DcaResults);
             }
             catch (Exception ex)
             {
@@ -240,7 +241,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 }
 
                 var results = await _calculationService.GetCalculationResultsAsync(wellId, poolId, fieldId, "ECONOMIC");
-                return Ok(results.Cast<EconomicAnalysisResult>().ToList());
+                return Ok(results.EconomicResults);
             }
             catch (Exception ex)
             {
@@ -333,7 +334,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 }
 
                 var results = await _calculationService.GetCalculationResultsAsync(wellId, null, fieldId, "NODAL");
-                return Ok(results.Cast<NodalAnalysisResult>().ToList());
+                return Ok(results.NodalResults);
             }
             catch (Exception ex)
             {
@@ -350,7 +351,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// Get all calculation results for a well, pool, or field (any type)
         /// </summary>
         [HttpGet("results")]
-        public async Task<ActionResult<List<object>>> GetCalculationResults(
+        public async Task<ActionResult<CalculationResultsResponse>> GetCalculationResults(
             [FromQuery] string? wellId = null,
             [FromQuery] string? poolId = null,
             [FromQuery] string? fieldId = null,

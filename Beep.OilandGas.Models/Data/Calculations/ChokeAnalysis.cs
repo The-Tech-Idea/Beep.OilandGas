@@ -3215,7 +3215,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         } // Mscf/day (for pressure calculation)
         
         // Additional parameters
-        public Dictionary<string, object>? AdditionalParameters { get; set; }
+        public ChokeAnalysisOptions? AdditionalParameters { get; set; }
         private string? UserIdValue;
 
         public string? UserId
@@ -3394,7 +3394,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         }
         
         // Additional metadata
-        public Dictionary<string, object>? AdditionalResults { get; set; }
+        public ChokeAnalysisAdditionalResults? AdditionalResults { get; set; }
         private string? StatusValue;
 
         public string? Status

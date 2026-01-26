@@ -229,7 +229,7 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         } // fraction 0-1
         
         // Additional parameters
-        public Dictionary<string, object>? AdditionalParameters { get; set; }
+        public PlungerLiftAnalysisOptions? AdditionalParameters { get; set; }
         private string? UserIdValue;
 
         public string? UserId
@@ -397,7 +397,7 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         } // ft/sec
         
         // Additional metadata
-        public Dictionary<string, object>? AdditionalResults { get; set; }
+        public PlungerLiftAnalysisAdditionalResults? AdditionalResults { get; set; }
         private string? StatusValue;
 
         public string? Status
@@ -431,16 +431,105 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
             set { SetProperty(ref UserIdValue, value); }
 
         }
+        private decimal? ProductionRateValue;
 
-        public decimal ProductionRate { get; set; }
-        public decimal CycleTime { get; set; }
-        public object? GasFlowRate { get; set; }
-        public decimal PlungerVelocity { get; set; }
-        public decimal OptimalGasFlowRate { get; set; }
-        public decimal MaximumProductionRate { get; set; }
-        public decimal FallTime { get; set; }
-        public decimal RiseTime { get; set; }
-        public decimal ShutInTime { get; set; }
+        public decimal? ProductionRate
+
+        {
+
+            get { return this.ProductionRateValue; }
+
+            set { SetProperty(ref ProductionRateValue, value); }
+
+        }
+        private decimal? CycleTimeValue;
+
+        public decimal? CycleTime
+
+        {
+
+            get { return this.CycleTimeValue; }
+
+            set { SetProperty(ref CycleTimeValue, value); }
+
+        }
+        private decimal? GasFlowRateValue;
+
+        public decimal? GasFlowRate
+
+        {
+
+            get { return this.GasFlowRateValue; }
+
+            set { SetProperty(ref GasFlowRateValue, value); }
+
+        }
+        private decimal? PlungerVelocityValue;
+
+        public decimal? PlungerVelocity
+
+        {
+
+            get { return this.PlungerVelocityValue; }
+
+            set { SetProperty(ref PlungerVelocityValue, value); }
+
+        }
+        private decimal? OptimalGasFlowRateValue;
+
+        public decimal? OptimalGasFlowRate
+
+        {
+
+            get { return this.OptimalGasFlowRateValue; }
+
+            set { SetProperty(ref OptimalGasFlowRateValue, value); }
+
+        }
+        private decimal? MaximumProductionRateValue;
+
+        public decimal? MaximumProductionRate
+
+        {
+
+            get { return this.MaximumProductionRateValue; }
+
+            set { SetProperty(ref MaximumProductionRateValue, value); }
+
+        }
+        private decimal? FallTimeValue;
+
+        public decimal? FallTime
+
+        {
+
+            get { return this.FallTimeValue; }
+
+            set { SetProperty(ref FallTimeValue, value); }
+
+        }
+        private decimal? RiseTimeValue;
+
+        public decimal? RiseTime
+
+        {
+
+            get { return this.RiseTimeValue; }
+
+            set { SetProperty(ref RiseTimeValue, value); }
+
+        }
+        private decimal? ShutInTimeValue;
+
+        public decimal? ShutInTime
+
+        {
+
+            get { return this.ShutInTimeValue; }
+
+            set { SetProperty(ref ShutInTimeValue, value); }
+
+        }
     }
 }
 

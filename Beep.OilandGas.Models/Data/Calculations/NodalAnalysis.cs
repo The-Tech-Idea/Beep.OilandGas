@@ -57,6 +57,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         public string AnalysisType { get; set; }
         public string FieldId { get; set; }
         public string? VLPModel { get; set; }
+        public NodalAnalysisOptions? AdditionalParameters { get; set; }
     }
 
     /// <summary>
@@ -185,6 +186,15 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref AnalysisIdValue, value); }
 
         }
+        public string CalculationId
+
+        {
+
+            get { return this.AnalysisIdValue; }
+
+            set { SetProperty(ref AnalysisIdValue, value); }
+
+        }
         private DateTime AnalysisDateValue;
 
         public DateTime AnalysisDate
@@ -196,9 +206,27 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref AnalysisDateValue, value); }
 
         }
+        public DateTime CalculationDate
+
+        {
+
+            get { return this.AnalysisDateValue; }
+
+            set { SetProperty(ref AnalysisDateValue, value); }
+
+        }
         private decimal OperatingRateValue;
 
         public decimal OperatingRate
+
+        {
+
+            get { return this.OperatingRateValue; }
+
+            set { SetProperty(ref OperatingRateValue, value); }
+
+        }
+        public decimal OperatingFlowRate
 
         {
 
@@ -273,14 +301,22 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref ErrorMessageValue, value); }
 
         }
-        public Dictionary<string, object>? AdditionalResults { get; set; }
-        public decimal OperatingFlowRate { get; set; }
-        public string CalculationId { get; set; }
+        private string? WellUWIValue;
+
+        public string? WellUWI
+
+        {
+
+            get { return this.WellUWIValue; }
+
+            set { SetProperty(ref WellUWIValue, value); }
+
+        }
+        public NodalAnalysisAdditionalResults? AdditionalResults { get; set; }
         public string WellId { get; set; }
         public string WellboreId { get; set; }
         public string FieldId { get; set; }
         public string AnalysisType { get; set; }
-        public DateTime CalculationDate { get; set; }
         public string? UserId { get; set; }
         public List<string> Recommendations { get; set; }
         public decimal? OperatingTemperature { get; set; }
@@ -290,6 +326,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         public decimal PressureDrop { get; set; }
         public decimal SystemEfficiency { get; set; }
     }
+
 }
 
 

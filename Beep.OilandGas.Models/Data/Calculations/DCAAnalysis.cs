@@ -1607,7 +1607,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Analysis results for each well
         /// </summary>
-        public Dictionary<string, DcaPortfolioWellAnalysis> WellAnalyses { get; set; } = new();
+        public List<DcaPortfolioWellAnalysis> WellAnalyses { get; set; } = new();
 
         /// <summary>
         /// Average initial production rate (qi) across portfolio
@@ -1847,7 +1847,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref ProductionFluidTypeValue, value); }
 
         } // OIL, GAS, WATER
-        public Dictionary<string, object>? AdditionalParameters { get; set; }
+        public DcaAnalysisOptions? AdditionalParameters { get; set; }
         private string? UserIdValue;
 
         public string? UserId
@@ -2085,7 +2085,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         }
         
         // Additional metadata
-        public Dictionary<string, object>? AdditionalResults { get; set; }
+        public DcaAdditionalResults? AdditionalResults { get; set; }
         private string? StatusValue;
 
         public string? Status
