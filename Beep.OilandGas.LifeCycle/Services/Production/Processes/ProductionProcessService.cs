@@ -1,13 +1,20 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Models.Processes;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.LifeCycle.Services.Production;
-
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
+using Beep.OilandGas.Models.Data.LifeCycle;
+using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.Models.Data.Process;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+
+// Alias to resolve type conflicts
+using DataModels = Beep.OilandGas.Models.Data;
+using WellTestRequestData = Beep.OilandGas.Models.Data.WellTestRequest;
+using ProductionForecastData = Beep.OilandGas.Models.Data.ProductionForecast;
 
 namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
 {
@@ -59,9 +66,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             }
         }
 
-        public async Task<bool> PerformProductionTestAsync(string instanceId, Dictionary<string, object> testData, string userId)
+        public async Task<bool> PerformProductionTestAsync(string instanceId, WellTestRequestData testData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_TESTING", testData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "PRODUCTION_TESTING",
+                WellTest = testData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_TESTING", stepData, userId);
         }
 
         public async Task<bool> ApproveProductionAsync(string instanceId, string userId)
@@ -69,9 +83,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             return await _processService.CompleteStepAsync(instanceId, "PRODUCTION_APPROVAL", "APPROVED", userId);
         }
 
-        public async Task<bool> StartProductionAsync(string instanceId, Dictionary<string, object> productionData, string userId)
+        public async Task<bool> StartProductionAsync(string instanceId, ProductionForecastData productionData, string userId)
         {
-            var result = await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_START", productionData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "PRODUCTION_START",
+                ProductionForecast = productionData, // Assuming PROCESS_STEP_DATA uses ProductionForecasting.ProductionForecast
+                LastUpdated = DateTime.UtcNow
+            };
+            var result = await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_START", stepData, userId);
             if (result)
             {
                 await _processService.CompleteStepAsync(instanceId, "PRODUCTION_START", "SUCCESS", userId);
@@ -114,29 +135,63 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             }
         }
 
-        public async Task<bool> RecordDailyProductionAsync(string instanceId, Dictionary<string, object> productionData, string userId)
+        public async Task<bool> RecordDailyProductionAsync(string instanceId, DailyOperationsRequest productionData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "DAILY_PRODUCTION", productionData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "DAILY_PRODUCTION",
+                DailyOperations = productionData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "DAILY_PRODUCTION", stepData, userId);
         }
 
         public async Task<bool> MonitorProductionAsync(string instanceId, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_MONITORING", new Dictionary<string, object>(), userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "PRODUCTION_MONITORING",
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_MONITORING", stepData, userId);
         }
 
-        public async Task<bool> AnalyzePerformanceAsync(string instanceId, Dictionary<string, object> analysisData, string userId)
+        public async Task<bool> AnalyzePerformanceAsync(string instanceId, WellTestRequestData analysisData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "PERFORMANCE_ANALYSIS", analysisData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "PERFORMANCE_ANALYSIS",
+                WellTest = analysisData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "PERFORMANCE_ANALYSIS", stepData, userId);
         }
 
-        public async Task<bool> MakeOptimizationDecisionAsync(string instanceId, Dictionary<string, object> decisionData, string userId)
+        public async Task<bool> MakeOptimizationDecisionAsync(string instanceId, WorkOrderCreationRequest decisionData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "OPTIMIZATION_DECISION", decisionData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "OPTIMIZATION_DECISION",
+                WorkOrderCreation = decisionData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "OPTIMIZATION_DECISION", stepData, userId);
         }
 
-        public async Task<bool> ExecuteOptimizationAsync(string instanceId, Dictionary<string, object> optimizationData, string userId)
+        public async Task<bool> ExecuteOptimizationAsync(string instanceId, WorkOrderUpdateRequest optimizationData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "OPTIMIZATION_EXECUTION", optimizationData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "OPTIMIZATION_EXECUTION",
+                WorkOrderUpdate = optimizationData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "OPTIMIZATION_EXECUTION", stepData, userId);
         }
 
         #endregion
@@ -171,27 +226,61 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
 
         public async Task<bool> DetectDeclineAsync(string instanceId, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "DECLINE_DETECTION", new Dictionary<string, object>(), userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "DECLINE_DETECTION",
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "DECLINE_DETECTION", stepData, userId);
         }
 
-        public async Task<bool> PerformDCAAnalysisAsync(string instanceId, Dictionary<string, object> dcaData, string userId)
+        public async Task<bool> PerformDCAAnalysisAsync(string instanceId, DCARequest dcaData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "DCA_ANALYSIS", dcaData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "DCA_ANALYSIS",
+                DCA = dcaData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "DCA_ANALYSIS", stepData, userId);
         }
 
-        public async Task<bool> ForecastProductionAsync(string instanceId, Dictionary<string, object> forecastData, string userId)
+        public async Task<bool> ForecastProductionAsync(string instanceId, DeclineCurveAnalysisRequest forecastData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_FORECAST", forecastData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "PRODUCTION_FORECAST",
+                DeclineCurveAnalysis = forecastData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_FORECAST", stepData, userId);
         }
 
-        public async Task<bool> AnalyzeEconomicsAsync(string instanceId, Dictionary<string, object> economicData, string userId)
+        public async Task<bool> AnalyzeEconomicsAsync(string instanceId, EconomicAnalysisRequest economicData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "ECONOMIC_ANALYSIS", economicData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "ECONOMIC_ANALYSIS",
+                EconomicAnalysis = economicData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "ECONOMIC_ANALYSIS", stepData, userId);
         }
 
-        public async Task<bool> MakeWorkoverDecisionAsync(string instanceId, Dictionary<string, object> decisionData, string userId)
+        public async Task<bool> MakeWorkoverDecisionAsync(string instanceId, WorkOrderCreationRequest decisionData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "WORKOVER_DECISION", decisionData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "WORKOVER_DECISION",
+                WorkOrderCreation = decisionData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "WORKOVER_DECISION", stepData, userId);
         }
 
         #endregion
@@ -224,9 +313,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             }
         }
 
-        public async Task<bool> PlanWorkoverAsync(string instanceId, Dictionary<string, object> planData, string userId)
+        public async Task<bool> PlanWorkoverAsync(string instanceId, WorkOrderCreationRequest planData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "WORKOVER_PLANNING", planData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "WORKOVER_PLANNING",
+                WorkOrderCreation = planData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "WORKOVER_PLANNING", stepData, userId);
         }
 
         public async Task<bool> ApproveWorkoverAsync(string instanceId, string userId)
@@ -234,19 +330,40 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             return await _processService.CompleteStepAsync(instanceId, "WORKOVER_APPROVAL", "APPROVED", userId);
         }
 
-        public async Task<bool> ExecuteWorkoverAsync(string instanceId, Dictionary<string, object> executionData, string userId)
+        public async Task<bool> ExecuteWorkoverAsync(string instanceId, WorkOrderUpdateRequest executionData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "WORKOVER_EXECUTION", executionData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "WORKOVER_EXECUTION",
+                WorkOrderUpdate = executionData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "WORKOVER_EXECUTION", stepData, userId);
         }
 
-        public async Task<bool> TestPostWorkoverAsync(string instanceId, Dictionary<string, object> testData, string userId)
+        public async Task<bool> TestPostWorkoverAsync(string instanceId, WellTestRequestData testData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "POST_WORKOVER_TESTING", testData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "POST_WORKOVER_TESTING",
+                WellTest = testData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "POST_WORKOVER_TESTING", stepData, userId);
         }
 
-        public async Task<bool> RestartProductionAsync(string instanceId, Dictionary<string, object> productionData, string userId)
+        public async Task<bool> RestartProductionAsync(string instanceId, ProductionForecastData productionData, string userId)
         {
-            var result = await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_RESTART", productionData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "PRODUCTION_RESTART",
+                ProductionForecast = productionData,
+                LastUpdated = DateTime.UtcNow
+            };
+            var result = await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_RESTART", stepData, userId);
             if (result)
             {
                 await _processService.CompleteStepAsync(instanceId, "PRODUCTION_RESTART", "SUCCESS", userId);
@@ -257,4 +374,3 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
         #endregion
     }
 }
-

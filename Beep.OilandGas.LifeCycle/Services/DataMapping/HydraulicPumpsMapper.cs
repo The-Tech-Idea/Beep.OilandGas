@@ -99,9 +99,9 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
                 BottomHoleTemperature = getBottomHoleTemperature(well, wellPressure),
                 OilGravity = getOilGravity(well),
                 WaterCut = getWaterCut(well),
-                GasOilRatio = getGasOilRatio(well),
-                GasSpecificGravity = getGasSpecificGravity(well),
-                DesiredProductionRate = getDesiredProductionRate(well)
+                GasOilRatio = (int)getGasOilRatio(well),
+                GasSpecificGravity = (int)getGasSpecificGravity(well),
+                DesiredProductionRate = (int)getDesiredProductionRate(well)
             };
         }
     }

@@ -8,5 +8,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         public decimal? StrokeLength { get; set; }
         public decimal? RotationalSpeed { get; set; }
         public decimal? Speed { get; set; }
+        public string? CompressorType { get; set; }
+        public string? AnalysisType { get; set; }
     }
 }

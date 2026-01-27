@@ -902,6 +902,7 @@ namespace Beep.OilandGas.Models.Data
     /// <summary>DTO for performance analysis request.</summary>
     public class PerformanceAnalysisRequest : ModelEntityBase
     {
+        public object AnalysisParameters { get; set; }
     }
 
     /// <summary>DTO for pump efficiency.</summary>

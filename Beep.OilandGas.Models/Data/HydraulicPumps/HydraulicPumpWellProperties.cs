@@ -172,6 +172,10 @@ namespace Beep.OilandGas.Models.Data.HydraulicPumps
             set { SetProperty(ref PumpDepthValue, value); }
 
         }
+
+        public decimal CasingDiameter { get; set; }
+        public decimal WellheadTemperature { get; set; }
+        public decimal BottomHoleTemperature { get; set; }
     }
 }
 

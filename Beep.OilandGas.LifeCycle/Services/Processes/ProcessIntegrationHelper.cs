@@ -11,6 +11,7 @@ using Beep.OilandGas.LifeCycle.Services.WellLifecycle;
 using Beep.OilandGas.LifeCycle.Services.FieldLifecycle;
 using Beep.OilandGas.LifeCycle.Services.ReservoirLifecycle;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes
 {
@@ -145,7 +146,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             try
             {
                 // Complete production restart step
-                var restartComplete = await _productionProcessService.RestartProductionAsync(instanceId, new Dictionary<string, object>(), userId);
+                var restartComplete = await _productionProcessService.RestartProductionAsync(instanceId, new ProductionForecast(), userId);
 
                 if (restartComplete)
                 {

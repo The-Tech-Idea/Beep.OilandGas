@@ -492,9 +492,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
                 lease.LeaseNumber = leaseData.LeaseNumber ?? string.Empty;
                 lease.FieldId = _defaults.FormatIdForTable("LEASE", fieldId);
                 if (leaseData.StartDate.HasValue)
-                    lease.EFFECTIVE_DATE = leaseData.StartDate.Value;
+                    lease.StartDate = leaseData.StartDate.Value;
                 if (leaseData.EndDate.HasValue)
-                    lease.ExpirationDate = leaseData.EndDate.Value;
+                    lease.EndDate = leaseData.EndDate.Value;
                 lease.ACTIVE_IND = "Y";
     
                 if (lease is IPPDMEntity entity)

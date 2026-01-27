@@ -491,16 +491,6 @@ namespace Beep.OilandGas.HydraulicPumps.Services
         public List<string> Recommendations { get; set; } = new();
     }
 
-    /// <summary>
-    /// Performance analysis request DTO
-    /// </summary>
-    public class PerformanceAnalysisRequest
-    {
-        public string PumpId { get; set; } = string.Empty;
-        public decimal MeasuredFlowRate { get; set; }
-        public decimal MeasuredPressure { get; set; }
-        public decimal MeasuredPower { get; set; }
-    }
 
     /// <summary>
     /// Pump efficiency DTO

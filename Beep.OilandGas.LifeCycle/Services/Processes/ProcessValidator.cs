@@ -29,9 +29,18 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             ProcessStepDefinition stepDefinition,
             PROCESS_STEP_DATA stepData)
         {
-            var dataDict = string.IsNullOrEmpty(stepData.DataJson) 
-                ? new Dictionary<string, object>() 
-                : JsonSerializer.Deserialize<Dictionary<string, object>>(stepData.DataJson) ?? new Dictionary<string, object>();
+            // Extract data from strongly-typed PROCESS_STEP_DATA using reflection
+            var dataDict = new Dictionary<string, object>();
+            
+            // Add core properties
+            if (!string.IsNullOrEmpty(stepData.StepInstanceId))
+                dataDict["StepInstanceId"] = stepData.StepInstanceId;
+            if (!string.IsNullOrEmpty(stepData.StepType))
+                dataDict["StepType"] = stepData.StepType;
+            if (!string.IsNullOrEmpty(stepData.Status))
+                dataDict["Status"] = stepData.Status;
+            if (stepData.LastUpdated.HasValue)
+                dataDict["LastUpdated"] = stepData.LastUpdated.Value;
 
             return await ValidateStepDataAsync(stepDefinition, dataDict);
         }

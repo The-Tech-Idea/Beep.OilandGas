@@ -1,11 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Models.Processes;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.LifeCycle.Services.FieldManagement;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.LifeCycle;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Process;
 
 namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
 {
@@ -62,9 +64,16 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
             return await _processService.CompleteStepAsync(instanceId, "FIELD_APPROVAL", "APPROVED", userId);
         }
 
-        public async Task<bool> SetupFieldAsync(string instanceId, Dictionary<string, object> setupData, string userId)
+        public async Task<bool> SetupFieldAsync(string instanceId, FieldCreationRequest setupData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "FIELD_SETUP", setupData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "FIELD_SETUP",
+                FieldCreation = setupData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "FIELD_SETUP", stepData, userId);
         }
 
         public async Task<bool> ActivateFieldAsync(string instanceId, string userId)
@@ -102,14 +111,28 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
             }
         }
 
-        public async Task<bool> DesignFieldPlanAsync(string instanceId, Dictionary<string, object> designData, string userId)
+        public async Task<bool> DesignFieldPlanAsync(string instanceId, FieldPlanningRequest designData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "FIELD_DESIGN", designData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "FIELD_DESIGN",
+                FieldPlanning = designData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "FIELD_DESIGN", stepData, userId);
         }
 
-        public async Task<bool> ReviewFieldPlanAsync(string instanceId, Dictionary<string, object> reviewData, string userId)
+        public async Task<bool> ReviewFieldPlanAsync(string instanceId, FieldPlanningRequest reviewData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "FIELD_REVIEW", reviewData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "FIELD_REVIEW",
+                FieldPlanning = reviewData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "FIELD_REVIEW", stepData, userId);
         }
 
         public async Task<bool> ApproveFieldPlanAsync(string instanceId, string userId)
@@ -147,22 +170,42 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement.Processes
             }
         }
 
-        public async Task<bool> RecordDailyOperationsAsync(string instanceId, Dictionary<string, object> operationsData, string userId)
+        public async Task<bool> RecordDailyOperationsAsync(string instanceId, FieldOperationsRequest operationsData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "DAILY_OPERATIONS", operationsData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "DAILY_OPERATIONS",
+                FieldOperations = operationsData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "DAILY_OPERATIONS", stepData, userId);
         }
 
-        public async Task<bool> MonitorFieldAsync(string instanceId, Dictionary<string, object> monitoringData, string userId)
+        public async Task<bool> MonitorFieldAsync(string instanceId, FieldPerformanceRequest monitoringData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "FIELD_MONITORING", monitoringData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "FIELD_MONITORING",
+                FieldPerformance = monitoringData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "FIELD_MONITORING", stepData, userId);
         }
 
-        public async Task<bool> GenerateOperationsReportAsync(string instanceId, Dictionary<string, object> reportData, string userId)
+        public async Task<bool> GenerateOperationsReportAsync(string instanceId, GenerateOperationalReportRequest reportData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "OPERATIONS_REPORTING", reportData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                StepInstanceId = instanceId,
+                StepType = "OPERATIONS_REPORTING",
+                GenerateOperationalReport = reportData,
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "OPERATIONS_REPORTING", stepData, userId);
         }
 
         #endregion
     }
 }
-

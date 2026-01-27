@@ -125,6 +125,8 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
             set { SetProperty(ref MechanicalEfficiencyValue, value); }
 
         }
+
+        public decimal GasMolecularWeight { get; set; }
     }
 }
 

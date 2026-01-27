@@ -1,0 +1,229 @@
+# Duplicate Class Resolution Plan
+
+## Strategy
+1. **Identify Master**: Prefer Data or General namespace.
+2. **Merge Properties**: Consolidate unique properties.
+3. **Apply Pattern**: Refactor to ModelEntityBase + SetProperty.
+4. **Update References**: Fix usages.
+5. **Delete Duplicate**: Remove redundancy.
+
+## Task List
+- [x] **ADDRESS**
+  - Paths: `ProductionAccounting\ADDRESS.cs`, `ProductionAccounting\OwnershipModels.cs`
+  - Action: Merge to best fit
+- [x] **AgingAnalysis**
+  - Paths: `Accounting\ReconciliationServiceModels.cs`, `General\AgingAnalysis.cs`
+  - Action: Merge to best fit
+- [x] **AgingBucket**
+  - Paths: `Accounting\ReconciliationServiceModels.cs`, `General\AgingBucket.cs`
+  - Action: Merge to best fit
+- [x] **BankReconciliation**
+  - Paths: `Accounting\BankReconciliationModels.cs`, `Accounting\ReconciliationServiceModels.cs`, `General\BankReconciliation.cs`
+  - Action: Merge to best fit
+- [x] **CalculateRoyaltyRequest**
+  - Paths: `Accounting\Royalty\RoyaltyRequest.cs`, `ProductionAccounting\Royalty.cs`
+  - Action: Merge to best fit
+- [x] **CeilingTestRequest**
+  - Paths: `Accounting\Financial\FinancialRequest.cs`, `ProductionAccounting\Financial.cs`
+  - Action: Merge to best fit
+- [x] **CostAllocationRequest**
+  - Paths: `Accounting\Cost\CostRequest.cs`, `ProductionAccounting\Cost.cs`
+  - Action: Merge to best fit
+- [x] **CreateCostTransactionRequest**
+  - Paths: `Accounting\CostTransaction.cs`, `Accounting\Cost\CostRequest.cs`, `ProductionAccounting\Cost.cs`
+  - Action: Merge to best fit
+- [x] **CreateExchangeContractRequest**
+  - Paths: `Accounting\Trading\TradingRequest.cs`, `Trading\Trading.cs`
+  - Action: Merge to best fit
+- [ ] **CreateInventoryItemRequest**
+  - Paths: `Accounting\InventoryItem.cs`, `Inventory\Inventory.cs`
+  - Action: Merge to best fit
+- [ ] **CreateJournalEntryRequest**
+  - Paths: `Accounting\JournalEntry.cs`, `ProductionAccounting\TraditionalAccounting.cs`
+  - Action: Merge to best fit
+- [ ] **CreateRevenueTransactionRequest**
+  - Paths: `Accounting\RevenueTransaction.cs`, `Accounting\Revenue\RevenueRequest.cs`
+  - Action: Merge to best fit
+- [x] **CreateRoyaltyPaymentRequest**
+  - Paths: `Accounting\Royalty\RoyaltyRequest.cs`, `ProductionAccounting\Royalty.cs`
+  - Action: Merge to best fit
+- [x] **CreateStorageFacilityRequest**
+  - Paths: `Accounting\Storage\StorageRequest.cs`, `Storage\Storage.cs`
+  - Action: Merge to best fit
+- [x] **CreateUnitAgreementRequest**
+  - Paths: `Accounting\Unitization\UnitizationRequest.cs`, `Unitization\Unitization.cs`
+  - Action: Merge to best fit
+- [ ] **FacilityResponse**
+  - Paths: `Development\Development.cs`, `LifeCycle\FacilityManagement.cs`
+  - Action: Merge to best fit
+- [ ] **FieldResponse**
+  - Paths: `LifeCycle\FieldManagement.cs`, `Production\Production.cs`
+  - Action: Merge to best fit
+- [ ] **FlashCalculationPropertyResult**
+  - Paths: `Calculations\FlashCalculation.cs`, `Properties\Properties.cs`
+  - Action: Merge to best fit
+- [ ] **FullCostAcquisitionRequest**
+  - Paths: `Accounting\Financial\FinancialRequest.cs`, `ProductionAccounting\Financial.cs`
+  - Action: Merge to best fit
+- [ ] **FullCostDevelopmentRequest**
+  - Paths: `Accounting\Financial\FinancialRequest.cs`, `ProductionAccounting\Financial.cs`
+  - Action: Merge to best fit
+- [ ] **FullCostExplorationRequest**
+  - Paths: `Accounting\Financial\FinancialRequest.cs`, `ProductionAccounting\Financial.cs`
+  - Action: Merge to best fit
+- [ ] **GasComponent**
+  - Paths: `GasProperties\GasComponent.cs`, `GasProperties\GasProperties.cs`
+  - Action: Merge to best fit
+- [ ] **GasComposition**
+  - Paths: `GasProperties\GasComposition.cs`, `GasProperties\GasProperties.cs`
+  - Action: Merge to best fit
+- [ ] **GasLiftPerformancePoint**
+  - Paths: `Calculations\GasLift.cs`, `GasLift\GasLiftPotentialResult.cs`
+  - Action: Merge to best fit
+- [ ] **GasLiftValve**
+  - Paths: `GasLift\GasLift.cs`, `GasLift\GasLiftValveDesignResult.cs`
+  - Action: Merge to best fit
+- [ ] **GenerateJIBStatementRequest**
+  - Paths: `ProductionAccounting\Report.cs`, `Reporting\Reporting.cs`
+  - Action: Merge to best fit
+- [ ] **GenerateLeaseReportRequest**
+  - Paths: `Accounting\Reporting\ReportingRequest.cs`, `ProductionAccounting\Report.cs`
+  - Action: Merge to best fit
+- [ ] **GenerateOperationalReportRequest**
+  - Paths: `Accounting\Reporting\ReportingRequest.cs`, `ProductionAccounting\Report.cs`, `Reporting\Reporting.cs`
+  - Action: Merge to best fit
+- [ ] **ImbalanceSummary**
+  - Paths: `Imbalance\IMBALANCE.cs`, `ProductionAccounting\ImbalanceModels.cs`
+  - Action: Merge to best fit
+- [ ] **ImpairmentRequest**
+  - Paths: `Accounting\Financial\FinancialRequest.cs`, `ProductionAccounting\Financial.cs`
+  - Action: Merge to best fit
+- [ ] **IntercompanyReconciliation**
+  - Paths: `Accounting\ReconciliationServiceModels.cs`, `General\IntercompanyReconciliation.cs`
+  - Action: Merge to best fit
+- [ ] **InterestCapitalizationData**
+  - Paths: `Calculations\SuccessfulEfforts.cs`, `ProductionAccounting\CostModels.cs`
+  - Action: Merge to best fit
+- [ ] **Invoice**
+  - Paths: `Accounting\Invoice.cs`, `ProductionAccounting\INVOICE.cs`
+  - Action: Merge to best fit
+- [ ] **Lease**
+  - Paths: `Lease\LeaseDtos.cs`, `ProductionAccounting\Lease.cs`
+  - Action: Merge to best fit
+- [ ] **LeaseAgreement**
+  - Paths: `LeaseManagement\LeaseAgreement.cs`, `ProductionAccounting\LeaseModels.cs`
+  - Action: Merge to best fit
+- [ ] **MaintenanceRequest**
+  - Paths: `HydraulicPumps\HydraulicPump.cs`, `LifeCycle\Maintenance.cs`
+  - Action: Merge to best fit
+- [ ] **MeasurementAccuracy**
+  - Paths: `Measurement\MeasurementAccuracy.cs`, `ProductionAccounting\MeasurementModels.cs`
+  - Action: Merge to best fit
+- [ ] **Nomination**
+  - Paths: `ProductionAccounting\ImbalanceModels.cs`, `ProductionAccounting\NOMINATION.cs`
+  - Action: Merge to best fit
+- [ ] **OutstandingItem**
+  - Paths: `Accounting\ReconciliationServiceModels.cs`, `General\OutstandingItem.cs`
+  - Action: Merge to best fit
+- [ ] **OwnershipTreeNode**
+  - Paths: `Ownership\OwnershipTree.cs`, `ProductionAccounting\Ownership.cs`
+  - Action: Merge to best fit
+- [ ] **Perforation**
+  - Paths: `Drilling\Drilling.cs`, `Drilling\PERFORATION.cs`
+  - Action: Merge to best fit
+- [ ] **PeriodClosingResult**
+  - Paths: `Accounting\PeriodClosingWorkflowModels.cs`, `General\PeriodClosingResult.cs`
+  - Action: Merge to best fit
+- [ ] **PeriodClosingStatus**
+  - Paths: `Accounting\PeriodClosingWorkflowModels.cs`, `General\PeriodClosingStatus.cs`
+  - Action: Merge to best fit
+- [ ] **PeriodClosingValidation**
+  - Paths: `Accounting\PeriodClosingWorkflowModels.cs`, `General\PeriodClosingValidation.cs`
+  - Action: Merge to best fit
+- [ ] **PermitApplication**
+  - Paths: `DevelopmentPlanning\DevelopmentPlanning.cs`, `PermitsAndApplications\PermitApplicationModels.cs`
+  - Action: Merge to best fit
+- [ ] **PipelineResponse**
+  - Paths: `Development\Development.cs`, `LifeCycle\PipelineManagement.cs`
+  - Action: Merge to best fit
+- [ ] **PlungerLiftWellProperties**
+  - Paths: `PlungerLift\PlungerLiftWellProperties.cs`, `Pumps\Pump.cs`
+  - Action: Merge to best fit
+- [ ] **PostingResult**
+  - Paths: `Accounting\PeriodClosingWorkflowModels.cs`, `General\PostingResult.cs`
+  - Action: Merge to best fit
+- [ ] **PressureDropResult**
+  - Paths: `Calculations\PipelineAnalysis.cs`, `PipelineAnalysis\PIPELINE_ANALYSIS_RESULT.cs`
+  - Action: Merge to best fit
+- [x] **PriceIndex**
+  - Paths: `Pricing\PriceIndex.cs`, `ProductionAccounting\PricingModels.cs`
+  - Action: Delegated `ProductionAccounting.PriceIndex` to canonical `Data.Pricing.PriceIndex` (done)
+- [x] **PriceIndexRequest**
+  - Paths: `Pricing\Pricing.cs`, `ProductionAccounting\Pricing.cs`
+  - Action: Delegated `ProductionAccounting.PriceIndexRequest` to canonical `Data.Pricing.CreatePriceIndexRequest` (done)
+- [ ] **ProductionData**
+  - Paths: `Calculations\SuccessfulEfforts.cs`, `ProductionAccounting\CostModels.cs`, `ProductionOperations\ProductionOperationsModels.cs`
+  - Action: Deferred: types differ significantly — requires manual reconciliation; left as separate for now
+- [ ] **ProductionForecast**
+  - Paths: `NodalAnalysis\NodalAnalysis.cs`, `ProductionForecasting\ProductionForecast.cs`
+  - Action: Merge to best fit
+- [ ] **PROSPECT**
+  - Paths: `ProspectIdentification\PROSPECT.cs`, `ProspectIdentification\Domain\Prospect.cs`
+  - Action: Merge to best fit
+- [ ] **ProvedReserves**
+  - Paths: `Calculations\SuccessfulEfforts.cs`, `ProductionAccounting\CostModels.cs`
+  - Action: Merge to best fit
+- [ ] **RECEIVABLE**
+  - Paths: `ProductionAccounting\RECEIVABLE.cs`, `ProductionAccounting\Sales.cs`
+  - Action: Merge to best fit
+- [ ] **ReconciliationResult**
+  - Paths: `Accounting\PeriodClosingWorkflowModels.cs`, `DataManagement\DataManagement.cs`
+  - Action: Merge to best fit
+- [ ] **ReconciliationSummary**
+  - Paths: `Accounting\ReconciliationModels.cs`, `Accounting\ReconciliationServiceModels.cs`, `General\ReconciliationSummary.cs`
+  - Action: Merge to best fit
+- [ ] **ReconciliationVariance**
+  - Paths: `Accounting\ReconciliationServiceModels.cs`, `General\ReconciliationVariance.cs`
+  - Action: Merge to best fit
+- [ ] **RegisterOwnershipInterestRequest**
+  - Paths: `Accounting\Ownership\OwnershipRequest.cs`, `ProductionAccounting\Ownership.cs`
+  - Action: Merge to best fit
+- [ ] **RegulatedPrice**
+  - Paths: `Pricing\RegulatedPrice.cs`, `ProductionAccounting\PricingModels.cs`
+  - Action: Merge to best fit
+- [ ] **SalesTransaction**
+  - Paths: `Accounting\SALES_TRANSACTION.cs`, `ProductionAccounting\Sales.cs`
+  - Action: Merge to best fit
+- [ ] **SeedDataRequest**
+  - Paths: `DataManagement\Connection.cs`, `SeedData\SeedData.cs`
+  - Action: Merge to best fit
+- [ ] **SeedDataResponse**
+  - Paths: `DataManagement\Connection.cs`, `SeedData\SeedData.cs`
+  - Action: Merge to best fit
+- [ ] **SensitivityAnalysis**
+  - Paths: `Calculations\EconomicAnalysis.cs`, `Evaluation\Evaluation.cs`
+  - Action: Merge to best fit
+- [ ] **SensitivityAnalysisResult**
+  - Paths: `Calculations\DevelopmentPlanning.cs`, `NodalAnalysis\NodalAnalysis.cs`
+  - Action: Merge to best fit
+- [ ] **UnmatchedTransaction**
+  - Paths: `Accounting\ReconciliationServiceModels.cs`, `General\UnmatchedTransaction.cs`
+  - Action: Merge to best fit
+- [ ] **UnreconciledItem**
+  - Paths: `Accounting\PeriodClosingWorkflowModels.cs`, `General\UnreconciledItem.cs`
+  - Action: Merge to best fit
+- [ ] **ValidationError**
+  - Paths: `DataManagement\DataManagement.cs`, `DataManagement\PPDM39DataModels.cs`
+  - Action: Merge to best fit
+- [ ] **ValidationResult**
+  - Paths: `DataManagement\DataManagement.cs`, `DataManagement\PPDM39DataModels.cs`, `General\ValidationResult.cs`
+  - Action: Merge to best fit
+- [ ] **ValueRunTicketRequest**
+  - Paths: `Accounting\Pricing\PricingRequest.cs`, `Pricing\Pricing.cs`, `ProductionAccounting\Pricing.cs`
+  - Action: Merge to best fit
+- [ ] **WellAllocationData**
+  - Paths: `Allocation\WellAllocationData.cs`, `ProductionAccounting\AllocationModels.cs`
+  - Action: Merge to best fit
+- [ ] **WellTestRequest**
+  - Paths: `LifeCycle\WorkOrder.cs`, `Production\Production.cs`
+  - Action: Merge to best fit

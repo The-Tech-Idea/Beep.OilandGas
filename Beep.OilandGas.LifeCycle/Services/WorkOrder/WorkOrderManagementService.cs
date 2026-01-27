@@ -230,7 +230,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder
                     Operator = "="
                 };
 
-                var xrefs = await xrefRepo.GetEntityAsync("WORK_ORDER_XREF",new List<AppFilter> { filter });
+                var xrefs = await xrefRepo.GetAsync(new List<AppFilter> { filter });
                 var xref = xrefs?.FirstOrDefault() as WORK_ORDER_XREF;
 
                 // Get AFE actual cost and ID if AFE exists
@@ -291,7 +291,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder
                     new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
                 };
 
-                var xrefs = await xrefRepo.GetEntityAsync(filters);
+                var xrefs = await xrefRepo.GetAsync(filters);
                 if (xrefs == null || !xrefs.Any())
                 {
                     return new List<WorkOrderResponse>();

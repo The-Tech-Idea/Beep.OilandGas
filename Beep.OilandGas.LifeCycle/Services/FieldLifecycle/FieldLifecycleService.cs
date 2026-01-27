@@ -255,19 +255,14 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldLifecycle
             return await Task.FromResult(true);
         }
 
-        #region Private Methods
 
-        private bool CanTransition(string fromPhase, string toPhase)
-        {
-            if (!_allowedTransitions.ContainsKey(fromPhase))
-            {
-                return false;
-            }
 
-            return _allowedTransitions[fromPhase].Contains(toPhase);
-        }
+        #region Phase Management
 
-        private async Task StartFieldPhaseAsync(string fieldId, string phase, string userId)
+        /// <summary>
+        /// Start a new field phase
+        /// </summary>
+        public async Task StartFieldPhaseAsync(string fieldId, string phase, string userId)
         {
             try
             {
@@ -307,6 +302,20 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldLifecycle
                 _logger?.LogError(ex, $"Error starting field phase for field {fieldId}");
                 throw;
             }
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private bool CanTransition(string fromPhase, string toPhase)
+        {
+            if (!_allowedTransitions.ContainsKey(fromPhase))
+            {
+                return false;
+            }
+
+            return _allowedTransitions[fromPhase].Contains(toPhase);
         }
 
         private async Task EndFieldPhaseAsync(string fieldId, string phase, string userId)

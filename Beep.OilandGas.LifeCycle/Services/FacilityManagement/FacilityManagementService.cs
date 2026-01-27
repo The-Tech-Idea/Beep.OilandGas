@@ -17,6 +17,9 @@ using TheTechIdea.Beep.Report;
 using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.Pumps;
+using Beep.OilandGas.Models.Data.HydraulicPumps;
+using DataModels = Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
 {
@@ -97,11 +100,9 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                     FacilityName = createdFacility.FACILITY_SHORT_NAME ?? string.Empty,
                     FieldId = request.FieldId ?? string.Empty,
                     Status = "ACTIVE",
-                    Properties = new Dictionary<string, object>
-                    {
-                        { "FacilityType", createdFacility.FACILITY_TYPE ?? string.Empty },
-                        { "FacilityPurpose", createdFacility.FACILITY_TYPE ?? string.Empty }
-                    }
+                    FacilityType= createdFacility.FACILITY_TYPE ,
+                    FacilityCategory=createdFacility.FACILITY_TYPE
+                    
                 };
             }
             catch (Exception ex)
@@ -132,16 +133,53 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                     FacilityName = facilityEntity.FACILITY_SHORT_NAME ?? string.Empty,
                     FieldId = facilityEntity.PRIMARY_FIELD_ID ?? string.Empty,
                     Status = facilityEntity.ACTIVE_IND == "Y" ? "ACTIVE" : "INACTIVE",
-                    Properties = new Dictionary<string, object>
-                    {
-                        { "FacilityType", facilityEntity.FACILITY_TYPE ?? string.Empty }
-                    }
+                   FacilityType = facilityEntity.FACILITY_TYPE
+                     
+                    
                 };
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error getting facility: {FacilityId}", facilityId);
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Inserts a facility-field link record
+        /// </summary>
+        private async Task InsertFacilityFieldLinkAsync(string facilityId, string fieldId, string facilityType, string userId)
+        {
+            try
+            {
+                var linkMetadata = await _metadata.GetTableMetadataAsync("FACILITY_FIELD");
+                if (linkMetadata == null)
+                {
+                    _logger?.LogWarning("FACILITY_FIELD table metadata not found, skipping link creation");
+                    return;
+                }
+
+                var linkRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(FACILITY_FIELD), _connectionName, "FACILITY_FIELD", null);
+
+                var link = new FACILITY_FIELD
+                {
+                    FACILITY_ID = _defaults.FormatIdForTable("FACILITY_FIELD", facilityId),
+                    FACILITY_TYPE = facilityType,
+                    FIELD_ID = _defaults.FormatIdForTable("FACILITY_FIELD", fieldId),
+                    ACTIVE_IND = "Y"
+                };
+
+                if (link is IPPDMEntity entity)
+                    _commonColumnHandler.PrepareForInsert(entity, userId);
+
+                await linkRepo.InsertAsync(link, userId);
+                _logger?.LogInformation("Facility-Field link created: FacilityId={FacilityId}, FieldId={FieldId}", facilityId, fieldId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error creating facility-field link for FacilityId={FacilityId}, FieldId={FieldId}", facilityId, fieldId);
+                // Don't throw - link failure shouldn't fail facility creation
             }
         }
 
@@ -272,10 +310,8 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                 }
 
                 var formattedFacilityId = _defaults.FormatIdForTable("FACILITY_EQUIPMENT", request.FacilityId);
-                var facilityType = facility.Properties != null &&
-                                   facility.Properties.TryGetValue("FacilityType", out var facilityTypeValue)
-                    ? facilityTypeValue?.ToString()
-                    : null;
+                var facilityType = facility.FacilityType;
+                   
 
                 var equipmentId = Guid.NewGuid().ToString();
                 var formattedEquipmentId = _defaults.FormatIdForTable("EQUIPMENT", equipmentId);
@@ -522,9 +558,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
             string facilityId,
             string userId = "system",
             string? equipmentId = null,
-            string compressorType = "CENTRIFUGAL",
-            string analysisType = "POWER",
-            Dictionary<string, object>? additionalParameters = null)
+            CompressorAnalysisOptions? options = null)
         {
             if (_dataFlowService == null)
             {
@@ -533,6 +567,10 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
 
             try
             {
+                var compressorType = options?.CompressorType ?? "CENTRIFUGAL";
+                var analysisType = options?.AnalysisType ?? "POWER";
+                var additionalParameters = options;
+
                 _logger?.LogInformation("Running compressor analysis for facility: {FacilityId}, CompressorType: {CompressorType}", 
                     facilityId, compressorType);
                 return await _dataFlowService.RunCompressorAnalysisAsync(facilityId, userId, equipmentId, compressorType, analysisType, additionalParameters);
@@ -551,9 +589,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
             string facilityId,
             string userId = "system",
             string? equipmentId = null,
-            string pumpType = "CENTRIFUGAL",
-            string analysisType = "PERFORMANCE",
-            Dictionary<string, object>? additionalParameters = null)
+            DataModels.PerformanceAnalysisRequest? options = null)
         {
             if (_dataFlowService == null)
             {
@@ -562,8 +598,23 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
 
             try
             {
-                _logger?.LogInformation("Running pump analysis for facility: {FacilityId}, PumpType: {PumpType}", facilityId, pumpType);
-                return await _dataFlowService.RunPumpAnalysisAsync(null, facilityId, equipmentId, userId, pumpType, analysisType, additionalParameters);
+                var pumpType = "CENTRIFUGAL";
+                var analysisType = "PERFORMANCE";
+                
+                PumpAnalysisOptions? pumpOptions = null;
+                if (options != null && options.AnalysisParameters != null)
+                {
+                     try 
+                     {
+                        pumpOptions = Newtonsoft.Json.JsonConvert.DeserializeObject<Beep.OilandGas.Models.Data.Pumps.PumpAnalysisOptions>(Newtonsoft.Json.JsonConvert.SerializeObject(options.AnalysisParameters));
+                     }
+                     catch {}
+                }
+
+                _logger?.LogInformation("Running pump analysis for facility: {FacilityId}, PumpType: {PumpType}", 
+                    facilityId, pumpType);
+                return await _dataFlowService.RunPumpAnalysisAsync(wellId: null, facilityId: facilityId, equipmentId: equipmentId, userId: userId, pumpType: pumpType, analysisType: analysisType, additionalParameters: pumpOptions);
+
             }
             catch (Exception ex)
             {

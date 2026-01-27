@@ -173,7 +173,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 // Step 8: Store result in database
                 var repository = await GetNodalResultRepositoryAsync();
 
-                await repository.InsertAsync(result, request.UserId ?? "system");
+                await repository.InsertAsync((object)result, request.UserId ?? "system");
 
                 _logger?.LogInformation("Nodal Analysis calculation completed: {CalculationId}, Operating Flow Rate: {FlowRate} BPD, Operating Pressure: {Pressure} psi",
                     result.CalculationId, result.OperatingFlowRate, result.OperatingPressure);
@@ -210,7 +210,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 {
                     var repository = await GetNodalResultRepositoryAsync();
 
-                    await repository.InsertAsync(errorResult, request.UserId ?? "system");
+                    await repository.InsertAsync((object)errorResult, request.UserId ?? "system");
                 }
                 catch (Exception storeEx)
                 {

@@ -21,5 +21,6 @@ namespace Beep.OilandGas.Models.Data.Calculations
         public decimal? BubblePointPressure { get; set; }
         public string? TestId { get; set; }
         public DateTime? AsOfDate { get; set; }
+        public string? DeclineModel { get; set; }
     }
 }

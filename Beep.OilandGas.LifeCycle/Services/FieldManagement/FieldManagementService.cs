@@ -325,8 +325,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
         public async Task<DCAResult> RunFieldDCAAsync(
             string fieldId,
             string userId,
-            string calculationType = "Hyperbolic",
-            Dictionary<string, object>? additionalParameters = null)
+            DcaAnalysisOptions? options = null)
         {
             if (_dataFlowService == null)
             {
@@ -335,6 +334,9 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
 
             try
             {
+                 var calculationType = options?.DeclineModel ?? "Hyperbolic";
+                 var additionalParameters = options; 
+
                 _logger?.LogInformation("Running DCA for field: {FieldId}, Type: {Type}", fieldId, calculationType);
                 return await _dataFlowService.RunDCAAsync(fieldId: fieldId, userId: userId, calculationType: calculationType, additionalParameters: additionalParameters);
             }
@@ -351,8 +353,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
         public async Task<DCAResult> RunPoolDCAAsync(
             string poolId,
             string userId,
-            string calculationType = "Hyperbolic",
-            Dictionary<string, object>? additionalParameters = null)
+            DcaAnalysisOptions? options = null)
         {
             if (_dataFlowService == null)
             {
@@ -361,6 +362,9 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
 
             try
             {
+                 var calculationType = options?.DeclineModel ?? "Hyperbolic";
+                var additionalParameters = options;
+
                 _logger?.LogInformation("Running DCA for pool: {PoolId}, Type: {Type}", poolId, calculationType);
                 return await _dataFlowService.RunDCAAsync(poolId: poolId, userId: userId, calculationType: calculationType, additionalParameters: additionalParameters);
             }

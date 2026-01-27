@@ -349,17 +349,17 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
                 {
                     cost.WorkOrderId = workOrderId;
                     await _accountingService.RecordWorkOrderCostAsync(
-                        cost,
-                        workOrder.EntityType == "WELL" ? workOrder.EntityId : null,
-                        workOrder.EntityType == "FACILITY" ? workOrder.EntityId : null,
-                        workOrder.FieldId,
-                        workOrder.PropertyId,
-                        cost.TransactionDate,
-                        cost.Description,
-                        userId);
+                        request: cost,
+                        wellId: workOrder.EntityType == "WELL" ? workOrder.EntityId : null,
+                        facilityId: workOrder.EntityType == "FACILITY" ? workOrder.EntityId : null,
+                        fieldId: workOrder.FieldId,
+                        propertyId: workOrder.PropertyId,
+                        userId: userId,
+                        transactionDate: cost.TransactionDate,
+                        description: cost.Description);
                 }
 
-                var stepData = new PROCESS_STEP_DATA { DataJson = JsonSerializer.Serialize(new { CostCount = costs.Count }) };
+                var stepData = new PROCESS_STEP_DATA { StepType = "COST_RECORDING", Status = $"Recorded {costs.Count} costs", LastUpdated = DateTime.UtcNow };
                 return await _processService.ExecuteStepAsync(instanceId, "COST_RECORDING", stepData, userId);
             }
             catch (Exception ex)
@@ -441,19 +441,17 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
                 var workOrderId = instance.EntityId;
                 var workOrder = await _workOrderService.GetWorkOrderAsync(workOrderId);
 
-                // Generate report data
+                // Generate report data using strongly-typed PROCESS_STEP_DATA
                 var stepData = new PROCESS_STEP_DATA
                 {
-                    DataJson = JsonSerializer.Serialize(new
+                    StepType = "WORK_ORDER_REPORTING",
+                    Status = $"Report generated for {workOrder.WorkOrderNumber}",
+                    LastUpdated = DateTime.UtcNow,
+                    WorkOrderUpdate = new WorkOrderUpdateRequest
                     {
-                        workOrder.WorkOrderId,
-                        workOrder.WorkOrderNumber,
-                        workOrder.WorkOrderType,
-                        workOrder.Status,
-                        EstimatedCost = workOrder.EstimatedCost,
-                        ActualCost = workOrder.ActualCost,
-                        ReportDate = DateTime.UtcNow
-                    })
+                        WorkOrderId = workOrder.WorkOrderId,
+                        Status = workOrder.Status
+                    }
                 };
 
                 return await _processService.ExecuteStepAsync(instanceId, "WORK_ORDER_REPORTING", stepData, userId);

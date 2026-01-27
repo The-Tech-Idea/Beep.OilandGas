@@ -123,7 +123,11 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
                 var startDate = sortedPressure.First().EFFECTIVE_DATE;
                 
                 wellTestData.Time = sortedPressure.Select(p => 
-                    (p.EFFECTIVE_DATE - startDate).TotalHours).ToList();
+                    {
+                         DateTime effDate = p.EFFECTIVE_DATE ?? DateTime.MinValue;
+                         DateTime start = startDate ?? DateTime.MinValue;
+                         return (effDate - start).TotalHours;
+                    }).ToList();
                 
                 // Use START_PRESSURE or END_PRESSURE based on test type
                 wellTestData.Pressure = sortedPressure.Select(p => 

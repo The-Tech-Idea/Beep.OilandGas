@@ -7,7 +7,6 @@ using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.LifeCycle.Services.Decommissioning;
 using Beep.OilandGas.Models.Data.Process;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
 
 namespace Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes
 {
@@ -59,13 +58,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes
             }
         }
 
-        public async Task<bool> PlanAbandonmentAsync(string instanceId, Dictionary<string, object> planData, string userId)
+        public async Task<bool> PlanAbandonmentAsync(string instanceId, PROCESS_STEP_DATA stepData, string userId)
         {
-            var stepData = new PROCESS_STEP_DATA
-            {
-                DataJson = JsonSerializer.Serialize(planData),
-                LastUpdated = DateTime.UtcNow
-            };
+            stepData.StepType = "ABANDONMENT_PLANNING";
+            stepData.LastUpdated = DateTime.UtcNow;
             return await _processService.ExecuteStepAsync(instanceId, "ABANDONMENT_PLANNING", stepData, userId);
         }
 
@@ -73,29 +69,24 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes
         {
             var stepData = new PROCESS_STEP_DATA
             {
-                DataJson = JsonSerializer.Serialize(new Dictionary<string, object>()),
+                StepType = "REGULATORY_APPROVAL",
+                Status = "PENDING",
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "REGULATORY_APPROVAL", stepData, userId);
         }
 
-        public async Task<bool> PlugWellAsync(string instanceId, Dictionary<string, object> pluggingData, string userId)
+        public async Task<bool> PlugWellAsync(string instanceId, PROCESS_STEP_DATA stepData, string userId)
         {
-            var stepData = new PROCESS_STEP_DATA
-            {
-                DataJson = JsonSerializer.Serialize(pluggingData),
-                LastUpdated = DateTime.UtcNow
-            };
+            stepData.StepType = "WELL_PLUGGING";
+            stepData.LastUpdated = DateTime.UtcNow;
             return await _processService.ExecuteStepAsync(instanceId, "WELL_PLUGGING", stepData, userId);
         }
 
-        public async Task<bool> RestoreSiteAsync(string instanceId, Dictionary<string, object> restorationData, string userId)
+        public async Task<bool> RestoreSiteAsync(string instanceId, PROCESS_STEP_DATA stepData, string userId)
         {
-            var stepData = new PROCESS_STEP_DATA
-            {
-                DataJson = JsonSerializer.Serialize(restorationData),
-                LastUpdated = DateTime.UtcNow
-            };
+            stepData.StepType = "SITE_RESTORATION";
+            stepData.LastUpdated = DateTime.UtcNow;
             return await _processService.ExecuteStepAsync(instanceId, "SITE_RESTORATION", stepData, userId);
         }
 
@@ -134,33 +125,24 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes
             }
         }
 
-        public async Task<bool> PlanDecommissioningAsync(string instanceId, Dictionary<string, object> planData, string userId)
+        public async Task<bool> PlanDecommissioningAsync(string instanceId, PROCESS_STEP_DATA stepData, string userId)
         {
-            var stepData = new PROCESS_STEP_DATA
-            {
-                DataJson = JsonSerializer.Serialize(planData),
-                LastUpdated = DateTime.UtcNow
-            };
+            stepData.StepType = "DECOMMISSIONING_PLANNING";
+            stepData.LastUpdated = DateTime.UtcNow;
             return await _processService.ExecuteStepAsync(instanceId, "DECOMMISSIONING_PLANNING", stepData, userId);
         }
 
-        public async Task<bool> RemoveEquipmentAsync(string instanceId, Dictionary<string, object> removalData, string userId)
+        public async Task<bool> RemoveEquipmentAsync(string instanceId, PROCESS_STEP_DATA stepData, string userId)
         {
-            var stepData = new PROCESS_STEP_DATA
-            {
-                DataJson = JsonSerializer.Serialize(removalData),
-                LastUpdated = DateTime.UtcNow
-            };
+            stepData.StepType = "EQUIPMENT_REMOVAL";
+            stepData.LastUpdated = DateTime.UtcNow;
             return await _processService.ExecuteStepAsync(instanceId, "EQUIPMENT_REMOVAL", stepData, userId);
         }
 
-        public async Task<bool> CleanupSiteAsync(string instanceId, Dictionary<string, object> cleanupData, string userId)
+        public async Task<bool> CleanupSiteAsync(string instanceId, PROCESS_STEP_DATA stepData, string userId)
         {
-            var stepData = new PROCESS_STEP_DATA
-            {
-                DataJson = JsonSerializer.Serialize(cleanupData),
-                LastUpdated = DateTime.UtcNow
-            };
+            stepData.StepType = "SITE_CLEANUP";
+            stepData.LastUpdated = DateTime.UtcNow;
             return await _processService.ExecuteStepAsync(instanceId, "SITE_CLEANUP", stepData, userId);
         }
 
@@ -168,7 +150,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes
         {
             var stepData = new PROCESS_STEP_DATA
             {
-                DataJson = JsonSerializer.Serialize(new Dictionary<string, object>()),
+                StepType = "REGULATORY_CLOSURE",
+                Status = "PENDING",
                 LastUpdated = DateTime.UtcNow
             };
             return await _processService.ExecuteStepAsync(instanceId, "REGULATORY_CLOSURE", stepData, userId);
@@ -182,4 +165,3 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning.Processes
         #endregion
     }
 }
-

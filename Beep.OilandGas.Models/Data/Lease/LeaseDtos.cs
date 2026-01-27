@@ -880,9 +880,9 @@ namespace Beep.OilandGas.Models.Data.Lease
             set { SetProperty(ref AnnualRentalValue, value); }
 
         }
-        private object StartDateValue;
+        private DateTime? StartDateValue;
 
-        public object StartDate
+        public DateTime? StartDate
 
         {
 
@@ -891,9 +891,9 @@ namespace Beep.OilandGas.Models.Data.Lease
             set { SetProperty(ref StartDateValue, value); }
 
         }
-        private object EndDateValue;
+        private DateTime? EndDateValue;
 
-        public object EndDate
+        public DateTime? EndDate
 
         {
 

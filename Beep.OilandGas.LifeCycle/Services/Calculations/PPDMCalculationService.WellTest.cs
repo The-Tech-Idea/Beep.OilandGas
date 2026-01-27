@@ -45,8 +45,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     // Use data from request
                     wellTestData = new WellTestData
                     {
-                        Time = request.PressureTimeData.Select(p => p.Time).ToList(),
-                        Pressure = request.PressureTimeData.Select(p => p.Pressure).ToList(),
+                        Time = request.PressureTimeData.Select(p => (double)(p.Time ?? 0)).ToList(),
+                        Pressure = request.PressureTimeData.Select(p => (double)(p.Pressure ?? 0)).ToList(),
                         FlowRate = request.FlowRate.HasValue ? (double)request.FlowRate.Value : 0.0,
                         WellboreRadius = request.WellboreRadius.HasValue ? (double)request.WellboreRadius.Value : 0.25,
                         FormationThickness = request.FormationThickness.HasValue ? (double)request.FormationThickness.Value : 50.0,

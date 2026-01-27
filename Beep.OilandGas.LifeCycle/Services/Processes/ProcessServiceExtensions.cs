@@ -166,7 +166,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 userId);
 
             // Merge initial data if provided
-            if (request.InitialData != null && request.InitialData.Any())
+            if (request.InitialData != null)
             {
                 instance.ProcessData = request.InitialData;
                 // Save would be handled by the service

@@ -25,6 +25,7 @@ using System.Text.Json;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.Models.Data.CompressorAnalysis;
 using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.Models.Data.LifeCycle;
 
 namespace Beep.OilandGas.LifeCycle.Services.Development
 {
@@ -782,7 +783,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     WellDepth = !string.IsNullOrEmpty(well.FINAL_TD_OUOM) && well.FINAL_TD_OUOM == "FT" 
                         ? well.FINAL_TD 
                         : 10000m, // Default 10,000 feet
-                    TubingDiameter = 2.875m, // Default - would retrieve from WELL_EQUIPMENT
+                    TubingDiameter = 3, // Default 3" - would retrieve from WELL_EQUIPMENT
                     CasingDiameter = 7.0m, // Default - would retrieve from WELL_EQUIPMENT
                     WellheadPressure = 100m, // Default - would retrieve from well test or production data
                     BottomHolePressure = 2000m, // Default - would retrieve from well test or reservoir data
@@ -1407,7 +1408,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 PolytropicEfficiency = 0.75m,
                 SpecificHeatRatio = 1.3m,
                 NumberOfStages = 1,
-                Speed = 3600m // Default 3600 RPM
+                Speed = 3600 // Default 3600 RPM
             };
         }
 
@@ -1427,7 +1428,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 RotationalSpeed = 300m, // Default 300 RPM
                 NumberOfCylinders = 2,
                 VolumetricEfficiency = 0.85m,
-                ClearanceFactor = 0.05m
+                ClearanceFactor = (int)0.05m
             };
         }
 
