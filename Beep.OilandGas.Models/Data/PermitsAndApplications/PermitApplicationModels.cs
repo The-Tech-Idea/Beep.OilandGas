@@ -248,6 +248,11 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref ComponentsValue, value); }
 
         }
+
+        public string ApplicantId { get; set; }
+        public string OperatorId { get; set; }
+        public string RelatedWellUwi { get; set; }
+        public string RelatedFacilityId { get; set; }
     }
 
     public class DrillingPermitApplication : PermitApplication

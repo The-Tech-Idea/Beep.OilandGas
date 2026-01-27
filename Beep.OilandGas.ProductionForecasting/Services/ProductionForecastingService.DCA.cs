@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.Models.Data.ProductionForecasting;
 using Beep.OilandGas.ProductionForecasting.Calculations;
 
 namespace Beep.OilandGas.ProductionForecasting.Services
@@ -53,7 +54,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             return analysis;
         }
 
-        public async Task<ProductionForecastResult> GenerateDCAForecastAsync(string wellUWI, string declineType, DateTime startDate, DateTime endDate, int forecastPeriod)
+        public async Task<ProductionForecastResult> GenerateDCAForecastAsync(string wellUWI, ForecastType declineType, DateTime startDate, DateTime endDate, int forecastPeriod)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
 
@@ -62,19 +63,19 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             decimal forecastDurationDays = forecastPeriod * 30m; // approximate months->days
 
             Beep.OilandGas.Models.Data.ProductionForecasting.ProductionForecast pf;
-            if (!string.IsNullOrWhiteSpace(declineType) && declineType.ToLowerInvariant().StartsWith("harmonic"))
+            if (declineType == ForecastType.Harmonic)
             {
                 pf = DeclineForecast.GenerateHarmonicDeclineForecast(qi, di, forecastDurationDays, null, forecastPeriod);
             }
-            else if (!string.IsNullOrWhiteSpace(declineType) && declineType.ToLowerInvariant().StartsWith("hyperbolic"))
+            else if (declineType == ForecastType.Hyperbolic)
             {
                 decimal b = 0.5m;
-                var parts = declineType.Split(':');
-                if (parts.Length > 1 && parts[1].StartsWith("b="))
-                {
-                    var bstr = parts[1].Substring(2);
-                    if (decimal.TryParse(bstr, out var vb)) b = vb;
-                }
+                //var parts = declineType.Split(':');
+                //if (parts.Length > 1 && parts[1].StartsWith("b="))
+                //{
+                //    var bstr = parts[1].Substring(2);
+                //    if (decimal.TryParse(bstr, out var vb)) b = vb;
+                //}
                 pf = DeclineForecast.GenerateHyperbolicDeclineForecast(qi, di, b, forecastDurationDays, null, forecastPeriod);
             }
             else
@@ -88,7 +89,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 WellUWI = wellUWI,
                 FieldId = null,
                 ForecastDate = DateTime.UtcNow,
-                ForecastMethod = "DCA",
+                ForecastMethod = Models.Data.ProductionForecasting.ForecastType.Decline,
                 ForecastPoints = new List<ProductionForecastPoint>(),
                 EstimatedReserves = pf.TotalCumulativeProduction,
                 Status = "Generated"
@@ -110,7 +111,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             return dto;
         }
 
-        public async Task<ProbabilisticForecast> GenerateProbabilisticForecastAsync(string wellUWI, string declineType, int forecastPeriod, int iterations = 1000)
+        public async Task<ProbabilisticForecast> GenerateProbabilisticForecastAsync(string wellUWI, ForecastType declineType, int forecastPeriod, int iterations = 1000)
         {
             var baseForecast = await GenerateForecastAsync(wellUWI, null, declineType, forecastPeriod);
             var probabilistic = new ProbabilisticForecast

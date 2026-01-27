@@ -366,6 +366,21 @@ namespace Beep.OilandGas.Models.Data.GasLift
             set { SetProperty(ref NetPayThicknessValue, value); }
 
         }
+
+        /// <summary>
+        /// Casing diameter (in inches or mm)
+        /// </summary>
+        private decimal CasingDiameterValue;
+
+        public decimal CasingDiameter
+
+        {
+
+            get { return this.CasingDiameterValue; }
+
+            set { SetProperty(ref CasingDiameterValue, value); }
+
+        }
     }
 }
 

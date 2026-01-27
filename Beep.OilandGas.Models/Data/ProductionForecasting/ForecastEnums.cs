@@ -28,7 +28,12 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
         /// <summary>
         /// Decline curve analysis (Arps decline methods).
         /// </summary>
-        Decline
+        Decline,
+        None,
+        ReservoirSim,
+        Ensamble,
+        Harmonic,
+        Hyperbolic
     }
 }
 

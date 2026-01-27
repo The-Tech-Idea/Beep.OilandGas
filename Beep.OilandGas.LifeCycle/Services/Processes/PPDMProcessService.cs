@@ -13,6 +13,7 @@ using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Data.Process;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes
 {
@@ -494,7 +495,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
         #region Validation
 
-        public override async Task<ValidationResult> ValidateStepAsync(string instanceId, string stepId, Dictionary<string, object> stepData)
+        public override async Task<ValidationResult> ValidateStepAsync(string instanceId, string stepId, PROCESS_STEP_DATA stepData)
         {
             try
             {
@@ -529,6 +530,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 }
 
                 var validator = new ProcessValidator(null);
+                // Note: Need to check if validator needs update too
                 return await validator.ValidateStepDataAsync(stepDef, stepData);
             }
             catch (Exception ex)
@@ -854,12 +856,26 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             {
                 try
                 {
+                    // Try to deserialize stored configuration as a dictionary
                     var config = JsonSerializer.Deserialize<Dictionary<string, object>>(configJson);
                     if (config != null)
                     {
                         definition.Configuration = config;
-                        // Extract steps and transitions from config if needed
                     }
+                    else
+                    {
+                        // Fallback: attempt to deserialize into PROCESS_CONFIGURATION and convert
+                        var legacy = JsonSerializer.Deserialize<PROCESS_CONFIGURATION>(configJson);
+                        if (legacy != null)
+                        {
+                            // Convert legacy PROCESS_CONFIGURATION to a dictionary via serialization
+                            var roundtrip = JsonSerializer.Serialize(legacy);
+                            var converted = JsonSerializer.Deserialize<Dictionary<string, object>>(roundtrip);
+                            if (converted != null)
+                                definition.Configuration = converted;
+                        }
+                    }
+                    // Extract steps and transitions from config if needed
                 }
                 catch (Exception ex)
                 {
@@ -916,7 +932,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 StartDate = processInst.START_DATE ?? DateTime.UtcNow,
                 CompletionDate = processInst.COMPLETION_DATE,
                 StartedBy = processInst.STARTED_BY ?? string.Empty,
-                ProcessData = new Dictionary<string, object>(),
+                ProcessData = new PROCESS_DATA(),
                 StepInstances = new List<ProcessStepInstance>(),
                 History = new List<ProcessHistoryEntry>()
             };
@@ -961,7 +977,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 CompletedBy = stepInst.COMPLETED_BY ?? string.Empty,
                 Outcome = stepInst.OUTCOME ?? string.Empty,
                 Notes = stepInst.NOTES ?? string.Empty,
-                StepData = new Dictionary<string, object>(),
+                StepData = new PROCESS_STEP_DATA(),
                 Approvals = new List<ApprovalRecord>(),
                 ValidationResults = new List<ValidationResult>()
             };
@@ -1004,7 +1020,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 Timestamp = history.ACTION_DATE ?? DateTime.UtcNow,
                 PerformedBy = history.PERFORMED_BY ?? string.Empty,
                 Notes = history.NOTES ?? string.Empty,
-                ActionData = new Dictionary<string, object>()
+                // Deserialize ACTION_DATA_JSON into a dictionary for ActionData
+                ActionData = string.IsNullOrEmpty(history.ACTION_DATA_JSON)
+                    ? new Dictionary<string, object>()
+                    : JsonSerializer.Deserialize<Dictionary<string, object>>(history.ACTION_DATA_JSON) ?? new Dictionary<string, object>()
             };
         }
 

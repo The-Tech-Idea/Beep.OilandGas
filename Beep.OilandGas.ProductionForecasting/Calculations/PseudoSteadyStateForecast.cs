@@ -39,7 +39,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             };
 
             decimal timeStep = forecastDuration / timeSteps;
-            decimal currentPressure = reservoir.InitialPressure;
+            decimal currentPressure = (decimal)reservoir.INITIAL_PRESSURE;
             decimal cumulativeProduction = 0m;
 
             // Calculate productivity index
@@ -64,21 +64,21 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 // Update cumulative production
                 cumulativeProduction += productionRate * timeStep;
 
-                forecast.ForecastPoints.Add(new ForecastPoint
+                forecast.FORECAST_POINTS.Add(new FORECAST_POINT
                 {
-                    Time = time,
-                    ProductionRate = productionRate,
-                    CumulativeProduction = cumulativeProduction,
-                    ReservoirPressure = currentPressure,
-                    BottomHolePressure = bottomHolePressure
+                    TIME = time,
+                    PRODUCTION_RATE = productionRate,
+                    CUMULATIVE_PRODUCTION = cumulativeProduction,
+                    RESERVOIR_PRESSURE = currentPressure,
+                    BOTTOM_HOLE_PRESSURE = bottomHolePressure
                 });
 
                 if (i == 0)
-                    forecast.InitialProductionRate = productionRate;
+                    forecast.INITIAL_PRODUCTION_RATE = productionRate;
             }
 
-            forecast.FinalProductionRate = forecast.ForecastPoints.Last().ProductionRate;
-            forecast.TotalCumulativeProduction = cumulativeProduction;
+            forecast.FINAL_PRODUCTION_RATE = forecast.FORECAST_POINTS.Last().PRODUCTION_RATE;
+            forecast.TOTAL_CUMULATIVE_PRODUCTION = cumulativeProduction;
 
             return forecast;
         }
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// Generates two-phase pseudo-steady state production forecast.
         /// </summary>
         public static ProductionForecast GenerateTwoPhaseForecast(
-            ReservoirForecastProperties reservoir,
+            RESERVOIR_FORECAST_PROPERTIES reservoir,
             decimal bottomHolePressure,
             decimal bubblePointPressure,
             decimal forecastDuration,
@@ -106,7 +106,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             };
 
             decimal timeStep = forecastDuration / timeSteps;
-            decimal currentPressure = reservoir.InitialPressure;
+            decimal currentPressure = (decimal)reservoir.INITIAL_PRESSURE;
             decimal cumulativeProduction = 0m;
 
             for (int i = 0; i <= timeSteps; i++)
@@ -160,38 +160,38 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
         // Helper methods
 
-        private static decimal CalculateProductivityIndex(ReservoirForecastProperties reservoir)
+        private static decimal CalculateProductivityIndex(RESERVOIR_FORECAST_PROPERTIES reservoir)
         {
             // Pseudo-steady state productivity index
             // J = (0.00708 * k * h) / (B * μ * (ln(re/rw) - 0.75 + S))
-            decimal re_rw = reservoir.DrainageRadius / reservoir.WellboreRadius;
+            decimal re_rw = (decimal)(reservoir.DRAINAGE_RADIUS / reservoir.WELLBORE_RADIUS);
             decimal ln_re_rw = (decimal)Math.Log((double)re_rw);
 
-            decimal productivityIndex = (0.00708m * reservoir.Permeability * reservoir.Thickness) /
-                                       (reservoir.FormationVolumeFactor * reservoir.OilViscosity *
-                                        (ln_re_rw - 0.75m + reservoir.SkinFactor));
+            decimal productivityIndex = (decimal)((0.00708m * reservoir.PERMEABILITY * reservoir.THICKNESS) /
+                                       (reservoir.FORMATION_VOLUME_FACTOR * reservoir.OIL_VISCOSITY *
+                                        (ln_re_rw - 0.75m + reservoir.SKIN_FACTOR)));
 
             return Math.Max(0.001m, productivityIndex);
         }
 
         private static decimal CalculatePressureDecline(
-            ReservoirForecastProperties reservoir,
+            RESERVOIR_FORECAST_PROPERTIES reservoir,
             decimal productionRate,
             decimal timeStep,
             decimal cumulativeProduction)
         {
             // Material balance: dP = -q * B / (c_t * V_p)
-            decimal poreVolume = (decimal)Math.PI * reservoir.DrainageRadius * reservoir.DrainageRadius *
-                                reservoir.Thickness * reservoir.Porosity;
+            decimal poreVolume = (decimal)((decimal)Math.PI * reservoir.DRAINAGE_RADIUS * reservoir.DRAINAGE_RADIUS    *
+                                reservoir.THICKNESS * reservoir.POROSITY);
 
-            decimal pressureDecline = (productionRate * reservoir.FormationVolumeFactor * timeStep) /
-                                     (reservoir.TotalCompressibility * poreVolume);
+            decimal pressureDecline = (decimal)((productionRate * reservoir.FORMATION_VOLUME_FACTOR * timeStep) /
+                                     (reservoir.TOTAL_COMPRESSIBILITY * poreVolume));
 
             return pressureDecline;
         }
 
         private static decimal CalculateTwoPhaseRate(
-            ReservoirForecastProperties reservoir,
+            RESERVOIR_FORECAST_PROPERTIES reservoir,
             decimal reservoirPressure,
             decimal bottomHolePressure,
             decimal bubblePointPressure)
@@ -214,7 +214,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         }
 
         private static decimal CalculateTwoPhasePressureDecline(
-            ReservoirForecastProperties reservoir,
+            RESERVOIR_FORECAST_PROPERTIES reservoir,
             decimal productionRate,
             decimal timeStep,
             decimal cumulativeProduction,
@@ -228,12 +228,12 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             if (currentPressure < bubblePointPressure)
             {
                 // Increased compressibility in two-phase region
-                decimal twoPhaseCompressibility = reservoir.TotalCompressibility * 1.5m;
-                decimal poreVolume = (decimal)Math.PI * reservoir.DrainageRadius * reservoir.DrainageRadius *
-                                    reservoir.Thickness * reservoir.Porosity;
+                decimal twoPhaseCompressibility = (decimal)(reservoir.TOTAL_COMPRESSIBILITY * 1.5m);
+                decimal poreVolume = (decimal)((decimal)Math.PI * reservoir.DRAINAGE_RADIUS * reservoir.DRAINAGE_RADIUS *
+                                    reservoir.THICKNESS * reservoir.POROSITY);
 
-                baseDecline = (productionRate * reservoir.FormationVolumeFactor * timeStep) /
-                             (twoPhaseCompressibility * poreVolume);
+                baseDecline = (decimal)(productionRate * reservoir.FORMATION_VOLUME_FACTOR * timeStep /
+                             (twoPhaseCompressibility * poreVolume));
             }
 
             return baseDecline;

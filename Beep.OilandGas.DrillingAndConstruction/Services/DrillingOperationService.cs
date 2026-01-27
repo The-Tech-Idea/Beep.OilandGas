@@ -4,13 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
-using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
-using Beep.OilandGas.PPDM39.Core.Metadata;
-using TheTechIdea.Beep.Editor;
-using TheTechIdea.Beep.Report;
-using TheTechIdea.Beep.DataBase;
 using Microsoft.Extensions.Logging;
+
 
 namespace Beep.OilandGas.DrillingAndConstruction.Services
 {

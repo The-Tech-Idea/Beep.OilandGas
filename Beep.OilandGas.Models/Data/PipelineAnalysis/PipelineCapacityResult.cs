@@ -110,6 +110,13 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
             set { SetProperty(ref OutletPressureValue, value); }
 
         }
+
+        // PPDM aliases for compatibility with PPDMCalculationService
+        public decimal MAXIMUM_FLOW_RATE { get => MaximumFlowRate; set => MaximumFlowRate = value; }
+        public decimal PRESSURE_DROP { get => PressureDrop; set => PressureDrop = value; }
+        public decimal REYNOLDS_NUMBER { get => ReynoldsNumber; set => ReynoldsNumber = value; }
+        public decimal FRICTION_FACTOR { get => FrictionFactor; set => FrictionFactor = value; }
+        public decimal OUTLET_PRESSURE { get => OutletPressure; set => OutletPressure = value; }
     }
 }
 

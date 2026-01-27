@@ -740,7 +740,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     AbandonmentId = abandonmentId,
                     WellId = wellId,
                     Status = "EXECUTING",
-                    AbandonmentDate = DateTime.UtcNow
+                    AbandonmentEndDate = DateTime.UtcNow
                 };
             }
             catch (Exception ex)

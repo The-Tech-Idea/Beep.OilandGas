@@ -542,9 +542,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 {
                     appFilters.Add(new AppFilter { FieldName = "MODULE", Operator = "=", FilterValue = filters.Module });
                 }
-                if (!string.IsNullOrEmpty(filters.Source))
+                if (!string.IsNullOrEmpty(filters.SOURCE))
                 {
-                    appFilters.Add(new AppFilter { FieldName = "SOURCE", Operator = "=", FilterValue = filters.Source });
+                    appFilters.Add(new AppFilter { FieldName = "SOURCE", Operator = "=", FilterValue = filters.SOURCE });
                 }
             }
 
@@ -724,7 +724,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 ParentValueId = lov.PARENT_VALUE_ID,
                 IsDefault = lov.IS_DEFAULT,
                 ActiveInd = lov.ACTIVE_IND,
-                Source = lov.SOURCE
+                SOURCE = lov.SOURCE
             };
         }
     }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Models.Processes;
 using Beep.OilandGas.LifeCycle.Services.Processes;
+using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.LifeCycle.Services.WellManagement;
 using Microsoft.Extensions.Logging;
 
@@ -57,7 +58,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement.Processes
             }
         }
 
-        public async Task<bool> DesignWellAsync(string instanceId, Dictionary<string, object> designData, string userId)
+        public async Task<bool> DesignWellAsync(string instanceId, PROCESS_STEP_DATA designData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "WELL_DESIGN", designData, userId);
         }
@@ -67,12 +68,12 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement.Processes
             return await _processService.CompleteStepAsync(instanceId, "WELL_APPROVAL", "APPROVED", userId);
         }
 
-        public async Task<bool> StartDrillingAsync(string instanceId, Dictionary<string, object> drillingData, string userId)
+        public async Task<bool> StartDrillingAsync(string instanceId, PROCESS_STEP_DATA drillingData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "WELL_DRILLING", drillingData, userId);
         }
 
-        public async Task<bool> CompleteWellAsync(string instanceId, Dictionary<string, object> completionData, string userId)
+        public async Task<bool> CompleteWellAsync(string instanceId, PROCESS_STEP_DATA completionData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "WELL_COMPLETION", completionData, userId);
         }
@@ -107,22 +108,22 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement.Processes
             }
         }
 
-        public async Task<bool> RecordProductionAsync(string instanceId, Dictionary<string, object> productionData, string userId)
+        public async Task<bool> RecordProductionAsync(string instanceId, PROCESS_STEP_DATA productionData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_RECORDING", productionData, userId);
         }
 
-        public async Task<bool> MonitorWellAsync(string instanceId, Dictionary<string, object> monitoringData, string userId)
+        public async Task<bool> MonitorWellAsync(string instanceId, PROCESS_STEP_DATA monitoringData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "WELL_MONITORING", monitoringData, userId);
         }
 
-        public async Task<bool> OptimizeWellAsync(string instanceId, Dictionary<string, object> optimizationData, string userId)
+        public async Task<bool> OptimizeWellAsync(string instanceId, PROCESS_STEP_DATA optimizationData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "WELL_OPTIMIZATION", optimizationData, userId);
         }
 
-        public async Task<bool> GenerateWellReportAsync(string instanceId, Dictionary<string, object> reportData, string userId)
+        public async Task<bool> GenerateWellReportAsync(string instanceId, PROCESS_STEP_DATA reportData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "WELL_REPORTING", reportData, userId);
         }
@@ -157,17 +158,17 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement.Processes
             }
         }
 
-        public async Task<bool> ScheduleMaintenanceAsync(string instanceId, Dictionary<string, object> scheduleData, string userId)
+        public async Task<bool> ScheduleMaintenanceAsync(string instanceId, PROCESS_STEP_DATA scheduleData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "MAINTENANCE_SCHEDULING", scheduleData, userId);
         }
 
-        public async Task<bool> ExecuteMaintenanceAsync(string instanceId, Dictionary<string, object> executionData, string userId)
+        public async Task<bool> ExecuteMaintenanceAsync(string instanceId, PROCESS_STEP_DATA executionData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "MAINTENANCE_EXECUTION", executionData, userId);
         }
 
-        public async Task<bool> VerifyMaintenanceAsync(string instanceId, Dictionary<string, object> verificationData, string userId)
+        public async Task<bool> VerifyMaintenanceAsync(string instanceId, PROCESS_STEP_DATA verificationData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "MAINTENANCE_VERIFICATION", verificationData, userId);
         }
@@ -207,22 +208,22 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement.Processes
             }
         }
 
-        public async Task<bool> PlanInspectionAsync(string instanceId, Dictionary<string, object> planData, string userId)
+        public async Task<bool> PlanInspectionAsync(string instanceId, PROCESS_STEP_DATA planData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "INSPECTION_PLANNING", planData, userId);
         }
 
-        public async Task<bool> ExecuteInspectionAsync(string instanceId, Dictionary<string, object> inspectionData, string userId)
+        public async Task<bool> ExecuteInspectionAsync(string instanceId, PROCESS_STEP_DATA inspectionData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "INSPECTION_EXECUTION", inspectionData, userId);
         }
 
-        public async Task<bool> ReportInspectionAsync(string instanceId, Dictionary<string, object> reportData, string userId)
+        public async Task<bool> ReportInspectionAsync(string instanceId, PROCESS_STEP_DATA reportData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "INSPECTION_REPORTING", reportData, userId);
         }
 
-        public async Task<bool> FollowUpInspectionAsync(string instanceId, Dictionary<string, object> followUpData, string userId)
+        public async Task<bool> FollowUpInspectionAsync(string instanceId, PROCESS_STEP_DATA followUpData, string userId)
         {
             return await _processService.ExecuteStepAsync(instanceId, "INSPECTION_FOLLOWUP", followUpData, userId);
         }

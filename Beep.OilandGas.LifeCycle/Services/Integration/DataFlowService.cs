@@ -1,14 +1,15 @@
-using System;
-using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Services.Calculations;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.HydraulicPumps;
+using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.Models.Data.PlungerLift;
 using Beep.OilandGas.Models.Data.Pumps;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
 
 namespace Beep.OilandGas.LifeCycle.Services.Integration
 {
@@ -48,7 +49,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
 
             var request = new NodalAnalysisRequest
             {
-                WellId = wellId,
+                WellUWI = wellId,
                 UserId = userId,
                 AdditionalParameters = additionalParameters
             };
@@ -57,7 +58,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             var result = await _calculationService.PerformNodalAnalysisAsync(request);
 
             _logger?.LogInformation("Nodal analysis completed for well: {WellId}, Operating Flow Rate: {FlowRate} BPD", 
-                wellId, result.OperatingPoint?.FlowRate);
+                wellId, result.OperatingPoint?.Rate);
 
             return result;
         }
@@ -205,7 +206,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 AdditionalParameters = additionalParameters
             };
 
-            var result = await _calculationService.PerformChokeAnalysisAsync(request);
+            var result = (ChokeAnalysisResult)await _calculationService.PerformChokeAnalysisAsync(request);
 
             _logger?.LogInformation("Choke analysis completed for well: {WellId}, Flow Rate: {FlowRate} Mscf/day", 
                 wellId, result.FlowRate);
@@ -240,7 +241,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 AdditionalParameters = additionalParameters
             };
 
-            var result = await _calculationService.PerformGasLiftAnalysisAsync(request);
+            var result = (GasLiftAnalysisResult)await _calculationService.PerformGasLiftAnalysisAsync(request);
 
             _logger?.LogInformation("Gas lift analysis completed for well: {WellId}, Optimal Injection Rate: {Rate} Mscf/day", 
                 wellId, result.OptimalGasInjectionRate);
@@ -285,7 +286,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 AdditionalParameters = additionalParameters
             };
 
-            var result = await _calculationService.PerformPumpAnalysisAsync(request);
+            var result = (PumpAnalysisResult)await _calculationService.PerformPumpAnalysisAsync(request);
 
             _logger?.LogInformation("Pump analysis completed - CalculationId: {CalculationId}, Efficiency: {Efficiency}", 
                 result.CalculationId, result.Efficiency);
@@ -323,7 +324,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 AdditionalParameters = additionalParameters
             };
 
-            var result = await _calculationService.PerformSuckerRodAnalysisAsync(request);
+            var result = (SuckerRodAnalysisResult)await _calculationService.PerformSuckerRodAnalysisAsync(request);
 
             _logger?.LogInformation("Sucker rod analysis completed for well: {WellId}, Production Rate: {Rate} bbl/day", 
                 wellId, result.ProductionRate);
@@ -365,7 +366,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 AdditionalParameters = additionalParameters
             };
 
-            var result = await _calculationService.PerformCompressorAnalysisAsync(request);
+            var result = (CompressorAnalysisResult)await _calculationService.PerformCompressorAnalysisAsync(request);
 
             _logger?.LogInformation("Compressor analysis completed for facility: {FacilityId}, Power Required: {Power} HP", 
                 facilityId, result.PowerRequired);
@@ -382,7 +383,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
         /// <param name="analysisType">Analysis type: CAPACITY, FLOW_RATE, or PRESSURE_DROP.</param>
         /// <param name="additionalParameters">Optional additional parameters for the analysis.</param>
         /// <returns>The pipeline analysis results.</returns>
-        public async Task<PipelineAnalysisResult> RunPipelineAnalysisAsync(
+        public async Task<PIPELINE_ANALYSIS_RESULT> RunPipelineAnalysisAsync(
             string pipelineId,
             string userId = "system",
             string pipelineType = "GAS",
@@ -404,7 +405,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 AdditionalParameters = additionalParameters
             };
 
-            var result = await _calculationService.PerformPipelineAnalysisAsync(request);
+            var result = (PIPELINE_ANALYSIS_RESULT)await _calculationService.PerformPipelineAnalysisAsync(request);
 
             _logger?.LogInformation("Pipeline analysis completed for pipeline: {PipelineId}, Flow Rate: {FlowRate} Mscf/day", 
                 pipelineId, result.FlowRate);
@@ -442,7 +443,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 AdditionalParameters = additionalParameters
             };
 
-            var result = await _calculationService.PerformPlungerLiftAnalysisAsync(request);
+            var result = (PlungerLiftAnalysisResult)await _calculationService.PerformPlungerLiftAnalysisAsync(request);
 
             _logger?.LogInformation("Plunger lift analysis completed for well: {WellId}, Production Rate: {Rate} bbl/day", 
                 wellId, result.ProductionRate);
@@ -480,7 +481,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
                 AdditionalParameters = additionalParameters
             };
 
-            var result = await _calculationService.PerformHydraulicPumpAnalysisAsync(request);
+            var result = (HydraulicPumpAnalysisResult)await _calculationService.PerformHydraulicPumpAnalysisAsync(request);
 
             _logger?.LogInformation("Hydraulic pump analysis completed for well: {WellId}, Production Rate: {Rate} bbl/day", 
                 wellId, result.ProductionRate);

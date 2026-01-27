@@ -20,7 +20,8 @@ using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.Models.Data.Pumps;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
-using Beep.OilandGas.Models.Data.PlungerLift;
+ using Beep.OilandGas.Models.Data.PlungerLift;
+using Beep.OilandGas.Models.Data.HydraulicPumps;
 
 namespace Beep.OilandGas.LifeCycle.Services.WellManagement
 {
@@ -631,6 +632,107 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
 
         #endregion
 
+        // Helpers to convert legacy dictionary parameters to strong option types
+        private static NodalAnalysisOptions? ConvertToNodalOptions(Dictionary<string, object>? dict)
+        {
+            if (dict == null) return null;
+            var o = new NodalAnalysisOptions();
+            if (dict.TryGetValue("BubblePointPressure", out var v1))
+            {
+                o.BubblePointPressure = ToDecimalNullable(v1);
+            }
+            else if (dict.TryGetValue("Bubble Point Pressure", out var v2))
+            {
+                o.BubblePointPressure = ToDecimalNullable(v2);
+            }
+            return o;
+        }
+
+       
+
+
+        private static decimal? ToDecimalNullable(object value)
+        {
+            if (value == null) return null;
+            if (value is decimal d) return d;
+            if (value is double d2) return (decimal)d2;
+            if (value is float f) return (decimal)f;
+            if (value is int i) return i;
+            if (value is long l) return l;
+            if (value is string s && decimal.TryParse(s, out var parsed)) return parsed;
+            return null;
+        }
+
+        private static double? ToDoubleNullable(object value)
+        {
+            if (value == null) return null;
+            // Direct numeric types
+            if (value is double d) return d;
+            if (value is float f) return (double)f;
+            if (value is int i) return i;
+            if (value is long l) return l;
+            // Decimal is common in settings dictionaries
+            if (value is decimal dec) return (double)dec;
+            // Try to detect boxed decimal?
+            if (value != null)
+            {
+                var t = value.GetType();
+                if (t == typeof(decimal)) return (double)(decimal)value;
+            }
+            // Fallback: string parsing
+            if (value is string s && double.TryParse(s, out var v)) return v;
+            return null;
+        }
+
+        private static int? ToIntNullable(object value)
+        {
+            if (value == null) return null;
+            if (value is int i) return i;
+            if (value is long l) return (int)l;
+            if (value is double d) return (int)d;
+            if (value is string s && int.TryParse(s, out var iv)) return iv;
+            return null;
+        }
+
+        private static bool? ToBoolNullable(object value)
+        {
+            if (value == null) return null;
+            if (value is bool b) return b;
+            if (value is string s && bool.TryParse(s, out var bv)) return bv;
+            return null;
+        }
+
+        private static List<double>? ToDoubleListNullable(object value)
+        {
+            if (value == null) return null;
+            if (value is List<double> list) return list;
+            if (value is double[] arr) return new List<double>(arr);
+            if (value is IEnumerable<object> en)
+            {
+                var result = new List<double>();
+                foreach (var item in en)
+                {
+                    if (item is double d) result.Add(d);
+                    else if (item is string s && double.TryParse(s, out var dv)) result.Add(dv);
+                }
+                return result;
+            }
+            return null;
+        }
+
+        private static List<string> ToStringListNullable(object value)
+        {
+            if (value == null) return null;
+            if (value is List<string> list) return list;
+            if (value is IEnumerable<object> en)
+            {
+                var res = new List<string>();
+                foreach (var it in en) res.Add(it?.ToString() ?? string.Empty);
+                return res;
+            }
+            return null;
+        }
+
         #region Well Analysis (using DataFlowService)
 
         /// <summary>
@@ -639,7 +741,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         public async Task<NodalAnalysisResult> RunWellNodalAnalysisAsync(
             string wellId,
             string userId,
-            Dictionary<string, object>? additionalParameters = null)
+           NodalAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -649,7 +751,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             try
             {
                 _logger?.LogInformation("Running nodal analysis for well: {WellId}", wellId);
-                return await _dataFlowService.RunNodalAnalysisAsync(wellId, userId, additionalParameters);
+                var options = additionalParameters;
+                return await _dataFlowService.RunNodalAnalysisAsync(wellId, userId, options);
             }
             catch (Exception ex)
             {
@@ -665,7 +768,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string wellId,
             string userId,
             string calculationType = "Hyperbolic",
-            Dictionary<string, object>? additionalParameters = null)
+            DcaAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -675,7 +778,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             try
             {
                 _logger?.LogInformation("Running DCA for well: {WellId}, Type: {Type}", wellId, calculationType);
-                return await _dataFlowService.RunDCAAsync(wellId: wellId, userId: userId, calculationType: calculationType, additionalParameters: additionalParameters);
+                var dcaOptions = additionalParameters;
+                return await _dataFlowService.RunDCAAsync(wellId: wellId, userId: userId, calculationType: calculationType, additionalParameters: dcaOptions);
             }
             catch (Exception ex)
             {
@@ -691,7 +795,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string wellId,
             string? testId = null,
             string userId = "system",
-            Dictionary<string, object>? additionalParameters = null)
+            WellTestAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -701,7 +805,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             try
             {
                 _logger?.LogInformation("Running well test analysis for well: {WellId}, TestId: {TestId}", wellId, testId);
-                return await _dataFlowService.RunWellTestAnalysisAsync(wellId, testId, userId, additionalParameters);
+                var testOptions = additionalParameters;
+                return await _dataFlowService.RunWellTestAnalysisAsync(wellId, testId, userId, testOptions);
             }
             catch (Exception ex)
             {
@@ -718,7 +823,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string userId = "system",
             string? equipmentId = null,
             string analysisType = "DOWNHOLE",
-            Dictionary<string, object>? additionalParameters = null)
+            ChokeAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -728,7 +833,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             try
             {
                 _logger?.LogInformation("Running choke analysis for well: {WellId}, AnalysisType: {AnalysisType}", wellId, analysisType);
-                return await _dataFlowService.RunChokeAnalysisAsync(wellId, userId, equipmentId, analysisType, additionalParameters);
+                var chokeOptions =  additionalParameters;
+                return await _dataFlowService.RunChokeAnalysisAsync(wellId, userId, equipmentId, analysisType, chokeOptions);
             }
             catch (Exception ex)
             {
@@ -744,7 +850,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string wellId,
             string userId = "system",
             string analysisType = "POTENTIAL",
-            Dictionary<string, object>? additionalParameters = null)
+            GasLiftAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -754,7 +860,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             try
             {
                 _logger?.LogInformation("Running gas lift analysis for well: {WellId}, AnalysisType: {AnalysisType}", wellId, analysisType);
-                return await _dataFlowService.RunGasLiftAnalysisAsync(wellId, userId, analysisType, additionalParameters);
+                var glOptions = additionalParameters;
+                return await _dataFlowService.RunGasLiftAnalysisAsync(wellId, userId, analysisType, glOptions);
             }
             catch (Exception ex)
             {
@@ -772,7 +879,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string? equipmentId = null,
             string pumpType = "ESP",
             string analysisType = "PERFORMANCE",
-            Dictionary<string, object>? additionalParameters = null)
+           PumpAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -782,7 +889,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             try
             {
                 _logger?.LogInformation("Running pump analysis for well: {WellId}, PumpType: {PumpType}", wellId, pumpType);
-                return await _dataFlowService.RunPumpAnalysisAsync(wellId, null, equipmentId, userId, pumpType, analysisType, additionalParameters);
+                var pumpOptions = additionalParameters;
+                return await _dataFlowService.RunPumpAnalysisAsync(wellId, null, equipmentId, userId, pumpType, analysisType, pumpOptions);
             }
             catch (Exception ex)
             {
@@ -799,7 +907,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string userId = "system",
             string? equipmentId = null,
             string analysisType = "LOAD",
-            Dictionary<string, object>? additionalParameters = null)
+            SuckerRodAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -809,7 +917,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             try
             {
                 _logger?.LogInformation("Running sucker rod analysis for well: {WellId}, AnalysisType: {AnalysisType}", wellId, analysisType);
-                return await _dataFlowService.RunSuckerRodAnalysisAsync(wellId, userId, equipmentId, analysisType, additionalParameters);
+                var srOptions = additionalParameters;
+                return await _dataFlowService.RunSuckerRodAnalysisAsync(wellId, userId, equipmentId, analysisType, srOptions);
             }
             catch (Exception ex)
             {
@@ -826,7 +935,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string userId = "system",
             string? equipmentId = null,
             string analysisType = "PERFORMANCE",
-            Dictionary<string, object>? additionalParameters = null)
+           PlungerLiftAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -836,7 +945,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             try
             {
                 _logger?.LogInformation("Running plunger lift analysis for well: {WellId}, AnalysisType: {AnalysisType}", wellId, analysisType);
-                return await _dataFlowService.RunPlungerLiftAnalysisAsync(wellId, userId, equipmentId, analysisType, additionalParameters);
+                var plOptions = additionalParameters;
+                return await _dataFlowService.RunPlungerLiftAnalysisAsync(wellId, userId, equipmentId, analysisType, plOptions);
             }
             catch (Exception ex)
             {
@@ -853,7 +963,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             string userId = "system",
             string? equipmentId = null,
             string analysisType = "PERFORMANCE",
-            Dictionary<string, object>? additionalParameters = null)
+            HydraulicPumpAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {
@@ -863,7 +973,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             try
             {
                 _logger?.LogInformation("Running hydraulic pump analysis for well: {WellId}, AnalysisType: {AnalysisType}", wellId, analysisType);
-                return await _dataFlowService.RunHydraulicPumpAnalysisAsync(wellId, userId, equipmentId, analysisType, additionalParameters);
+                var hpOptions = additionalParameters;
+                return await _dataFlowService.RunHydraulicPumpAnalysisAsync(wellId, userId, equipmentId, analysisType, hpOptions);
             }
             catch (Exception ex)
             {

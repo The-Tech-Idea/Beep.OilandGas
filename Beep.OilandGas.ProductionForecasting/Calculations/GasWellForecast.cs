@@ -20,8 +20,8 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// <param name="forecastDuration">Forecast duration in days.</param>
         /// <param name="timeSteps">Number of time steps.</param>
         /// <returns>Production forecast (rates in Mscf/day).</returns>
-        public static ProductionForecast GenerateGasWellForecast(
-            ReservoirForecastProperties reservoir,
+        public static PRODUCTION_FORECAST GenerateGasWellForecast(
+            RESERVOIR_FORECAST_PROPERTIES reservoir,
             decimal bottomHolePressure,
             decimal forecastDuration,
             int timeSteps = 100)
@@ -32,14 +32,14 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             if (bottomHolePressure <= 0)
                 throw new ArgumentException("Bottom hole pressure must be greater than zero.", nameof(bottomHolePressure));
 
-            var forecast = new ProductionForecast
+            var forecast = new PRODUCTION_FORECAST
             {
-                ForecastType = ForecastType.GasWell,
-                ForecastDuration = forecastDuration
+                FORECAST_TYPE = ForecastType.GasWell,
+                FORECAST_DURATION = forecastDuration
             };
 
             decimal timeStep = forecastDuration / timeSteps;
-            decimal currentPressure = reservoir.InitialPressure;
+            decimal currentPressure = (decimal)reservoir.INITIAL_PRESSURE;
             decimal cumulativeProduction = 0m;
 
             for (int i = 0; i <= timeSteps; i++)
@@ -48,7 +48,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
                 // Calculate Z-factor at current conditions
                 decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                    currentPressure, reservoir.Temperature, reservoir.GasSpecificGravity);
+                    currentPressure, (decimal)reservoir.TEMPERATURE, reservoir.GAS_SPECIFIC_GRAVITY);
 
                 // Calculate gas production rate using pseudo-steady state equation
                 decimal productionRate = CalculateGasRate(
@@ -65,21 +65,21 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
                 cumulativeProduction += productionRate * timeStep;
 
-                forecast.ForecastPoints.Add(new ForecastPoint
+                forecast.FORECAST_POINTS.Add(new FORECAST_POINT
                 {
-                    Time = time,
-                    ProductionRate = productionRate,
-                    CumulativeProduction = cumulativeProduction,
-                    ReservoirPressure = currentPressure,
-                    BottomHolePressure = bottomHolePressure
+                    TIME = time,
+                    PRODUCTION_RATE = productionRate,
+                    CUMULATIVE_PRODUCTION = cumulativeProduction,
+                    RESERVOIR_PRESSURE = currentPressure,
+                    BOTTOM_HOLE_PRESSURE = bottomHolePressure
                 });
 
                 if (i == 0)
-                    forecast.InitialProductionRate = productionRate;
+                    forecast.INITIAL_PRODUCTION_RATE = productionRate;
             }
 
-            forecast.FinalProductionRate = forecast.ForecastPoints.Last().ProductionRate;
-            forecast.TotalCumulativeProduction = cumulativeProduction;
+            forecast.FINAL_PRODUCTION_RATE = forecast.FORECAST_POINTS.Last().PRODUCTION_RATE;
+            forecast.TOTAL_CUMULATIVE_PRODUCTION = cumulativeProduction;
 
             return forecast;
         }
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         // Helper methods
 
         private static decimal CalculateGasRate(
-            ReservoirForecastProperties reservoir,
+            RESERVOIR_FORECAST_PROPERTIES reservoir,
             decimal reservoirPressure,
             decimal bottomHolePressure,
             decimal zFactor)
@@ -95,20 +95,20 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             // Gas well deliverability equation (pseudo-steady state)
             // q_g = (0.703 * k * h * (Pr² - Pwf²)) / (μ_g * Z * T * (ln(re/rw) - 0.75 + S))
 
-            decimal permeability = reservoir.Permeability;
-            decimal thickness = reservoir.Thickness;
+            decimal permeability = (decimal)reservoir.PERMEABILITY;
+            decimal thickness = (decimal)reservoir.THICKNESS;
             decimal pressureSquaredDiff = reservoirPressure * reservoirPressure - 
                                          bottomHolePressure * bottomHolePressure;
-            decimal temperature = reservoir.Temperature;
+            decimal temperature = (decimal)reservoir.TEMPERATURE;
 
             // Gas viscosity (simplified - would use gas properties library)
             decimal gasViscosity = 0.02m; // cp (approximate)
 
-            decimal re_rw = reservoir.DrainageRadius / reservoir.WellboreRadius;
+            decimal re_rw = (decimal)(reservoir.DRAINAGE_RADIUS / reservoir.WELLBORE_RADIUS);
             decimal ln_re_rw = (decimal)Math.Log((double)re_rw);
 
-            decimal denominator = gasViscosity * zFactor * temperature * 
-                                (ln_re_rw - 0.75m + reservoir.SkinFactor);
+            decimal denominator = (decimal)(gasViscosity * zFactor * temperature * 
+                                (ln_re_rw - 0.75m + reservoir.SKIN_FACTOR));
 
             if (denominator <= 0)
                 denominator = 0.001m;
@@ -120,7 +120,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         }
 
         private static decimal CalculateGasPressureDecline(
-            ReservoirForecastProperties reservoir,
+            RESERVOIR_FORECAST_PROPERTIES reservoir,
             decimal productionRate,
             decimal timeStep,
             decimal cumulativeProduction,
@@ -130,16 +130,16 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             // Material balance for gas: P/Z = (Pi/Zi) * (1 - Gp/Gi)
             // Simplified pressure decline calculation
 
-            decimal poreVolume = (decimal)Math.PI * reservoir.DrainageRadius * reservoir.DrainageRadius *
-                                reservoir.Thickness * reservoir.Porosity;
+            decimal poreVolume = (decimal)((decimal)Math.PI * reservoir.DRAINAGE_RADIUS * reservoir.DRAINAGE_RADIUS *
+                                reservoir.THICKNESS * reservoir.POROSITY);
 
             // Gas formation volume factor
             decimal gasFormationVolumeFactor = CalculateGasFormationVolumeFactor(
-                currentPressure, reservoir.Temperature, zFactor);
+                currentPressure, (decimal)reservoir.TEMPERATURE, zFactor);
 
             // Pressure decline
-            decimal pressureDecline = (productionRate * gasFormationVolumeFactor * timeStep) /
-                                     (reservoir.TotalCompressibility * poreVolume);
+            decimal pressureDecline = (decimal)((productionRate * gasFormationVolumeFactor * timeStep) /
+                                     (reservoir.TOTAL_COMPRESSIBILITY * poreVolume));
 
             return Math.Max(0m, pressureDecline);
         }

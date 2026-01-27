@@ -31,8 +31,8 @@ namespace Beep.OilandGas.GasProperties.Calculations
                 throw new ArgumentException("Specific gravity must be greater than zero.", nameof(specificGravity));
 
             // Calculate pseudo-critical properties
-            decimal pseudoCriticalPressure = 756.8m - 131.0m * specificGravity - 3.6m * specificGravity * specificGravity;
-            decimal pseudoCriticalTemperature = 169.2m + 349.5m * specificGravity - 74.0m * specificGravity * specificGravity;
+            decimal pseudoCriticalPressure = (decimal)(756.8m - 131.0m * specificGravity - 3.6m * specificGravity * specificGravity);
+            decimal pseudoCriticalTemperature = (decimal)(169.2m + 349.5m * specificGravity - 74.0m * specificGravity * specificGravity);
 
             // Calculate pseudo-reduced properties
             decimal pseudoReducedPressure = pressure / pseudoCriticalPressure;

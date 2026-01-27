@@ -220,7 +220,20 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories
             // All PPDM tables use string IDs, so convert to string
             return id?.ToString() ?? string.Empty;
         }
-
+        public string GetIdColumnNameForTable(string tableName)
+        {
+            if (string.IsNullOrWhiteSpace(tableName))
+                throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
+            // Default ID column name for PPDM tables
+            return "ID";
+        }
+        public string GenerateId(string tableName)
+        {
+            if (string.IsNullOrWhiteSpace(tableName))
+                throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
+            // Generate a new GUID string as ID for PPDM tables
+            return Guid.NewGuid().ToString();
+        }
         #region Database-Backed Default Values
 
         /// <summary>

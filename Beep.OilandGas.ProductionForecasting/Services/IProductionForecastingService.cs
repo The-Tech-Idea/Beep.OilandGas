@@ -6,6 +6,7 @@ using ProductionForecastResult = Beep.OilandGas.Models.Data.Calculations.Product
 using DeclineCurveAnalysis = Beep.OilandGas.Models.Data.Calculations.DeclineCurveAnalysis;
 using ProductionForecastPoint = Beep.OilandGas.Models.Data.Calculations.ProductionForecastPoint;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ProductionForecasting;
 
 namespace Beep.OilandGas.ProductionForecasting.Services
 {
@@ -25,12 +26,12 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         /// <summary>
         /// Generates DCA-based forecast using historical production data
         /// </summary>
-        Task<ProductionForecastResult> GenerateDCAForecastAsync(string wellUWI, string declineType, DateTime startDate, DateTime endDate, int forecastPeriod);
+        Task<ProductionForecastResult> GenerateDCAForecastAsync(string wellUWI, ForecastType declineType, DateTime startDate, DateTime endDate, int forecastPeriod);
 
         /// <summary>
         /// Generates probabilistic forecast with uncertainty analysis
         /// </summary>
-        Task<ProbabilisticForecast> GenerateProbabilisticForecastAsync(string wellUWI, string declineType, int forecastPeriod, int iterations = 1000);
+        Task<ProbabilisticForecast> GenerateProbabilisticForecastAsync(string wellUWI, ForecastType declineType, int forecastPeriod, int iterations = 1000);
 
         /// <summary>
         /// Performs decline curve analysis on historical production data
@@ -59,7 +60,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         /// <summary>
         /// Optimizes forecast parameters using machine learning
         /// </summary>
-        Task<ProductionForecastResult> OptimizeForecastAsync(string wellUWI, string forecastMethod);
+        Task<ProductionForecastResult> OptimizeForecastAsync(string wellUWI, ForecastType forecastMethod);
 
         #endregion
 
@@ -112,7 +113,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
         /// <summary>
         /// Combines multiple forecast methods for ensemble forecasting
         /// </summary>
-        Task<ProductionForecastResult> GenerateEnsembleForecastAsync(string wellUWI, List<string> forecastMethods, int forecastPeriod);
+        Task<ProductionForecastResult> GenerateEnsembleForecastAsync(string wellUWI, List<ForecastType> forecastMethods, int forecastPeriod);
 
         #endregion
 

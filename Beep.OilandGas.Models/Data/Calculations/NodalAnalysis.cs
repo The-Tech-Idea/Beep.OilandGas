@@ -325,6 +325,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         public decimal OptimalFlowRate { get; set; }
         public decimal PressureDrop { get; set; }
         public decimal SystemEfficiency { get; set; }
+        public NodalOperatingPoint? OperatingPoint { get; set; }
     }
 
 }

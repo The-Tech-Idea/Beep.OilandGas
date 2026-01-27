@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ProductionForecasting;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
 namespace Beep.OilandGas.Models.Data.Calculations
 {
@@ -42,10 +43,10 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Forecast method (e.g., "DCA", "ARPS", "HYP")
         /// </summary>
-        private string ForecastMethodValue = string.Empty;
+        private ForecastType ForecastMethodValue = ForecastType.None;
 
         [Required(ErrorMessage = "ForecastMethod is required")]
-        public string ForecastMethod
+        public ForecastType ForecastMethod
 
         {
 
@@ -395,9 +396,9 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Forecast method used
         /// </summary>
-        private string ForecastMethodValue = string.Empty;
+        private ForecastType ForecastMethodValue = ForecastType.Decline;
 
-        public string ForecastMethod
+        public ForecastType ForecastMethod
 
         {
 

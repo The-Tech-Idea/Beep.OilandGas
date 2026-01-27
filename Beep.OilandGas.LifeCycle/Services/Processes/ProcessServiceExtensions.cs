@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Models.Processes;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Validation;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes
 {
@@ -203,7 +204,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                             ValidationId = validationResult.ValidationId,
                             IsValid = false,
                             ErrorMessage = validationResult.ErrorMessage,
-                            ValidatedDate = validationResult.ValidatedDate
+                            ValidationDate = validationResult.ValidatedDate
                         }
                     }
                 };
@@ -243,7 +244,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     ValidationId = v.ValidationId,
                     IsValid = v.IsValid,
                     ErrorMessage = v.ErrorMessage,
-                    ValidatedDate = v.ValidatedDate
+                    ValidationDate = v.ValidatedDate
                 }).ToList() ?? new List<ValidationResultResponse>()
             };
         }

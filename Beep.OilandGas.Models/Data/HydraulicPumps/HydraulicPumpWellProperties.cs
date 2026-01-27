@@ -157,6 +157,21 @@ namespace Beep.OilandGas.Models.Data.HydraulicPumps
             set { SetProperty(ref DesiredProductionRateValue, value); }
 
         }
+
+        /// <summary>
+        /// Pump setting depth in feet.
+        /// </summary>
+        private decimal PumpDepthValue;
+
+        public decimal PumpDepth
+
+        {
+
+            get { return this.PumpDepthValue; }
+
+            set { SetProperty(ref PumpDepthValue, value); }
+
+        }
     }
 }
 

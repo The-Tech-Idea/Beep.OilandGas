@@ -224,37 +224,6 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
                 ?? Enumerable.Empty<WELL>();
         }
 
-        /// <summary>
-        /// Maps PPDM39 WELL to WellboreProperties asynchronously.
-        /// </summary>
-        public System.Threading.Tasks.Task<WellboreProperties> MapToDomainAsync(WELL ppdm39Entity)
-        {
-            return System.Threading.Tasks.Task.FromResult(MapToDomain(ppdm39Entity));
-        }
-
-        /// <summary>
-        /// Maps a collection of PPDM39 WELL entities to WellboreProperties asynchronously.
-        /// </summary>
-        public System.Threading.Tasks.Task<IEnumerable<WellboreProperties>> MapToDomainAsync(IEnumerable<WELL> ppdm39Entities)
-        {
-            return System.Threading.Tasks.Task.FromResult(MapToDomain(ppdm39Entities));
-        }
-
-        /// <summary>
-        /// Maps PPDM39 WELL to ReservoirProperties asynchronously.
-        /// </summary>
-        System.Threading.Tasks.Task<ReservoirProperties> IPPDM39Mapper<WELL, ReservoirProperties>.MapToDomainAsync(WELL ppdm39Entity)
-        {
-            return System.Threading.Tasks.Task.FromResult(((IPPDM39Mapper<WELL, ReservoirProperties>)this).MapToDomain(ppdm39Entity));
-        }
-
-        /// <summary>
-        /// Maps a collection of PPDM39 WELL entities to ReservoirProperties asynchronously.
-        /// </summary>
-        System.Threading.Tasks.Task<IEnumerable<ReservoirProperties>> IPPDM39Mapper<WELL, ReservoirProperties>.MapToDomainAsync(IEnumerable<WELL> ppdm39Entities)
-        {
-            return System.Threading.Tasks.Task.FromResult(((IPPDM39Mapper<WELL, ReservoirProperties>)this).MapToDomain(ppdm39Entities));
-        }
     }
 }
 

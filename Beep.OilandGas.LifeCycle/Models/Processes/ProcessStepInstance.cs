@@ -1,6 +1,7 @@
 using Beep.OilandGas.Models.Data;
 using System;
 using System.Collections.Generic;
+using Beep.OilandGas.Models.Data.Process;
 
 namespace Beep.OilandGas.LifeCycle.Models.Processes
 {
@@ -17,7 +18,7 @@ namespace Beep.OilandGas.LifeCycle.Models.Processes
         public DateTime? StartDate { get; set; }
         public DateTime? CompletionDate { get; set; }
         public string CompletedBy { get; set; } = string.Empty;
-        public Dictionary<string, object> StepData { get; set; } = new Dictionary<string, object>();
+        public PROCESS_STEP_DATA StepData { get; set; } = new PROCESS_STEP_DATA();
         public List<ApprovalRecord> Approvals { get; set; } = new List<ApprovalRecord>();
         public List<ValidationResult> ValidationResults { get; set; } = new List<ValidationResult>();
         public string Outcome { get; set; } = string.Empty; // SUCCESS, FAILED, CONDITIONAL

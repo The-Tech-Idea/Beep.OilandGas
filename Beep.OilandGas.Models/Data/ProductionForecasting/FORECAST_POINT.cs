@@ -87,6 +87,7 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+        public DateTime FORECAST_DATE { get; set; }
     }
 }
 

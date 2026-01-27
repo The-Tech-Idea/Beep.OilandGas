@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Models.Processes;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Process;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes
 {
@@ -26,7 +27,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         Task<bool> CancelProcessAsync(string instanceId, string reason, string userId);
 
         // Process Execution
-        Task<bool> ExecuteStepAsync(string instanceId, string stepId, Dictionary<string, object> stepData, string userId);
+        Task<bool> ExecuteStepAsync(string instanceId, string stepId, PROCESS_STEP_DATA stepData, string userId);
         Task<bool> CompleteStepAsync(string instanceId, string stepId, string outcome, string userId);
         Task<bool> SkipStepAsync(string instanceId, string stepId, string reason, string userId);
         Task<bool> RollbackStepAsync(string instanceId, string stepId, string reason, string userId);
@@ -46,7 +47,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         Task<ProcessHistoryEntry> AddHistoryEntryAsync(string instanceId, ProcessHistoryEntry entry);
 
         // Validation
-        Task<ValidationResult> ValidateStepAsync(string instanceId, string stepId, Dictionary<string, object> stepData);
+        Task<ValidationResult> ValidateStepAsync(string instanceId, string stepId, PROCESS_STEP_DATA stepData);
         Task<bool> ValidateProcessCompletionAsync(string instanceId);
 
         // Approvals

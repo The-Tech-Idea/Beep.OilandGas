@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Models.Processes;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Process;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes
@@ -23,6 +25,17 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         /// <summary>
         /// Validate step data against validation rules
         /// </summary>
+        public async Task<ValidationResult> ValidateStepDataAsync(
+            ProcessStepDefinition stepDefinition,
+            PROCESS_STEP_DATA stepData)
+        {
+            var dataDict = string.IsNullOrEmpty(stepData.DataJson) 
+                ? new Dictionary<string, object>() 
+                : JsonSerializer.Deserialize<Dictionary<string, object>>(stepData.DataJson) ?? new Dictionary<string, object>();
+
+            return await ValidateStepDataAsync(stepDefinition, dataDict);
+        }
+
         public async Task<ValidationResult> ValidateStepDataAsync(
             ProcessStepDefinition stepDefinition,
             Dictionary<string, object> stepData)

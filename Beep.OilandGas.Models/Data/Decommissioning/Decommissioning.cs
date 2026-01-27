@@ -672,6 +672,9 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref UpdateUserValue, value); }
 
         }
+
+        public DateTime VerificationDate { get; set; }
+        public string VerifiedBy { get; set; }
     }
 
     #endregion

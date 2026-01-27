@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Models.Processes;
+using Beep.OilandGas.Models.Data.Process;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.Models.Data.ProductionForecasting;

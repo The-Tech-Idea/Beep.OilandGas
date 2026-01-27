@@ -5,9 +5,10 @@ using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Models.Processes;
 using Beep.OilandGas.LifeCycle.Services.Processes;
 using Beep.OilandGas.LifeCycle.Services.Development;
-
+using Beep.OilandGas.Models.Data.Process;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
+using System.Text.Json;
 
 namespace Beep.OilandGas.LifeCycle.Services.Development.Processes
 {
@@ -61,12 +62,22 @@ namespace Beep.OilandGas.LifeCycle.Services.Development.Processes
 
         public async Task<bool> DelineatePoolAsync(string instanceId, Dictionary<string, object> delineationData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "POOL_DELINEATION", delineationData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(delineationData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "POOL_DELINEATION", stepData, userId);
         }
 
         public async Task<bool> AssignReservesAsync(string instanceId, Dictionary<string, object> reserveData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "RESERVE_ASSIGNMENT", reserveData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(reserveData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "RESERVE_ASSIGNMENT", stepData, userId);
         }
 
         public async Task<bool> ApprovePoolAsync(string instanceId, string userId)
@@ -111,27 +122,52 @@ namespace Beep.OilandGas.LifeCycle.Services.Development.Processes
 
         public async Task<bool> DesignFacilityAsync(string instanceId, Dictionary<string, object> designData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "FACILITY_DESIGN", designData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(designData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "FACILITY_DESIGN", stepData, userId);
         }
 
         public async Task<bool> ObtainFacilityPermitsAsync(string instanceId, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "FACILITY_PERMITTING", new Dictionary<string, object>(), userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(new Dictionary<string, object>()),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "FACILITY_PERMITTING", stepData, userId);
         }
 
         public async Task<bool> StartConstructionAsync(string instanceId, Dictionary<string, object> constructionData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "CONSTRUCTION", constructionData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(constructionData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "CONSTRUCTION", stepData, userId);
         }
 
         public async Task<bool> TestFacilityAsync(string instanceId, Dictionary<string, object> testData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "FACILITY_TESTING", testData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(testData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "FACILITY_TESTING", stepData, userId);
         }
 
         public async Task<bool> CommissionFacilityAsync(string instanceId, Dictionary<string, object> commissioningData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "COMMISSIONING", commissioningData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(commissioningData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "COMMISSIONING", stepData, userId);
         }
 
         public async Task<bool> ActivateFacilityAsync(string instanceId, string userId)
@@ -171,22 +207,42 @@ namespace Beep.OilandGas.LifeCycle.Services.Development.Processes
 
         public async Task<bool> ObtainDrillingPermitAsync(string instanceId, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "DRILLING_PERMIT", new Dictionary<string, object>(), userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(new Dictionary<string, object>()),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "DRILLING_PERMIT", stepData, userId);
         }
 
         public async Task<bool> StartDrillingAsync(string instanceId, Dictionary<string, object> drillingData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "DRILLING", drillingData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(drillingData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "DRILLING", stepData, userId);
         }
 
         public async Task<bool> CompleteWellAsync(string instanceId, Dictionary<string, object> completionData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "COMPLETION", completionData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(completionData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "COMPLETION", stepData, userId);
         }
 
         public async Task<bool> TestWellProductionAsync(string instanceId, Dictionary<string, object> testData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_TESTING", testData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(testData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_TESTING", stepData, userId);
         }
 
         public async Task<bool> HandoverToProductionAsync(string instanceId, string userId)
@@ -226,27 +282,52 @@ namespace Beep.OilandGas.LifeCycle.Services.Development.Processes
 
         public async Task<bool> DesignPipelineAsync(string instanceId, Dictionary<string, object> designData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "PIPELINE_DESIGN", designData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(designData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "PIPELINE_DESIGN", stepData, userId);
         }
 
         public async Task<bool> ObtainPipelinePermitsAsync(string instanceId, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "PIPELINE_PERMITTING", new Dictionary<string, object>(), userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(new Dictionary<string, object>()),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "PIPELINE_PERMITTING", stepData, userId);
         }
 
         public async Task<bool> StartPipelineConstructionAsync(string instanceId, Dictionary<string, object> constructionData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "PIPELINE_CONSTRUCTION", constructionData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(constructionData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "PIPELINE_CONSTRUCTION", stepData, userId);
         }
 
         public async Task<bool> TestPipelineAsync(string instanceId, Dictionary<string, object> testData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "PIPELINE_TESTING", testData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(testData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "PIPELINE_TESTING", stepData, userId);
         }
 
         public async Task<bool> CommissionPipelineAsync(string instanceId, Dictionary<string, object> commissioningData, string userId)
         {
-            return await _processService.ExecuteStepAsync(instanceId, "PIPELINE_COMMISSIONING", commissioningData, userId);
+            var stepData = new PROCESS_STEP_DATA
+            {
+                DataJson = JsonSerializer.Serialize(commissioningData),
+                LastUpdated = DateTime.UtcNow
+            };
+            return await _processService.ExecuteStepAsync(instanceId, "PIPELINE_COMMISSIONING", stepData, userId);
         }
 
         public async Task<bool> ActivatePipelineAsync(string instanceId, string userId)

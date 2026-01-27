@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Models.Processes;
 using Beep.OilandGas.LifeCycle.Services.Processes;
+using Beep.OilandGas.Models.Data.Process;
 using Beep.OilandGas.LifeCycle.Services.Exploration;
 
 using Microsoft.Extensions.Logging;
@@ -65,7 +66,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Evaluate lead
         /// </summary>
-        public async Task<bool> EvaluateLeadAsync(string instanceId, Dictionary<string, object> evaluationData, string userId)
+        public async Task<bool> EvaluateLeadAsync(string instanceId, PROCESS_STEP_DATA evaluationData, string userId)
         {
             try
             {
@@ -134,7 +135,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Promote lead to prospect
         /// </summary>
-        public async Task<bool> PromoteLeadToProspectAsync(string instanceId, Dictionary<string, object> prospectData, string userId)
+        public async Task<bool> PromoteLeadToProspectAsync(string instanceId, PROCESS_STEP_DATA prospectData, string userId)
         {
             try
             {
@@ -198,7 +199,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Perform risk assessment
         /// </summary>
-        public async Task<bool> PerformRiskAssessmentAsync(string instanceId, Dictionary<string, object> riskData, string userId)
+        public async Task<bool> PerformRiskAssessmentAsync(string instanceId, PROCESS_STEP_DATA riskData, string userId)
         {
             try
             {
@@ -214,7 +215,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Perform volume estimation
         /// </summary>
-        public async Task<bool> PerformVolumeEstimationAsync(string instanceId, Dictionary<string, object> volumeData, string userId)
+        public async Task<bool> PerformVolumeEstimationAsync(string instanceId, PROCESS_STEP_DATA volumeData, string userId)
         {
             try
             {
@@ -230,7 +231,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Perform economic evaluation
         /// </summary>
-        public async Task<bool> PerformEconomicEvaluationAsync(string instanceId, Dictionary<string, object> economicData, string userId)
+        public async Task<bool> PerformEconomicEvaluationAsync(string instanceId, PROCESS_STEP_DATA economicData, string userId)
         {
             try
             {
@@ -246,7 +247,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Make drilling decision
         /// </summary>
-        public async Task<bool> MakeDrillingDecisionAsync(string instanceId, Dictionary<string, object> decisionData, string userId)
+        public async Task<bool> MakeDrillingDecisionAsync(string instanceId, PROCESS_STEP_DATA decisionData, string userId)
         {
             try
             {
@@ -262,7 +263,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Record discovery
         /// </summary>
-        public async Task<bool> RecordDiscoveryAsync(string instanceId, Dictionary<string, object> discoveryData, string userId)
+        public async Task<bool> RecordDiscoveryAsync(string instanceId, PROCESS_STEP_DATA discoveryData, string userId)
         {
             try
             {
@@ -318,7 +319,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Perform appraisal
         /// </summary>
-        public async Task<bool> PerformAppraisalAsync(string instanceId, Dictionary<string, object> appraisalData, string userId)
+        public async Task<bool> PerformAppraisalAsync(string instanceId, PROCESS_STEP_DATA appraisalData, string userId)
         {
             try
             {
@@ -334,7 +335,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Estimate reserves
         /// </summary>
-        public async Task<bool> EstimateReservesAsync(string instanceId, Dictionary<string, object> reserveData, string userId)
+        public async Task<bool> EstimateReservesAsync(string instanceId, PROCESS_STEP_DATA reserveData, string userId)
         {
             try
             {
@@ -350,7 +351,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration.Processes
         /// <summary>
         /// Perform development economic analysis
         /// </summary>
-        public async Task<bool> PerformDevelopmentEconomicAnalysisAsync(string instanceId, Dictionary<string, object> economicData, string userId)
+        public async Task<bool> PerformDevelopmentEconomicAnalysisAsync(string instanceId, PROCESS_STEP_DATA economicData, string userId)
         {
             try
             {

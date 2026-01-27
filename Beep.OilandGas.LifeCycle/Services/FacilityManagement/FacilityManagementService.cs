@@ -89,7 +89,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                     await InsertFacilityFieldLinkAsync(createdFacility.FACILITY_ID ?? string.Empty, request.FieldId, createdFacility.FACILITY_TYPE ?? request.FacilityType ?? string.Empty, userId);
                 }
 
-                _logger?.LogInformation("Facility created: {FacilityId}, Name: {FacilityName}", createdFacility.FACILITY_ID, createdFacility.FACILITY_NAME);
+                _logger?.LogInformation("Facility created: {FacilityId}, Name: {FacilityName}", createdFacility.FACILITY_ID, createdFacility.FACILITY_LONG_NAME);
 
                 return new FacilityResponse
                 {
@@ -100,7 +100,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                     Properties = new Dictionary<string, object>
                     {
                         { "FacilityType", createdFacility.FACILITY_TYPE ?? string.Empty },
-                        { "FacilityPurpose", createdFacility.FACILITY_PURPOSE ?? string.Empty }
+                        { "FacilityPurpose", createdFacility.FACILITY_TYPE ?? string.Empty }
                     }
                 };
             }

@@ -12,6 +12,7 @@ using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Process;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes
 {
@@ -78,7 +79,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     Status = ProcessStatus.IN_PROGRESS,
                     StartDate = DateTime.UtcNow,
                     StartedBy = userId,
-                    ProcessData = new Dictionary<string, object>(),
+                    ProcessData = new PROCESS_DATA(),
                     StepInstances = new List<ProcessStepInstance>(),
                     History = new List<ProcessHistoryEntry>()
                 };
@@ -93,7 +94,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                         StepId = step.StepId,
                         SequenceNumber = step.SequenceNumber,
                         Status = step.SequenceNumber == 1 ? StepStatus.PENDING : StepStatus.PENDING,
-                        StepData = new Dictionary<string, object>(),
+                        StepData = new PROCESS_STEP_DATA(),
                         Approvals = new List<ApprovalRecord>(),
                         ValidationResults = new List<ValidationResult>()
                     });
@@ -131,7 +132,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         public abstract Task<bool> CancelProcessAsync(string instanceId, string reason, string userId);
 
         // Process Execution - Base implementation
-        public virtual async Task<bool> ExecuteStepAsync(string instanceId, string stepId, Dictionary<string, object> stepData, string userId)
+        public virtual async Task<bool> ExecuteStepAsync(string instanceId, string stepId, PROCESS_STEP_DATA stepData, string userId)
         {
             try
             {
@@ -162,7 +163,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 // Update step instance
                 stepInstance.Status = StepStatus.IN_PROGRESS;
                 stepInstance.StartDate = DateTime.UtcNow;
-                stepInstance.StepData = stepData ?? new Dictionary<string, object>();
+                stepInstance.StepData = stepData ?? new PROCESS_STEP_DATA();
                 stepInstance.ValidationResults.Add(validationResult);
 
                 // Update instance
@@ -299,7 +300,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         public abstract Task<ProcessHistoryEntry> AddHistoryEntryAsync(string instanceId, ProcessHistoryEntry entry);
 
         // Validation - To be implemented by derived classes
-        public abstract Task<ValidationResult> ValidateStepAsync(string instanceId, string stepId, Dictionary<string, object> stepData);
+        public abstract Task<ValidationResult> ValidateStepAsync(string instanceId, string stepId, PROCESS_STEP_DATA stepData);
         public abstract Task<bool> ValidateProcessCompletionAsync(string instanceId);
 
         // Approvals - To be implemented by derived classes

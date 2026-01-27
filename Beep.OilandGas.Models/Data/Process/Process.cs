@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.Validation;
+using Beep.OilandGas.Models.Data.Process;
 
 namespace Beep.OilandGas.Models.Data
 {
@@ -67,7 +68,7 @@ namespace Beep.OilandGas.Models.Data
 
         }
         public Dictionary<string, ProcessTransitionRequest> Transitions { get; set; } = new Dictionary<string, ProcessTransitionRequest>();
-        public Dictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
+        public PROCESS_CONFIGURATION Configuration { get; set; } = new PROCESS_CONFIGURATION();
         private bool IsActiveValue = true;
 
         public bool IsActive
@@ -459,7 +460,7 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref FieldIdValue, value); }
 
         }
-        public Dictionary<string, object> InitialData { get; set; } = new Dictionary<string, object>();
+        public PROCESS_DATA InitialData { get; set; } = new PROCESS_DATA();
     }
 
     /// <summary>
@@ -687,7 +688,7 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref StepIdValue, value); }
 
         }
-        public Dictionary<string, object> StepData { get; set; } = new Dictionary<string, object>();
+        public PROCESS_STEP_DATA StepData { get; set; } = new PROCESS_STEP_DATA();
     }
 
     /// <summary>
@@ -845,7 +846,7 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref TargetStateValue, value); }
 
         }
-        public Dictionary<string, object> TransitionData { get; set; } = new Dictionary<string, object>();
+        public PROCESS_DATA TransitionData { get; set; } = new PROCESS_DATA();
     }
 
     /// <summary>

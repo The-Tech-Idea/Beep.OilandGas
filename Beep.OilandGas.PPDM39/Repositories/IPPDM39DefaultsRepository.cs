@@ -215,6 +215,7 @@ namespace Beep.OilandGas.PPDM39.Repositories
         /// <param name="databaseId">Database identifier (GUID)</param>
         /// <param name="userId">User identifier for audit trail (defaults to "SYSTEM")</param>
         Task InitializeSystemDefaultsAsync(string databaseId, string userId = "SYSTEM");
+        string GenerateId(string v);
 
         #endregion
     }

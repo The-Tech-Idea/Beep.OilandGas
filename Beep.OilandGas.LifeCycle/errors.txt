@@ -1,0 +1,13 @@
+'PPDMCalculationService' does not implement interface member 'ICalculationService.PerformFlashCalculationAsync(FlashCalculationRequest)'. 'PPDMCalculationService.PerformFlashCalculationAsync(FlashCalculationRequest)' cannot implement 'ICalculationService.PerformFlashCalculationAsync(FlashCalculationRequest)' because it does not have the matching return type of 'Task<FlashCalculationResult>'.
+'PPDMCalculationService' does not implement interface member 'ICalculationService.PerformEconomicAnalysisAsync(EconomicAnalysisRequest)'
+'PPDMCalculationService' does not implement interface member 'ICalculationService.PerformNodalAnalysisAsync(NodalAnalysisRequest)'. 'PPDMCalculationService.PerformNodalAnalysisAsync(NodalAnalysisRequest)' cannot implement 'ICalculationService.PerformNodalAnalysisAsync(NodalAnalysisRequest)' because it does not have the matching return type of 'Task<NodalAnalysisResult>'.
+Cannot implicitly convert type 'decimal' to 'double?'. An explicit conversion exists (are you missing a cast?)
+Cannot implicitly convert type 'decimal' to 'double?'. An explicit conversion exists (are you missing a cast?)
+Cannot implicitly convert type 'decimal' to 'double?'. An explicit conversion exists (are you missing a cast?)
+Cannot implicitly convert type 'decimal' to 'double?'. An explicit conversion exists (are you missing a cast?)
+Operator '==' cannot be applied to operands of type 'RESERVOIR_FORECAST_PROPERTIES?' and '<null>'
+Argument 1: cannot convert from 'RESERVOIR_FORECAST_PROPERTIES?' to 'Beep.OilandGas.Models.Data.ProductionForecasting.RESERVOIR_FORECAST_PROPERTIES'
+Argument 1: cannot convert from 'RESERVOIR_FORECAST_PROPERTIES?' to 'Beep.OilandGas.Models.Data.ProductionForecasting.RESERVOIR_FORECAST_PROPERTIES'
+Argument 1: cannot convert from 'RESERVOIR_FORECAST_PROPERTIES?' to 'Beep.OilandGas.Models.Data.ProductionForecasting.ReservoirForecastProperties'
+Argument 1: cannot convert from 'RESERVOIR_FORECAST_PROPERTIES?' to 'Beep.OilandGas.Models.Data.ProductionForecasting.ReservoirForecastProperties'
+Argument 1: cannot convert from 'RESERVOIR_FORECAST_PROPERTIES?' to 'Beep.OilandGas.Models.Data.ProductionForecasting.RESERVOIR_FORECAST_PROPERTIES'

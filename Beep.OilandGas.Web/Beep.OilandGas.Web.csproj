@@ -9,22 +9,22 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.13" />
     <PackageReference Include="MudBlazor" Version="8.*" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.1" />
-    <PackageReference Include="TheTechIdea.Beep.AssemblyLoader" Version="2.0.15" />
-    <PackageReference Include="TheTechIdea.Beep.Container" Version="1.0.0.93" />
-    <PackageReference Include="TheTechIdea.Beep.Container.Model" Version="1.0.0.49" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.55" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.108" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.2" />
+    <PackageReference Include="TheTechIdea.Beep.AssemblyLoader" Version="2.0.24" />
+    <PackageReference Include="TheTechIdea.Beep.Container" Version="1.0.0.94" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.63" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.120" />
     <PackageReference Include="TheTechIdea.Beep.DMLogger" Version="2.0.3" />
-    <PackageReference Include="TheTechIdea.Beep.DuckDBDataSourceCore" Version="1.0.45" />
-    <PackageReference Include="TheTechIdea.Beep.JsonLoader" Version="2.0.4" />
+    <PackageReference Include="TheTechIdea.Beep.SqliteDatasourceCore" Version="1.0.55" />
+    <PackageReference Include="TheTechIdea.Beep.TreeNodes" Version="1.0.15" />
+    <PackageReference Include="TheTechIdea.Beep.Vis.Loader" Version="1.0.6" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\fahadTheTechIdea\MyWebSite\TheTechIdeaWeb\Beep.Foundation.IdentityServer.Shared\Beep.Foundation.IdentityServer.Shared.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.ChokeAnalysis\Beep.OilandGas.ChokeAnalysis.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.CompressorAnalysis\Beep.OilandGas.CompressorAnalysis.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.DCA\Beep.OilandGas.DCA.csproj" />
@@ -57,7 +57,6 @@
     <ProjectReference Include="..\Beep.OilandGas.PumpPerformance\Beep.OilandGas.PumpPerformance.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.SuckerRodPumping\Beep.OilandGas.SuckerRodPumping.csproj" />
     <ProjectReference Include="..\Beep.OilandGas.WellTestAnalysis\Beep.OilandGas.WellTestAnalysis.csproj" />
-    <ProjectReference Include="..\..\..\..\fahadTheTechIdea\MyWebSite\TheTechIdeaWeb\Beep.Foundation.IdentityServer.Shared\Beep.Foundation.IdentityServer.Shared.csproj" />
   </ItemGroup>
 
 </Project>

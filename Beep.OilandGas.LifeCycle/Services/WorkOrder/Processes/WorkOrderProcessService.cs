@@ -9,6 +9,8 @@ using Beep.OilandGas.LifeCycle.Services.Accounting;
 using Beep.OilandGas.Models.Data.LifeCycle;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Process;
+using System.Text.Json;
 
 namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
 {
@@ -235,7 +237,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
         /// <summary>
         /// Plans work order: Work planning and resource allocation step
         /// </summary>
-        public async Task<bool> PlanWorkOrderAsync(string instanceId, Dictionary<string, object> planningData, string userId)
+        public async Task<bool> PlanWorkOrderAsync(string instanceId, PROCESS_STEP_DATA planningData, string userId)
         {
             try
             {
@@ -304,7 +306,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
         /// <summary>
         /// Executes work order: Work execution step
         /// </summary>
-        public async Task<bool> ExecuteWorkOrderAsync(string instanceId, Dictionary<string, object> executionData, string userId)
+        public async Task<bool> ExecuteWorkOrderAsync(string instanceId, PROCESS_STEP_DATA executionData, string userId)
         {
             try
             {
@@ -357,7 +359,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
                         userId);
                 }
 
-                return await _processService.ExecuteStepAsync(instanceId, "COST_RECORDING", new Dictionary<string, object> { { "CostCount", costs.Count } }, userId);
+                var stepData = new PROCESS_STEP_DATA { DataJson = JsonSerializer.Serialize(new { CostCount = costs.Count }) };
+                return await _processService.ExecuteStepAsync(instanceId, "COST_RECORDING", stepData, userId);
             }
             catch (Exception ex)
             {
@@ -369,7 +372,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
         /// <summary>
         /// Verifies work order completion: Completion verification step
         /// </summary>
-        public async Task<bool> VerifyWorkOrderCompletionAsync(string instanceId, Dictionary<string, object> verificationData, string userId)
+        public async Task<bool> VerifyWorkOrderCompletionAsync(string instanceId, PROCESS_STEP_DATA verificationData, string userId)
         {
             try
             {
@@ -439,18 +442,21 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
                 var workOrder = await _workOrderService.GetWorkOrderAsync(workOrderId);
 
                 // Generate report data
-                var reportData = new Dictionary<string, object>
+                var stepData = new PROCESS_STEP_DATA
                 {
-                    { "WorkOrderId", workOrder.WorkOrderId },
-                    { "WorkOrderNumber", workOrder.WorkOrderNumber },
-                    { "WorkOrderType", workOrder.WorkOrderType },
-                    { "Status", workOrder.Status },
-                    { "EstimatedCost", workOrder.EstimatedCost },
-                    { "ActualCost", workOrder.ActualCost },
-                    { "ReportDate", DateTime.UtcNow }
+                    DataJson = JsonSerializer.Serialize(new
+                    {
+                        workOrder.WorkOrderId,
+                        workOrder.WorkOrderNumber,
+                        workOrder.WorkOrderType,
+                        workOrder.Status,
+                        EstimatedCost = workOrder.EstimatedCost,
+                        ActualCost = workOrder.ActualCost,
+                        ReportDate = DateTime.UtcNow
+                    })
                 };
 
-                return await _processService.ExecuteStepAsync(instanceId, "WORK_ORDER_REPORTING", reportData, userId);
+                return await _processService.ExecuteStepAsync(instanceId, "WORK_ORDER_REPORTING", stepData, userId);
             }
             catch (Exception ex)
             {

@@ -49,12 +49,12 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             _logger = logger;
         }
 
-        public async Task<ProductionForecastResult> GenerateForecastAsync(string? wellUWI, string? fieldId, string forecastMethod, int forecastPeriod)
+        public async Task<ProductionForecastResult> GenerateForecastAsync(string? wellUWI, string? fieldId, ForecastType forecastMethod, int forecastPeriod)
         {
             if (string.IsNullOrWhiteSpace(wellUWI) && string.IsNullOrWhiteSpace(fieldId))
                 throw new ArgumentException("Either wellUWI or fieldId must be provided");
-            if (string.IsNullOrWhiteSpace(forecastMethod))
-                throw new ArgumentException("Forecast method cannot be null or empty", nameof(forecastMethod));
+            if (forecastMethod == ForecastType.None)
+                throw new ArgumentException("Forecast method cannot be None", nameof(forecastMethod));
 
             _logger?.LogInformation("Generating {Method} forecast for {WellUWI}{FieldId} over {Period} months",
                 forecastMethod, wellUWI ?? string.Empty, fieldId ?? string.Empty, forecastPeriod);
@@ -137,9 +137,9 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             return result;
         }
 
-        public async Task<ProductionForecastResult> OptimizeForecastAsync(string wellUWI, string forecastMethod)
+        public async Task<ProductionForecastResult> OptimizeForecastAsync(string wellUWI, ForecastType forecastMethod)
         {
-            return await GenerateForecastAsync(wellUWI, null, forecastMethod ?? "Optimized", 12);
+            return await GenerateForecastAsync(wellUWI, null, forecastMethod, 12);
         }
 
         public async Task<ProductionForecastResult?> GetForecastAsync(string forecastId)
@@ -161,7 +161,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 WellUWI = string.IsNullOrWhiteSpace(pf.WELL_UWI) ? null : pf.WELL_UWI,
                 FieldId = string.IsNullOrWhiteSpace(pf.FIELD_ID) ? null : pf.FIELD_ID,
                 ForecastDate = pf.FORECAST_START_DATE,
-                ForecastMethod = pf.FORECAST_TYPE ?? pf.FORECAST_NAME ?? string.Empty,
+                ForecastMethod = pf.FORECAST_TYPE,
                 ForecastPoints = new List<ProductionForecastPoint>(),
                 EstimatedReserves = 0m,
                 Status = pf.ACTIVE_IND == _defaults.GetActiveIndicatorYes() ? "Active" : "Inactive",
@@ -215,24 +215,25 @@ namespace Beep.OilandGas.ProductionForecasting.Services
 
         public async Task<ProductionForecastResult> GenerateReservoirSimulationForecastAsync(string wellUWI, ReservoirProperties reservoirProperties, int forecastPeriod)
         {
-            return await GenerateForecastAsync(wellUWI, null, "ReservoirSim", forecastPeriod);
+            return await GenerateForecastAsync(wellUWI, null, ForecastType.ReservoirSim, forecastPeriod);
         }
 
         public async Task<ProductionForecastResult> GenerateTypeCurveForecastAsync(string wellUWI, string typeCurveId, int forecastPeriod)
         {
-            return await GenerateForecastAsync(wellUWI, null, "TypeCurve", forecastPeriod);
+            return await GenerateForecastAsync(wellUWI, null, ForecastType.Decline, forecastPeriod);
         }
 
         public async Task<ProductionForecastResult> GenerateMLForecastAsync(string wellUWI, string modelType, int forecastPeriod)
         {
-            return await GenerateForecastAsync(wellUWI, null, "ML-" + (modelType ?? "default"), forecastPeriod);
+            return await GenerateForecastAsync(wellUWI, null, ForecastType.Decline, forecastPeriod);
         }
 
-        public async Task<ProductionForecastResult> GenerateEnsembleForecastAsync(string wellUWI, List<string> forecastMethods, int forecastPeriod)
+        public async Task<ProductionForecastResult> GenerateEnsembleForecastAsync(string wellUWI, List<ForecastType> forecastMethods, int forecastPeriod)
         {
             // Simplified ensemble: call first method
-            var method = (forecastMethods != null && forecastMethods.Count > 0) ? forecastMethods[0] : "Ensemble";
-            return await GenerateForecastAsync(wellUWI, null, method, forecastPeriod);
+            // In real implementation, would combine multiple methods ForecastType
+            var method = (forecastMethods != null && forecastMethods.Count > 0) ? forecastMethods[0] : ForecastType.Ensamble;
+            return await GenerateForecastAsync(wellUWI, null, ForecastType.Decline, forecastPeriod);
         }
 
         public async Task<byte[]> ExportForecastAsync(string forecastId, string format = "CSV")
@@ -329,8 +330,8 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 FORECAST_ID = forecast.ForecastId,
                 WELL_UWI = forecast.WellUWI ?? string.Empty,
                 FIELD_ID = forecast.FieldId ?? string.Empty,
-                FORECAST_NAME = forecast.ForecastMethod ?? string.Empty,
-                FORECAST_TYPE = forecast.ForecastMethod ?? string.Empty,
+                FORECAST_NAME = string.IsNullOrEmpty(forecast.ForecastMethod.ToString()) ? string.Empty : forecast.ForecastMethod.ToString(),
+                FORECAST_TYPE = forecast.ForecastMethod ,
                 FORECAST_START_DATE = forecast.ForecastDate,
                 ACTIVE_IND = "Y"
             };
