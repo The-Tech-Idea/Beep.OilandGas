@@ -533,12 +533,12 @@ namespace Beep.OilandGas.LifeCycle.Services.PipelineManagement
         /// <summary>
         /// Runs pipeline analysis for a pipeline using DataFlowService
         /// </summary>
-        public async Task<PipelineAnalysisResult> AnalyzePipelineAsync(
+        public async Task<PIPELINE_ANALYSIS_RESULT> AnalyzePipelineAsync(
             string pipelineId,
             string userId = "system",
             string pipelineType = "GAS",
             string analysisType = "CAPACITY",
-            Dictionary<string, object>? additionalParameters = null)
+            PipelineAnalysisOptions? additionalParameters = null)
         {
             if (_dataFlowService == null)
             {

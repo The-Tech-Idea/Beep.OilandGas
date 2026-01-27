@@ -6,7 +6,6 @@ using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.HydraulicPumps;
 using Beep.OilandGas.Models.Data.PlungerLift;
 using Beep.OilandGas.Models.Data.Pumps;
-using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Microsoft.Extensions.Logging;
@@ -38,18 +37,18 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
         /// <param name="additionalParameters">Optional additional parameters for the analysis.</param>
         /// <returns>The nodal analysis results including operating point and curves.</returns>
         public async Task<NodalAnalysisResult> RunNodalAnalysisAsync(
-            string wellUwi,
+            string wellId,
             string userId,
             NodalAnalysisOptions? additionalParameters = null)
         {
-            if (string.IsNullOrEmpty(wellUwi))
-                throw new ArgumentException("Well UWI cannot be null or empty.", nameof(wellUwi));
+            if (string.IsNullOrEmpty(wellId))
+                throw new ArgumentException("Well ID cannot be null or empty.", nameof(wellId));
 
-            _logger?.LogInformation("Running nodal analysis for well UWI: {WellUwi}", wellUwi);
+            _logger?.LogInformation("Running nodal analysis for well: {WellId}", wellId);
 
             var request = new NodalAnalysisRequest
             {
-                WellUWI = wellUwi,
+                WellId = wellId,
                 UserId = userId,
                 AdditionalParameters = additionalParameters
             };
@@ -57,8 +56,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             // Use PPDMCalculationService to perform the analysis
             var result = await _calculationService.PerformNodalAnalysisAsync(request);
 
-            _logger?.LogInformation("Nodal analysis completed for well UWI: {WellUwi}, Operating Flow Rate: {FlowRate} BPD", 
-                wellUwi, result.OperatingFlowRate);
+            _logger?.LogInformation("Nodal analysis completed for well: {WellId}, Operating Flow Rate: {FlowRate} BPD", 
+                wellId, result.OperatingPoint?.FlowRate);
 
             return result;
         }
@@ -383,7 +382,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
         /// <param name="analysisType">Analysis type: CAPACITY, FLOW_RATE, or PRESSURE_DROP.</param>
         /// <param name="additionalParameters">Optional additional parameters for the analysis.</param>
         /// <returns>The pipeline analysis results.</returns>
-        public async Task<PIPELINE_ANALYSIS_RESULT> RunPipelineAnalysisAsync(
+        public async Task<PipelineAnalysisResult> RunPipelineAnalysisAsync(
             string pipelineId,
             string userId = "system",
             string pipelineType = "GAS",
