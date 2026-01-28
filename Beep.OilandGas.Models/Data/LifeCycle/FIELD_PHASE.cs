@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.LifeCycle
 {
     public partial class FIELD_PHASE : ModelEntityBase
@@ -84,5 +84,3 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
         public FIELD_PHASE() { }
     }
 }
-
-

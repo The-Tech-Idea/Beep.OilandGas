@@ -1,13 +1,9 @@
 using System;
 using System.Collections.Generic;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Stratigraphy
 {
-    /// <summary>
-    /// Data Transfer Object for Stratigraphic Hierarchy
-    /// Represents parent-child relationships between stratigraphic units
-    /// </summary>
     public class StratHierarchy : ModelEntityBase
     {
         /// <summary>
@@ -122,94 +118,4 @@ namespace Beep.OilandGas.Models.Data.Stratigraphy
         /// </summary>
 
     }
-
-    /// <summary>
-    /// Data Transfer Object for Stratigraphic Hierarchy Tree
-    /// Represents a complete hierarchy tree structure
-    /// </summary>
-    public class StratHierarchyTree : ModelEntityBase
-    {
-        /// <summary>
-        /// Root stratigraphic unit
-        /// </summary>
-        private StratUnit RootUnitValue;
-
-        public StratUnit RootUnit
-
-        {
-
-            get { return this.RootUnitValue; }
-
-            set { SetProperty(ref RootUnitValue, value); }
-
-        }
-
-        /// <summary>
-        /// Child units (direct children)
-        /// </summary>
-        private List<StratHierarchyTreeNode> ChildrenValue = new List<StratHierarchyTreeNode>();
-
-        public List<StratHierarchyTreeNode> Children
-
-        {
-
-            get { return this.ChildrenValue; }
-
-            set { SetProperty(ref ChildrenValue, value); }
-
-        }
-    }
-
-    /// <summary>
-    /// Data Transfer Object for a node in the hierarchy tree
-    /// </summary>
-    public class StratHierarchyTreeNode : ModelEntityBase
-    {
-        /// <summary>
-        /// Stratigraphic unit
-        /// </summary>
-        private StratUnit UnitValue;
-
-        public StratUnit Unit
-
-        {
-
-            get { return this.UnitValue; }
-
-            set { SetProperty(ref UnitValue, value); }
-
-        }
-
-        /// <summary>
-        /// Child units (nested children)
-        /// </summary>
-        private List<StratHierarchyTreeNode> ChildrenValue = new List<StratHierarchyTreeNode>();
-
-        public List<StratHierarchyTreeNode> Children
-
-        {
-
-            get { return this.ChildrenValue; }
-
-            set { SetProperty(ref ChildrenValue, value); }
-
-        }
-
-        /// <summary>
-        /// Hierarchy level (depth in tree)
-        /// </summary>
-        private int LevelValue;
-
-        public int Level
-
-        {
-
-            get { return this.LevelValue; }
-
-            set { SetProperty(ref LevelValue, value); }
-
-        }
-    }
 }
-
-

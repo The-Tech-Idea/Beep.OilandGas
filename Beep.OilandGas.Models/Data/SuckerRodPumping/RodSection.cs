@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.SuckerRodPumping
 {
-    /// <summary>
-    /// Represents a section of sucker rod string
-    /// DTO for calculations - Entity class: ROD_SECTION
-    /// </summary>
     public class RodSection : ModelEntityBase
     {
         /// <summary>
@@ -67,8 +64,3 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
         }
     }
 }
-
-
-
-
-

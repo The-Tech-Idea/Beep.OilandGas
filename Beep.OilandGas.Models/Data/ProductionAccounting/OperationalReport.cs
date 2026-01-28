@@ -1,0 +1,121 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Beep.OilandGas.Models.Data;
+
+namespace Beep.OilandGas.Models.Data.ProductionAccounting
+{
+    public class OperationalReport : ModelEntityBase
+    {
+        private string ReportIdValue = string.Empty;
+
+        public string ReportId
+
+        {
+
+            get { return this.ReportIdValue; }
+
+            set { SetProperty(ref ReportIdValue, value); }
+
+        }
+        private DateTime ReportPeriodStartValue;
+
+        public DateTime ReportPeriodStart
+
+        {
+
+            get { return this.ReportPeriodStartValue; }
+
+            set { SetProperty(ref ReportPeriodStartValue, value); }
+
+        }
+        private DateTime ReportPeriodEndValue;
+
+        public DateTime ReportPeriodEnd
+
+        {
+
+            get { return this.ReportPeriodEndValue; }
+
+            set { SetProperty(ref ReportPeriodEndValue, value); }
+
+        }
+        private DateTime GeneratedDateValue;
+
+        public DateTime GeneratedDate
+
+        {
+
+            get { return this.GeneratedDateValue; }
+
+            set { SetProperty(ref GeneratedDateValue, value); }
+
+        }
+        private ProductionSummary? ProductionSummaryValue;
+
+        public ProductionSummary? ProductionSummary
+
+        {
+
+            get { return this.ProductionSummaryValue; }
+
+            set { SetProperty(ref ProductionSummaryValue, value); }
+
+        }
+        private List<RunTicket> RunTicketsValue = new();
+
+        public List<RunTicket> RunTickets
+
+        {
+
+            get { return this.RunTicketsValue; }
+
+            set { SetProperty(ref RunTicketsValue, value); }
+
+        }
+        private List<Inventory> InventoriesValue = new();
+
+        public List<Inventory> Inventories
+
+        {
+
+            get { return this.InventoriesValue; }
+
+            set { SetProperty(ref InventoriesValue, value); }
+
+        }
+        private List<AllocationResult> AllocationsValue = new();
+
+        public List<AllocationResult> Allocations
+
+        {
+
+            get { return this.AllocationsValue; }
+
+            set { SetProperty(ref AllocationsValue, value); }
+
+        }
+        private List<Measurement> MeasurementsValue = new();
+
+        public List<Measurement> Measurements
+
+        {
+
+            get { return this.MeasurementsValue; }
+
+            set { SetProperty(ref MeasurementsValue, value); }
+
+        }
+        private List<SalesTransaction> SalesTransactionsValue = new();
+
+        public List<SalesTransaction> SalesTransactions
+
+        {
+
+            get { return this.SalesTransactionsValue; }
+
+            set { SetProperty(ref SalesTransactionsValue, value); }
+
+        }
+    }
+}

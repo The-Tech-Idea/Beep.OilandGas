@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.GasProperties
 {
-    /// <summary>
-    /// Represents a gas component in a mixture
-    /// DTO for calculations - Entity class: GAS_COMPONENT
-    /// </summary>
     public class GasComponent : ModelEntityBase
     {
         /// <summary>
@@ -80,10 +77,7 @@ namespace Beep.OilandGas.Models.Data.GasProperties
             set { SetProperty(ref CriticalTemperatureValue, value); }
 
         }
+
+        public string ComponentName { get; set; }
     }
 }
-
-
-
-
-

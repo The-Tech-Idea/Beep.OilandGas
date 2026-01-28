@@ -1,11 +1,8 @@
 using System.Collections.Generic;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.GasLift
 {
-    /// <summary>
-    /// Represents the result of a gas lift valve spacing calculation.
-    /// </summary>
     public class GasLiftValveSpacingResult : ModelEntityBase
     {
         /// <summary>
@@ -69,6 +66,3 @@ namespace Beep.OilandGas.Models.Data.GasLift
         }
     }
 }
-
-
-

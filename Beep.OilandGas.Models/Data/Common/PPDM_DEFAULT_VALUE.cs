@@ -1,14 +1,10 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Common
 {
-    /// <summary>
-    /// Stores PPDM default values per database and per user
-    /// Allows system defaults and user-specific overrides
-    /// </summary>
     public partial class PPDM_DEFAULT_VALUE : ModelEntityBase
     {
         private System.String DEFAULT_VALUE_IDValue;
@@ -81,5 +77,3 @@ namespace Beep.OilandGas.Models.Data.Common
         }
     }
 }
-
-

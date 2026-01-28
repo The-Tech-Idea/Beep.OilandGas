@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.HydraulicPumps
 {
     public partial class HYDRAULIC_PUMP_WELL_PROPERTIES : ModelEntityBase {
@@ -131,5 +131,3 @@ namespace Beep.OilandGas.Models.Data.HydraulicPumps
 
     }
 }
-
-

@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.OilProperties
 {
-    /// <summary>
-    /// Represents oil property calculation conditions
-    /// DTO for calculations - Entity class: OIL_PROPERTY_CONDITIONS
-    /// </summary>
     public class OilPropertyConditions : ModelEntityBase
     {
         /// <summary>
@@ -97,8 +94,3 @@ namespace Beep.OilandGas.Models.Data.OilProperties
         }
     }
 }
-
-
-
-
-

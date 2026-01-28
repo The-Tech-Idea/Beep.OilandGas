@@ -1,15 +1,10 @@
 using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
-    /// <summary>
-    /// Represents a detected boundary in the reservoir from well test analysis.
-    /// Includes boundary type, location, and confidence metrics.
-    /// DTO for calculations - Entity class: RESERVOIR_BOUNDARY
-    /// </summary>
     public partial class ReservoirBoundary : ModelEntityBase {
         /// <summary>
         /// Boundary type (e.g., "No Flow Boundary", "Constant Pressure Boundary", "Fault")
@@ -101,5 +96,3 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
         }
     }
 }
-
-

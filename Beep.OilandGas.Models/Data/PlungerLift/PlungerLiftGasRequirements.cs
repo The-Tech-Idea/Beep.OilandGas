@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.PlungerLift
 {
-    /// <summary>
-    /// Represents plunger lift gas requirements
-    /// DTO for calculations - Entity class: PLUNGER_LIFT_GAS_REQUIREMENTS
-    /// </summary>
     public class PlungerLiftGasRequirements : ModelEntityBase
     {
         /// <summary>
@@ -97,7 +94,3 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         }
     }
 }
-
-
-
-

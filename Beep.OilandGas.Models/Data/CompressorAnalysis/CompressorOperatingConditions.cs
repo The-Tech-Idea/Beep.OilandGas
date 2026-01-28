@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.CompressorAnalysis
 {
-    /// <summary>
-    /// Operating conditions for compressors
-    /// DTO for calculations - Entity class: COMPRESSOR_OPERATING_CONDITIONS
-    /// </summary>
     public class CompressorOperatingConditions : ModelEntityBase
     {
         /// <summary>
@@ -129,8 +126,3 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
         public decimal GasMolecularWeight { get; set; }
     }
 }
-
-
-
-
-

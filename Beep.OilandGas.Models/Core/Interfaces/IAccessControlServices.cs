@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.AccessControl;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

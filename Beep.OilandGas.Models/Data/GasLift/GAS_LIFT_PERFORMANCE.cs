@@ -1,7 +1,7 @@
 using System;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.GasLift
 {
     public partial class GAS_LIFT_PERFORMANCE : ModelEntityBase {
@@ -57,8 +57,3 @@ namespace Beep.OilandGas.Models.Data.GasLift
         // Standard PPDM columns
     }
 }
-
-
-
-
-

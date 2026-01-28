@@ -1,15 +1,10 @@
 using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    /// <summary>
-    /// Represents a single point on a one-way sensitivity curve.
-    /// Shows how operating point varies with a single parameter.
-    /// DTO for calculations - Entity class: SENSITIVITY_CURVE_POINT
-    /// </summary>
     public partial class SensitivityCurvePoint : ModelEntityBase {
         /// <summary>
         /// Parameter value at this point
@@ -61,5 +56,3 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         }
     }
 }
-
-

@@ -1,12 +1,8 @@
 using System;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.GasProperties
 {
-    /// <summary>
-    /// Represents gas composition with mole fractions
-    /// DTO for calculations - Entity class: GAS_COMPOSITION
-    /// </summary>
     public class GasComposition : ModelEntityBase
     {
         /// <summary>
@@ -174,6 +170,13 @@ namespace Beep.OilandGas.Models.Data.GasProperties
 
         }
 
+        public decimal SpecificGravity { get; set; }
+        public decimal MolecularWeight { get; set; }
+        public string CompositionId { get; set; }
+        public string CompositionName { get; set; }
+        public DateTime CompositionDate { get; set; }
+        public decimal TotalMoleFraction { get; set; }
+
         /// <summary>
         /// Validates that all fractions sum to 1.0 (within tolerance)
         /// </summary>
@@ -188,8 +191,3 @@ namespace Beep.OilandGas.Models.Data.GasProperties
         }
     }
 }
-
-
-
-
-

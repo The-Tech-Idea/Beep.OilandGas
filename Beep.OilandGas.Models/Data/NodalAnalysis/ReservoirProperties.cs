@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    /// <summary>
-    /// Reservoir properties for nodal analysis
-    /// DTO for calculations - Entity class: NODAL_RESERVOIR_PROPERTIES
-    /// </summary>
     public class ReservoirProperties : ModelEntityBase
     {
         /// <summary>
@@ -127,7 +124,3 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         }
     }
 }
-
-
-
-

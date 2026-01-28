@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.CompressorAnalysis
 {
-    /// <summary>
-    /// Compressor pressure calculation results
-    /// DTO for calculations - Entity class: COMPRESSOR_PRESSURE_RESULT
-    /// </summary>
     public class CompressorPressureResult : ModelEntityBase
     {
         /// <summary>
@@ -82,7 +79,3 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
         }
     }
 }
-
-
-
-

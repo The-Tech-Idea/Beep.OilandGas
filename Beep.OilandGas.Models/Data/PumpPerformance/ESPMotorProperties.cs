@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.PumpPerformance
 {
-    /// <summary>
-    /// Represents ESP motor properties
-    /// DTO for calculations - Entity class: ESP_MOTOR_PROPERTIES
-    /// </summary>
     public class ESPMotorProperties : ModelEntityBase
     {
         /// <summary>
@@ -67,8 +64,3 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
         }
     }
 }
-
-
-
-
-

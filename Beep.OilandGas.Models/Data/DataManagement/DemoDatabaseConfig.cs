@@ -1,8 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.DataManagement
 {
-    /// <summary>
-    /// Configuration for demo database settings
-    /// </summary>
     public class DemoDatabaseConfig : ModelEntityBase
     {
         /// <summary>
@@ -81,8 +79,3 @@ namespace Beep.OilandGas.Models.Data.DataManagement
         }
     }
 }
-
-
-
-
-

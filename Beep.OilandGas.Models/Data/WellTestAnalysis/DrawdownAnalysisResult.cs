@@ -1,15 +1,10 @@
 using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
-    /// <summary>
-    /// Represents results from drawdown test analysis.
-    /// Includes early-time, middle-time, and late-time analysis results.
-    /// DTO for calculations - Entity class: DRAWDOWN_ANALYSIS_RESULT
-    /// </summary>
     public partial class DrawdownAnalysisResult : ModelEntityBase {
         /// <summary>
         /// Analysis method used (e.g., "Constant Rate Drawdown", "Type Curve Matching")
@@ -131,5 +126,3 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
         }
     }
 }
-
-

@@ -1,10 +1,6 @@
-#nullable enable
 
 namespace Beep.OilandGas.Models.Data.Measurement
 {
-    /// <summary>
-    /// Represents measurement accuracy standards.
-    /// </summary>
     public class MeasurementAccuracy : ModelEntityBase
     {
         private string? AccuracyIdValue;
@@ -64,4 +60,3 @@ namespace Beep.OilandGas.Models.Data.Measurement
         }
     }
 }
-

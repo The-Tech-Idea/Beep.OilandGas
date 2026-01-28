@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 {
-    /// <summary>
-    /// Represents a cash flow for a specific period in economic analysis
-    /// DTO for calculations - Entity class: ECONOMIC_CASH_FLOW
-    /// </summary>
     public class CashFlow : ModelEntityBase
     {
         /// <summary>
@@ -52,7 +49,3 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
         }
     }
 }
-
-
-
-

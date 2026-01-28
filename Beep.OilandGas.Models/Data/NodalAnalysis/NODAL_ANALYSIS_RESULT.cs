@@ -1,7 +1,7 @@
 using System;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
     public partial class NODAL_ANALYSIS_RESULT : ModelEntityBase {
@@ -57,8 +57,3 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         // Standard PPDM columns
     }
 }
-
-
-
-
-

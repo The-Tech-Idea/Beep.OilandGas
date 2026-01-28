@@ -1,8 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.HydraulicPumps
 {
-    /// <summary>
-    /// Represents the result of a hydraulic piston pump performance calculation.
-    /// </summary>
     public class HydraulicPistonPumpResult : ModelEntityBase
     {
         /// <summary>
@@ -281,5 +279,3 @@ namespace Beep.OilandGas.Models.Data.HydraulicPumps
         }
     }
 }
-
-

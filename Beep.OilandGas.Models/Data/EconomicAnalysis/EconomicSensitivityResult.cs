@@ -1,15 +1,10 @@
 using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 {
-    /// <summary>
-    /// Represents results from economic sensitivity analysis.
-    /// Shows how project economics respond to parameter variations (price, costs, rates, etc.).
-    /// DTO for calculations - Entity class: ECONOMIC_SENSITIVITY_RESULT
-    /// </summary>
     public partial class EconomicSensitivityResult : ModelEntityBase {
         /// <summary>
         /// Parameter being analyzed (e.g., "Oil Price", "Operating Cost", "Discount Rate")
@@ -194,4 +189,3 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
         }
     }
 }
-

@@ -1,12 +1,8 @@
 using System.Collections.Generic;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
-    /// <summary>
-    /// Represents well test data for pressure transient analysis
-    /// DTO for calculations - Entity class: WELL_TEST_DATA
-    /// </summary>
     public class WellTestData : ModelEntityBase
     {
         /// <summary>
@@ -235,9 +231,3 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
         }
     }
 }
-
-
-
-
-
-

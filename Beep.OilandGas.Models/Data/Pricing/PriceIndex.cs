@@ -1,10 +1,6 @@
-#nullable enable
 
 namespace Beep.OilandGas.Models.Data.Pricing
 {
-    /// <summary>
-    /// Represents a price index reference in the oil and gas domain.
-    /// </summary>
     public class PriceIndex : ModelEntityBase
     {
         private string? PriceIndexIdValue;
@@ -87,5 +83,3 @@ namespace Beep.OilandGas.Models.Data.Pricing
 
     }
 }
-
-

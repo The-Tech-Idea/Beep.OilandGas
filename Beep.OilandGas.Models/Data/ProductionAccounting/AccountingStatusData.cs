@@ -1,11 +1,8 @@
 using System;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    /// <summary>
-    /// Accounting status data for reporting.
-    /// </summary>
     public class AccountingStatusData : ModelEntityBase
     {
         private string FieldIdValue = string.Empty;
@@ -109,6 +106,3 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
-
-
-

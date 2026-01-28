@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Decommissioning
 {
     public partial class ABANDONMENT_STATUS : ModelEntityBase
@@ -74,5 +74,3 @@ namespace Beep.OilandGas.Models.Data.Decommissioning
         public ABANDONMENT_STATUS() { }
     }
 }
-
-

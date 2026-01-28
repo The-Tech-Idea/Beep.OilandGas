@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Lease
 {
     public partial class GOVERNMENT_LEASE : ModelEntityBase
@@ -87,5 +87,3 @@ namespace Beep.OilandGas.Models.Data.Lease
 
     }
 }
-
-

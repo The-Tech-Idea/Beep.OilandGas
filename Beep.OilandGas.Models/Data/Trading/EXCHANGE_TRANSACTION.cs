@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Trading
 {
     public partial class EXCHANGE_TRANSACTION : ModelEntityBase
@@ -92,5 +92,3 @@ namespace Beep.OilandGas.Models.Data.Trading
 
     }
 }
-
-

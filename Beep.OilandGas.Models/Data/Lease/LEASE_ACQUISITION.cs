@@ -2,14 +2,10 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Lease
 {
-    /// <summary>
-    /// Lease acquisition entity - represents a lease acquisition transaction
-    /// PPDM39 compliant with full audit trail
-    /// </summary>
     public partial class LEASE_ACQUISITION : ModelEntityBase
     {
         private String LEASE_ACQUISITION_IDValue;
@@ -127,4 +123,3 @@ namespace Beep.OilandGas.Models.Data.Lease
         // PPDM Audit Fields
     }
 }
-

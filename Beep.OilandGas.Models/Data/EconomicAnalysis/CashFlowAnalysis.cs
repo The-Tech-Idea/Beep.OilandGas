@@ -2,15 +2,10 @@ using System;
 using System.Collections.Generic;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 {
-    /// <summary>
-    /// Represents cash flow analysis for oil and gas projects.
-    /// Includes NPV, IRR, payback period, and profitability metrics.
-    /// DTO for calculations - Entity class: CASH_FLOW_ANALYSIS
-    /// </summary>
     public partial class CashFlowAnalysis : ModelEntityBase {
         /// <summary>
         /// Project name or identifier
@@ -203,4 +198,3 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
         }
     }
 }
-

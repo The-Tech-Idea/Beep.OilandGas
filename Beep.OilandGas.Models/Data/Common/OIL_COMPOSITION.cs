@@ -59,5 +59,3 @@ namespace Beep.OilandGas.Models.Data.Common
 
     }
 }
-
-

@@ -1,10 +1,6 @@
-#nullable enable
 
 namespace Beep.OilandGas.Models.Data.LeaseManagement
 {
-    /// <summary>
-    /// Represents a lease agreement in the oil and gas domain.
-    /// </summary>
     public class LeaseAgreement : ModelEntityBase
     {
         private string? LeaseAgreementIdValue;
@@ -108,4 +104,3 @@ namespace Beep.OilandGas.Models.Data.LeaseManagement
         }
     }
 }
-

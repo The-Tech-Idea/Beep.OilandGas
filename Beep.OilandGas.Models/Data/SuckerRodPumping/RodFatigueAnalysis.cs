@@ -1,15 +1,10 @@
 using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.SuckerRodPumping
 {
-    /// <summary>
-    /// Represents rod string fatigue and stress analysis results.
-    /// Calculates remaining service life and fatigue margin based on load history.
-    /// DTO for calculations - Entity class: ROD_FATIGUE_ANALYSIS
-    /// </summary>
     public partial class RodFatigueAnalysis : ModelEntityBase {
         /// <summary>
         /// Maximum rod stress during operating cycle (psi)
@@ -172,5 +167,3 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
         }
     }
 }
-
-

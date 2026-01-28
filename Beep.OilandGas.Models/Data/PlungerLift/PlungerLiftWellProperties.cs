@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.PlungerLift
 {
-    /// <summary>
-    /// Represents plunger lift well properties
-    /// DTO for calculations - Entity class: PLUNGER_LIFT_WELL_PROPERTIES
-    /// </summary>
     public class PlungerLiftWellProperties : ModelEntityBase
     {
         /// <summary>
@@ -202,7 +199,3 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         }
     }
 }
-
-
-
-

@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Drilling
 {
     public partial class WELL_CONSTRUCTION : ModelEntityBase
@@ -48,5 +48,3 @@ namespace Beep.OilandGas.Models.Data.Drilling
         public WELL_CONSTRUCTION() { }
     }
 }
-
-

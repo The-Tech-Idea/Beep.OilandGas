@@ -1,12 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
-    using System;
-
-using Beep.OilandGas.Models.Data;    using System.Collections.Generic;
-    /// <summary>
-    /// Represents the result of a well test analysis
-    /// DTO for calculations - Entity class: WELL_TEST_ANALYSIS_RESULT
-    /// </summary>
     public class WellTestAnalysisResult : ModelEntityBase
     {
         private string AnalysisIdValue = string.Empty;
@@ -517,9 +511,3 @@ using Beep.OilandGas.Models.Data;    using System.Collections.Generic;
         } // Added from Calculations.cs
     }
 }
-
-
-
-
-
-

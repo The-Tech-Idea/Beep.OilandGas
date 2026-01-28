@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Common
 {
     public partial class GAS_COMPOSITION_COMPONENT : ModelEntityBase
@@ -42,6 +42,8 @@ namespace Beep.OilandGas.Models.Data.Common
             set { SetProperty(ref MOLECULAR_WEIGHTValue, value); }
         }
 
+        public DateTime COMPOSITION_DATE { get; set; }
+
         // Standard PPDM columns
 
         private System.String REMARKValue;
@@ -50,5 +52,3 @@ namespace Beep.OilandGas.Models.Data.Common
 
     }
 }
-
-

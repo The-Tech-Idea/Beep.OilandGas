@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.OilProperties
 {
-    /// <summary>
-    /// Represents solution GOR calculation result
-    /// DTO for calculations - Entity class: SOLUTION_GOR_RESULT
-    /// </summary>
     public class SolutionGORResult : ModelEntityBase
     {
         /// <summary>
@@ -37,7 +34,3 @@ namespace Beep.OilandGas.Models.Data.OilProperties
         }
     }
 }
-
-
-
-

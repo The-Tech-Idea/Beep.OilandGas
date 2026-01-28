@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Security
 {
     public partial class ORGANIZATION_HIERARCHY_CONFIG : ModelEntityBase
@@ -47,5 +47,3 @@ namespace Beep.OilandGas.Models.Data.Security
 
     }
 }
-
-

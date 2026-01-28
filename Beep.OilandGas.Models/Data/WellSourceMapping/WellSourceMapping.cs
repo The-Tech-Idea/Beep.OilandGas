@@ -1,8 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data
 {
-    /// <summary>
-    /// Maps a well identifier to its data source
-    /// </summary>
     public class WellSourceMapping : ModelEntityBase
     {
         /// <summary>
@@ -51,9 +49,3 @@ namespace Beep.OilandGas.Models.Data
         }
     }
 }
-
-
-
-
-
-

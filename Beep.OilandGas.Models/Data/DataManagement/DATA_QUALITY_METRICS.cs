@@ -3,13 +3,10 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.DataManagement
 {
-    /// <summary>
-    /// Entity for storing table-level data quality metrics
-    /// </summary>
     public partial class DATA_QUALITY_METRICS : ModelEntityBase
     {
         private System.String METRICS_IDValue;
@@ -123,5 +120,3 @@ namespace Beep.OilandGas.Models.Data.DataManagement
 
     }
 }
-
-

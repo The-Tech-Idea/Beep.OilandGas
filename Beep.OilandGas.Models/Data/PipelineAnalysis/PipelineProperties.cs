@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.PipelineAnalysis
 {
-    /// <summary>
-    /// Represents pipeline properties
-    /// DTO for calculations - Entity class: PIPELINE_PROPERTIES
-    /// </summary>
     public class PipelineProperties : ModelEntityBase
     {
         /// <summary>
@@ -112,8 +109,3 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
         }
     }
 }
-
-
-
-
-

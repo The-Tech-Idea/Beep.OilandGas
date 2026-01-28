@@ -1,15 +1,10 @@
 using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    /// <summary>
-    /// Represents a production scenario (Best/Base/Worst case).
-    /// Used for scenario analysis of well performance.
-    /// DTO for calculations - Entity class: PRODUCTION_SCENARIO
-    /// </summary>
     public partial class ProductionScenario : ModelEntityBase {
         /// <summary>
         /// Scenario name (e.g., "Best Case", "Base Case", "Worst Case")
@@ -71,5 +66,3 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         }
     }
 }
-
-

@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.PipelineAnalysis
 {
-    /// <summary>
-    /// Represents pipeline capacity calculation results
-    /// DTO for calculations - Entity class: PIPELINE_CAPACITY_RESULT
-    /// </summary>
     public class PipelineCapacityResult : ModelEntityBase
     {
         /// <summary>
@@ -119,7 +116,3 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
         public decimal OUTLET_PRESSURE { get => OutletPressure; set => OutletPressure = value; }
     }
 }
-
-
-
-

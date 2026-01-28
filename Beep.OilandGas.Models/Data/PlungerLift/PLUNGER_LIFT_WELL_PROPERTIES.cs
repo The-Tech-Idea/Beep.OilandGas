@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
+
 namespace Beep.OilandGas.Models.Data.PlungerLift
 {
     public partial class PLUNGER_LIFT_WELL_PROPERTIES : ModelEntityBase {
@@ -214,5 +215,3 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
 
     }
 }
-
-

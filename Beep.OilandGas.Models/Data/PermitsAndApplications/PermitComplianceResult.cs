@@ -3,9 +3,6 @@ using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Data.PermitsAndApplications
 {
-    /// <summary>
-    /// Compliance result for permit applications.
-    /// </summary>
     public class PermitComplianceResult : ModelEntityBase
     {
         private bool IsCompliantValue;

@@ -1,7 +1,7 @@
 using System;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.HeatMap
 {
     public partial class HEAT_MAP_CONFIGURATION : ModelEntityBase {
@@ -22,8 +22,3 @@ namespace Beep.OilandGas.Models.Data.HeatMap
         // Standard PPDM columns
     }
 }
-
-
-
-
-

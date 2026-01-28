@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.PumpPerformance
 {
-    /// <summary>
-    /// Represents a point on ESP pump performance curve
-    /// DTO for calculations - Entity class: ESP_PUMP_POINT
-    /// </summary>
     public class ESPPumpPoint : ModelEntityBase
     {
         /// <summary>
@@ -67,7 +64,3 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
         }
     }
 }
-
-
-
-

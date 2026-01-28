@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.OilProperties
 {
-    /// <summary>
-    /// Represents bubble point pressure calculation result
-    /// DTO for calculations - Entity class: BUBBLE_POINT_RESULT
-    /// </summary>
     public class BubblePointResult : ModelEntityBase
     {
         /// <summary>
@@ -37,7 +34,3 @@ namespace Beep.OilandGas.Models.Data.OilProperties
         }
     }
 }
-
-
-
-

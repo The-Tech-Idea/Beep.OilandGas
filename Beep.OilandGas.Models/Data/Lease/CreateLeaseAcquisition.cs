@@ -1,12 +1,8 @@
 using System;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Lease
 {
-    /// <summary>
-    /// DTO for creating a lease acquisition.
-    /// Can represent either a fee mineral lease or government lease.
-    /// </summary>
     public class CreateLeaseAcquisition : ModelEntityBase
     {
         private string LeaseTypeValue = string.Empty;
@@ -180,11 +176,3 @@ namespace Beep.OilandGas.Models.Data.Lease
         }
     }
 }
-
-
-
-
-
-
-
-

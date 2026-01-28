@@ -1,14 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Setup
 {
-    /// <summary>
-    /// Data class for initial user and role assignment during setup
-    /// Maps to BA_EMPLOYEE and BA_AUTHORITY tables in PPDM39 schema
-    /// </summary>
     public class UserRoleSetupData : ModelEntityBase
     {
         private string UserIdValue = string.Empty;
@@ -181,117 +177,4 @@ namespace Beep.OilandGas.Models.Data.Setup
 
         }
     }
-
-    /// <summary>
-    /// Role assignment data for a user
-    /// Maps to BA_AUTHORITY table
-    /// </summary>
-    public class RoleAssignmentData : ModelEntityBase
-    {
-        private string BusinessAssociateIdValue = string.Empty;
-
-        [Required]
-        public string BusinessAssociateId
-
-        {
-
-            get { return this.BusinessAssociateIdValue; }
-
-            set { SetProperty(ref BusinessAssociateIdValue, value); }
-
-        }
-
-        private string AuthorityIdValue = string.Empty;
-
-
-        [Required]
-        public string AuthorityId
-
-
-        {
-
-
-            get { return this.AuthorityIdValue; }
-
-
-            set { SetProperty(ref AuthorityIdValue, value); }
-
-
-        } // Role ID
-
-        private string? AuthorityTypeValue;
-
-
-        public string? AuthorityType
-
-
-        {
-
-
-            get { return this.AuthorityTypeValue; }
-
-
-            set { SetProperty(ref AuthorityTypeValue, value); }
-
-
-        }
-
-        private DateTime? EffectiveDateValue;
-
-
-        public DateTime? EffectiveDate
-
-
-        {
-
-
-            get { return this.EffectiveDateValue; }
-
-
-            set { SetProperty(ref EffectiveDateValue, value); }
-
-
-        }
-
-        private DateTime? ExpiryDateValue;
-
-
-        public DateTime? ExpiryDate
-
-
-        {
-
-
-            get { return this.ExpiryDateValue; }
-
-
-            set { SetProperty(ref ExpiryDateValue, value); }
-
-
-        }
-
-        private bool ActiveValue = true;
-
-
-        public bool Active
-
-
-        {
-
-
-            get { return this.ActiveValue; }
-
-
-            set { SetProperty(ref ActiveValue, value); }
-
-
-        }
-    }
 }
-
-
-
-
-
-
-

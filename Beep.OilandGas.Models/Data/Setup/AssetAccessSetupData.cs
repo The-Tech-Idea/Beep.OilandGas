@@ -1,14 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Setup
 {
-    /// <summary>
-    /// Data class for initial asset access configuration for setup users
-    /// Maps to USER_ASSET_ACCESS table (custom access control table)
-    /// </summary>
     public class AssetAccessSetupData : ModelEntityBase
     {
         private string UserIdValue = string.Empty;
@@ -163,64 +159,4 @@ namespace Beep.OilandGas.Models.Data.Setup
 
         }
     }
-
-    /// <summary>
-    /// Collection of asset access grants for setup
-    /// </summary>
-    public class AssetAccessSetupCollection : ModelEntityBase
-    {
-        private string UserIdValue = string.Empty;
-
-        [Required]
-        public string UserId
-
-        {
-
-            get { return this.UserIdValue; }
-
-            set { SetProperty(ref UserIdValue, value); }
-
-        }
-
-        private string? OrganizationIdValue;
-
-
-        public string? OrganizationId
-
-
-        {
-
-
-            get { return this.OrganizationIdValue; }
-
-
-            set { SetProperty(ref OrganizationIdValue, value); }
-
-
-        }
-
-        private List<AssetAccessSetupData> AssetAccessesValue = new List<AssetAccessSetupData>();
-
-
-        public List<AssetAccessSetupData> AssetAccesses
-
-
-        {
-
-
-            get { return this.AssetAccessesValue; }
-
-
-            set { SetProperty(ref AssetAccessesValue, value); }
-
-
-        }
-    }
 }
-
-
-
-
-
-
-

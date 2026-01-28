@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.ProductionForecasting
 {
-    /// <summary>
-    /// Represents reservoir properties for production forecasting
-    /// DTO for calculations - Entity class: RESERVOIR_FORECAST_PROPERTIES
-    /// </summary>
     public class ReservoirForecastProperties : ModelEntityBase
     {
         /// <summary>
@@ -187,7 +184,3 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
         }
     }
 }
-
-
-
-

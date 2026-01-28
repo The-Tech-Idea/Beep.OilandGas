@@ -45,14 +45,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="composition">Gas composition data</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Task</returns>
-        Task SaveGasCompositionAsync(Beep.OilandGas.Models.Data.GasComposition composition, string userId);
+        Task SaveGasCompositionAsync(GasComposition composition, string userId);
 
         /// <summary>
         /// Gets gas composition from database.
         /// </summary>
         /// <param name="compositionId">Composition identifier</param>
         /// <returns>Gas composition data</returns>
-        Task<Beep.OilandGas.Models.Data.GasComposition?> GetGasCompositionAsync(string compositionId);
+        Task<GasComposition?> GetGasCompositionAsync(string compositionId);
     }
 }
 

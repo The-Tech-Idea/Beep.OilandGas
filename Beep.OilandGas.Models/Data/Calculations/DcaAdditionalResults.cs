@@ -2,9 +2,6 @@ using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Data.Calculations
 {
-    /// <summary>
-    /// Additional DCA result metadata for forecast summary.
-    /// </summary>
     public class DcaAdditionalResults : ModelEntityBase
     {
         public string? ForecastType { get; set; }

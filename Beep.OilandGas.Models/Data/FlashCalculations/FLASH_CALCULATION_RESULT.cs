@@ -1,7 +1,7 @@
 using System;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.FlashCalculations
 {
     public partial class FLASH_CALCULATION_RESULT : ModelEntityBase {
@@ -146,8 +146,3 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
         // Standard PPDM columns
     }
 }
-
-
-
-
-

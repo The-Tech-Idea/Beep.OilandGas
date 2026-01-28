@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.CompressorAnalysis
 {
-    /// <summary>
-    /// Centrifugal compressor properties
-    /// DTO for calculations - Entity class: CENTRIFUGAL_COMPRESSOR_PROPERTIES
-    /// </summary>
     public class CentrifugalCompressorProperties : ModelEntityBase
     {
         /// <summary>
@@ -74,8 +71,3 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
         }
     }
 }
-
-
-
-
-

@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
-    /// <summary>
-    /// Represents a point on a pressure-time curve
-    /// DTO for calculations - Entity class: PRESSURE_TIME_POINT
-    /// </summary>
     public class PressureTimePoint : ModelEntityBase
     {
         /// <summary>
@@ -60,7 +57,3 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
         }
     }
 }
-
-
-
-

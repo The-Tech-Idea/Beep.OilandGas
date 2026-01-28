@@ -1,36 +1,24 @@
-using System.ComponentModel.DataAnnotations;
+using System;
+using System.Collections.Generic;
 
-using Beep.OilandGas.Models.Data;
-namespace Beep.OilandGas.Models.Data.AccessControl
+namespace Beep.OilandGas.Models.Data
 {
-    /// <summary>
-    /// Request to update user preferences
-    /// </summary>
-    public class UpdatePreferencesRequest : ModelEntityBase
+    public class UserProfile : ModelEntityBase
     {
-        private string PreferencesJsonValue = string.Empty;
+        private string UserIdValue = string.Empty;
 
-        [Required(ErrorMessage = "PreferencesJson is required")]
-        public string PreferencesJson
+        public string UserId
 
         {
 
-            get { return this.PreferencesJsonValue; }
+            get { return this.UserIdValue; }
 
-            set { SetProperty(ref PreferencesJsonValue, value); }
+            set { SetProperty(ref UserIdValue, value); }
 
         }
-    }
+        private string? PrimaryRoleValue;
 
-    /// <summary>
-    /// Request to update user's primary role
-    /// </summary>
-    public class UpdatePrimaryRoleRequest : ModelEntityBase
-    {
-        private string PrimaryRoleValue = string.Empty;
-
-        [Required(ErrorMessage = "PrimaryRole is required")]
-        public string PrimaryRole
+        public string? PrimaryRole
 
         {
 
@@ -39,17 +27,9 @@ namespace Beep.OilandGas.Models.Data.AccessControl
             set { SetProperty(ref PrimaryRoleValue, value); }
 
         }
-    }
+        private string? PreferredLayoutValue;
 
-    /// <summary>
-    /// Request to update user's preferred layout
-    /// </summary>
-    public class UpdatePreferredLayoutRequest : ModelEntityBase
-    {
-        private string PreferredLayoutValue = string.Empty;
-
-        [Required(ErrorMessage = "PreferredLayout is required")]
-        public string PreferredLayout
+        public string? PreferredLayout
 
         {
 
@@ -58,11 +38,49 @@ namespace Beep.OilandGas.Models.Data.AccessControl
             set { SetProperty(ref PreferredLayoutValue, value); }
 
         }
+        private string? UserPreferencesValue;
+
+        public string? UserPreferences
+
+        {
+
+            get { return this.UserPreferencesValue; }
+
+            set { SetProperty(ref UserPreferencesValue, value); }
+
+        } // JSON string
+        private DateTime? LastLoginDateValue;
+
+        public DateTime? LastLoginDate
+
+        {
+
+            get { return this.LastLoginDateValue; }
+
+            set { SetProperty(ref LastLoginDateValue, value); }
+
+        }
+        private bool ActiveValue = true;
+
+        public bool Active
+
+        {
+
+            get { return this.ActiveValue; }
+
+            set { SetProperty(ref ActiveValue, value); }
+
+        }
+        private List<string> RolesValue = new List<string>();
+
+        public List<string> Roles
+
+        {
+
+            get { return this.RolesValue; }
+
+            set { SetProperty(ref RolesValue, value); }
+
+        }
     }
 }
-
-
-
-
-
-

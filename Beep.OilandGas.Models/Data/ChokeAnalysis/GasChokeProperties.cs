@@ -4,14 +4,10 @@ using System.Runtime.CompilerServices;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ChokeAnalysis
 {
-    /// <summary>
-    /// Represents gas properties for choke calculations
-    /// DTO for calculations - Entity class: GAS_CHOKE_PROPERTIES
-    /// </summary>
     public partial class GasChokeProperties : ModelEntityBase {
         /// <summary>
         /// Gas specific gravity (relative to air)
@@ -76,5 +72,3 @@ namespace Beep.OilandGas.Models.Data.ChokeAnalysis
        
     }
 }
-
-

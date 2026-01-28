@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ProductionOperations
 {
     public partial class PRODUCTION_COSTS : ModelEntityBase
@@ -70,5 +70,3 @@ namespace Beep.OilandGas.Models.Data.ProductionOperations
         }
     }
 }
-
-

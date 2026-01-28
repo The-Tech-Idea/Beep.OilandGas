@@ -3,14 +3,10 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.DCA
 {
-    /// <summary>
-    /// Production data point for DCA analysis.
-    /// DTO for calculations - Entity class: DCA_PRODUCTION_DATA
-    /// </summary>
     public partial class DCAProductionDataPoint : ModelEntityBase {
         /// <summary>
         /// Production rate at this time point.
@@ -85,4 +81,3 @@ namespace Beep.OilandGas.Models.Data.DCA
         
     }
 }
-

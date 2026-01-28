@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ChokeAnalysis
 {
     public partial class GAS_CHOKE_PROPERTIES : ModelEntityBase {
@@ -60,5 +60,3 @@ namespace Beep.OilandGas.Models.Data.ChokeAnalysis
 
     }
 }
-
-

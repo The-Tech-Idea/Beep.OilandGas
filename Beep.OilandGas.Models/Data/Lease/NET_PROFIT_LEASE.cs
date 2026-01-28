@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Lease
 {
     public partial class NET_PROFIT_LEASE : ModelEntityBase
@@ -126,5 +126,3 @@ namespace Beep.OilandGas.Models.Data.Lease
 
     }
 }
-
-

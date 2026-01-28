@@ -1,15 +1,10 @@
 using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    /// <summary>
-    /// Represents a single parameter ranking in tornado sensitivity analysis.
-    /// Shows impact of parameter variation on operating point.
-    /// DTO for calculations - Entity class: PARAMETER_RANKING
-    /// </summary>
     public partial class ParameterRanking : ModelEntityBase {
         /// <summary>
         /// Parameter name (e.g., "ReservoirPressure", "ProductivityIndex")
@@ -81,5 +76,3 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         }
     }
 }
-
-

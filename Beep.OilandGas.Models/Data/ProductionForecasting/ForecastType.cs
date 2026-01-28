@@ -1,0 +1,36 @@
+
+namespace Beep.OilandGas.Models.Data.ProductionForecasting
+{
+    public enum ForecastType
+    {
+        /// <summary>
+        /// Pseudo-steady state single-phase.
+        /// </summary>
+        PseudoSteadyStateSinglePhase,
+
+        /// <summary>
+        /// Pseudo-steady state two-phase.
+        /// </summary>
+        PseudoSteadyStateTwoPhase,
+
+        /// <summary>
+        /// Transient flow.
+        /// </summary>
+        Transient,
+
+        /// <summary>
+        /// Gas well forecast.
+        /// </summary>
+        GasWell,
+
+        /// <summary>
+        /// Decline curve analysis (Arps decline methods).
+        /// </summary>
+        Decline,
+        None,
+        ReservoirSim,
+        Ensamble,
+        Harmonic,
+        Hyperbolic
+    }
+}

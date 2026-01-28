@@ -1,15 +1,10 @@
 using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
-    /// <summary>
-    /// Represents a detected flow regime segment in pressure transient data.
-    /// Used to identify and characterize different flow periods during well testing.
-    /// DTO for calculations - Entity class: FLOW_REGIME_INDICATOR
-    /// </summary>
     public partial class FlowRegimeIndicator : ModelEntityBase {
         /// <summary>
         /// Flow regime type (e.g., "Storage", "Wellbore Skin", "Infinite Acting", "Boundary Dominated")
@@ -112,5 +107,3 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
         }
     }
 }
-
-

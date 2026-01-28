@@ -1,11 +1,8 @@
 using System.Collections.Generic;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    /// <summary>
-    /// Represents the result of a multilateral well deliverability calculation.
-    /// </summary>
     public class MultilateralDeliverabilityResult : ModelEntityBase
     {
         /// <summary>
@@ -89,6 +86,3 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         }
     }
 }
-
-
-

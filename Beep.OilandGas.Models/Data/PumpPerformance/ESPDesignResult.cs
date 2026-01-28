@@ -1,12 +1,8 @@
 using System.Collections.Generic;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.PumpPerformance
 {
-    /// <summary>
-    /// Represents ESP design results
-    /// DTO for calculations - Entity class: ESP_DESIGN_RESULT
-    /// </summary>
     public class ESPDesignResult : ModelEntityBase
     {
         /// <summary>
@@ -220,9 +216,3 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
         }
     }
 }
-
-
-
-
-
-

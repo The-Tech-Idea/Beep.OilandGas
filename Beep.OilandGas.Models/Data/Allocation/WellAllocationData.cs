@@ -1,10 +1,6 @@
-#nullable enable
 
 namespace Beep.OilandGas.Models.Data.Allocation
 {
-    /// <summary>
-    /// Represents well allocation data for production allocation calculations.
-    /// </summary>
     public class WellAllocationData : ModelEntityBase
     {
         private string? WellIdValue;
@@ -75,5 +71,3 @@ namespace Beep.OilandGas.Models.Data.Allocation
         }
     }
 }
-
-

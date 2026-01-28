@@ -1,9 +1,9 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
- namespace Beep.OilandGas.Models.Data.PipelineAnalysis
+
+namespace Beep.OilandGas.Models.Data.PipelineAnalysis
 {
 public partial class PIPELINE_MATERIAL : ModelEntityBase {
 
@@ -119,5 +119,3 @@ private  System.String SOURCEValue;
 
   }
 }
-
-

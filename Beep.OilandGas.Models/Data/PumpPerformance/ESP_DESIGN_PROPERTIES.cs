@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.PumpPerformance
 {
     public partial class ESP_DESIGN_PROPERTIES : ModelEntityBase {
@@ -124,5 +124,3 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
 
     }
 }
-
-

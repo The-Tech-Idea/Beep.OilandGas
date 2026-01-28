@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.SuckerRodPumping
 {
-    /// <summary>
-    /// Represents sucker rod pumping system properties
-    /// DTO for calculations - Entity class: SUCKER_ROD_SYSTEM_PROPERTIES
-    /// </summary>
     public class SuckerRodSystemProperties : ModelEntityBase
     {
         /// <summary>
@@ -247,8 +244,3 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
         }
     }
 }
-
-
-
-
-

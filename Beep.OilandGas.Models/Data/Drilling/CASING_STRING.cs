@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Drilling
 {
     public partial class CASING_STRING : ModelEntityBase
@@ -83,5 +83,3 @@ namespace Beep.OilandGas.Models.Data.Drilling
         public CASING_STRING() { }
     }
 }
-
-

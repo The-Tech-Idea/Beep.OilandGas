@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 {
-    /// <summary>
-    /// Represents a point on an NPV profile curve
-    /// DTO for calculations - Entity class: NPV_PROFILE_POINT
-    /// </summary>
     public class NPVProfilePoint : ModelEntityBase
     {
         /// <summary>
@@ -64,7 +61,3 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
         }
     }
 }
-
-
-
-

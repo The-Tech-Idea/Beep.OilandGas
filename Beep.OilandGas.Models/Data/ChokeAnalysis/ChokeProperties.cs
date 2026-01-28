@@ -4,14 +4,10 @@ using System.Runtime.CompilerServices;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ChokeAnalysis
 {
-    /// <summary>
-    /// Represents choke properties
-    /// DTO for calculations - Entity class: CHOKE_PROPERTIES
-    /// </summary>
     public partial class ChokeProperties : ModelEntityBase {
         /// <summary>
         /// Choke diameter in inches
@@ -51,5 +47,3 @@ namespace Beep.OilandGas.Models.Data.ChokeAnalysis
      
     }
 }
-
-

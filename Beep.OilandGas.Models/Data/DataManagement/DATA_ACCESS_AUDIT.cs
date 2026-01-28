@@ -3,14 +3,10 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.DataManagement
 {
-    /// <summary>
-    /// Entity for tracking data access events for compliance and auditing
-    /// Records who accessed what data and when
-    /// </summary>
     public partial class DATA_ACCESS_AUDIT : ModelEntityBase
     {
         private System.String ACCESS_AUDIT_IDValue;
@@ -103,5 +99,3 @@ namespace Beep.OilandGas.Models.Data.DataManagement
 
     }
 }
-
-

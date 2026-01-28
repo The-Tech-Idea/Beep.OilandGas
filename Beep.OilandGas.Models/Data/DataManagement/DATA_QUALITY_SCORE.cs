@@ -3,13 +3,10 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.DataManagement
 {
-    /// <summary>
-    /// Entity for storing individual entity quality scores
-    /// </summary>
     public partial class DATA_QUALITY_SCORE : ModelEntityBase
     {
         private System.String QUALITY_SCORE_IDValue;
@@ -88,5 +85,3 @@ namespace Beep.OilandGas.Models.Data.DataManagement
 
     }
 }
-
-

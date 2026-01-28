@@ -1,15 +1,10 @@
 using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.PlungerLift
 {
-    /// <summary>
-    /// Represents plunger lift system optimization analysis and results.
-    /// Analyzes operating parameters for optimal well performance and economics.
-    /// DTO for calculations - Entity class: PLUNGER_LIFT_OPTIMIZATION
-    /// </summary>
     public partial class PlungerLiftOptimization : ModelEntityBase {
         /// <summary>
         /// Optimal opening pressure for casing plunger (psia)
@@ -162,5 +157,3 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         }
     }
 }
-
-

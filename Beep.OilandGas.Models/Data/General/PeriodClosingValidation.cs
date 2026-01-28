@@ -43,5 +43,3 @@ namespace Beep.OilandGas.Models.Data.General
         public Dictionary<string, object> CheckDetails { get; set; } = new();
     }
 }
-
-

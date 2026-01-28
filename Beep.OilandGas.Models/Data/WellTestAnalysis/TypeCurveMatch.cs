@@ -1,15 +1,10 @@
 using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
-    /// <summary>
-    /// Represents a type curve matching result for well test analysis.
-    /// Stores type curve characteristics and match quality metrics.
-    /// DTO for calculations - Entity class: TYPE_CURVE_MATCH
-    /// </summary>
     public partial class TypeCurveMatch : ModelEntityBase {
         /// <summary>
         /// Type curve name/identifier (e.g., "Infinite Acting Homogeneous", "Bounded Reservoir")
@@ -141,5 +136,3 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
         }
     }
 }
-
-

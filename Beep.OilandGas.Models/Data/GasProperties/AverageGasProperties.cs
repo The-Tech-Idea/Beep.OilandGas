@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.GasProperties
 {
-    /// <summary>
-    /// Represents average gas properties over a range
-    /// DTO for calculations - Entity class: AVERAGE_GAS_PROPERTIES
-    /// </summary>
     public class AverageGasProperties : ModelEntityBase
     {
         /// <summary>
@@ -67,7 +64,3 @@ namespace Beep.OilandGas.Models.Data.GasProperties
         }
     }
 }
-
-
-
-

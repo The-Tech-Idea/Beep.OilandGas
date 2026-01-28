@@ -1,13 +1,9 @@
 using System;
 using System.ComponentModel.DataAnnotations;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Setup
 {
-    /// <summary>
-    /// Data class for BA_ORGANIZATION setup during initial organization/company setup
-    /// Maps to BA_ORGANIZATION table in PPDM39 schema
-    /// </summary>
     public class OrganizationSetupData : ModelEntityBase
     {
         private string BusinessAssociateIdValue = string.Empty;
@@ -171,5 +167,3 @@ namespace Beep.OilandGas.Models.Data.Setup
         }
     }
 }
-
-

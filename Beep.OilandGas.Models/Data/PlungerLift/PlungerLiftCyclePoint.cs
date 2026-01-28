@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.PlungerLift
 {
-    /// <summary>
-    /// Represents a point in plunger lift cycle
-    /// DTO for calculations - Entity class: PLUNGER_LIFT_CYCLE_POINT
-    /// </summary>
     public class PlungerLiftCyclePoint : ModelEntityBase
     {
         /// <summary>
@@ -97,7 +94,3 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         }
     }
 }
-
-
-
-

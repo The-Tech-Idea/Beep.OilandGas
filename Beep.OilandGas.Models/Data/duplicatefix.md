@@ -1,229 +1,331 @@
 # Duplicate Class Resolution Plan
 
-## Strategy
-1. **Identify Master**: Prefer Data or General namespace.
-2. **Merge Properties**: Consolidate unique properties.
-3. **Apply Pattern**: Refactor to ModelEntityBase + SetProperty.
-4. **Update References**: Fix usages.
-5. **Delete Duplicate**: Remove redundancy.
+**Total Duplicates Found**: 63
 
-## Task List
-- [x] **ADDRESS**
-  - Paths: `ProductionAccounting\ADDRESS.cs`, `ProductionAccounting\OwnershipModels.cs`
-  - Action: Merge to best fit
-- [x] **AgingAnalysis**
-  - Paths: `Accounting\ReconciliationServiceModels.cs`, `General\AgingAnalysis.cs`
-  - Action: Merge to best fit
-- [x] **AgingBucket**
-  - Paths: `Accounting\ReconciliationServiceModels.cs`, `General\AgingBucket.cs`
-  - Action: Merge to best fit
-- [x] **BankReconciliation**
-  - Paths: `Accounting\BankReconciliationModels.cs`, `Accounting\ReconciliationServiceModels.cs`, `General\BankReconciliation.cs`
-  - Action: Merge to best fit
-- [x] **CalculateRoyaltyRequest**
-  - Paths: `Accounting\Royalty\RoyaltyRequest.cs`, `ProductionAccounting\Royalty.cs`
-  - Action: Merge to best fit
-- [x] **CeilingTestRequest**
-  - Paths: `Accounting\Financial\FinancialRequest.cs`, `ProductionAccounting\Financial.cs`
-  - Action: Merge to best fit
-- [x] **CostAllocationRequest**
-  - Paths: `Accounting\Cost\CostRequest.cs`, `ProductionAccounting\Cost.cs`
-  - Action: Merge to best fit
-- [x] **CreateCostTransactionRequest**
-  - Paths: `Accounting\CostTransaction.cs`, `Accounting\Cost\CostRequest.cs`, `ProductionAccounting\Cost.cs`
-  - Action: Merge to best fit
-- [x] **CreateExchangeContractRequest**
-  - Paths: `Accounting\Trading\TradingRequest.cs`, `Trading\Trading.cs`
-  - Action: Merge to best fit
-- [ ] **CreateInventoryItemRequest**
-  - Paths: `Accounting\InventoryItem.cs`, `Inventory\Inventory.cs`
-  - Action: Merge to best fit
-- [ ] **CreateJournalEntryRequest**
-  - Paths: `Accounting\JournalEntry.cs`, `ProductionAccounting\TraditionalAccounting.cs`
-  - Action: Merge to best fit
-- [ ] **CreateRevenueTransactionRequest**
-  - Paths: `Accounting\RevenueTransaction.cs`, `Accounting\Revenue\RevenueRequest.cs`
-  - Action: Merge to best fit
-- [x] **CreateRoyaltyPaymentRequest**
-  - Paths: `Accounting\Royalty\RoyaltyRequest.cs`, `ProductionAccounting\Royalty.cs`
-  - Action: Merge to best fit
-- [x] **CreateStorageFacilityRequest**
-  - Paths: `Accounting\Storage\StorageRequest.cs`, `Storage\Storage.cs`
-  - Action: Merge to best fit
-- [x] **CreateUnitAgreementRequest**
-  - Paths: `Accounting\Unitization\UnitizationRequest.cs`, `Unitization\Unitization.cs`
-  - Action: Merge to best fit
-- [ ] **FacilityResponse**
-  - Paths: `Development\Development.cs`, `LifeCycle\FacilityManagement.cs`
-  - Action: Merge to best fit
-- [ ] **FieldResponse**
-  - Paths: `LifeCycle\FieldManagement.cs`, `Production\Production.cs`
-  - Action: Merge to best fit
-- [ ] **FlashCalculationPropertyResult**
-  - Paths: `Calculations\FlashCalculation.cs`, `Properties\Properties.cs`
-  - Action: Merge to best fit
-- [ ] **FullCostAcquisitionRequest**
-  - Paths: `Accounting\Financial\FinancialRequest.cs`, `ProductionAccounting\Financial.cs`
-  - Action: Merge to best fit
-- [ ] **FullCostDevelopmentRequest**
-  - Paths: `Accounting\Financial\FinancialRequest.cs`, `ProductionAccounting\Financial.cs`
-  - Action: Merge to best fit
-- [ ] **FullCostExplorationRequest**
-  - Paths: `Accounting\Financial\FinancialRequest.cs`, `ProductionAccounting\Financial.cs`
-  - Action: Merge to best fit
-- [ ] **GasComponent**
-  - Paths: `GasProperties\GasComponent.cs`, `GasProperties\GasProperties.cs`
-  - Action: Merge to best fit
-- [ ] **GasComposition**
-  - Paths: `GasProperties\GasComposition.cs`, `GasProperties\GasProperties.cs`
-  - Action: Merge to best fit
-- [ ] **GasLiftPerformancePoint**
-  - Paths: `Calculations\GasLift.cs`, `GasLift\GasLiftPotentialResult.cs`
-  - Action: Merge to best fit
-- [ ] **GasLiftValve**
-  - Paths: `GasLift\GasLift.cs`, `GasLift\GasLiftValveDesignResult.cs`
-  - Action: Merge to best fit
-- [ ] **GenerateJIBStatementRequest**
-  - Paths: `ProductionAccounting\Report.cs`, `Reporting\Reporting.cs`
-  - Action: Merge to best fit
-- [ ] **GenerateLeaseReportRequest**
-  - Paths: `Accounting\Reporting\ReportingRequest.cs`, `ProductionAccounting\Report.cs`
-  - Action: Merge to best fit
-- [ ] **GenerateOperationalReportRequest**
-  - Paths: `Accounting\Reporting\ReportingRequest.cs`, `ProductionAccounting\Report.cs`, `Reporting\Reporting.cs`
-  - Action: Merge to best fit
-- [ ] **ImbalanceSummary**
-  - Paths: `Imbalance\IMBALANCE.cs`, `ProductionAccounting\ImbalanceModels.cs`
-  - Action: Merge to best fit
-- [ ] **ImpairmentRequest**
-  - Paths: `Accounting\Financial\FinancialRequest.cs`, `ProductionAccounting\Financial.cs`
-  - Action: Merge to best fit
-- [ ] **IntercompanyReconciliation**
-  - Paths: `Accounting\ReconciliationServiceModels.cs`, `General\IntercompanyReconciliation.cs`
-  - Action: Merge to best fit
-- [ ] **InterestCapitalizationData**
-  - Paths: `Calculations\SuccessfulEfforts.cs`, `ProductionAccounting\CostModels.cs`
-  - Action: Merge to best fit
-- [ ] **Invoice**
-  - Paths: `Accounting\Invoice.cs`, `ProductionAccounting\INVOICE.cs`
-  - Action: Merge to best fit
-- [ ] **Lease**
-  - Paths: `Lease\LeaseDtos.cs`, `ProductionAccounting\Lease.cs`
-  - Action: Merge to best fit
-- [ ] **LeaseAgreement**
-  - Paths: `LeaseManagement\LeaseAgreement.cs`, `ProductionAccounting\LeaseModels.cs`
-  - Action: Merge to best fit
-- [ ] **MaintenanceRequest**
-  - Paths: `HydraulicPumps\HydraulicPump.cs`, `LifeCycle\Maintenance.cs`
-  - Action: Merge to best fit
-- [ ] **MeasurementAccuracy**
-  - Paths: `Measurement\MeasurementAccuracy.cs`, `ProductionAccounting\MeasurementModels.cs`
-  - Action: Merge to best fit
-- [ ] **Nomination**
-  - Paths: `ProductionAccounting\ImbalanceModels.cs`, `ProductionAccounting\NOMINATION.cs`
-  - Action: Merge to best fit
-- [ ] **OutstandingItem**
-  - Paths: `Accounting\ReconciliationServiceModels.cs`, `General\OutstandingItem.cs`
-  - Action: Merge to best fit
-- [ ] **OwnershipTreeNode**
-  - Paths: `Ownership\OwnershipTree.cs`, `ProductionAccounting\Ownership.cs`
-  - Action: Merge to best fit
-- [ ] **Perforation**
-  - Paths: `Drilling\Drilling.cs`, `Drilling\PERFORATION.cs`
-  - Action: Merge to best fit
-- [ ] **PeriodClosingResult**
-  - Paths: `Accounting\PeriodClosingWorkflowModels.cs`, `General\PeriodClosingResult.cs`
-  - Action: Merge to best fit
-- [ ] **PeriodClosingStatus**
-  - Paths: `Accounting\PeriodClosingWorkflowModels.cs`, `General\PeriodClosingStatus.cs`
-  - Action: Merge to best fit
-- [ ] **PeriodClosingValidation**
-  - Paths: `Accounting\PeriodClosingWorkflowModels.cs`, `General\PeriodClosingValidation.cs`
-  - Action: Merge to best fit
-- [ ] **PermitApplication**
-  - Paths: `DevelopmentPlanning\DevelopmentPlanning.cs`, `PermitsAndApplications\PermitApplicationModels.cs`
-  - Action: Merge to best fit
-- [ ] **PipelineResponse**
-  - Paths: `Development\Development.cs`, `LifeCycle\PipelineManagement.cs`
-  - Action: Merge to best fit
-- [ ] **PlungerLiftWellProperties**
-  - Paths: `PlungerLift\PlungerLiftWellProperties.cs`, `Pumps\Pump.cs`
-  - Action: Merge to best fit
-- [ ] **PostingResult**
-  - Paths: `Accounting\PeriodClosingWorkflowModels.cs`, `General\PostingResult.cs`
-  - Action: Merge to best fit
-- [ ] **PressureDropResult**
-  - Paths: `Calculations\PipelineAnalysis.cs`, `PipelineAnalysis\PIPELINE_ANALYSIS_RESULT.cs`
-  - Action: Merge to best fit
-- [x] **PriceIndex**
-  - Paths: `Pricing\PriceIndex.cs`, `ProductionAccounting\PricingModels.cs`
-  - Action: Delegated `ProductionAccounting.PriceIndex` to canonical `Data.Pricing.PriceIndex` (done)
-- [x] **PriceIndexRequest**
-  - Paths: `Pricing\Pricing.cs`, `ProductionAccounting\Pricing.cs`
-  - Action: Delegated `ProductionAccounting.PriceIndexRequest` to canonical `Data.Pricing.CreatePriceIndexRequest` (done)
-- [ ] **ProductionData**
-  - Paths: `Calculations\SuccessfulEfforts.cs`, `ProductionAccounting\CostModels.cs`, `ProductionOperations\ProductionOperationsModels.cs`
-  - Action: Deferred: types differ significantly — requires manual reconciliation; left as separate for now
-- [ ] **ProductionForecast**
-  - Paths: `NodalAnalysis\NodalAnalysis.cs`, `ProductionForecasting\ProductionForecast.cs`
-  - Action: Merge to best fit
-- [ ] **PROSPECT**
-  - Paths: `ProspectIdentification\PROSPECT.cs`, `ProspectIdentification\Domain\Prospect.cs`
-  - Action: Merge to best fit
-- [ ] **ProvedReserves**
-  - Paths: `Calculations\SuccessfulEfforts.cs`, `ProductionAccounting\CostModels.cs`
-  - Action: Merge to best fit
-- [ ] **RECEIVABLE**
-  - Paths: `ProductionAccounting\RECEIVABLE.cs`, `ProductionAccounting\Sales.cs`
-  - Action: Merge to best fit
-- [ ] **ReconciliationResult**
-  - Paths: `Accounting\PeriodClosingWorkflowModels.cs`, `DataManagement\DataManagement.cs`
-  - Action: Merge to best fit
-- [ ] **ReconciliationSummary**
-  - Paths: `Accounting\ReconciliationModels.cs`, `Accounting\ReconciliationServiceModels.cs`, `General\ReconciliationSummary.cs`
-  - Action: Merge to best fit
-- [ ] **ReconciliationVariance**
-  - Paths: `Accounting\ReconciliationServiceModels.cs`, `General\ReconciliationVariance.cs`
-  - Action: Merge to best fit
-- [ ] **RegisterOwnershipInterestRequest**
-  - Paths: `Accounting\Ownership\OwnershipRequest.cs`, `ProductionAccounting\Ownership.cs`
-  - Action: Merge to best fit
-- [ ] **RegulatedPrice**
-  - Paths: `Pricing\RegulatedPrice.cs`, `ProductionAccounting\PricingModels.cs`
-  - Action: Merge to best fit
-- [ ] **SalesTransaction**
-  - Paths: `Accounting\SALES_TRANSACTION.cs`, `ProductionAccounting\Sales.cs`
-  - Action: Merge to best fit
-- [ ] **SeedDataRequest**
-  - Paths: `DataManagement\Connection.cs`, `SeedData\SeedData.cs`
-  - Action: Merge to best fit
-- [ ] **SeedDataResponse**
-  - Paths: `DataManagement\Connection.cs`, `SeedData\SeedData.cs`
-  - Action: Merge to best fit
-- [ ] **SensitivityAnalysis**
-  - Paths: `Calculations\EconomicAnalysis.cs`, `Evaluation\Evaluation.cs`
-  - Action: Merge to best fit
-- [ ] **SensitivityAnalysisResult**
-  - Paths: `Calculations\DevelopmentPlanning.cs`, `NodalAnalysis\NodalAnalysis.cs`
-  - Action: Merge to best fit
-- [ ] **UnmatchedTransaction**
-  - Paths: `Accounting\ReconciliationServiceModels.cs`, `General\UnmatchedTransaction.cs`
-  - Action: Merge to best fit
-- [ ] **UnreconciledItem**
-  - Paths: `Accounting\PeriodClosingWorkflowModels.cs`, `General\UnreconciledItem.cs`
-  - Action: Merge to best fit
-- [ ] **ValidationError**
-  - Paths: `DataManagement\DataManagement.cs`, `DataManagement\PPDM39DataModels.cs`
-  - Action: Merge to best fit
-- [ ] **ValidationResult**
-  - Paths: `DataManagement\DataManagement.cs`, `DataManagement\PPDM39DataModels.cs`, `General\ValidationResult.cs`
-  - Action: Merge to best fit
-- [ ] **ValueRunTicketRequest**
-  - Paths: `Accounting\Pricing\PricingRequest.cs`, `Pricing\Pricing.cs`, `ProductionAccounting\Pricing.cs`
-  - Action: Merge to best fit
-- [ ] **WellAllocationData**
-  - Paths: `Allocation\WellAllocationData.cs`, `ProductionAccounting\AllocationModels.cs`
-  - Action: Merge to best fit
-- [ ] **WellTestRequest**
-  - Paths: `LifeCycle\WorkOrder.cs`, `Production\Production.cs`
-  - Action: Merge to best fit
+## Strategy
+1. **Identify Master**: Choose the most relevant namespace/folder (e.g., `Data` vs `ProductionAccounting`).
+2. **Merge Properties**: Consolidate unique properties to the master file.
+3. **Update References**: Fix usages in the code.
+4. **Delete Duplicate**: Remove the redundant file.
+
+## Duplicate Candidates
+### Address
+- `Data\General\Address.cs`
+- `Data\ProductionAccounting\ADDRESS.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### AgingAnalysis
+- `Data\Accounting\AgingAnalysis.cs`
+- `Data\General\AgingAnalysis.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### AgingBucket
+- `Data\Accounting\AgingBucket.cs`
+- `Data\General\AgingBucket.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### BankReconciliation
+- `Data\Accounting\BankReconciliation.cs`
+- `Data\General\BankReconciliation.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### CalculateRoyaltyRequest
+- `Data\Accounting\Royalty\CalculateRoyaltyRequest.cs`
+- `Data\ProductionAccounting\CalculateRoyaltyRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### CeilingTestRequest
+- `Data\Accounting\Financial\CeilingTestRequest.cs`
+- `Data\ProductionAccounting\CeilingTestRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### CostAllocationRequest
+- `Data\Accounting\Cost\CostAllocationRequest.cs`
+- `Data\ProductionAccounting\CostAllocationRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### CreateCostTransactionRequest
+- `Data\Accounting\CreateCostTransactionRequest.cs`
+- `Data\Accounting\Cost\CreateCostTransactionRequest.cs`
+- `Data\ProductionAccounting\CreateCostTransactionRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### CreateExchangeContractRequest
+- `Data\Accounting\Trading\CreateExchangeContractRequest.cs`
+- `Data\Trading\CreateExchangeContractRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### CreateInventoryItemRequest
+- `Data\Accounting\CreateInventoryItemRequest.cs`
+- `Data\Inventory\CreateInventoryItemRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### CreateInventoryTransactionRequest
+- `Data\Accounting\Traditional\CreateInventoryTransactionRequest.cs`
+- `Data\Inventory\CreateInventoryTransactionRequest.cs`
+- `Data\ProductionAccounting\CreateInventoryTransactionRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### CreateJournalEntryRequest
+- `Data\Accounting\CreateJournalEntryRequest.cs`
+- `Data\ProductionAccounting\CreateJournalEntryRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### CreateRevenueTransactionRequest
+- `Data\Accounting\CreateRevenueTransactionRequest.cs`
+- `Data\Accounting\Revenue\CreateRevenueTransactionRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### CreateRoyaltyPaymentRequest
+- `Data\Accounting\Royalty\CreateRoyaltyPaymentRequest.cs`
+- `Data\ProductionAccounting\CreateRoyaltyPaymentRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### CreateStorageFacilityRequest
+- `Data\Accounting\Storage\CreateStorageFacilityRequest.cs`
+- `Data\Storage\CreateStorageFacilityRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### CreateUnitAgreementRequest
+- `Data\Accounting\Unitization\CreateUnitAgreementRequest.cs`
+- `Data\Unitization\CreateUnitAgreementRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### FieldResponse
+- `Data\LifeCycle\FieldResponse.cs`
+- `Data\Production\FieldResponse.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### FlashCalculationPropertyResult
+- `Data\Calculations\FlashCalculationPropertyResult.cs`
+- `Data\Properties\FlashCalculationPropertyResult.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### FullCostAcquisitionRequest
+- `Data\Accounting\Financial\FullCostAcquisitionRequest.cs`
+- `Data\ProductionAccounting\FullCostAcquisitionRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### FullCostDevelopmentRequest
+- `Data\Accounting\Financial\FullCostDevelopmentRequest.cs`
+- `Data\ProductionAccounting\FullCostDevelopmentRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### FullCostExplorationRequest
+- `Data\Accounting\Financial\FullCostExplorationRequest.cs`
+- `Data\ProductionAccounting\FullCostExplorationRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### GasLiftPerformancePoint
+- `Data\Calculations\GasLiftPerformancePoint.cs`
+- `Data\GasLift\GasLiftPerformancePoint.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### GenerateJIBStatementRequest
+- `Data\ProductionAccounting\GenerateJIBStatementRequest.cs`
+- `Data\Reporting\GenerateJIBStatementRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### GenerateLeaseReportRequest
+- `Data\Accounting\Reporting\GenerateLeaseReportRequest.cs`
+- `Data\ProductionAccounting\GenerateLeaseReportRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### GenerateOperationalReportRequest
+- `Data\Accounting\Reporting\GenerateOperationalReportRequest.cs`
+- `Data\ProductionAccounting\GenerateOperationalReportRequest.cs`
+- `Data\Reporting\GenerateOperationalReportRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### ImbalanceSummary
+- `Data\Imbalance\ImbalanceSummary.cs`
+- `Data\ProductionAccounting\ImbalanceSummary.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### ImpairmentRequest
+- `Data\Accounting\Financial\ImpairmentRequest.cs`
+- `Data\ProductionAccounting\ImpairmentRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### IntercompanyReconciliation
+- `Data\Accounting\IntercompanyReconciliation.cs`
+- `Data\General\IntercompanyReconciliation.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### InterestCapitalizationData
+- `Data\Calculations\InterestCapitalizationData.cs`
+- `Data\ProductionAccounting\InterestCapitalizationData.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### Lease
+- `Data\Lease\Lease.cs`
+- `Data\ProductionAccounting\Lease.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### LeaseAgreement
+- `Data\LeaseManagement\LeaseAgreement.cs`
+- `Data\ProductionAccounting\LeaseAgreement.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### MaintenanceRequest
+- `Data\HydraulicPumps\MaintenanceRequest.cs`
+- `Data\LifeCycle\MaintenanceRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### MeasurementAccuracy
+- `Data\Measurement\MeasurementAccuracy.cs`
+- `Data\ProductionAccounting\MeasurementAccuracy.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### OutstandingItem
+- `Data\Accounting\OutstandingItem.cs`
+- `Data\General\OutstandingItem.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### OwnershipTreeNode
+- `Data\Ownership\OwnershipTreeNode.cs`
+- `Data\ProductionAccounting\OwnershipTreeNode.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### PeriodClosingResult
+- `Data\Accounting\PeriodClosingResult.cs`
+- `Data\General\PeriodClosingResult.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### PeriodClosingStatus
+- `Data\Accounting\PeriodClosingStatus.cs`
+- `Data\General\PeriodClosingStatus.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### PeriodClosingValidation
+- `Data\Accounting\PeriodClosingValidation.cs`
+- `Data\General\PeriodClosingValidation.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### PipelineResponse
+- `Data\Development\PipelineResponse.cs`
+- `Data\LifeCycle\PipelineResponse.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### PlungerLiftWellProperties
+- `Data\PlungerLift\PlungerLiftWellProperties.cs`
+- `Data\Pumps\PlungerLiftWellProperties.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### PostingResult
+- `Data\Accounting\PostingResult.cs`
+- `Data\General\PostingResult.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### PressureDropResult
+- `Data\Calculations\PressureDropResult.cs`
+- `Data\PipelineAnalysis\PressureDropResult.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### PriceIndex
+- `Data\Pricing\PriceIndex.cs`
+- `Data\ProductionAccounting\PriceIndex.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### PriceIndexRequest
+- `Data\Accounting\Pricing\PriceIndexRequest.cs`
+- `Data\ProductionAccounting\PriceIndexRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### ProductionData
+- `Data\Calculations\ProductionData.cs`
+- `Data\ProductionAccounting\ProductionData.cs`
+- `Data\ProductionOperations\ProductionData.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### ProductionForecast
+- `Data\NodalAnalysis\ProductionForecast.cs`
+- `Data\ProductionForecasting\ProductionForecast.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### ProvedReserves
+- `Data\Calculations\ProvedReserves.cs`
+- `Data\ProductionAccounting\ProvedReserves.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### ReconciliationResult
+- `Data\Accounting\ReconciliationResult.cs`
+- `Data\DataManagement\ReconciliationResult.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### ReconciliationSummary
+- `Data\Accounting\ReconciliationSummary.cs`
+- `Data\General\ReconciliationSummary.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### ReconciliationVariance
+- `Data\Accounting\ReconciliationVariance.cs`
+- `Data\General\ReconciliationVariance.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### RegisterOwnershipInterestRequest
+- `Data\Accounting\Ownership\RegisterOwnershipInterestRequest.cs`
+- `Data\ProductionAccounting\RegisterOwnershipInterestRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### RegulatedPrice
+- `Data\Pricing\RegulatedPrice.cs`
+- `Data\ProductionAccounting\RegulatedPrice.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### SalesTransaction
+- `Data\Accounting\SalesTransaction.cs`
+- `Data\ProductionAccounting\SalesTransaction.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### SeedDataRequest
+- `Data\DataManagement\SeedDataRequest.cs`
+- `Data\SeedData\SeedDataRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### SeedDataResponse
+- `Data\DataManagement\SeedDataResponse.cs`
+- `Data\SeedData\SeedDataResponse.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### SensitivityAnalysis
+- `Data\Calculations\SensitivityAnalysis.cs`
+- `Data\Evaluation\SensitivityAnalysis.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### SensitivityAnalysisResult
+- `Data\Calculations\SensitivityAnalysisResult.cs`
+- `Data\NodalAnalysis\SensitivityAnalysisResult.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### UnmatchedTransaction
+- `Data\Accounting\UnmatchedTransaction.cs`
+- `Data\General\UnmatchedTransaction.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### UnreconciledItem
+- `Data\Accounting\UnreconciledItem.cs`
+- `Data\General\UnreconciledItem.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### ValidationResult
+- `Data\DataManagement\ValidationResult.cs`
+- `Data\General\ValidationResult.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### ValueRunTicketRequest
+- `Data\Accounting\Pricing\ValueRunTicketRequest.cs`
+- `Data\Pricing\ValueRunTicketRequest.cs`
+- `Data\ProductionAccounting\ValueRunTicketRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### WellAllocationData
+- `Data\Allocation\WellAllocationData.cs`
+- `Data\ProductionAccounting\WellAllocationData.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+
+### WellTestRequest
+- `Data\LifeCycle\WellTestRequest.cs`
+- `Data\Production\WellTestRequest.cs`
+- **Action**: [ ] Select Master / Merge / Delete
+

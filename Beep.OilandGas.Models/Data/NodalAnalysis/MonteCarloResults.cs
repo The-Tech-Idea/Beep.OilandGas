@@ -1,15 +1,10 @@
 using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    /// <summary>
-    /// Represents results from Monte Carlo uncertainty analysis.
-    /// Contains probability distribution statistics (P10, P50, P90).
-    /// DTO for calculations - Entity class: MONTE_CARLO_RESULTS
-    /// </summary>
     public partial class MonteCarloResults : ModelEntityBase {
         /// <summary>
         /// Mean production rate from simulation (bbl/day or equivalent)
@@ -102,5 +97,3 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         }
     }
 }
-
-

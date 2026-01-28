@@ -1,75 +1,83 @@
 using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
-using TheTechIdea.Beep.Editor;
-using Beep.OilandGas.PPDM.Models;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
-    public partial class ADDRESS : ModelEntityBase {
-        private System.String ADDRESS_IDValue;
-        public System.String ADDRESS_ID
+    public class Address : ModelEntityBase
+    {
+        /// <summary>
+        /// Gets or sets the street address.
+        /// </summary>
+        private string StreetAddressValue = string.Empty;
+
+        public string StreetAddress
+
         {
-            get { return this.ADDRESS_IDValue; }
-            set { SetProperty(ref ADDRESS_IDValue, value); }
+
+            get { return this.StreetAddressValue; }
+
+            set { SetProperty(ref StreetAddressValue, value); }
+
         }
 
-        private System.String OWNER_INFORMATION_IDValue;
-        public System.String OWNER_INFORMATION_ID
+        /// <summary>
+        /// Gets or sets the city.
+        /// </summary>
+        private string CityValue = string.Empty;
+
+        public string City
+
         {
-            get { return this.OWNER_INFORMATION_IDValue; }
-            set { SetProperty(ref OWNER_INFORMATION_IDValue, value); }
+
+            get { return this.CityValue; }
+
+            set { SetProperty(ref CityValue, value); }
+
         }
 
-        private System.String STREET_ADDRESSValue;
-        public System.String STREET_ADDRESS
+        /// <summary>
+        /// Gets or sets the state.
+        /// </summary>
+        private string StateValue = string.Empty;
+
+        public string State
+
         {
-            get { return this.STREET_ADDRESSValue; }
-            set { SetProperty(ref STREET_ADDRESSValue, value); }
+
+            get { return this.StateValue; }
+
+            set { SetProperty(ref StateValue, value); }
+
         }
 
-        private System.String CITYValue;
-        public System.String CITY
+        /// <summary>
+        /// Gets or sets the zip code.
+        /// </summary>
+        private string ZipCodeValue = string.Empty;
+
+        public string ZipCode
+
         {
-            get { return this.CITYValue; }
-            set { SetProperty(ref CITYValue, value); }
+
+            get { return this.ZipCodeValue; }
+
+            set { SetProperty(ref ZipCodeValue, value); }
+
         }
 
-        private System.String STATEValue;
-        public System.String STATE
+        /// <summary>
+        /// Gets or sets the country.
+        /// </summary>
+        private string CountryValue = "USA";
+
+        public string Country
+
         {
-            get { return this.STATEValue; }
-            set { SetProperty(ref STATEValue, value); }
-        }
 
-        private System.String ZIP_CODEValue;
-        public System.String ZIP_CODE
-        {
-            get { return this.ZIP_CODEValue; }
-            set { SetProperty(ref ZIP_CODEValue, value); }
-        }
+            get { return this.CountryValue; }
 
-        private System.String COUNTRYValue;
-        public System.String COUNTRY
-        {
-            get { return this.COUNTRYValue; }
-            set { SetProperty(ref COUNTRYValue, value); }
-        }
+            set { SetProperty(ref CountryValue, value); }
 
-        // Standard PPDM columns
-
-        private System.String REMARKValue;
-
-        private System.String SOURCEValue;
-
-        private System.String ROW_IDValue;
-        public System.String ROW_ID
-        {
-            get { return this.ROW_IDValue; }
-            set { SetProperty(ref ROW_IDValue, value); }
         }
     }
 }
-
-

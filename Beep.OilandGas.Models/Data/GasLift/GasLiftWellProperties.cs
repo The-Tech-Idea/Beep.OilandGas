@@ -1,10 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.GasLift
 {
-    /// <summary>
-    /// Comprehensive well properties for gas lift analysis and design
-    /// DTO for calculations - Entity class: GAS_LIFT_WELL_PROPERTIES
-    /// Includes all parameters needed for industry-standard gas lift engineering calculations
-    /// </summary>
     public class GasLiftWellProperties : ModelEntityBase
     {
         /// <summary>
@@ -383,8 +379,3 @@ namespace Beep.OilandGas.Models.Data.GasLift
         }
     }
 }
-
-
-
-
-

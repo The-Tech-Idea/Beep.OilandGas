@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.PumpPerformance
 {
-    /// <summary>
-    /// Represents ESP cable properties
-    /// DTO for calculations - Entity class: ESP_CABLE_PROPERTIES
-    /// </summary>
     public class ESPCableProperties : ModelEntityBase
     {
         /// <summary>
@@ -67,7 +64,3 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
         }
     }
 }
-
-
-
-

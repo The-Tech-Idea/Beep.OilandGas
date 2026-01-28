@@ -1,11 +1,8 @@
 using System;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Stratigraphy
 {
-    /// <summary>
-    /// Data Transfer Object for Stratigraphic Unit
-    /// </summary>
     public class StratUnit : ModelEntityBase
     {
         /// <summary>
@@ -275,5 +272,3 @@ namespace Beep.OilandGas.Models.Data.Stratigraphy
 
     }
 }
-
-

@@ -15,6 +15,7 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data.Common;
+using Beep.OilandGas.Models.Data.GasProperties;
 
 namespace Beep.OilandGas.GasProperties.Services
 {
@@ -180,11 +181,11 @@ namespace Beep.OilandGas.GasProperties.Services
                 foreach (var component in composition.Components)
                 {
                     var componentId = _defaults.FormatIdForTable("GAS_COMPONENT", Guid.NewGuid().ToString());
-                    var newComponent = new GAS_COMPOSITION_COMPONENT
+                    var newComponent = new GasComposition
                     {
-                        GAS_COMPONENT_ID = componentId,
-                        GAS_COMPOSITION_ID = composition.CompositionId,
-                        COMPONENT_NAME = component.ComponentName ?? string.Empty,
+                        ComponentId = componentId,
+                        CompositionId = composition.CompositionId,
+                        CompositionName = component.ComponentName ?? string.Empty,
                         MOLE_FRACTION = component.MoleFraction,
                         MOLECULAR_WEIGHT = component.MolecularWeight,
                         ACTIVE_IND = "Y"

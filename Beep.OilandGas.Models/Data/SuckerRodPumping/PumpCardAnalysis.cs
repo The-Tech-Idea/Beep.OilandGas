@@ -2,15 +2,10 @@ using System;
 using System.Collections.Generic;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.SuckerRodPumping
 {
-    /// <summary>
-    /// Represents detailed pump card analysis results.
-    /// Analyzes pump efficiency, card shape, and pump performance characteristics.
-    /// DTO for calculations - Entity class: PUMP_CARD_ANALYSIS
-    /// </summary>
     public partial class PumpCardAnalysis : ModelEntityBase {
         /// <summary>
         /// Pump card shape classification (Ideal, Normal, Gas Interference, Traveling Valve Leak, etc.)
@@ -162,5 +157,3 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
         }
     }
 }
-
-

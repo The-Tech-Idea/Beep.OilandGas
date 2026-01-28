@@ -1,8 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.HydraulicPumps
 {
-    /// <summary>
-    /// Represents well properties for hydraulic pump calculations.
-    /// </summary>
     public class HydraulicPumpWellProperties : ModelEntityBase
     {
         /// <summary>
@@ -178,4 +176,3 @@ namespace Beep.OilandGas.Models.Data.HydraulicPumps
         public decimal BottomHoleTemperature { get; set; }
     }
 }
-

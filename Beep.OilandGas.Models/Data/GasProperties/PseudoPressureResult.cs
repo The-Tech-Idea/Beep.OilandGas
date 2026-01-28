@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.GasProperties
 {
-    /// <summary>
-    /// Represents pseudo-pressure calculation result
-    /// DTO for calculations - Entity class: PSEUDO_PRESSURE_RESULT
-    /// </summary>
     public class PseudoPressureResult : ModelEntityBase
     {
         /// <summary>
@@ -67,7 +64,3 @@ namespace Beep.OilandGas.Models.Data.GasProperties
         }
     }
 }
-
-
-
-

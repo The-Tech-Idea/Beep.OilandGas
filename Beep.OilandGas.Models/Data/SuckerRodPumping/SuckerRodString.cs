@@ -1,12 +1,8 @@
 using System.Collections.Generic;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.SuckerRodPumping
 {
-    /// <summary>
-    /// Represents sucker rod string configuration
-    /// DTO for calculations - Entity class: SUCKER_ROD_STRING
-    /// </summary>
     public class SuckerRodString : ModelEntityBase
     {
         /// <summary>
@@ -55,9 +51,3 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
         }
     }
 }
-
-
-
-
-
-

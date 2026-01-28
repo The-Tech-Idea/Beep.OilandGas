@@ -2,14 +2,10 @@ using System;
 using System.Collections.Generic;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    /// <summary>
-    /// Represents tornado sensitivity analysis results showing parameter rankings by impact.
-    /// DTO for calculations - Entity class: TORNADO_ANALYSIS_RESULT
-    /// </summary>
     public partial class TornadoAnalysisResult : ModelEntityBase {
         /// <summary>
         /// Base operating point used as reference
@@ -72,5 +68,3 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         }
     }
 }
-
-

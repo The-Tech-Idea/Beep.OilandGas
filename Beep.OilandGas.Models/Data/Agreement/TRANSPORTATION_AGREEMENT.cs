@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Agreement
 {
     public partial class TRANSPORTATION_AGREEMENT : ModelEntityBase
@@ -73,5 +73,3 @@ namespace Beep.OilandGas.Models.Data.Agreement
 
     }
 }
-
-

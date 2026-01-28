@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Drilling
 {
     public partial class COMPLETION_STRING : ModelEntityBase
@@ -62,5 +62,3 @@ namespace Beep.OilandGas.Models.Data.Drilling
         public COMPLETION_STRING() { }
     }
 }
-
-

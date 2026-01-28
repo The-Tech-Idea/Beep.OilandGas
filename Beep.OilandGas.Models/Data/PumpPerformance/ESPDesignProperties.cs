@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.PumpPerformance
 {
-    /// <summary>
-    /// Represents ESP (Electric Submersible Pump) design properties
-    /// DTO for calculations - Entity class: ESP_DESIGN_PROPERTIES
-    /// </summary>
     public class ESPDesignProperties : ModelEntityBase
     {
         /// <summary>
@@ -187,7 +184,3 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
         }
     }
 }
-
-
-
-

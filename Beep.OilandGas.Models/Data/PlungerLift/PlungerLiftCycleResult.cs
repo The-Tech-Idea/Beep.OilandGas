@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.PlungerLift
 {
-    /// <summary>
-    /// Represents plunger lift cycle analysis results
-    /// DTO for calculations - Entity class: PLUNGER_LIFT_CYCLE_RESULT
-    /// </summary>
     public class PlungerLiftCycleResult : ModelEntityBase
     {
         /// <summary>
@@ -157,7 +154,3 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         }
     }
 }
-
-
-
-

@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.ProductionForecasting
 {
-    /// <summary>
-    /// Represents a production forecast point
-    /// DTO for calculations - Entity class: FORECAST_POINT
-    /// </summary>
     public class ForecastPoint : ModelEntityBase
     {
         /// <summary>
@@ -113,7 +110,3 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
         }
     }
 }
-
-
-
-

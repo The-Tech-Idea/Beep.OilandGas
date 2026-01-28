@@ -1,15 +1,10 @@
 using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    /// <summary>
-    /// Represents a single time step in VLP degradation forecast.
-    /// Shows VLP performance at a specific year in the forecast.
-    /// DTO for calculations - Entity class: VLP_FORECAST_TIME_STEP
-    /// </summary>
     public partial class VLPForecastTimeStep : ModelEntityBase {
         /// <summary>
         /// Year number in forecast (0 = baseline, 1+ = future years)
@@ -91,5 +86,3 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         }
     }
 }
-
-

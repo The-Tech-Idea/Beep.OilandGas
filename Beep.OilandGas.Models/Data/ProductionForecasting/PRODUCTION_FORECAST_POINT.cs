@@ -1,7 +1,7 @@
 using System;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ProductionForecasting
 {
     public partial class PRODUCTION_FORECAST_POINT : ModelEntityBase {
@@ -50,8 +50,3 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
         // Standard PPDM columns
     }
 }
-
-
-
-
-

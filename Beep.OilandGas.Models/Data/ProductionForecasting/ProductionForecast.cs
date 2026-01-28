@@ -1,12 +1,8 @@
 using System.Collections.Generic;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ProductionForecasting
 {
-    /// <summary>
-    /// Represents production forecast results
-    /// DTO for calculations - Entity class: PRODUCTION_FORECAST
-    /// </summary>
     public class ProductionForecast : ModelEntityBase
     {
         /// <summary>
@@ -100,9 +96,3 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
         }
     }
 }
-
-
-
-
-
-

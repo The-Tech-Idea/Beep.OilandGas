@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.PlungerLift
 {
     public partial class PLUNGER_LIFT_CYCLE_RESULT : ModelEntityBase {
@@ -95,5 +95,3 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
 
     }
 }
-
-

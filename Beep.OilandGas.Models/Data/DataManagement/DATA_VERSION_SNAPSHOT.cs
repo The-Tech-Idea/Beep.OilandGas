@@ -3,13 +3,10 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.DataManagement
 {
-    /// <summary>
-    /// Entity for storing entity version snapshots for audit and rollback
-    /// </summary>
     public partial class DATA_VERSION_SNAPSHOT : ModelEntityBase
     {
         private System.String VERSION_SNAPSHOT_IDValue;
@@ -109,5 +106,3 @@ namespace Beep.OilandGas.Models.Data.DataManagement
 
     }
 }
-
-

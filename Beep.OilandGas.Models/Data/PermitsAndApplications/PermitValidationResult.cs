@@ -1,11 +1,8 @@
 using System.Collections.Generic;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.PermitsAndApplications
 {
-    /// <summary>
-    /// Validation result for permit applications.
-    /// </summary>
     public class PermitValidationResult : ModelEntityBase
     {
         /// <summary>
@@ -84,6 +81,3 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
         }
     }
 }
-
-
-

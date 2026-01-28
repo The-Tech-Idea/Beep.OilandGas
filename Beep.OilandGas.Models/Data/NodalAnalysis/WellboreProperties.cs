@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    /// <summary>
-    /// Wellbore properties for nodal analysis
-    /// DTO for calculations - Entity class: NODAL_WELLBORE_PROPERTIES
-    /// </summary>
     public class WellboreProperties : ModelEntityBase
     {
         /// <summary>
@@ -157,7 +154,3 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         }
     }
 }
-
-
-
-

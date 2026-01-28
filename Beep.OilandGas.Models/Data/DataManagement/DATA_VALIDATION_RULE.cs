@@ -3,13 +3,10 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.DataManagement
 {
-    /// <summary>
-    /// Entity for storing validation rules configuration
-    /// </summary>
     public partial class DATA_VALIDATION_RULE : ModelEntityBase
     {
         private System.String VALIDATION_RULE_IDValue;
@@ -102,5 +99,3 @@ namespace Beep.OilandGas.Models.Data.DataManagement
 
     }
 }
-
-

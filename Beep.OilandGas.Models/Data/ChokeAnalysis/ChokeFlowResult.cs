@@ -4,14 +4,10 @@ using System.Runtime.CompilerServices;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ChokeAnalysis
 {
-    /// <summary>
-    /// Represents choke flow calculation results
-    /// DTO for calculations - Entity class: CHOKE_FLOW_RESULT
-    /// </summary>
     public partial class ChokeFlowResult : ModelEntityBase {
         /// <summary>
         /// Calculated flow rate in Mscf/day
@@ -76,5 +72,3 @@ namespace Beep.OilandGas.Models.Data.ChokeAnalysis
       
     }
 }
-
-

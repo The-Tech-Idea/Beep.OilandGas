@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.CompressorAnalysis
 {
-    /// <summary>
-    /// Reciprocating compressor properties
-    /// DTO for calculations - Entity class: RECIPROCATING_COMPRESSOR_PROPERTIES
-    /// </summary>
     public class ReciprocatingCompressorProperties : ModelEntityBase
     {
         /// <summary>
@@ -108,8 +105,3 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
         }
     }
 }
-
-
-
-
-

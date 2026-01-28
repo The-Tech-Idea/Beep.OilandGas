@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.CompressorAnalysis
 {
-    /// <summary>
-    /// Compressor power calculation results
-    /// DTO for calculations - Entity class: COMPRESSOR_POWER_RESULT
-    /// </summary>
     public class CompressorPowerResult : ModelEntityBase
     {
         /// <summary>
@@ -147,7 +144,3 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
         public decimal? VolumetricEfficiency { get; set; }
     }
 }
-
-
-
-

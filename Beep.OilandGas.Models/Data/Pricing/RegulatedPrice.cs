@@ -1,10 +1,6 @@
-#nullable enable
 
 namespace Beep.OilandGas.Models.Data.Pricing
 {
-    /// <summary>
-    /// Represents a regulated price in the oil and gas domain.
-    /// </summary>
     public class RegulatedPrice : ModelEntityBase
     {
         private string? RegulatedPriceIdValue;
@@ -75,4 +71,3 @@ namespace Beep.OilandGas.Models.Data.Pricing
         }
     }
 }
-

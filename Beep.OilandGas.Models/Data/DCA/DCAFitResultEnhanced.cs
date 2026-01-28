@@ -3,14 +3,10 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.DCA
 {
-    /// <summary>
-    /// Enhanced DCA fit result with industry-standard analysis and PPDM compliance.
-    /// DTO for calculations - Entity class: DCA_FIT_RESULT
-    /// </summary>
     public partial class DCAFitResultEnhanced : ModelEntityBase {
         /// <summary>
         /// Fitted parameters array [qi, Di, b] for decline models.
@@ -215,4 +211,3 @@ namespace Beep.OilandGas.Models.Data.DCA
       
     }
 }
-

@@ -6,10 +6,6 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 
 namespace Beep.OilandGas.Models.Data.Process
 {
-    /// <summary>
-    /// Represents strongly typed step data for a process step instance.
-    /// Replaces Dictionary<string, object> StepData.
-    /// </summary>
     public class PROCESS_STEP_DATA : ModelEntityBase
     {
         private string StepInstanceIdValue = string.Empty;

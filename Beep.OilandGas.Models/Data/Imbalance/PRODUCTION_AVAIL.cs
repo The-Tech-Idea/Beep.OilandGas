@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Imbalance
 {
     public partial class PRODUCTION_AVAIL : ModelEntityBase
@@ -50,5 +50,3 @@ namespace Beep.OilandGas.Models.Data.Imbalance
 
     }
 }
-
-

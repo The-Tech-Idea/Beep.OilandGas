@@ -1,12 +1,8 @@
 using System.Collections.Generic;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.PlungerLift
 {
-    /// <summary>
-    /// Represents plunger lift performance analysis
-    /// DTO for calculations - Entity class: PLUNGER_LIFT_PERFORMANCE_RESULT
-    /// </summary>
     public class PlungerLiftPerformanceResult : ModelEntityBase
     {
         /// <summary>
@@ -85,9 +81,3 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         }
     }
 }
-
-
-
-
-
-

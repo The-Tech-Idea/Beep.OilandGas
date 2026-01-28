@@ -1,12 +1,8 @@
 using System.Collections.Generic;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.FlashCalculations
 {
-    /// <summary>
-    /// Result of flash calculation
-    /// DTO for calculations - Entity class: FLASH_CALCULATION_RESULT
-    /// </summary>
     public class FlashResult : ModelEntityBase
     {
         /// <summary>
@@ -100,8 +96,3 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
         public List<FlashComponentFraction> LiquidComposition { get; set; } = new();
     }
 }
-
-
-
-
-

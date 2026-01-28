@@ -109,4 +109,3 @@ namespace Beep.OilandGas.Models.Data.General
         } // Open, Resolved, Investigated
     }
 }
-

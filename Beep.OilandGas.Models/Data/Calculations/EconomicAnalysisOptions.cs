@@ -2,9 +2,6 @@ using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Data.Calculations
 {
-    /// <summary>
-    /// Additional economic analysis options used for financial controls and profiles.
-    /// </summary>
     public class EconomicAnalysisOptions : ModelEntityBase
     {
         public double? FinanceRate { get; set; }

@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.SuckerRodPumping
 {
-    /// <summary>
-    /// Represents sucker rod load analysis results
-    /// DTO for calculations - Entity class: SUCKER_ROD_LOAD_RESULT
-    /// </summary>
     public class SuckerRodLoadResult : ModelEntityBase
     {
         /// <summary>
@@ -157,7 +154,3 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
         }
     }
 }
-
-
-
-

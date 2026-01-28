@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class LEASE_EXPIRY_EVENT : ModelEntityBase {
@@ -43,5 +43,3 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
-
-

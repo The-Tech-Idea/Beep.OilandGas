@@ -3,13 +3,10 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.DataManagement
 {
-    /// <summary>
-    /// Entity for storing data quality dashboard configuration and snapshots
-    /// </summary>
     public partial class DATA_QUALITY_DASHBOARD : ModelEntityBase
     {
         private System.String DASHBOARD_IDValue;
@@ -88,5 +85,3 @@ namespace Beep.OilandGas.Models.Data.DataManagement
 
     }
 }
-
-

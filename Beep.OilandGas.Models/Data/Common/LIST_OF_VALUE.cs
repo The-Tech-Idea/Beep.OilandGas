@@ -1,13 +1,10 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Common
 {
-    /// <summary>
-    /// Generic List of Value table for storing custom/non-PPDM LOVs
-    /// </summary>
     public partial class LIST_OF_VALUE : ModelEntityBase
     {
         private System.String LIST_OF_VALUE_IDValue;
@@ -94,5 +91,3 @@ namespace Beep.OilandGas.Models.Data.Common
         }
     }
 }
-
-

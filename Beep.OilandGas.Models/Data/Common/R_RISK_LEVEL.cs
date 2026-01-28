@@ -1,9 +1,9 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
- namespace Beep.OilandGas.Models.Data.Common
+
+namespace Beep.OilandGas.Models.Data.Common
 {
 public partial class R_RISK_LEVEL : ModelEntityBase
 
@@ -61,5 +61,3 @@ private  System.String SOURCEValue;
 
   }
 }
-
-

@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Royalty
 {
     public partial class ROYALTY_DISPUTE : ModelEntityBase
@@ -79,5 +79,3 @@ namespace Beep.OilandGas.Models.Data.Royalty
 
     }
 }
-
-

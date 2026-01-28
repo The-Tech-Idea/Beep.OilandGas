@@ -2,8 +2,8 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
     public partial class RUN_TICKET : ModelEntityBase {
@@ -168,5 +168,3 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
     }
 }
-
-

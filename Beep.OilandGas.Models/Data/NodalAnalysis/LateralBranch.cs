@@ -1,8 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.NodalAnalysis
 {
-    /// <summary>
-    /// Represents lateral branch properties for multilateral well calculations.
-    /// </summary>
     public class LateralBranch : ModelEntityBase
     {
         /// <summary>
@@ -126,4 +124,3 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
         }
     }
 }
-

@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
     public partial class PRESSURE_TIME_POINT : ModelEntityBase {
@@ -75,5 +75,3 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 
     }
 }
-
-

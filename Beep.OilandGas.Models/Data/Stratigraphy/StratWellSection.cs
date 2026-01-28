@@ -1,12 +1,8 @@
 using System;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Stratigraphy
 {
-    /// <summary>
-    /// Data Transfer Object for Well Stratigraphic Section
-    /// Represents stratigraphic interpretations for wells
-    /// </summary>
     public class StratWellSection : ModelEntityBase
     {
         /// <summary>
@@ -182,5 +178,3 @@ namespace Beep.OilandGas.Models.Data.Stratigraphy
 
     }
 }
-
-

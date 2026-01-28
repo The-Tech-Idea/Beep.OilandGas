@@ -1,15 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.Setup
 {
-    /// <summary>
-    /// Data class for script execution metadata and tracking
-    /// Tracks which scripts have been executed for a connection/organization
-    /// Maps to SETUP_WIZARD_LOG table
-    /// </summary>
     public class ScriptExecutionSetupData : ModelEntityBase
     {
         private string SetupLogIdValue = string.Empty;
@@ -233,116 +228,4 @@ namespace Beep.OilandGas.Models.Data.Setup
 
         } // JSON or structured setup data
     }
-
-    /// <summary>
-    /// Collection of script execution records for tracking setup progress
-    /// </summary>
-    public class ScriptExecutionSetupCollection : ModelEntityBase
-    {
-        private string OrganizationIdValue = string.Empty;
-
-        [Required]
-        public string OrganizationId
-
-        {
-
-            get { return this.OrganizationIdValue; }
-
-            set { SetProperty(ref OrganizationIdValue, value); }
-
-        }
-
-        private string ConnectionNameValue = string.Empty;
-
-
-        [Required]
-        public string ConnectionName
-
-
-        {
-
-
-            get { return this.ConnectionNameValue; }
-
-
-            set { SetProperty(ref ConnectionNameValue, value); }
-
-
-        }
-
-        private List<ScriptExecutionSetupData> ScriptExecutionsValue = new List<ScriptExecutionSetupData>();
-
-
-        public List<ScriptExecutionSetupData> ScriptExecutions
-
-
-        {
-
-
-            get { return this.ScriptExecutionsValue; }
-
-
-            set { SetProperty(ref ScriptExecutionsValue, value); }
-
-
-        }
-
-        private DateTime SetupStartDateValue = DateTime.UtcNow;
-
-
-        public DateTime SetupStartDate
-
-
-        {
-
-
-            get { return this.SetupStartDateValue; }
-
-
-            set { SetProperty(ref SetupStartDateValue, value); }
-
-
-        }
-
-        private DateTime? SetupCompletionDateValue;
-
-
-        public DateTime? SetupCompletionDate
-
-
-        {
-
-
-            get { return this.SetupCompletionDateValue; }
-
-
-            set { SetProperty(ref SetupCompletionDateValue, value); }
-
-
-        }
-
-        private string OverallStatusValue = "IN_PROGRESS";
-
-
-        public string OverallStatus
-
-
-        {
-
-
-            get { return this.OverallStatusValue; }
-
-
-            set { SetProperty(ref OverallStatusValue, value); }
-
-
-        } // IN_PROGRESS, COMPLETED, FAILED
-    }
 }
-
-
-
-
-
-
-

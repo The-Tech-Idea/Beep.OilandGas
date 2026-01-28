@@ -3,10 +3,6 @@ using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Data.Process
 {
-    /// <summary>
-    /// Represents strongly typed process data for a process instance.
-    /// Replaces Dictionary<string, object> ProcessData.
-    /// </summary>
     public class PROCESS_DATA : ModelEntityBase
     {
         private string InstanceIdValue = string.Empty;

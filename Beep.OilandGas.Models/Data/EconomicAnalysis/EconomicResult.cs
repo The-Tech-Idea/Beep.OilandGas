@@ -1,9 +1,6 @@
+
 namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 {
-    /// <summary>
-    /// Result of comprehensive economic analysis
-    /// DTO for calculations - Entity class: ECONOMIC_ANALYSIS_RESULT
-    /// </summary>
     public class EconomicResult : ModelEntityBase
     {
         /// <summary>
@@ -157,7 +154,3 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
         }
     }
 }
-
-
-
-

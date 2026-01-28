@@ -2,8 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
-
 using Beep.OilandGas.Models.Data;
+
 namespace Beep.OilandGas.Models.Data.ProductionForecasting
 {
     public partial class FORECAST_POINT : ModelEntityBase {
@@ -90,5 +90,3 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
         public DateTime FORECAST_DATE { get; set; }
     }
 }
-
-

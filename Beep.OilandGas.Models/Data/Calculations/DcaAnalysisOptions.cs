@@ -3,9 +3,6 @@ using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Data.Calculations
 {
-    /// <summary>
-    /// Additional DCA options used for forecasting and control flags.
-    /// </summary>
     public class DcaAnalysisOptions : ModelEntityBase
     {
         public string? ForecastType { get; set; }
