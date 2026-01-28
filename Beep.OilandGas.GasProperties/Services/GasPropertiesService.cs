@@ -186,8 +186,8 @@ namespace Beep.OilandGas.GasProperties.Services
                         ComponentId = componentId,
                         CompositionId = composition.CompositionId,
                         CompositionName = component.ComponentName ?? string.Empty,
-                        MOLE_FRACTION = component.MoleFraction,
-                        MOLECULAR_WEIGHT = component.MolecularWeight,
+                        TotalMoleFraction = component.MoleFraction,
+                        MolecularWeight = component.MolecularWeight,
                         ACTIVE_IND = "Y"
                     };
 

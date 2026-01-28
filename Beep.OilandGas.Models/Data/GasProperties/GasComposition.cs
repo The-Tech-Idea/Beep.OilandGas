@@ -176,6 +176,10 @@ namespace Beep.OilandGas.Models.Data.GasProperties
         public string CompositionName { get; set; }
         public DateTime CompositionDate { get; set; }
         public decimal TotalMoleFraction { get; set; }
+        public string ComponentId { get; set; }
+        public List<GasComponent> Components { get; set; } = new List<GasComponent>();
+        public string ComponentName { get; set; }
+        public decimal MoleFraction { get; set; }
 
         /// <summary>
         /// Validates that all fractions sum to 1.0 (within tolerance)
