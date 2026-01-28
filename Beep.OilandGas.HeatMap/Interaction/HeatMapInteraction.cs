@@ -1,4 +1,4 @@
-using SkiaSharp;
+﻿using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +13,7 @@ namespace Beep.OilandGas.HeatMap.Interaction
         /// <summary>
         /// Gets or sets the data point.
         /// </summary>
-        public HeatMapDataPoint DataPoint { get; set; }
+        public HEAT_MAP_DATA_POINT DataPoint { get; set; }
 
         /// <summary>
         /// Gets or sets the selection timestamp.
@@ -25,7 +25,7 @@ namespace Beep.OilandGas.HeatMap.Interaction
         /// </summary>
         public bool IsMultiSelected { get; set; }
 
-        public SelectedPoint(HeatMapDataPoint dataPoint)
+        public SelectedPoint(HEAT_MAP_DATA_POINT dataPoint)
         {
             DataPoint = dataPoint ?? throw new ArgumentNullException(nameof(dataPoint));
             SelectedAt = DateTime.Now;
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.HeatMap.Interaction
         /// <summary>
         /// Gets or sets the currently hovered point (for tooltips).
         /// </summary>
-        public HeatMapDataPoint HoveredPoint { get; private set; }
+        public HEAT_MAP_DATA_POINT HoveredPoint { get; private set; }
 
         /// <summary>
         /// Gets or sets the hover position in screen coordinates.
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.HeatMap.Interaction
         /// <summary>
         /// Event raised when a point is clicked.
         /// </summary>
-        public event EventHandler<HeatMapDataPoint> PointClicked;
+        public event EventHandler<HEAT_MAP_DATA_POINT> PointClicked;
 
         /// <summary>
         /// Event raised when a point is selected.
@@ -119,10 +119,10 @@ namespace Beep.OilandGas.HeatMap.Interaction
         /// <param name="zoom">Current zoom level.</param>
         /// <param name="panOffset">Current pan offset.</param>
         /// <returns>The clicked data point, or null if none found.</returns>
-        public HeatMapDataPoint HandleClick(
+        public HEAT_MAP_DATA_POINT HandleClick(
             float screenX,
             float screenY,
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double zoom,
             SKPoint panOffset)
         {
@@ -134,7 +134,7 @@ namespace Beep.OilandGas.HeatMap.Interaction
             float dataY = (float)((screenY - panOffset.Y) / zoom);
 
             // Find nearest point within selection radius
-            HeatMapDataPoint nearestPoint = FindNearestPoint(dataX, dataY, dataPoints, SelectionRadius);
+            HEAT_MAP_DATA_POINT nearestPoint = FindNearestPoint(dataX, dataY, dataPoints, SelectionRadius);
 
             if (nearestPoint != null)
             {
@@ -178,7 +178,7 @@ namespace Beep.OilandGas.HeatMap.Interaction
         public void HandleHover(
             float screenX,
             float screenY,
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double zoom,
             SKPoint panOffset)
         {
@@ -269,9 +269,9 @@ namespace Beep.OilandGas.HeatMap.Interaction
         /// <summary>
         /// Finds the nearest data point to the given coordinates.
         /// </summary>
-        private HeatMapDataPoint FindNearestPoint(float x, float y, List<HeatMapDataPoint> dataPoints, float radius)
+        private HEAT_MAP_DATA_POINT FindNearestPoint(float x, float y, List<HEAT_MAP_DATA_POINT> dataPoints, float radius)
         {
-            HeatMapDataPoint nearest = null;
+            HEAT_MAP_DATA_POINT nearest = null;
             float minDistance = radius;
 
             foreach (var point in dataPoints)
@@ -293,22 +293,22 @@ namespace Beep.OilandGas.HeatMap.Interaction
         /// <summary>
         /// Formats tooltip text for a data point.
         /// </summary>
-        private string FormatTooltipText(HeatMapDataPoint point)
+        private string FormatTooltipText(HEAT_MAP_DATA_POINT point)
         {
             var parts = new List<string>();
 
-            if (!string.IsNullOrEmpty(point.Label))
+            if (!string.IsNullOrEmpty(point.LABEL))
             {
-                parts.Add($"Label: {point.Label}");
+                parts.Add($"Label: {point.LABEL}");
             }
 
             parts.Add($"X: {point.X:F2}");
             parts.Add($"Y: {point.Y:F2}");
             parts.Add($"Value: {point.Value:F4}");
 
-            if (point.OriginalX != 0 || point.OriginalY != 0)
+            if (point.ORIGINAL_X != 0 || point.ORIGINAL_Y != 0)
             {
-                parts.Add($"UTM: ({point.OriginalX:F2}, {point.OriginalY:F2})");
+                parts.Add($"UTM: ({point.ORIGINAL_X:F2}, {point.ORIGINAL_Y:F2})");
             }
 
             return string.Join("\n", parts);

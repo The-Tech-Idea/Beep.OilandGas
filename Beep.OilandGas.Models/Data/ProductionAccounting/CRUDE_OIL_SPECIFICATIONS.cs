@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -99,9 +99,9 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
-        private System.DateTime? EFFECTIVE_DATEValue;
+      
 
-        private System.DateTime? EXPIRY_DATEValue;
 
+      
     }
 }

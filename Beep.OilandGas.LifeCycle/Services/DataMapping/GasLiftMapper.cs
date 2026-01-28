@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.PPDM39.Models;
@@ -57,13 +57,13 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to GasLiftWellProperties.
+        /// Maps PPDM39 WELL and related entities to GAS_LIFT_WELL_PROPERTIES.
         /// </summary>
         /// <param name="well">The PPDM39 WELL entity.</param>
         /// <param name="tubular">Optional WELL_TUBULAR entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity.</param>
-        /// <returns>The mapped GasLiftWellProperties.</returns>
-        public GasLiftWellProperties MapToGasLiftWellProperties(
+        /// <returns>The mapped GAS_LIFT_WELL_PROPERTIES.</returns>
+        public GAS_LIFT_WELL_PROPERTIES MapToGasLiftWellProperties(
             WELL well,
             WELL_TUBULAR? tubular = null,
             WELL_PRESSURE? wellPressure = null)
@@ -82,7 +82,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getGasSpecificGravity = _getGasSpecificGravity ?? ValueRetrievers.GetGasSpecificGravityDecimal;
             var getDesiredProductionRate = _getDesiredProductionRate ?? ((w) => throw new InvalidOperationException("Desired production rate not available. Provide getDesiredProductionRate function."));
 
-            return new GasLiftWellProperties
+            return new GAS_LIFT_WELL_PROPERTIES
             {
                 WellDepth = getWellDepth(well, tubular),
                 WellheadPressure = getWellheadPressure(well, wellPressure),

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,19 +11,19 @@ namespace Beep.OilandGas.Client.App.Services.Pumps
     {
         #region Sucker Rod Pumping
 
-        public async Task<SuckerRodFlowRatePowerResult> DesignSuckerRodPumpAsync(SuckerRodSystemProperties request, CancellationToken cancellationToken = default)
+        public async Task<SUCKER_ROD_FLOW_RATE_POWER_RESULT> DesignSuckerRodPumpAsync(SUCKER_ROD_SYSTEM_PROPERTIES request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<SuckerRodSystemProperties, SuckerRodFlowRatePowerResult>("/api/suckerrodpumping/design", request, cancellationToken);
+                return await PostAsync<SUCKER_ROD_SYSTEM_PROPERTIES, SUCKER_ROD_FLOW_RATE_POWER_RESULT>("/api/suckerrodpumping/design", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<SuckerRodLoadResult> AnalyzeSuckerRodPumpPerformanceAsync(SUCKER_ROD_SYSTEM_PROPERTIES request, CancellationToken cancellationToken = default)
+        public async Task<SUCKER_ROD_LOAD_RESULT> AnalyzeSuckerRodPumpPerformanceAsync(SUCKER_ROD_SYSTEM_PROPERTIES request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<SUCKER_ROD_SYSTEM_PROPERTIES, SuckerRodLoadResult>("/api/suckerrodpumping/analyze-performance", request, cancellationToken);
+                return await PostAsync<SUCKER_ROD_SYSTEM_PROPERTIES, SUCKER_ROD_LOAD_RESULT>("/api/suckerrodpumping/analyze-performance", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

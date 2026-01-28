@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -19,7 +19,7 @@ namespace Beep.OilandGas.Client.App.Services.Operations
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/drillingoperation/create", request, cancellationToken);
+                return await PostAsync<object, object>("/api/DRILLING_OPERATION/create", request, cancellationToken);
             var localService = GetLocalService<IOperationsLocalService>();
             if (localService == null) throw new InvalidOperationException("IOperationsLocalService not available");
             return await localService.CreateDrillingOperationAsync(request);
@@ -29,7 +29,7 @@ namespace Beep.OilandGas.Client.App.Services.Operations
         {
             if (string.IsNullOrEmpty(operationId)) throw new ArgumentException("Operation ID is required", nameof(operationId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/drillingoperation/{Uri.EscapeDataString(operationId)}", cancellationToken);
+                return await GetAsync<object>($"/api/DRILLING_OPERATION/{Uri.EscapeDataString(operationId)}", cancellationToken);
             var localService = GetLocalService<IOperationsLocalService>();
             if (localService == null) throw new InvalidOperationException("IOperationsLocalService not available");
             return await localService.GetDrillingOperationAsync(operationId);

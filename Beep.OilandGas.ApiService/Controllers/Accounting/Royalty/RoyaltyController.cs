@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         /// Calculate and create royalty payment.
         /// </summary>
         [HttpPost("payments")]
-        public async Task<ActionResult<RoyaltyPayment>> CreateRoyaltyPayment(
+        public async Task<ActionResult<ROYALTY_PAYMENT>> CreateRoyaltyPayment(
             [FromBody] CreateRoyaltyPaymentRequest request,
             [FromQuery] string? userId = null,
             [FromQuery] string? connectionName = null)
@@ -57,23 +57,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
                 var tempTransaction = new SalesTransaction
                 {
                     TransactionId = Guid.NewGuid().ToString(),
-                    TransactionDate = request.PaymentDate ?? DateTime.UtcNow,
+                    TransactionDate = request.PAYMENT_DATE ?? DateTime.UtcNow,
                     NetVolume = 0,
-                    PricePerBarrel = request.RoyaltyAmount,
+                    PricePerBarrel = request.ROYALTY_AMOUNT,
                     Purchaser = ""
                 };
 
                 var payment = _service.RoyaltyManager.CalculateAndCreatePayment(
                     tempTransaction,
-                    request.RoyaltyOwnerId,
-                    request.RoyaltyInterest ?? 1.0m,
-                    request.PaymentDate ?? DateTime.UtcNow);
+                    request.ROYALTY_OWNER_ID,
+                    request.ROYALTY_INTEREST ?? 1.0m,
+                    request.PAYMENT_DATE ?? DateTime.UtcNow);
 
                 // Post to GL: Debit Royalty Expense, Credit Cash
                 var journalEntryId = await _glIntegration.PostRoyaltyToGL(
-                    payment.PaymentId,
-                    payment.RoyaltyAmount,
-                    transactionDate: payment.PaymentDate,
+                    payment.PAYMENT_ID,
+                    payment.ROYALTY_AMOUNT,
+                    transactionDate: payment.PAYMENT_DATE,
                     userId: userId ?? "system");
 
                 return Ok(new { Payment = MapToRoyaltyPaymentDto(payment), JournalEntryId = journalEntryId });
@@ -107,8 +107,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
                 if (string.IsNullOrEmpty(request.FieldId))
                     return BadRequest(new { error = "FieldId is required" });
 
-                var startDate = request.CalculationDate.Date;
-                var endDate = request.CalculationDate.Date;
+                var startDate = request.CALCULATION_DATE.Date;
+                var endDate = request.CALCULATION_DATE.Date;
 
                 var result = await _accountingService.CalculateRoyaltiesAsync(
                     request.FieldId,
@@ -126,12 +126,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
                 var royaltyGasValue = result.RoyaltyGasVolume * gasPrice;
                 var totalRoyaltyValue = royaltyOilValue + royaltyGasValue;
 
-                var royaltyCalculation = new ROYALTY_CALCULATION
+                var ROYALTY_CALCULATION = new ROYALTY_CALCULATION
                 {
                     ROYALTY_CALCULATION_ID = Guid.NewGuid().ToString(),
                     FIELD_ID = request.FieldId,
                     POOL_ID = request.PoolId,
-                    CALCULATION_DATE = request.CalculationDate,
+                    CALCULATION_DATE = request.CALCULATION_DATE,
                     GROSS_OIL_VOLUME = result.GrossOilVolume,
                     GROSS_GAS_VOLUME = result.GrossGasVolume,
                     OIL_ROYALTY_RATE = oilRoyaltyRate,
@@ -143,7 +143,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
                     CREATE_USER = userId ?? "system"
                 };
 
-                await _accountingService.SaveRoyaltyCalculationAsync(royaltyCalculation, userId ?? "system");
+                await _accountingService.SaveRoyaltyCalculationAsync(ROYALTY_CALCULATION, userId ?? "system");
 
                 return Ok(new
                 {
@@ -196,7 +196,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         /// Get royalty payments by owner.
         /// </summary>
         [HttpGet("payments")]
-        public ActionResult<List<RoyaltyPayment>> GetRoyaltyPayments([FromQuery] string? ownerId = null, [FromQuery] string? connectionName = null)
+        public ActionResult<List<ROYALTY_PAYMENT>> GetRoyaltyPayments([FromQuery] string? ownerId = null, [FromQuery] string? connectionName = null)
         {
             try
             {
@@ -214,16 +214,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
             }
         }
 
-        private RoyaltyPayment MapToRoyaltyPaymentDto(RoyaltyPayment payment)
+        private ROYALTY_PAYMENT MapToRoyaltyPaymentDto(ROYALTY_PAYMENT payment)
         {
-            return new RoyaltyPayment
+            return new ROYALTY_PAYMENT
             {
-                PaymentId = payment.PaymentId,
-                RoyaltyOwnerId = payment.RoyaltyOwnerId,
-                OwnerName = payment.OwnerName,
-                PaymentDate = payment.PaymentDate,
-                RoyaltyAmount = payment.RoyaltyAmount,
-                NetPayment = payment.NetPayment,
+                PaymentId = payment.PAYMENT_ID,
+                RoyaltyOwnerId = payment.ROYALTY_OWNER_ID,
+                OwnerName = payment.OWNER_NAME,
+                PaymentDate = payment.PAYMENT_DATE,
+                RoyaltyAmount = payment.ROYALTY_AMOUNT,
+                NetPayment = payment.NET_PAYMENT,
                 Status = payment.Status.ToString()
             };
         }

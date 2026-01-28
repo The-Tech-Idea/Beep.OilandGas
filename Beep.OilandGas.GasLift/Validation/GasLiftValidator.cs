@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.GasLift.Constants;
 using Beep.OilandGas.GasLift.Exceptions;
@@ -13,30 +13,30 @@ namespace Beep.OilandGas.GasLift.Validation
         /// <summary>
         /// Validates well properties.
         /// </summary>
-        public static void ValidateWellProperties(GasLiftWellProperties wellProperties)
+        public static void ValidateWellProperties(GAS_LIFT_WELL_PROPERTIES wellProperties)
         {
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
 
-            if (wellProperties.WellDepth <= 0)
+            if (wellProperties.WELL_DEPTH <= 0)
                 throw new InvalidWellPropertiesException("Well depth must be greater than zero.");
 
-            if (wellProperties.TubingDiameter <= 0)
+            if (wellProperties.TUBING_DIAMETER <= 0)
                 throw new InvalidWellPropertiesException("Tubing diameter must be greater than zero.");
 
-            if (wellProperties.WellheadPressure <= 0)
+            if (wellProperties.WELLHEAD_PRESSURE <= 0)
                 throw new InvalidWellPropertiesException("Wellhead pressure must be greater than zero.");
 
-            if (wellProperties.BottomHolePressure <= wellProperties.WellheadPressure)
+            if (wellProperties.BOTTOM_HOLE_PRESSURE <= wellProperties.WELLHEAD_PRESSURE)
                 throw new InvalidWellPropertiesException("Bottom hole pressure must be greater than wellhead pressure.");
 
-            if (wellProperties.WaterCut < 0 || wellProperties.WaterCut > 1)
+            if (wellProperties.WATER_CUT < 0 || wellProperties.WATER_CUT > 1)
                 throw new InvalidWellPropertiesException("Water cut must be between 0 and 1.");
 
-            if (wellProperties.GasSpecificGravity <= 0)
+            if (wellProperties.GAS_SPECIFIC_GRAVITY <= 0)
                 throw new InvalidWellPropertiesException("Gas specific gravity must be greater than zero.");
 
-            if (wellProperties.DesiredProductionRate <= 0)
+            if (wellProperties.DESIRED_PRODUCTION_RATE <= 0)
                 throw new InvalidWellPropertiesException("Desired production rate must be greater than zero.");
         }
 
@@ -94,12 +94,12 @@ namespace Beep.OilandGas.GasLift.Validation
         /// Validates all calculation parameters.
         /// </summary>
         public static void ValidateCalculationParameters(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves)
         {
             ValidateWellProperties(wellProperties);
-            ValidateGasInjectionPressure(gasInjectionPressure, wellProperties.WellheadPressure);
+            ValidateGasInjectionPressure(gasInjectionPressure, wellProperties.WELLHEAD_PRESSURE);
             ValidateNumberOfValves(numberOfValves);
         }
     }

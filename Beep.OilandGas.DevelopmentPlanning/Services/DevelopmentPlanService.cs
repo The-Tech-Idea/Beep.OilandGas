@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -234,10 +234,10 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             }).ToList();
         }
 
-        public async Task<List<PermitApplication>> GetPermitApplicationsAsync(string planId)
+        public async Task<List<PERMIT_APPLICATION>> GetPermitApplicationsAsync(string planId)
         {
             if (string.IsNullOrWhiteSpace(planId))
-                return new List<PermitApplication>();
+                return new List<PERMIT_APPLICATION>();
 
             var applicationUow = GetApplicationUnitOfWork();
             var filters = new List<AppFilter>

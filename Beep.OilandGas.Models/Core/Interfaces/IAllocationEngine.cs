@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// Allocates production from RUN_TICKET to ALLOCATION_RESULT/DETAIL.
         /// </summary>
         Task<ALLOCATION_RESULT> AllocateAsync(
-            RUN_TICKET runTicket,
+            RUN_TICKET RUN_TICKET,
             string allocationMethod,
             string userId,
             string connectionName = "PPDM39");

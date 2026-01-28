@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.HeatMap;
@@ -13,7 +13,7 @@ namespace Beep.OilandGas.Web.Services
     public interface IPropertiesServiceClient
     {
         // Heat Map Operations
-        Task<HeatMapResult> GenerateHeatMapAsync(List<HeatMapDataPoint> dataPoints, HeatMapConfiguration configuration);
+        Task<HeatMapResult> GenerateHeatMapAsync(List<HEAT_MAP_DATA_POINT> dataPoints, HEAT_MAP_CONFIGURATION configuration);
         Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationRecord configuration, string? userId = null);
         Task<HeatMapConfigurationRecord?> GetHeatMapConfigurationAsync(string heatMapId);
         Task<HeatMapResult> GenerateProductionHeatMapAsync(string fieldId, DateTime startDate, DateTime endDate);

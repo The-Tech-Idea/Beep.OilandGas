@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -102,5 +102,14 @@ namespace Beep.OilandGas.Models.Data.Drilling
         // Standard PPDM columns
 
         public DRILLING_OPERATION() { }
+
+        private string OPERATION_IDValue;
+        public string OPERATION_ID
+        {
+            get { return this.OPERATION_IDValue; }
+            set { SetProperty(ref OPERATION_IDValue, value); }
+        }
+
+        public object Reports { get; set; }
     }
 }

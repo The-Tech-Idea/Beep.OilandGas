@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.PumpPerformance;
@@ -17,8 +17,8 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// <param name="designProperties">ESP design properties.</param>
         /// <param name="useSIUnits">Whether to use SI units (false = US field units).</param>
         /// <returns>ESP design result.</returns>
-        public static ESPDesignResult DesignESP(
-            ESPDesignProperties designProperties,
+        public static ESP_DESIGN_RESULT DesignESP(
+            ESP_DESIGN_PROPERTIES designProperties,
             bool useSIUnits = false)
         {
             if (designProperties == null)
@@ -39,11 +39,11 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
                 designProperties, pumpStages, totalDynamicHead);
 
             // Find operating point
-            var operatingPoint = FindOperatingPoint(performancePoints, designProperties.DesiredFlowRate);
+            var operatingPoint = FindOperatingPoint(performancePoints, designProperties.DESIRED_FLOW_RATE);
 
             // Calculate required horsepower
             decimal requiredHorsepower = CalculateRequiredHorsepower(
-                operatingPoint.FlowRate, operatingPoint.Head, fluidDensity, operatingPoint.Efficiency);
+                operatingPoint.FLOW_RATE, operatingPoint.HEAD, fluidDensity, operatingPoint.EFFICIENCY);
 
             // Select motor
             var motor = SelectMotor(requiredHorsepower, designProperties);
@@ -53,27 +53,27 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
 
             // Calculate system efficiency
             decimal systemEfficiency = CalculateSystemEfficiency(
-                operatingPoint.Efficiency, motor.Efficiency, cable);
+                operatingPoint.EFFICIENCY, motor.EFFICIENCY, cable);
 
             // Calculate power consumption
             decimal powerConsumption = CalculatePowerConsumption(
-                requiredHorsepower, motor.Efficiency, useSIUnits);
+                requiredHorsepower, motor.EFFICIENCY, useSIUnits);
 
-            return new ESPDesignResult
+            return new ESP_DESIGN_RESULT
             {
                 PumpStages = pumpStages,
                 RequiredHorsepower = requiredHorsepower,
-                MotorHorsepower = motor.Horsepower,
-                MotorVoltage = motor.Voltage,
+                MotorHorsepower = motor.HORSEPOWER,
+                MotorVoltage = motor.VOLTAGE,
                 MotorCurrent = CalculateMotorCurrent(motor, requiredHorsepower),
-                CableSize = cable.CableSize,
-                CableLength = cable.CableLength,
+                CableSize = cable.CABLE_SIZE,
+                CableLength = cable.CABLE_LENGTH,
                 SystemEfficiency = systemEfficiency,
-                PumpEfficiency = operatingPoint.Efficiency,
-                MotorEfficiency = motor.Efficiency,
+                PumpEfficiency = operatingPoint.EFFICIENCY,
+                MotorEfficiency = motor.EFFICIENCY,
                 PowerConsumption = powerConsumption,
-                OperatingFlowRate = operatingPoint.FlowRate,
-                OperatingHead = operatingPoint.Head,
+                OperatingFlowRate = operatingPoint.FLOW_RATE,
+                OperatingHead = operatingPoint.HEAD,
                 PerformancePoints = performancePoints
             };
         }
@@ -81,34 +81,34 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// <summary>
         /// Calculates fluid density.
         /// </summary>
-        private static decimal CalculateFluidDensity(ESPDesignProperties properties)
+        private static decimal CalculateFluidDensity(ESP_DESIGN_PROPERTIES properties)
         {
             // Oil density
-            decimal oilSpecificGravity = 141.5m / (131.5m + properties.OilGravity);
-            decimal oilDensity = oilSpecificGravity * 62.4m; // lb/ft³
+            decimal oilSpecificGravity = 141.5m / (131.5m + properties.OIL_GRAVITY);
+            decimal oilDensity = oilSpecificGravity * 62.4m; // lb/ftÂ³
 
             // Water density
-            decimal waterDensity = 62.4m; // lb/ft³
+            decimal waterDensity = 62.4m; // lb/ftÂ³
 
             // Mixture density
-            decimal mixtureDensity = oilDensity * (1.0m - properties.WaterCut) +
-                                   waterDensity * properties.WaterCut;
+            decimal mixtureDensity = oilDensity * (1.0m - properties.WATER_CUT) +
+                                   waterDensity * properties.WATER_CUT;
 
             // Account for gas
-            if (properties.GasOilRatio > 0)
+            if (properties.GAS_OIL_RATIO > 0)
             {
                 // Calculate Z-factor
-                decimal averagePressure = (properties.WellheadPressure + 
-                                          properties.WellheadPressure + 0.433m * properties.PumpSettingDepth) / 2m;
+                decimal averagePressure = (properties.WELLHEAD_PRESSURE + 
+                                          properties.WELLHEAD_PRESSURE + 0.433m * properties.PUMP_SETTING_DEPTH) / 2m;
                 decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                    averagePressure, properties.BottomHoleTemperature, properties.GasSpecificGravity);
+                    averagePressure, properties.BOTTOM_HOLE_TEMPERATURE, properties.GAS_SPECIFIC_GRAVITY);
 
                 // Gas density
-                decimal gasDensity = (averagePressure * properties.GasSpecificGravity * 28.9645m) /
-                                    (zFactor * 10.7316m * properties.BottomHoleTemperature);
+                decimal gasDensity = (averagePressure * properties.GAS_SPECIFIC_GRAVITY * 28.9645m) /
+                                    (zFactor * 10.7316m * properties.BOTTOM_HOLE_TEMPERATURE);
 
                 // Gas volume factor
-                decimal gasVolumeFactor = properties.GasOilRatio * zFactor * properties.BottomHoleTemperature /
+                decimal gasVolumeFactor = properties.GAS_OIL_RATIO * zFactor * properties.BOTTOM_HOLE_TEMPERATURE /
                                          (averagePressure * 5.614m);
 
                 // Adjust mixture density for gas
@@ -121,30 +121,30 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// <summary>
         /// Calculates fluid viscosity.
         /// </summary>
-        private static decimal CalculateFluidViscosity(ESPDesignProperties properties)
+        private static decimal CalculateFluidViscosity(ESP_DESIGN_PROPERTIES properties)
         {
             // Simplified viscosity calculation
             decimal oilViscosity = 1.5m; // cp (approximate)
             decimal waterViscosity = 1.0m; // cp
 
-            return oilViscosity * (1.0m - properties.WaterCut) + waterViscosity * properties.WaterCut;
+            return oilViscosity * (1.0m - properties.WATER_CUT) + waterViscosity * properties.WATER_CUT;
         }
 
         /// <summary>
         /// Calculates total dynamic head.
         /// </summary>
         private static decimal CalculateTotalDynamicHead(
-            ESPDesignProperties properties,
+            ESP_DESIGN_PROPERTIES properties,
             decimal fluidDensity)
         {
             // Static head (depth to pump)
-            decimal staticHead = properties.PumpSettingDepth;
+            decimal staticHead = properties.PUMP_SETTING_DEPTH;
 
             // Friction head (simplified)
             decimal frictionHead = CalculateFrictionHead(properties, fluidDensity);
 
             // Wellhead pressure head
-            decimal wellheadHead = properties.WellheadPressure * 144m / fluidDensity;
+            decimal wellheadHead = properties.WELLHEAD_PRESSURE * 144m / fluidDensity;
 
             // Total dynamic head
             return staticHead + frictionHead + wellheadHead;
@@ -154,20 +154,20 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// Calculates friction head.
         /// </summary>
         private static decimal CalculateFrictionHead(
-            ESPDesignProperties properties,
+            ESP_DESIGN_PROPERTIES properties,
             decimal fluidDensity)
         {
             // Simplified friction calculation
-            decimal tubingArea = (decimal)Math.PI * (properties.TubingDiameter / 12m) *
-                               (properties.TubingDiameter / 12m) / 4m;
-            decimal velocity = (properties.DesiredFlowRate * 5.615m) / (86400m * tubingArea); // ft/s
+            decimal tubingArea = (decimal)Math.PI * (properties.TUBING_DIAMETER / 12m) *
+                               (properties.TUBING_DIAMETER / 12m) / 4m;
+            decimal velocity = (properties.DESIRED_FLOW_RATE * 5.615m) / (86400m * tubingArea); // ft/s
 
-            decimal reynoldsNumber = fluidDensity * velocity * (properties.TubingDiameter / 12m) / 0.001m;
+            decimal reynoldsNumber = fluidDensity * velocity * (properties.TUBING_DIAMETER / 12m) / 0.001m;
             decimal frictionFactor = reynoldsNumber < 2000m
                 ? 64m / reynoldsNumber
                 : 0.3164m / (decimal)Math.Pow((double)reynoldsNumber, 0.25);
 
-            decimal frictionHead = frictionFactor * (properties.PumpSettingDepth / (properties.TubingDiameter / 12m)) *
+            decimal frictionHead = frictionFactor * (properties.PUMP_SETTING_DEPTH / (properties.TUBING_DIAMETER / 12m)) *
                                   (velocity * velocity) / (2m * 32.174m);
 
             return frictionHead;
@@ -177,7 +177,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// Selects pump stages based on head requirements.
         /// </summary>
         private static int SelectPumpStages(
-            ESPDesignProperties properties,
+            ESP_DESIGN_PROPERTIES properties,
             decimal totalDynamicHead)
         {
             // Typical ESP stage head: 20-40 feet per stage
@@ -190,26 +190,26 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// <summary>
         /// Generates pump performance curve.
         /// </summary>
-        private static List<ESPPumpPoint> GeneratePumpPerformanceCurve(
-            ESPDesignProperties properties,
+        private static List<ESP_PUMP_POINT> GeneratePumpPerformanceCurve(
+            ESP_DESIGN_PROPERTIES properties,
             int pumpStages,
             decimal totalDynamicHead)
         {
-            var points = new List<ESPPumpPoint>();
+            var points = new List<ESP_PUMP_POINT>();
             int numberOfPoints = 20;
 
-            decimal minFlowRate = properties.DesiredFlowRate * 0.5m;
-            decimal maxFlowRate = properties.DesiredFlowRate * 1.5m;
+            decimal minFlowRate = properties.DESIRED_FLOW_RATE * 0.5m;
+            decimal maxFlowRate = properties.DESIRED_FLOW_RATE * 1.5m;
             decimal flowStep = (maxFlowRate - minFlowRate) / numberOfPoints;
 
             for (int i = 0; i <= numberOfPoints; i++)
             {
                 decimal flowRate = minFlowRate + i * flowStep;
-                decimal head = CalculatePumpHead(flowRate, properties.DesiredFlowRate, totalDynamicHead, pumpStages);
-                decimal efficiency = CalculatePumpEfficiency(flowRate, properties.DesiredFlowRate);
+                decimal head = CalculatePumpHead(flowRate, properties.DESIRED_FLOW_RATE, totalDynamicHead, pumpStages);
+                decimal efficiency = CalculatePumpEfficiency(flowRate, properties.DESIRED_FLOW_RATE);
                 decimal horsepower = CalculatePumpHorsepower(flowRate, head, properties, efficiency);
 
-                points.Add(new ESPPumpPoint
+                points.Add(new ESP_PUMP_POINT
                 {
                     FlowRate = flowRate,
                     Head = head,
@@ -230,7 +230,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
             decimal designHead,
             int stages)
         {
-            // Pump head curve: H = H0 * (1 - (Q/Q0)²)
+            // Pump head curve: H = H0 * (1 - (Q/Q0)Â²)
             decimal flowRatio = flowRate / designFlowRate;
             decimal headPerStage = designHead / stages;
             decimal head = headPerStage * stages * (1.0m - flowRatio * flowRatio);
@@ -256,7 +256,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         private static decimal CalculatePumpHorsepower(
             decimal flowRate,
             decimal head,
-            ESPDesignProperties properties,
+            ESP_DESIGN_PROPERTIES properties,
             decimal efficiency)
         {
             decimal fluidDensity = CalculateFluidDensity(properties);
@@ -268,13 +268,13 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// <summary>
         /// Finds operating point on pump curve.
         /// </summary>
-        private static ESPPumpPoint FindOperatingPoint(
-            List<ESPPumpPoint> performancePoints,
+        private static ESP_PUMP_POINT FindOperatingPoint(
+            List<ESP_PUMP_POINT> performancePoints,
             decimal desiredFlowRate)
         {
             // Find closest point to desired flow rate
             var closestPoint = performancePoints
-                .OrderBy(p => Math.Abs(p.FlowRate - desiredFlowRate))
+                .OrderBy(p => Math.Abs(p.FLOW_RATE - desiredFlowRate))
                 .First();
 
             return closestPoint;
@@ -296,9 +296,9 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// <summary>
         /// Selects motor based on horsepower requirements.
         /// </summary>
-        private static ESPMotorProperties SelectMotor(
+        private static ESP_MOTOR_PROPERTIES SelectMotor(
             decimal requiredHorsepower,
-            ESPDesignProperties properties)
+            ESP_DESIGN_PROPERTIES properties)
         {
             // Standard motor sizes: 10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 125, 150, 200, 250, 300 HP
             decimal[] motorSizes = { 10m, 15m, 20m, 25m, 30m, 40m, 50m, 60m, 75m, 100m, 125m, 150m, 200m, 250m, 300m };
@@ -313,7 +313,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
             if (selectedVoltage == 0m)
                 selectedVoltage = voltages.Last();
 
-            return new ESPMotorProperties
+            return new ESP_MOTOR_PROPERTIES
             {
                 Horsepower = selectedHorsepower,
                 Voltage = selectedVoltage,
@@ -325,13 +325,13 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// <summary>
         /// Selects cable based on motor and depth.
         /// </summary>
-        private static ESPCableProperties SelectCable(
-            ESPMotorProperties motor,
-            ESPDesignProperties properties)
+        private static ESP_CABLE_PROPERTIES SelectCable(
+            ESP_MOTOR_PROPERTIES motor,
+            ESP_DESIGN_PROPERTIES properties)
         {
             // Cable size selection based on motor current and depth
-            decimal motorCurrent = CalculateMotorCurrent(motor, motor.Horsepower);
-            decimal cableLength = properties.PumpSettingDepth + 100m; // Extra for surface
+            decimal motorCurrent = CalculateMotorCurrent(motor, motor.HORSEPOWER);
+            decimal cableLength = properties.PUMP_SETTING_DEPTH + 100m; // Extra for surface
 
             // Standard cable sizes: 1, 2, 4, 6 AWG
             // Resistance per 1000 feet (approximate): 1 AWG = 0.1, 2 AWG = 0.15, 4 AWG = 0.25, 6 AWG = 0.4 ohms
@@ -361,7 +361,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
 
             decimal voltageDrop = motorCurrent * (resistance * cableLength / 1000m);
 
-            return new ESPCableProperties
+            return new ESP_CABLE_PROPERTIES
             {
                 CableSize = cableSize,
                 CableLength = cableLength,
@@ -373,11 +373,11 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// <summary>
         /// Calculates motor current.
         /// </summary>
-        private static decimal CalculateMotorCurrent(ESPMotorProperties motor, decimal horsepower)
+        private static decimal CalculateMotorCurrent(ESP_MOTOR_PROPERTIES motor, decimal horsepower)
         {
             // I = (HP * 746) / (V * PF * Efficiency)
             decimal powerWatts = horsepower * 746m;
-            decimal current = powerWatts / (motor.Voltage * motor.PowerFactor * motor.Efficiency);
+            decimal current = powerWatts / (motor.VOLTAGE * motor.POWER_FACTOR * motor.EFFICIENCY);
 
             return Math.Max(0m, current);
         }
@@ -388,10 +388,10 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         private static decimal CalculateSystemEfficiency(
             decimal pumpEfficiency,
             decimal motorEfficiency,
-            ESPCableProperties cable)
+            ESP_CABLE_PROPERTIES cable)
         {
             // Cable efficiency (voltage drop effect)
-            decimal cableEfficiency = 1.0m - (cable.VoltageDrop / 1000m); // Simplified
+            decimal cableEfficiency = 1.0m - (cable.VOLTAGE_DROP / 1000m); // Simplified
             cableEfficiency = Math.Max(0.95m, Math.Min(1.0m, cableEfficiency));
 
             return pumpEfficiency * motorEfficiency * cableEfficiency;

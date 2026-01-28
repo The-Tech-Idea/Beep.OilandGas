@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using SkiaSharp;
@@ -74,7 +74,7 @@ namespace Beep.OilandGas.HeatMap.Aggregation
         /// <summary>
         /// Gets the points in this cell.
         /// </summary>
-        public List<HeatMapDataPoint> Points { get; } = new List<HeatMapDataPoint>();
+        public List<HEAT_MAP_DATA_POINT> Points { get; } = new List<HEAT_MAP_DATA_POINT>();
     }
 
     /// <summary>
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.HeatMap.Aggregation
         /// <summary>
         /// Gets the points in this cell.
         /// </summary>
-        public List<HeatMapDataPoint> Points { get; } = new List<HeatMapDataPoint>();
+        public List<HEAT_MAP_DATA_POINT> Points { get; } = new List<HEAT_MAP_DATA_POINT>();
     }
 
     /// <summary>
@@ -126,7 +126,7 @@ namespace Beep.OilandGas.HeatMap.Aggregation
         /// <param name="method">The aggregation method to use.</param>
         /// <returns>List of hexbin cells with aggregated values.</returns>
         public static List<HexbinCell> CreateHexbin(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double radius,
             AggregationMethod method = AggregationMethod.Average)
         {
@@ -178,7 +178,7 @@ namespace Beep.OilandGas.HeatMap.Aggregation
         /// <param name="maxY">Maximum Y coordinate (optional, auto-calculated if not provided).</param>
         /// <returns>List of grid cells with aggregated values.</returns>
         public static List<GridCell> CreateGrid(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double cellSize,
             AggregationMethod method = AggregationMethod.Average,
             double? minX = null,
@@ -244,7 +244,7 @@ namespace Beep.OilandGas.HeatMap.Aggregation
         /// <summary>
         /// Aggregates values using the specified method.
         /// </summary>
-        private static double AggregateValues(List<HeatMapDataPoint> points, AggregationMethod method)
+        private static double AggregateValues(List<HEAT_MAP_DATA_POINT> points, AggregationMethod method)
         {
             if (points.Count == 0)
                 return 0;

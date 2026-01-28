@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -72,5 +72,12 @@ namespace Beep.OilandGas.Models.Data.GasLift
 
         // Standard PPDM columns
 
+
+        private string VALVE_IDValue;
+        public string VALVE_ID
+        {
+            get { return this.VALVE_IDValue; }
+            set { SetProperty(ref VALVE_IDValue, value); }
+        }
     }
 }

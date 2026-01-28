@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.Extensions.Logging;
 
@@ -1331,13 +1332,20 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             return (npv + capex) / capex;
         }
 
-        private SensitivityAnalysisResult PerformSensitivityAnalysis(InvestmentEvaluationResult eval)
+        private InvestmentEvaluationResult PerformSensitivityAnalysis(InvestmentEvaluationResult eval)
         {
-            return new SensitivityAnalysisResult
+            return new InvestmentEvaluationResult
             {
-                PriceVariation = new List<double> { eval.NPV * 0.8, eval.NPV, eval.NPV * 1.2 },
-                VolumeVariation = new List<double> { eval.NPV * 0.9, eval.NPV, eval.NPV * 1.1 },
-                CostVariation = new List<double> { eval.NPV * 1.1, eval.NPV, eval.NPV * 0.9 }
+                NPV = eval.NPV,
+                IRR = eval.IRR,
+                PaybackPeriod = eval.PaybackPeriod,
+                ProfitabilityIndex = eval.ProfitabilityIndex,
+                SensitivityHighPrice = eval.NPV * 1.2,
+                SensitivityLowPrice = eval.NPV * 0.8,
+                SensitivityHighCost = eval.NPV * 0.7,
+                SensitivityLowCost = eval.NPV * 1.1
+
+
             };
         }
 

@@ -63,6 +63,13 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
             set { SetProperty(ref MOLECULAR_WEIGHTValue, value); }
         }
 
+        private String NAMEValue;
+        public String NAME
+        {
+            get { return this.NAMEValue; }
+            set { SetProperty(ref NAMEValue, value); }
+        }
+
         // Standard PPDM columns
 
     }

@@ -143,7 +143,9 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
             set { SetProperty(ref ForecastPointsValue, value); }
         }
 
-      
-        
+        public Dictionary<int, decimal> MONTHLY_PRODUCTION { get; set; }
+        public decimal TOTAL_FORCAST_PRODUCTION { get; set; }
+        public decimal AVERAGE_MONTHLY_PRODUCTION { get; set; }
+        public int ECONOMIC_LIMIT_MONTH { get; set; }
     }
 }

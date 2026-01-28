@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Beep.OilandGas.Models.Data;
@@ -134,7 +134,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         // Production forecast
         private List<EconomicProductionPoint>? ProductionForecastValue;
 
-        public List<EconomicProductionPoint>? ProductionForecast
+        public List<EconomicProductionPoint>? PRODUCTION_FORECAST
 
         {
 

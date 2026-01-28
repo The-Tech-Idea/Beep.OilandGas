@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -138,5 +138,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 
         private System.DateTime? EXPIRY_DATEValue;
 
+
+      
     }
 }

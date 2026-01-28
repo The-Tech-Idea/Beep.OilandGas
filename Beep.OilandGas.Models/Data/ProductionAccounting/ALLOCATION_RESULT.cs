@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -83,5 +83,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             get { return this.ROW_IDValue; }
             set { SetProperty(ref ROW_IDValue, value); }
         }
+
+        private string ALLOCATION_IDValue;
+        public string ALLOCATION_ID
+        {
+            get { return this.ALLOCATION_IDValue; }
+            set { SetProperty(ref ALLOCATION_IDValue, value); }
+        }
+
+   
+        private AllocationMethod METHODValue;
+        public AllocationMethod METHOD
+        {
+            get { return this.METHODValue; }
+            set { SetProperty(ref METHODValue, value); }
+        }
+
+        
     }
 }

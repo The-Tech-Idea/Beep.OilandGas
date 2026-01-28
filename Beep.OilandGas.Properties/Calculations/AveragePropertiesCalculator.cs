@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.GasProperties.Models;
@@ -19,7 +19,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
         /// <param name="specificGravity">Gas specific gravity (relative to air).</param>
         /// <param name="zFactorMethod">Z-factor calculation method.</param>
         /// <returns>Average gas properties.</returns>
-        public static AverageGasProperties CalculatePressureWeightedAverage(
+        public static AVERAGE_GAS_PROPERTIES CalculatePressureWeightedAverage(
             List<decimal> pressures,
             List<decimal> temperatures,
             decimal specificGravity,
@@ -59,7 +59,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
             if (totalWeight == 0)
                 throw new InvalidOperationException("Total weight cannot be zero.");
 
-            return new AverageGasProperties
+            return new AVERAGE_GAS_PROPERTIES
             {
                 AveragePressure = totalPressure / totalWeight,
                 AverageTemperature = totalTemperature / totalWeight,
@@ -70,7 +70,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
         /// <summary>
         /// Calculates average temperature and Z-factor using simple arithmetic mean.
         /// </summary>
-        public static AverageGasProperties CalculateArithmeticAverage(
+        public static AVERAGE_GAS_PROPERTIES CalculateArithmeticAverage(
             List<decimal> pressures,
             List<decimal> temperatures,
             decimal specificGravity,
@@ -95,7 +95,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
                 averageZFactor = zFactorMethod(averagePressure, averageTemperature, specificGravity);
             }
 
-            return new AverageGasProperties
+            return new AVERAGE_GAS_PROPERTIES
             {
                 AveragePressure = averagePressure,
                 AverageTemperature = averageTemperature,
@@ -106,7 +106,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
         /// <summary>
         /// Calculates average temperature and Z-factor over a pressure range.
         /// </summary>
-        public static AverageGasProperties CalculateAverageOverRange(
+        public static AVERAGE_GAS_PROPERTIES CalculateAverageOverRange(
             decimal minPressure,
             decimal maxPressure,
             decimal temperature,
@@ -138,7 +138,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
                 totalViscosity += viscosity;
             }
 
-            return new AverageGasProperties
+            return new AVERAGE_GAS_PROPERTIES
             {
                 AveragePressure = (minPressure + maxPressure) / 2m,
                 AverageTemperature = temperature,

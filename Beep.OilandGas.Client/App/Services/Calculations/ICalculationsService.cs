@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.FlashCalculations;
@@ -17,8 +17,8 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
     {
         #region Flash Calculation
 
-        Task<FlashResult> PerformIsothermalFlashAsync(FlashConditions request, CancellationToken cancellationToken = default);
-        Task<List<FlashResult>> PerformMultiStageFlashAsync(FlashConditions request, CancellationToken cancellationToken = default);
+        Task<FlashResult> PerformIsothermalFlashAsync(FLASH_CONDITIONS request, CancellationToken cancellationToken = default);
+        Task<List<FlashResult>> PerformMultiStageFlashAsync(FLASH_CONDITIONS request, CancellationToken cancellationToken = default);
         Task<FLASH_CALCULATION_RESULT> SaveFlashResultAsync(FLASH_CALCULATION_RESULT result, string? userId = null, CancellationToken cancellationToken = default);
         Task<List<FLASH_CALCULATION_RESULT>> GetFlashHistoryAsync(string compositionId, CancellationToken cancellationToken = default);
 
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
         Task<decimal> CalculateNPVAsync(List<CashFlow> request, CancellationToken cancellationToken = default);
         Task<decimal> CalculateIRRAsync(List<CashFlow> request, CancellationToken cancellationToken = default);
         Task<EconomicResult> PerformEconomicAnalysisAsync(List<CashFlow> request, CancellationToken cancellationToken = default);
-        Task<List<NPVProfilePoint>> GenerateNPVProfileAsync(List<ECONOMIC_CASH_FLOW> request, CancellationToken cancellationToken = default);
+        Task<List<NPV_PROFILE_POINT>> GenerateNPVProfileAsync(List<ECONOMIC_CASH_FLOW> request, CancellationToken cancellationToken = default);
         Task<ECONOMIC_ANALYSIS_RESULT> SaveEconomicResultAsync(ECONOMIC_ANALYSIS_RESULT result, string? userId = null, CancellationToken cancellationToken = default);
         Task<ECONOMIC_ANALYSIS_RESULT> GetEconomicResultAsync(string resultId, CancellationToken cancellationToken = default);
 

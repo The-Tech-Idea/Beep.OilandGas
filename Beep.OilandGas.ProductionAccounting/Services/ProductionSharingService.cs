@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -79,26 +79,26 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         }
 
         public async Task<PRODUCTION_SHARING_ENTITLEMENT> CalculateEntitlementAsync(
-            ALLOCATION_DETAIL allocationDetail,
+            ALLOCATION_DETAIL ALLOCATION_DETAIL,
             DateTime productionDate,
             string userId,
             string cn = "PPDM39")
         {
-            if (allocationDetail == null)
-                throw new ArgumentNullException(nameof(allocationDetail));
+            if (ALLOCATION_DETAIL == null)
+                throw new ArgumentNullException(nameof(ALLOCATION_DETAIL));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
             try
             {
-                var runTicket = await GetRunTicketAsync(allocationDetail, cn);
-                if (runTicket == null || string.IsNullOrWhiteSpace(runTicket.LEASE_ID))
+                var RUN_TICKET = await GetRunTicketAsync(ALLOCATION_DETAIL, cn);
+                if (RUN_TICKET == null || string.IsNullOrWhiteSpace(RUN_TICKET.LEASE_ID))
                     return null;
 
-                var agreement = await GetActiveAgreementAsync(runTicket.LEASE_ID, productionDate, cn);
+                var agreement = await GetActiveAgreementAsync(RUN_TICKET.LEASE_ID, productionDate, cn);
                 if (agreement == null)
                     return null;
 
-                var totalVolume = allocationDetail.ALLOCATED_VOLUME ?? 0m;
+                var totalVolume = ALLOCATION_DETAIL.ALLOCATED_VOLUME ?? 0m;
                 if (totalVolume <= 0m)
                     return null;
 
@@ -121,8 +121,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     PSA_ENTITLEMENT_ID = Guid.NewGuid().ToString(),
                     PSA_ID = agreement.PSA_ID,
-                    PROPERTY_ID = runTicket.LEASE_ID,
-                    ALLOCATION_DETAIL_ID = allocationDetail.ALLOCATION_DETAIL_ID,
+                    PROPERTY_ID = RUN_TICKET.LEASE_ID,
+                    ALLOCATION_DETAIL_ID = ALLOCATION_DETAIL.ALLOCATION_DETAIL_ID,
                     PRODUCTION_DATE = productionDate,
                     TOTAL_VOLUME = totalVolume,
                     COST_OIL_VOLUME = costOilVolume,
@@ -147,20 +147,20 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
                 _logger?.LogInformation(
                     "PSA entitlement calculated for allocation {AllocationDetailId}: ContractorVolume={Contractor}, GovVolume={Government}",
-                    allocationDetail.ALLOCATION_DETAIL_ID, contractorVolume, governmentVolume);
+                    ALLOCATION_DETAIL.ALLOCATION_DETAIL_ID, contractorVolume, governmentVolume);
 
                 return entitlement;
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "PSA entitlement calculation failed for allocation {AllocationDetailId}", allocationDetail.ALLOCATION_DETAIL_ID);
+                _logger?.LogWarning(ex, "PSA entitlement calculation failed for allocation {AllocationDetailId}", ALLOCATION_DETAIL.ALLOCATION_DETAIL_ID);
                 return null;
             }
         }
 
-        private async Task<RUN_TICKET> GetRunTicketAsync(ALLOCATION_DETAIL allocationDetail, string cn)
+        private async Task<RUN_TICKET> GetRunTicketAsync(ALLOCATION_DETAIL ALLOCATION_DETAIL, string cn)
         {
-            if (string.IsNullOrWhiteSpace(allocationDetail.ALLOCATION_RESULT_ID))
+            if (string.IsNullOrWhiteSpace(ALLOCATION_DETAIL.ALLOCATION_RESULT_ID))
                 return null;
 
             var allocationMetadata = await _metadata.GetTableMetadataAsync("ALLOCATION_RESULT");
@@ -171,8 +171,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 allocationEntityType, cn, "ALLOCATION_RESULT");
 
-            var allocationResult = await allocationRepo.GetByIdAsync(allocationDetail.ALLOCATION_RESULT_ID) as ALLOCATION_RESULT;
-            if (allocationResult == null || string.IsNullOrWhiteSpace(allocationResult.ALLOCATION_REQUEST_ID))
+            var ALLOCATION_RESULT = await allocationRepo.GetByIdAsync(ALLOCATION_DETAIL.ALLOCATION_RESULT_ID) as ALLOCATION_RESULT;
+            if (ALLOCATION_RESULT == null || string.IsNullOrWhiteSpace(ALLOCATION_RESULT.ALLOCATION_REQUEST_ID))
                 return null;
 
             var runTicketMetadata = await _metadata.GetTableMetadataAsync("RUN_TICKET");
@@ -185,7 +185,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ALLOCATION_REQUEST_ID", Operator = "=", FilterValue = allocationResult.ALLOCATION_REQUEST_ID },
+                new AppFilter { FieldName = "ALLOCATION_REQUEST_ID", Operator = "=", FilterValue = ALLOCATION_RESULT.ALLOCATION_REQUEST_ID },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
 

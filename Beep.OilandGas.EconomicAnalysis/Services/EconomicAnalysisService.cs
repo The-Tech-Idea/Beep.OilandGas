@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,7 +15,6 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.PPDM.Models;
-using EconomicSensitivityAnalysis = Beep.OilandGas.Models.Data.Calculations.SensitivityAnalysis;
 
 namespace Beep.OilandGas.EconomicAnalysis.Services
 {
@@ -72,7 +71,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Services
             return result;
         }
 
-        public List<NPVProfilePoint> GenerateNPVProfile(CashFlow[] cashFlows, double minRate = 0.0, double maxRate = 1.0, int points = 50)
+        public List<NPV_PROFILE_POINT> GenerateNPVProfile(CashFlow[] cashFlows, double minRate = 0.0, double maxRate = 1.0, int points = 50)
         {
             _logger?.LogDebug("Generating NPV profile with {Points} points from {MinRate} to {MaxRate}", 
                 points, minRate, maxRate);

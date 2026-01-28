@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -24,20 +24,20 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// <summary>
         /// Calculates gas flow rate through a downhole choke with enhanced accuracy.
         /// </summary>
-        public async Task<ChokeFlowResult> CalculateDownholeChokeFlowAsync(
-            ChokeProperties choke,
-            GasChokeProperties gasProperties)
+        public async Task<CHOKE_FLOW_RESULT> CalculateDownholeChokeFlowAsync(
+            CHOKE_PROPERTIES choke,
+            GAS_CHOKE_PROPERTIES gasProperties)
         {
             return await Task.Run(() =>
             {
                 try
                 {
-                    _logger?.LogInformation("Calculating downhole choke flow for choke size: {ChokeDiameter} in", choke.ChokeDiameter);
+                    _logger?.LogInformation("Calculating downhole choke flow for choke size: {ChokeDiameter} in", choke.CHOKE_DIAMETER);
                     
                     var result = GasChokeCalculator.CalculateDownholeChokeFlow(choke, gasProperties);
                     
                     _logger?.LogInformation("Choke flow calculation completed. Flow rate: {FlowRate} Mscf/day, Regime: {FlowRegime}", 
-                        result.FlowRate, result.FlowRegime);
+                        result.FLOW_RATE, result.FLOW_REGIME);
                     
                     return result;
                 }
@@ -52,20 +52,20 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// <summary>
         /// Calculates gas flow rate through an uphole choke.
         /// </summary>
-        public async Task<ChokeFlowResult> CalculateUpholeChokeFlowAsync(
-            ChokeProperties choke,
-            GasChokeProperties gasProperties)
+        public async Task<CHOKE_FLOW_RESULT> CalculateUpholeChokeFlowAsync(
+            CHOKE_PROPERTIES choke,
+            GAS_CHOKE_PROPERTIES gasProperties)
         {
             return await Task.Run(() =>
             {
                 try
                 {
-                    _logger?.LogInformation("Calculating uphole choke flow for choke size: {ChokeDiameter} in", choke.ChokeDiameter);
+                    _logger?.LogInformation("Calculating uphole choke flow for choke size: {ChokeDiameter} in", choke.CHOKE_DIAMETER);
                     
                     // Uphole calculations are similar to downhole but may have different operating conditions
                     var result = GasChokeCalculator.CalculateUpholeChokeFlow(choke, gasProperties);
                     
-                    _logger?.LogInformation("Uphole choke flow calculation completed. Flow rate: {FlowRate} Mscf/day", result.FlowRate);
+                    _logger?.LogInformation("Uphole choke flow calculation completed. Flow rate: {FlowRate} Mscf/day", result.FLOW_RATE);
                     
                     return result;
                 }
@@ -81,8 +81,8 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// Calculates downstream pressure for a given flow rate and choke configuration.
         /// </summary>
         public async Task<decimal> CalculateDownstreamPressureAsync(
-            ChokeProperties choke,
-            GasChokeProperties gasProperties,
+            CHOKE_PROPERTIES choke,
+            GAS_CHOKE_PROPERTIES gasProperties,
             decimal flowRate)
         {
             return await Task.Run(() =>
@@ -109,7 +109,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// Calculates required choke size for specified flow conditions.
         /// </summary>
         public async Task<decimal> CalculateRequiredChokeSizeAsync(
-            GasChokeProperties gasProperties,
+            GAS_CHOKE_PROPERTIES gasProperties,
             decimal flowRate)
         {
             return await Task.Run(() =>
@@ -136,8 +136,8 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// Validates choke configuration parameters.
         /// </summary>
         public async Task<ChokeValidationResult> ValidateChokeConfigurationAsync(
-            ChokeProperties choke,
-            GasChokeProperties gasProperties)
+            CHOKE_PROPERTIES choke,
+            GAS_CHOKE_PROPERTIES gasProperties)
         {
             return await Task.Run(() =>
             {
@@ -154,23 +154,23 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     ChokeAnalysis.Validation.ChokeValidator.ValidateGasChokeProperties(gasProperties);
 
                     // Additional engineering validations
-                    if (choke.ChokeDiameter > 1.5m)
+                    if (choke.CHOKE_DIAMETER > 1.5m)
                     {
                         warnings.Add("Large choke size detected. Consider flow control implications.");
                     }
 
-                    if (gasProperties.UpstreamPressure > 10000m)
+                    if (gasProperties.UPSTREAM_PRESSURE > 10000m)
                     {
                         warnings.Add("High upstream pressure. Ensure choke rating is adequate.");
                     }
 
-                    var pressureRatio = gasProperties.DownstreamPressure / gasProperties.UpstreamPressure;
+                    var pressureRatio = gasProperties.DOWNSTREAM_PRESSURE / gasProperties.UPSTREAM_PRESSURE;
                     if (pressureRatio < 0.3m)
                     {
                         warnings.Add("Very low downstream pressure. Verify critical flow conditions.");
                     }
 
-                    if (Math.Abs(gasProperties.GasSpecificGravity - 0.65m) > 0.2m)
+                    if (Math.Abs(gasProperties.GAS_SPECIFIC_GRAVITY - 0.65m) > 0.2m)
                     {
                         warnings.Add("Gas specific gravity outside typical range. Verify Z-factor correlations.");
                     }
@@ -201,8 +201,8 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// Calculates choke performance characteristics across a range of conditions.
         /// </summary>
         public async Task<ChokePerformanceCurve[]> CalculatePerformanceCurveAsync(
-            ChokeProperties choke,
-            GasChokeProperties gasProperties,
+            CHOKE_PROPERTIES choke,
+            GAS_CHOKE_PROPERTIES gasProperties,
             (decimal Min, decimal Max) pressureRange,
             int numberOfPoints = 20)
         {
@@ -221,25 +221,25 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
 
                     for (int i = 0; i < numberOfPoints; i++)
                     {
-                        var testProperties = new GasChokeProperties
+                        var testProperties = new GAS_CHOKE_PROPERTIES
                         {
-                            UpstreamPressure = gasProperties.UpstreamPressure,
+                            UpstreamPressure = gasProperties.UPSTREAM_PRESSURE,
                             DownstreamPressure = pressureRange.Min + (i * pressureStep),
-                            Temperature = gasProperties.Temperature,
-                            GasSpecificGravity = gasProperties.GasSpecificGravity,
-                            ZFactor = gasProperties.ZFactor,
-                            FlowRate = gasProperties.FlowRate
+                            Temperature = gasProperties.TEMPERATURE,
+                            GasSpecificGravity = gasProperties.GAS_SPECIFIC_GRAVITY,
+                            ZFactor = gasProperties.ZFACTOR,
+                            FlowRate = gasProperties.FLOW_RATE
                         };
 
                         var flowResult = GasChokeCalculator.CalculateDownholeChokeFlow(choke, testProperties);
 
                         results[i] = new ChokePerformanceCurve
                         {
-                            DownstreamPressure = testProperties.DownstreamPressure,
-                            FlowRate = flowResult.FlowRate,
-                            FlowRegime = flowResult.FlowRegime,
-                            PressureRatio = flowResult.PressureRatio,
-                            IsCriticalFlow = flowResult.PressureRatio < flowResult.CriticalPressureRatio
+                            DownstreamPressure = testProperties.DOWNSTREAM_PRESSURE,
+                            FlowRate = flowResult.FLOW_RATE,
+                            FlowRegime = flowResult.FLOW_REGIME,
+                            PressureRatio = flowResult.PRESSURE_RATIO,
+                            IsCriticalFlow = flowResult.PRESSURE_RATIO < flowResult.CRITICAL_PRESSURE_RATIO
                         };
                     }
 
@@ -259,8 +259,8 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
         /// Provides engineering recommendations for choke optimization.
         /// </summary>
         public async Task<string[]> GetOptimizationRecommendationsAsync(
-            ChokeProperties choke,
-            GasChokeProperties gasProperties)
+            CHOKE_PROPERTIES choke,
+            GAS_CHOKE_PROPERTIES gasProperties)
         {
             return await Task.Run(() =>
             {
@@ -281,7 +281,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     // Flow regime specific recommendations
                     var flowResult = GasChokeCalculator.CalculateDownholeChokeFlow(choke, gasProperties);
                     
-                    if (flowResult.FlowRegime == FlowRegime.Sonic)
+                    if (flowResult.FLOW_REGIME == FlowRegime.Sonic)
                     {
                         recommendations.Add("Choke is in critical flow. Consider monitoring for erosion and wear.");
                     }
@@ -290,12 +290,12 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                         recommendations.Add("Subsonic flow detected. Downstream pressure changes will affect flow rate.");
                     }
 
-                    if (flowResult.PressureRatio > 0.9m)
+                    if (flowResult.PRESSURE_RATIO > 0.9m)
                     {
                         recommendations.Add("High pressure ratio. Flow is pressure-sensitive - consider flow control improvements.");
                     }
 
-                    if (choke.DischargeCoefficient < 0.8m)
+                    if (choke.DISCHARGE_COEFFICIENT < 0.8m)
                     {
                         recommendations.Add("Low discharge coefficient. Consider choke cleaning or replacement.");
                     }

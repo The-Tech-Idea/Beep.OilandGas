@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -68,35 +68,35 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (string.IsNullOrWhiteSpace(allocation.ALLOCATION_RESULT_ID))
                     throw new AccountingException("Allocation detail is missing ALLOCATION_RESULT_ID.");
 
-                var allocationResult = await GetAllocationResultAsync(allocation.ALLOCATION_RESULT_ID, cn);
-                if (allocationResult == null)
+                var ALLOCATION_RESULT = await GetAllocationResultAsync(allocation.ALLOCATION_RESULT_ID, cn);
+                if (ALLOCATION_RESULT == null)
                     throw new AccountingException($"Allocation result not found: {allocation.ALLOCATION_RESULT_ID}");
 
-                var runTicket = await GetRunTicketAsync(allocationResult.ALLOCATION_REQUEST_ID, cn);
-                if (runTicket == null)
-                    throw new AccountingException($"Run ticket not found for allocation request {allocationResult.ALLOCATION_REQUEST_ID}");
+                var RUN_TICKET = await GetRunTicketAsync(ALLOCATION_RESULT.ALLOCATION_REQUEST_ID, cn);
+                if (RUN_TICKET == null)
+                    throw new AccountingException($"Run ticket not found for allocation request {ALLOCATION_RESULT.ALLOCATION_REQUEST_ID}");
 
-                if (_leaseEconomicInterestService != null && !string.IsNullOrWhiteSpace(runTicket.LEASE_ID))
+                if (_leaseEconomicInterestService != null && !string.IsNullOrWhiteSpace(RUN_TICKET.LEASE_ID))
                 {
                     var interestsValid = await _leaseEconomicInterestService.ValidateEconomicInterestsAsync(
-                        runTicket.LEASE_ID,
-                        runTicket.TICKET_DATE_TIME,
+                        RUN_TICKET.LEASE_ID,
+                        RUN_TICKET.TICKET_DATE_TIME,
                         cn);
                     if (!interestsValid)
-                        throw new AccountingException($"Economic interest validation failed for lease {runTicket.LEASE_ID}");
+                        throw new AccountingException($"Economic interest validation failed for lease {RUN_TICKET.LEASE_ID}");
                 }
 
                 var allocatedVolume = allocation.ALLOCATED_VOLUME.Value;
-                var priceDate = runTicket.TICKET_DATE_TIME ?? DateTime.UtcNow;
+                var priceDate = RUN_TICKET.TICKET_DATE_TIME ?? DateTime.UtcNow;
 
-                decimal commodityPrice = runTicket.PRICE_PER_BARREL > 0
-                    ? runTicket.PRICE_PER_BARREL.Value
+                decimal commodityPrice = RUN_TICKET.PRICE_PER_BARREL > 0
+                    ? RUN_TICKET.PRICE_PER_BARREL.Value
                     : await GetCommodityPriceAsync("OIL", priceDate, cn);
 
-                var totalVolume = allocationResult.ALLOCATED_VOLUME ?? allocationResult.TOTAL_VOLUME ?? allocatedVolume;
+                var totalVolume = ALLOCATION_RESULT.ALLOCATED_VOLUME ?? ALLOCATION_RESULT.TOTAL_VOLUME ?? allocatedVolume;
                 var grossRevenueTotal = totalVolume * commodityPrice;
 
-                var totalRoyalty = await GetTotalRoyaltyAsync(allocationResult.ALLOCATION_RESULT_ID, cn);
+                var totalRoyalty = await GetTotalRoyaltyAsync(ALLOCATION_RESULT.ALLOCATION_RESULT_ID, cn);
                 var netRevenueTotal = grossRevenueTotal - totalRoyalty;
                 if (netRevenueTotal < 0m)
                     netRevenueTotal = 0m;
@@ -107,8 +107,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                     allocation.ALLOCATION_PERCENTAGE ?? 100, grossRevenueTotal);
 
                 var revenueTransaction = await GetOrCreateRevenueTransactionAsync(
-                    allocationResult,
-                    runTicket,
+                    ALLOCATION_RESULT,
+                    RUN_TICKET,
                     priceDate,
                     commodityPrice,
                     grossRevenueTotal,
@@ -296,8 +296,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         }
 
         private async Task<REVENUE_TRANSACTION> GetOrCreateRevenueTransactionAsync(
-            ALLOCATION_RESULT allocationResult,
-            RUN_TICKET runTicket,
+            ALLOCATION_RESULT ALLOCATION_RESULT,
+            RUN_TICKET RUN_TICKET,
             DateTime priceDate,
             decimal commodityPrice,
             decimal grossRevenueTotal,
@@ -315,7 +315,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "ALLOCATION_RESULT_ID", Operator = "=", FilterValue = allocationResult.ALLOCATION_RESULT_ID },
+                new AppFilter { FieldName = "ALLOCATION_RESULT_ID", Operator = "=", FilterValue = ALLOCATION_RESULT.ALLOCATION_RESULT_ID },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
 
@@ -327,18 +327,18 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var revenueTransaction = new REVENUE_TRANSACTION
             {
                 REVENUE_TRANSACTION_ID = Guid.NewGuid().ToString(),
-                ALLOCATION_RESULT_ID = allocationResult.ALLOCATION_RESULT_ID,
-                PROPERTY_ID = runTicket.LEASE_ID,
-                WELL_ID = runTicket.WELL_ID,
-                AFE_ID = GetAfeId(allocationResult, runTicket),
+                ALLOCATION_RESULT_ID = ALLOCATION_RESULT.ALLOCATION_RESULT_ID,
+                PROPERTY_ID = RUN_TICKET.LEASE_ID,
+                WELL_ID = RUN_TICKET.WELL_ID,
+                AFE_ID = GetAfeId(ALLOCATION_RESULT, RUN_TICKET),
                 TRANSACTION_DATE = priceDate,
                 REVENUE_TYPE = "OIL",
                 GROSS_REVENUE = grossRevenueTotal,
                 NET_REVENUE = netRevenueTotal,
-                OIL_VOLUME = allocationResult.ALLOCATED_VOLUME ?? allocationResult.TOTAL_VOLUME ?? 0m,
+                OIL_VOLUME = ALLOCATION_RESULT.ALLOCATED_VOLUME ?? ALLOCATION_RESULT.TOTAL_VOLUME ?? 0m,
                 OIL_PRICE = commodityPrice,
                 CURRENCY_CODE = "USD",
-                DESCRIPTION = $"Revenue from allocation {allocationResult.ALLOCATION_RESULT_ID}",
+                DESCRIPTION = $"Revenue from allocation {ALLOCATION_RESULT.ALLOCATION_RESULT_ID}",
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_DATE = DateTime.UtcNow,
@@ -383,12 +383,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return results?.Cast<RUN_TICKET>().FirstOrDefault();
         }
 
-        private static string GetAfeId(ALLOCATION_RESULT allocationResult, RUN_TICKET runTicket)
+        private static string GetAfeId(ALLOCATION_RESULT ALLOCATION_RESULT, RUN_TICKET RUN_TICKET)
         {
-            if (!string.IsNullOrWhiteSpace(allocationResult?.AFE_ID))
-                return allocationResult.AFE_ID;
-            if (!string.IsNullOrWhiteSpace(runTicket?.AFE_ID))
-                return runTicket.AFE_ID;
+            if (!string.IsNullOrWhiteSpace(ALLOCATION_RESULT?.AFE_ID))
+                return ALLOCATION_RESULT.AFE_ID;
+            if (!string.IsNullOrWhiteSpace(RUN_TICKET?.AFE_ID))
+                return RUN_TICKET.AFE_ID;
             return null;
         }
     }

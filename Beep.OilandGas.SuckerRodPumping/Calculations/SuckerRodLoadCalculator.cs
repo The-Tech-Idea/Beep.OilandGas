@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
@@ -17,9 +17,9 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         /// <param name="systemProperties">Sucker rod system properties.</param>
         /// <param name="rodString">Rod string configuration.</param>
         /// <returns>Sucker rod load analysis results.</returns>
-        public static SuckerRodLoadResult CalculateLoads(
-            SuckerRodSystemProperties systemProperties,
-            SuckerRodString rodString)
+        public static SUCKER_ROD_LOAD_RESULT CalculateLoads(
+            SUCKER_ROD_SYSTEM_PROPERTIES systemProperties,
+            SUCKER_ROD_STRING rodString)
         {
             if (systemProperties == null)
                 throw new ArgumentNullException(nameof(systemProperties));
@@ -27,37 +27,37 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
             if (rodString == null)
                 throw new ArgumentNullException(nameof(rodString));
 
-            var result = new SuckerRodLoadResult();
+            var result = new SUCKER_ROD_LOAD_RESULT();
 
             // Calculate rod string weight
-            result.RodStringWeight = CalculateRodStringWeight(rodString);
+            result.ROD_STRING_WEIGHT = CalculateRodStringWeight(rodString);
 
             // Calculate fluid load
-            result.FluidLoad = CalculateFluidLoad(systemProperties);
+            result.FLUID_LOAD = CalculateFluidLoad(systemProperties);
 
             // Calculate dynamic load
-            result.DynamicLoad = CalculateDynamicLoad(systemProperties, rodString);
+            result.DYNAMIC_LOAD = CalculateDynamicLoad(systemProperties, rodString);
 
             // Calculate peak load (upstroke)
-            result.PeakLoad = result.RodStringWeight + result.FluidLoad + result.DynamicLoad;
+            result.PEAK_LOAD = result.ROD_STRING_WEIGHT + result.FLUID_LOAD + result.DYNAMIC_LOAD;
 
             // Calculate minimum load (downstroke)
-            result.MinimumLoad = result.RodStringWeight - result.DynamicLoad;
+            result.MINIMUM_LOAD = result.ROD_STRING_WEIGHT - result.DYNAMIC_LOAD;
 
             // Polished rod load (average)
-            result.PolishedRodLoad = (result.PeakLoad + result.MinimumLoad) / 2m;
+            result.POLISHED_ROD_LOAD = (result.PEAK_LOAD + result.MINIMUM_LOAD) / 2m;
 
             // Load range
-            result.LoadRange = result.PeakLoad - result.MinimumLoad;
+            result.LOAD_RANGE = result.PEAK_LOAD - result.MINIMUM_LOAD;
 
             // Calculate stress
-            decimal rodArea = (decimal)Math.PI * systemProperties.RodDiameter * systemProperties.RodDiameter / 4m;
-            result.MaximumStress = result.PeakLoad / rodArea;
-            result.StressRange = result.LoadRange / rodArea;
+            decimal rodArea = (decimal)Math.PI * systemProperties.ROD_DIAMETER * systemProperties.ROD_DIAMETER / 4m;
+            result.MAXIMUM_STRESS = result.PEAK_LOAD / rodArea;
+            result.STRESS_RANGE = result.LOAD_RANGE / rodArea;
 
             // Load factor (safety factor)
             decimal yieldStrength = 100000m; // psi (typical for sucker rod steel)
-            result.LoadFactor = yieldStrength / result.MaximumStress;
+            result.LOAD_FACTOR = yieldStrength / result.MAXIMUM_STRESS;
 
             return result;
         }
@@ -65,7 +65,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         /// <summary>
         /// Calculates rod string weight.
         /// </summary>
-        private static decimal CalculateRodStringWeight(SuckerRodString rodString)
+        private static decimal CalculateRodStringWeight(SUCKER_ROD_STRING rodString)
         {
             decimal totalWeight = 0m;
 
@@ -81,38 +81,38 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
                 totalWeight += sectionWeight;
             }
 
-            rodString.TotalWeight = totalWeight;
+            rodString.TOTAL_WEIGHT = totalWeight;
             return totalWeight;
         }
 
         /// <summary>
         /// Calculates fluid load.
         /// </summary>
-        private static decimal CalculateFluidLoad(SuckerRodSystemProperties systemProperties)
+        private static decimal CalculateFluidLoad(SUCKER_ROD_SYSTEM_PROPERTIES systemProperties)
         {
             // Calculate fluid density
-            decimal oilDensity = (141.5m / (131.5m + systemProperties.OilGravity)) * 62.4m; // lb/ft³
-            decimal waterDensity = 62.4m; // lb/ft³
-            decimal liquidDensity = oilDensity * (1.0m - systemProperties.WaterCut) + 
-                                   waterDensity * systemProperties.WaterCut;
+            decimal oilDensity = (141.5m / (131.5m + systemProperties.OIL_GRAVITY)) * 62.4m; // lb/ftÂ³
+            decimal waterDensity = 62.4m; // lb/ftÂ³
+            decimal liquidDensity = oilDensity * (1.0m - systemProperties.WATER_CUT) + 
+                                   waterDensity * systemProperties.WATER_CUT;
 
             // Account for gas
-            if (systemProperties.GasOilRatio > 0)
+            if (systemProperties.GAS_OIL_RATIO > 0)
             {
                 // Calculate average pressure
-                decimal averagePressure = (systemProperties.WellheadPressure + systemProperties.BottomHolePressure) / 2m;
+                decimal averagePressure = (systemProperties.WELLHEAD_PRESSURE + systemProperties.BOTTOM_HOLE_PRESSURE) / 2m;
                 decimal averageTemperature = 540m; // Rankine (simplified)
 
                 // Calculate Z-factor
                 decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                    averagePressure, averageTemperature, systemProperties.GasSpecificGravity);
+                    averagePressure, averageTemperature, systemProperties.GAS_SPECIFIC_GRAVITY);
 
                 // Gas density
-                decimal gasDensity = (averagePressure * systemProperties.GasSpecificGravity * 28.9645m) /
+                decimal gasDensity = (averagePressure * systemProperties.GAS_SPECIFIC_GRAVITY * 28.9645m) /
                                     (zFactor * 10.7316m * averageTemperature);
 
                 // Gas volume factor
-                decimal gasVolumeFactor = systemProperties.GasOilRatio * zFactor * averageTemperature /
+                decimal gasVolumeFactor = systemProperties.GAS_OIL_RATIO * zFactor * averageTemperature /
                                         (averagePressure * 5.614m);
 
                 // Adjust liquid density for gas
@@ -120,10 +120,10 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
             }
 
             // Pump area
-            decimal pumpArea = (decimal)Math.PI * systemProperties.PumpDiameter * systemProperties.PumpDiameter / 4m; // square inches
+            decimal pumpArea = (decimal)Math.PI * systemProperties.PUMP_DIAMETER * systemProperties.PUMP_DIAMETER / 4m; // square inches
 
             // Fluid column height (simplified - using well depth)
-            decimal fluidColumnHeight = systemProperties.WellDepth; // feet
+            decimal fluidColumnHeight = systemProperties.WELL_DEPTH; // feet
 
             // Fluid load = pressure * area
             decimal fluidPressure = liquidDensity * fluidColumnHeight / 144m; // psia
@@ -136,25 +136,25 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         /// Calculates dynamic load.
         /// </summary>
         private static decimal CalculateDynamicLoad(
-            SuckerRodSystemProperties systemProperties,
-            SuckerRodString rodString)
+            SUCKER_ROD_SYSTEM_PROPERTIES systemProperties,
+            SUCKER_ROD_STRING rodString)
         {
             // Dynamic load due to acceleration
             // Simplified calculation based on stroke length and SPM
 
-            decimal strokeLengthFt = systemProperties.StrokeLength / 12m; // feet
-            decimal angularVelocity = 2m * (decimal)Math.PI * systemProperties.StrokesPerMinute / 60m; // rad/s
+            decimal strokeLengthFt = systemProperties.STROKE_LENGTH / 12m; // feet
+            decimal angularVelocity = 2m * (decimal)Math.PI * systemProperties.STROKES_PER_MINUTE / 60m; // rad/s
 
             // Acceleration at top of stroke
-            decimal acceleration = angularVelocity * angularVelocity * strokeLengthFt / 2m; // ft/s²
+            decimal acceleration = angularVelocity * angularVelocity * strokeLengthFt / 2m; // ft/sÂ²
 
             // Dynamic load = mass * acceleration
-            decimal rodMass = rodString.TotalWeight / 32.174m; // slugs
+            decimal rodMass = rodString.TOTAL_WEIGHT / 32.174m; // slugs
             decimal dynamicLoad = rodMass * acceleration; // pounds
 
             // Add fluid mass effect
-            decimal fluidDensity = (141.5m / (131.5m + systemProperties.OilGravity)) * 62.4m;
-            decimal pumpArea = (decimal)Math.PI * systemProperties.PumpDiameter * systemProperties.PumpDiameter / 4m;
+            decimal fluidDensity = (141.5m / (131.5m + systemProperties.OIL_GRAVITY)) * 62.4m;
+            decimal pumpArea = (decimal)Math.PI * systemProperties.PUMP_DIAMETER * systemProperties.PUMP_DIAMETER / 4m;
             decimal fluidVolume = pumpArea * strokeLengthFt / 144m; // cubic feet
             decimal fluidMass = fluidVolume * fluidDensity / 32.174m; // slugs
             decimal fluidDynamicLoad = fluidMass * acceleration;
@@ -166,14 +166,14 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         /// Generates pump card (load vs position).
         /// </summary>
         public static PumpCard GeneratePumpCard(
-            SuckerRodSystemProperties systemProperties,
-            SuckerRodString rodString)
+            SUCKER_ROD_SYSTEM_PROPERTIES systemProperties,
+            SUCKER_ROD_STRING rodString)
         {
             var loadResult = CalculateLoads(systemProperties, rodString);
             var pumpCard = new PumpCard
             {
-                PeakLoad = loadResult.PeakLoad,
-                MinimumLoad = loadResult.MinimumLoad
+                PeakLoad = loadResult.PEAK_LOAD,
+                MinimumLoad = loadResult.MINIMUM_LOAD
             };
 
             // Generate points for pump card
@@ -184,7 +184,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
 
                 // Simplified load curve (sinusoidal)
                 decimal load = CalculateLoadAtPosition(
-                    position, loadResult.MinimumLoad, loadResult.PeakLoad);
+                    position, loadResult.MINIMUM_LOAD, loadResult.PEAK_LOAD);
 
                 pumpCard.Points.Add(new PumpCardPoint
                 {

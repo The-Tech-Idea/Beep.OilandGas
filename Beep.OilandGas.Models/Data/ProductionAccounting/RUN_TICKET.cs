@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
@@ -156,9 +156,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 
         // Standard PPDM columns
 
-        private System.String REMARKValue;
-
-        private System.String SOURCEValue;
+       
 
         private System.String ROW_IDValue;
         public System.String ROW_ID
@@ -166,5 +164,23 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             get { return this.ROW_IDValue; }
             set { SetProperty(ref ROW_IDValue, value); }
         }
+
+      
+
+        private decimal BSWVOLUMEValue;
+        public decimal BSWVOLUME
+        {
+            get { return this.BSWVOLUMEValue; }
+            set { SetProperty(ref BSWVOLUMEValue, value); }
+        }
+
+        private decimal BSWPERCENTAGEValue;
+        public decimal BSWPERCENTAGE
+        {
+            get { return this.BSWPERCENTAGEValue; }
+            set { SetProperty(ref BSWPERCENTAGEValue, value); }
+        }
+
+       
     }
 }

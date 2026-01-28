@@ -77,7 +77,73 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
             set { SetProperty(ref FLOW_REGIMEValue, value); }
         }
 
-        // Standard PPDM columns
+        // Analysis Compatibility
+        public string AnalysisId
+        {
+            get { return this.PIPELINE_FLOW_ANALYSIS_RESULT_ID; }
+            set { this.PIPELINE_FLOW_ANALYSIS_RESULT_ID = value; }
+        }
+        public string PipelineId
+        {
+            get { return this.PIPELINE_PROPERTIES_ID; }
+            set { this.PIPELINE_PROPERTIES_ID = value; }
+        }
+        public DateTime AnalysisDate
+        {
+             get { return DateTime.Now; } // Placeholder if not in PPDM
+             set {  }
+        }
+        public double FlowRate
+        {
+            get { return (double)(this.FLOW_RATE ?? 0); }
+            set { this.FLOW_RATE = (decimal)value; }
+        }
+        // Missing PPDM property for InletPressure, adding usage
+        private decimal? INLET_PRESSUREValue;
+        public decimal? INLET_PRESSURE
+        {
+            get { return INLET_PRESSUREValue; }
+            set { SetProperty(ref INLET_PRESSUREValue, value); }
+        }
+        public double InletPressure {
+            get { return (double)(this.INLET_PRESSURE ?? 0); }
+            set { this.INLET_PRESSURE = (decimal)value; }
+        }
+
+        public double OutletPressure
+        {
+            get { return (double)(this.OUTLET_PRESSURE ?? 0); }
+            set { this.OUTLET_PRESSURE = (decimal)value; }
+        }
+        public double PressureDrop
+        {
+            get { return (double)(this.PRESSURE_DROP ?? 0); }
+            set { this.PRESSURE_DROP = (decimal)value; }
+        }
+        public double Velocity
+        {
+            get { return (double)(this.FLOW_VELOCITY ?? 0); }
+            set { this.FLOW_VELOCITY = (decimal)value; }
+        }
+        public string FlowRegime
+        {
+            get { return this.FLOW_REGIME; }
+            set { this.FLOW_REGIME = value; }
+        }
+        
+        private string STATUSValue;
+        public string Status
+        {
+             get { return this.STATUSValue; }
+             set { SetProperty(ref STATUSValue, value); }
+        }
+
+        private string RECOMMENDATIONSValue;
+        public string Recommendations
+        {
+             get { return this.RECOMMENDATIONSValue; }
+             set { SetProperty(ref RECOMMENDATIONSValue, value); }
+        }
 
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -87,5 +87,33 @@ namespace Beep.OilandGas.Models.Data.HydraulicPumps
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+
+        private string? PRODUCTION_FLUID_TYPEValue;
+        public string? PRODUCTION_FLUID_TYPE
+        {
+            get { return this.PRODUCTION_FLUID_TYPEValue; }
+            set { SetProperty(ref PRODUCTION_FLUID_TYPEValue, value); }
+        }
+
+        private decimal? PUMP_DEPTHValue;
+        public decimal? PUMP_DEPTH
+        {
+            get { return this.PUMP_DEPTHValue; }
+            set { SetProperty(ref PUMP_DEPTHValue, value); }
+        }
+
+        private string? PUMP_IDValue;
+        public string? PUMP_ID
+        {
+            get { return this.PUMP_IDValue; }
+            set { SetProperty(ref PUMP_IDValue, value); }
+        }
+
+        private string? MANUFACTURERValue;
+        public string? MANUFACTURER
+        {
+            get { return this.MANUFACTURERValue; }
+            set { SetProperty(ref MANUFACTURERValue, value); }
+        }
     }
 }

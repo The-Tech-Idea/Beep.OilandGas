@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,19 +11,19 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
     {
         #region Flash Calculation
 
-        public async Task<FlashResult> PerformIsothermalFlashAsync(FlashConditions request, CancellationToken cancellationToken = default)
+        public async Task<FlashResult> PerformIsothermalFlashAsync(FLASH_CONDITIONS request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<FlashConditions, FlashResult>("/api/flashcalculation/isothermal", request, cancellationToken);
+                return await PostAsync<FLASH_CONDITIONS, FlashResult>("/api/flashcalculation/isothermal", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<List<FlashResult>> PerformMultiStageFlashAsync(FlashConditions request, CancellationToken cancellationToken = default)
+        public async Task<List<FlashResult>> PerformMultiStageFlashAsync(FLASH_CONDITIONS request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<FlashConditions, List<FlashResult>>("/api/flashcalculation/multistage", request, cancellationToken);
+                return await PostAsync<FLASH_CONDITIONS, List<FlashResult>>("/api/flashcalculation/multistage", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
@@ -44,29 +44,29 @@ namespace Beep.OilandGas.Models.Data.DataManagement
             set { SetProperty(ref INCOMPLETE_RECORDSValue, value); }
         }
 
-        private System.Decimal? COMPLETENESS_SCOREValue;
-        public System.Decimal? COMPLETENESS_SCORE
+        private System.Double? COMPLETENESS_SCOREValue;
+        public System.Double? COMPLETENESS_SCORE
         {
             get { return this.COMPLETENESS_SCOREValue; }
             set { SetProperty(ref COMPLETENESS_SCOREValue, value); }
         }
 
-        private System.Decimal? ACCURACY_SCOREValue;
-        public System.Decimal? ACCURACY_SCORE
+        private System.Double? ACCURACY_SCOREValue;
+        public System.Double? ACCURACY_SCORE
         {
             get { return this.ACCURACY_SCOREValue; }
             set { SetProperty(ref ACCURACY_SCOREValue, value); }
         }
 
-        private System.Decimal? CONSISTENCY_SCOREValue;
-        public System.Decimal? CONSISTENCY_SCORE
+        private System.Double? CONSISTENCY_SCOREValue;
+        public System.Double? CONSISTENCY_SCORE
         {
             get { return this.CONSISTENCY_SCOREValue; }
             set { SetProperty(ref CONSISTENCY_SCOREValue, value); }
         }
 
-        private System.Decimal? OVERALL_QUALITY_SCOREValue;
-        public System.Decimal? OVERALL_QUALITY_SCORE
+        private System.Double? OVERALL_QUALITY_SCOREValue;
+        public System.Double? OVERALL_QUALITY_SCORE
         {
             get { return this.OVERALL_QUALITY_SCOREValue; }
             set { SetProperty(ref OVERALL_QUALITY_SCOREValue, value); }
@@ -114,9 +114,6 @@ namespace Beep.OilandGas.Models.Data.DataManagement
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
-        private System.DateTime? EFFECTIVE_DATEValue;
-
-        private System.DateTime? EXPIRY_DATEValue;
-
+        public Dictionary<string, FieldQualityMetrics> FIELD_METRICS { get; set; }
     }
 }

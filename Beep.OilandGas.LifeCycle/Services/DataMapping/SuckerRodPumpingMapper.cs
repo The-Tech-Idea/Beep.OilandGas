@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
 using Beep.OilandGas.PPDM39.Models;
 
@@ -62,13 +62,13 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to SuckerRodSystemProperties.
+        /// Maps PPDM39 WELL and related entities to SUCKER_ROD_SYSTEM_PROPERTIES.
         /// </summary>
         /// <param name="well">The PPDM39 WELL entity.</param>
         /// <param name="tubular">Optional WELL_TUBULAR entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity.</param>
-        /// <returns>The mapped SuckerRodSystemProperties.</returns>
-        public SuckerRodSystemProperties MapToSuckerRodSystemProperties(
+        /// <returns>The mapped SUCKER_ROD_SYSTEM_PROPERTIES.</returns>
+        public SUCKER_ROD_SYSTEM_PROPERTIES MapToSuckerRodSystemProperties(
             WELL well,
             WELL_TUBULAR? tubular = null,
             WELL_PRESSURE? wellPressure = null)
@@ -89,7 +89,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getGasOilRatio = _getGasOilRatio ?? ValueRetrievers.GetGasOilRatioDecimal;
             var getGasSpecificGravity = _getGasSpecificGravity ?? ValueRetrievers.GetGasSpecificGravityDecimal;
 
-            return new SuckerRodSystemProperties
+            return new SUCKER_ROD_SYSTEM_PROPERTIES
             {
                 WellDepth = getWellDepth(well, tubular),
                 TubingDiameter = getTubingDiameter(well, tubular),

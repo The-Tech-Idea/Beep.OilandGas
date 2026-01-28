@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -34,7 +34,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 DeclineType = "AutoSelected",
                 DeclineRate = di,
                 InitialRate = qi,
-                EstimatedReserves = pf.TotalCumulativeProduction,
+                EstimatedReserves = pf.TOTAL_CUMULATIVE_PRODUCTION,
                 Status = "OK",
                 HistoricalData = new List<ForecastProductionDataPoint>()
             };
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             decimal di = 0.01m; // 1/day
             decimal forecastDurationDays = forecastPeriod * 30m; // approximate months->days
 
-            Beep.OilandGas.Models.Data.ProductionForecasting.ProductionForecast pf;
+            Beep.OilandGas.Models.Data.ProductionForecasting.PRODUCTION_FORECAST pf;
             if (declineType == ForecastType.Harmonic)
             {
                 pf = DeclineForecast.GenerateHarmonicDeclineForecast(qi, di, forecastDurationDays, null, forecastPeriod);
@@ -89,9 +89,9 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 WellUWI = wellUWI,
                 FieldId = null,
                 ForecastDate = DateTime.UtcNow,
-                ForecastMethod = Models.Data.ProductionForecasting.ForecastType.Decline,
+                ForecastMethod = Models.Data.ProductionForecasting.FORECAST_TYPE.Decline,
                 ForecastPoints = new List<ProductionForecastPoint>(),
-                EstimatedReserves = pf.TotalCumulativeProduction,
+                EstimatedReserves = pf.TOTAL_CUMULATIVE_PRODUCTION,
                 Status = "Generated"
             };
 

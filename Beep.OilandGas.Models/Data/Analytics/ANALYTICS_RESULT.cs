@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data;
@@ -62,5 +62,14 @@ namespace Beep.OilandGas.Models.Data.Analytics
 
         private System.String SOURCEValue;
 
+
+        private string ANALYTICS_IDValue;
+        public string ANALYTICS_ID
+        {
+            get { return this.ANALYTICS_IDValue; }
+            set { SetProperty(ref ANALYTICS_IDValue, value); }
+        }
+
+      
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Analytics;
@@ -14,22 +14,22 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Calculates production trends.
         /// </summary>
-        Task<AnalyticsResult> CalculateProductionTrendsAsync(ProductionTrendsRequest request, string userId, string? connectionName = null);
+        Task<ANALYTICS_RESULT> CalculateProductionTrendsAsync(ProductionTrendsRequest request, string userId, string? connectionName = null);
         
         /// <summary>
         /// Calculates revenue trends.
         /// </summary>
-        Task<AnalyticsResult> CalculateRevenueTrendsAsync(RevenueTrendsRequest request, string userId, string? connectionName = null);
+        Task<ANALYTICS_RESULT> CalculateRevenueTrendsAsync(RevenueTrendsRequest request, string userId, string? connectionName = null);
         
         /// <summary>
         /// Calculates cost trends.
         /// </summary>
-        Task<AnalyticsResult> CalculateCostTrendsAsync(CostTrendsRequest request, string userId, string? connectionName = null);
+        Task<ANALYTICS_RESULT> CalculateCostTrendsAsync(CostTrendsRequest request, string userId, string? connectionName = null);
         
         /// <summary>
         /// Saves analytics result.
         /// </summary>
-        Task<ANALYTICS_RESULT> SaveAnalyticsResultAsync(AnalyticsResult result, string userId, string? connectionName = null);
+        Task<ANALYTICS_RESULT> SaveAnalyticsResultAsync(ANALYTICS_RESULT result, string userId, string? connectionName = null);
         
         /// <summary>
         /// Gets analytics history.

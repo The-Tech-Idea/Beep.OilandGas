@@ -1,0 +1,116 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Imbalance;
+
+namespace Beep.OilandGas.Models.Data.ProductionAccounting
+{
+    public class ImbalanceStatement : ModelEntityBase
+    {
+        /// <summary>
+        /// Gets or sets the statement identifier.
+        /// </summary>
+        private string StatementIdValue = string.Empty;
+
+        public string StatementId
+
+        {
+
+            get { return this.StatementIdValue; }
+
+            set { SetProperty(ref StatementIdValue, value); }
+
+        }
+
+        /// <summary>
+        /// Gets or sets the statement period start date.
+        /// </summary>
+        private DateTime StatementPeriodStartValue;
+
+        public DateTime StatementPeriodStart
+
+        {
+
+            get { return this.StatementPeriodStartValue; }
+
+            set { SetProperty(ref StatementPeriodStartValue, value); }
+
+        }
+
+        /// <summary>
+        /// Gets or sets the statement period end date.
+        /// </summary>
+        private DateTime StatementPeriodEndValue;
+
+        public DateTime StatementPeriodEnd
+
+        {
+
+            get { return this.StatementPeriodEndValue; }
+
+            set { SetProperty(ref StatementPeriodEndValue, value); }
+
+        }
+
+        /// <summary>
+        /// Gets or sets the nominations summary.
+        /// </summary>
+        private ImbalanceSummary NominationsValue = new();
+
+        public ImbalanceSummary Nominations
+
+        {
+
+            get { return this.NominationsValue; }
+
+            set { SetProperty(ref NominationsValue, value); }
+
+        }
+
+        /// <summary>
+        /// Gets or sets the actuals summary.
+        /// </summary>
+        private ImbalanceSummary ActualsValue = new();
+
+        public ImbalanceSummary Actuals
+
+        {
+
+            get { return this.ActualsValue; }
+
+            set { SetProperty(ref ActualsValue, value); }
+
+        }
+
+        /// <summary>
+        /// Gets or sets the imbalances.
+        /// </summary>
+        private List<OilImbalance> ImbalancesValue = new();
+
+        public List<OilImbalance> Imbalances
+
+        {
+
+            get { return this.ImbalancesValue; }
+
+            set { SetProperty(ref ImbalancesValue, value); }
+
+        }
+
+        /// <summary>
+        /// Gets or sets the reconciliation details.
+        /// </summary>
+        private ImbalanceReconciliation? ReconciliationValue;
+
+        public ImbalanceReconciliation? Reconciliation
+
+        {
+
+            get { return this.ReconciliationValue; }
+
+            set { SetProperty(ref ReconciliationValue, value); }
+
+        }
+    }
+}

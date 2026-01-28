@@ -1,4 +1,4 @@
-using Beep.OilandGas.HeatMap.ColorSchemes;
+﻿using Beep.OilandGas.HeatMap.ColorSchemes;
 using SkiaSharp;
 using System;
 
@@ -7,7 +7,7 @@ namespace Beep.OilandGas.HeatMap.Configuration
     /// <summary>
     /// Configuration class for heat map generation and rendering.
     /// </summary>
-    public class HeatMapConfiguration
+    public class HEAT_MAP_CONFIGURATION
     {
         /// <summary>
         /// Gets or sets the color scheme type.

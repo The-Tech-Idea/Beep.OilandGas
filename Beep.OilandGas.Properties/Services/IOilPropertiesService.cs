@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -584,7 +584,7 @@ namespace Beep.OilandGas.Properties.Services
         public string AssessmentId { get; set; } = string.Empty;
         public string SampleId { get; set; } = string.Empty;
         public decimal OverallQualityScore { get; set; }
-        public List<DataQualityIssue> Issues { get; set; } = new();
+        public List<DATA_QUALITY_ISSUE> Issues { get; set; } = new();
         public List<string> Recommendations { get; set; } = new();
         public string QualityRating { get; set; } = string.Empty;
     }
@@ -592,7 +592,7 @@ namespace Beep.OilandGas.Properties.Services
     /// <summary>
     /// Data quality issue DTO
     /// </summary>
-    public class DataQualityIssue
+    public class DATA_QUALITY_ISSUE
     {
         public string IssueType { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

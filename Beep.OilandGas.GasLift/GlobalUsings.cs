@@ -14,6 +14,4 @@ global using Microsoft.Extensions.Logging;
 global using TheTechIdea.Beep.Editor;
 global using TheTechIdea.Beep.DataBase;
 
-// Resolve ambiguous type references - prefer GasLift models namespace
-global using GasLiftPerformancePoint = Beep.OilandGas.Models.Data.GasLift.GasLiftPerformancePoint;
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -514,7 +514,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// <summary>
         /// Analyzes choke flow for a well (downhole or uphole)
         /// </summary>
-        public async Task<ChokeFlowResult> AnalyzeChokeFlowAsync(
+        public async Task<CHOKE_FLOW_RESULT> AnalyzeChokeFlowAsync(
             string fieldId,
             string wellId,
             string chokeLocation = "DOWNHOLE", // DOWNHOLE or UPHOLE
@@ -531,26 +531,26 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     wellId, fieldId, chokeLocation);
 
                 // Get choke and gas properties from PPDM or request
-                var chokeProperties = await GetChokePropertiesAsync(wellId, chokeDiameter);
+                var CHOKE_PROPERTIES = await GetChokePropertiesAsync(wellId, chokeDiameter);
                 var gasProperties = await GetGasChokePropertiesAsync(
                     fieldId, wellId, upstreamPressure, downstreamPressure, gasFlowRate, gasSpecificGravity);
 
                 // Calculate choke flow
-                ChokeFlowResult result;
+                CHOKE_FLOW_RESULT result;
                 if (chokeLocation.ToUpper() == "UPHOLE")
                 {
-                    result = GasChokeCalculator.CalculateUpholeChokeFlow(chokeProperties, gasProperties);
+                    result = GasChokeCalculator.CalculateUpholeChokeFlow(CHOKE_PROPERTIES, gasProperties);
                 }
                 else
                 {
-                    result = GasChokeCalculator.CalculateDownholeChokeFlow(chokeProperties, gasProperties);
+                    result = GasChokeCalculator.CalculateDownholeChokeFlow(CHOKE_PROPERTIES, gasProperties);
                 }
 
                 // Store results in WELL_EQUIPMENT table
                 await StoreChokeFlowResultsAsync(wellId, result, chokeLocation, userId ?? "SYSTEM");
 
                 _logger?.LogInformation("Choke flow analysis completed for well {WellId}. Flow rate: {FlowRate} Mscf/day, Flow regime: {Regime}",
-                    wellId, result.FlowRate, result.FlowRegime);
+                    wellId, result.FLOW_RATE, result.FLOW_REGIME);
 
                 return result;
             }
@@ -564,7 +564,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// <summary>
         /// Calculates required choke size for a target flow rate
         /// </summary>
-        public async Task<ChokeProperties> CalculateChokeSizingAsync(
+        public async Task<CHOKE_PROPERTIES> CalculateChokeSizingAsync(
             string fieldId,
             string wellId,
             decimal targetFlowRate,
@@ -590,31 +590,31 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
                 for (int i = 0; i < 20; i++) // Max 20 iterations
                 {
-                    var chokeProperties = new ChokeProperties
+                    var CHOKE_PROPERTIES = new CHOKE_PROPERTIES
                     {
                         ChokeDiameter = optimalDiameter,
                         ChokeType = ChokeType.Bean,
                         DischargeCoefficient = 0.85m
                     };
 
-                    ChokeFlowResult result;
+                    CHOKE_FLOW_RESULT result;
                     if (chokeLocation.ToUpper() == "UPHOLE")
                     {
-                        result = GasChokeCalculator.CalculateUpholeChokeFlow(chokeProperties, gasProperties);
+                        result = GasChokeCalculator.CalculateUpholeChokeFlow(CHOKE_PROPERTIES, gasProperties);
                     }
                     else
                     {
-                        result = GasChokeCalculator.CalculateDownholeChokeFlow(chokeProperties, gasProperties);
+                        result = GasChokeCalculator.CalculateDownholeChokeFlow(CHOKE_PROPERTIES, gasProperties);
                     }
 
-                    decimal error = Math.Abs(result.FlowRate - targetFlowRate);
+                    decimal error = Math.Abs(result.FLOW_RATE - targetFlowRate);
                     if (error < 1.0m) // Within 1 Mscf/day
                     {
                         break;
                     }
 
                     // Adjust diameter based on flow rate difference
-                    if (result.FlowRate < targetFlowRate)
+                    if (result.FLOW_RATE < targetFlowRate)
                     {
                         minDiameter = optimalDiameter;
                         optimalDiameter = (optimalDiameter + maxDiameter) / 2m;
@@ -626,7 +626,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     }
                 }
 
-                var finalChoke = new ChokeProperties
+                var finalChoke = new CHOKE_PROPERTIES
                 {
                     ChokeDiameter = optimalDiameter,
                     ChokeType = ChokeType.Bean,
@@ -655,13 +655,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// <summary>
         /// Retrieves choke properties from PPDM
         /// </summary>
-        private async Task<ChokeProperties> GetChokePropertiesAsync(string wellId, decimal? chokeDiameter)
+        private async Task<CHOKE_PROPERTIES> GetChokePropertiesAsync(string wellId, decimal? chokeDiameter)
         {
             try
             {
                 // Get well equipment data from PPDM
                 // This is a simplified implementation - in production, you would retrieve actual values
-                var chokeProperties = new ChokeProperties
+                var CHOKE_PROPERTIES = new CHOKE_PROPERTIES
                 {
                     ChokeDiameter = chokeDiameter ?? 0.5m, // Default 1/2 inch
                     ChokeType = ChokeType.Bean,
@@ -670,7 +670,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
                 _logger?.LogWarning("Using default values for choke properties. For accurate analysis, provide choke diameter in request or ensure PPDM data is complete.");
 
-                return chokeProperties;
+                return CHOKE_PROPERTIES;
             }
             catch (Exception ex)
             {
@@ -682,7 +682,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// <summary>
         /// Retrieves gas properties for choke analysis from PPDM
         /// </summary>
-        private async Task<GasChokeProperties> GetGasChokePropertiesAsync(
+        private async Task<GAS_CHOKE_PROPERTIES> GetGasChokePropertiesAsync(
             string fieldId,
             string wellId,
             decimal? upstreamPressure,
@@ -694,11 +694,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             {
                 // Get well/production data from PPDM
                 // This is a simplified implementation - in production, you would retrieve actual values
-                var gasProperties = new GasChokeProperties
+                var gasProperties = new GAS_CHOKE_PROPERTIES
                 {
                     UpstreamPressure = upstreamPressure ?? 1000m, // Default 1000 psia
                     DownstreamPressure = downstreamPressure ?? 500m, // Default 500 psia
-                    Temperature = 540m, // Default 80°F = 540°R
+                    Temperature = 540m, // Default 80Â°F = 540Â°R
                     GasSpecificGravity = gasSpecificGravity ?? 0.65m,
                     FlowRate = gasFlowRate ?? 1000m, // Default 1000 Mscf/day
                     ZFactor = 0.9m // Default - would calculate from pressure/temperature
@@ -720,7 +720,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// </summary>
         private async Task StoreChokeFlowResultsAsync(
             string wellId,
-            ChokeFlowResult result,
+            CHOKE_FLOW_RESULT result,
             string chokeLocation,
             string userId)
         {
@@ -742,16 +742,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     ["WELL_ID"] = wellId,
                     ["EQUIPMENT_TYPE"] = "CHOKE",
                     ["EQUIPMENT_NAME"] = $"{chokeLocation} Choke Flow Analysis",
-                    ["DESCRIPTION"] = $"Flow rate: {result.FlowRate:F2} Mscf/day, Flow regime: {result.FlowRegime}",
+                    ["DESCRIPTION"] = $"Flow rate: {result.FLOW_RATE:F2} Mscf/day, Flow regime: {result.FLOW_REGIME}",
                     ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
                     {
                         ChokeLocation = chokeLocation,
-                        FlowRate = result.FlowRate,
-                        UpstreamPressure = result.UpstreamPressure,
-                        DownstreamPressure = result.DownstreamPressure,
-                        PressureRatio = result.PressureRatio,
-                        FlowRegime = result.FlowRegime.ToString(),
-                        CriticalPressureRatio = result.CriticalPressureRatio,
+                        FlowRate = result.FLOW_RATE,
+                        UpstreamPressure = result.UPSTREAM_PRESSURE,
+                        DownstreamPressure = result.DOWNSTREAM_PRESSURE,
+                        PressureRatio = result.PRESSURE_RATIO,
+                        FlowRegime = result.FLOW_REGIME.ToString(),
+                        CriticalPressureRatio = result.CRITICAL_PRESSURE_RATIO,
                         AnalysisDate = DateTime.UtcNow
                     })
                 };
@@ -771,7 +771,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// </summary>
         private async Task StoreChokeSizingResultsAsync(
             string wellId,
-            ChokeProperties chokeProperties,
+            CHOKE_PROPERTIES CHOKE_PROPERTIES,
             decimal targetFlowRate,
             string chokeLocation,
             string userId)
@@ -794,14 +794,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     ["WELL_ID"] = wellId,
                     ["EQUIPMENT_TYPE"] = "CHOKE",
                     ["EQUIPMENT_NAME"] = $"{chokeLocation} Choke Sizing",
-                    ["DESCRIPTION"] = $"Optimal diameter: {chokeProperties.ChokeDiameter:F3} inches for {targetFlowRate:F2} Mscf/day",
+                    ["DESCRIPTION"] = $"Optimal diameter: {CHOKE_PROPERTIES.CHOKE_DIAMETER:F3} inches for {targetFlowRate:F2} Mscf/day",
                     ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
                     {
                         ChokeLocation = chokeLocation,
-                        ChokeDiameter = chokeProperties.ChokeDiameter,
-                        ChokeType = chokeProperties.ChokeType.ToString(),
-                        DischargeCoefficient = chokeProperties.DischargeCoefficient,
-                        ChokeArea = chokeProperties.ChokeArea,
+                        ChokeDiameter = CHOKE_PROPERTIES.CHOKE_DIAMETER,
+                        ChokeType = CHOKE_PROPERTIES.CHOKE_TYPE.ToString(),
+                        DischargeCoefficient = CHOKE_PROPERTIES.DISCHARGE_COEFFICIENT,
+                        ChokeArea = CHOKE_PROPERTIES.ChokeArea,
                         TargetFlowRate = targetFlowRate,
                         AnalysisDate = DateTime.UtcNow
                     })
@@ -824,7 +824,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// <summary>
         /// Analyzes sucker rod load for a well
         /// </summary>
-        public async Task<SuckerRodLoadResult> AnalyzeSuckerRodLoadAsync(
+        public async Task<SUCKER_ROD_LOAD_RESULT> AnalyzeSuckerRodLoadAsync(
             string fieldId,
             string wellId,
             decimal? strokeLength = null,
@@ -850,7 +850,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 await StoreSuckerRodLoadResultsAsync(wellId, result, userId ?? "SYSTEM");
 
                 _logger?.LogInformation("Sucker rod load analysis completed for well {WellId}. Peak load: {PeakLoad} lbs, Stress range: {StressRange} psi",
-                    wellId, result.PeakLoad, result.StressRange);
+                    wellId, result.PEAK_LOAD, result.STRESS_RANGE);
 
                 return result;
             }
@@ -864,7 +864,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// <summary>
         /// Analyzes sucker rod power requirements and production rate
         /// </summary>
-        public async Task<SuckerRodFlowRatePowerResult> AnalyzeSuckerRodPowerAsync(
+        public async Task<SUCKER_ROD_FLOW_RATE_POWER_RESULT> AnalyzeSuckerRodPowerAsync(
             string fieldId,
             string wellId,
             decimal? strokeLength = null,
@@ -894,7 +894,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 await StoreSuckerRodPowerResultsAsync(wellId, result, userId ?? "SYSTEM");
 
                 _logger?.LogInformation("Sucker rod power analysis completed for well {WellId}. Production rate: {Rate} bbl/day, Motor HP: {MotorHP}",
-                    wellId, result.ProductionRate, result.MotorHorsepower);
+                    wellId, result.PRODUCTION_RATE, result.MOTOR_HORSEPOWER);
 
                 return result;
             }
@@ -912,7 +912,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// <summary>
         /// Retrieves sucker rod system properties from PPDM
         /// </summary>
-        private async Task<SuckerRodSystemProperties> GetSuckerRodSystemPropertiesAsync(
+        private async Task<SUCKER_ROD_SYSTEM_PROPERTIES> GetSuckerRodSystemPropertiesAsync(
             string fieldId,
             string wellId,
             decimal? strokeLength,
@@ -924,7 +924,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             {
                 // Get well data from PPDM
                 // This is a simplified implementation - in production, you would retrieve actual values
-                var systemProperties = new SuckerRodSystemProperties
+                var systemProperties = new SUCKER_ROD_SYSTEM_PROPERTIES
                 {
                     WellDepth = 5000m, // Default - would retrieve from WELL table
                     TubingDiameter = 2.875m, // Default - would retrieve from WELL_EQUIPMENT
@@ -956,22 +956,22 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// <summary>
         /// Gets sucker rod string configuration from PPDM
         /// </summary>
-        private async Task<SuckerRodString> GetSuckerRodStringAsync(
+        private async Task<SUCKER_ROD_STRING> GetSuckerRodStringAsync(
             string wellId,
-            SuckerRodSystemProperties systemProperties)
+            SUCKER_ROD_SYSTEM_PROPERTIES systemProperties)
         {
             // This is a simplified implementation - in production, you would retrieve actual rod string from PPDM
-            var rodString = new SuckerRodString
+            var rodString = new SUCKER_ROD_STRING
             {
-                TotalLength = systemProperties.WellDepth
+                TotalLength = systemProperties.WELL_DEPTH
             };
 
             // Create a single rod section (simplified - actual systems may have multiple sections)
-            var section = new RodSection
+            var section = new ROD_SECTION
             {
-                Diameter = systemProperties.RodDiameter,
-                Length = systemProperties.WellDepth,
-                Density = systemProperties.RodDensity
+                Diameter = systemProperties.ROD_DIAMETER,
+                Length = systemProperties.WELL_DEPTH,
+                Density = systemProperties.ROD_DENSITY
             };
 
             rodString.Sections.Add(section);
@@ -984,7 +984,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// </summary>
         private async Task StoreSuckerRodLoadResultsAsync(
             string wellId,
-            SuckerRodLoadResult result,
+            SUCKER_ROD_LOAD_RESULT result,
             string userId)
         {
             try
@@ -1005,19 +1005,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     ["WELL_ID"] = wellId,
                     ["EQUIPMENT_TYPE"] = "SUCKER_ROD_PUMP",
                     ["EQUIPMENT_NAME"] = "Sucker Rod Load Analysis",
-                    ["DESCRIPTION"] = $"Peak load: {result.PeakLoad:F2} lbs, Stress range: {result.StressRange:F2} psi",
+                    ["DESCRIPTION"] = $"Peak load: {result.PEAK_LOAD:F2} lbs, Stress range: {result.STRESS_RANGE:F2} psi",
                     ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
                     {
-                        PeakLoad = result.PeakLoad,
-                        MinimumLoad = result.MinimumLoad,
-                        PolishedRodLoad = result.PolishedRodLoad,
-                        RodStringWeight = result.RodStringWeight,
-                        FluidLoad = result.FluidLoad,
-                        DynamicLoad = result.DynamicLoad,
-                        LoadRange = result.LoadRange,
-                        StressRange = result.StressRange,
-                        MaximumStress = result.MaximumStress,
-                        LoadFactor = result.LoadFactor,
+                        PeakLoad = result.PEAK_LOAD,
+                        MinimumLoad = result.MINIMUM_LOAD,
+                        PolishedRodLoad = result.POLISHED_ROD_LOAD,
+                        RodStringWeight = result.ROD_STRING_WEIGHT,
+                        FluidLoad = result.FLUID_LOAD,
+                        DynamicLoad = result.DYNAMIC_LOAD,
+                        LoadRange = result.LOAD_RANGE,
+                        StressRange = result.STRESS_RANGE,
+                        MaximumStress = result.MAXIMUM_STRESS,
+                        LoadFactor = result.LOAD_FACTOR,
                         AnalysisDate = DateTime.UtcNow
                     })
                 };
@@ -1037,7 +1037,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
         /// </summary>
         private async Task StoreSuckerRodPowerResultsAsync(
             string wellId,
-            SuckerRodFlowRatePowerResult result,
+            SUCKER_ROD_FLOW_RATE_POWER_RESULT result,
             string userId)
         {
             try
@@ -1058,19 +1058,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                     ["WELL_ID"] = wellId,
                     ["EQUIPMENT_TYPE"] = "SUCKER_ROD_PUMP",
                     ["EQUIPMENT_NAME"] = "Sucker Rod Power Analysis",
-                    ["DESCRIPTION"] = $"Production rate: {result.ProductionRate:F2} bbl/day, Motor HP: {result.MotorHorsepower:F2}",
+                    ["DESCRIPTION"] = $"Production rate: {result.PRODUCTION_RATE:F2} bbl/day, Motor HP: {result.MOTOR_HORSEPOWER:F2}",
                     ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
                     {
-                        ProductionRate = result.ProductionRate,
-                        PumpDisplacement = result.PumpDisplacement,
-                        VolumetricEfficiency = result.VolumetricEfficiency,
-                        PolishedRodHorsepower = result.PolishedRodHorsepower,
-                        HydraulicHorsepower = result.HydraulicHorsepower,
-                        FrictionHorsepower = result.FrictionHorsepower,
-                        TotalHorsepower = result.TotalHorsepower,
-                        MotorHorsepower = result.MotorHorsepower,
-                        SystemEfficiency = result.SystemEfficiency,
-                        EnergyConsumption = result.EnergyConsumption,
+                        ProductionRate = result.PRODUCTION_RATE,
+                        PumpDisplacement = result.PUMP_DISPLACEMENT,
+                        VolumetricEfficiency = result.VOLUMETRIC_EFFICIENCY,
+                        PolishedRodHorsepower = result.POLISHED_ROD_HORSEPOWER,
+                        HydraulicHorsepower = result.HYDRAULIC_HORSEPOWER,
+                        FrictionHorsepower = result.FRICTION_HORSEPOWER,
+                        TotalHorsepower = result.TOTAL_HORSEPOWER,
+                        MotorHorsepower = result.MOTOR_HORSEPOWER,
+                        SystemEfficiency = result.SYSTEM_EFFICIENCY,
+                        EnergyConsumption = result.ENERGY_CONSUMPTION,
                         AnalysisDate = DateTime.UtcNow
                     })
                 };

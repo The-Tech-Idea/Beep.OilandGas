@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
@@ -14,14 +14,14 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
     public class ApplicationMapper
     {
         /// <summary>
-        /// Maps PPDM39 APPLICATION to PermitApplication domain model.
+        /// Maps PPDM39 APPLICATION to PERMIT_APPLICATION domain model.
         /// </summary>
         /// <param name="ppdmApplication">The PPDM39 APPLICATION entity.</param>
         /// <param name="attachments">Optional list of APPLIC_ATTACH entities.</param>
         /// <param name="areas">Optional list of APPLIC_AREA entities.</param>
         /// <param name="components">Optional list of APPLICATION_COMPONENT entities.</param>
-        /// <returns>The mapped PermitApplication.</returns>
-        public PermitApplication MapToDomain(
+        /// <returns>The mapped PERMIT_APPLICATION.</returns>
+        public PERMIT_APPLICATION MapToDomain(
             APPLICATION ppdmApplication,
             IEnumerable<APPLIC_ATTACH>? attachments = null,
             IEnumerable<APPLIC_AREA>? areas = null,
@@ -34,33 +34,33 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             var regulatoryAuthority = MapRegulatoryAuthority(ppdmApplication.SUBMITTED_TO);
             var (country, stateProvince) = InferJurisdiction(regulatoryAuthority, ppdmApplication);
 
-            var application = new PermitApplication
+            var application = new PERMIT_APPLICATION
             {
-                ApplicationId = ppdmApplication.APPLICATION_ID ?? string.Empty,
-                ApplicationType = MapApplicationType(ppdmApplication.APPLICATION_TYPE),
-                Status = MapApplicationStatus(ppdmApplication.CURRENT_STATUS),
-                Country = country,
-                StateProvince = stateProvince,
-                RegulatoryAuthority = regulatoryAuthority,
-                CreatedDate = ppdmApplication.ROW_CREATED_DATE ?? ppdmApplication.ROW_CREATED_DATE,
-                SubmittedDate = ppdmApplication.SUBMITTED_DATE,
-                ReceivedDate = ppdmApplication.RECEIVED_DATE,
-                DecisionDate = ppdmApplication.DECISION_DATE,
-                EffectiveDate = ppdmApplication.EFFECTIVE_DATE,
-                ExpiryDate = ppdmApplication.EXPIRY_DATE,
-                Decision = ppdmApplication.DECISION,
-                ReferenceNumber = ppdmApplication.REFERENCE_NUM,
-                FeesDescription = ppdmApplication.FEES_DESC,
-                FeesPaid = string.Equals(ppdmApplication.FEES_PAID_IND, "Y", StringComparison.OrdinalIgnoreCase),
-                Remarks = ppdmApplication.REMARK,
-                SubmissionComplete = string.Equals(ppdmApplication.SUBMISSION_COMPLETE_IND, "Y", StringComparison.OrdinalIgnoreCase),
-                SubmissionDescription = ppdmApplication.SUBMISSION_DESC
+                APPLICANT_ID = ppdmApplication.APPLICATION_ID ?? string.Empty,
+                APPLICATION_TYPE = MapApplicationType(ppdmApplication.APPLICATION_TYPE),
+                STATUS = MapApplicationStatus(ppdmApplication.CURRENT_STATUS),
+                COUNTRY = country,
+                STATE_PROVINCE = stateProvince,
+                REGULATORY_AUTHORITY = regulatoryAuthority,
+                CREATED_DATE = ppdmApplication.ROW_CREATED_DATE ?? ppdmApplication.ROW_CREATED_DATE,
+                SUBMITTED_DATE = ppdmApplication.SUBMITTED_DATE,
+                RECEIVED_DATE = ppdmApplication.RECEIVED_DATE,
+                DECISION_DATE = ppdmApplication.DECISION_DATE,
+                EFFECTIVE_DATE = ppdmApplication.EFFECTIVE_DATE,
+                EXPIRY_DATE = ppdmApplication.EXPIRY_DATE,
+                DECISION = ppdmApplication.DECISION,
+                REFERENCE_NUMBER = ppdmApplication.REFERENCE_NUM,
+                FEES_DESCRIPTION = ppdmApplication.FEES_DESC,
+                FEES_PAID = string.Equals(ppdmApplication.FEES_PAID_IND, "Y", StringComparison.OrdinalIgnoreCase),
+                REMARKS = ppdmApplication.REMARK,
+                SUBMISSION_COMPLETE = string.Equals(ppdmApplication.SUBMISSION_COMPLETE_IND, "Y", StringComparison.OrdinalIgnoreCase),
+                SUBMISSION_DESCRIPTION = ppdmApplication.SUBMISSION_DESC
             };
 
             // Map attachments
             if (attachments != null)
             {
-                application.Attachments = attachments.Select(a => new APPLICATION_ATTACHMENT
+                application.ATTACHMENTS = attachments.Select(a => new APPLICATION_ATTACHMENT
                 {
                     APPLICATION_ATTACHMENT_ID = a.ATTACHMENT_ID ?? Guid.NewGuid().ToString(),
                     PERMIT_APPLICATION_ID = ppdmApplication.APPLICATION_ID ?? string.Empty,
@@ -105,13 +105,13 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
         }
 
         /// <summary>
-        /// Maps PermitApplication domain model to PPDM39 APPLICATION entity.
+        /// Maps PERMIT_APPLICATION domain model to PPDM39 APPLICATION entity.
         /// </summary>
         /// <param name="application">The domain model.</param>
         /// <param name="existingApplication">Optional existing PPDM39 entity to update.</param>
         /// <returns>The mapped APPLICATION entity.</returns>
         public APPLICATION MapToPPDM39(
-            PermitApplication application,
+            PERMIT_APPLICATION application,
             APPLICATION? existingApplication = null)
         {
             if (application == null)
@@ -119,90 +119,90 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 
             var ppdmApplication = existingApplication ?? new APPLICATION();
 
-            ppdmApplication.APPLICATION_ID = application.ApplicationId;
-            ppdmApplication.APPLICATION_TYPE = MapApplicationTypeToString(application.ApplicationType);
-            ppdmApplication.CURRENT_STATUS = MapApplicationStatusToString(application.Status);
-            ppdmApplication.SUBMITTED_TO = MapRegulatoryAuthorityToString(application.RegulatoryAuthority);
+            ppdmApplication.APPLICATION_ID = application.APPLICATION_ID;
+            ppdmApplication.APPLICATION_TYPE = MapApplicationTypeToString(application.APPLICATION_TYPE);
+            ppdmApplication.CURRENT_STATUS = MapApplicationStatusToString(application.STATUS);
+            ppdmApplication.SUBMITTED_TO = MapRegulatoryAuthorityToString(application.REGULATORY_AUTHORITY);
             
             // Store jurisdiction information in REMARK or use a component
-            var jurisdictionInfo = $"{application.Country}|{application.StateProvince}";
-            ppdmApplication.REMARK = string.IsNullOrEmpty(application.Remarks) 
+            var jurisdictionInfo = $"{application.COUNTRY}|{application.STATE_PROVINCE}";
+            ppdmApplication.REMARK = string.IsNullOrEmpty(application.REMARKS) 
                 ? $"Jurisdiction: {jurisdictionInfo}" 
-                : $"{application.Remarks}\nJurisdiction: {jurisdictionInfo}";
+                : $"{application.REMARKS}\nJurisdiction: {jurisdictionInfo}";
             
-            ppdmApplication.SUBMITTED_DATE = (DateTime)application.SubmittedDate;
-            ppdmApplication.RECEIVED_DATE = (DateTime)application.ReceivedDate;
-            ppdmApplication.DECISION_DATE = (DateTime)application.DecisionDate;
-            ppdmApplication.EFFECTIVE_DATE = (DateTime)application.EffectiveDate;
-            ppdmApplication.EXPIRY_DATE = (DateTime)application.ExpiryDate;
-            ppdmApplication.DECISION = application.Decision;
-            ppdmApplication.REFERENCE_NUM = application.ReferenceNumber;
-            ppdmApplication.FEES_DESC = application.FeesDescription;
-            ppdmApplication.FEES_PAID_IND = application.FeesPaid ? "Y" : "N";
-            ppdmApplication.SUBMISSION_COMPLETE_IND = application.SubmissionComplete ? "Y" : "N";
-            ppdmApplication.SUBMISSION_DESC = application.SubmissionDescription;
-            ppdmApplication.ACTIVE_IND = application.Status != PermitApplicationStatus.Expired ? "Y" : "N";
+            ppdmApplication.SUBMITTED_DATE = (DateTime)application.SUBMITTED_DATE;
+            ppdmApplication.RECEIVED_DATE = (DateTime)application.RECEIVED_DATE;
+            ppdmApplication.DECISION_DATE = (DateTime)application.DECISION_DATE;
+            ppdmApplication.EFFECTIVE_DATE = (DateTime)application.EFFECTIVE_DATE;
+            ppdmApplication.EXPIRY_DATE = (DateTime)application.EXPIRY_DATE;
+            ppdmApplication.DECISION = application.DECISION;
+            ppdmApplication.REFERENCE_NUM = application.REFERENCE_NUMBER;
+            ppdmApplication.FEES_DESC = application.FEES_DESCRIPTION;
+            ppdmApplication.FEES_PAID_IND = application.FEES_PAID ? "Y" : "N";
+            ppdmApplication.SUBMISSION_COMPLETE_IND = application.SUBMISSION_COMPLETE ? "Y" : "N";
+            ppdmApplication.SUBMISSION_DESC = application.SUBMISSION_DESCRIPTION;
+            ppdmApplication.ACTIVE_IND = application.STATUS != PermitApplicationStatus.Expired ? "Y" : "N";
 
             return ppdmApplication;
         }
 
         /// <summary>
-        /// Maps DrillingPermitApplication to PPDM39 APPLICATION.
+        /// Maps DRILLING_PERMIT_APPLICATION to PPDM39 APPLICATION.
         /// </summary>
         public APPLICATION MapDrillingPermitToPPDM39(
-            DrillingPermitApplication application,
+            DRILLING_PERMIT_APPLICATION application,
             APPLICATION? existingApplication = null)
         {
             var ppdmApplication = MapToPPDM39(application, existingApplication);
             
             // Add drilling-specific information to components or remarks
-            if (!string.IsNullOrEmpty(application.TargetFormation))
+            if (!string.IsNullOrEmpty(application.TARGET_FORMATION))
             {
-                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nTarget Formation: {application.TargetFormation}";
+                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nTarget Formation: {application.TARGET_FORMATION}";
             }
-            if (application.ProposedDepth > 0m)
+            if (application.PROPOSED_DEPTH > 0m)
             {
-                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nProposed Depth: {application.ProposedDepth} ft";
+                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nProposed Depth: {application.PROPOSED_DEPTH} ft";
             }
 
             return ppdmApplication;
         }
 
         /// <summary>
-        /// Maps EnvironmentalPermitApplication to PPDM39 APPLICATION.
+        /// Maps ENVIRONMENTAL_PERMIT_APPLICATION to PPDM39 APPLICATION.
         /// </summary>
         public APPLICATION MapEnvironmentalPermitToPPDM39(
-            EnvironmentalPermitApplication application,
+            ENVIRONMENTAL_PERMIT_APPLICATION application,
             APPLICATION? existingApplication = null)
         {
             var ppdmApplication = MapToPPDM39(application, existingApplication);
             
             // Add environmental-specific information
-            if (!string.IsNullOrEmpty(application.WasteType))
+            if (!string.IsNullOrEmpty(application.WASTE_TYPE))
             {
-                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nWaste Type: {application.WasteType}";
+                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nWaste Type: {application.WASTE_TYPE}";
             }
 
             return ppdmApplication;
         }
 
         /// <summary>
-        /// Maps InjectionPermitApplication to PPDM39 APPLICATION.
+        /// Maps INJECTION_PERMIT_APPLICATION to PPDM39 APPLICATION.
         /// </summary>
         public APPLICATION MapInjectionPermitToPPDM39(
-            InjectionPermitApplication application,
+            INJECTION_PERMIT_APPLICATION application,
             APPLICATION? existingApplication = null)
         {
             var ppdmApplication = MapToPPDM39(application, existingApplication);
             
             // Add injection-specific information
-            if (!string.IsNullOrEmpty(application.InjectionType))
+            if (!string.IsNullOrEmpty(application.INJECTION_TYPE))
             {
-                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nInjection Type: {application.InjectionType}";
+                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nInjection Type: {application.INJECTION_TYPE}";
             }
-            if (!string.IsNullOrEmpty(application.InjectionZone))
+            if (!string.IsNullOrEmpty(application.INJECTION_ZONE))
             {
-                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nInjection Zone: {application.InjectionZone}";
+                ppdmApplication.REMARK = $"{ppdmApplication.REMARK}\nInjection Zone: {application.INJECTION_ZONE}";
             }
 
             return ppdmApplication;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -66,5 +66,19 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+
+        private double DISCOUNT_RATEValue;
+
+        public NPV_PROFILE_POINT(double rate, double npv)
+        {
+            RATE = (decimal?)rate;
+            NPV = (decimal?)npv;
+        }
+
+        public double DISCOUNT_RATE
+        {
+            get { return this.DISCOUNT_RATEValue; }
+            set { SetProperty(ref DISCOUNT_RATEValue, value); }
+        }
     }
 }

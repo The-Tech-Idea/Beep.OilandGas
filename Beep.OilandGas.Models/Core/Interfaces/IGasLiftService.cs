@@ -1,5 +1,6 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.GasLift;
 
 
@@ -19,8 +20,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="maxGasInjectionRate">Maximum gas injection rate</param>
         /// <param name="numberOfPoints">Number of analysis points</param>
         /// <returns>Gas lift potential result</returns>
-        GasLiftPotentialResult AnalyzeGasLiftPotential(
-            GasLiftWellProperties wellProperties,
+        GAS_LIFT_POTENTIAL_RESULT AnalyzeGasLiftPotential(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal minGasInjectionRate,
             decimal maxGasInjectionRate,
             int numberOfPoints = 50);
@@ -33,8 +34,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="numberOfValves">Number of valves</param>
         /// <param name="useSIUnits">Whether to use SI units (default false for US field units)</param>
         /// <returns>Gas lift valve design result</returns>
-        GasLiftValveDesignResult DesignValves(
-            GasLiftWellProperties wellProperties,
+        GAS_LIFT_VALVE_DESIGN_RESULT DesignValves(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves,
             bool useSIUnits = false);
@@ -45,14 +46,14 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="design">Gas lift design</param>
         /// <param name="userId">User ID for audit</param>
         /// <returns>Task</returns>
-        Task SaveGasLiftDesignAsync(Beep.OilandGas.Models.Data.GasLiftDesign design, string userId);
+        Task SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, string userId);
 
         /// <summary>
         /// Gets gas lift performance data.
         /// </summary>
         /// <param name="wellUWI">Well UWI</param>
         /// <returns>Gas lift performance data</returns>
-        Task<Beep.OilandGas.Models.Data.GasLiftPerformance> GetGasLiftPerformanceAsync(string wellUWI);
+        Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI);
     }
 }
 

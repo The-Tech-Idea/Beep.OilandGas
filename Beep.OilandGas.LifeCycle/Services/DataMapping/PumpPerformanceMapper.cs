@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.PumpPerformance;
@@ -58,15 +58,15 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to ESPDesignProperties.
+        /// Maps PPDM39 WELL and related entities to ESP_DESIGN_PROPERTIES.
         /// </summary>
         /// <param name="well">The PPDM39 WELL entity.</param>
         /// <param name="tubular">Optional WELL_TUBULAR entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity.</param>
         /// <param name="desiredFlowRate">Desired flow rate in bbl/day.</param>
         /// <param name="totalDynamicHead">Total dynamic head in feet.</param>
-        /// <returns>The mapped ESPDesignProperties.</returns>
-        public ESPDesignProperties MapToESPDesignProperties(
+        /// <returns>The mapped ESP_DESIGN_PROPERTIES.</returns>
+        public ESP_DESIGN_PROPERTIES MapToESPDesignProperties(
             WELL well,
             WELL_TUBULAR? tubular = null,
             WELL_PRESSURE? wellPressure = null,
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getGasSpecificGravity = _getGasSpecificGravity ?? ValueRetrievers.GetGasSpecificGravityDecimal;
             var getPumpSettingDepth = _getPumpSettingDepth ?? ValueRetrievers.GetPumpSettingDepth;
 
-            return new ESPDesignProperties
+            return new ESP_DESIGN_PROPERTIES
             {
                 DesiredFlowRate = desiredFlowRate,
                 TotalDynamicHead = totalDynamicHead,

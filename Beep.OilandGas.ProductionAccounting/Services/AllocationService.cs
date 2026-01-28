@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -52,28 +52,28 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// Creates ALLOCATION_RESULT with detailed breakdown.
         /// </summary>
         public async Task<ALLOCATION_RESULT> AllocateAsync(
-            RUN_TICKET runTicket,
+            RUN_TICKET RUN_TICKET,
             string method,
             string userId,
             string cn = "PPDM39")
         {
-            if (runTicket == null)
+            if (RUN_TICKET == null)
                 throw new AllocationException("Run ticket cannot be null");
             if (string.IsNullOrWhiteSpace(method))
                 throw new AllocationException("Allocation method required");
 
             _logger?.LogInformation("Starting allocation for run ticket {RunTicketId} using method {Method}",
-                runTicket.RUN_TICKET_ID, method);
+                RUN_TICKET.RUN_TICKET_ID, method);
 
             // Delegate to allocation engine for core calculation
             var normalizedMethod = AllocationMethods.AllMethods
                 .FirstOrDefault(m => string.Equals(m, method, StringComparison.OrdinalIgnoreCase))
                 ?? method;
 
-            var allocationResult = await _allocationEngine.AllocateAsync(runTicket, normalizedMethod, userId, cn);
+            var ALLOCATION_RESULT = await _allocationEngine.AllocateAsync(RUN_TICKET, normalizedMethod, userId, cn);
 
-            _logger?.LogInformation("Allocation completed: {AllocationResultId}", allocationResult.ALLOCATION_RESULT_ID);
-            return allocationResult;
+            _logger?.LogInformation("Allocation completed: {AllocationResultId}", ALLOCATION_RESULT.ALLOCATION_RESULT_ID);
+            return ALLOCATION_RESULT;
         }
 
         /// <summary>

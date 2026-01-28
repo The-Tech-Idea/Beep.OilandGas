@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.PPDM39.Models;
@@ -36,12 +36,12 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to FlashConditions.
+        /// Maps PPDM39 WELL and related entities to FLASH_CONDITIONS.
         /// </summary>
         /// <param name="well">The PPDM39 WELL entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity.</param>
-        /// <returns>The mapped FlashConditions.</returns>
-        public FlashConditions MapToFlashConditions(
+        /// <returns>The mapped FLASH_CONDITIONS.</returns>
+        public FLASH_CONDITIONS MapToFlashConditions(
             WELL well,
             WELL_PRESSURE? wellPressure = null)
         {
@@ -52,11 +52,11 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getTemperature = _getTemperature ?? ValueRetrievers.GetWellheadTemperatureInRankine;
             var getFeedComposition = _getFeedComposition ?? ((w) => throw new InvalidOperationException("Feed composition not available. Provide getFeedComposition function."));
 
-            return new FlashConditions
+            return new FLASH_CONDITIONS
             {
                 Pressure = getPressure(well, wellPressure),
                 Temperature = getTemperature(well, wellPressure),
-                FeedComposition = getFeedComposition(well).Cast<FlashComponent>().ToList()
+                FeedComposition = getFeedComposition(well).Cast<FLASH_COMPONENT>().ToList()
             };
         }
     }

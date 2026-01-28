@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.LifeCycle.Models.Processes;
@@ -14,7 +14,6 @@ using Beep.OilandGas.Models.Data.ProductionAccounting;
 // Alias to resolve type conflicts
 using DataModels = Beep.OilandGas.Models.Data;
 using WellTestRequestData = Beep.OilandGas.Models.Data.WellTestRequest;
-using ProductionForecastData = Beep.OilandGas.Models.Data.ProductionForecast;
 
 namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
 {
@@ -83,13 +82,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             return await _processService.CompleteStepAsync(instanceId, "PRODUCTION_APPROVAL", "APPROVED", userId);
         }
 
-        public async Task<bool> StartProductionAsync(string instanceId, ProductionForecastData productionData, string userId)
+        public async Task<bool> StartProductionAsync(string instanceId, PRODUCTION_FORECAST productionData, string userId)
         {
             var stepData = new PROCESS_STEP_DATA
             {
                 StepInstanceId = instanceId,
                 StepType = "PRODUCTION_START",
-                ProductionForecast = productionData, // Assuming PROCESS_STEP_DATA uses ProductionForecasting.ProductionForecast
+                PRODUCTION_FORECAST = productionData, // Assuming PROCESS_STEP_DATA uses ProductionForecasting.PRODUCTION_FORECAST
                 LastUpdated = DateTime.UtcNow
             };
             var result = await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_START", stepData, userId);
@@ -354,13 +353,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Production.Processes
             return await _processService.ExecuteStepAsync(instanceId, "POST_WORKOVER_TESTING", stepData, userId);
         }
 
-        public async Task<bool> RestartProductionAsync(string instanceId, ProductionForecastData productionData, string userId)
+        public async Task<bool> RestartProductionAsync(string instanceId, PRODUCTION_FORECAST productionData, string userId)
         {
             var stepData = new PROCESS_STEP_DATA
             {
                 StepInstanceId = instanceId,
                 StepType = "PRODUCTION_RESTART",
-                ProductionForecast = productionData,
+                PRODUCTION_FORECAST = productionData,
                 LastUpdated = DateTime.UtcNow
             };
             var result = await _processService.ExecuteStepAsync(instanceId, "PRODUCTION_RESTART", stepData, userId);

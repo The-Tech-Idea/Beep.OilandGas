@@ -1,4 +1,4 @@
-using SkiaSharp;
+﻿using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -75,7 +75,7 @@ namespace Beep.OilandGas.HeatMap.Interaction
         /// <param name="padding">Padding around the data in pixels (default: 20).</param>
         /// <returns>Tuple containing (zoom, panOffset), or null if no valid data.</returns>
         public static (double zoom, SKPoint panOffset)? CalculateZoomToFit(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double canvasWidth,
             double canvasHeight,
             float padding = 20f)

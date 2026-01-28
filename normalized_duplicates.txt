@@ -1,0 +1,503 @@
+﻿Found 125 case-insensitive duplicate groups (ignoring underscores/special chars):
+
+=== Directory: Analytics ===
+  - ANALYTICS_RESULT.cs
+  - AnalyticsResult.cs
+
+=== Directory: ChokeAnalysis ===
+  - CHOKE_FLOW_RESULT.cs
+  - ChokeFlowResult.cs
+
+=== Directory: ChokeAnalysis ===
+  - CHOKE_PROPERTIES.cs
+  - ChokeProperties.cs
+
+=== Directory: ChokeAnalysis ===
+  - GAS_CHOKE_PROPERTIES.cs
+  - GasChokeProperties.cs
+
+=== Directory: CompressorAnalysis ===
+  - COMPRESSOR_PRESSURE_RESULT.cs
+  - CompressorPressureResult.cs
+
+=== Directory: CompressorAnalysis ===
+  - RECIPROCATING_COMPRESSOR_PROPERTIES.cs
+  - ReciprocatingCompressorProperties.cs
+
+=== Directory: CompressorAnalysis ===
+  - CENTRIFUGAL_COMPRESSOR_PROPERTIES.cs
+  - CentrifugalCompressorProperties.cs
+
+=== Directory: CompressorAnalysis ===
+  - COMPRESSOR_OPERATING_CONDITIONS.cs
+  - CompressorOperatingConditions.cs
+
+=== Directory: CompressorAnalysis ===
+  - COMPRESSOR_POWER_RESULT.cs
+  - CompressorPowerResult.cs
+
+=== Directory: DataManagement ===
+  - DATA_QUALITY_METRICS.cs
+  - DataQualityMetrics.cs
+
+=== Directory: DataManagement ===
+  - DATA_QUALITY_ISSUE.cs
+  - DataQualityIssue.cs
+
+=== Directory: DataManagement ===
+  - DATA_QUALITY_SCORE.cs
+  - DataQualityScore.cs
+
+=== Directory: Drilling ===
+  - WELL_CONSTRUCTION.cs
+  - WellConstruction.cs
+
+=== Directory: Drilling ===
+  - CASING_STRING.cs
+  - CasingString.cs
+
+=== Directory: Drilling ===
+  - COMPLETION_STRING.cs
+  - CompletionString.cs
+
+=== Directory: Drilling ===
+  - DRILLING_OPERATION.cs
+  - DrillingOperation.cs
+
+=== Directory: Drilling ===
+  - DRILLING_REPORT.cs
+  - DrillingReport.cs
+
+=== Directory: EconomicAnalysis ===
+  - NPV_PROFILE_POINT.cs
+  - NPVProfilePoint.cs
+
+=== Directory: FlashCalculations ===
+  - FLASH_COMPONENT.cs
+  - FlashComponent.cs
+
+=== Directory: FlashCalculations ===
+  - FLASH_CONDITIONS.cs
+  - FlashConditions.cs
+
+=== Directory: GasLift ===
+  - GAS_LIFT_POTENTIAL_RESULT.cs
+  - GasLiftPotentialResult.cs
+
+=== Directory: GasLift ===
+  - GAS_LIFT_VALVE.cs
+  - GasLiftValve.cs
+
+=== Directory: GasLift ===
+  - GAS_LIFT_VALVE_DESIGN_RESULT.cs
+  - GasLiftValveDesignResult.cs
+
+=== Directory: GasLift ===
+  - GAS_LIFT_PERFORMANCE.cs
+  - GasLiftPerformance.cs
+
+=== Directory: GasLift ===
+  - GAS_LIFT_WELL_PROPERTIES.cs
+  - GasLiftWellProperties.cs
+
+=== Directory: GasLift ===
+  - GAS_LIFT_DESIGN.cs
+  - GasLiftDesign.cs
+
+=== Directory: GasProperties ===
+  - AVERAGE_GAS_PROPERTIES.cs
+  - AverageGasProperties.cs
+
+=== Directory: GasProperties ===
+  - PSEUDO_PRESSURE_RESULT.cs
+  - PseudoPressureResult.cs
+
+=== Directory: HeatMap ===
+  - HEAT_MAP_CONFIGURATION.cs
+  - HeatMapConfiguration.cs
+
+=== Directory: HeatMap ===
+  - HEAT_MAP_DATA_POINT.cs
+  - HeatMapDataPoint.cs
+
+=== Directory: HydraulicPumps ===
+  - HYDRAULIC_PUMP_WELL_PROPERTIES.cs
+  - HydraulicPumpWellProperties.cs
+
+=== Directory: HydraulicPumps ===
+  - HYDRAULIC_JET_PUMP_RESULT.cs
+  - HydraulicJetPumpResult.cs
+
+=== Directory: HydraulicPumps ===
+  - HYDRAULIC_PISTON_PUMP_RESULT.cs
+  - HydraulicPistonPumpResult.cs
+
+=== Directory: HydraulicPumps ===
+  - HYDRAULIC_PISTON_PUMP_PROPERTIES.cs
+  - HydraulicPistonPumpProperties.cs
+
+=== Directory: HydraulicPumps ===
+  - HYDRAULIC_JET_PUMP_PROPERTIES.cs
+  - HydraulicJetPumpProperties.cs
+
+=== Directory: OilProperties ===
+  - OIL_PROPERTY_CONDITIONS.cs
+  - OilPropertyConditions.cs
+
+=== Directory: OilProperties ===
+  - BUBBLE_POINT_RESULT.cs
+  - BubblePointResult.cs
+
+=== Directory: OilProperties ===
+  - SOLUTION_GOR_RESULT.cs
+  - SolutionGORResult.cs
+
+=== Directory: PermitsAndApplications ===
+  - PERMIT_APPLICATION.cs
+  - PermitApplication.cs
+
+=== Directory: PermitsAndApplications ===
+  - DRILLING_PERMIT_APPLICATION.cs
+  - DrillingPermitApplication.cs
+
+=== Directory: PermitsAndApplications ===
+  - ENVIRONMENTAL_PERMIT_APPLICATION.cs
+  - EnvironmentalPermitApplication.cs
+
+=== Directory: PermitsAndApplications ===
+  - INJECTION_PERMIT_APPLICATION.cs
+  - InjectionPermitApplication.cs
+
+=== Directory: PipelineAnalysis ===
+  - PIPELINE_FLOW_ANALYSIS_RESULT.cs
+  - PipelineFlowAnalysisResult.cs
+
+=== Directory: PipelineAnalysis ===
+  - GAS_PIPELINE_FLOW_PROPERTIES.cs
+  - GasPipelineFlowProperties.cs
+
+=== Directory: PipelineAnalysis ===
+  - PIPELINE_PROPERTIES.cs
+  - PipelineProperties.cs
+
+=== Directory: PipelineAnalysis ===
+  - LIQUID_PIPELINE_FLOW_PROPERTIES.cs
+  - LiquidPipelineFlowProperties.cs
+
+=== Directory: PipelineAnalysis ===
+  - PIPELINE_CAPACITY_RESULT.cs
+  - PipelineCapacityResult.cs
+
+=== Directory: PlungerLift ===
+  - PLUNGER_LIFT_GAS_REQUIREMENTS.cs
+  - PlungerLiftGasRequirements.cs
+
+=== Directory: PlungerLift ===
+  - PLUNGER_LIFT_WELL_PROPERTIES.cs
+  - PlungerLiftWellProperties.cs
+
+=== Directory: PlungerLift ===
+  - PLUNGER_LIFT_CYCLE_RESULT.cs
+  - PlungerLiftCycleResult.cs
+
+=== Directory: PlungerLift ===
+  - PLUNGER_LIFT_CYCLE_POINT.cs
+  - PlungerLiftCyclePoint.cs
+
+=== Directory: ProductionAccounting ===
+  - JOINT_INTEREST_STATEMENT.cs
+  - JointInterestStatement.cs
+
+=== Directory: ProductionAccounting ===
+  - MEASUREMENT_CORRECTIONS.cs
+  - MeasurementCorrections.cs
+
+=== Directory: ProductionAccounting ===
+  - ALLOCATION_REPORT_SUMMARY.cs
+  - AllocationReportSummary.cs
+
+=== Directory: ProductionAccounting ===
+  - ALLOCATION_RESULT.cs
+  - AllocationResult.cs
+
+=== Directory: ProductionAccounting ===
+  - JIB_PARTICIPANT.cs
+  - JIBParticipant.cs
+
+=== Directory: ProductionAccounting ===
+  - ALLOCATION_DETAIL.cs
+  - AllocationDetail.cs
+
+=== Directory: ProductionAccounting ===
+  - GOVERNMENTAL_REPORT.cs
+  - GovernmentalReport.cs
+
+=== Directory: ProductionAccounting ===
+  - RUN_TICKET.cs
+  - RunTicket.cs
+
+=== Directory: ProductionAccounting ===
+  - EXCHANGE_CONTRACT.cs
+  - ExchangeContract.cs
+
+=== Directory: ProductionAccounting ===
+  - TRACT_ALLOCATION_DATA.cs
+  - TractAllocationData.cs
+
+=== Directory: ProductionAccounting ===
+  - COST_SHARING.cs
+  - CostSharing.cs
+
+=== Directory: ProductionAccounting ===
+  - GOVERNMENTAL_PRODUCTION_DATA.cs
+  - GovernmentalProductionData.cs
+
+=== Directory: ProductionAccounting ===
+  - VOTING_RIGHTS.cs
+  - VotingRights.cs
+
+=== Directory: ProductionAccounting ===
+  - ACTUAL_DELIVERY.cs
+  - ActualDelivery.cs
+
+=== Directory: ProductionAccounting ===
+  - MEASUREMENT_REPORT_SUMMARY.cs
+  - MeasurementReportSummary.cs
+
+=== Directory: ProductionAccounting ===
+  - ROYALTY_INTEREST.cs
+  - RoyaltyInterest.cs
+
+=== Directory: ProductionAccounting ===
+  - IMBALANCE_RECONCILIATION.cs
+  - ImbalanceReconciliation.cs
+
+=== Directory: ProductionAccounting ===
+  - DIVISION_ORDER.cs
+  - DivisionOrder.cs
+
+=== Directory: ProductionAccounting ===
+  - CRUDE_OIL_PROPERTIES.cs
+  - CrudeOilProperties.cs
+
+=== Directory: ProductionAccounting ===
+  - ROYALTY_PAYMENT.cs
+  - RoyaltyPayment.cs
+
+=== Directory: ProductionAccounting ===
+  - LOCATION_ADJUSTMENTS.cs
+  - LocationAdjustments.cs
+
+=== Directory: ProductionAccounting ===
+  - UNIT_PARTICIPANT.cs
+  - UnitParticipant.cs
+
+=== Directory: ProductionAccounting ===
+  - CONTACT_INFORMATION.cs
+  - ContactInformation.cs
+
+=== Directory: ProductionAccounting ===
+  - EXCHANGE_PRICING_TERMS.cs
+  - ExchangePricingTerms.cs
+
+=== Directory: ProductionAccounting ===
+  - TRANSFER_ORDER.cs
+  - TransferOrder.cs
+
+=== Directory: ProductionAccounting ===
+  - OPERATIONAL_REPORT.cs
+  - OperationalReport.cs
+
+=== Directory: ProductionAccounting ===
+  - INVENTORY_REPORT_SUMMARY.cs
+  - InventoryReportSummary.cs
+
+=== Directory: ProductionAccounting ===
+  - OWNERSHIP_INTEREST.cs
+  - OwnershipInterest.cs
+
+=== Directory: ProductionAccounting ===
+  - JIB_CREDIT.cs
+  - JIBCredit.cs
+
+=== Directory: ProductionAccounting ===
+  - MEASUREMENT_RECORD.cs
+  - MeasurementRecord.cs
+
+=== Directory: ProductionAccounting ===
+  - JIB_CHARGE.cs
+  - JIBCharge.cs
+
+=== Directory: ProductionAccounting ===
+  - IMBALANCE_ADJUSTMENT.cs
+  - ImbalanceAdjustment.cs
+
+=== Directory: ProductionAccounting ===
+  - OIL_IMBALANCE.cs
+  - OilImbalance.cs
+
+=== Directory: ProductionAccounting ===
+  - CRUDE_OIL_SPECIFICATIONS.cs
+  - CrudeOilSpecifications.cs
+
+=== Directory: ProductionAccounting ===
+  - UNIT_OPERATING_AGREEMENT.cs
+  - UnitOperatingAgreement.cs
+
+=== Directory: ProductionAccounting ===
+  - GOVERNMENTAL_TAX_DATA.cs
+  - GovernmentalTaxData.cs
+
+=== Directory: ProductionAccounting ===
+  - PRODUCTION_REPORT_SUMMARY.cs
+  - ProductionReportSummary.cs
+
+=== Directory: ProductionAccounting ===
+  - COST_REPORT_SUMMARY.cs
+  - CostReportSummary.cs
+
+=== Directory: ProductionAccounting ===
+  - EXCHANGE_TERMS.cs
+  - ExchangeTerms.cs
+
+=== Directory: ProductionAccounting ===
+  - QUALITY_ADJUSTMENTS.cs
+  - QualityAdjustments.cs
+
+=== Directory: ProductionAccounting ===
+  - UNIT_AGREEMENT.cs
+  - UnitAgreement.cs
+
+=== Directory: ProductionAccounting ===
+  - OWNER_INFORMATION.cs
+  - OwnerInformation.cs
+
+=== Directory: ProductionAccounting ===
+  - TRACT_PARTICIPATION.cs
+  - TractParticipation.cs
+
+=== Directory: ProductionAccounting ===
+  - ROYALTY_CALCULATION.cs
+  - RoyaltyCalculation.cs
+
+=== Directory: ProductionAccounting ===
+  - ROYALTY_DEDUCTIONS.cs
+  - RoyaltyDeductions.cs
+
+=== Directory: ProductionAccounting ===
+  - PARTICIPATING_AREA.cs
+  - ParticipatingArea.cs
+
+=== Directory: ProductionAccounting ===
+  - IMBALANCE_STATEMENT.cs
+  - ImbalanceStatement.cs
+
+=== Directory: ProductionAccounting ===
+  - EXCHANGE_COMMITMENT.cs
+  - ExchangeCommitment.cs
+
+=== Directory: ProductionAccounting ===
+  - LEASE_REPORT.cs
+  - LeaseReport.cs
+
+=== Directory: ProductionAccounting ===
+  - EXCHANGE_PARTY.cs
+  - ExchangeParty.cs
+
+=== Directory: ProductionAccounting ===
+  - EXCHANGE_DELIVERY_POINT.cs
+  - ExchangeDeliveryPoint.cs
+
+=== Directory: ProductionAccounting ===
+  - AVAILS_ALLOCATION.cs
+  - AvailsAllocation.cs
+
+=== Directory: ProductionAccounting ===
+  - GOVERNMENTAL_ROYALTY_DATA.cs
+  - GovernmentalRoyaltyData.cs
+
+=== Directory: ProductionAccounting ===
+  - LEASE_ALLOCATION_DATA.cs
+  - LeaseAllocationData.cs
+
+=== Directory: ProductionAccounting ===
+  - PRODUCTION_AVAILS.cs
+  - ProductionAvails.cs
+
+=== Directory: ProductionAccounting ===
+  - TIME_ADJUSTMENTS.cs
+  - TimeAdjustments.cs
+
+=== Directory: ProductionAccounting ===
+  - REVENUE_SHARING.cs
+  - RevenueSharing.cs
+
+=== Directory: ProductionForecasting ===
+  - RESERVOIR_FORECAST_PROPERTIES.cs
+  - ReservoirForecastProperties.cs
+
+=== Directory: ProductionForecasting ===
+  - PRODUCTION_FORECAST.cs
+  - ProductionForecast.cs
+
+=== Directory: ProductionForecasting ===
+  - FORECAST_POINT.cs
+  - ForecastPoint.cs
+
+=== Directory: PumpPerformance ===
+  - ESP_DESIGN_RESULT.cs
+  - ESPDesignResult.cs
+
+=== Directory: PumpPerformance ===
+  - ESP_MOTOR_PROPERTIES.cs
+  - ESPMotorProperties.cs
+
+=== Directory: PumpPerformance ===
+  - ESP_DESIGN_PROPERTIES.cs
+  - ESPDesignProperties.cs
+
+=== Directory: PumpPerformance ===
+  - ESP_PUMP_POINT.cs
+  - ESPPumpPoint.cs
+
+=== Directory: PumpPerformance ===
+  - ESP_CABLE_PROPERTIES.cs
+  - ESPCableProperties.cs
+
+=== Directory: SuckerRodPumping ===
+  - SUCKER_ROD_LOAD_RESULT.cs
+  - SuckerRodLoadResult.cs
+
+=== Directory: SuckerRodPumping ===
+  - ROD_SECTION.cs
+  - RodSection.cs
+
+=== Directory: SuckerRodPumping ===
+  - SUCKER_ROD_STRING.cs
+  - SuckerRodString.cs
+
+=== Directory: SuckerRodPumping ===
+  - SUCKER_ROD_SYSTEM_PROPERTIES.cs
+  - SuckerRodSystemProperties.cs
+
+=== Directory: SuckerRodPumping ===
+  - SUCKER_ROD_FLOW_RATE_POWER_RESULT.cs
+  - SuckerRodFlowRatePowerResult.cs
+
+=== Directory: Trading ===
+  - EXCHANGE_TRANSACTION.cs
+  - ExchangeTransaction.cs
+
+=== Directory: WellTestAnalysis ===
+  - PRESSURE_TIME_POINT.cs
+  - PressureTimePoint.cs
+
+=== Directory: WellTestAnalysis ===
+  - WELL_TEST_DATA.cs
+  - WellTestData.cs
+
+=== Directory: WellTestAnalysis ===
+  - WELL_TEST_ANALYSIS_RESULT.cs
+  - WellTestAnalysisResult.cs
+
+

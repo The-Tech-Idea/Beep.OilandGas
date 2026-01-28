@@ -2,10 +2,11 @@ using System;
 using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 {
-    public partial class EconomicSensitivityResult : ModelEntityBase {
+    public partial class EconomicSensitivityAnalysis : ModelEntityBase {
         /// <summary>
         /// Parameter being analyzed (e.g., "Oil Price", "Operating Cost", "Discount Rate")
         /// </summary>
@@ -178,12 +179,18 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
             set { SetProperty(ref _sensitivityLevelValue, value); }
         }
 
+        public string AnalysisId { get; set; }
+        public DateTime AnalysisDate { get; set; }
+        public double BaseNPV { get; set; }
+        public double BaseIRR { get; set; }
+        public List<SensitivityParameter> Parameters { get; set; }
+
 
 
         /// <summary>
         /// Default constructor
         /// </summary>
-        public EconomicSensitivityResult()
+        public EconomicSensitivityAnalysis()
         {
             PPDM_GUID = Guid.NewGuid().ToString();
         }

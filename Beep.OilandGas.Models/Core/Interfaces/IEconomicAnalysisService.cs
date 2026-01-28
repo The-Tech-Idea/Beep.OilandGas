@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
 
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="maxRate">Maximum discount rate (default 1.0)</param>
         /// <param name="points">Number of points to generate (default 50)</param>
         /// <returns>List of NPV profile points</returns>
-        List<NPVProfilePoint> GenerateNPVProfile(CashFlow[] cashFlows, double minRate = 0.0, double maxRate = 1.0, int points = 50);
+        List<NPV_PROFILE_POINT> GenerateNPVProfile(CashFlow[] cashFlows, double minRate = 0.0, double maxRate = 1.0, int points = 50);
 
         /// <summary>
         /// Saves economic analysis result to database.

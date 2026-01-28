@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
 using Beep.OilandGas.GasProperties.Calculations;
 
@@ -15,9 +15,9 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         /// <param name="systemProperties">Sucker rod system properties.</param>
         /// <param name="loadResult">Load analysis results.</param>
         /// <returns>Flow rate and power results.</returns>
-        public static SuckerRodFlowRatePowerResult CalculateFlowRateAndPower(
-            SuckerRodSystemProperties systemProperties,
-            SuckerRodLoadResult loadResult)
+        public static SUCKER_ROD_FLOW_RATE_POWER_RESULT CalculateFlowRateAndPower(
+            SUCKER_ROD_SYSTEM_PROPERTIES systemProperties,
+            SUCKER_ROD_LOAD_RESULT loadResult)
         {
             if (systemProperties == null)
                 throw new ArgumentNullException(nameof(systemProperties));
@@ -25,45 +25,45 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
             if (loadResult == null)
                 throw new ArgumentNullException(nameof(loadResult));
 
-            var result = new SuckerRodFlowRatePowerResult();
+            var result = new SUCKER_ROD_FLOW_RATE_POWER_RESULT();
 
             // Calculate pump displacement
-            result.PumpDisplacement = CalculatePumpDisplacement(systemProperties);
+            result.PUMP_DISPLACEMENT = CalculatePumpDisplacement(systemProperties);
 
             // Calculate volumetric efficiency
-            result.VolumetricEfficiency = CalculateVolumetricEfficiency(systemProperties);
+            result.VOLUMETRIC_EFFICIENCY = CalculateVolumetricEfficiency(systemProperties);
 
             // Calculate production rate
-            result.ProductionRate = result.PumpDisplacement * result.VolumetricEfficiency;
+            result.PRODUCTION_RATE = result.PUMP_DISPLACEMENT * result.VOLUMETRIC_EFFICIENCY;
 
             // Calculate polished rod horsepower
-            result.PolishedRodHorsepower = CalculatePolishedRodHorsepower(
+            result.POLISHED_ROD_HORSEPOWER = CalculatePolishedRodHorsepower(
                 systemProperties, loadResult);
 
             // Calculate hydraulic horsepower
-            result.HydraulicHorsepower = CalculateHydraulicHorsepower(
-                systemProperties, result.ProductionRate);
+            result.HYDRAULIC_HORSEPOWER = CalculateHydraulicHorsepower(
+                systemProperties, result.PRODUCTION_RATE);
 
             // Calculate friction horsepower
-            result.FrictionHorsepower = CalculateFrictionHorsepower(
+            result.FRICTION_HORSEPOWER = CalculateFrictionHorsepower(
                 systemProperties, loadResult);
 
             // Total horsepower
-            result.TotalHorsepower = result.PolishedRodHorsepower + 
-                                   result.HydraulicHorsepower + 
-                                   result.FrictionHorsepower;
+            result.TOTAL_HORSEPOWER = result.POLISHED_ROD_HORSEPOWER + 
+                                   result.HYDRAULIC_HORSEPOWER + 
+                                   result.FRICTION_HORSEPOWER;
 
             // Motor horsepower (with efficiency)
             decimal motorEfficiency = 0.9m;
-            result.MotorHorsepower = result.TotalHorsepower / motorEfficiency;
+            result.MOTOR_HORSEPOWER = result.TOTAL_HORSEPOWER / motorEfficiency;
 
             // System efficiency
-            result.SystemEfficiency = CalculateSystemEfficiency(
-                result.HydraulicHorsepower, result.TotalHorsepower);
+            result.SYSTEM_EFFICIENCY = CalculateSystemEfficiency(
+                result.HYDRAULIC_HORSEPOWER, result.TOTAL_HORSEPOWER);
 
             // Energy consumption
-            result.EnergyConsumption = CalculateEnergyConsumption(
-                result.MotorHorsepower);
+            result.ENERGY_CONSUMPTION = CalculateEnergyConsumption(
+                result.MOTOR_HORSEPOWER);
 
             return result;
         }
@@ -71,21 +71,21 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         /// <summary>
         /// Calculates pump displacement.
         /// </summary>
-        private static decimal CalculatePumpDisplacement(SuckerRodSystemProperties systemProperties)
+        private static decimal CalculatePumpDisplacement(SUCKER_ROD_SYSTEM_PROPERTIES systemProperties)
         {
-            // Pump displacement = (π * D² / 4) * Stroke Length * SPM * 1440 minutes/day
+            // Pump displacement = (Ï€ * DÂ² / 4) * Stroke Length * SPM * 1440 minutes/day
             // Convert to bbl/day
 
-            decimal pumpArea = (decimal)Math.PI * systemProperties.PumpDiameter * 
-                             systemProperties.PumpDiameter / 4m; // square inches
+            decimal pumpArea = (decimal)Math.PI * systemProperties.PUMP_DIAMETER * 
+                             systemProperties.PUMP_DIAMETER / 4m; // square inches
 
-            decimal strokeLengthFt = systemProperties.StrokeLength / 12m; // feet
+            decimal strokeLengthFt = systemProperties.STROKE_LENGTH / 12m; // feet
             decimal volumePerStroke = pumpArea * strokeLengthFt / 144m; // cubic feet per stroke
 
-            decimal strokesPerDay = systemProperties.StrokesPerMinute * 1440m; // strokes per day
+            decimal strokesPerDay = systemProperties.STROKES_PER_MINUTE * 1440m; // strokes per day
             decimal volumePerDay = volumePerStroke * strokesPerDay; // cubic feet per day
 
-            // Convert to bbl/day (1 bbl = 5.615 ft³)
+            // Convert to bbl/day (1 bbl = 5.615 ftÂ³)
             decimal pumpDisplacement = volumePerDay / 5.615m; // bbl/day
 
             return pumpDisplacement;
@@ -94,27 +94,27 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         /// <summary>
         /// Calculates volumetric efficiency.
         /// </summary>
-        private static decimal CalculateVolumetricEfficiency(SuckerRodSystemProperties systemProperties)
+        private static decimal CalculateVolumetricEfficiency(SUCKER_ROD_SYSTEM_PROPERTIES systemProperties)
         {
             // Volumetric efficiency depends on:
             // - Gas-oil ratio
             // - Pump efficiency
             // - Fluid properties
 
-            decimal baseEfficiency = systemProperties.PumpEfficiency;
+            decimal baseEfficiency = systemProperties.PUMP_EFFICIENCY;
 
             // Gas effect (reduces efficiency)
             decimal gasEffect = 1.0m;
-            if (systemProperties.GasOilRatio > 0)
+            if (systemProperties.GAS_OIL_RATIO > 0)
             {
                 // Simplified: efficiency decreases with GOR
-                decimal gorFactor = systemProperties.GasOilRatio / 1000m; // Normalize
+                decimal gorFactor = systemProperties.GAS_OIL_RATIO / 1000m; // Normalize
                 gasEffect = 1.0m - (gorFactor * 0.1m); // Up to 10% reduction
                 gasEffect = Math.Max(0.5m, gasEffect); // Minimum 50%
             }
 
             // Water cut effect (slight reduction)
-            decimal waterCutEffect = 1.0m - (systemProperties.WaterCut * 0.05m); // Up to 5% reduction
+            decimal waterCutEffect = 1.0m - (systemProperties.WATER_CUT * 0.05m); // Up to 5% reduction
 
             decimal volumetricEfficiency = baseEfficiency * gasEffect * waterCutEffect;
 
@@ -125,16 +125,16 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         /// Calculates polished rod horsepower.
         /// </summary>
         private static decimal CalculatePolishedRodHorsepower(
-            SuckerRodSystemProperties systemProperties,
-            SuckerRodLoadResult loadResult)
+            SUCKER_ROD_SYSTEM_PROPERTIES systemProperties,
+            SUCKER_ROD_LOAD_RESULT loadResult)
         {
             // PRHP = (Peak Load - Min Load) * Stroke Length * SPM / 33000
             // Simplified: use load range
 
-            decimal strokeLengthFt = systemProperties.StrokeLength / 12m; // feet
-            decimal loadRange = loadResult.LoadRange; // pounds
+            decimal strokeLengthFt = systemProperties.STROKE_LENGTH / 12m; // feet
+            decimal loadRange = loadResult.LOAD_RANGE; // pounds
 
-            decimal prhp = loadRange * strokeLengthFt * systemProperties.StrokesPerMinute / 33000m;
+            decimal prhp = loadRange * strokeLengthFt * systemProperties.STROKES_PER_MINUTE / 33000m;
 
             return Math.Max(0m, prhp);
         }
@@ -143,21 +143,21 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         /// Calculates hydraulic horsepower.
         /// </summary>
         private static decimal CalculateHydraulicHorsepower(
-            SuckerRodSystemProperties systemProperties,
+            SUCKER_ROD_SYSTEM_PROPERTIES systemProperties,
             decimal productionRate)
         {
-            // HHP = (Q * ΔP) / (1714 * efficiency)
-            // Where Q = flow rate in GPM, ΔP = pressure differential in psi
+            // HHP = (Q * Î”P) / (1714 * efficiency)
+            // Where Q = flow rate in GPM, Î”P = pressure differential in psi
 
             // Convert production rate to GPM
             decimal flowRateGPM = productionRate * 42m / 1440m; // bbl/day to GPM
 
             // Pressure differential
-            decimal pressureDifferential = systemProperties.BottomHolePressure - 
-                                         systemProperties.WellheadPressure; // psi
+            decimal pressureDifferential = systemProperties.BOTTOM_HOLE_PRESSURE - 
+                                         systemProperties.WELLHEAD_PRESSURE; // psi
 
             // Hydraulic horsepower
-            decimal hhp = (flowRateGPM * pressureDifferential) / (1714m * systemProperties.PumpEfficiency);
+            decimal hhp = (flowRateGPM * pressureDifferential) / (1714m * systemProperties.PUMP_EFFICIENCY);
 
             return Math.Max(0m, hhp);
         }
@@ -166,8 +166,8 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         /// Calculates friction horsepower.
         /// </summary>
         private static decimal CalculateFrictionHorsepower(
-            SuckerRodSystemProperties systemProperties,
-            SuckerRodLoadResult loadResult)
+            SUCKER_ROD_SYSTEM_PROPERTIES systemProperties,
+            SUCKER_ROD_LOAD_RESULT loadResult)
         {
             // Friction horsepower is typically 10-20% of polished rod horsepower
             // Simplified calculation
@@ -212,7 +212,7 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         /// <summary>
         /// Calculates production rate for given system properties.
         /// </summary>
-        public static decimal CalculateProductionRate(SuckerRodSystemProperties systemProperties)
+        public static decimal CalculateProductionRate(SUCKER_ROD_SYSTEM_PROPERTIES systemProperties)
         {
             // Calculate pump displacement
             decimal pumpDisplacement = CalculatePumpDisplacement(systemProperties);
@@ -228,11 +228,11 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         /// Calculates power requirements for given system properties.
         /// </summary>
         public static decimal CalculatePowerRequirements(
-            SuckerRodSystemProperties systemProperties,
-            SuckerRodLoadResult loadResult)
+            SUCKER_ROD_SYSTEM_PROPERTIES systemProperties,
+            SUCKER_ROD_LOAD_RESULT loadResult)
         {
             var flowRatePowerResult = CalculateFlowRateAndPower(systemProperties, loadResult);
-            return flowRatePowerResult.MotorHorsepower;
+            return flowRatePowerResult.MOTOR_HORSEPOWER;
         }
     }
 }

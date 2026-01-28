@@ -1,4 +1,4 @@
-using SkiaSharp;
+﻿using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,13 +17,13 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// <param name="viewportBounds">The viewport bounds in data coordinates.</param>
         /// <param name="padding">Padding around viewport in data coordinates (default: 0).</param>
         /// <returns>List of points visible in the viewport.</returns>
-        public static List<HeatMapDataPoint> CullToViewport(
-            List<HeatMapDataPoint> dataPoints,
+        public static List<HEAT_MAP_DATA_POINT> CullToViewport(
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             BoundingBox viewportBounds,
             double padding = 0)
         {
             if (dataPoints == null)
-                return new List<HeatMapDataPoint>();
+                return new List<HEAT_MAP_DATA_POINT>();
 
             // Expand viewport bounds by padding
             var expandedBounds = new BoundingBox(
@@ -69,13 +69,13 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// <param name="viewportBounds">The viewport bounds in data coordinates.</param>
         /// <param name="padding">Padding around viewport in data coordinates (default: 0).</param>
         /// <returns>List of points visible in the viewport.</returns>
-        public static List<HeatMapDataPoint> CullToViewportWithIndex(
+        public static List<HEAT_MAP_DATA_POINT> CullToViewportWithIndex(
             SpatialIndex spatialIndex,
             BoundingBox viewportBounds,
             double padding = 0)
         {
             if (spatialIndex == null)
-                return new List<HeatMapDataPoint>();
+                return new List<HEAT_MAP_DATA_POINT>();
 
             // Expand viewport bounds by padding
             var expandedBounds = new BoundingBox(

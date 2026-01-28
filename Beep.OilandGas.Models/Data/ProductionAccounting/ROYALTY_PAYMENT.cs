@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -94,15 +94,52 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 
         // Standard PPDM columns
 
-        private System.String REMARKValue;
-
-        private System.String SOURCEValue;
-
+    
         private System.String ROW_IDValue;
         public System.String ROW_ID
         {
             get { return this.ROW_IDValue; }
             set { SetProperty(ref ROW_IDValue, value); }
+        }
+
+        private string PAYMENT_IDValue;
+        public string PAYMENT_ID
+        {
+            get { return this.PAYMENT_IDValue; }
+            set { SetProperty(ref PAYMENT_IDValue, value); }
+        }
+
+     
+        private string OWNER_NAMEValue;
+        public string OWNER_NAME
+        {
+            get { return this.OWNER_NAMEValue; }
+            set { SetProperty(ref OWNER_NAMEValue, value); }
+        }
+
+       
+
+        private decimal TAX_WITHHOLDINGSValue;
+        public decimal TAX_WITHHOLDINGS
+        {
+            get { return this.TAX_WITHHOLDINGSValue; }
+            set { SetProperty(ref TAX_WITHHOLDINGSValue, value); }
+        }
+
+        private decimal NET_PAYMENTValue;
+        public decimal NET_PAYMENT
+        {
+            get { return this.NET_PAYMENTValue; }
+            set { SetProperty(ref NET_PAYMENTValue, value); }
+        }
+
+       
+
+        private DateTime? PAYMENT_PROCESSED_DATEValue;
+        public DateTime? PAYMENT_PROCESSED_DATE
+        {
+            get { return this.PAYMENT_PROCESSED_DATEValue; }
+            set { SetProperty(ref PAYMENT_PROCESSED_DATEValue, value); }
         }
     }
 }

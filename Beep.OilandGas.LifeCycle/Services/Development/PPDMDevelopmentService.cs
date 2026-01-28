@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -607,7 +607,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Analyzes gas lift potential for a well
         /// </summary>
-        public async Task<GasLiftPotentialResult> AnalyzeGasLiftPotentialAsync(
+        public async Task<GAS_LIFT_POTENTIAL_RESULT> AnalyzeGasLiftPotentialAsync(
             string fieldId,
             string wellId,
             decimal minGasInjectionRate = 100m,
@@ -633,7 +633,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 await StoreGasLiftPotentialResultsAsync(wellId, result, userId ?? "SYSTEM");
 
                 _logger?.LogInformation("Gas lift potential analysis completed for well {WellId}. Optimal injection rate: {Rate} Mscf/day, Max production: {Production} bbl/day",
-                    wellId, result.OptimalGasInjectionRate, result.MaximumProductionRate);
+                    wellId, result.OPTIMAL_GAS_INJECTION_RATE, result.MAXIMUM_PRODUCTION_RATE);
 
                 return result;
             }
@@ -647,7 +647,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Designs gas lift valves for a well (US field units)
         /// </summary>
-        public async Task<GasLiftValveDesignResult> DesignGasLiftValvesAsync(
+        public async Task<GAS_LIFT_VALVE_DESIGN_RESULT> DesignGasLiftValvesAsync(
             string fieldId,
             string wellId,
             decimal gasInjectionPressure,
@@ -663,7 +663,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 var wellProperties = await GetGasLiftWellPropertiesAsync(fieldId, wellId);
 
                 // Design valves
-                GasLiftValveDesignResult result;
+                GAS_LIFT_VALVE_DESIGN_RESULT result;
                 if (useSIUnits)
                 {
                     result = GasLiftValveDesignCalculator.DesignValvesSI(
@@ -743,7 +743,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Retrieves well properties from PPDM for gas lift analysis
         /// </summary>
-        private async Task<GasLiftWellProperties> GetGasLiftWellPropertiesAsync(string fieldId, string wellId)
+        private async Task<GAS_LIFT_WELL_PROPERTIES> GetGasLiftWellPropertiesAsync(string fieldId, string wellId)
         {
             try
             {
@@ -778,7 +778,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
 
                 // Get wellbore/tubing data from WELL_EQUIPMENT or WELLBORE
                 // This is a simplified implementation - in production, you would retrieve actual values
-                var wellProperties = new GasLiftWellProperties
+                var wellProperties = new GAS_LIFT_WELL_PROPERTIES
                 {
                     WellDepth = !string.IsNullOrEmpty(well.FINAL_TD_OUOM) && well.FINAL_TD_OUOM == "FT" 
                         ? well.FINAL_TD 
@@ -787,8 +787,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     CasingDiameter = 7.0m, // Default - would retrieve from WELL_EQUIPMENT
                     WellheadPressure = 100m, // Default - would retrieve from well test or production data
                     BottomHolePressure = 2000m, // Default - would retrieve from well test or reservoir data
-                    WellheadTemperature = 520m, // Default 60°F = 520°R
-                    BottomHoleTemperature = 580m, // Default 120°F = 580°R
+                    WellheadTemperature = 520m, // Default 60Â°F = 520Â°R
+                    BottomHoleTemperature = 580m, // Default 120Â°F = 580Â°R
                     OilGravity = 35m, // Default 35 API - would retrieve from reservoir/fluid data
                     WaterCut = 0.3m, // Default 30% - would retrieve from production data
                     GasOilRatio = 500m, // Default 500 scf/bbl - would retrieve from production data
@@ -812,7 +812,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// </summary>
         private async Task StoreGasLiftPotentialResultsAsync(
             string wellId,
-            GasLiftPotentialResult result,
+            GAS_LIFT_POTENTIAL_RESULT result,
             string userId)
         {
             try
@@ -833,18 +833,18 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     ["WELL_ID"] = wellId,
                     ["EQUIPMENT_TYPE"] = "GAS_LIFT_SYSTEM",
                     ["EQUIPMENT_NAME"] = "Gas Lift Potential Analysis",
-                    ["DESCRIPTION"] = $"Optimal injection rate: {result.OptimalGasInjectionRate:F2} Mscf/day, Max production: {result.MaximumProductionRate:F2} bbl/day",
+                    ["DESCRIPTION"] = $"Optimal injection rate: {result.OPTIMAL_GAS_INJECTION_RATE:F2} Mscf/day, Max production: {result.MAXIMUM_PRODUCTION_RATE:F2} bbl/day",
                     ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
                     {
-                        OptimalGasInjectionRate = result.OptimalGasInjectionRate,
-                        MaximumProductionRate = result.MaximumProductionRate,
-                        OptimalGasLiquidRatio = result.OptimalGasLiquidRatio,
+                        OptimalGasInjectionRate = result.OPTIMAL_GAS_INJECTION_RATE,
+                        MaximumProductionRate = result.MAXIMUM_PRODUCTION_RATE,
+                        OptimalGasLiquidRatio = result.OPTIMAL_GAS_LIQUID_RATIO,
                         PerformancePoints = result.PerformancePoints.Select(p => new
                         {
                             p.GasInjectionRate,
                             p.ProductionRate,
                             p.GasLiquidRatio,
-                            p.BottomHolePressure
+                            p.BOTTOM_HOLE_PRESSURE
                         })
                     })
                 };
@@ -864,7 +864,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// </summary>
         private async Task StoreGasLiftValveDesignAsync(
             string wellId,
-            GasLiftValveDesignResult result,
+            GAS_LIFT_VALVE_DESIGN_RESULT result,
             string userId)
         {
             try
@@ -968,7 +968,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Analyzes pipeline capacity for gas or liquid pipelines
         /// </summary>
-        public async Task<PipelineCapacityResult> AnalyzePipelineCapacityAsync(
+        public async Task<PIPELINE_CAPACITY_RESULT> AnalyzePipelineCapacityAsync(
             string fieldId,
             string pipelineId,
             string pipelineType = "GAS", // GAS or LIQUID
@@ -984,15 +984,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     pipelineId, fieldId, pipelineType);
 
                 // Get pipeline properties from PPDM
-                var pipelineProperties = await GetPipelinePropertiesFromPPDMAsync(fieldId, pipelineId);
+                var PIPELINE_PROPERTIES = await GetPipelinePropertiesFromPPDMAsync(fieldId, pipelineId);
 
-                PipelineCapacityResult result;
+                PIPELINE_CAPACITY_RESULT result;
                 if (pipelineType.ToUpper() == "GAS")
                 {
                     // Gas pipeline capacity
-                    var gasFlowProperties = new GasPipelineFlowProperties
+                    var gasFlowProperties = new GAS_PIPELINE_FLOW_PROPERTIES
                     {
-                        Pipeline = pipelineProperties,
+                        Pipeline = PIPELINE_PROPERTIES,
                         GasFlowRate = gasFlowRate ?? 1000m, // Default
                         GasSpecificGravity = gasSpecificGravity ?? 0.65m,
                         GasMolecularWeight = (gasSpecificGravity ?? 0.65m) * 28.9645m,
@@ -1005,9 +1005,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 else
                 {
                     // Liquid pipeline capacity
-                    var liquidFlowProperties = new LiquidPipelineFlowProperties
+                    var liquidFlowProperties = new LIQUID_PIPELINE_FLOW_PROPERTIES
                     {
-                        Pipeline = pipelineProperties,
+                        Pipeline = PIPELINE_PROPERTIES,
                         LiquidFlowRate = liquidFlowRate ?? 1000m, // Default
                         LiquidSpecificGravity = liquidSpecificGravity ?? 0.85m,
                         LiquidViscosity = 1.0m
@@ -1020,7 +1020,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 await StorePipelineCapacityResultsAsync(pipelineId, result, pipelineType, userId ?? "SYSTEM");
 
                 _logger?.LogInformation("Pipeline capacity analysis completed for pipeline {PipelineId}. Max flow rate: {FlowRate}, Pressure drop: {PressureDrop}",
-                    pipelineId, result.MaximumFlowRate, result.PressureDrop);
+                    pipelineId, result.MAXIMUM_FLOW_RATE, result.PRESSURE_DROP);
 
                 return result;
             }
@@ -1034,7 +1034,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Analyzes pipeline flow (flow rate or pressure drop) for gas or liquid pipelines
         /// </summary>
-        public async Task<PipelineFlowAnalysisResult> AnalyzePipelineFlowAsync(
+        public async Task<PIPELINE_FLOW_ANALYSIS_RESULT> AnalyzePipelineFlowAsync(
             string fieldId,
             string pipelineId,
             string pipelineType = "GAS", // GAS or LIQUID
@@ -1050,15 +1050,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     pipelineId, fieldId, pipelineType);
 
                 // Get pipeline properties from PPDM
-                var pipelineProperties = await GetPipelinePropertiesFromPPDMAsync(fieldId, pipelineId);
+                var PIPELINE_PROPERTIES = await GetPipelinePropertiesFromPPDMAsync(fieldId, pipelineId);
 
-                PipelineFlowAnalysisResult result;
+                PIPELINE_FLOW_ANALYSIS_RESULT result;
                 if (pipelineType.ToUpper() == "GAS")
                 {
                     // Gas pipeline flow
-                    var gasFlowProperties = new GasPipelineFlowProperties
+                    var gasFlowProperties = new GAS_PIPELINE_FLOW_PROPERTIES
                     {
-                        Pipeline = pipelineProperties,
+                        Pipeline = PIPELINE_PROPERTIES,
                         GasFlowRate = gasFlowRate ?? 1000m,
                         GasSpecificGravity = gasSpecificGravity ?? 0.65m,
                         GasMolecularWeight = (gasSpecificGravity ?? 0.65m) * 28.9645m,
@@ -1071,9 +1071,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 else
                 {
                     // Liquid pipeline flow
-                    var liquidFlowProperties = new LiquidPipelineFlowProperties
+                    var liquidFlowProperties = new LIQUID_PIPELINE_FLOW_PROPERTIES
                     {
-                        Pipeline = pipelineProperties,
+                        Pipeline = PIPELINE_PROPERTIES,
                         LiquidFlowRate = liquidFlowRate ?? 1000m,
                         LiquidSpecificGravity = liquidSpecificGravity ?? 0.85m,
                         LiquidViscosity = 1.0m
@@ -1086,7 +1086,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 await StorePipelineFlowResultsAsync(pipelineId, result, pipelineType, userId ?? "SYSTEM");
 
                 _logger?.LogInformation("Pipeline flow analysis completed for pipeline {PipelineId}. Flow rate: {FlowRate}, Pressure drop: {PressureDrop}",
-                    pipelineId, result.FlowRate, result.PressureDrop);
+                    pipelineId, result.FLOW_RATE, result.PRESSURE_DROP);
 
                 return result;
             }
@@ -1104,7 +1104,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Retrieves pipeline properties from PPDM for analysis
         /// </summary>
-        private async Task<PipelineProperties> GetPipelinePropertiesFromPPDMAsync(string fieldId, string pipelineId)
+        private async Task<PIPELINE_PROPERTIES> GetPipelinePropertiesFromPPDMAsync(string fieldId, string pipelineId)
         {
             try
             {
@@ -1137,9 +1137,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     throw new InvalidOperationException($"Failed to retrieve pipeline {pipelineId}");
                 }
 
-                // Map PPDM pipeline to PipelineProperties
+                // Map PPDM pipeline to PIPELINE_PROPERTIES
                 // This is a simplified implementation - in production, you would retrieve actual values from PIPELINE and related tables
-                var pipelineProperties = new PipelineProperties
+                var PIPELINE_PROPERTIES = new PIPELINE_PROPERTIES
                 {
                     Diameter = !string.IsNullOrEmpty(pipeline.DIAMETER_OUOM) && pipeline.DIAMETER_OUOM == "IN"
                         ? (pipeline.DIAMETER ?? 12m)
@@ -1151,12 +1151,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     ElevationChange = 0m, // Would retrieve from pipeline route data
                     InletPressure = 1000m, // Default - would retrieve from operational data
                     OutletPressure = 500m, // Default - would retrieve from operational data
-                    AverageTemperature = 540m // Default 80°F = 540°R
+                    AverageTemperature = 540m // Default 80Â°F = 540Â°R
                 };
 
                 _logger?.LogWarning("Using default values for some pipeline properties. For accurate analysis, provide pipeline properties in request or ensure PPDM data is complete.");
 
-                return pipelineProperties;
+                return PIPELINE_PROPERTIES;
             }
             catch (Exception ex)
             {
@@ -1170,7 +1170,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// </summary>
         private async Task StorePipelineCapacityResultsAsync(
             string pipelineId,
-            PipelineCapacityResult result,
+            PIPELINE_CAPACITY_RESULT result,
             string pipelineType,
             string userId)
         {
@@ -1187,13 +1187,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     ["CAPACITY_ANALYSIS_JSON"] = JsonSerializer.Serialize(new
                     {
                         PipelineType = pipelineType,
-                        MaximumFlowRate = result.MaximumFlowRate,
-                        PressureDrop = result.PressureDrop,
-                        FlowVelocity = result.FlowVelocity,
-                        ReynoldsNumber = result.ReynoldsNumber,
-                        FrictionFactor = result.FrictionFactor,
-                        PressureGradient = result.PressureGradient,
-                        OutletPressure = result.OutletPressure,
+                        MaximumFlowRate = result.MAXIMUM_FLOW_RATE,
+                        PressureDrop = result.PRESSURE_DROP,
+                        FlowVelocity = result.FLOW_VELOCITY,
+                        ReynoldsNumber = result.REYNOLDS_NUMBER,
+                        FrictionFactor = result.FRICTION_FACTOR,
+                        PressureGradient = result.PRESSURE_GRADIENT,
+                        OutletPressure = result.OUTLET_PRESSURE,
                         AnalysisDate = DateTime.UtcNow
                     })
                 };
@@ -1213,7 +1213,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// </summary>
         private async Task StorePipelineFlowResultsAsync(
             string pipelineId,
-            PipelineFlowAnalysisResult result,
+            PIPELINE_FLOW_ANALYSIS_RESULT result,
             string pipelineType,
             string userId)
         {
@@ -1229,12 +1229,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     ["FLOW_ANALYSIS_JSON"] = JsonSerializer.Serialize(new
                     {
                         PipelineType = pipelineType,
-                        FlowRate = result.FlowRate,
-                        PressureDrop = result.PressureDrop,
-                        FlowVelocity = result.FlowVelocity,
-                        ReynoldsNumber = result.ReynoldsNumber,
-                        FrictionFactor = result.FrictionFactor,
-                        FlowRegime = result.FlowRegime,
+                        FlowRate = result.FLOW_RATE,
+                        PressureDrop = result.PRESSURE_DROP,
+                        FlowVelocity = result.FLOW_VELOCITY,
+                        ReynoldsNumber = result.REYNOLDS_NUMBER,
+                        FrictionFactor = result.FRICTION_FACTOR,
+                        FlowRegime = result.FLOW_REGIME,
                         AnalysisDate = DateTime.UtcNow
                     })
                 };
@@ -1256,7 +1256,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Analyzes compressor power requirements for centrifugal or reciprocating compressors
         /// </summary>
-        public async Task<CompressorPowerResult> AnalyzeCompressorPowerAsync(
+        public async Task<COMPRESSOR_POWER_RESULT> AnalyzeCompressorPowerAsync(
             string fieldId,
             string facilityId,
             string compressorType = "CENTRIFUGAL", // CENTRIFUGAL or RECIPROCATING
@@ -1276,7 +1276,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 var operatingConditions = await GetCompressorOperatingConditionsAsync(
                     fieldId, facilityId, suctionPressure, dischargePressure, gasFlowRate, gasSpecificGravity);
 
-                CompressorPowerResult result;
+                COMPRESSOR_POWER_RESULT result;
                 if (compressorType.ToUpper() == "RECIPROCATING")
                 {
                     // Reciprocating compressor
@@ -1296,7 +1296,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 await StoreCompressorPowerResultsAsync(facilityId, result, compressorType, userId ?? "SYSTEM");
 
                 _logger?.LogInformation("Compressor power analysis completed for facility {FacilityId}. Brake HP: {BHP}, Motor HP: {MotorHP}",
-                    facilityId, result.BrakeHorsepower, result.MotorHorsepower);
+                    facilityId, result.BRAKE_HORSEPOWER, result.MOTOR_HORSEPOWER);
 
                 return result;
             }
@@ -1310,7 +1310,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Analyzes compressor pressure requirements
         /// </summary>
-        public async Task<CompressorPressureResult> AnalyzeCompressorPressureAsync(
+        public async Task<COMPRESSOR_PRESSURE_RESULT> AnalyzeCompressorPressureAsync(
             string fieldId,
             string facilityId,
             decimal requiredFlowRate,
@@ -1340,7 +1340,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 await StoreCompressorPressureResultsAsync(facilityId, result, userId ?? "SYSTEM");
 
                 _logger?.LogInformation("Compressor pressure analysis completed for facility {FacilityId}. Required discharge pressure: {Pressure} psia",
-                    facilityId, result.RequiredDischargePressure);
+                    facilityId, result.REQUIRED_DISCHARGE_PRESSURE);
 
                 return result;
             }
@@ -1358,7 +1358,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Retrieves compressor operating conditions from PPDM
         /// </summary>
-        private async Task<CompressorOperatingConditions> GetCompressorOperatingConditionsAsync(
+        private async Task<COMPRESSOR_OPERATING_CONDITIONS> GetCompressorOperatingConditionsAsync(
             string fieldId,
             string facilityId,
             decimal? suctionPressure,
@@ -1370,12 +1370,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             {
                 // Get facility/equipment data from PPDM
                 // This is a simplified implementation - in production, you would retrieve actual values
-                var operatingConditions = new CompressorOperatingConditions
+                var operatingConditions = new COMPRESSOR_OPERATING_CONDITIONS
                 {
                     SuctionPressure = suctionPressure ?? 100m, // Default 100 psia
                     DischargePressure = dischargePressure ?? 500m, // Default 500 psia
-                    SuctionTemperature = 520m, // Default 60°F = 520°R
-                    DischargeTemperature = 600m, // Default 140°F = 600°R
+                    SuctionTemperature = 520m, // Default 60Â°F = 520Â°R
+                    DischargeTemperature = 600m, // Default 140Â°F = 600Â°R
                     GasFlowRate = gasFlowRate ?? 1000m, // Default 1000 Mscf/day
                     GasSpecificGravity = gasSpecificGravity ?? 0.65m,
                     GasMolecularWeight = (gasSpecificGravity ?? 0.65m) * 28.9645m,
@@ -1397,12 +1397,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Gets centrifugal compressor properties from PPDM
         /// </summary>
-        private async Task<CentrifugalCompressorProperties> GetCentrifugalCompressorPropertiesAsync(
+        private async Task<CENTRIFUGAL_COMPRESSOR_PROPERTIES> GetCentrifugalCompressorPropertiesAsync(
             string facilityId,
-            CompressorOperatingConditions operatingConditions)
+            COMPRESSOR_OPERATING_CONDITIONS operatingConditions)
         {
             // This is a simplified implementation
-            return new CentrifugalCompressorProperties
+            return new CENTRIFUGAL_COMPRESSOR_PROPERTIES
             {
                 OperatingConditions = operatingConditions,
                 PolytropicEfficiency = 0.75m,
@@ -1415,12 +1415,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Gets reciprocating compressor properties from PPDM
         /// </summary>
-        private async Task<ReciprocatingCompressorProperties> GetReciprocatingCompressorPropertiesAsync(
+        private async Task<RECIPROCATING_COMPRESSOR_PROPERTIES> GetReciprocatingCompressorPropertiesAsync(
             string facilityId,
-            CompressorOperatingConditions operatingConditions)
+            COMPRESSOR_OPERATING_CONDITIONS operatingConditions)
         {
             // This is a simplified implementation
-            return new ReciprocatingCompressorProperties
+            return new RECIPROCATING_COMPRESSOR_PROPERTIES
             {
                 OperatingConditions = operatingConditions,
                 CylinderDiameter = 12m, // Default 12 inches
@@ -1437,7 +1437,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// </summary>
         private async Task StoreCompressorPowerResultsAsync(
             string facilityId,
-            CompressorPowerResult result,
+            COMPRESSOR_POWER_RESULT result,
             string compressorType,
             string userId)
         {
@@ -1459,17 +1459,17 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     ["FACILITY_ID"] = facilityId,
                     ["EQUIPMENT_TYPE"] = "COMPRESSOR",
                     ["EQUIPMENT_NAME"] = $"{compressorType} Compressor Power Analysis",
-                    ["DESCRIPTION"] = $"Brake HP: {result.BrakeHorsepower:F2}, Motor HP: {result.MotorHorsepower:F2}",
+                    ["DESCRIPTION"] = $"Brake HP: {result.BRAKE_HORSEPOWER:F2}, Motor HP: {result.MOTOR_HORSEPOWER:F2}",
                     ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
                     {
                         CompressorType = compressorType,
-                        TheoreticalPower = result.TheoreticalPower,
-                        BrakeHorsepower = result.BrakeHorsepower,
-                        MotorHorsepower = result.MotorHorsepower,
-                        PowerConsumptionKW = result.PowerConsumptionKW,
-                        CompressionRatio = result.CompressionRatio,
-                        PolytropicHead = result.PolytropicHead,
-                        AdiabaticHead = result.AdiabaticHead,
+                        TheoreticalPower = result.THEORETICAL_POWER,
+                        BrakeHorsepower = result.BRAKE_HORSEPOWER,
+                        MotorHorsepower = result.MOTOR_HORSEPOWER,
+                        PowerConsumptionKW = result.POWER_CONSUMPTION_KW,
+                        CompressionRatio = result.COMPRESSION_RATIO,
+                        PolytropicHead = result.POLYTROPIC_HEAD,
+                        AdiabaticHead = result.ADIABATIC_HEAD,
                         AnalysisDate = DateTime.UtcNow
                     })
                 };
@@ -1489,7 +1489,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// </summary>
         private async Task StoreCompressorPressureResultsAsync(
             string facilityId,
-            CompressorPressureResult result,
+            COMPRESSOR_PRESSURE_RESULT result,
             string userId)
         {
             try
@@ -1510,13 +1510,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     ["FACILITY_ID"] = facilityId,
                     ["EQUIPMENT_TYPE"] = "COMPRESSOR",
                     ["EQUIPMENT_NAME"] = "Compressor Pressure Analysis",
-                    ["DESCRIPTION"] = $"Required discharge pressure: {result.RequiredDischargePressure:F2} psia",
+                    ["DESCRIPTION"] = $"Required discharge pressure: {result.REQUIRED_DISCHARGE_PRESSURE:F2} psia",
                     ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
                     {
-                        RequiredDischargePressure = result.RequiredDischargePressure,
-                        CompressionRatio = result.CompressionRatio,
-                        RequiredPower = result.RequiredPower,
-                        DischargeTemperature = result.DischargeTemperature,
+                        RequiredDischargePressure = result.REQUIRED_DISCHARGE_PRESSURE,
+                        CompressionRatio = result.COMPRESSION_RATIO,
+                        RequiredPower = result.REQUIRED_POWER,
+                        DischargeTemperature = result.DISCHARGE_TEMPERATURE,
                         AnalysisDate = DateTime.UtcNow
                     })
                 };
@@ -1580,8 +1580,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 {
                     WellPlanId = Guid.NewGuid().ToString(),
                     PlanId = planId,
-                    WellName = wellPlanData.WellName ?? "Well",
-                    WellType = wellPlanData.WellType ?? "PRODUCTION",
+                    WellName = wellPlanData.WELL_NAME ?? "Well",
+                    WellType = wellPlanData.WELL_TYPE ?? "PRODUCTION",
                     Status = "DESIGNED",
                     CreatedDate = DateTime.UtcNow
                 };
@@ -1600,7 +1600,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Executes drilling operation using DrillingAndConstruction service
         /// </summary>
-        public async Task<DrillingOperation> ExecuteDrillingAsync(string fieldId, string wellId, CreateDrillingOperation drillingData, string userId)
+        public async Task<DRILLING_OPERATION> ExecuteDrillingAsync(string fieldId, string wellId, CREATE_DRILLING_OPERATION drillingData, string userId)
         {
             try
             {
@@ -1640,7 +1640,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
 
                 _logger?.LogInformation("Drilling operation created: {OperationId} for well: {WellId}", operationId, wellId);
 
-                return new DrillingOperation
+                return new DRILLING_OPERATION
                 {
                     OperationId = operationId,
                     WellUWI = wellId,

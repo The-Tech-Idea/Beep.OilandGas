@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data.PlungerLift;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
 using Beep.OilandGas.Models.Data;
@@ -26,10 +26,10 @@ namespace Beep.OilandGas.Models.Data.Pumps
         /// <summary>
         /// Well properties for plunger lift design
         /// </summary>
-        private PlungerLiftWellProperties WellPropertiesValue = null!;
+        private PLUNGER_LIFT_WELL_PROPERTIES WellPropertiesValue = null!;
 
         [Required(ErrorMessage = "WellProperties are required")]
-        public PlungerLiftWellProperties WellProperties
+        public PLUNGER_LIFT_WELL_PROPERTIES WellProperties
 
         {
 

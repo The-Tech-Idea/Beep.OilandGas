@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,11 +12,11 @@ namespace Beep.OilandGas.Client.App.Services.Production
     {
         #region Forecasting
 
-        public async Task<ProductionForecast> CreateForecastAsync(ReservoirForecastProperties request, CancellationToken cancellationToken = default)
+        public async Task<PRODUCTION_FORECAST> CreateForecastAsync(RESERVOIR_FORECAST_PROPERTIES request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<ReservoirForecastProperties, ProductionForecast>("/api/production/forecast/create", request, cancellationToken);
+                return await PostAsync<RESERVOIR_FORECAST_PROPERTIES, PRODUCTION_FORECAST>("/api/production/forecast/create", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

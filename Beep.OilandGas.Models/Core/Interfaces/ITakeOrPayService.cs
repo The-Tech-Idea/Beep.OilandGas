@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 
@@ -10,8 +10,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     public interface ITakeOrPayService
     {
         Task<REVENUE_TRANSACTION?> ApplyTakeOrPayAsync(
-            RUN_TICKET runTicket,
-            ALLOCATION_RESULT allocationResult,
+            RUN_TICKET RUN_TICKET,
+            ALLOCATION_RESULT ALLOCATION_RESULT,
             decimal deliveredVolume,
             string userId,
             string cn = "PPDM39");

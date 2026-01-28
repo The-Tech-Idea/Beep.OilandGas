@@ -14,22 +14,22 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Creates a sales transaction.
         /// </summary>
-        Task<Data.ProductionAccounting.SalesTransaction> CreateSalesTransactionAsync(CreateSalesTransactionRequest request, string userId, string? connectionName = null);
+        Task<SalesTransaction> CreateSalesTransactionAsync(CreateSalesTransactionRequest request, string userId, string? connectionName = null);
 
         /// <summary>
         /// Gets a sales transaction by ID.
         /// </summary>
-        Task<Data.ProductionAccounting.SalesTransaction?> GetSalesTransactionAsync(string transactionId, string? connectionName = null);
+        Task<SalesTransaction?> GetSalesTransactionAsync(string transactionId, string? connectionName = null);
 
         /// <summary>
         /// Gets sales transactions within a date range.
         /// </summary>
-        Task<List<Data.ProductionAccounting.SalesTransaction>> GetSalesTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, string? connectionName = null);
+        Task<List<SalesTransaction>> GetSalesTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate, string? connectionName = null);
 
         /// <summary>
         /// Gets sales transactions for a specific customer.
         /// </summary>
-        Task<List<Data.ProductionAccounting.SalesTransaction>> GetSalesTransactionsByCustomerAsync(string customerBaId, DateTime? startDate = null, DateTime? endDate = null, string? connectionName = null);
+        Task<List<SalesTransaction>> GetSalesTransactionsByCustomerAsync(string customerBaId, DateTime? startDate = null, DateTime? endDate = null, string? connectionName = null);
 
         /// <summary>
         /// Creates a receivable record.

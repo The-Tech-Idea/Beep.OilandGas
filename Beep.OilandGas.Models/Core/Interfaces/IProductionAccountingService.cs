@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
@@ -12,7 +12,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
     /// </summary>
     public interface IProductionAccountingService
     {
-        Task<bool> ProcessProductionCycleAsync(RUN_TICKET runTicket, string userId, string connectionName = "PPDM39");
+        Task<bool> ProcessProductionCycleAsync(RUN_TICKET RUN_TICKET, string userId, string connectionName = "PPDM39");
         Task<AccountingStatusData> GetAccountingStatusAsync(string fieldId, DateTime? asOfDate = null, string connectionName = "PPDM39");
         Task<bool> ClosePeriodAsync(string fieldId, DateTime periodEnd, string userId, string connectionName = "PPDM39");
     }

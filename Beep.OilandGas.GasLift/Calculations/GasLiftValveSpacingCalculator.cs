@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.GasProperties.Calculations;
@@ -18,7 +18,7 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// <param name="numberOfValves">Number of valves.</param>
         /// <returns>Valve spacing result.</returns>
         public static GasLiftValveSpacingResult CalculateValveSpacing(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves = 5)
         {
@@ -28,7 +28,7 @@ namespace Beep.OilandGas.GasLift.Calculations
             if (numberOfValves <= 0)
                 throw new ArgumentException("Number of valves must be greater than zero.", nameof(numberOfValves));
 
-            if (gasInjectionPressure <= wellProperties.WellheadPressure)
+            if (gasInjectionPressure <= wellProperties.WELLHEAD_PRESSURE)
                 throw new ArgumentException("Gas injection pressure must be greater than wellhead pressure.", nameof(gasInjectionPressure));
 
             var result = new GasLiftValveSpacingResult
@@ -37,22 +37,22 @@ namespace Beep.OilandGas.GasLift.Calculations
             };
 
             // Calculate temperature gradient
-            decimal temperatureGradient = (wellProperties.BottomHoleTemperature - wellProperties.WellheadTemperature) /
-                                        wellProperties.WellDepth;
+            decimal temperatureGradient = (wellProperties.BOTTOM_HOLE_TEMPERATURE - wellProperties.WELLHEAD_TEMPERATURE) /
+                                        wellProperties.WELL_DEPTH;
 
             // Calculate pressure gradient (simplified)
             decimal pressureGradient = CalculatePressureGradient(wellProperties);
 
             // Calculate valve depths and opening pressures
-            decimal currentDepth = wellProperties.WellheadPressure * 144m / (62.4m * 0.433m); // Initial depth estimate
-            decimal depthIncrement = (wellProperties.WellDepth - currentDepth) / numberOfValves;
+            decimal currentDepth = wellProperties.WELLHEAD_PRESSURE * 144m / (62.4m * 0.433m); // Initial depth estimate
+            decimal depthIncrement = (wellProperties.WELL_DEPTH - currentDepth) / numberOfValves;
 
             for (int i = 0; i < numberOfValves; i++)
             {
                 decimal valveDepth = currentDepth + (i + 1) * depthIncrement;
 
                 // Calculate opening pressure at valve depth
-                decimal valveTemperature = wellProperties.WellheadTemperature + temperatureGradient * valveDepth;
+                decimal valveTemperature = wellProperties.WELLHEAD_TEMPERATURE + temperatureGradient * valveDepth;
                 decimal openingPressure = CalculateOpeningPressure(
                     wellProperties, gasInjectionPressure, valveDepth, valveTemperature, pressureGradient);
 
@@ -68,12 +68,12 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// <summary>
         /// Calculates pressure gradient in the well.
         /// </summary>
-        private static decimal CalculatePressureGradient(GasLiftWellProperties wellProperties)
+        private static decimal CalculatePressureGradient(GAS_LIFT_WELL_PROPERTIES wellProperties)
         {
             // Calculate fluid density
-            decimal oilDensity = (141.5m / (131.5m + wellProperties.OilGravity)) * 62.4m;
+            decimal oilDensity = (141.5m / (131.5m + wellProperties.OIL_GRAVITY)) * 62.4m;
             decimal waterDensity = 62.4m;
-            decimal liquidDensity = oilDensity * (1.0m - wellProperties.WaterCut) + waterDensity * wellProperties.WaterCut;
+            decimal liquidDensity = oilDensity * (1.0m - wellProperties.WATER_CUT) + waterDensity * wellProperties.WATER_CUT;
 
             // Pressure gradient in psia/ft
             decimal pressureGradient = liquidDensity / 144m;
@@ -85,7 +85,7 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// Calculates opening pressure for a valve at given depth.
         /// </summary>
         private static decimal CalculateOpeningPressure(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             decimal valveDepth,
             decimal valveTemperature,
@@ -98,17 +98,17 @@ namespace Beep.OilandGas.GasLift.Calculations
             decimal openingPressure = gasInjectionPressure - (valveDepth * pressureGradient * depthFactor);
 
             // Ensure opening pressure is reasonable
-            decimal minimumPressure = wellProperties.WellheadPressure;
+            decimal minimumPressure = wellProperties.WELLHEAD_PRESSURE;
             decimal maximumPressure = gasInjectionPressure * 0.95m;
 
             openingPressure = Math.Max(minimumPressure, Math.Min(maximumPressure, openingPressure));
 
             // Adjust for temperature (gas expands with temperature)
             decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                openingPressure, valveTemperature, wellProperties.GasSpecificGravity);
+                openingPressure, valveTemperature, wellProperties.GAS_SPECIFIC_GRAVITY);
 
             // Temperature correction
-            decimal temperatureCorrection = valveTemperature / wellProperties.WellheadTemperature;
+            decimal temperatureCorrection = valveTemperature / wellProperties.WELLHEAD_TEMPERATURE;
             openingPressure = openingPressure / temperatureCorrection;
 
             return Math.Max(minimumPressure, openingPressure);
@@ -118,7 +118,7 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// Calculates valve spacing using equal pressure drop method.
         /// </summary>
         public static GasLiftValveSpacingResult CalculateEqualPressureDropSpacing(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves)
         {
@@ -131,18 +131,18 @@ namespace Beep.OilandGas.GasLift.Calculations
             };
 
             // Calculate pressure drop per valve
-            decimal totalPressureDrop = gasInjectionPressure - wellProperties.WellheadPressure;
+            decimal totalPressureDrop = gasInjectionPressure - wellProperties.WELLHEAD_PRESSURE;
             decimal pressureDropPerValve = totalPressureDrop / numberOfValves;
 
             // Calculate temperature gradient
-            decimal temperatureGradient = (wellProperties.BottomHoleTemperature - wellProperties.WellheadTemperature) /
-                                        wellProperties.WellDepth;
+            decimal temperatureGradient = (wellProperties.BOTTOM_HOLE_TEMPERATURE - wellProperties.WELLHEAD_TEMPERATURE) /
+                                        wellProperties.WELL_DEPTH;
 
             // Calculate pressure gradient
             decimal pressureGradient = CalculatePressureGradient(wellProperties);
 
             decimal currentDepth = 0m;
-            decimal currentPressure = wellProperties.WellheadPressure;
+            decimal currentPressure = wellProperties.WELLHEAD_PRESSURE;
 
             for (int i = 0; i < numberOfValves; i++)
             {
@@ -154,15 +154,15 @@ namespace Beep.OilandGas.GasLift.Calculations
                 currentPressure = targetPressure;
 
                 // Ensure we don't exceed well depth
-                if (currentDepth > wellProperties.WellDepth)
-                    currentDepth = wellProperties.WellDepth;
+                if (currentDepth > wellProperties.WELL_DEPTH)
+                    currentDepth = wellProperties.WELL_DEPTH;
 
-                decimal valveTemperature = wellProperties.WellheadTemperature + temperatureGradient * currentDepth;
+                decimal valveTemperature = wellProperties.WELLHEAD_TEMPERATURE + temperatureGradient * currentDepth;
 
                 result.ValveDepths.Add(currentDepth);
                 result.OpeningPressures.Add(currentPressure);
 
-                if (currentDepth >= wellProperties.WellDepth)
+                if (currentDepth >= wellProperties.WELL_DEPTH)
                     break;
             }
 
@@ -179,7 +179,7 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// Calculates valve spacing using equal depth spacing method.
         /// </summary>
         public static GasLiftValveSpacingResult CalculateEqualDepthSpacing(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves)
         {
@@ -192,11 +192,11 @@ namespace Beep.OilandGas.GasLift.Calculations
             };
 
             // Equal depth spacing
-            decimal depthSpacing = wellProperties.WellDepth / numberOfValves;
+            decimal depthSpacing = wellProperties.WELL_DEPTH / numberOfValves;
 
             // Calculate temperature gradient
-            decimal temperatureGradient = (wellProperties.BottomHoleTemperature - wellProperties.WellheadTemperature) /
-                                        wellProperties.WellDepth;
+            decimal temperatureGradient = (wellProperties.BOTTOM_HOLE_TEMPERATURE - wellProperties.WELLHEAD_TEMPERATURE) /
+                                        wellProperties.WELL_DEPTH;
 
             // Calculate pressure gradient
             decimal pressureGradient = CalculatePressureGradient(wellProperties);
@@ -204,7 +204,7 @@ namespace Beep.OilandGas.GasLift.Calculations
             for (int i = 0; i < numberOfValves; i++)
             {
                 decimal valveDepth = (i + 1) * depthSpacing;
-                decimal valveTemperature = wellProperties.WellheadTemperature + temperatureGradient * valveDepth;
+                decimal valveTemperature = wellProperties.WELLHEAD_TEMPERATURE + temperatureGradient * valveDepth;
 
                 decimal openingPressure = CalculateOpeningPressure(
                     wellProperties, gasInjectionPressure, valveDepth, valveTemperature, pressureGradient);

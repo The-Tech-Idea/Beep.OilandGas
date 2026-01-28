@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.HeatMap;
@@ -26,7 +26,7 @@ namespace Beep.OilandGas.Web.Services
 
         #region Heat Map Operations
 
-        public async Task<HeatMapResult> GenerateHeatMapAsync(List<HeatMapDataPoint> dataPoints, HeatMapConfiguration configuration)
+        public async Task<HeatMapResult> GenerateHeatMapAsync(List<HEAT_MAP_DATA_POINT> dataPoints, HEAT_MAP_CONFIGURATION configuration)
         {
             try
             {

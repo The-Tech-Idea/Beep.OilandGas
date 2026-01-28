@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.LeaseManagement;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {
@@ -35,7 +36,12 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref SurfaceOwnerValue, value); }
 
         }
-
+        private LeaseType _leasetype;
+        public LeaseType LeaseType
+        {
+            get { return _leasetype; }
+            set { SetProperty(ref _leasetype, value); }
+        }
         public FeeMineralLease()
         {
             LeaseType = LeaseType.Fee;

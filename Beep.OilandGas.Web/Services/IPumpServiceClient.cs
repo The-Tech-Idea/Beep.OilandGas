@@ -1,4 +1,4 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 
@@ -16,7 +16,7 @@ namespace Beep.OilandGas.Web.Services
         Task<List<PumpPerformanceHistory>> GetHydraulicPumpPerformanceHistoryAsync(string pumpId);
 
         // Plunger Lift Operations
-        Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellProperties wellProperties);
+        Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PLUNGER_LIFT_WELL_PROPERTIES wellProperties);
         Task<PlungerLiftPerformance> AnalyzePlungerLiftPerformanceAsync(string wellUWI);
         Task<bool> SavePlungerLiftDesignAsync(PlungerLiftDesign design, string? userId = null);
 

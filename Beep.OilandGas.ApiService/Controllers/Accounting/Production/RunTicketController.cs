@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         /// Get all run tickets.
         /// </summary>
         [HttpGet]
-        public ActionResult<List<RunTicket>> GetRunTickets(
+        public ActionResult<List<RUN_TICKET>> GetRunTickets(
             [FromQuery] DateTime? startDate = null, 
             [FromQuery] DateTime? endDate = null,
             [FromQuery] string? connectionName = null)
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         /// Get run ticket by ID.
         /// </summary>
         [HttpGet("{id}")]
-        public ActionResult<RunTicket> GetRunTicket(string id, [FromQuery] string? connectionName = null)
+        public ActionResult<RUN_TICKET> GetRunTicket(string id, [FromQuery] string? connectionName = null)
         {
             try
             {
@@ -83,7 +83,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         /// Create a run ticket.
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<RunTicket>> CreateRunTicket(
+        public async Task<ActionResult<RUN_TICKET>> CreateRunTicket(
             [FromBody] CreateRunTicketRequest request,
             [FromQuery] decimal? revenueAmount = null,
             [FromQuery] bool isCash = false,
@@ -95,34 +95,34 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var measurement = new MeasurementRecord
+                var measurement = new MEASUREMENT_RECORD
                 {
                     MeasurementId = Guid.NewGuid().ToString(),
-                    MeasurementDateTime = request.TicketDateTime ?? DateTime.Now,
+                    MeasurementDateTime = request.TICKET_DATE_TIME ?? DateTime.Now,
                     Method = MeasurementMethod.Manual,
                     Standard = MeasurementStandard.API,
-                    GrossVolume = request.GrossVolume,
-                    BSW = request.BSWPercentage,
-                    Temperature = request.Temperature,
-                    ApiGravity = request.ApiGravity
+                    GrossVolume = request.GROSS_VOLUME,
+                    BSW = request.BSWPERCENTAGE,
+                    Temperature = request.TEMPERATURE,
+                    ApiGravity = request.API_GRAVITY
                 };
 
                 var ticket = _service.ProductionManager.CreateRunTicket(
-                    request.LeaseId,
-                    request.WellId,
-                    request.TankBatteryId,
+                    request.LEASE_ID,
+                    request.WELL_ID,
+                    request.TANK_BATTERY_ID,
                     measurement,
-                    request.DispositionType,
-                    request.Purchaser);
+                    request.DISPOSITION_TYPE,
+                    request.PURCHASER);
 
                 // Post to GL if revenue amount provided
                 if (revenueAmount.HasValue && revenueAmount.Value > 0)
                 {
                     var journalEntryId = await _glIntegration.PostProductionToGL(
-                        ticket.RunTicketNumber,
+                        ticket.RUN_TICKET_NUMBER,
                         revenueAmount.Value,
                         isCash: isCash,
-                        transactionDate: ticket.TicketDateTime,
+                        transactionDate: ticket.TICKET_DATE_TIME,
                         userId: userId ?? "system");
 
                     return Ok(new { Ticket = MapToRunTicketDto(ticket), JournalEntryId = journalEntryId });
@@ -142,23 +142,23 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             }
         }
 
-        private RunTicket MapToRunTicketDto(RunTicket ticket)
+        private RUN_TICKET MapToRunTicketDto(RUN_TICKET ticket)
         {
-                return new RunTicket
+                return new RUN_TICKET
                 {
-                    RunTicketNumber = ticket.RunTicketNumber,
-                    TicketDateTime = ticket.TicketDateTime,
-                    LeaseId = ticket.LeaseId,
-                    WellId = ticket.WellId,
-                    TankBatteryId = ticket.TankBatteryId,
-                    GrossVolume = ticket.GrossVolume,
-                    BSWVolume = ticket.BSWVolume,
-                    BSWPercentage = ticket.BSWPercentage,
-                    NetVolume = ticket.NetVolume,
-                    Temperature = ticket.Temperature,
-                    ApiGravity = ticket.ApiGravity,
-                    DispositionType = ticket.DispositionType,
-                    Purchaser = ticket.Purchaser
+                    RunTicketNumber = ticket.RUN_TICKET_NUMBER,
+                    TicketDateTime = ticket.TICKET_DATE_TIME,
+                    LeaseId = ticket.LEASE_ID,
+                    WellId = ticket.WELL_ID,
+                    TankBatteryId = ticket.TANK_BATTERY_ID,
+                    GrossVolume = ticket.GROSS_VOLUME,
+                    BSWVolume = ticket.BSWVOLUME,
+                    BSWPercentage = ticket.BSWPERCENTAGE,
+                    NetVolume = ticket.NET_VOLUME,
+                    Temperature = ticket.TEMPERATURE,
+                    ApiGravity = ticket.API_GRAVITY,
+                    DispositionType = ticket.DISPOSITION_TYPE,
+                    Purchaser = ticket.PURCHASER
                 };
         }
     }

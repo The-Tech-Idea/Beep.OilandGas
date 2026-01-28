@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,11 +35,11 @@ namespace Beep.OilandGas.Client.App.Services.Calculations
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<List<NPVProfilePoint>> GenerateNPVProfileAsync(List<ECONOMIC_CASH_FLOW> request, CancellationToken cancellationToken = default)
+        public async Task<List<NPV_PROFILE_POINT>> GenerateNPVProfileAsync(List<ECONOMIC_CASH_FLOW> request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<List<ECONOMIC_CASH_FLOW>, List<NPVProfilePoint>>("/api/economicanalysis/npv-profile", request, cancellationToken);
+                return await PostAsync<List<ECONOMIC_CASH_FLOW>, List<NPV_PROFILE_POINT>>("/api/economicanalysis/npv-profile", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

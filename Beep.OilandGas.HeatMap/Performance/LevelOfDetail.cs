@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -17,14 +17,14 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// <param name="maxPoints">Maximum number of points to render (default: 1000).</param>
         /// <param name="minZoomForFullDetail">Minimum zoom level to show full detail (default: 1.0).</param>
         /// <returns>Filtered list of points to render.</returns>
-        public static List<HeatMapDataPoint> ApplyLOD(
-            List<HeatMapDataPoint> dataPoints,
+        public static List<HEAT_MAP_DATA_POINT> ApplyLOD(
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double zoom,
             int maxPoints = 1000,
             double minZoomForFullDetail = 1.0)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                return new List<HeatMapDataPoint>();
+                return new List<HEAT_MAP_DATA_POINT>();
 
             // If zoomed in enough and points are within limit, return all
             if (zoom >= minZoomForFullDetail && dataPoints.Count <= maxPoints)
@@ -68,8 +68,8 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// <summary>
         /// Performs spatial sampling to reduce point count while maintaining distribution.
         /// </summary>
-        private static List<HeatMapDataPoint> SpatialSample(
-            List<HeatMapDataPoint> dataPoints,
+        private static List<HEAT_MAP_DATA_POINT> SpatialSample(
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             int targetCount)
         {
             if (targetCount >= dataPoints.Count)
@@ -93,8 +93,8 @@ namespace Beep.OilandGas.HeatMap.Performance
             double cellHeight = height / gridSize;
 
             // Sample one point per cell (highest value or first encountered)
-            var sampled = new List<HeatMapDataPoint>();
-            var grid = new Dictionary<(int, int), HeatMapDataPoint>();
+            var sampled = new List<HEAT_MAP_DATA_POINT>();
+            var grid = new Dictionary<(int, int), HEAT_MAP_DATA_POINT>();
 
             foreach (var point in dataPoints)
             {
@@ -139,8 +139,8 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// <param name="viewportArea">Area of the viewport in data coordinates squared.</param>
         /// <param name="maxDensity">Maximum points per unit area (default: 10).</param>
         /// <returns>Filtered list of points.</returns>
-        public static List<HeatMapDataPoint> ApplyDensityBasedLOD(
-            List<HeatMapDataPoint> dataPoints,
+        public static List<HEAT_MAP_DATA_POINT> ApplyDensityBasedLOD(
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double viewportArea,
             double maxDensity = 10.0)
         {
@@ -169,15 +169,15 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// <param name="maxPoints">Maximum number of points (default: 1000).</param>
         /// <param name="maxDensity">Maximum points per unit area (default: 10).</param>
         /// <returns>Filtered list of points.</returns>
-        public static List<HeatMapDataPoint> ApplyAdaptiveLOD(
-            List<HeatMapDataPoint> dataPoints,
+        public static List<HEAT_MAP_DATA_POINT> ApplyAdaptiveLOD(
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double zoom,
             double viewportArea,
             int maxPoints = 1000,
             double maxDensity = 10.0)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                return new List<HeatMapDataPoint>();
+                return new List<HEAT_MAP_DATA_POINT>();
 
             // Apply zoom-based LOD
             var zoomFiltered = ApplyLOD(dataPoints, zoom, maxPoints);

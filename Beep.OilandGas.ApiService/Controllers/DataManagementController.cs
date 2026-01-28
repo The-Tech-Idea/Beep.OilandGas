@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
@@ -461,7 +461,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         /// GET /api/datamanagement/quality/{tableName}/metrics
         /// </summary>
         [HttpGet("quality/{tableName}/metrics")]
-        public async Task<ActionResult<DataQualityMetrics>> GetQualityMetrics(string tableName)
+        public async Task<ActionResult<DATA_QUALITY_METRICS>> GetQualityMetrics(string tableName)
         {
             try
             {
@@ -640,7 +640,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             try
             {
-                var tableMetadata = _metadata.GetTableMetadataAsync(repository.TableName).GetAwaiter().GetResult();
+                var tableMetadata = _metadata.GetTableMetadataAsync(repository.TABLE_NAME).GetAwaiter().GetResult();
                 if (tableMetadata?.PrimaryKeyColumn == null)
                     return null;
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     request.WellId, request.PoolId, request.FieldId);
 
                 // Check if this is a physics-based forecast (uses reservoir properties instead of historical data)
-                var forecastTypeStr = request.AdditionalParameters?.ForecastType ?? string.Empty;
+                var forecastTypeStr = request.AdditionalParameters?.FORECAST_TYPE ?? string.Empty;
                 var isPhysicsBased = !string.IsNullOrEmpty(forecastTypeStr) &&
                     (forecastTypeStr.StartsWith("PHYSICS", StringComparison.OrdinalIgnoreCase) ||
                      forecastTypeStr.Equals("PSEUDO_STEADY_STATE", StringComparison.OrdinalIgnoreCase) ||
@@ -104,7 +104,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
               
                 await repository.InsertAsync(result, request.UserId ?? "system");
 
-                _logger?.LogInformation("DCA calculation completed successfully: {CalculationId}, R²: {RSquared}, RMSE: {RMSE}", 
+                _logger?.LogInformation("DCA calculation completed successfully: {CalculationId}, RÂ²: {RSquared}, RMSE: {RMSE}", 
                     result.CalculationId, result.R2, result.RMSE);
 
                 return result;
@@ -406,10 +406,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     throw new InvalidOperationException("Reservoir properties not found. Cannot perform physics-based forecast.");
                 }
 
-                var forecastTypeStr = request.AdditionalParameters?.ForecastType ?? "PSEUDO_STEADY_STATE_SINGLE_PHASE";
+                var forecastTypeStr = request.AdditionalParameters?.FORECAST_TYPE ?? "PSEUDO_STEADY_STATE_SINGLE_PHASE";
 
                 var bottomHolePressure = (decimal)(request.AdditionalParameters?.BottomHolePressure ?? 1000m);
-                var forecastDuration = (decimal)(request.AdditionalParameters?.ForecastDuration ?? 1825m);
+                var forecastDuration = (decimal)(request.AdditionalParameters?.FORECAST_DURATION ?? 1825m);
                 var timeSteps = request.AdditionalParameters?.TimeSteps ?? 100;
                 var bubblePointPressure = (decimal)(request.AdditionalParameters?.BubblePointPressure ?? 0m);
 
@@ -430,14 +430,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                         var res2 = PseudoSteadyStateForecast.GenerateTwoPhaseForecast(
                             reservoirProperties!, bottomHolePressure, bubblePointPressure, forecastDuration, timeSteps);
                         
-                        // Map ProductionForecast to PRODUCTION_FORECAST if needed
+                        // Map PRODUCTION_FORECAST to PRODUCTION_FORECAST if needed
                         forecast = new PRODUCTION_FORECAST
                         {
                             FORECAST_TYPE = ForecastType.PseudoSteadyStateTwoPhase,
-                            FORECAST_DURATION = res2.ForecastDuration,
-                            INITIAL_PRODUCTION_RATE = res2.InitialProductionRate,
-                            FINAL_PRODUCTION_RATE = res2.FinalProductionRate,
-                            TOTAL_CUMULATIVE_PRODUCTION = res2.TotalCumulativeProduction,
+                            FORECAST_DURATION = res2.FORECAST_DURATION,
+                            INITIAL_PRODUCTION_RATE = res2.INITIAL_PRODUCTION_RATE,
+                            FINAL_PRODUCTION_RATE = res2.FINAL_PRODUCTION_RATE,
+                            TOTAL_CUMULATIVE_PRODUCTION = res2.TOTAL_CUMULATIVE_PRODUCTION,
                             FORECAST_POINTS = res2.ForecastPoints.Select(p => new FORECAST_POINT
                             {
                                 TIME = p.Time,

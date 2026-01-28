@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Beep.OilandGas.Models.Data
 {
-    public class CreateDrillingOperation : ModelEntityBase
+    public class CREATE_DRILLING_OPERATION : ModelEntityBase
     {
         private string WellUWIValue = string.Empty;
 

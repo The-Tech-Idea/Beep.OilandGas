@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Beep.OilandGas.WellTestAnalysis.Constants;
 using Beep.OilandGas.WellTestAnalysis.Exceptions;
@@ -14,7 +14,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Validation
         /// <summary>
         /// Validates well test data.
         /// </summary>
-        public static void Validate(WellTestData data)
+        public static void Validate(WELL_TEST_DATA data)
         {
             if (data == null)
                 throw new ArgumentNullException(nameof(data));
@@ -22,13 +22,13 @@ namespace Beep.OilandGas.WellTestAnalysis.Validation
             ValidateTimeData(data.Time, nameof(data.Time));
             ValidatePressureData(data.Pressure, nameof(data.Pressure));
             ValidateMatchingLengths(data.Time, data.Pressure, nameof(data.Time), nameof(data.Pressure));
-            ValidateFlowRate(data.FlowRate, nameof(data.FlowRate));
-            ValidateWellboreRadius(data.WellboreRadius, nameof(data.WellboreRadius));
-            ValidateFormationThickness(data.FormationThickness, nameof(data.FormationThickness));
-            ValidatePorosity(data.Porosity, nameof(data.Porosity));
-            ValidateCompressibility(data.TotalCompressibility, nameof(data.TotalCompressibility));
-            ValidateViscosity(data.OilViscosity, nameof(data.OilViscosity));
-            ValidateFormationVolumeFactor(data.OilFormationVolumeFactor, nameof(data.OilFormationVolumeFactor));
+            ValidateFlowRate((double)data.FLOW_RATE, nameof(data.FLOW_RATE));
+            ValidateWellboreRadius((double)data.WELLBORE_RADIUS, nameof(data.WELLBORE_RADIUS));
+            ValidateFormationThickness((double)data.FORMATION_THICKNESS, nameof(data.FORMATION_THICKNESS));
+            ValidatePorosity((double)data.POROSITY, nameof(data.POROSITY));
+            ValidateCompressibility((double)data.TOTAL_COMPRESSIBILITY, nameof(data.TOTAL_COMPRESSIBILITY));
+            ValidateViscosity((double)data.OIL_VISCOSITY, nameof(data.OIL_VISCOSITY));
+            ValidateFormationVolumeFactor((double)data.OIL_FORMATION_VOLUME_FACTOR, nameof(data.OIL_FORMATION_VOLUME_FACTOR));
         }
 
         /// <summary>

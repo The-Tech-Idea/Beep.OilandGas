@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -14,7 +14,7 @@ namespace Beep.OilandGas.HeatMap.Analysis
         /// </summary>
         /// <param name="dataPoints">List of data points to analyze.</param>
         /// <returns>Statistical summary object.</returns>
-        public static StatisticalSummary CalculateSummary(List<HeatMapDataPoint> dataPoints)
+        public static StatisticalSummary CalculateSummary(List<HEAT_MAP_DATA_POINT> dataPoints)
         {
             if (dataPoints == null || dataPoints.Count == 0)
                 return new StatisticalSummary();
@@ -51,8 +51,8 @@ namespace Beep.OilandGas.HeatMap.Analysis
         /// <param name="matchRadius">Radius for matching points between sets.</param>
         /// <returns>Correlation coefficient (-1 to 1), or null if insufficient matches.</returns>
         public static double? CalculateCorrelation(
-            List<HeatMapDataPoint> points1,
-            List<HeatMapDataPoint> points2,
+            List<HEAT_MAP_DATA_POINT> points1,
+            List<HEAT_MAP_DATA_POINT> points2,
             double matchRadius = 10.0)
         {
             if (points1 == null || points2 == null || points1.Count == 0 || points2.Count == 0)

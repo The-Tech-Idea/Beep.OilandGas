@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,6 +22,7 @@ using Beep.OilandGas.Models.Data.Pumps;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
  using Beep.OilandGas.Models.Data.PlungerLift;
 using Beep.OilandGas.Models.Data.HydraulicPumps;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.LifeCycle.Services.WellManagement
 {
@@ -526,8 +527,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
                 RequestDate = request.RequestDate,
                 DueDate = request.DueDate,
                 EstimatedCost = request.EstimatedCost,
-                Description = request.Description,
-                AdditionalProperties = request.TestData
+                Description = request.Description
+                
             };
 
             return await _workOrderService.CreateWorkOrderAsync(workOrderRequest, userId);
@@ -791,7 +792,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
         /// <summary>
         /// Runs well test analysis for a well using DataFlowService
         /// </summary>
-        public async Task<WellTestAnalysisResult> RunWellTestAnalysisAsync(
+        public async Task<WELL_TEST_ANALYSIS_RESULT> RunWellTestAnalysisAsync(
             string wellId,
             string? testId = null,
             string userId = "system",

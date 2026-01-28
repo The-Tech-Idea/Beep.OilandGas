@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -7,7 +7,7 @@ namespace Beep.OilandGas.HeatMap.Animation
     /// <summary>
     /// Represents a time-stamped data point for animation.
     /// </summary>
-    public class TimeSeriesDataPoint : HeatMapDataPoint
+    public class TimeSeriesDataPoint : HEAT_MAP_DATA_POINT
     {
         /// <summary>
         /// Gets or sets the timestamp for this data point.
@@ -120,14 +120,14 @@ namespace Beep.OilandGas.HeatMap.Animation
         /// Gets the data points for the current time index.
         /// </summary>
         /// <returns>List of data points for the current time.</returns>
-        public List<HeatMapDataPoint> GetCurrentFrame()
+        public List<HEAT_MAP_DATA_POINT> GetCurrentFrame()
         {
             if (TimeFrames.ContainsKey(CurrentTimeIndex))
             {
-                return TimeFrames[CurrentTimeIndex].Cast<HeatMapDataPoint>().ToList();
+                return TimeFrames[CurrentTimeIndex].Cast<HEAT_MAP_DATA_POINT>().ToList();
             }
 
-            return new List<HeatMapDataPoint>();
+            return new List<HEAT_MAP_DATA_POINT>();
         }
 
         /// <summary>
@@ -137,7 +137,7 @@ namespace Beep.OilandGas.HeatMap.Animation
         /// <param name="timeIndex2">Second time index.</param>
         /// <param name="t">Interpolation factor (0.0 to 1.0).</param>
         /// <returns>List of interpolated data points.</returns>
-        public List<HeatMapDataPoint> GetInterpolatedFrame(int timeIndex1, int timeIndex2, double t)
+        public List<HEAT_MAP_DATA_POINT> GetInterpolatedFrame(int timeIndex1, int timeIndex2, double t)
         {
             t = Math.Max(0.0, Math.Min(1.0, t)); // Clamp to [0, 1]
 
@@ -148,7 +148,7 @@ namespace Beep.OilandGas.HeatMap.Animation
                 ? TimeFrames[timeIndex2] 
                 : new List<TimeSeriesDataPoint>();
 
-            var interpolated = new List<HeatMapDataPoint>();
+            var interpolated = new List<HEAT_MAP_DATA_POINT>();
 
             // Create a map of points by their base coordinates
             var pointMap = new Dictionary<(double, double), (TimeSeriesDataPoint p1, TimeSeriesDataPoint p2)>();
@@ -202,12 +202,12 @@ namespace Beep.OilandGas.HeatMap.Animation
                     continue;
                 }
 
-                interpolated.Add(new HeatMapDataPoint
+                interpolated.Add(new HEAT_MAP_DATA_POINT
                 {
                     X = kvp.Key.Item1,
                     Y = kvp.Key.Item2,
                     Value = interpolatedValue,
-                    Label = p1?.Label ?? p2?.Label
+                    Label = p1?.LABEL ?? p2?.LABEL
                 });
             }
 

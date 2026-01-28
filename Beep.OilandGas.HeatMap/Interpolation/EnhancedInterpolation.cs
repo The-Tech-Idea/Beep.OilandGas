@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -20,7 +20,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         /// <param name="maxDistance">Maximum distance to consider.</param>
         /// <returns>Interpolated value.</returns>
         public static double OptimizedIdw(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double targetX,
             double targetY,
             double power = 2.0,
@@ -80,7 +80,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         /// <param name="shapeParameter">Shape parameter (epsilon) for RBF.</param>
         /// <returns>Interpolated value.</returns>
         public static double RadialBasisFunction(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double targetX,
             double targetY,
             RbfType rbfType = RbfType.ThinPlateSpline,
@@ -137,7 +137,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         /// <param name="targetY">Target Y coordinate.</param>
         /// <returns>Interpolated value.</returns>
         public static double NaturalNeighbor(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double targetX,
             double targetY)
         {
@@ -188,7 +188,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         /// <param name="tension">Tension parameter (0 = linear, 1 = tight).</param>
         /// <returns>Interpolated value.</returns>
         public static double SplineInterpolation(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double targetX,
             double targetY,
             double tension = 0.5)
@@ -243,8 +243,8 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         /// Performs Catmull-Rom spline interpolation.
         /// </summary>
         private static double CatmullRomSpline(
-            HeatMapDataPoint p0, HeatMapDataPoint p1,
-            HeatMapDataPoint p2, HeatMapDataPoint p3,
+            HEAT_MAP_DATA_POINT p0, HEAT_MAP_DATA_POINT p1,
+            HEAT_MAP_DATA_POINT p2, HEAT_MAP_DATA_POINT p3,
             double targetX, double targetY, double tension)
         {
             // Simplified 2D Catmull-Rom spline
@@ -295,7 +295,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         /// <param name="interpolationMethod">Interpolation method to use.</param>
         /// <returns>2D grid of interpolated values with adaptive cell sizes.</returns>
         public static AdaptiveGridResult AdaptiveInterpolation(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double minX, double maxX, double minY, double maxY,
             double baseCellSize,
             InterpolationMethodType interpolationMethod = InterpolationMethodType.InverseDistanceWeighting)

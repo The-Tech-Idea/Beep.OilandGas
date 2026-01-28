@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Data.PlungerLift;
 
@@ -64,13 +64,13 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to PlungerLiftWellProperties.
+        /// Maps PPDM39 WELL and related entities to PLUNGER_LIFT_WELL_PROPERTIES.
         /// </summary>
         /// <param name="well">The PPDM39 WELL entity.</param>
         /// <param name="tubular">Optional WELL_TUBULAR entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity.</param>
-        /// <returns>The mapped PlungerLiftWellProperties.</returns>
-        public PlungerLiftWellProperties MapToPlungerLiftWellProperties(
+        /// <returns>The mapped PLUNGER_LIFT_WELL_PROPERTIES.</returns>
+        public PLUNGER_LIFT_WELL_PROPERTIES MapToPlungerLiftWellProperties(
             WELL well,
             WELL_TUBULAR? tubular = null,
             WELL_PRESSURE? wellPressure = null)
@@ -92,7 +92,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getGasSpecificGravity = _getGasSpecificGravity ?? ValueRetrievers.GetGasSpecificGravityDecimal;
             var getLiquidProductionRate = _getLiquidProductionRate ?? ((w) => throw new InvalidOperationException("Liquid production rate not available. Provide getLiquidProductionRate function."));
 
-            return new PlungerLiftWellProperties
+            return new PLUNGER_LIFT_WELL_PROPERTIES
             {
                 WellDepth = getWellDepth(well, tubular),
                 TubingDiameter = getTubingDiameter(well, tubular),

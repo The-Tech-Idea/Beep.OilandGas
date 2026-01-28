@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -56,10 +56,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
         /// <summary>
         /// Creates a drilling permit application
         /// </summary>
-        public async Task<DrillingPermitApplication> CreateDrillingPermitApplicationAsync(
+        public async Task<DRILLING_PERMIT_APPLICATION> CreateDrillingPermitApplicationAsync(
             string fieldId,
             string wellId,
-            DrillingPermitApplication application,
+            DRILLING_PERMIT_APPLICATION application,
             string userId)
         {
             try
@@ -90,40 +90,40 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                 }
 
                 _logger?.LogInformation("Created drilling permit application {ApplicationId} for well {WellId}",
-                    application.ApplicationId, wellId);
+                    application.PERMIT_APPLICATION_ID, wellId);
 
                 // Map back to domain model
                 var mappedApplication = _applicationMapper.MapToDomain(result as APPLICATION);
-                // Convert to DrillingPermitApplication
-                return new DrillingPermitApplication
+                // Convert to DRILLING_PERMIT_APPLICATION
+                return new DRILLING_PERMIT_APPLICATION
                 {
-                    ApplicationId = mappedApplication.ApplicationId,
-                    ApplicationType = mappedApplication.ApplicationType,
-                    Status = mappedApplication.Status,
-                    Country = mappedApplication.Country,
-                    StateProvince = mappedApplication.StateProvince,
-                    RegulatoryAuthority = mappedApplication.RegulatoryAuthority,
-                    CreatedDate = mappedApplication.CreatedDate,
-                    SubmittedDate = mappedApplication.SubmittedDate,
-                    ReceivedDate = mappedApplication.ReceivedDate,
-                    DecisionDate = mappedApplication.DecisionDate,
-                    EffectiveDate = mappedApplication.EffectiveDate,
-                    ExpiryDate = mappedApplication.ExpiryDate,
-                    Decision = mappedApplication.Decision,
-                    ReferenceNumber = mappedApplication.ReferenceNumber,
-                    FeesDescription = mappedApplication.FeesDescription,
-                    FeesPaid = mappedApplication.FeesPaid,
-                    Remarks = mappedApplication.Remarks,
-                    SubmissionComplete = mappedApplication.SubmissionComplete,
-                    SubmissionDescription = mappedApplication.SubmissionDescription,
-                    Attachments = mappedApplication.Attachments,
-                    Areas = mappedApplication.Areas,
-                    Components = mappedApplication.Components,
-                    WellUWI = application.WellUWI, // Preserve from original
-                    TargetFormation = application.TargetFormation,
-                    ProposedDepth = application.ProposedDepth,
-                    DrillingMethod = application.DrillingMethod,
-                    SurfaceOwnerNotified = application.SurfaceOwnerNotified
+                    DRILLING_PERMIT_APPLICATION_ID = mappedApplication.APPLICATION_ID,
+                    APPLICATION_TYPE = mappedApplication.APPLICATION_TYPE,
+                    STATUS = mappedApplication.STATUS,
+                    COUNTRY = mappedApplication.COUNTRY,
+                    STATE_PROVINCE = mappedApplication.STATE_PROVINCE,
+                    REGULATORY_AUTHORITY = mappedApplication.REGULATORY_AUTHORITY,
+                    CREATED_DATE = mappedApplication.CREATED_DATE,
+                    SUBMITTED_DATE = mappedApplication.SUBMITTED_DATE,
+                    RECEIVED_DATE = mappedApplication.RECEIVED_DATE,
+                    DECISION_DATE = mappedApplication.DECISION_DATE,
+                    EFFECTIVE_DATE = mappedApplication.EFFECTIVE_DATE,
+                    EXPIRY_DATE = mappedApplication.EXPIRY_DATE,
+                    DECISION = mappedApplication.DECISION,
+                    REFERENCE_NUMBER = mappedApplication.REFERENCE_NUMBER,
+                    FEES_DESCRIPTION = mappedApplication.FEES_DESCRIPTION,
+                    FEES_PAID = mappedApplication.FEES_PAID,
+                    REMARKS = mappedApplication.REMARKS,
+                    SUBMISSION_COMPLETE = mappedApplication.SUBMISSION_COMPLETE,
+                    SUBMISSION_DESCRIPTION = mappedApplication.SUBMISSION_DESCRIPTION,
+                    ATTACHMENTS = mappedApplication.ATTACHMENTS,
+                    AREAS = mappedApplication.Areas,
+                    COMPONENTS = mappedApplication.Components,
+                    WELL_UWI = application.WELL_UWI, // Preserve from original
+                    TARGET_FORMATION = application.TARGET_FORMATION,
+                    PROPOSED_DEPTH = application.PROPOSED_DEPTH,
+                    DRILLING_METHOD = application.DRILLING_METHOD,
+                    SURFACE_OWNER_NOTIFIED = application.SURFACE_OWNER_NOTIFIED
                 };
             }
             catch (Exception ex)
@@ -136,10 +136,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
         /// <summary>
         /// Creates an environmental permit application
         /// </summary>
-        public async Task<EnvironmentalPermitApplication> CreateEnvironmentalPermitApplicationAsync(
+        public async Task<ENVIRONMENTAL_PERMIT_APPLICATION> CreateEnvironmentalPermitApplicationAsync(
             string fieldId,
             string? facilityId,
-            EnvironmentalPermitApplication application,
+            ENVIRONMENTAL_PERMIT_APPLICATION application,
             string userId)
         {
             try
@@ -169,39 +169,44 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                 }
 
                 _logger?.LogInformation("Created environmental permit application {ApplicationId}",
-                    application.ApplicationId);
+                    application.PERMIT_APPLICATION_ID);
 
                 // Map back to domain model
                 var mappedApplication = _applicationMapper.MapToDomain(result as APPLICATION);
-                // Convert to EnvironmentalPermitApplication
-                return new EnvironmentalPermitApplication
+                // Convert to ENVIRONMENTAL_PERMIT_APPLICATION
+                return new ENVIRONMENTAL_PERMIT_APPLICATION
                 {
-                    ApplicationId = mappedApplication.ApplicationId,
-                    ApplicationType = mappedApplication.ApplicationType,
-                    Status = mappedApplication.Status,
-                    Country = mappedApplication.Country,
-                    StateProvince = mappedApplication.StateProvince,
-                    RegulatoryAuthority = mappedApplication.RegulatoryAuthority,
-                    CreatedDate = mappedApplication.CreatedDate,
-                    SubmittedDate = mappedApplication.SubmittedDate,
-                    ReceivedDate = mappedApplication.ReceivedDate,
-                    DecisionDate = mappedApplication.DecisionDate,
-                    EffectiveDate = mappedApplication.EffectiveDate,
-                    ExpiryDate = mappedApplication.ExpiryDate,
-                    Decision = mappedApplication.Decision,
-                    ReferenceNumber = mappedApplication.ReferenceNumber,
-                    FeesDescription = mappedApplication.FeesDescription,
-                    FeesPaid = mappedApplication.FeesPaid,
-                    Remarks = mappedApplication.Remarks,
-                    SubmissionComplete = mappedApplication.SubmissionComplete,
-                    SubmissionDescription = mappedApplication.SubmissionDescription,
-                    Attachments = mappedApplication.Attachments,
-                    Areas = mappedApplication.Areas,
-                    Components = mappedApplication.Components,
-                    EnvironmentalPermitType = application.EnvironmentalPermitType, // Preserve from original
-                    WasteType = application.WasteType,
-                    WasteVolume = application.WasteVolume,
-                    NORMInvolved = application.NORMInvolved
+                    ENVIRONMENTAL_PERMIT_APPLICATION_ID = mappedApplication.APPLICATION_ID,
+                    APPLICATION_TYPE = mappedApplication.APPLICATION_TYPE,
+                    STATUS = mappedApplication.STATUS,
+                    COUNTRY = mappedApplication.COUNTRY,
+                    STATE_PROVINCE = mappedApplication.STATE_PROVINCE,
+                    REGULATORY_AUTHORITY = mappedApplication.REGULATORY_AUTHORITY,
+                    CREATED_DATE = mappedApplication.CREATED_DATE,
+                    SUBMITTED_DATE = mappedApplication.SUBMITTED_DATE,
+                    RECEIVED_DATE = mappedApplication.RECEIVED_DATE,
+                    DECISION_DATE = mappedApplication.DECISION_DATE,
+                    EFFECTIVE_DATE = mappedApplication.EFFECTIVE_DATE,
+                    EXPIRY_DATE = mappedApplication.EXPIRY_DATE,
+                    DECISION = mappedApplication.DECISION,
+                    REFERENCE_NUMBER = mappedApplication.REFERENCE_NUMBER,
+                    FEES_DESCRIPTION = mappedApplication.FEES_DESCRIPTION,
+                    FEES_PAID = mappedApplication.FEES_PAID,
+                    REMARKS = mappedApplication.REMARKS,
+                    SUBMISSION_COMPLETE = mappedApplication.SUBMISSION_COMPLETE,
+                    SUBMISSION_DESCRIPTION = mappedApplication.SUBMISSION_DESCRIPTION,
+                    ATTACHMENTS = mappedApplication.ATTACHMENTS,
+                    AREAS = mappedApplication.Areas,
+                    COMPONENTS = mappedApplication.Components,
+                    WELL_UWI = application.WELL_UWI, // Preserve from original
+                    TARGET_FORMATION = application.TARGET_FORMATION,
+                    PROPOSED_DEPTH = application.PROPOSED_DEPTH,
+                    DRILLING_METHOD = application.DRILLING_METHOD,
+                    SURFACE_OWNER_NOTIFIED = application.SURFACE_OWNER_NOTIFIED,
+                    ENVIRONMENTAL_PERMIT_TYPE = application.ENVIRONMENTAL_PERMIT_TYPE, // Preserve from original
+                    WASTE_TYPE = application.WASTE_TYPE,
+                    WASTE_VOLUME = application.WASTE_VOLUME,
+                    NORMINVOLVED = application.NORMINVOLVED
                 };
             }
             catch (Exception ex)
@@ -214,11 +219,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
         /// <summary>
         /// Creates an injection permit application
         /// </summary>
-        public async Task<InjectionPermitApplication> CreateInjectionPermitApplicationAsync(
+        public async Task<INJECTION_PERMIT_APPLICATION> CreateInjectionPermitApplicationAsync(
             string fieldId,
             string? wellId,
             string? facilityId,
-            InjectionPermitApplication application,
+            INJECTION_PERMIT_APPLICATION application,
             string userId)
         {
             try
@@ -252,40 +257,41 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                 }
 
                 _logger?.LogInformation("Created injection permit application {ApplicationId}",
-                    application.ApplicationId);
+                    application.INJECTION_PERMIT_APPLICATION_ID);
 
                 // Map back to domain model
                 var mappedApplication = _applicationMapper.MapToDomain(result as APPLICATION);
-                // Convert to InjectionPermitApplication
-                return new InjectionPermitApplication
+                // Convert to INJECTION_PERMIT_APPLICATION
+                return new INJECTION_PERMIT_APPLICATION
                 {
-                    ApplicationId = mappedApplication.ApplicationId,
-                    ApplicationType = mappedApplication.ApplicationType,
-                    Status = mappedApplication.Status,
-                    Country = mappedApplication.Country,
-                    StateProvince = mappedApplication.StateProvince,
-                    RegulatoryAuthority = mappedApplication.RegulatoryAuthority,
-                    CreatedDate = mappedApplication.CreatedDate,
-                    SubmittedDate = mappedApplication.SubmittedDate,
-                    ReceivedDate = mappedApplication.ReceivedDate,
-                    DecisionDate = mappedApplication.DecisionDate,
-                    EffectiveDate = mappedApplication.EffectiveDate,
-                    ExpiryDate = mappedApplication.ExpiryDate,
-                    Decision = mappedApplication.Decision,
-                    ReferenceNumber = mappedApplication.ReferenceNumber,
-                    FeesDescription = mappedApplication.FeesDescription,
-                    FeesPaid = mappedApplication.FeesPaid,
-                    Remarks = mappedApplication.Remarks,
-                    SubmissionComplete = mappedApplication.SubmissionComplete,
-                    SubmissionDescription = mappedApplication.SubmissionDescription,
-                    Attachments = mappedApplication.Attachments,
-                    Areas = mappedApplication.Areas,
-                    Components = mappedApplication.Components,
-                    InjectionType = application.InjectionType, // Preserve from original
-                    InjectionZone = application.InjectionZone,
-                    InjectionFluid = application.InjectionFluid,
-                    MaximumInjectionPressure = application.MaximumInjectionPressure,
-                    MaximumInjectionRate = application.MaximumInjectionRate
+                    INJECTION_PERMIT_APPLICATION_ID = mappedApplication.APPLICATION_ID,
+                    APPLICATION_TYPE = mappedApplication.APPLICATION_TYPE,
+                    STATUS = mappedApplication.STATUS,
+                    COUNTRY = mappedApplication.COUNTRY,
+                    STATE_PROVINCE = mappedApplication.STATE_PROVINCE,
+                    REGULATORY_AUTHORITY = mappedApplication.REGULATORY_AUTHORITY,
+                    CREATED_DATE = mappedApplication.CREATED_DATE,
+                    SUBMITTED_DATE = mappedApplication.SUBMITTED_DATE,
+                    RECEIVED_DATE = mappedApplication.RECEIVED_DATE,
+                    DECISION_DATE = mappedApplication.DECISION_DATE,
+                    EFFECTIVE_DATE = mappedApplication.EFFECTIVE_DATE,
+                    EXPIRY_DATE = mappedApplication.EXPIRY_DATE,
+                    DECISION = mappedApplication.DECISION,
+                    REFERENCE_NUMBER = mappedApplication.REFERENCE_NUMBER,
+                    FEES_DESCRIPTION = mappedApplication.FEES_DESCRIPTION,
+                    FEES_PAID = mappedApplication.FEES_PAID,
+                    REMARKS = mappedApplication.REMARKS,
+                    SUBMISSION_COMPLETE = mappedApplication.SUBMISSION_COMPLETE,
+                    SUBMISSION_DESCRIPTION = mappedApplication.SUBMISSION_DESCRIPTION,
+                    ATTACHMENTS = mappedApplication.ATTACHMENTS,
+                    AREAS = mappedApplication.Areas,
+                    COMPONENTS = mappedApplication.Components,
+                    WELL_UWI = application.WELL_UWI, // Preserve from original
+                    INJECTION_TYPE = application.INJECTION_TYPE, // Preserve from original
+                    INJECTION_ZONE = application.INJECTION_ZONE,
+                    INJECTION_FLUID = application.INJECTION_FLUID,
+                    MAXIMUM_INJECTION_PRESSURE = application.MAXIMUM_INJECTION_PRESSURE,
+                    MAXIMUM_INJECTION_RATE = application.MAXIMUM_INJECTION_RATE
                 };
             }
             catch (Exception ex)
@@ -298,7 +304,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
         /// <summary>
         /// Gets all permit applications for a field
         /// </summary>
-        public async Task<List<PermitApplication>> GetPermitApplicationsForFieldAsync(
+        public async Task<List<PERMIT_APPLICATION>> GetPermitApplicationsForFieldAsync(
             string fieldId,
             PermitApplicationType? applicationType = null,
             PermitApplicationStatus? status = null)
@@ -327,7 +333,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                 if (applicationIds.Count == 0)
                 {
                     _logger?.LogInformation("No permit applications found for field {FieldId}", fieldId);
-                    return new List<PermitApplication>();
+                    return new List<PERMIT_APPLICATION>();
                 }
 
                 // Now get the applications - query each application ID individually and filter in memory
@@ -383,7 +389,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
         /// <summary>
         /// Gets a permit application by ID
         /// </summary>
-        public async Task<PermitApplication?> GetPermitApplicationAsync(string applicationId)
+        public async Task<PERMIT_APPLICATION?> GetPermitApplicationAsync(string applicationId)
         {
             try
             {
@@ -423,7 +429,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
         /// <summary>
         /// Updates permit application status
         /// </summary>
-        public async Task<PermitApplication> UpdatePermitApplicationStatusAsync(
+        public async Task<PERMIT_APPLICATION> UpdatePermitApplicationStatusAsync(
             string applicationId,
             PermitApplicationStatus newStatus,
             DateTime? decisionDate = null,
@@ -480,7 +486,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
         /// <summary>
         /// Submits a permit application
         /// </summary>
-        public async Task<PermitApplication> SubmitPermitApplicationAsync(
+        public async Task<PERMIT_APPLICATION> SubmitPermitApplicationAsync(
             string applicationId,
             string userId)
         {

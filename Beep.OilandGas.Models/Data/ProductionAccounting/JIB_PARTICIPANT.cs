@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -55,5 +55,14 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             get { return this.ROW_IDValue; }
             set { SetProperty(ref ROW_IDValue, value); }
         }
+
+        private string PARTICIPANT_IDValue;
+        public string PARTICIPANT_ID
+        {
+            get { return this.PARTICIPANT_IDValue; }
+            set { SetProperty(ref PARTICIPANT_IDValue, value); }
+        }
+
+     
     }
 }

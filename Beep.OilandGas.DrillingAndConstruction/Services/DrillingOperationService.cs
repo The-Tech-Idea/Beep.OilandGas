@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,6 +6,7 @@ using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data.Drilling;
 
 
 namespace Beep.OilandGas.DrillingAndConstruction.Services
@@ -97,7 +98,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
 
         #endregion
 
-        public async Task<List<DrillingOperation>> GetDrillingOperationsAsync(string? wellUWI = null)
+        public async Task<List<DRILLING_OPERATION>> GetDrillingOperationsAsync(string? wellUWI = null)
         {
             _logger?.LogInformation("Getting drilling operations for well UWI: {WellUWI}", wellUWI ?? "all");
 
@@ -124,7 +125,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
                 wells = ConvertToList<WELL>(wellEntities);
             }
 
-            var operations = new List<DrillingOperation>();
+            var operations = new List<DRILLING_OPERATION>();
             var drillReportRepo = await GetDrillReportRepositoryAsync();
 
             foreach (var well in wells)
@@ -145,7 +146,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return operations;
         }
 
-        public async Task<DrillingOperation?> GetDrillingOperationAsync(string operationId)
+        public async Task<DRILLING_OPERATION?> GetDrillingOperationAsync(string operationId)
         {
             if (string.IsNullOrWhiteSpace(operationId))
             {
@@ -183,7 +184,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return MapToDrillingOperationDto(well, reports);
         }
 
-        public async Task<DrillingOperation> CreateDrillingOperationAsync(CreateDrillingOperation createDto)
+        public async Task<DRILLING_OPERATION> CreateDrillingOperationAsync(CREATE_DRILLING_OPERATION createDto)
         {
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
@@ -238,7 +239,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return MapToDrillingOperationDto(well, new List<WELL_DRILL_REPORT> { report });
         }
 
-        public async Task<DrillingOperation> UpdateDrillingOperationAsync(string operationId, UpdateDrillingOperation updateDto)
+        public async Task<DRILLING_OPERATION> UpdateDrillingOperationAsync(string operationId, UpdateDrillingOperation updateDto)
         {
             if (string.IsNullOrWhiteSpace(operationId))
                 throw new ArgumentException("Operation ID cannot be null or empty.", nameof(operationId));
@@ -288,12 +289,12 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return MapToDrillingOperationDto(well, reports);
         }
 
-        public async Task<List<DrillingReport>> GetDrillingReportsAsync(string operationId)
+        public async Task<List<DRILLING_REPORT>> GetDrillingReportsAsync(string operationId)
         {
             if (string.IsNullOrWhiteSpace(operationId))
             {
                 _logger?.LogWarning("GetDrillingReportsAsync called with null or empty operationId");
-                return new List<DrillingReport>();
+                return new List<DRILLING_REPORT>();
             }
 
             _logger?.LogInformation("Getting drilling reports for operation UWI: {OperationId}", operationId);
@@ -307,12 +308,12 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             var reportEntities = await drillReportRepo.GetAsync(filters);
             var reports = ConvertToList<WELL_DRILL_REPORT>(reportEntities);
 
-            var result = reports.Select(r => new DrillingReport
+            var result = reports.Select(r => new DRILLING_REPORT
             {
-                ReportId = r.REPORT_ID ?? string.Empty,
-                OperationId = operationId,
-                ReportDate = r.EFFECTIVE_DATE.Value,
-                Remarks = r.REMARK
+                REPORT_ID = r.REPORT_ID ?? string.Empty,
+                OPERATION_ID = operationId,
+                REPORT_DATE = r.EFFECTIVE_DATE.Value,
+                REMARK = r.REMARK
             }).ToList();
 
             _logger?.LogInformation("Retrieved {Count} drilling reports for operation UWI: {OperationId}", result.Count, operationId);
@@ -320,7 +321,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             return result;
         }
 
-        public async Task<DrillingReport> CreateDrillingReportAsync(string operationId, CreateDrillingReport createDto)
+        public async Task<DRILLING_REPORT> CreateDrillingReportAsync(string operationId, CreateDrillingReport createDto)
         {
             if (string.IsNullOrWhiteSpace(operationId))
                 throw new ArgumentException("Operation ID cannot be null or empty.", nameof(operationId));
@@ -337,7 +338,7 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
                 UWI = operationId,
                 ACTIVE_IND = "Y",
                 EFFECTIVE_DATE = createDto.ReportDate,
-                REMARK = createDto.Remarks
+                REMARK = createDto.REMARK
             };
 
             await drillReportRepo.InsertAsync(report, "SYSTEM");
@@ -345,15 +346,15 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
             _logger?.LogInformation("Successfully created drilling report {ReportId} for operation UWI: {OperationId}", 
                 report.REPORT_ID, operationId);
 
-            return new DrillingReport
+            return new DRILLING_REPORT
             {
-                ReportId = report.REPORT_ID ?? string.Empty,
-                OperationId = operationId,
-                ReportDate = createDto.ReportDate,
-                Depth = createDto.Depth,
-                Activity = createDto.Activity,
-                Hours = createDto.Hours,
-                Remarks = createDto.Remarks
+                REPORT_ID = report.REPORT_ID ?? string.Empty,
+                OPERATION_ID = operationId,
+                REPORT_DATE = createDto.ReportDate,
+                DEPTH = createDto.Depth,
+                ACTIVITY = createDto.Activity,
+                HOURS = createDto.Hours,
+                REMARKS = createDto.Remarks
             };
         }
 
@@ -644,24 +645,24 @@ namespace Beep.OilandGas.DrillingAndConstruction.Services
 
         #endregion
 
-        private DrillingOperation MapToDrillingOperationDto(WELL well, List<WELL_DRILL_REPORT> reports)
+        private DRILLING_OPERATION MapToDrillingOperationDto(WELL well, List<WELL_DRILL_REPORT> reports)
         {
             var firstReport = reports.FirstOrDefault();
-            return new DrillingOperation
+            return new DRILLING_OPERATION
             {
-                OperationId = well.UWI ?? string.Empty,
-                WellUWI = well.UWI ?? string.Empty,
-                WellName = well.UWI ?? string.Empty,
-                SpudDate = firstReport?.EFFECTIVE_DATE,
-                CompletionDate = firstReport?.END_DATE,
-                Status = well.ACTIVE_IND == "Y" ? "Active" : "Inactive",
-                TargetDepth = well.BASE_DEPTH,
-                Reports = reports.Select(r => new DrillingReport
+                OPERATION_ID = well.UWI ?? string.Empty,
+                WELL_UWI = well.UWI ?? string.Empty,
+                WELL_NAME = well.WELL_NAME ?? string.Empty,
+                SPUD_DATE = firstReport?.EFFECTIVE_DATE,
+                COMPLETION_DATE = firstReport?.END_DATE,
+                STATUS = well.ACTIVE_IND == "Y" ? "Active" : "Inactive",
+                TARGET_DEPTH = well.BASE_DEPTH,
+                Reports = reports.Select(r => new DRILLING_REPORT
                 {
-                    ReportId = r.REPORT_ID ?? string.Empty,
-                    OperationId = well.UWI ?? string.Empty,
-                    ReportDate = r.EFFECTIVE_DATE.Value,
-                    Remarks = r.REMARK
+                    REPORT_ID = r.REPORT_ID ?? string.Empty,
+                    OPERATION_ID = well.UWI ?? string.Empty,
+                    REPORT_DATE = r.EFFECTIVE_DATE.Value,
+                    REMARKS = r.REMARK
                 }).ToList()
             };
         }

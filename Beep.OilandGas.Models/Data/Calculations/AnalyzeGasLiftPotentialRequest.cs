@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Data;
 
@@ -9,10 +9,10 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Well properties for gas lift analysis
         /// </summary>
-        private GasLiftWellProperties WellPropertiesValue = null!;
+        private GAS_LIFT_WELL_PROPERTIES WellPropertiesValue = null!;
 
         [Required(ErrorMessage = "WellProperties are required")]
-        public GasLiftWellProperties WellProperties
+        public GAS_LIFT_WELL_PROPERTIES WellProperties
 
         {
 

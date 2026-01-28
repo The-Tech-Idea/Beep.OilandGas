@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,19 +11,19 @@ namespace Beep.OilandGas.Client.App.Services.Pumps
     {
         #region Plunger Lift
 
-        public async Task<PlungerLiftPerformanceResult> DesignPlungerLiftAsync(PlungerLiftWellProperties request, CancellationToken cancellationToken = default)
+        public async Task<PlungerLiftPerformanceResult> DesignPlungerLiftAsync(PLUNGER_LIFT_WELL_PROPERTIES request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<PlungerLiftWellProperties, PlungerLiftPerformanceResult>("/api/plungerlift/design", request, cancellationToken);
+                return await PostAsync<PLUNGER_LIFT_WELL_PROPERTIES, PlungerLiftPerformanceResult>("/api/plungerlift/design", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<PlungerLiftCycleResult> AnalyzePlungerLiftPerformanceAsync(PLUNGER_LIFT_WELL_PROPERTIES request, CancellationToken cancellationToken = default)
+        public async Task<PLUNGER_LIFT_CYCLE_RESULT> AnalyzePlungerLiftPerformanceAsync(PLUNGER_LIFT_WELL_PROPERTIES request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<PLUNGER_LIFT_WELL_PROPERTIES, PlungerLiftCycleResult>("/api/plungerlift/analyze-performance", request, cancellationToken);
+                return await PostAsync<PLUNGER_LIFT_WELL_PROPERTIES, PLUNGER_LIFT_CYCLE_RESULT>("/api/plungerlift/analyze-performance", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

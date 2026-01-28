@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.LeaseAcquisition.Services;
@@ -107,7 +107,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
                     RoyaltyOwnerId = $"ROYOWNER-{Guid.NewGuid().ToString().Substring(0, 8)}",
                     LeaseId = leaseId,
                     OwnerName = details.OwnerName,
-                    RoyaltyInterest = details.RoyaltyInterest,
+                    ROYALTY_INTEREST = details.ROYALTY_INTEREST,
                     ManagementStatus = "ACTIVE"
                 };
 

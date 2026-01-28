@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.LeaseAcquisition.Services;
@@ -240,7 +240,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Method 12: Calculates royalty and revenue distribution
         /// </summary>
-        public async Task<RoyaltyCalculation> CalculateRoyaltyDistributionAsync(string leaseId, RoyaltyRequest request)
+        public async Task<ROYALTY_CALCULATION> CalculateRoyaltyDistributionAsync(string leaseId, RoyaltyRequest request)
         {
             if (string.IsNullOrWhiteSpace(leaseId))
                 throw new ArgumentNullException(nameof(leaseId));
@@ -253,7 +253,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
 
                 var royaltyAmount = request.ProductionVolume * request.ProductPrice * 0.1875m;
                 
-                var calculation = new RoyaltyCalculation
+                var calculation = new ROYALTY_CALCULATION
                 {
                     LeaseId = leaseId,
                     ProductionVolume = request.ProductionVolume,

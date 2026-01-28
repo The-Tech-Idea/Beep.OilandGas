@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 using Beep.OilandGas.OilProperties.Constants;
 using Beep.OilandGas.OilProperties.Exceptions;
@@ -14,40 +14,40 @@ namespace Beep.OilandGas.OilProperties.Validation
         /// <summary>
         /// Validates oil property conditions.
         /// </summary>
-        public static void ValidateOilPropertyConditions(OilPropertyConditions conditions)
+        public static void ValidateOilPropertyConditions(OIL_PROPERTY_CONDITIONS conditions)
         {
             if (conditions == null)
                 throw new ArgumentNullException(nameof(conditions));
 
-            if (conditions.Pressure <= 0)
+            if (conditions.PRESSURE <= 0)
                 throw new InvalidOilPropertyConditionsException("Pressure must be greater than zero.");
 
-            if (conditions.Temperature <= 0)
+            if (conditions.TEMPERATURE <= 0)
                 throw new InvalidOilPropertyConditionsException("Temperature must be greater than zero.");
 
-            if (conditions.ApiGravity < OilPropertyConstants.MinimumApiGravity || conditions.ApiGravity > OilPropertyConstants.MaximumApiGravity)
+            if (conditions.API_GRAVITY < OilPropertyConstants.MinimumApiGravity || conditions.API_GRAVITY > OilPropertyConstants.MaximumApiGravity)
                 throw new OilPropertyParameterOutOfRangeException(
-                    nameof(conditions.ApiGravity),
+                    nameof(conditions.API_GRAVITY),
                     $"API gravity must be between {OilPropertyConstants.MinimumApiGravity} and {OilPropertyConstants.MaximumApiGravity}.");
 
-            if (conditions.GasSpecificGravity <= 0)
+            if (conditions.GAS_SPECIFIC_GRAVITY <= 0)
                 throw new InvalidOilPropertyConditionsException("Gas specific gravity must be greater than zero.");
 
-            if (conditions.SolutionGasOilRatio.HasValue && 
-                (conditions.SolutionGasOilRatio.Value < OilPropertyConstants.MinimumSolutionGOR || 
-                 conditions.SolutionGasOilRatio.Value > OilPropertyConstants.MaximumSolutionGOR))
+            if (conditions.SOLUTION_GAS_OIL_RATIO.HasValue && 
+                (conditions.SOLUTION_GAS_OIL_RATIO.Value < OilPropertyConstants.MinimumSolutionGOR || 
+                 conditions.SOLUTION_GAS_OIL_RATIO.Value > OilPropertyConstants.MaximumSolutionGOR))
             {
                 throw new OilPropertyParameterOutOfRangeException(
-                    nameof(conditions.SolutionGasOilRatio),
+                    nameof(conditions.SOLUTION_GAS_OIL_RATIO),
                     $"Solution GOR must be between {OilPropertyConstants.MinimumSolutionGOR} and {OilPropertyConstants.MaximumSolutionGOR} scf/STB.");
             }
 
-            if (conditions.BubblePointPressure.HasValue && 
-                (conditions.BubblePointPressure.Value < OilPropertyConstants.MinimumBubblePointPressure || 
-                 conditions.BubblePointPressure.Value > OilPropertyConstants.MaximumBubblePointPressure))
+            if (conditions.BUBBLE_POINT_PRESSURE.HasValue && 
+                (conditions.BUBBLE_POINT_PRESSURE.Value < OilPropertyConstants.MinimumBubblePointPressure || 
+                 conditions.BUBBLE_POINT_PRESSURE.Value > OilPropertyConstants.MaximumBubblePointPressure))
             {
                 throw new OilPropertyParameterOutOfRangeException(
-                    nameof(conditions.BubblePointPressure),
+                    nameof(conditions.BUBBLE_POINT_PRESSURE),
                     $"Bubble point pressure must be between {OilPropertyConstants.MinimumBubblePointPressure} and {OilPropertyConstants.MaximumBubblePointPressure} psia.");
             }
         }

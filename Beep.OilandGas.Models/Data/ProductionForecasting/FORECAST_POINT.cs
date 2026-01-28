@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -88,5 +88,19 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
         }
 
         public DateTime FORECAST_DATE { get; set; }
+
+        private decimal? DECLINE_EXPONENTValue;
+        public decimal? DECLINE_EXPONENT
+        {
+            get { return this.DECLINE_EXPONENTValue; }
+            set { SetProperty(ref DECLINE_EXPONENTValue, value); }
+        }
+
+        private string FORECAST_METHODValue;
+        public string FORECAST_METHOD
+        {
+            get { return this.FORECAST_METHODValue; }
+            set { SetProperty(ref FORECAST_METHODValue, value); }
+        }
     }
 }

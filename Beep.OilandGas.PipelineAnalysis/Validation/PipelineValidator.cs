@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.PipelineAnalysis.Exceptions;
 
@@ -12,73 +12,73 @@ namespace Beep.OilandGas.PipelineAnalysis.Validation
         /// <summary>
         /// Validates pipeline properties.
         /// </summary>
-        public static void ValidatePipelineProperties(PipelineProperties pipeline)
+        public static void ValidatePipelineProperties(PIPELINE_PROPERTIES pipeline)
         {
             if (pipeline == null)
                 throw new ArgumentNullException(nameof(pipeline));
 
-            if (pipeline.Diameter <= 0)
+            if (pipeline.DIAMETER <= 0)
                 throw new InvalidPipelinePropertiesException("Pipeline diameter must be greater than zero.");
 
-            if (pipeline.Length <= 0)
+            if (pipeline.LENGTH <= 0)
                 throw new InvalidPipelinePropertiesException("Pipeline length must be greater than zero.");
 
-            if (pipeline.Roughness < 0)
+            if (pipeline.ROUGHNESS < 0)
                 throw new InvalidPipelinePropertiesException("Pipeline roughness cannot be negative.");
 
-            if (pipeline.InletPressure <= 0)
+            if (pipeline.INLET_PRESSURE <= 0)
                 throw new InvalidPipelinePropertiesException("Inlet pressure must be greater than zero.");
 
-            if (pipeline.OutletPressure < 0)
+            if (pipeline.OUTLET_PRESSURE < 0)
                 throw new InvalidPipelinePropertiesException("Outlet pressure cannot be negative.");
 
-            if (pipeline.OutletPressure >= pipeline.InletPressure)
+            if (pipeline.OUTLET_PRESSURE >= pipeline.INLET_PRESSURE)
                 throw new InvalidPipelinePropertiesException("Outlet pressure must be less than inlet pressure for flow.");
 
-            if (pipeline.AverageTemperature <= 0)
+            if (pipeline.AVERAGE_TEMPERATURE <= 0)
                 throw new InvalidPipelinePropertiesException("Average temperature must be greater than zero.");
         }
 
         /// <summary>
         /// Validates gas pipeline flow properties.
         /// </summary>
-        public static void ValidateGasFlowProperties(GasPipelineFlowProperties flowProperties)
+        public static void ValidateGasFlowProperties(GAS_PIPELINE_FLOW_PROPERTIES flowProperties)
         {
             if (flowProperties == null)
                 throw new ArgumentNullException(nameof(flowProperties));
 
-            ValidatePipelineProperties(flowProperties.Pipeline);
+            ValidatePipelineProperties(flowProperties.PIPELINE);
 
-            if (flowProperties.GasFlowRate < 0)
+            if (flowProperties.GAS_FLOW_RATE < 0)
                 throw new InvalidFlowPropertiesException("Gas flow rate cannot be negative.");
 
-            if (flowProperties.GasSpecificGravity <= 0)
+            if (flowProperties.GAS_SPECIFIC_GRAVITY <= 0)
                 throw new InvalidFlowPropertiesException("Gas specific gravity must be greater than zero.");
 
-            if (flowProperties.BasePressure <= 0)
+            if (flowProperties.BASE_PRESSURE <= 0)
                 throw new InvalidFlowPropertiesException("Base pressure must be greater than zero.");
 
-            if (flowProperties.BaseTemperature <= 0)
+            if (flowProperties.BASE_TEMPERATURE <= 0)
                 throw new InvalidFlowPropertiesException("Base temperature must be greater than zero.");
         }
 
         /// <summary>
         /// Validates liquid pipeline flow properties.
         /// </summary>
-        public static void ValidateLiquidFlowProperties(LiquidPipelineFlowProperties flowProperties)
+        public static void ValidateLiquidFlowProperties(LIQUID_PIPELINE_FLOW_PROPERTIES flowProperties)
         {
             if (flowProperties == null)
                 throw new ArgumentNullException(nameof(flowProperties));
 
-            ValidatePipelineProperties(flowProperties.Pipeline);
+            ValidatePipelineProperties(flowProperties.PIPELINE);
 
-            if (flowProperties.LiquidFlowRate < 0)
+            if (flowProperties.LIQUID_FLOW_RATE < 0)
                 throw new InvalidFlowPropertiesException("Liquid flow rate cannot be negative.");
 
-            if (flowProperties.LiquidSpecificGravity <= 0)
+            if (flowProperties.LIQUID_SPECIFIC_GRAVITY <= 0)
                 throw new InvalidFlowPropertiesException("Liquid specific gravity must be greater than zero.");
 
-            if (flowProperties.LiquidViscosity <= 0)
+            if (flowProperties.LIQUID_VISCOSITY <= 0)
                 throw new InvalidFlowPropertiesException("Liquid viscosity must be greater than zero.");
         }
     }

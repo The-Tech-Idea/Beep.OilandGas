@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
@@ -9,35 +9,35 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
     {
         #region Choke
 
-        public async Task<ChokeFlowResult> CalculateDownholeChokeFlowAsync(GasChokeProperties request, CancellationToken cancellationToken = default)
+        public async Task<CHOKE_FLOW_RESULT> CalculateDownholeChokeFlowAsync(GAS_CHOKE_PROPERTIES request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasChokeProperties, ChokeFlowResult>("/api/choke/downhole/flow", request, cancellationToken);
+                return await PostAsync<GAS_CHOKE_PROPERTIES, CHOKE_FLOW_RESULT>("/api/choke/downhole/flow", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<ChokeFlowResult> CalculateUpholeChokeFlowAsync(GasChokeProperties request, CancellationToken cancellationToken = default)
+        public async Task<CHOKE_FLOW_RESULT> CalculateUpholeChokeFlowAsync(GAS_CHOKE_PROPERTIES request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasChokeProperties, ChokeFlowResult>("/api/choke/uphole/flow", request, cancellationToken);
+                return await PostAsync<GAS_CHOKE_PROPERTIES, CHOKE_FLOW_RESULT>("/api/choke/uphole/flow", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<ChokeFlowResult> CalculateDownstreamPressureAsync(GasChokeProperties request, CancellationToken cancellationToken = default)
+        public async Task<CHOKE_FLOW_RESULT> CalculateDownstreamPressureAsync(GAS_CHOKE_PROPERTIES request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasChokeProperties, ChokeFlowResult>("/api/choke/downstream-pressure", request, cancellationToken);
+                return await PostAsync<GAS_CHOKE_PROPERTIES, CHOKE_FLOW_RESULT>("/api/choke/downstream-pressure", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<ChokeFlowResult> CalculateRequiredChokeSizeAsync(GasChokeProperties request, CancellationToken cancellationToken = default)
+        public async Task<CHOKE_FLOW_RESULT> CalculateRequiredChokeSizeAsync(GAS_CHOKE_PROPERTIES request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasChokeProperties, ChokeFlowResult>("/api/choke/size", request, cancellationToken);
+                return await PostAsync<GAS_CHOKE_PROPERTIES, CHOKE_FLOW_RESULT>("/api/choke/size", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

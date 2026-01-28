@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
@@ -23,7 +23,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Royalty interest.
         /// </summary>
-        RoyaltyInterest,
+        ROYALTY_INTEREST,
 
         /// <summary>
         /// Production payment.

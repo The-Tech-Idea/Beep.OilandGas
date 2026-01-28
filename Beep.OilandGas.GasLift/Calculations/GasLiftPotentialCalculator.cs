@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.GasProperties.Calculations;
+using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.GasLift.Calculations
 {
@@ -19,8 +20,8 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// <param name="maxGasInjectionRate">Maximum gas injection rate in Mscf/day.</param>
         /// <param name="numberOfPoints">Number of analysis points.</param>
         /// <returns>Gas lift potential analysis results.</returns>
-        public static GasLiftPotentialResult AnalyzeGasLiftPotential(
-            GasLiftWellProperties wellProperties,
+        public static GAS_LIFT_WELL_PROPERTIES AnalyzeGasLiftPotential(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal minGasInjectionRate = 100m,
             decimal maxGasInjectionRate = 5000m,
             int numberOfPoints = 50)
@@ -28,7 +29,7 @@ namespace Beep.OilandGas.GasLift.Calculations
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
 
-            var result = new GasLiftPotentialResult();
+            var result = new GAS_LIFT_WELL_PROPERTIES();
 
             decimal gasInjectionStep = (maxGasInjectionRate - minGasInjectionRate) / numberOfPoints;
 
@@ -41,14 +42,14 @@ namespace Beep.OilandGas.GasLift.Calculations
                     wellProperties, gasInjectionRate);
 
                 // Calculate gas-liquid ratio
-                decimal totalGasRate = wellProperties.GasOilRatio * productionRate / 1000m + gasInjectionRate;
+                decimal totalGasRate = (decimal)(wellProperties.GAS_OIL_RATIO * productionRate / 1000m + gasInjectionRate);
                 decimal gasLiquidRatio = totalGasRate * 1000m / productionRate;
 
                 // Calculate bottom hole pressure
                 decimal bottomHolePressure = CalculateBottomHolePressure(
                     wellProperties, gasInjectionRate, productionRate);
 
-                result.PerformancePoints.Add(new GasLiftPerformancePoint
+                result.PERFORMANCE_POINTS.Add(new GasLiftPerformancePoint
                 {
                     GasInjectionRate = gasInjectionRate,
                     ProductionRate = productionRate,
@@ -58,13 +59,13 @@ namespace Beep.OilandGas.GasLift.Calculations
             }
 
             // Find optimal point (maximum production rate)
-            var optimalPoint = result.PerformancePoints
+            var optimalPoint = result.PERFORMANCE_POINTS
                 .OrderByDescending(p => p.ProductionRate)
                 .First();
 
-            result.OptimalGasInjectionRate = optimalPoint.GasInjectionRate;
-            result.MaximumProductionRate = optimalPoint.ProductionRate;
-            result.OptimalGasLiquidRatio = optimalPoint.GasLiquidRatio;
+            result.OPTIMAL_GAS_INJECTION_RATE = optimalPoint.GasInjectionRate;
+            result.MAXIMUM_PRODUCTION_RATE = optimalPoint.ProductionRate;
+            result.OPTIMAL_GAS_LIQUID_RATIO = optimalPoint.GasLiquidRatio;
 
             return result;
         }
@@ -73,14 +74,14 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// Calculates production rate for given gas injection rate.
         /// </summary>
         private static decimal CalculateProductionRate(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionRate)
         {
             // Simplified gas lift production calculation
             // Based on gas lift performance curve
 
             // Base production without gas lift
-            decimal baseProduction = wellProperties.DesiredProductionRate * 0.3m;
+            decimal baseProduction = (decimal)(wellProperties.DESIRED_PRODUCTION_RATE * 0.3m);
 
             // Gas lift effect (simplified)
             decimal gasLiftEffect = CalculateGasLiftEffect(
@@ -104,59 +105,59 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// Calculates gas lift effect on production.
         /// </summary>
         private static decimal CalculateGasLiftEffect(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionRate)
         {
             // Gas lift effect increases production up to optimal point
             // Simplified model: effect = a * GLR - b * GLR²
 
-            decimal gasLiquidRatio = gasInjectionRate * 1000m / wellProperties.DesiredProductionRate;
+            decimal gasLiquidRatio = (decimal)(gasInjectionRate * 1000m / wellProperties.DESIRED_PRODUCTION_RATE);
 
             decimal a = 2.0m; // Coefficient
             decimal b = 0.0001m; // Coefficient
 
             decimal effect = a * gasLiquidRatio - b * gasLiquidRatio * gasLiquidRatio;
 
-            return Math.Max(0m, effect * wellProperties.DesiredProductionRate / 100m);
+            return Math.Max(0m, (decimal)(effect * wellProperties.DESIRED_PRODUCTION_RATE / 100m));
         }
 
         /// <summary>
         /// Calculates bottom hole pressure with gas lift.
         /// </summary>
         private static decimal CalculateBottomHolePressure(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionRate,
             decimal productionRate)
         {
             // Calculate average pressure
-            decimal averagePressure = (wellProperties.WellheadPressure + wellProperties.BottomHolePressure) / 2m;
-            decimal averageTemperature = (wellProperties.WellheadTemperature + wellProperties.BottomHoleTemperature) / 2m;
+            decimal averagePressure = (decimal)((wellProperties.WELLHEAD_PRESSURE + wellProperties.BOTTOM_HOLE_PRESSURE) / 2m);
+            decimal averageTemperature = (decimal)((wellProperties.WELLHEAD_TEMPERATURE + wellProperties.BOTTOM_HOLE_TEMPERATURE) / 2m);
 
             // Calculate Z-factor
             decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                averagePressure, averageTemperature, wellProperties.GasSpecificGravity);
+                averagePressure, averageTemperature, wellProperties.GAS_SPECIFIC_GRAVITY);
 
             // Calculate fluid density with gas
-            decimal oilDensity = (141.5m / (131.5m + wellProperties.OilGravity)) * 62.4m;
+            decimal oilDensity = (decimal)(141.5m / (131.5m + wellProperties.GAS_SPECIFIC_GRAVITY) * 62.4m);
             decimal waterDensity = 62.4m;
-            decimal liquidDensity = oilDensity * (1.0m - wellProperties.WaterCut) + waterDensity * wellProperties.WaterCut;
+            decimal liquidDensity = (decimal)(oilDensity * (1.0m - wellProperties.WATER_CUT) + waterDensity * wellProperties.WATER_CUT);
 
             // Gas density
-            decimal gasDensity = (averagePressure * wellProperties.GasSpecificGravity * 28.9645m) /
-                                (zFactor * 10.7316m * averageTemperature);
+            decimal gasDensity = (decimal)((averagePressure * wellProperties.GAS_SPECIFIC_GRAVITY * 28.9645m) /
+                                (zFactor * 10.7316m * averageTemperature));
 
             // Total gas rate
-            decimal totalGasRate = wellProperties.GasOilRatio * productionRate / 1000m + gasInjectionRate;
+            decimal totalGasRate = (decimal)(wellProperties.GAS_OIL_RATIO * productionRate / 1000m + gasInjectionRate);
             decimal gasVolumeFactor = totalGasRate * zFactor * averageTemperature / (averagePressure * 5.614m);
 
             // Mixture density
             decimal mixtureDensity = (liquidDensity + gasDensity * gasVolumeFactor) / (1.0m + gasVolumeFactor);
 
             // Bottom hole pressure with gas lift (reduced due to gas)
-            decimal hydrostaticHead = mixtureDensity * wellProperties.WellDepth / 144m;
-            decimal bottomHolePressure = wellProperties.WellheadPressure + hydrostaticHead;
+            decimal hydrostaticHead = (decimal)(mixtureDensity * wellProperties.WELL_DEPTH / 144m);
+            decimal bottomHolePressure = (decimal)(wellProperties.WELLHEAD_PRESSURE + hydrostaticHead);
 
-            return Math.Max(wellProperties.WellheadPressure, bottomHolePressure);
+            return Math.Max((decimal)wellProperties.WELLHEAD_PRESSURE, bottomHolePressure);
         }
     }
 }

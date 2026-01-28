@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,35 +12,35 @@ namespace Beep.OilandGas.Client.App.Services.Properties
     {
         #region Oil Properties
 
-        public async Task<decimal> CalculateOilFormationVolumeFactorAsync(OilPropertyConditions request, CancellationToken cancellationToken = default)
+        public async Task<decimal> CalculateOilFormationVolumeFactorAsync(OIL_PROPERTY_CONDITIONS request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<OilPropertyConditions, decimal>("/api/oilproperties/fvf", request, cancellationToken);
+                return await PostAsync<OIL_PROPERTY_CONDITIONS, decimal>("/api/oilproperties/fvf", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<decimal> CalculateOilDensityAsync(OilPropertyConditions request, CancellationToken cancellationToken = default)
+        public async Task<decimal> CalculateOilDensityAsync(OIL_PROPERTY_CONDITIONS request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<OilPropertyConditions, decimal>("/api/oilproperties/density", request, cancellationToken);
+                return await PostAsync<OIL_PROPERTY_CONDITIONS, decimal>("/api/oilproperties/density", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<decimal> CalculateOilViscosityAsync(OilPropertyConditions request, CancellationToken cancellationToken = default)
+        public async Task<decimal> CalculateOilViscosityAsync(OIL_PROPERTY_CONDITIONS request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<OilPropertyConditions, decimal>("/api/oilproperties/viscosity", request, cancellationToken);
+                return await PostAsync<OIL_PROPERTY_CONDITIONS, decimal>("/api/oilproperties/viscosity", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<OilPropertyResult> CalculateOilPropertiesAsync(OilPropertyConditions request, CancellationToken cancellationToken = default)
+        public async Task<OilPropertyResult> CalculateOilPropertiesAsync(OIL_PROPERTY_CONDITIONS request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<OilPropertyConditions, OilPropertyResult>("/api/oilproperties/calculate", request, cancellationToken);
+                return await PostAsync<OIL_PROPERTY_CONDITIONS, OilPropertyResult>("/api/oilproperties/calculate", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

@@ -168,5 +168,13 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref RowQualityValue, value); }
 
         }
+
+        public string WorkOrderNumber { get; set; }
+        public string FieldId { get; set; }
+        public string PropertyId { get; set; }
+        public string Instructions { get; set; }
+        public DateTime? RequestDate { get; set; }
+        public DateTime? DueDate { get; set; }
+        public decimal? EstimatedCost { get; set; }
     }
 }

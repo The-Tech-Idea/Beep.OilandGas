@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 
@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// </summary>
         /// <param name="conditions">Flash calculation conditions</param>
         /// <returns>Flash calculation result</returns>
-        FlashResult PerformIsothermalFlash(FlashConditions conditions);
+        FlashResult PerformIsothermalFlash(FLASH_CONDITIONS conditions);
 
         /// <summary>
         /// Performs multi-stage flash calculation.
@@ -23,7 +23,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="conditions">Flash calculation conditions</param>
         /// <param name="stages">Number of stages</param>
         /// <returns>Multi-stage flash results</returns>
-        List<FlashResult> PerformMultiStageFlash(FlashConditions conditions, int stages);
+        List<FlashResult> PerformMultiStageFlash(FLASH_CONDITIONS conditions, int stages);
 
         /// <summary>
         /// Saves flash calculation result to database.

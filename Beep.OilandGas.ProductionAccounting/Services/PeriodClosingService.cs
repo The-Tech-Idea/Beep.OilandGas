@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -471,8 +471,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // Filter for incomplete allocations (missing details)
                 foreach (var alloc in allocResults)
                 {
-                    var runTicket = await GetRunTicketAsync(alloc.ALLOCATION_REQUEST_ID, cn);
-                    if (runTicket == null || !string.Equals(runTicket.LEASE_ID, fieldId, StringComparison.OrdinalIgnoreCase))
+                    var RUN_TICKET = await GetRunTicketAsync(alloc.ALLOCATION_REQUEST_ID, cn);
+                    if (RUN_TICKET == null || !string.Equals(RUN_TICKET.LEASE_ID, fieldId, StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     var detailFilters = new List<AppFilter>
@@ -691,8 +691,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // Mark each allocation as processed by updating row changed timestamp
                 foreach (var alloc in allocResults)
                 {
-                    var runTicket = await GetRunTicketAsync(alloc.ALLOCATION_REQUEST_ID, cn);
-                    if (runTicket == null || !string.Equals(runTicket.LEASE_ID, fieldId, StringComparison.OrdinalIgnoreCase))
+                    var RUN_TICKET = await GetRunTicketAsync(alloc.ALLOCATION_REQUEST_ID, cn);
+                    if (RUN_TICKET == null || !string.Equals(RUN_TICKET.LEASE_ID, fieldId, StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     alloc.ROW_CHANGED_BY = userId;

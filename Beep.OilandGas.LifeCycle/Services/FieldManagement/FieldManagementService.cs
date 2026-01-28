@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
 {
@@ -98,11 +99,8 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
                     FieldName = createdField.FIELD_NAME ?? string.Empty,
                     CurrentPhase = "EXPLORATION",
                     Status = "ACTIVE",
-                    Properties = new Dictionary<string, object>
-                    {
-                        { "FieldType", createdField.FIELD_TYPE ?? string.Empty },
-                        { "AreaId", createdField.AREA_ID ?? string.Empty }
-                    }
+                    FieldType = createdField.FIELD_TYPE ?? string.Empty,
+                    AreaId = createdField.AREA_ID ?? string.Empty
                 };
             }
             catch (Exception ex)
@@ -144,11 +142,8 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
                     FieldName = fieldEntity.FIELD_NAME ?? string.Empty,
                     CurrentPhase = currentPhase,
                     Status = fieldEntity.ACTIVE_IND == "Y" ? "ACTIVE" : "INACTIVE",
-                    Properties = new Dictionary<string, object>
-                    {
-                        { "FieldType", fieldEntity.FIELD_TYPE ?? string.Empty },
-                        { "AreaId", fieldEntity.AREA_ID ?? string.Empty }
-                    }
+                    FieldType = fieldEntity.FIELD_TYPE ?? string.Empty,
+                    AreaId = fieldEntity.AREA_ID ?? string.Empty
                 };
             }
             catch (Exception ex)

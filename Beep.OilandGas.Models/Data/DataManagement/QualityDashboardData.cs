@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Beep.OilandGas.Models.Data.DataManagement;
 using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.Models.Data
@@ -39,9 +40,9 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref OverallQualityScoreValue, value); }
 
         }
-        private DataQualityMetrics CurrentMetricsValue;
+        private DATA_QUALITY_METRICS CurrentMetricsValue;
 
-        public DataQualityMetrics CurrentMetrics
+        public DATA_QUALITY_METRICS CurrentMetrics
 
         {
 

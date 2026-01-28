@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
@@ -48,7 +48,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
         /// <summary>
         /// Gets permit applications for a development plan.
         /// </summary>
-        Task<List<PermitApplication>> GetPermitApplicationsAsync(string planId);
+        Task<List<PERMIT_APPLICATION>> GetPermitApplicationsAsync(string planId);
     }
 }
 

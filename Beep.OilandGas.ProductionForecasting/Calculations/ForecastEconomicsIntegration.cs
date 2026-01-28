@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
@@ -42,7 +42,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// <returns>Forecast with added economic data points.</returns>
         /// <exception cref="ArgumentNullException">Thrown when forecast or parameters are null.</exception>
         /// <remarks>
-        /// The method enhances the forecast by adding to each ForecastPoint:
+        /// The method enhances the forecast by adding to each FORECAST_POINT:
         /// - Revenue = ProductionRate * Price
         /// - Operating Cost = ProductionRate * Cost per unit OR Fixed Cost per day
         /// - Net Income = Revenue - Operating Cost
@@ -50,8 +50,8 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// 
         /// For decline curve forecasts, this provides full project economics.
         /// </remarks>
-        public static ProductionForecast AddEconomicAnalysis(
-            ProductionForecast forecast,
+        public static PRODUCTION_FORECAST AddEconomicAnalysis(
+            PRODUCTION_FORECAST forecast,
             ForecastEconomicParameters economicParams)
         {
             if (forecast == null)
@@ -71,14 +71,14 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 var point = forecast.ForecastPoints[i];
                 
                 // Convert time from days to years (assuming 365.25 days/year)
-                timeInYears = point.Time / 365.25m;
+                timeInYears = point.TIME / 365.25m;
 
                 // Calculate revenue
-                decimal revenue = point.ProductionRate * economicParams.ProductPrice;
+                decimal revenue = point.PRODUCTION_RATE * economicParams.ProductPrice;
 
                 // Calculate operating cost
                 decimal operatingCost = CalculateOperatingCost(
-                    point.ProductionRate,
+                    point.PRODUCTION_RATE,
                     economicParams.VariableCostPerUnit,
                     economicParams.FixedCostPerDay);
 
@@ -93,9 +93,9 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 cumulativeNPV += presentValue;
 
                 // Add economic data to forecast point
-                if (!point.ForecastMethod.Contains("Economic"))
+                if (!point.FORECAST_METHOD.Contains("Economic"))
                 {
-                    point.ForecastMethod = $"{point.ForecastMethod} (Economic)";
+                    point.FORECAST_METHOD = $"{point.FORECAST_METHOD} (Economic)";
                 }
             }
 
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// <param name="economicParams">Economic parameters used.</param>
         /// <returns>Economic summary metrics.</returns>
         public static ForecastEconomicsSummary CalculateEconomicsSummary(
-            ProductionForecast forecast,
+            PRODUCTION_FORECAST forecast,
             ForecastEconomicParameters economicParams)
         {
             if (forecast == null || forecast.ForecastPoints.Count == 0)
@@ -129,12 +129,12 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             for (int i = 0; i < forecast.ForecastPoints.Count; i++)
             {
                 var point = forecast.ForecastPoints[i];
-                decimal timeInYears = point.Time / 365.25m;
+                decimal timeInYears = point.TIME / 365.25m;
 
                 // Calculate revenue and costs
-                decimal revenue = point.ProductionRate * economicParams.ProductPrice;
+                decimal revenue = point.PRODUCTION_RATE * economicParams.ProductPrice;
                 decimal operatingCost = CalculateOperatingCost(
-                    point.ProductionRate,
+                    point.PRODUCTION_RATE,
                     economicParams.VariableCostPerUnit,
                     economicParams.FixedCostPerDay);
 
@@ -179,13 +179,13 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// <param name="forecast">Production forecast.</param>
         /// <param name="economicLimitRate">Minimum viable production rate.</param>
         /// <returns>Time in days when production reaches economic limit (or 0 if never reached).</returns>
-        public static decimal GetEconomicLimitTime(ProductionForecast forecast, decimal economicLimitRate)
+        public static decimal GetEconomicLimitTime(PRODUCTION_FORECAST forecast, decimal economicLimitRate)
         {
             if (forecast == null || forecast.ForecastPoints.Count == 0)
                 return 0m;
 
-            var point = forecast.ForecastPoints.FirstOrDefault(p => p.ProductionRate <= economicLimitRate);
-            return point != null ? point.Time : 0m;
+            var point = forecast.ForecastPoints.FirstOrDefault(p => p.PRODUCTION_RATE <= economicLimitRate);
+            return point != null ? point.TIME : 0m;
         }
 
         /// <summary>
@@ -195,7 +195,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// <param name="economicParams">Economic parameters.</param>
         /// <returns>Time in days when project breaks even, or 0 if never breaks even.</returns>
         public static decimal GetBreakEvenTime(
-            ProductionForecast forecast,
+            PRODUCTION_FORECAST forecast,
             ForecastEconomicParameters economicParams)
         {
             if (forecast == null || forecast.ForecastPoints.Count == 0)
@@ -205,16 +205,16 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
             foreach (var point in forecast.ForecastPoints)
             {
-                decimal revenue = point.ProductionRate * economicParams.ProductPrice;
+                decimal revenue = point.PRODUCTION_RATE * economicParams.ProductPrice;
                 decimal operatingCost = CalculateOperatingCost(
-                    point.ProductionRate,
+                    point.PRODUCTION_RATE,
                     economicParams.VariableCostPerUnit,
                     economicParams.FixedCostPerDay);
 
                 cumulativeNetCash += (revenue - operatingCost);
 
                 if (cumulativeNetCash >= 0)
-                    return point.Time;
+                    return point.TIME;
             }
 
             return 0m; // Never breaks even
@@ -226,10 +226,10 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// </summary>
         /// <param name="forecast">Production forecast.</param>
         /// <param name="baseEconomicParams">Base economic parameters.</param>
-        /// <param name="priceVariations">Price variations to test (e.g., -20, -10, 0, 10, 20 for ±20%).</param>
+        /// <param name="priceVariations">Price variations to test (e.g., -20, -10, 0, 10, 20 for Â±20%).</param>
         /// <returns>Sensitivity analysis results.</returns>
         public static List<EconomicSensitivityResult> AnalyzePriceSensitivity(
-            ProductionForecast forecast,
+            PRODUCTION_FORECAST forecast,
             ForecastEconomicParameters baseEconomicParams,
             decimal[] priceVariations)
         {

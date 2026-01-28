@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -49,7 +49,7 @@ namespace Beep.OilandGas.HeatMap.Density
         /// <param name="kernelType">Type of kernel to use.</param>
         /// <returns>2D array of density values.</returns>
         public static double[,] CalculateDensity(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             int gridWidth,
             int gridHeight,
             double minX,
@@ -100,7 +100,7 @@ namespace Beep.OilandGas.HeatMap.Density
         /// <summary>
         /// Calculates optimal bandwidth using Silverman's rule of thumb.
         /// </summary>
-        private static double CalculateOptimalBandwidth(List<HeatMapDataPoint> dataPoints)
+        private static double CalculateOptimalBandwidth(List<HEAT_MAP_DATA_POINT> dataPoints)
         {
             if (dataPoints.Count < 2)
                 return 1.0;
@@ -125,7 +125,7 @@ namespace Beep.OilandGas.HeatMap.Density
             double variance = distances.Sum(d => Math.Pow(d - mean, 2)) / distances.Count;
             double stdDev = Math.Sqrt(variance);
 
-            // Silverman's rule of thumb: h = 1.06 * σ * n^(-1/5)
+            // Silverman's rule of thumb: h = 1.06 * Ïƒ * n^(-1/5)
             double n = dataPoints.Count;
             return 1.06 * stdDev * Math.Pow(n, -0.2);
         }

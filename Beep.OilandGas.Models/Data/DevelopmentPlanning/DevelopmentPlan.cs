@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
 
@@ -160,9 +160,9 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref FacilityPlansValue, value); }
 
         }
-        private List<PermitApplication> PermitApplicationsValue = new();
+        private List<PERMIT_APPLICATION> PermitApplicationsValue = new();
 
-        public List<PermitApplication> PermitApplications
+        public List<PERMIT_APPLICATION> PermitApplications
 
         {
 

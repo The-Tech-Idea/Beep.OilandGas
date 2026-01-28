@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -41,20 +41,20 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         }
 
         public async Task<REVENUE_TRANSACTION?> ApplyTakeOrPayAsync(
-            RUN_TICKET runTicket,
-            ALLOCATION_RESULT allocationResult,
+            RUN_TICKET RUN_TICKET,
+            ALLOCATION_RESULT ALLOCATION_RESULT,
             decimal deliveredVolume,
             string userId,
             string cn = "PPDM39")
         {
-            if (runTicket == null)
-                throw new ArgumentNullException(nameof(runTicket));
-            if (allocationResult == null)
-                throw new ArgumentNullException(nameof(allocationResult));
+            if (RUN_TICKET == null)
+                throw new ArgumentNullException(nameof(RUN_TICKET));
+            if (ALLOCATION_RESULT == null)
+                throw new ArgumentNullException(nameof(ALLOCATION_RESULT));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            var contract = await FindApplicableContractAsync(runTicket, cn);
+            var contract = await FindApplicableContractAsync(RUN_TICKET, cn);
             if (contract == null)
                 return null;
 
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (obligation == null)
                 return null;
 
-            var contractDate = runTicket.TICKET_DATE_TIME ?? DateTime.UtcNow;
+            var contractDate = RUN_TICKET.TICKET_DATE_TIME ?? DateTime.UtcNow;
             var schedule = await GetScheduleAsync(contract.SALES_CONTRACT_ID, contractDate, cn);
             var minVolume = schedule?.MIN_VOLUME
                 ?? ParseDecimal(obligation.OBLIGATION_DESCRIPTION, "MIN_VOLUME")
@@ -98,11 +98,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var revenueTransaction = new REVENUE_TRANSACTION
             {
                 REVENUE_TRANSACTION_ID = Guid.NewGuid().ToString(),
-                ALLOCATION_RESULT_ID = allocationResult.ALLOCATION_RESULT_ID,
+                ALLOCATION_RESULT_ID = ALLOCATION_RESULT.ALLOCATION_RESULT_ID,
                 CONTRACT_ID = contract.SALES_CONTRACT_ID,
-                PROPERTY_ID = runTicket.LEASE_ID,
-                WELL_ID = runTicket.WELL_ID,
-                AFE_ID = runTicket.AFE_ID,
+                PROPERTY_ID = RUN_TICKET.LEASE_ID,
+                WELL_ID = RUN_TICKET.WELL_ID,
+                AFE_ID = RUN_TICKET.AFE_ID,
                 TRANSACTION_DATE = contractDate,
                 REVENUE_TYPE = "TAKE_OR_PAY",
                 GROSS_REVENUE = adjustmentRevenue,
@@ -132,11 +132,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             return revenueTransaction;
         }
 
-        private async Task<SALES_CONTRACT?> FindApplicableContractAsync(RUN_TICKET runTicket, string cn)
+        private async Task<SALES_CONTRACT?> FindApplicableContractAsync(RUN_TICKET RUN_TICKET, string cn)
         {
             var repo = await CreateRepoAsync<SALES_CONTRACT>("SALES_CONTRACT", cn);
-            var ticketDate = runTicket.TICKET_DATE_TIME ?? DateTime.UtcNow;
-            var buyerId = runTicket.PURCHASER;
+            var ticketDate = RUN_TICKET.TICKET_DATE_TIME ?? DateTime.UtcNow;
+            var buyerId = RUN_TICKET.PURCHASER;
             var filters = new List<AppFilter>
             {
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }

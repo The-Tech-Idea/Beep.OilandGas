@@ -17,6 +17,5 @@ global using SkiaSharp;
 // Explicit type aliases to avoid conflicts
 global using HeatMapConfigurationRecord = Beep.OilandGas.Models.Data.HeatMapConfigurationRecord;
 global using HeatMapResult = Beep.OilandGas.Models.Data.HeatMapResult;
-global using HeatMapDataPoint = Beep.OilandGas.Models.Data.HeatMap.HeatMapDataPoint;
 global using TheTechIdea.Beep.Report;
 

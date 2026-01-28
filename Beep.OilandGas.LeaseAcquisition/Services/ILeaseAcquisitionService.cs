@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -69,7 +69,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         /// <summary>
         /// Calculates royalty and revenue distribution
         /// </summary>
-        Task<RoyaltyCalculation> CalculateRoyaltyDistributionAsync(string leaseId, RoyaltyRequest request);
+        Task<ROYALTY_CALCULATION> CalculateRoyaltyDistributionAsync(string leaseId, RoyaltyRequest request);
 
         #endregion
 
@@ -570,7 +570,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
     /// <summary>
     /// Royalty calculation DTO
     /// </summary>
-    public class RoyaltyCalculation
+    public class ROYALTY_CALCULATION
     {
         public string LeaseId { get; set; } = string.Empty;
         public decimal ProductionVolume { get; set; }
@@ -939,7 +939,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
         public string RoyaltyOwnerId { get; set; } = string.Empty;
         public string LeaseId { get; set; } = string.Empty;
         public string OwnerName { get; set; } = string.Empty;
-        public decimal RoyaltyInterest { get; set; }
+        public decimal ROYALTY_INTEREST { get; set; }
         public string ManagementStatus { get; set; } = string.Empty;
     }
 
@@ -950,7 +950,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
     {
         public string LeaseId { get; set; } = string.Empty;
         public string OwnerName { get; set; } = string.Empty;
-        public decimal RoyaltyInterest { get; set; }
+        public decimal ROYALTY_INTEREST { get; set; }
         public string PaymentAddress { get; set; } = string.Empty;
     }
 

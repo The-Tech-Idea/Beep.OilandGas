@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -12,33 +12,33 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
     {
         #region Pipeline
 
-        public async Task<PipelineFlowAnalysisResult> AnalyzePipelineAsync(Beep.OilandGas.Models.Data.Calculations.AnalyzePipelineFlowRequest request, CancellationToken cancellationToken = default)
+        public async Task<PIPELINE_FLOW_ANALYSIS_RESULT> AnalyzePipelineAsync(Beep.OilandGas.Models.Data.Calculations.AnalyzePipelineFlowRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
 
             if (AccessMode == ServiceAccessMode.Local)
             {
                 var service = GetLocalService<IPipelineAnalysisService>();
-                var result = await service.AnalyzePipelineFlowAsync(request.PipelineId, request.FlowRate, request.InletPressure);
+                var result = await service.AnalyzePipelineFlowAsync(request.PipelineId, request.FLOW_RATE, request.InletPressure);
 
-                return new PipelineFlowAnalysisResult
+                return new PIPELINE_FLOW_ANALYSIS_RESULT
                 {
                     AnalysisId = result.AnalysisId,
                     PipelineId = result.PipelineId,
                     AnalysisDate = result.AnalysisDate,
-                    FlowRate = result.FlowRate,
+                    FlowRate = result.FLOW_RATE,
                     InletPressure = result.InletPressure,
-                    OutletPressure = result.OutletPressure,
-                    PressureDrop = result.PressureDrop,
+                    OutletPressure = result.OUTLET_PRESSURE,
+                    PressureDrop = result.PRESSURE_DROP,
                     Velocity = result.Velocity,
-                    FlowRegime = result.FlowRegime,
+                    FlowRegime = result.FLOW_REGIME,
                     Status = result.Status,
                     Recommendations = result.Recommendations
                 };
             }
 
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<AnalyzePipelineFlowRequest, PipelineFlowAnalysisResult>("/api/pipeline/analyze-flow", request, cancellationToken);
+                return await PostAsync<AnalyzePipelineFlowRequest, PIPELINE_FLOW_ANALYSIS_RESULT>("/api/pipeline/analyze-flow", request, cancellationToken);
             
             throw new InvalidOperationException($"Untitled AccessMode: {AccessMode}");
         }

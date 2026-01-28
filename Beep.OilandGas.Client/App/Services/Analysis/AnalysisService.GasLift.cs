@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.GasLift;
@@ -10,19 +10,19 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
     {
         #region GasLift
 
-        public async Task<GasLiftValveDesignResult> DesignGasLiftAsync(GasLiftWellProperties request, CancellationToken cancellationToken = default)
+        public async Task<GAS_LIFT_VALVE_DESIGN_RESULT> DesignGasLiftAsync(GAS_LIFT_WELL_PROPERTIES request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasLiftWellProperties, GasLiftValveDesignResult>("/api/gaslift/design", request, cancellationToken);
+                return await PostAsync<GAS_LIFT_WELL_PROPERTIES, GAS_LIFT_VALVE_DESIGN_RESULT>("/api/gaslift/design", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<GasLiftPotentialResult> OptimizeInjectionAsync(GasLiftWellProperties request, CancellationToken cancellationToken = default)
+        public async Task<GAS_LIFT_POTENTIAL_RESULT> OptimizeInjectionAsync(GAS_LIFT_WELL_PROPERTIES request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<GasLiftWellProperties, GasLiftPotentialResult>("/api/gaslift/optimize", request, cancellationToken);
+                return await PostAsync<GAS_LIFT_WELL_PROPERTIES, GAS_LIFT_POTENTIAL_RESULT>("/api/gaslift/optimize", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.Models.Data.CompressorAnalysis;
 using Beep.OilandGas.GasProperties.Calculations;
 
@@ -15,84 +15,84 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
         /// <param name="compressorProperties">Centrifugal compressor properties.</param>
         /// <param name="useSIUnits">Whether to use SI units (false = US field units).</param>
         /// <returns>Compressor power calculation results.</returns>
-        public static CompressorPowerResult CalculatePower(
-            CentrifugalCompressorProperties compressorProperties,
+        public static COMPRESSOR_POWER_RESULT CalculatePower(
+            CENTRIFUGAL_COMPRESSOR_PROPERTIES compressorProperties,
             bool useSIUnits = false)
         {
             if (compressorProperties == null)
                 throw new ArgumentNullException(nameof(compressorProperties));
 
-            if (compressorProperties.OperatingConditions == null)
-                throw new ArgumentNullException(nameof(compressorProperties.OperatingConditions));
+            if (compressorProperties.OPERATING_CONDITIONS == null)
+                throw new ArgumentNullException(nameof(compressorProperties.OPERATING_CONDITIONS));
 
-            var result = new CompressorPowerResult();
+            var result = new COMPRESSOR_POWER_RESULT();
 
-            var conditions = compressorProperties.OperatingConditions;
+            var conditions = compressorProperties.OPERATING_CONDITIONS;
 
             // Calculate compression ratio
-            result.CompressionRatio = conditions.DischargePressure / conditions.SuctionPressure;
+            result.COMPRESSION_RATIO = conditions.DischargePressure / conditions.SuctionPressure;
 
             // Calculate average pressure and temperature
             decimal averagePressure = (conditions.SuctionPressure + conditions.DischargePressure) / 2m;
-            decimal averageTemperature = (conditions.SuctionTemperature + conditions.DischargeTemperature) / 2m;
+            decimal averageTemperature = (conditions.SuctionTemperature + conditions.DISCHARGE_TEMPERATURE) / 2m;
 
             // Calculate Z-factor at average conditions
             decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
                 averagePressure, averageTemperature, conditions.GasSpecificGravity);
 
             // Calculate polytropic head
-            result.PolytropicHead = CalculatePolytropicHead(
+            result.POLYTROPIC_HEAD = CalculatePolytropicHead(
                 conditions.SuctionPressure,
                 conditions.DischargePressure,
                 conditions.SuctionTemperature,
-                compressorProperties.SpecificHeatRatio,
-                compressorProperties.PolytropicEfficiency,
+                compressorProperties.SPECIFIC_HEAT_RATIO,
+                compressorProperties.POLYTROPIC_EFFICIENCY,
                 zFactor,
                 conditions.GasSpecificGravity);
 
             // Calculate adiabatic head
-            result.AdiabaticHead = CalculateAdiabaticHead(
+            result.ADIABATIC_HEAD = CalculateAdiabaticHead(
                 conditions.SuctionPressure,
                 conditions.DischargePressure,
                 conditions.SuctionTemperature,
-                compressorProperties.SpecificHeatRatio,
+                compressorProperties.SPECIFIC_HEAT_RATIO,
                 zFactor,
                 conditions.GasSpecificGravity);
 
             // Calculate theoretical power
-            result.TheoreticalPower = CalculateTheoreticalPower(
+            result.THEORETICAL_POWER = CalculateTheoreticalPower(
                 conditions.GasFlowRate,
-                result.PolytropicHead,
+                result.POLYTROPIC_HEAD,
                 conditions.GasSpecificGravity,
                 averageTemperature,
                 zFactor,
                 averagePressure);
 
             // Calculate brake horsepower
-            result.BrakeHorsepower = result.TheoreticalPower / compressorProperties.PolytropicEfficiency;
+            result.BRAKE_HORSEPOWER = result.THEORETICAL_POWER / compressorProperties.POLYTROPIC_EFFICIENCY;
 
             // Calculate motor horsepower
-            result.MotorHorsepower = result.BrakeHorsepower / conditions.MechanicalEfficiency;
+            result.MOTOR_HORSEPOWER = result.BRAKE_HORSEPOWER / conditions.MechanicalEfficiency;
 
             // Calculate power consumption
             if (useSIUnits)
             {
-                result.PowerConsumptionKW = result.MotorHorsepower * 0.746m;
+                result.POWER_CONSUMPTION_KW = result.MOTOR_HORSEPOWER * 0.746m;
             }
             else
             {
-                result.PowerConsumptionKW = result.MotorHorsepower * 0.746m; // Still in kW for consistency
+                result.POWER_CONSUMPTION_KW = result.MOTOR_HORSEPOWER * 0.746m; // Still in kW for consistency
             }
 
             // Calculate discharge temperature
-            result.DischargeTemperature = CalculateDischargeTemperature(
+            result.DISCHARGE_TEMPERATURE = CalculateDischargeTemperature(
                 conditions.SuctionTemperature,
-                result.CompressionRatio,
-                compressorProperties.SpecificHeatRatio,
-                compressorProperties.PolytropicEfficiency);
+                result.COMPRESSION_RATIO,
+                compressorProperties.SPECIFIC_HEAT_RATIO,
+                compressorProperties.POLYTROPIC_EFFICIENCY);
 
             // Overall efficiency
-            result.OverallEfficiency = compressorProperties.PolytropicEfficiency * conditions.MechanicalEfficiency;
+            result.OVERALL_EFFICIENCY = compressorProperties.POLYTROPIC_EFFICIENCY * conditions.MechanicalEfficiency;
 
             return result;
         }
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             decimal gasSpecificGravity)
         {
             // Polytropic head: Hp = (Z_avg * R * T1 / MW) * (n / (n-1)) * [(P2/P1)^((n-1)/n) - 1]
-            // Where n = polytropic exponent = (k * ηp) / (k - ηp * (k - 1))
+            // Where n = polytropic exponent = (k * Î·p) / (k - Î·p * (k - 1))
 
             decimal k = specificHeatRatio;
             decimal etaP = polytropicEfficiency;
@@ -175,7 +175,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             decimal zFactor,
             decimal averagePressure)
         {
-            // Theoretical power: P = (W * Hp) / (33000 * η)
+            // Theoretical power: P = (W * Hp) / (33000 * Î·)
             // Where W = weight flow rate
 
             // Convert gas flow rate from Mscf/day to scf/min

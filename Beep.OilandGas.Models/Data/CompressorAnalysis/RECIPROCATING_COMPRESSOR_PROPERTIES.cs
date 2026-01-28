@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -65,5 +65,12 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
 
         // Standard PPDM columns
 
+
+        private COMPRESSOR_OPERATING_CONDITIONS OPERATING_CONDITIONSValue;
+        public COMPRESSOR_OPERATING_CONDITIONS OPERATING_CONDITIONS
+        {
+            get { return this.OPERATING_CONDITIONSValue; }
+            set { SetProperty(ref OPERATING_CONDITIONSValue, value); }
+        }
     }
 }

@@ -16,6 +16,7 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
 using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.Models.Data.ProductionForecasting;
 
 namespace Beep.OilandGas.NodalAnalysis.Services
 {
@@ -271,7 +272,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
          /// Performs sensitivity analysis on key variables affecting well performance
          /// Tests impact of pressure, tubing diameter, and other parameters on production
          /// </summary>
-         public async Task<SensitivityAnalysisResult> PerformSensitivityAnalysisAsync(
+         public async Task<EconomicSensitivityAnalysisResult> PerformSensitivityAnalysisAsync(
              string wellUWI,
              NodalAnalysisParameters baselineParameters,
              List<string> parametersToVary)
@@ -284,7 +285,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              _logger?.LogInformation("Performing sensitivity analysis for well {WellUWI} with {Count} parameters", 
                  wellUWI, parametersToVary?.Count ?? 0);
 
-             var result = new SensitivityAnalysisResult
+             var result = new EconomicSensitivityAnalysisResult
              {
                  AnalysisId = _defaults.FormatIdForTable("SENSITIVITY", Guid.NewGuid().ToString()),
                  WellUWI = wellUWI,
@@ -428,7 +429,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
          /// Forecasts future well production based on declining curve analysis
          /// Projects production decline curve for economic evaluation
          /// </summary>
-         public async Task<ProductionForecast> ForecastProductionAsync(
+         public async Task<PRODUCTION_FORECAST> ForecastProductionAsync(
              string wellUWI,
              decimal currentProduction,
              decimal declineRate,
@@ -440,14 +441,14 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              _logger?.LogInformation("Forecasting production for well {WellUWI} for {Months} months with decline rate {Decline}%",
                  wellUWI, forecastMonths, declineRate);
 
-             var forecast = new ProductionForecast
+             var forecast = new PRODUCTION_FORECAST
              {
-                 ForecastId = _defaults.FormatIdForTable("FORECAST", Guid.NewGuid().ToString()),
-                 WellUWI = wellUWI,
-                 ForecastDate = DateTime.UtcNow,
-                 ForecastPeriodMonths = forecastMonths,
-                 MonthlyProduction = new Dictionary<int, decimal>(),
-                 TotalForecastedVolume = 0
+                 FORECAST_ID = _defaults.FormatIdForTable("FORECAST", Guid.NewGuid().ToString()),
+                 WELL_UWI = wellUWI,
+                 FORECAST_START_DATE = DateTime.UtcNow,
+                 FORECAST_DURATION = forecastMonths,
+                 MONTHLY_PRODUCTION = new Dictionary<int, decimal>(),
+                 TOTAL_CUMULATIVE_PRODUCTION = 0
              };
 
              // Calculate exponential decline curve
@@ -456,23 +457,23 @@ namespace Beep.OilandGas.NodalAnalysis.Services
              decimal productionThisMonth = currentProduction;
              for (int month = 1; month <= forecastMonths; month++)
              {
-                 forecast.MonthlyProduction[month] = productionThisMonth;
-                 forecast.TotalForecastedVolume += productionThisMonth;
+                 forecast.MONTHLY_PRODUCTION[month] = productionThisMonth;
+                 forecast.TOTAL_FORCAST_PRODUCTION += productionThisMonth;
                  productionThisMonth *= monthlyDeclineRate;
 
                  // Stop forecasting if production drops below economic limit (0.5% of initial)
                  if (productionThisMonth < (currentProduction * 0.005m))
                  {
-                     forecast.EconomicLimitMonth = month;
+                     forecast.ECONOMIC_LIMIT_MONTH = month;
                      break;
                  }
              }
 
-             forecast.FinalProduction = productionThisMonth;
-             forecast.AverageMonthlyProduction = forecast.TotalForecastedVolume / forecastMonths;
+             forecast.FINAL_PRODUCTION_RATE = productionThisMonth;
+             forecast.AVERAGE_MONTHLY_PRODUCTION = forecast.TOTAL_FORCAST_PRODUCTION / forecastMonths;
 
              _logger?.LogInformation("Production forecast complete: Total Volume={Volume}bbl, Final Production={Final}bpd",
-                 forecast.TotalForecastedVolume, forecast.FinalProduction);
+                 forecast.TOTAL_FORCAST_PRODUCTION, forecast.FINAL_PRODUCTION_RATE);
 
              return await Task.FromResult(forecast);
          }

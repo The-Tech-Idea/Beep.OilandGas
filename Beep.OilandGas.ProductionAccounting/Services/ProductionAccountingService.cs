@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -104,40 +104,40 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// 5. Post GL entries (debits = credits)
         /// </summary>
         public async Task<bool> ProcessProductionCycleAsync(
-            RUN_TICKET runTicket,
+            RUN_TICKET RUN_TICKET,
             string userId,
             string connectionName = "PPDM39")
         {
-            if (runTicket == null)
-                throw new ArgumentNullException(nameof(runTicket));
+            if (RUN_TICKET == null)
+                throw new ArgumentNullException(nameof(RUN_TICKET));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
             _logger?.LogInformation(
                 "Starting production cycle for run ticket {TicketId} by user {UserId}",
-                runTicket.RUN_TICKET_ID, userId);
+                RUN_TICKET.RUN_TICKET_ID, userId);
 
             try
             {
                 // Step 1: Record measurement
-                _logger?.LogInformation("Step 1: Recording measurement for ticket {TicketId}", runTicket.RUN_TICKET_ID);
-                var measurement = await _measurementService.RecordAsync(runTicket, userId, connectionName);
+                _logger?.LogInformation("Step 1: Recording measurement for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);
+                var measurement = await _measurementService.RecordAsync(RUN_TICKET, userId, connectionName);
                 if (measurement == null)
                 {
-                    _logger?.LogError("Failed to record measurement for ticket {TicketId}", runTicket.RUN_TICKET_ID);
+                    _logger?.LogError("Failed to record measurement for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);
                     return false;
                 }
 
                 // Step 2: Allocate production
-                _logger?.LogInformation("Step 2: Allocating production for ticket {TicketId}", runTicket.RUN_TICKET_ID);
+                _logger?.LogInformation("Step 2: Allocating production for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);
                 var allocation = await _allocationService.AllocateAsync(
-                    runTicket,
+                    RUN_TICKET,
                     "ProRata", // Pro Rata allocation method
                     userId,
                     connectionName);
                 if (allocation == null)
                 {
-                    _logger?.LogError("Failed to allocate production for ticket {TicketId}", runTicket.RUN_TICKET_ID);
+                    _logger?.LogError("Failed to allocate production for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);
                     return false;
                 }
 
@@ -152,7 +152,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Step 3: Calculate royalties for each allocation detail
-                _logger?.LogInformation("Step 3: Calculating royalties for ticket {TicketId}", runTicket.RUN_TICKET_ID);
+                _logger?.LogInformation("Step 3: Calculating royalties for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);
                 var royaltyCalculations = new List<ROYALTY_CALCULATION>();
                 foreach (var detail in allocationDetails)
                 {
@@ -162,14 +162,14 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         connectionName);
                     if (royalty == null)
                     {
-                        _logger?.LogError("Failed to calculate royalties for ticket {TicketId}", runTicket.RUN_TICKET_ID);
+                        _logger?.LogError("Failed to calculate royalties for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);
                         return false;
                     }
                     royaltyCalculations.Add(royalty);
                 }
 
                 // Step 4: Recognize revenue
-                _logger?.LogInformation("Step 4: Recognizing revenue for ticket {TicketId}", runTicket.RUN_TICKET_ID);
+                _logger?.LogInformation("Step 4: Recognizing revenue for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);
                 var revenueAllocations = new List<REVENUE_ALLOCATION>();
                 foreach (var detail in allocationDetails)
                 {
@@ -179,7 +179,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                         connectionName);
                     if (revenue == null)
                     {
-                        _logger?.LogError("Failed to recognize revenue for ticket {TicketId}", runTicket.RUN_TICKET_ID);
+                        _logger?.LogError("Failed to recognize revenue for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);
                         return false;
                     }
                     revenueAllocations.Add(revenue);
@@ -189,7 +189,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     var deliveredVolume = allocation.TOTAL_VOLUME ?? allocation.ALLOCATED_VOLUME ?? 0m;
                     var topUpTransaction = await _takeOrPayService.ApplyTakeOrPayAsync(
-                        runTicket,
+                        RUN_TICKET,
                         allocation,
                         deliveredVolume,
                         userId,
@@ -216,7 +216,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Step 5: Post GL entries
-                _logger?.LogInformation("Step 5: Posting GL entries for ticket {TicketId}", runTicket.RUN_TICKET_ID);
+                _logger?.LogInformation("Step 5: Posting GL entries for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);
                 
                 // Get GL account from configuration or field settings
                 // TODO: Implement GL account lookup from CONFIGURATION table
@@ -227,20 +227,20 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var glEntry = await _glService.CreateEntryAsync(
                     glAccountId,
                     glAmount,
-                    $"Production Cycle Entry - Ticket {runTicket.RUN_TICKET_ID}",
+                    $"Production Cycle Entry - Ticket {RUN_TICKET.RUN_TICKET_ID}",
                     userId,
                     connectionName);
                 if (glEntry == null)
                 {
-                    _logger?.LogError("Failed to post GL entries for ticket {TicketId}", runTicket.RUN_TICKET_ID);
+                    _logger?.LogError("Failed to post GL entries for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);
                     return false;
                 }
 
-                await MarkRunTicketProcessedAsync(runTicket, userId, connectionName);
+                await MarkRunTicketProcessedAsync(RUN_TICKET, userId, connectionName);
 
                 _logger?.LogInformation(
                     "Production cycle completed successfully for ticket {TicketId}",
-                    runTicket.RUN_TICKET_ID);
+                    RUN_TICKET.RUN_TICKET_ID);
 
                 return true;
             }
@@ -249,9 +249,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _logger?.LogError(
                     ex,
                     "Error processing production cycle for ticket {TicketId}: {ErrorMessage}",
-                    runTicket.RUN_TICKET_ID, ex.Message);
+                    RUN_TICKET.RUN_TICKET_ID, ex.Message);
                 throw new ProductionAccountingException(
-                    $"Failed to process production cycle for ticket {runTicket.RUN_TICKET_ID}", ex);
+                    $"Failed to process production cycle for ticket {RUN_TICKET.RUN_TICKET_ID}", ex);
             }
         }
 
@@ -591,7 +591,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
         }
 
-        private async Task MarkRunTicketProcessedAsync(RUN_TICKET runTicket, string userId, string cn)
+        private async Task MarkRunTicketProcessedAsync(RUN_TICKET RUN_TICKET, string userId, string cn)
         {
             var metadata = await _metadata.GetTableMetadataAsync("RUN_TICKET");
             var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
@@ -601,12 +601,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 entityType, cn, "RUN_TICKET");
 
-            runTicket.IS_PROCESSED = "Y";
-            runTicket.PROCESSED_DATE = DateTime.UtcNow;
-            runTicket.ROW_CHANGED_BY = userId;
-            runTicket.ROW_CHANGED_DATE = DateTime.UtcNow;
+            RUN_TICKET.IS_PROCESSED = "Y";
+            RUN_TICKET.PROCESSED_DATE = DateTime.UtcNow;
+            RUN_TICKET.ROW_CHANGED_BY = userId;
+            RUN_TICKET.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-            await repo.UpdateAsync(runTicket, userId);
+            await repo.UpdateAsync(RUN_TICKET, userId);
         }
 
         private async Task CreateTakeOrPayAllocationsAsync(

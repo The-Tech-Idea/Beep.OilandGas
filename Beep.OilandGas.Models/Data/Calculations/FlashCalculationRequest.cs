@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data.FlashCalculations;
@@ -11,10 +11,10 @@ namespace Beep.OilandGas.Models.Data.Calculations
         /// <summary>
         /// Flash conditions
         /// </summary>
-        private FlashConditions ConditionsValue = null!;
+        private FLASH_CONDITIONS ConditionsValue = null!;
 
         [Required(ErrorMessage = "Conditions are required")]
-        public FlashConditions Conditions
+        public FLASH_CONDITIONS Conditions
 
         {
 

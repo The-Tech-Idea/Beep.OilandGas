@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.Models.Data.HydraulicPumps;
 using Beep.OilandGas.GasProperties.Calculations;
 
@@ -15,9 +15,9 @@ namespace Beep.OilandGas.HydraulicPumps.Calculations
         /// <param name="wellProperties">Well properties.</param>
         /// <param name="pumpProperties">Jet pump properties.</param>
         /// <returns>Jet pump performance results.</returns>
-        public static HydraulicJetPumpResult CalculatePerformance(
-            HydraulicPumpWellProperties wellProperties,
-            HydraulicJetPumpProperties pumpProperties)
+        public static HYDRAULIC_JET_PUMP_RESULT CalculatePerformance(
+            HYDRAULIC_PUMP_WELL_PROPERTIES wellProperties,
+            HYDRAULIC_JET_PUMP_PROPERTIES pumpProperties)
         {
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
@@ -25,59 +25,59 @@ namespace Beep.OilandGas.HydraulicPumps.Calculations
             if (pumpProperties == null)
                 throw new ArgumentNullException(nameof(pumpProperties));
 
-            var result = new HydraulicJetPumpResult();
+            var result = new HYDRAULIC_JET_PUMP_RESULT();
 
             // Calculate area ratios
-            decimal nozzleArea = (decimal)Math.PI * pumpProperties.NozzleDiameter * pumpProperties.NozzleDiameter / 4m;
-            decimal throatArea = (decimal)Math.PI * pumpProperties.ThroatDiameter * pumpProperties.ThroatDiameter / 4m;
+            decimal nozzleArea = (decimal)Math.PI * pumpProperties.NOZZLE_DIAMETER * pumpProperties.NOZZLE_DIAMETER / 4m;
+            decimal throatArea = (decimal)Math.PI * pumpProperties.THROAT_DIAMETER * pumpProperties.THROAT_DIAMETER / 4m;
             decimal areaRatio = nozzleArea / throatArea;
 
             // Calculate fluid properties
-            decimal oilDensity = (141.5m / (131.5m + wellProperties.OilGravity)) * 62.4m; // lb/ft³
-            decimal waterDensity = 62.4m; // lb/ft³
-            decimal liquidDensity = oilDensity * (1.0m - wellProperties.WaterCut) + waterDensity * wellProperties.WaterCut;
-            decimal powerFluidDensity = pumpProperties.PowerFluidSpecificGravity * 62.4m;
+            decimal oilDensity = (141.5m / (131.5m + wellProperties.OIL_GRAVITY)) * 62.4m; // lb/ftÂ³
+            decimal waterDensity = 62.4m; // lb/ftÂ³
+            decimal liquidDensity = oilDensity * (1.0m - wellProperties.WATER_CUT) + waterDensity * wellProperties.WATER_CUT;
+            decimal powerFluidDensity = pumpProperties.POWER_FLUID_SPECIFIC_GRAVITY * 62.4m;
 
             // Calculate production rate
-            result.ProductionRate = CalculateProductionRate(
+            result.PRODUCTION_RATE = CalculateProductionRate(
                 wellProperties, pumpProperties, areaRatio, liquidDensity, powerFluidDensity);
 
             // Calculate total flow rate
-            result.TotalFlowRate = result.ProductionRate + pumpProperties.PowerFluidRate;
+            result.TOTAL_FLOW_RATE = result.PRODUCTION_RATE + pumpProperties.POWER_FLUID_RATE;
 
             // Calculate production ratio
-            if (pumpProperties.PowerFluidRate > 0)
+            if (pumpProperties.POWER_FLUID_RATE > 0)
             {
-                result.ProductionRatio = result.ProductionRate / pumpProperties.PowerFluidRate;
+                result.PRODUCTION_RATIO = result.PRODUCTION_RATE / pumpProperties.POWER_FLUID_RATE;
             }
             else
             {
-                result.ProductionRatio = 0m;
+                result.PRODUCTION_RATIO = 0m;
             }
 
             // Calculate pump efficiency
-            result.PumpEfficiency = CalculatePumpEfficiency(
-                areaRatio, result.ProductionRatio, liquidDensity, powerFluidDensity);
+            result.PUMP_EFFICIENCY = CalculatePumpEfficiency(
+                areaRatio, result.PRODUCTION_RATIO, liquidDensity, powerFluidDensity);
 
             // Calculate pressures
-            result.PumpIntakePressure = CalculatePumpIntakePressure(wellProperties);
-            result.PumpDischargePressure = CalculatePumpDischargePressure(
-                wellProperties, pumpProperties, result.ProductionRate);
+            result.PUMP_INTAKE_PRESSURE = CalculatePumpIntakePressure(wellProperties);
+            result.PUMP_DISCHARGE_PRESSURE = CalculatePumpDischargePressure(
+                wellProperties, pumpProperties, result.PRODUCTION_RATE);
 
             // Calculate horsepower
-            result.PowerFluidHorsepower = CalculatePowerFluidHorsepower(
+            result.POWER_FLUID_HORSEPOWER = CalculatePowerFluidHorsepower(
                 pumpProperties, powerFluidDensity);
-            result.HydraulicHorsepower = CalculateHydraulicHorsepower(
-                result.ProductionRate, result.PumpIntakePressure, result.PumpDischargePressure, liquidDensity);
+            result.HYDRAULIC_HORSEPOWER = CalculateHydraulicHorsepower(
+                result.PRODUCTION_RATE, result.PUMP_INTAKE_PRESSURE, result.PUMP_DISCHARGE_PRESSURE, liquidDensity);
 
             // System efficiency
-            if (result.PowerFluidHorsepower > 0)
+            if (result.POWER_FLUID_HORSEPOWER > 0)
             {
-                result.SystemEfficiency = result.HydraulicHorsepower / result.PowerFluidHorsepower;
+                result.SYSTEM_EFFICIENCY = result.HYDRAULIC_HORSEPOWER / result.POWER_FLUID_HORSEPOWER;
             }
             else
             {
-                result.SystemEfficiency = 0m;
+                result.SYSTEM_EFFICIENCY = 0m;
             }
 
             return result;
@@ -87,8 +87,8 @@ namespace Beep.OilandGas.HydraulicPumps.Calculations
         /// Calculates production rate.
         /// </summary>
         private static decimal CalculateProductionRate(
-            HydraulicPumpWellProperties wellProperties,
-            HydraulicJetPumpProperties pumpProperties,
+            HYDRAULIC_PUMP_WELL_PROPERTIES wellProperties,
+            HYDRAULIC_JET_PUMP_PROPERTIES pumpProperties,
             decimal areaRatio,
             decimal liquidDensity,
             decimal powerFluidDensity)
@@ -97,15 +97,15 @@ namespace Beep.OilandGas.HydraulicPumps.Calculations
             // Based on momentum transfer from power fluid to production fluid
 
             // Nozzle velocity
-            decimal nozzleArea = (decimal)Math.PI * pumpProperties.NozzleDiameter * pumpProperties.NozzleDiameter / 4m;
-            decimal powerFluidRateFt3PerSec = pumpProperties.PowerFluidRate * 5.615m / 86400m; // ft³/s
+            decimal nozzleArea = (decimal)Math.PI * pumpProperties.NOZZLE_DIAMETER * pumpProperties.NOZZLE_DIAMETER / 4m;
+            decimal powerFluidRateFt3PerSec = pumpProperties.POWER_FLUID_RATE * 5.615m / 86400m; // ftÂ³/s
             decimal nozzleVelocity = powerFluidRateFt3PerSec / (nozzleArea / 144m); // ft/s
 
             // Pressure differential
-            decimal pressureDifferential = pumpProperties.PowerFluidPressure - wellProperties.BottomHolePressure;
+            decimal pressureDifferential = pumpProperties.POWER_FLUID_PRESSURE - wellProperties.BOTTOM_HOLE_PRESSURE;
 
             // Production rate (simplified)
-            decimal productionRate = pumpProperties.PowerFluidRate * areaRatio * 
+            decimal productionRate = pumpProperties.POWER_FLUID_RATE * areaRatio * 
                                    (liquidDensity / powerFluidDensity) * 
                                    (pressureDifferential / 100m); // Simplified
 
@@ -150,32 +150,32 @@ namespace Beep.OilandGas.HydraulicPumps.Calculations
         /// <summary>
         /// Calculates pump intake pressure.
         /// </summary>
-        private static decimal CalculatePumpIntakePressure(HydraulicPumpWellProperties wellProperties)
+        private static decimal CalculatePumpIntakePressure(HYDRAULIC_PUMP_WELL_PROPERTIES wellProperties)
         {
             // Pump intake pressure is approximately bottom hole pressure
             // Adjusted for depth and fluid column
-            return wellProperties.BottomHolePressure;
+            return wellProperties.BOTTOM_HOLE_PRESSURE;
         }
 
         /// <summary>
         /// Calculates pump discharge pressure.
         /// </summary>
         private static decimal CalculatePumpDischargePressure(
-            HydraulicPumpWellProperties wellProperties,
-            HydraulicJetPumpProperties pumpProperties,
+            HYDRAULIC_PUMP_WELL_PROPERTIES wellProperties,
+            HYDRAULIC_JET_PUMP_PROPERTIES pumpProperties,
             decimal productionRate)
         {
             // Discharge pressure = wellhead pressure + friction + hydrostatic
-            decimal wellheadPressure = wellProperties.WellheadPressure;
+            decimal wellheadPressure = wellProperties.WELLHEAD_PRESSURE;
 
             // Friction pressure (simplified)
             decimal frictionPressure = CalculateFrictionPressure(wellProperties, productionRate);
 
             // Hydrostatic head
-            decimal oilDensity = (141.5m / (131.5m + wellProperties.OilGravity)) * 62.4m;
+            decimal oilDensity = (141.5m / (131.5m + wellProperties.OIL_GRAVITY)) * 62.4m;
             decimal waterDensity = 62.4m;
-            decimal liquidDensity = oilDensity * (1.0m - wellProperties.WaterCut) + waterDensity * wellProperties.WaterCut;
-            decimal hydrostaticPressure = liquidDensity * wellProperties.WellDepth / 144m;
+            decimal liquidDensity = oilDensity * (1.0m - wellProperties.WATER_CUT) + waterDensity * wellProperties.WATER_CUT;
+            decimal hydrostaticPressure = liquidDensity * wellProperties.WELL_DEPTH / 144m;
 
             return wellheadPressure + frictionPressure + hydrostaticPressure;
         }
@@ -184,19 +184,19 @@ namespace Beep.OilandGas.HydraulicPumps.Calculations
         /// Calculates friction pressure.
         /// </summary>
         private static decimal CalculateFrictionPressure(
-            HydraulicPumpWellProperties wellProperties,
+            HYDRAULIC_PUMP_WELL_PROPERTIES wellProperties,
             decimal flowRate)
         {
             // Simplified friction calculation
-            decimal tubingArea = (decimal)Math.PI * wellProperties.TubingDiameter * wellProperties.TubingDiameter / 4m;
+            decimal tubingArea = (decimal)Math.PI * wellProperties.TUBING_DIAMETER * wellProperties.TUBING_DIAMETER / 4m;
             decimal velocity = (flowRate * 5.615m) / (86400m * tubingArea / 144m); // ft/s
 
-            decimal reynoldsNumber = 62.4m * velocity * (wellProperties.TubingDiameter / 12m) / 0.001m;
+            decimal reynoldsNumber = 62.4m * velocity * (wellProperties.TUBING_DIAMETER / 12m) / 0.001m;
             decimal frictionFactor = reynoldsNumber < 2000m
                 ? 64m / reynoldsNumber
                 : 0.3164m / (decimal)Math.Pow((double)reynoldsNumber, 0.25);
 
-            decimal frictionPressure = frictionFactor * (wellProperties.WellDepth / (wellProperties.TubingDiameter / 12m)) *
+            decimal frictionPressure = frictionFactor * (wellProperties.WELL_DEPTH / (wellProperties.TUBING_DIAMETER / 12m)) *
                                       (velocity * velocity) / (2m * 32.174m) * 62.4m / 144m;
 
             return Math.Max(0m, frictionPressure);
@@ -206,12 +206,12 @@ namespace Beep.OilandGas.HydraulicPumps.Calculations
         /// Calculates power fluid horsepower.
         /// </summary>
         private static decimal CalculatePowerFluidHorsepower(
-            HydraulicJetPumpProperties pumpProperties,
+            HYDRAULIC_JET_PUMP_PROPERTIES pumpProperties,
             decimal powerFluidDensity)
         {
             // HHP = (Q * P) / (1714 * efficiency)
-            decimal flowRateGPM = pumpProperties.PowerFluidRate * 42m / 1440m; // GPM
-            decimal horsepower = (flowRateGPM * pumpProperties.PowerFluidPressure) / 1714m;
+            decimal flowRateGPM = pumpProperties.POWER_FLUID_RATE * 42m / 1440m; // GPM
+            decimal horsepower = (flowRateGPM * pumpProperties.POWER_FLUID_PRESSURE) / 1714m;
 
             return Math.Max(0m, horsepower);
         }
@@ -225,7 +225,7 @@ namespace Beep.OilandGas.HydraulicPumps.Calculations
             decimal dischargePressure,
             decimal liquidDensity)
         {
-            // HHP = (Q * ΔP) / 1714
+            // HHP = (Q * Î”P) / 1714
             decimal flowRateGPM = productionRate * 42m / 1440m; // GPM
             decimal pressureDifferential = dischargePressure - intakePressure;
             decimal horsepower = (flowRateGPM * pressureDifferential) / 1714m;

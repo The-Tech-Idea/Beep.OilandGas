@@ -1,4 +1,4 @@
-using Beep.OilandGas.LifeCycle.Services.Calculations;
+﻿using Beep.OilandGas.LifeCycle.Services.Calculations;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.HydraulicPumps;
@@ -100,8 +100,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             // Use PPDMCalculationService to perform the analysis
             var result = await _calculationService.PerformDCAAnalysisAsync(request);
 
-            _logger?.LogInformation("DCA analysis completed - CalculationId: {CalculationId}, R²: {RSquared}", 
-                result.CalculationId, result.R2);
+            _logger?.LogInformation("DCA analysis completed - CalculationId: {CalculationId}, RÂ²: {RSquared}", 
+                result.CALCULATION_ID, result.R2);
 
             return result;
         }
@@ -114,7 +114,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
         /// <param name="userId">The user ID performing the analysis.</param>
         /// <param name="additionalParameters">Optional additional parameters for the analysis.</param>
         /// <returns>The well test analysis results.</returns>
-        public async Task<WellTestAnalysisResult> RunWellTestAnalysisAsync(
+        public async Task<WELL_TEST_ANALYSIS_RESULT> RunWellTestAnalysisAsync(
             string wellId,
             string? testId = null,
             string userId = "system",
@@ -171,7 +171,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             // Use PPDMCalculationService to perform the calculation
             var result = await _calculationService.PerformFlashCalculationAsync(request);
 
-            _logger?.LogInformation("Flash calculation completed - CalculationId: {CalculationId}", result.CalculationId);
+            _logger?.LogInformation("Flash calculation completed - CalculationId: {CalculationId}", result.CALCULATION_ID);
 
             return result;
         }
@@ -209,7 +209,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             var result = (ChokeAnalysisResult)await _calculationService.PerformChokeAnalysisAsync(request);
 
             _logger?.LogInformation("Choke analysis completed for well: {WellId}, Flow Rate: {FlowRate} Mscf/day", 
-                wellId, result.FlowRate);
+                wellId, result.FLOW_RATE);
 
             return result;
         }
@@ -289,7 +289,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             var result = (PumpAnalysisResult)await _calculationService.PerformPumpAnalysisAsync(request);
 
             _logger?.LogInformation("Pump analysis completed - CalculationId: {CalculationId}, Efficiency: {Efficiency}", 
-                result.CalculationId, result.Efficiency);
+                result.CALCULATION_ID, result.Efficiency);
 
             return result;
         }
@@ -408,7 +408,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Integration
             var result = (PIPELINE_ANALYSIS_RESULT)await _calculationService.PerformPipelineAnalysisAsync(request);
 
             _logger?.LogInformation("Pipeline analysis completed for pipeline: {PipelineId}, Flow Rate: {FlowRate} Mscf/day", 
-                pipelineId, result.FlowRate);
+                pipelineId, result.FLOW_RATE);
 
             return result;
         }

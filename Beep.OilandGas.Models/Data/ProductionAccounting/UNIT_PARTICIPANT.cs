@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -22,40 +22,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref UNIT_OPERATING_AGREEMENT_IDValue, value); }
         }
 
-        private System.String COMPANY_NAMEValue;
-        public System.String COMPANY_NAME
-        {
-            get { return this.COMPANY_NAMEValue; }
-            set { SetProperty(ref COMPANY_NAMEValue, value); }
-        }
-
-        private System.Decimal? WORKING_INTERESTValue;
-        public System.Decimal? WORKING_INTEREST
-        {
-            get { return this.WORKING_INTERESTValue; }
-            set { SetProperty(ref WORKING_INTERESTValue, value); }
-        }
-
-        private System.Decimal? NET_REVENUE_INTERESTValue;
-        public System.Decimal? NET_REVENUE_INTEREST
-        {
-            get { return this.NET_REVENUE_INTERESTValue; }
-            set { SetProperty(ref NET_REVENUE_INTERESTValue, value); }
-        }
-
-        private System.String IS_OPERATORValue;
-        public System.String IS_OPERATOR
-        {
-            get { return this.IS_OPERATORValue; }
-            set { SetProperty(ref IS_OPERATORValue, value); }
-        }
-
-        private System.Decimal? VOTING_PERCENTAGEValue;
-        public System.Decimal? VOTING_PERCENTAGE
-        {
-            get { return this.VOTING_PERCENTAGEValue; }
-            set { SetProperty(ref VOTING_PERCENTAGEValue, value); }
-        }
+       
 
         // Standard PPDM columns
 
@@ -68,6 +35,48 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         {
             get { return this.ROW_IDValue; }
             set { SetProperty(ref ROW_IDValue, value); }
+        }
+
+        private string PARTICIPANT_IDValue;
+        public string PARTICIPANT_ID
+        {
+            get { return this.PARTICIPANT_IDValue; }
+            set { SetProperty(ref PARTICIPANT_IDValue, value); }
+        }
+
+        private string COMPANY_NAMEValue;
+        public string COMPANY_NAME
+        {
+            get { return this.COMPANY_NAMEValue; }
+            set { SetProperty(ref COMPANY_NAMEValue, value); }
+        }
+
+        private decimal WORKING_INTERESTValue;
+        public decimal WORKING_INTEREST
+        {
+            get { return this.WORKING_INTERESTValue; }
+            set { SetProperty(ref WORKING_INTERESTValue, value); }
+        }
+
+        private decimal NET_REVENUE_INTERESTValue;
+        public decimal NET_REVENUE_INTEREST
+        {
+            get { return this.NET_REVENUE_INTERESTValue; }
+            set { SetProperty(ref NET_REVENUE_INTERESTValue, value); }
+        }
+
+        private bool IS_OPERATORValue;
+        public bool IS_OPERATOR
+        {
+            get { return this.IS_OPERATORValue; }
+            set { SetProperty(ref IS_OPERATORValue, value); }
+        }
+
+        private decimal VOTING_PERCENTAGEValue;
+        public decimal VOTING_PERCENTAGE
+        {
+            get { return this.VOTING_PERCENTAGEValue; }
+            set { SetProperty(ref VOTING_PERCENTAGEValue, value); }
         }
     }
 }

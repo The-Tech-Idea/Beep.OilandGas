@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -25,7 +25,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
 
         #region Build-up Analysis Methods
 
-        public async Task<WellTestAnalysisResult> AnalyzeBuildUpHornerAsync(string wellUWI, WellTestData testData, string userId)
+        public async Task<WELL_TEST_ANALYSIS_RESULT> AnalyzeBuildUpHornerAsync(string wellUWI, WELL_TEST_DATA testData, string userId)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (testData == null) throw new ArgumentNullException(nameof(testData));
@@ -36,13 +36,13 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
                 _logger?.LogInformation("Starting Horner build-up analysis for well {WellUWI}", wellUWI);
                 
                 var result = WellTestAnalyzer.AnalyzeBuildUp(testData);
-                result.AnalysisId = Guid.NewGuid().ToString();
-                result.WellUWI = wellUWI;
-                result.AnalysisDate = DateTime.UtcNow;
-                result.AnalysisByUser = userId;
+                result.ANALYSIS_ID = Guid.NewGuid().ToString();
+                result.WELL_UWI = wellUWI;
+                result.ANALYSIS_DATE = DateTime.UtcNow;
+                result.ANALYSIS_BY_USER = userId;
                 
                 _logger?.LogInformation("Horner analysis completed for well {WellUWI}: K={Permeability}md, S={SkinFactor}", 
-                    wellUWI, result.Permeability, result.SkinFactor);
+                    wellUWI, result.PERMEABILITY, result.SKIN_FACTOR);
                 
                 return await Task.FromResult(result);
             }
@@ -53,7 +53,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
             }
         }
 
-        public async Task<WellTestAnalysisResult> AnalyzeBuildUpMDHAsync(string wellUWI, WellTestData testData, string userId)
+        public async Task<WELL_TEST_ANALYSIS_RESULT> AnalyzeBuildUpMDHAsync(string wellUWI, WELL_TEST_DATA testData, string userId)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (testData == null) throw new ArgumentNullException(nameof(testData));
@@ -64,13 +64,13 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
                 _logger?.LogInformation("Starting MDH build-up analysis for well {WellUWI}", wellUWI);
                 
                 var result = WellTestAnalyzer.AnalyzeBuildUpMDH(testData);
-                result.AnalysisId = Guid.NewGuid().ToString();
-                result.WellUWI = wellUWI;
-                result.AnalysisDate = DateTime.UtcNow;
-                result.AnalysisByUser = userId;
+                result.ANALYSIS_ID = Guid.NewGuid().ToString();
+                result.WELL_UWI = wellUWI;
+                result.ANALYSIS_DATE = DateTime.UtcNow;
+                result.ANALYSIS_BY_USER = userId;
                 
                 _logger?.LogInformation("MDH analysis completed for well {WellUWI}: K={Permeability}md, S={SkinFactor}", 
-                    wellUWI, result.Permeability, result.SkinFactor);
+                    wellUWI, result.PERMEABILITY, result.SKIN_FACTOR);
                 
                 return await Task.FromResult(result);
             }
@@ -85,7 +85,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
 
         #region Drawdown Analysis Methods
 
-        public async Task<WellTestAnalysisResult> AnalyzeDrawdownAsync(string wellUWI, WellTestData testData, string userId)
+        public async Task<WELL_TEST_ANALYSIS_RESULT> AnalyzeDrawdownAsync(string wellUWI, WELL_TEST_DATA testData, string userId)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (testData == null) throw new ArgumentNullException(nameof(testData));
@@ -95,13 +95,13 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
             {
                 _logger?.LogInformation("Starting drawdown analysis for well {WellUWI}", wellUWI);
                 
-                var result = new WellTestAnalysisResult
+                var result = new WELL_TEST_ANALYSIS_RESULT
                 {
-                    AnalysisId = Guid.NewGuid().ToString(),
-                    WellUWI = wellUWI,
-                    AnalysisDate = DateTime.UtcNow,
-                    AnalysisByUser = userId,
-                    AnalysisMethod = "Drawdown - Semi-log"
+                    ANALYSIS_ID = Guid.NewGuid().ToString(),
+                    WELL_UWI = wellUWI,
+                    ANALYSIS_DATE = DateTime.UtcNow,
+                    ANALYSIS_BY_USER = userId,
+                    ANALYSIS_METHOD = "Drawdown - Semi-log"
                 };
                 
                 _logger?.LogInformation("Drawdown analysis completed for well {WellUWI}", wellUWI);
@@ -118,7 +118,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
 
         #region Derivative Analysis Methods
 
-        public async Task<List<PressureTimePoint>> CalculateDerivativeAsync(string wellUWI, List<PressureTimePoint> pressureData, double smoothingFactor = 0.05)
+        public async Task<List<PRESSURE_TIME_POINT>> CalculateDerivativeAsync(string wellUWI, List<PRESSURE_TIME_POINT> pressureData, double smoothingFactor = 0.05)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (pressureData == null || pressureData.Count == 0) throw new ArgumentNullException(nameof(pressureData));
@@ -141,7 +141,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
             }
         }
 
-        public async Task<ReservoirModel> IdentifyReservoirModelAsync(string wellUWI, List<PressureTimePoint> derivativeData)
+        public async Task<ReservoirModel> IdentifyReservoirModelAsync(string wellUWI, List<PRESSURE_TIME_POINT> derivativeData)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (derivativeData == null || derivativeData.Count == 0) throw new ArgumentNullException(nameof(derivativeData));
@@ -168,7 +168,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
 
         #region Type Curve Matching Methods
 
-        public async Task<TypeCurveMatchResult> PerformTypeCurveMatchingAsync(string wellUWI, WellTestData testData, string userId)
+        public async Task<TypeCurveMatchResult> PerformTypeCurveMatchingAsync(string wellUWI, WELL_TEST_DATA testData, string userId)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (testData == null) throw new ArgumentNullException(nameof(testData));
@@ -203,7 +203,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
 
         #region Multi-rate Analysis Methods
 
-        public async Task<WellTestAnalysisResult> AnalyzeMultiRateAsync(string wellUWI, MultiRateTestData multiRateData, string userId)
+        public async Task<WELL_TEST_ANALYSIS_RESULT> AnalyzeMultiRateAsync(string wellUWI, MultiRateTestData multiRateData, string userId)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (multiRateData == null) throw new ArgumentNullException(nameof(multiRateData));
@@ -214,13 +214,13 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
                 _logger?.LogInformation("Performing multi-rate analysis for well {WellUWI} with {RateChanges} changes", 
                     wellUWI, multiRateData.RateChanges.Count);
                 
-                var result = new WellTestAnalysisResult
+                var result = new WELL_TEST_ANALYSIS_RESULT
                 {
-                    AnalysisId = Guid.NewGuid().ToString(),
-                    WellUWI = wellUWI,
-                    AnalysisDate = DateTime.UtcNow,
-                    AnalysisByUser = userId,
-                    AnalysisMethod = "Multi-rate Superposition"
+                    ANALYSIS_ID = Guid.NewGuid().ToString(),
+                    WELL_UWI = wellUWI,
+                    ANALYSIS_DATE = DateTime.UtcNow,
+                    ANALYSIS_BY_USER = userId,
+                    ANALYSIS_METHOD = "Multi-rate Superposition"
                 };
                 
                 _logger?.LogInformation("Multi-rate analysis completed for well {WellUWI}", wellUWI);
@@ -233,7 +233,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
             }
         }
 
-        public async Task<WellTestAnalysisResult> PerformDeconvolutionAsync(string wellUWI, VariableRateData variableRateData, string userId)
+        public async Task<WELL_TEST_ANALYSIS_RESULT> PerformDeconvolutionAsync(string wellUWI, VariableRateData variableRateData, string userId)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (variableRateData == null) throw new ArgumentNullException(nameof(variableRateData));
@@ -243,13 +243,13 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
             {
                 _logger?.LogInformation("Performing deconvolution analysis for well {WellUWI}", wellUWI);
                 
-                var result = new WellTestAnalysisResult
+                var result = new WELL_TEST_ANALYSIS_RESULT
                 {
-                    AnalysisId = Guid.NewGuid().ToString(),
-                    WellUWI = wellUWI,
-                    AnalysisDate = DateTime.UtcNow,
-                    AnalysisByUser = userId,
-                    AnalysisMethod = "Deconvolution"
+                    ANALYSIS_ID = Guid.NewGuid().ToString(),
+                    WELL_UWI = wellUWI,
+                    ANALYSIS_DATE = DateTime.UtcNow,
+                    ANALYSIS_BY_USER = userId,
+                    ANALYSIS_METHOD = "Deconvolution"
                 };
                 
                 _logger?.LogInformation("Deconvolution analysis completed for well {WellUWI}", wellUWI);
@@ -266,7 +266,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
 
         #region Boundary Detection Methods
 
-        public async Task<List<ReservoirBoundary>> DetectBoundariesAsync(string wellUWI, WellTestData testData)
+        public async Task<List<ReservoirBoundary>> DetectBoundariesAsync(string wellUWI, WELL_TEST_DATA testData)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (testData == null) throw new ArgumentNullException(nameof(testData));
@@ -293,7 +293,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
 
         #region Data Management Methods
 
-        public async Task SaveAnalysisResultAsync(string wellUWI, WellTestAnalysisResult analysisResult, string userId)
+        public async Task SaveAnalysisResultAsync(string wellUWI, WELL_TEST_ANALYSIS_RESULT analysisResult, string userId)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (analysisResult == null) throw new ArgumentNullException(nameof(analysisResult));
@@ -302,11 +302,11 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
             try
             {
                 _logger?.LogInformation("Saving analysis result {AnalysisId} for well {WellUWI}", 
-                    analysisResult.AnalysisId, wellUWI);
+                    analysisResult.ANALYSIS_ID, wellUWI);
                 
                 await Task.CompletedTask;
                 
-                _logger?.LogInformation("Analysis result {AnalysisId} saved successfully", analysisResult.AnalysisId);
+                _logger?.LogInformation("Analysis result {AnalysisId} saved successfully", analysisResult.ANALYSIS_ID);
             }
             catch (Exception ex)
             {
@@ -315,7 +315,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
             }
         }
 
-        public async Task<List<WellTestAnalysisResult>> GetAnalysisResultsAsync(string wellUWI, DateTime? testDate = null)
+        public async Task<List<WELL_TEST_ANALYSIS_RESULT>> GetAnalysisResultsAsync(string wellUWI, DateTime? testDate = null)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
 
@@ -323,7 +323,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
             {
                 _logger?.LogInformation("Retrieving analysis results for well {WellUWI}", wellUWI);
                 
-                var results = new List<WellTestAnalysisResult>();
+                var results = new List<WELL_TEST_ANALYSIS_RESULT>();
                 
                 return await Task.FromResult(results);
             }
@@ -334,7 +334,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
             }
         }
 
-        public async Task<List<WellTestAnalysisResult>> GetAnalysisHistoryAsync(string wellUWI, DateTime startDate, DateTime endDate)
+        public async Task<List<WELL_TEST_ANALYSIS_RESULT>> GetAnalysisHistoryAsync(string wellUWI, DateTime startDate, DateTime endDate)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
 
@@ -343,7 +343,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
                 _logger?.LogInformation("Retrieving analysis history for well {WellUWI} from {StartDate} to {EndDate}", 
                     wellUWI, startDate, endDate);
                 
-                var results = new List<WellTestAnalysisResult>();
+                var results = new List<WELL_TEST_ANALYSIS_RESULT>();
                 
                 return await Task.FromResult(results);
             }
@@ -354,7 +354,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
             }
         }
 
-        public async Task UpdateAnalysisResultAsync(string wellUWI, string analysisId, WellTestAnalysisResult updatedResult, string userId)
+        public async Task UpdateAnalysisResultAsync(string wellUWI, string analysisId, WELL_TEST_ANALYSIS_RESULT updatedResult, string userId)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (string.IsNullOrWhiteSpace(analysisId)) throw new ArgumentNullException(nameof(analysisId));
@@ -435,7 +435,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
 
         #region Validation and Quality Methods
 
-        public async Task<TestDataValidationResult> ValidateTestDataAsync(string wellUWI, WellTestData testData)
+        public async Task<TestDataValidationResult> ValidateTestDataAsync(string wellUWI, WELL_TEST_DATA testData)
         {
             if (string.IsNullOrWhiteSpace(wellUWI)) throw new ArgumentNullException(nameof(wellUWI));
             if (testData == null) throw new ArgumentNullException(nameof(testData));
@@ -449,7 +449,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Services
                 var result = new TestDataValidationResult
                 {
                     IsValid = true,
-                    DataQualityScore = 0.95,
+                    DATA_QUALITY_SCORE = 0.95,
                     DataQualityRating = "Excellent"
                 };
                 

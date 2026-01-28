@@ -21,22 +21,22 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             set { SetProperty(ref WELL_TEST_DATA_IDValue, value); }
         }
 
-        private Decimal? TIMEValue;
-        public Decimal? TIME
+        private double? TIMEValue;
+        public double? TIME
         {
             get { return this.TIMEValue; }
             set { SetProperty(ref TIMEValue, value); }
         }
 
-        private Decimal? PRESSUREValue;
-        public Decimal? PRESSURE
+        private double? PRESSUREValue;
+        public double? PRESSURE
         {
             get { return this.PRESSUREValue; }
             set { SetProperty(ref PRESSUREValue, value); }
         }
 
-        private Decimal? PRESSURE_DERIVATIVEValue;
-        public Decimal? PRESSURE_DERIVATIVE
+        private double? PRESSURE_DERIVATIVEValue;
+        public double? PRESSURE_DERIVATIVE
         {
             get { return this.PRESSURE_DERIVATIVEValue; }
             set { SetProperty(ref PRESSURE_DERIVATIVEValue, value); }

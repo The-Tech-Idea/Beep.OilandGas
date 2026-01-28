@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -48,7 +48,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
             _logger = logger;
         }
 
-        public FlashResult PerformIsothermalFlash(FlashConditions conditions)
+        public FlashResult PerformIsothermalFlash(FLASH_CONDITIONS conditions)
         {
             _logger?.LogInformation("Performing isothermal flash calculation");
             var result = FlashCalculator.PerformIsothermalFlash(conditions);
@@ -57,7 +57,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
             return result;
         }
 
-        public List<FlashResult> PerformMultiStageFlash(FlashConditions conditions, int stages)
+        public List<FlashResult> PerformMultiStageFlash(FLASH_CONDITIONS conditions, int stages)
         {
             _logger?.LogInformation("Performing multi-stage flash calculation with {Stages} stages", stages);
             var results = new List<FlashResult>();
@@ -71,12 +71,12 @@ namespace Beep.OilandGas.FlashCalculations.Services
             for (int i = 1; i < stages; i++)
             {
                 // Create new conditions with liquid composition from previous stage
-                var nextStageConditions = new FlashConditions
+                var nextStageConditions = new FLASH_CONDITIONS
                 {
-                    Pressure = currentFeed.Pressure,
-                    Temperature = currentFeed.Temperature,
+                    Pressure = currentFeed.PRESSURE,
+                    Temperature = currentFeed.TEMPERATURE,
                     FeedComposition = firstStageResult.LiquidComposition.Select(component => 
-                        new FlashComponent
+                        new FLASH_COMPONENT
                         {
                             Name = component.ComponentName,
                             MoleFraction = component.Fraction
@@ -166,7 +166,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Analyzes the PVT envelope for a given composition across a range of pressures and temperatures.
         /// </summary>
-        public async Task<PVTEnvelopeAnalysis> AnalyzePVTEnvelopeAsync(List<FlashComponent> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
+        public async Task<PVTEnvelopeAnalysis> AnalyzePVTEnvelopeAsync(List<FLASH_COMPONENT> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -185,9 +185,9 @@ namespace Beep.OilandGas.FlashCalculations.Services
             };
 
             // Estimate critical properties from composition
-            var avgMolWeight = composition.Sum(c => c.MoleFraction * 30m) / composition.Sum(c => c.MoleFraction);
-            result.CriticalPressure = 5000m - (avgMolWeight * 10m);
-            result.CriticalTemperature = 400m + (avgMolWeight * 2m);
+            var avgMolWeight = composition.Sum(c => c.MOLE_FRACTION * 30m) / composition.Sum(c => c.MOLE_FRACTION);
+            result.CRITICAL_PRESSURE = 5000m - (avgMolWeight * 10m);
+            result.CRITICAL_TEMPERATURE = 400m + (avgMolWeight * 2m);
 
             // Generate envelope points
             var pressureStep = (maxPressure - minPressure) / 15m;
@@ -197,7 +197,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
             {
                 for (decimal t = minTemperature; t <= maxTemperature; t += tempStep)
                 {
-                    var conditions = new FlashConditions
+                    var conditions = new FLASH_CONDITIONS
                     {
                         Pressure = p,
                         Temperature = t,
@@ -226,7 +226,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Performs bubble point calculation for the given composition.
         /// </summary>
-        public async Task<BubblePointAnalysis> CalculateBubblePointAsync(List<FlashComponent> composition, decimal pressure)
+        public async Task<BubblePointAnalysis> CalculateBubblePointAsync(List<FLASH_COMPONENT> composition, decimal pressure)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -250,7 +250,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
 
             while (iterations < maxIterations)
             {
-                var conditions = new FlashConditions
+                var conditions = new FLASH_CONDITIONS
                 {
                     Pressure = pressure,
                     Temperature = temperature,
@@ -258,7 +258,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 };
 
                 var flashResult = PerformIsothermalFlash(conditions);
-                var sumKx = composition.Sum(c => c.MoleFraction *
+                var sumKx = composition.Sum(c => c.MOLE_FRACTION *
                     (flashResult.KValues.FirstOrDefault(k => string.Equals(k.ComponentName, c.Name, StringComparison.OrdinalIgnoreCase))?.KValue ?? 1m));
 
                 var convergenceError = Math.Abs(sumKx - 1m);
@@ -266,13 +266,13 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 {
                     result.Converged = true;
                     result.ConvergenceError = convergenceError;
-                    result.Temperature = temperature;
+                    result.TEMPERATURE = temperature;
                     result.BubblePointPressure = pressure;
                     result.KValues = flashResult.KValues;
                     result.LiquidComposition = composition.Select(c => new FlashComponentFraction
                     {
                         ComponentName = c.Name,
-                        Fraction = c.MoleFraction
+                        Fraction = c.MOLE_FRACTION
                     }).ToList();
                     break;
                 }
@@ -282,7 +282,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
             }
 
             result.Iterations = iterations;
-            _logger?.LogInformation("Bubble point calculation complete: T={Temperature}°R, Converged={Converged}", result.Temperature, result.Converged);
+            _logger?.LogInformation("Bubble point calculation complete: T={Temperature}Â°R, Converged={Converged}", result.TEMPERATURE, result.Converged);
             await Task.CompletedTask;
             return result;
         }
@@ -290,7 +290,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Performs dew point calculation for the given composition.
         /// </summary>
-        public async Task<DewPointAnalysis> CalculateDewPointAsync(List<FlashComponent> composition, decimal pressure)
+        public async Task<DewPointAnalysis> CalculateDewPointAsync(List<FLASH_COMPONENT> composition, decimal pressure)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -314,7 +314,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
 
             while (iterations < maxIterations)
             {
-                var conditions = new FlashConditions
+                var conditions = new FLASH_CONDITIONS
                 {
                     Pressure = pressure,
                     Temperature = temperature,
@@ -322,7 +322,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 };
 
                 var flashResult = PerformIsothermalFlash(conditions);
-                var sumYoverK = composition.Sum(c => c.MoleFraction /
+                var sumYoverK = composition.Sum(c => c.MOLE_FRACTION /
                     (flashResult.KValues.FirstOrDefault(k => string.Equals(k.ComponentName, c.Name, StringComparison.OrdinalIgnoreCase))?.KValue ?? 1m));
 
                 var convergenceError = Math.Abs(sumYoverK - 1m);
@@ -330,13 +330,13 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 {
                     result.Converged = true;
                     result.ConvergenceError = convergenceError;
-                    result.Temperature = temperature;
+                    result.TEMPERATURE = temperature;
                     result.DewPointPressure = pressure;
                     result.KValues = flashResult.KValues;
                     result.VaporComposition = composition.Select(c => new FlashComponentFraction
                     {
                         ComponentName = c.Name,
-                        Fraction = c.MoleFraction
+                        Fraction = c.MOLE_FRACTION
                     }).ToList();
                     break;
                 }
@@ -346,7 +346,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
             }
 
             result.Iterations = iterations;
-            _logger?.LogInformation("Dew point calculation complete: T={Temperature}°R, Converged={Converged}", result.Temperature, result.Converged);
+            _logger?.LogInformation("Dew point calculation complete: T={Temperature}Â°R, Converged={Converged}", result.TEMPERATURE, result.Converged);
             await Task.CompletedTask;
             return result;
         }
@@ -354,7 +354,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Analyzes separator design and performance for multi-stage separation.
         /// </summary>
-        public async Task<SeparatorSimulation> SimulateSeparatorAsync(List<FlashComponent> composition, decimal inletPressure, decimal inletTemperature, int stages)
+        public async Task<SeparatorSimulation> SimulateSeparatorAsync(List<FLASH_COMPONENT> composition, decimal inletPressure, decimal inletTemperature, int stages)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -381,7 +381,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 var stagePressure = stagePressures[i];
                 var stageTemperature = stageTemperatures[i];
 
-                var conditions = new FlashConditions
+                var conditions = new FLASH_CONDITIONS
                 {
                     Pressure = stagePressure,
                     Temperature = stageTemperature,
@@ -415,7 +415,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Generates pressure-temperature phase diagram for the composition.
         /// </summary>
-        public async Task<PhaseDiagram> GeneratePhaseDiagramAsync(List<FlashComponent> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
+        public async Task<PhaseDiagram> GeneratePhaseDiagramAsync(List<FLASH_COMPONENT> composition, decimal minPressure, decimal maxPressure, decimal minTemperature, decimal maxTemperature)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -445,7 +445,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
             {
                 for (decimal t = minTemperature; t <= maxTemperature; t += tempStep)
                 {
-                    var conditions = new FlashConditions { Pressure = p, Temperature = t, FeedComposition = composition };
+                    var conditions = new FLASH_CONDITIONS { Pressure = p, Temperature = t, FeedComposition = composition };
                     var flashResult = PerformIsothermalFlash(conditions);
 
                     if (flashResult.VaporFraction < 0.01m)
@@ -478,7 +478,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Performs stability analysis using tangent plane distance criterion.
         /// </summary>
-        public async Task<StabilityAnalysis> AnalyzeStabilityAsync(List<FlashComponent> composition, decimal pressure, decimal temperature)
+        public async Task<StabilityAnalysis> AnalyzeStabilityAsync(List<FLASH_COMPONENT> composition, decimal pressure, decimal temperature)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
@@ -495,11 +495,11 @@ namespace Beep.OilandGas.FlashCalculations.Services
             };
 
             // Perform flash to get K-values
-            var conditions = new FlashConditions { Pressure = pressure, Temperature = temperature, FeedComposition = composition };
+            var conditions = new FLASH_CONDITIONS { Pressure = pressure, Temperature = temperature, FeedComposition = composition };
             var flashResult = PerformIsothermalFlash(conditions);
 
             // Calculate tangent plane distance
-            var tpd = composition.Sum(c => (decimal)Math.Log((double)(c.MoleFraction / Math.Max(0.0001m, 1m))) * c.MoleFraction);
+            var tpd = composition.Sum(c => (decimal)Math.Log((double)(c.MOLE_FRACTION / Math.Max(0.0001m, 1m))) * c.MOLE_FRACTION);
             result.TangentPlaneDistance = tpd;
 
             // Determine stability
@@ -513,7 +513,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
                 result.CriticalComposition.Add(new FlashComponentFraction
                 {
                     ComponentName = component.Name,
-                    Fraction = component.MoleFraction
+                    Fraction = component.MOLE_FRACTION
                 });
             }
 
@@ -525,14 +525,14 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Analyzes equilibrium constants (K-values) across pressure and temperature ranges.
         /// </summary>
-        public async Task<EquilibriumConstantAnalysis> AnalyzeEquilibriumConstantsAsync(List<FlashComponent> composition, decimal pressure, decimal temperature)
+        public async Task<EquilibriumConstantAnalysis> AnalyzeEquilibriumConstantsAsync(List<FLASH_COMPONENT> composition, decimal pressure, decimal temperature)
         {
             if (composition == null || composition.Count == 0)
                 throw new ArgumentException("Composition cannot be null or empty", nameof(composition));
 
             _logger?.LogInformation("Analyzing equilibrium constants at P={Pressure}, T={Temperature}", pressure, temperature);
 
-            var conditions = new FlashConditions { Pressure = pressure, Temperature = temperature, FeedComposition = composition };
+            var conditions = new FLASH_CONDITIONS { Pressure = pressure, Temperature = temperature, FeedComposition = composition };
             var flashResult = PerformIsothermalFlash(conditions);
 
             var result = new EquilibriumConstantAnalysis
@@ -565,10 +565,10 @@ namespace Beep.OilandGas.FlashCalculations.Services
         /// <summary>
         /// Helper method to determine envelope type based on composition.
         /// </summary>
-        private string DetermineEnvelopeType(List<FlashComponent> composition)
+        private string DetermineEnvelopeType(List<FLASH_COMPONENT> composition)
         {
             var heavyComponents = composition.Where(c => !c.Name.StartsWith("C1") && !c.Name.StartsWith("C2")).Count();
-            var heavyFraction = composition.Where(c => !c.Name.StartsWith("C1") && !c.Name.StartsWith("C2")).Sum(c => c.MoleFraction);
+            var heavyFraction = composition.Where(c => !c.Name.StartsWith("C1") && !c.Name.StartsWith("C2")).Sum(c => c.MOLE_FRACTION);
 
             if (heavyFraction < 0.05m)
                 return "Type I";
@@ -601,7 +601,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
         private List<decimal> GenerateStageTemperatures(decimal inletTemperature, int stages)
         {
             var stageTemperatures = new List<decimal>();
-            decimal tempStep = (inletTemperature - 520m) / (stages + 1);  // 520°R = 60°F surface condition
+            decimal tempStep = (inletTemperature - 520m) / (stages + 1);  // 520Â°R = 60Â°F surface condition
 
             for (int i = 0; i < stages; i++)
             {

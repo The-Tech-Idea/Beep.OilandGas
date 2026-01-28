@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 using Beep.OilandGas.GasProperties.Calculations;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
@@ -15,25 +15,25 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
         /// </summary>
         /// <param name="flowProperties">Gas pipeline flow properties.</param>
         /// <returns>Pipeline capacity results.</returns>
-        public static PipelineCapacityResult CalculateGasPipelineCapacity(
-            GasPipelineFlowProperties flowProperties)
+        public static PIPELINE_CAPACITY_RESULT CalculateGasPipelineCapacity(
+            GAS_PIPELINE_FLOW_PROPERTIES flowProperties)
         {
             if (flowProperties == null)
                 throw new ArgumentNullException(nameof(flowProperties));
 
-            if (flowProperties.Pipeline == null)
-                throw new ArgumentNullException(nameof(flowProperties.Pipeline));
+            if (flowProperties.PIPELINE == null)
+                throw new ArgumentNullException(nameof(flowProperties.PIPELINE));
 
-            var result = new PipelineCapacityResult();
+            var result = new PIPELINE_CAPACITY_RESULT();
 
-            var pipeline = flowProperties.Pipeline;
+            var pipeline = flowProperties.PIPELINE;
 
             // Calculate average pressure
-            decimal averagePressure = (pipeline.InletPressure + pipeline.OutletPressure) / 2m;
+            decimal averagePressure = (pipeline.InletPressure + pipeline.OUTLET_PRESSURE) / 2m;
 
             // Calculate Z-factor at average conditions
             decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                averagePressure, pipeline.AverageTemperature, flowProperties.GasSpecificGravity);
+                averagePressure, pipeline.AverageTemperature, flowProperties.GAS_SPECIFIC_GRAVITY);
 
             // Calculate pipeline capacity using Weymouth equation
             // Q = (433.5 * Tb / Pb) * (1 / sqrt(f)) * D^2.667 * sqrt((P1^2 - P2^2) / (L * T * Z * SG))
@@ -41,52 +41,52 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
 
             decimal diameterFt = pipeline.Diameter / 12m; // feet
             decimal pressureDifferenceSquared = pipeline.InletPressure * pipeline.InletPressure -
-                                               pipeline.OutletPressure * pipeline.OutletPressure;
+                                               pipeline.OUTLET_PRESSURE * pipeline.OUTLET_PRESSURE;
 
             if (pressureDifferenceSquared <= 0)
             {
-                result.MaximumFlowRate = 0m;
-                result.PressureDrop = 0m;
+                result.MAXIMUM_FLOW_RATE = 0m;
+                result.PRESSURE_DROP = 0m;
                 return result;
             }
 
             // Calculate friction factor (simplified - will iterate)
             decimal frictionFactor = CalculateFrictionFactor(
-                pipeline.Diameter, pipeline.Roughness, flowProperties.GasFlowRate,
-                flowProperties.GasSpecificGravity, averagePressure, pipeline.AverageTemperature, zFactor);
+                pipeline.Diameter, pipeline.Roughness, flowProperties.GAS_FLOW_RATE,
+                flowProperties.GAS_SPECIFIC_GRAVITY, averagePressure, pipeline.AverageTemperature, zFactor);
 
             // Weymouth equation
-            decimal constant = 433.5m * flowProperties.BaseTemperature / flowProperties.BasePressure;
+            decimal constant = 433.5m * flowProperties.BASE_TEMPERATURE / flowProperties.BASE_PRESSURE;
             decimal diameterTerm = (decimal)Math.Pow((double)diameterFt, 2.667);
             decimal pressureTerm = (decimal)Math.Sqrt((double)(pressureDifferenceSquared / 
-                                                               (pipeline.Length * pipeline.AverageTemperature * zFactor * flowProperties.GasSpecificGravity)));
+                                                               (pipeline.Length * pipeline.AverageTemperature * zFactor * flowProperties.GAS_SPECIFIC_GRAVITY)));
 
             decimal maximumFlowRate = constant * diameterTerm * pressureTerm / (decimal)Math.Sqrt((double)frictionFactor);
 
             // Convert to Mscf/day
-            result.MaximumFlowRate = maximumFlowRate / 1000m; // Mscf/day
+            result.MAXIMUM_FLOW_RATE = maximumFlowRate / 1000m; // Mscf/day
 
             // Calculate pressure drop
-            result.PressureDrop = pipeline.InletPressure - pipeline.OutletPressure;
+            result.PRESSURE_DROP = pipeline.InletPressure - pipeline.OUTLET_PRESSURE;
 
             // Calculate flow velocity
             decimal pipelineArea = (decimal)Math.PI * diameterFt * diameterFt / 4m; // square feet
-            decimal gasDensity = (averagePressure * flowProperties.GasSpecificGravity * 28.9645m) /
+            decimal gasDensity = (averagePressure * flowProperties.GAS_SPECIFIC_GRAVITY * 28.9645m) /
                                 (zFactor * 10.7316m * pipeline.AverageTemperature);
-            decimal flowRateFt3PerSec = maximumFlowRate * 1000m / 86400m * 379.0m / 1000m; // ft³/s (simplified)
-            result.FlowVelocity = flowRateFt3PerSec / pipelineArea; // ft/s
+            decimal flowRateFt3PerSec = maximumFlowRate * 1000m / 86400m * 379.0m / 1000m; // ftÂ³/s (simplified)
+            result.FLOW_VELOCITY = flowRateFt3PerSec / pipelineArea; // ft/s
 
             // Calculate Reynolds number
-            result.ReynoldsNumber = CalculateReynoldsNumber(
-                flowProperties.GasSpecificGravity, result.FlowVelocity, pipeline.Diameter,
+            result.REYNOLDS_NUMBER = CalculateReynoldsNumber(
+                flowProperties.GAS_SPECIFIC_GRAVITY, result.FLOW_VELOCITY, pipeline.Diameter,
                 averagePressure, pipeline.AverageTemperature, zFactor);
 
-            result.FrictionFactor = frictionFactor;
+            result.FRICTION_FACTOR = frictionFactor;
 
             // Pressure gradient
-            result.PressureGradient = result.PressureDrop / pipeline.Length; // psia/ft
+            result.PRESSURE_GRADIENT = result.PRESSURE_DROP / pipeline.Length; // psia/ft
 
-            result.OutletPressure = pipeline.OutletPressure;
+            result.OUTLET_PRESSURE = pipeline.OUTLET_PRESSURE;
 
             return result;
         }
@@ -96,18 +96,18 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
         /// </summary>
         /// <param name="flowProperties">Liquid pipeline flow properties.</param>
         /// <returns>Pipeline capacity results.</returns>
-        public static PipelineCapacityResult CalculateLiquidPipelineCapacity(
-            LiquidPipelineFlowProperties flowProperties)
+        public static PIPELINE_CAPACITY_RESULT CalculateLiquidPipelineCapacity(
+            LIQUID_PIPELINE_FLOW_PROPERTIES flowProperties)
         {
             if (flowProperties == null)
                 throw new ArgumentNullException(nameof(flowProperties));
 
-            if (flowProperties.Pipeline == null)
-                throw new ArgumentNullException(nameof(flowProperties.Pipeline));
+            if (flowProperties.PIPELINE == null)
+                throw new ArgumentNullException(nameof(flowProperties.PIPELINE));
 
-            var result = new PipelineCapacityResult();
+            var result = new PIPELINE_CAPACITY_RESULT();
 
-            var pipeline = flowProperties.Pipeline;
+            var pipeline = flowProperties.PIPELINE;
 
             // Calculate pipeline capacity using Darcy-Weisbach equation
             // Simplified: Q = sqrt((2 * g * D * h) / (f * L))
@@ -117,39 +117,39 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
             decimal pipelineArea = (decimal)Math.PI * diameterFt * diameterFt / 4m; // square feet
 
             // Calculate pressure head
-            decimal liquidDensity = flowProperties.LiquidSpecificGravity * 62.4m; // lb/ft³
-            decimal pressureHead = (pipeline.InletPressure - pipeline.OutletPressure) * 144m / liquidDensity; // feet
+            decimal liquidDensity = flowProperties.LIQUID_SPECIFIC_GRAVITY * 62.4m; // lb/ftÂ³
+            decimal pressureHead = (pipeline.InletPressure - pipeline.OUTLET_PRESSURE) * 144m / liquidDensity; // feet
 
             if (pressureHead <= 0)
             {
-                result.MaximumFlowRate = 0m;
-                result.PressureDrop = 0m;
+                result.MAXIMUM_FLOW_RATE = 0m;
+                result.PRESSURE_DROP = 0m;
                 return result;
             }
 
             // Calculate friction factor (iterative)
             decimal frictionFactor = CalculateLiquidFrictionFactor(
-                pipeline.Diameter, pipeline.Roughness, flowProperties.LiquidFlowRate,
-                flowProperties.LiquidSpecificGravity, flowProperties.LiquidViscosity);
+                pipeline.Diameter, pipeline.Roughness, flowProperties.LIQUID_FLOW_RATE,
+                flowProperties.LIQUID_SPECIFIC_GRAVITY, flowProperties.LIQUID_VISCOSITY);
 
             // Calculate flow velocity
             decimal flowVelocity = (decimal)Math.Sqrt((double)(2m * 32.174m * diameterFt * pressureHead / (frictionFactor * pipeline.Length)));
 
             // Calculate flow rate
-            decimal flowRateFt3PerSec = flowVelocity * pipelineArea; // ft³/s
+            decimal flowRateFt3PerSec = flowVelocity * pipelineArea; // ftÂ³/s
             decimal flowRateBblPerDay = flowRateFt3PerSec * 86400m / 5.615m; // bbl/day
 
-            result.MaximumFlowRate = flowRateBblPerDay;
-            result.PressureDrop = pipeline.InletPressure - pipeline.OutletPressure;
-            result.FlowVelocity = flowVelocity;
+            result.MAXIMUM_FLOW_RATE = flowRateBblPerDay;
+            result.PRESSURE_DROP = pipeline.InletPressure - pipeline.OUTLET_PRESSURE;
+            result.FLOW_VELOCITY = flowVelocity;
 
             // Calculate Reynolds number
-            result.ReynoldsNumber = CalculateLiquidReynoldsNumber(
-                flowProperties.LiquidSpecificGravity, flowVelocity, pipeline.Diameter, flowProperties.LiquidViscosity);
+            result.REYNOLDS_NUMBER = CalculateLiquidReynoldsNumber(
+                flowProperties.LIQUID_SPECIFIC_GRAVITY, flowVelocity, pipeline.Diameter, flowProperties.LIQUID_VISCOSITY);
 
-            result.FrictionFactor = frictionFactor;
-            result.PressureGradient = result.PressureDrop / pipeline.Length;
-            result.OutletPressure = pipeline.OutletPressure;
+            result.FRICTION_FACTOR = frictionFactor;
+            result.PRESSURE_GRADIENT = result.PRESSURE_DROP / pipeline.Length;
+            result.OUTLET_PRESSURE = pipeline.OUTLET_PRESSURE;
 
             return result;
         }
@@ -227,7 +227,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
             decimal temperature,
             decimal zFactor)
         {
-            // Re = (ρ * v * D) / μ
+            // Re = (Ï * v * D) / Î¼
             decimal gasDensity = (pressure * gasSpecificGravity * 28.9645m) / (zFactor * 10.7316m * temperature);
             decimal gasViscosity = 0.02m; // cp (simplified)
             decimal gasViscosityLbPerFtS = gasViscosity * 0.000672m; // lb/(ft-s)
@@ -254,8 +254,8 @@ namespace Beep.OilandGas.PipelineAnalysis.Calculations
             decimal diameter,
             decimal viscosity)
         {
-            // Re = (ρ * v * D) / μ
-            decimal liquidDensity = specificGravity * 62.4m; // lb/ft³
+            // Re = (Ï * v * D) / Î¼
+            decimal liquidDensity = specificGravity * 62.4m; // lb/ftÂ³
             decimal viscosityLbPerFtS = viscosity * 0.000672m; // lb/(ft-s)
 
             if (velocity <= 0m)

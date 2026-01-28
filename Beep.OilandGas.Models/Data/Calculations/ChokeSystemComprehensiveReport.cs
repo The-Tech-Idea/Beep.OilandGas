@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data;
 
@@ -111,7 +111,7 @@ namespace Beep.OilandGas.Models.Data.Calculations
         }
         private ChokeProductionForecast ProductionForecastValue = new();
 
-        public ChokeProductionForecast ProductionForecast
+        public ChokeProductionForecast PRODUCTION_FORECAST
 
         {
 

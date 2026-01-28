@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -42,7 +42,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 // Step 1: Build cash flows from request or PPDM data
                 CashFlow[] cashFlows;
-                if (request.ProductionForecast != null && request.ProductionForecast.Count > 0)
+                if (request.PRODUCTION_FORECAST != null && request.PRODUCTION_FORECAST.Count > 0)
                 {
                     // Build cash flows from production forecast in request
                     cashFlows = BuildCashFlowsFromProductionForecast(request);
@@ -55,11 +55,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 if (cashFlows == null || cashFlows.Length == 0)
                 {
-                    throw new InvalidOperationException("No cash flow data available for economic analysis. Provide ProductionForecast or ensure PPDM data is available.");
+                    throw new InvalidOperationException("No cash flow data available for economic analysis. Provide PRODUCTION_FORECAST or ensure PPDM data is available.");
                 }
 
                 // Step 2: Validate discount rate
-                double discountRate = (double)request.DiscountRate / 100.0; // Convert percentage to decimal
+                double discountRate = (double)request.DISCOUNT_RATE / 100.0; // Convert percentage to decimal
 
                 if (discountRate < 0 || discountRate > 1)
                 {
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
 
                 // Step 4: Generate NPV profile if requested
-                List<NPVProfilePoint>? npvProfile = null;
+                List<NPV_PROFILE_POINT>? npvProfile = null;
                 if (request.AdditionalParameters?.GenerateNpvProfile == true)
                 {
                     double minRate = request.AdditionalParameters?.NpvProfileMinRate != null
@@ -158,13 +158,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// </summary>
         private CashFlow[] BuildCashFlowsFromProductionForecast(EconomicAnalysisRequest request)
         {
-            if (request.ProductionForecast == null || request.ProductionForecast.Count == 0)
+            if (request.PRODUCTION_FORECAST == null || request.PRODUCTION_FORECAST.Count == 0)
             {
                 return Array.Empty<CashFlow>();
             }
 
             var cashFlows = new List<CashFlow>();
-            var startDate = request.AnalysisStartDate ?? request.ProductionForecast.First().Date;
+            var startDate = request.AnalysisStartDate ?? request.PRODUCTION_FORECAST.First().Date;
             var oilPrice = request.OilPrice ?? 50.0m; // Default $50/bbl
             var gasPrice = request.GasPrice ?? 3.0m; // Default $3/Mscf
             var operatingCostPerUnit = request.OperatingCostPerUnit ?? 10.0m; // Default $10/bbl equivalent
@@ -185,7 +185,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
             // Build cash flows from production forecast
             int period = 1;
-            foreach (var point in request.ProductionForecast.OrderBy(p => p.Date))
+            foreach (var point in request.PRODUCTION_FORECAST.OrderBy(p => p.Date))
             {
                 // Calculate revenue
                 decimal revenue = 0;
@@ -263,7 +263,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 if (productionData.Count == 0)
                 {
                     _logger?.LogWarning("No production data found in PPDM for economic analysis. " +
-                        "Consider providing ProductionForecast in request.");
+                        "Consider providing PRODUCTION_FORECAST in request.");
                     return cashFlows.ToArray();
                 }
 
@@ -433,7 +433,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             EconomicResult economicResult,
             EconomicAnalysisRequest request,
             CashFlow[] cashFlows,
-            List<NPVProfilePoint>? npvProfile)
+            List<NPV_PROFILE_POINT>? npvProfile)
         {
             var result = new EconomicAnalysisResult
             {
@@ -458,7 +458,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             // Map cash flows to cash flow points
             decimal cumulativeCashFlow = 0;
             decimal cumulativeDiscountedCashFlow = 0;
-            double discountRate = (double)request.DiscountRate / 100.0;
+            double discountRate = (double)request.DISCOUNT_RATE / 100.0;
 
             foreach (var cf in cashFlows.OrderBy(c => c.Period))
             {

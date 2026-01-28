@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
 
@@ -61,12 +61,12 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to PipelineProperties.
+        /// Maps PPDM39 WELL and related entities to PIPELINE_PROPERTIES.
         /// </summary>
         /// <param name="well">The PPDM39 WELL entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity.</param>
-        /// <returns>The mapped PipelineProperties.</returns>
-        public PipelineProperties MapToPipelineProperties(
+        /// <returns>The mapped PIPELINE_PROPERTIES.</returns>
+        public PIPELINE_PROPERTIES MapToPipelineProperties(
             WELL well,
             WELL_PRESSURE? wellPressure = null)
         {
@@ -81,7 +81,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getOutletPressure = _getOutletPressure ?? ValueRetrievers.GetDownstreamPressure90Percent;
             var getAverageTemperature = _getAverageTemperature ?? ValueRetrievers.GetWellheadTemperatureInRankine;
 
-            return new PipelineProperties
+            return new PIPELINE_PROPERTIES
             {
                 Diameter = getPipelineDiameter(well),
                 Length = getPipelineLength(well),
@@ -94,12 +94,12 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to GasPipelineFlowProperties.
+        /// Maps PPDM39 WELL and related entities to GAS_PIPELINE_FLOW_PROPERTIES.
         /// </summary>
         /// <param name="well">The PPDM39 WELL entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity.</param>
-        /// <returns>The mapped GasPipelineFlowProperties.</returns>
-        public GasPipelineFlowProperties MapToGasPipelineFlowProperties(
+        /// <returns>The mapped GAS_PIPELINE_FLOW_PROPERTIES.</returns>
+        public GAS_PIPELINE_FLOW_PROPERTIES MapToGasPipelineFlowProperties(
             WELL well,
             WELL_PRESSURE? wellPressure = null)
         {
@@ -111,7 +111,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getGasSpecificGravity = _getGasSpecificGravity ?? ValueRetrievers.GetGasSpecificGravityDecimal;
             var getGasMolecularWeight = ValueRetrievers.GetGasMolecularWeight;
 
-            return new GasPipelineFlowProperties
+            return new GAS_PIPELINE_FLOW_PROPERTIES
             {
                 Pipeline = pipeline,
                 GasFlowRate = getGasFlowRate(well),
@@ -121,12 +121,12 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to LiquidPipelineFlowProperties.
+        /// Maps PPDM39 WELL and related entities to LIQUID_PIPELINE_FLOW_PROPERTIES.
         /// </summary>
         /// <param name="well">The PPDM39 WELL entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity.</param>
-        /// <returns>The mapped LiquidPipelineFlowProperties.</returns>
-        public LiquidPipelineFlowProperties MapToLiquidPipelineFlowProperties(
+        /// <returns>The mapped LIQUID_PIPELINE_FLOW_PROPERTIES.</returns>
+        public LIQUID_PIPELINE_FLOW_PROPERTIES MapToLiquidPipelineFlowProperties(
             WELL well,
             WELL_PRESSURE? wellPressure = null)
         {
@@ -138,7 +138,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getLiquidSpecificGravity = _getLiquidSpecificGravity ?? ValueRetrievers.GetLiquidSpecificGravityFromAPIGravity;
             var getLiquidViscosity = _getLiquidViscosity ?? ValueRetrievers.GetOilViscosityDecimal;
 
-            return new LiquidPipelineFlowProperties
+            return new LIQUID_PIPELINE_FLOW_PROPERTIES
             {
                 Pipeline = pipeline,
                 LiquidFlowRate = getLiquidFlowRate(well),

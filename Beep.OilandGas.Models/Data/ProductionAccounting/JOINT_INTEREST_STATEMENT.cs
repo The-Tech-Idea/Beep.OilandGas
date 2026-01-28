@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -96,6 +96,55 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         {
             get { return this.ROW_IDValue; }
             set { SetProperty(ref ROW_IDValue, value); }
+        }
+
+        private string STATEMENT_IDValue;
+        public string STATEMENT_ID
+        {
+            get { return this.STATEMENT_IDValue; }
+            set { SetProperty(ref STATEMENT_IDValue, value); }
+        }
+
+        private string PROPERTY_OR_LEASE_IDValue;
+        public string PROPERTY_OR_LEASE_ID
+        {
+            get { return this.PROPERTY_OR_LEASE_IDValue; }
+            set { SetProperty(ref PROPERTY_OR_LEASE_IDValue, value); }
+        }
+
+        private DateTime STATEMENT_PERIOD_STARTValue;
+        public DateTime STATEMENT_PERIOD_START
+        {
+            get { return this.STATEMENT_PERIOD_STARTValue; }
+            set { SetProperty(ref STATEMENT_PERIOD_STARTValue, value); }
+        }
+
+        private DateTime STATEMENT_PERIOD_ENDValue;
+        public DateTime STATEMENT_PERIOD_END
+        {
+            get { return this.STATEMENT_PERIOD_ENDValue; }
+            set { SetProperty(ref STATEMENT_PERIOD_ENDValue, value); }
+        }
+
+        private DateTime GENERATED_DATEValue;
+        public DateTime GENERATED_DATE
+        {
+            get { return this.GENERATED_DATEValue; }
+            set { SetProperty(ref GENERATED_DATEValue, value); }
+        }
+
+        private ProductionSummary? PRODUCTION_SUMMARYValue;
+        public ProductionSummary? PRODUCTION_SUMMARY
+        {
+            get { return this.PRODUCTION_SUMMARYValue; }
+            set { SetProperty(ref PRODUCTION_SUMMARYValue, value); }
+        }
+
+        private RevenueSummary? REVENUE_SUMMARYValue;
+        public RevenueSummary? REVENUE_SUMMARY
+        {
+            get { return this.REVENUE_SUMMARYValue; }
+            set { SetProperty(ref REVENUE_SUMMARYValue, value); }
         }
     }
 }

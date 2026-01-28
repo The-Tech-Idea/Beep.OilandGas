@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -46,7 +46,7 @@ namespace Beep.OilandGas.HeatMap.Performance
         private const int MaxDepth = 10;
 
         private readonly BoundingBox bounds;
-        private readonly List<HeatMapDataPoint> points;
+        private readonly List<HEAT_MAP_DATA_POINT> points;
         private readonly int depth;
         private QuadTree[] children;
         private bool isLeaf;
@@ -60,7 +60,7 @@ namespace Beep.OilandGas.HeatMap.Performance
         {
             this.bounds = bounds;
             this.depth = depth;
-            this.points = new List<HeatMapDataPoint>();
+            this.points = new List<HEAT_MAP_DATA_POINT>();
             this.isLeaf = true;
         }
 
@@ -68,7 +68,7 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// Inserts a point into the QuadTree.
         /// </summary>
         /// <param name="point">The point to insert.</param>
-        public void Insert(HeatMapDataPoint point)
+        public void Insert(HEAT_MAP_DATA_POINT point)
         {
             if (!bounds.Contains(point.X, point.Y))
                 return;
@@ -95,9 +95,9 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// </summary>
         /// <param name="queryBounds">The bounding box to query.</param>
         /// <returns>List of points within the query bounds.</returns>
-        public List<HeatMapDataPoint> Query(BoundingBox queryBounds)
+        public List<HEAT_MAP_DATA_POINT> Query(BoundingBox queryBounds)
         {
-            var results = new List<HeatMapDataPoint>();
+            var results = new List<HEAT_MAP_DATA_POINT>();
 
             if (!bounds.Intersects(queryBounds))
                 return results;
@@ -135,7 +135,7 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// <param name="centerY">Y coordinate of the center point.</param>
         /// <param name="radius">Search radius.</param>
         /// <returns>List of points within the radius.</returns>
-        public List<HeatMapDataPoint> QueryRadius(double centerX, double centerY, double radius)
+        public List<HEAT_MAP_DATA_POINT> QueryRadius(double centerX, double centerY, double radius)
         {
             var queryBounds = new BoundingBox(
                 centerX - radius,
@@ -146,7 +146,7 @@ namespace Beep.OilandGas.HeatMap.Performance
             var candidates = Query(queryBounds);
 
             // Filter to exact radius (query gives bounding box, need to check actual distance)
-            var results = new List<HeatMapDataPoint>();
+            var results = new List<HEAT_MAP_DATA_POINT>();
             double radiusSquared = radius * radius;
 
             foreach (var point in candidates)
@@ -168,9 +168,9 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// Gets all points in the tree.
         /// </summary>
         /// <returns>List of all points.</returns>
-        public List<HeatMapDataPoint> GetAllPoints()
+        public List<HEAT_MAP_DATA_POINT> GetAllPoints()
         {
-            var results = new List<HeatMapDataPoint>();
+            var results = new List<HEAT_MAP_DATA_POINT>();
 
             if (isLeaf)
             {
@@ -220,7 +220,7 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// <summary>
         /// Inserts a point into the appropriate child node.
         /// </summary>
-        private void InsertIntoChild(HeatMapDataPoint point)
+        private void InsertIntoChild(HEAT_MAP_DATA_POINT point)
         {
             double halfWidth = bounds.Width / 2.0;
             double halfHeight = bounds.Height / 2.0;
@@ -246,7 +246,7 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// Initializes a new instance of the <see cref="SpatialIndex"/> class.
         /// </summary>
         /// <param name="dataPoints">List of data points to index.</param>
-        public SpatialIndex(List<HeatMapDataPoint> dataPoints)
+        public SpatialIndex(List<HEAT_MAP_DATA_POINT> dataPoints)
         {
             if (dataPoints == null || dataPoints.Count == 0)
                 throw new ArgumentException("Data points list cannot be null or empty.");
@@ -275,7 +275,7 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// <param name="maxX">Maximum X coordinate.</param>
         /// <param name="maxY">Maximum Y coordinate.</param>
         /// <returns>List of points within the bounds.</returns>
-        public List<HeatMapDataPoint> QueryBounds(double minX, double minY, double maxX, double maxY)
+        public List<HEAT_MAP_DATA_POINT> QueryBounds(double minX, double minY, double maxX, double maxY)
         {
             var queryBounds = new BoundingBox(minX, minY, maxX, maxY);
             return quadTree.Query(queryBounds);
@@ -288,7 +288,7 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// <param name="y">Y coordinate of the center point.</param>
         /// <param name="radius">Search radius.</param>
         /// <returns>List of points within the radius.</returns>
-        public List<HeatMapDataPoint> QueryRadius(double x, double y, double radius)
+        public List<HEAT_MAP_DATA_POINT> QueryRadius(double x, double y, double radius)
         {
             return quadTree.QueryRadius(x, y, radius);
         }
@@ -300,11 +300,11 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// <param name="y">Y coordinate.</param>
         /// <param name="maxDistance">Maximum distance to search (default: infinity).</param>
         /// <returns>The nearest point, or null if none found within maxDistance.</returns>
-        public HeatMapDataPoint FindNearest(double x, double y, double maxDistance = double.MaxValue)
+        public HEAT_MAP_DATA_POINT FindNearest(double x, double y, double maxDistance = double.MaxValue)
         {
             // Start with a small radius and expand if needed
             double searchRadius = Math.Min(100, maxDistance);
-            List<HeatMapDataPoint> candidates;
+            List<HEAT_MAP_DATA_POINT> candidates;
 
             do
             {
@@ -319,7 +319,7 @@ namespace Beep.OilandGas.HeatMap.Performance
                 return null;
 
             // Find the actual nearest point
-            HeatMapDataPoint nearest = null;
+            HEAT_MAP_DATA_POINT nearest = null;
             double minDistanceSquared = maxDistance * maxDistance;
 
             foreach (var point in candidates)
@@ -342,7 +342,7 @@ namespace Beep.OilandGas.HeatMap.Performance
         /// Gets all points in the index.
         /// </summary>
         /// <returns>List of all points.</returns>
-        public List<HeatMapDataPoint> GetAllPoints()
+        public List<HEAT_MAP_DATA_POINT> GetAllPoints()
         {
             return quadTree.GetAllPoints();
         }

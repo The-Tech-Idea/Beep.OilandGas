@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.GasLift;
@@ -14,18 +14,18 @@ namespace Beep.OilandGas.Web.Services
     public interface ICalculationServiceClient
     {
         // Gas Lift Operations
-        Task<GasLiftPotentialResult> AnalyzeGasLiftPotentialAsync(
-            GasLiftWellProperties wellProperties,
+        Task<GAS_LIFT_POTENTIAL_RESULT> AnalyzeGasLiftPotentialAsync(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal minGasInjectionRate,
             decimal maxGasInjectionRate,
             int numberOfPoints = 50);
-        Task<GasLiftValveDesignResult> DesignGasLiftValvesAsync(
-            GasLiftWellProperties wellProperties,
+        Task<GAS_LIFT_VALVE_DESIGN_RESULT> DesignGasLiftValvesAsync(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves,
             bool useSIUnits = false);
-        Task<bool> SaveGasLiftDesignAsync(GasLiftDesign design, string? userId = null);
-        Task<GasLiftPerformance> GetGasLiftPerformanceAsync(string wellUWI);
+        Task<bool> SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, string? userId = null);
+        Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI);
 
         // Nodal Analysis Operations
         Task<NodalAnalysisRunResult> PerformNodalAnalysisAsync(string wellUWI, NodalAnalysisParameters analysisParameters);
@@ -47,7 +47,7 @@ namespace Beep.OilandGas.Web.Services
         Task<double> CalculateNPVAsync(CashFlow[] cashFlows, double discountRate);
         Task<double> CalculateIRRAsync(CashFlow[] cashFlows, double initialGuess = 0.1);
         Task<EconomicResult> AnalyzeEconomicAsync(CashFlow[] cashFlows, double discountRate, double financeRate = 0.1, double reinvestRate = 0.1);
-        Task<List<NPVProfilePoint>> GenerateNPVProfileAsync(CashFlow[] cashFlows, double minRate = 0.0, double maxRate = 1.0, int points = 50);
+        Task<List<NPV_PROFILE_POINT>> GenerateNPVProfileAsync(CashFlow[] cashFlows, double minRate = 0.0, double maxRate = 1.0, int points = 50);
         Task<bool> SaveEconomicAnalysisResultAsync(string analysisId, EconomicResult result, string? userId = null);
         Task<EconomicResult?> GetEconomicAnalysisResultAsync(string analysisId);
     }

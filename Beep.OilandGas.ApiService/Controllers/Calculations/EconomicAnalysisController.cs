@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Beep.OilandGas.Models.Data.Calculations;
@@ -29,7 +29,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             try
             {
-                var result = _service.CalculateNPV(request.CashFlows, request.DiscountRate);
+                var result = _service.CalculateNPV(request.CashFlows, request.DISCOUNT_RATE);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -61,7 +61,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             {
                 var result = _service.Analyze(
                     request.CashFlows,
-                    request.DiscountRate,
+                    request.DISCOUNT_RATE,
                     request.FinanceRate,
                     request.ReinvestRate);
                 return Ok(result);
@@ -74,7 +74,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("npv-profile")]
-        public ActionResult<List<NPVProfilePoint>> GenerateNPVProfile([FromBody] GenerateNPVProfileRequest request)
+        public ActionResult<List<NPV_PROFILE_POINT>> GenerateNPVProfile([FromBody] GenerateNPVProfileRequest request)
         {
             try
             {

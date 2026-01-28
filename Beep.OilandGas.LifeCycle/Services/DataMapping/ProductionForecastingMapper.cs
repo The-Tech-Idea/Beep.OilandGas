@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
@@ -10,7 +10,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
     /// <summary>
     /// Maps PPDM39 entities to ProductionForecasting models.
     /// </summary>
-    public class ProductionForecastingMapper : IPPDM39Mapper<WELL, ReservoirForecastProperties>
+    public class ProductionForecastingMapper : IPPDM39Mapper<WELL, RESERVOIR_FORECAST_PROPERTIES>
     {
         private readonly Func<WELL, WELL_PRESSURE?, decimal>? _getInitialPressure;
         private readonly Func<WELL, decimal>? _getPermeability;
@@ -64,13 +64,13 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to ReservoirForecastProperties.
+        /// Maps PPDM39 WELL and related entities to RESERVOIR_FORECAST_PROPERTIES.
         /// </summary>
         /// <param name="ppdm39Well">The PPDM39 WELL entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity for pressure data.</param>
         /// <param name="tubular">Optional WELL_TUBULAR entity for wellbore radius.</param>
-        /// <returns>The mapped ReservoirForecastProperties.</returns>
-        public ReservoirForecastProperties MapToDomain(
+        /// <returns>The mapped RESERVOIR_FORECAST_PROPERTIES.</returns>
+        public RESERVOIR_FORECAST_PROPERTIES MapToDomain(
             WELL ppdm39Well,
             WELL_PRESSURE? wellPressure = null,
             WELL_TUBULAR? tubular = null)
@@ -91,7 +91,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getGasSpecificGravity = _getGasSpecificGravity ?? ValueRetrievers.GetGasSpecificGravityDecimal;
             var getTemperature = _getTemperature ?? ValueRetrievers.GetReservoirTemperature;
 
-            var forecastProperties = new ReservoirForecastProperties
+            var forecastProperties = new RESERVOIR_FORECAST_PROPERTIES
             {
                 InitialPressure = getInitialPressure(ppdm39Well, wellPressure),
                 Permeability = getPermeability(ppdm39Well),
@@ -111,36 +111,36 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL to ReservoirForecastProperties (implements interface).
+        /// Maps PPDM39 WELL to RESERVOIR_FORECAST_PROPERTIES (implements interface).
         /// </summary>
-        ReservoirForecastProperties IPPDM39Mapper<WELL, ReservoirForecastProperties>.MapToDomain(WELL ppdm39Well)
+        RESERVOIR_FORECAST_PROPERTIES IPPDM39Mapper<WELL, RESERVOIR_FORECAST_PROPERTIES>.MapToDomain(WELL ppdm39Well)
         {
             return MapToDomain(ppdm39Well, null, null);
         }
 
         /// <summary>
-        /// Maps ReservoirForecastProperties back to PPDM39 (typically not used - results stored in ANL_ANALYSIS_REPORT).
+        /// Maps RESERVOIR_FORECAST_PROPERTIES back to PPDM39 (typically not used - results stored in ANL_ANALYSIS_REPORT).
         /// </summary>
-        public WELL MapToPPDM39(ReservoirForecastProperties domainModel, WELL? existingPPDM39Entity = null)
+        public WELL MapToPPDM39(RESERVOIR_FORECAST_PROPERTIES domainModel, WELL? existingPPDM39Entity = null)
         {
             // Forecast results should be stored in ANL_ANALYSIS_REPORT, not in WELL
             return existingPPDM39Entity ?? new WELL();
         }
 
         /// <summary>
-        /// Maps a collection of PPDM39 WELL entities to ReservoirForecastProperties.
+        /// Maps a collection of PPDM39 WELL entities to RESERVOIR_FORECAST_PROPERTIES.
         /// </summary>
-        public IEnumerable<ReservoirForecastProperties> MapToDomain(IEnumerable<WELL> ppdm39Entities)
+        public IEnumerable<RESERVOIR_FORECAST_PROPERTIES> MapToDomain(IEnumerable<WELL> ppdm39Entities)
         {
-            return ppdm39Entities?.Select<WELL, ReservoirForecastProperties>(w => ((IPPDM39Mapper<WELL, ReservoirForecastProperties>)this).MapToDomain(w)) ?? Enumerable.Empty<ReservoirForecastProperties>();
+            return ppdm39Entities?.Select<WELL, RESERVOIR_FORECAST_PROPERTIES>(w => ((IPPDM39Mapper<WELL, RESERVOIR_FORECAST_PROPERTIES>)this).MapToDomain(w)) ?? Enumerable.Empty<RESERVOIR_FORECAST_PROPERTIES>();
         }
 
         /// <summary>
-        /// Maps a collection of ReservoirForecastProperties to PPDM39 WELL entities.
+        /// Maps a collection of RESERVOIR_FORECAST_PROPERTIES to PPDM39 WELL entities.
         /// </summary>
-        public IEnumerable<WELL> MapToPPDM39(IEnumerable<ReservoirForecastProperties> domainModels)
+        public IEnumerable<WELL> MapToPPDM39(IEnumerable<RESERVOIR_FORECAST_PROPERTIES> domainModels)
         {
-            return domainModels?.Select<ReservoirForecastProperties, WELL>(d => ((IPPDM39Mapper<WELL, ReservoirForecastProperties>)this).MapToPPDM39(d)) ?? Enumerable.Empty<WELL>();
+            return domainModels?.Select<RESERVOIR_FORECAST_PROPERTIES, WELL>(d => ((IPPDM39Mapper<WELL, RESERVOIR_FORECAST_PROPERTIES>)this).MapToPPDM39(d)) ?? Enumerable.Empty<WELL>();
         }
     }
 }

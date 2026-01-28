@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         /// Generate operational report.
         /// </summary>
         [HttpPost("operational")]
-        public ActionResult<OperationalReport> GenerateOperationalReport(
+        public ActionResult<OPERATIONAL_REPORT> GenerateOperationalReport(
             [FromBody] GenerateOperationalReportRequest request,
             [FromQuery] string? connectionName = null)
         {
@@ -49,8 +49,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
 
                 var runTickets = _service.ProductionManager.GetRunTicketsByDateRange(request.StartDate, request.EndDate).ToList();
                 var inventories = new List<Inventory.CrudeOilInventory>();
-                var allocations = new List<AllocationResult>();
-                var measurements = new List<MeasurementRecord>();
+                var allocations = new List<ALLOCATION_RESULT>();
+                var measurements = new List<MEASUREMENT_RECORD>();
                 var salesTransactions = new List<SalesTransaction>();
 
                 var report = _service.ReportManager.GenerateOperationalReport(
@@ -75,7 +75,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
         /// Generate lease report.
         /// </summary>
         [HttpPost("lease")]
-        public ActionResult<LeaseReport> GenerateLeaseReport(
+        public ActionResult<LEASE_REPORT> GenerateLeaseReport(
             [FromBody] GenerateLeaseReportRequest request,
             [FromQuery] string? connectionName = null)
         {
@@ -84,18 +84,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var lease = _service.LeaseManager.GetLease(request.LeaseId);
+                var lease = _service.LeaseManager.GetLease(request.LEASE_ID);
                 if (lease == null)
-                    return NotFound(new { error = $"Lease {request.LeaseId} not found" });
+                    return NotFound(new { error = $"Lease {request.LEASE_ID} not found" });
 
-                var runTickets = _service.ProductionManager.GetRunTicketsByLease(request.LeaseId)
+                var runTickets = _service.ProductionManager.GetRunTicketsByLease(request.LEASE_ID)
                     .Where(t => t.TicketDateTime >= request.StartDate && t.TicketDateTime <= request.EndDate)
                     .ToList();
 
                 var salesTransactions = new List<SalesTransaction>();
 
                 var report = _service.ReportManager.GenerateLeaseReport(
-                    request.LeaseId,
+                    request.LEASE_ID,
                     request.StartDate,
                     request.EndDate,
                     runTickets,
@@ -110,27 +110,27 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
             }
         }
 
-        private OperationalReport MapToOperationalReportDto(OperationalReport report)
+        private OPERATIONAL_REPORT MapToOperationalReportDto(OPERATIONAL_REPORT report)
         {
-            return new OperationalReport
+            return new OPERATIONAL_REPORT
             {
-                ReportId = report.ReportId,
-                ReportPeriodStart = report.ReportPeriodStart,
-                ReportPeriodEnd = report.ReportPeriodEnd,
+                ReportId = report.REPORT_ID,
+                ReportPeriodStart = report.REPORT_PERIOD_START,
+                ReportPeriodEnd = report.REPORT_PERIOD_END,
                 GeneratedDate = report.GenerationDate
             };
         }
 
-        private LeaseReport MapToLeaseReportDto(LeaseReport report)
+        private LEASE_REPORT MapToLeaseReportDto(LEASE_REPORT report)
         {
-            var lease = _service.LeaseManager.GetLease(report.LeaseId);
-            return new LeaseReport
+            var lease = _service.LeaseManager.GetLease(report.LEASE_ID);
+            return new LEASE_REPORT
             {
-                ReportId = report.ReportId,
-                LeaseId = report.LeaseId,
-                LeaseName = lease?.LeaseName ?? report.LeaseId,
-                ReportPeriodStart = report.ReportPeriodStart,
-                ReportPeriodEnd = report.ReportPeriodEnd,
+                ReportId = report.REPORT_ID,
+                LeaseId = report.LEASE_ID,
+                LeaseName = lease?.LEASE_NAME ?? report.LEASE_ID,
+                ReportPeriodStart = report.REPORT_PERIOD_START,
+                ReportPeriodEnd = report.REPORT_PERIOD_END,
                 GeneratedDate = report.GenerationDate
             };
         }

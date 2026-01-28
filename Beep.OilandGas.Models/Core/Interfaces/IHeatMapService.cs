@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.HeatMap;
 using Beep.OilandGas.Models.Data;
@@ -17,7 +17,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="dataPoints">Data points for heat map</param>
         /// <param name="configuration">Heat map configuration</param>
         /// <returns>Generated heat map</returns>
-        Task<HeatMapResult> GenerateHeatMapAsync(List<HeatMapDataPoint> dataPoints, HeatMapConfigurationRecord configuration);
+        Task<HeatMapResult> GenerateHeatMapAsync(List<HEAT_MAP_DATA_POINT> dataPoints, HeatMapConfigurationRecord configuration);
 
         /// <summary>
         /// Saves heat map configuration to database.

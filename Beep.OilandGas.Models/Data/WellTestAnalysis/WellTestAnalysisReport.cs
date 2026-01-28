@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data;
 
@@ -50,9 +50,9 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             set { SetProperty(ref GeneratedByValue, value); }
 
         }
-        private List<WellTestAnalysisResult> AnalysisResultsValue = new();
+        private List<WELL_TEST_ANALYSIS_RESULT> AnalysisResultsValue = new();
 
-        public List<WellTestAnalysisResult> AnalysisResults
+        public List<WELL_TEST_ANALYSIS_RESULT> AnalysisResults
 
         {
 

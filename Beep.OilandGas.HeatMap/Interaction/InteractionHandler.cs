@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using SkiaSharp;
 using Beep.OilandGas.HeatMap.Tools;
 using Beep.OilandGas.HeatMap.Rendering;
@@ -265,9 +265,9 @@ namespace Beep.OilandGas.HeatMap.Interaction
         /// <summary>
         /// Finds the nearest data point to the specified coordinates.
         /// </summary>
-        private HeatMapDataPoint FindNearestPoint(double x, double y, double maxDistance = 10.0)
+        private HEAT_MAP_DATA_POINT FindNearestPoint(double x, double y, double maxDistance = 10.0)
         {
-            HeatMapDataPoint nearest = null;
+            HEAT_MAP_DATA_POINT nearest = null;
             double minDistance = double.MaxValue;
 
             foreach (var point in renderer.GetDataPoints())

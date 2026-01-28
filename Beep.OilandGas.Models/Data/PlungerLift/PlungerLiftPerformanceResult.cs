@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Data.PlungerLift
@@ -8,9 +8,9 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         /// <summary>
         /// Cycle analysis results
         /// </summary>
-        private PlungerLiftCycleResult CycleResultValue = new();
+        private PLUNGER_LIFT_CYCLE_RESULT CycleResultValue = new();
 
-        public PlungerLiftCycleResult CycleResult
+        public PLUNGER_LIFT_CYCLE_RESULT CycleResult
 
         {
 
@@ -23,9 +23,9 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
         /// <summary>
         /// Gas requirements
         /// </summary>
-        private PlungerLiftGasRequirements GasRequirementsValue = new();
+        private PLUNGER_LIFT_GAS_REQUIREMENTS GasRequirementsValue = new();
 
-        public PlungerLiftGasRequirements GasRequirements
+        public PLUNGER_LIFT_GAS_REQUIREMENTS GasRequirements
 
         {
 

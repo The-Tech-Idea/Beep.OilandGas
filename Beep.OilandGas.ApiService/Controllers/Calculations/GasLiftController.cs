@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Data;
@@ -26,7 +26,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("analyze-potential")]
-        public ActionResult<GasLiftPotentialResult> AnalyzePotential([FromBody] AnalyzeGasLiftPotentialRequest request)
+        public ActionResult<GAS_LIFT_POTENTIAL_RESULT> AnalyzePotential([FromBody] AnalyzeGasLiftPotentialRequest request)
         {
             try
             {
@@ -45,14 +45,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("design-valves")]
-        public ActionResult<GasLiftValveDesignResult> DesignValves([FromBody] DesignValvesRequest request)
+        public ActionResult<GAS_LIFT_VALVE_DESIGN_RESULT> DesignValves([FromBody] DesignValvesRequest request)
         {
             try
             {
                 var result = _service.DesignValves(
                     request.WellProperties,
-                    request.GasInjectionPressure,
-                    request.NumberOfValves,
+                    request.GAS_INJECTION_PRESSURE,
+                    request.NUMBER_OF_VALVES,
                     request.UseSIUnits);
                 return Ok(result);
             }
@@ -64,12 +64,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("design")]
-        public async Task<ActionResult> SaveDesign([FromBody] GasLiftDesign design, [FromQuery] string? userId = null)
+        public async Task<ActionResult> SaveDesign([FromBody] GAS_LIFT_DESIGN design, [FromQuery] string? userId = null)
         {
             try
             {
                 await _service.SaveGasLiftDesignAsync(design, userId ?? GetUserId());
-                return Ok(new { message = "Gas lift design saved successfully", designId = design.DesignId });
+                return Ok(new { message = "Gas lift design saved successfully", designId = design.DESIGN_ID });
             }
             catch (Exception ex)
             {
@@ -79,7 +79,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpGet("performance/{wellUWI}")]
-        public async Task<ActionResult<GasLiftPerformance>> GetPerformance(string wellUWI)
+        public async Task<ActionResult<GAS_LIFT_PERFORMANCE>> GetPerformance(string wellUWI)
         {
             try
             {

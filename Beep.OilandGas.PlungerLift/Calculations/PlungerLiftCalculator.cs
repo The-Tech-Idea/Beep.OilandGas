@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.PlungerLift;
@@ -16,41 +16,41 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         /// </summary>
         /// <param name="wellProperties">Well properties.</param>
         /// <returns>Plunger lift cycle analysis results.</returns>
-        public static PlungerLiftCycleResult AnalyzeCycle(
-            PlungerLiftWellProperties wellProperties)
+        public static PLUNGER_LIFT_CYCLE_RESULT AnalyzeCycle(
+            PLUNGER_LIFT_WELL_PROPERTIES wellProperties)
         {
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
 
-            var result = new PlungerLiftCycleResult();
+            var result = new PLUNGER_LIFT_CYCLE_RESULT();
 
             // Calculate plunger fall time
-            result.FallTime = CalculateFallTime(wellProperties);
+            result.FALL_TIME = CalculateFallTime(wellProperties);
 
             // Calculate plunger rise time
-            result.RiseTime = CalculateRiseTime(wellProperties);
+            result.RISE_TIME = CalculateRiseTime(wellProperties);
 
             // Calculate shut-in time (pressure build-up)
-            result.ShutInTime = CalculateShutInTime(wellProperties);
+            result.SHUT_IN_TIME = CalculateShutInTime(wellProperties);
 
             // Total cycle time
-            result.CycleTime = result.FallTime + result.RiseTime + result.ShutInTime;
+            result.CYCLE_TIME = result.FALL_TIME + result.RISE_TIME + result.SHUT_IN_TIME;
 
             // Calculate velocities
-            result.FallVelocity = wellProperties.WellDepth / result.FallTime;
-            result.RiseVelocity = wellProperties.WellDepth / result.RiseTime;
+            result.FALL_VELOCITY = wellProperties.WELL_DEPTH / result.FALL_TIME;
+            result.RISE_VELOCITY = wellProperties.WELL_DEPTH / result.RISE_TIME;
 
             // Calculate liquid slug size
-            result.LiquidSlugSize = CalculateLiquidSlugSize(wellProperties);
+            result.LIQUID_SLUG_SIZE = CalculateLiquidSlugSize(wellProperties);
 
             // Production per cycle
-            result.ProductionPerCycle = result.LiquidSlugSize;
+            result.PRODUCTION_PER_CYCLE = result.LIQUID_SLUG_SIZE;
 
             // Cycles per day
-            result.CyclesPerDay = 1440m / result.CycleTime; // 1440 minutes per day
+            result.CYCLES_PER_DAY = 1440m / result.CYCLE_TIME; // 1440 minutes per day
 
             // Daily production rate
-            result.DailyProductionRate = result.ProductionPerCycle * result.CyclesPerDay;
+            result.DAILY_PRODUCTION_RATE = result.PRODUCTION_PER_CYCLE * result.CYCLES_PER_DAY;
 
             return result;
         }
@@ -58,7 +58,7 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         /// <summary>
         /// Calculates plunger fall time.
         /// </summary>
-        private static decimal CalculateFallTime(PlungerLiftWellProperties wellProperties)
+        private static decimal CalculateFallTime(PLUNGER_LIFT_WELL_PROPERTIES wellProperties)
         {
             // Plunger fall velocity depends on:
             // - Plunger weight
@@ -69,16 +69,16 @@ namespace Beep.OilandGas.PlungerLift.Calculations
             decimal averageFallVelocity = 750m; // ft/min (typical)
 
             // Adjust for fluid properties
-            decimal oilDensity = (141.5m / (131.5m + wellProperties.OilGravity)) * 62.4m;
+            decimal oilDensity = (141.5m / (131.5m + wellProperties.OIL_GRAVITY)) * 62.4m;
             decimal waterDensity = 62.4m;
-            decimal liquidDensity = oilDensity * (1.0m - wellProperties.WaterCut) + waterDensity * wellProperties.WaterCut;
+            decimal liquidDensity = oilDensity * (1.0m - wellProperties.WATER_CUT) + waterDensity * wellProperties.WATER_CUT;
 
             // Heavier fluid = slower fall
             decimal densityFactor = 62.4m / liquidDensity;
             averageFallVelocity *= densityFactor;
 
             // Fall time
-            decimal fallTime = wellProperties.WellDepth / averageFallVelocity; // minutes
+            decimal fallTime = wellProperties.WELL_DEPTH / averageFallVelocity; // minutes
 
             return Math.Max(1m, Math.Min(60m, fallTime)); // Clamp to 1-60 minutes
         }
@@ -86,7 +86,7 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         /// <summary>
         /// Calculates plunger rise time.
         /// </summary>
-        private static decimal CalculateRiseTime(PlungerLiftWellProperties wellProperties)
+        private static decimal CalculateRiseTime(PLUNGER_LIFT_WELL_PROPERTIES wellProperties)
         {
             // Plunger rise velocity depends on:
             // - Gas pressure
@@ -97,7 +97,7 @@ namespace Beep.OilandGas.PlungerLift.Calculations
             decimal averageRiseVelocity = 350m; // ft/min (typical)
 
             // Adjust for pressure differential
-            decimal pressureDifferential = wellProperties.CasingPressure - wellProperties.WellheadPressure;
+            decimal pressureDifferential = wellProperties.CASING_PRESSURE - wellProperties.WELLHEAD_PRESSURE;
             decimal pressureFactor = pressureDifferential / 100m; // Normalize
             averageRiseVelocity *= (1.0m + pressureFactor * 0.2m); // Up to 20% increase
 
@@ -107,7 +107,7 @@ namespace Beep.OilandGas.PlungerLift.Calculations
             averageRiseVelocity *= Math.Max(0.5m, slugFactor);
 
             // Rise time
-            decimal riseTime = wellProperties.WellDepth / averageRiseVelocity; // minutes
+            decimal riseTime = wellProperties.WELL_DEPTH / averageRiseVelocity; // minutes
 
             return Math.Max(2m, Math.Min(30m, riseTime)); // Clamp to 2-30 minutes
         }
@@ -115,7 +115,7 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         /// <summary>
         /// Calculates shut-in time (pressure build-up).
         /// </summary>
-        private static decimal CalculateShutInTime(PlungerLiftWellProperties wellProperties)
+        private static decimal CalculateShutInTime(PLUNGER_LIFT_WELL_PROPERTIES wellProperties)
         {
             // Shut-in time depends on:
             // - Required pressure build-up
@@ -126,12 +126,12 @@ namespace Beep.OilandGas.PlungerLift.Calculations
             decimal baseShutInTime = 15m; // minutes
 
             // Adjust for pressure differential needed
-            decimal requiredPressure = wellProperties.CasingPressure - wellProperties.WellheadPressure;
+            decimal requiredPressure = wellProperties.CASING_PRESSURE - wellProperties.WELLHEAD_PRESSURE;
             decimal pressureFactor = requiredPressure / 200m; // Normalize
             baseShutInTime *= (1.0m + pressureFactor * 0.5m); // Up to 50% increase
 
             // Adjust for gas availability
-            decimal gasFactor = wellProperties.GasOilRatio / 1000m; // Normalize
+            decimal gasFactor = wellProperties.GAS_OIL_RATIO / 1000m; // Normalize
             baseShutInTime *= (1.0m - gasFactor * 0.2m); // More gas = faster build-up
 
             return Math.Max(5m, Math.Min(60m, baseShutInTime)); // Clamp to 5-60 minutes
@@ -140,7 +140,7 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         /// <summary>
         /// Calculates liquid slug size.
         /// </summary>
-        private static decimal CalculateLiquidSlugSize(PlungerLiftWellProperties wellProperties)
+        private static decimal CalculateLiquidSlugSize(PLUNGER_LIFT_WELL_PROPERTIES wellProperties)
         {
             // Liquid slug size depends on:
             // - Liquid production rate
@@ -153,7 +153,7 @@ namespace Beep.OilandGas.PlungerLift.Calculations
                                CalculateRiseTime(wellProperties);
 
             // Liquid accumulated during shut-in
-            decimal liquidSlugSize = wellProperties.LiquidProductionRate * cycleTime / 1440m; // bbl
+            decimal liquidSlugSize = wellProperties.LIQUID_PRODUCTION_RATE * cycleTime / 1440m; // bbl
 
             // Clamp to reasonable range
             return Math.Max(0.1m, Math.Min(5.0m, liquidSlugSize));
@@ -162,9 +162,9 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         /// <summary>
         /// Calculates gas requirements for plunger lift.
         /// </summary>
-        public static PlungerLiftGasRequirements CalculateGasRequirements(
-            PlungerLiftWellProperties wellProperties,
-            PlungerLiftCycleResult cycleResult)
+        public static PLUNGER_LIFT_GAS_REQUIREMENTS CalculateGasRequirements(
+            PLUNGER_LIFT_WELL_PROPERTIES wellProperties,
+            PLUNGER_LIFT_CYCLE_RESULT cycleResult)
         {
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
@@ -172,33 +172,33 @@ namespace Beep.OilandGas.PlungerLift.Calculations
             if (cycleResult == null)
                 throw new ArgumentNullException(nameof(cycleResult));
 
-            var result = new PlungerLiftGasRequirements();
+            var result = new PLUNGER_LIFT_GAS_REQUIREMENTS();
 
             // Calculate required gas for lifting
             decimal requiredGasPerCycle = CalculateGasPerCycle(wellProperties, cycleResult);
 
             // Required gas injection rate
-            result.RequiredGasInjectionRate = requiredGasPerCycle * cycleResult.CyclesPerDay / 1000m; // Mscf/day
+            result.REQUIRED_GAS_INJECTION_RATE = requiredGasPerCycle * cycleResult.CYCLES_PER_DAY / 1000m; // Mscf/day
 
             // Available gas from well
-            result.AvailableGas = wellProperties.GasOilRatio * wellProperties.LiquidProductionRate / 1000m; // Mscf/day
+            result.AVAILABLE_GAS = wellProperties.GAS_OIL_RATIO * wellProperties.LIQUID_PRODUCTION_RATE / 1000m; // Mscf/day
 
             // Additional gas required
-            result.AdditionalGasRequired = Math.Max(0m, result.RequiredGasInjectionRate - result.AvailableGas);
+            result.ADDITIONAL_GAS_REQUIRED = Math.Max(0m, result.REQUIRED_GAS_INJECTION_RATE - result.AVAILABLE_GAS);
 
             // Required GLR
-            if (wellProperties.LiquidProductionRate > 0)
+            if (wellProperties.LIQUID_PRODUCTION_RATE > 0)
             {
-                result.RequiredGasLiquidRatio = result.RequiredGasInjectionRate * 1000m / wellProperties.LiquidProductionRate;
+                result.REQUIRED_GAS_LIQUID_RATIO = result.REQUIRED_GAS_INJECTION_RATE * 1000m / wellProperties.LIQUID_PRODUCTION_RATE;
             }
             else
             {
-                result.RequiredGasLiquidRatio = 0m;
+                result.REQUIRED_GAS_LIQUID_RATIO = 0m;
             }
 
             // Minimum and maximum casing pressure
-            result.MinimumCasingPressure = wellProperties.WellheadPressure + 50m; // Minimum 50 psi above
-            result.MaximumCasingPressure = wellProperties.BottomHolePressure * 0.8m; // 80% of BHP
+            result.MINIMUM_CASING_PRESSURE = wellProperties.WELLHEAD_PRESSURE + 50m; // Minimum 50 psi above
+            result.MAXIMUM_CASING_PRESSURE = wellProperties.BOTTOM_HOLE_PRESSURE * 0.8m; // 80% of BHP
 
             return result;
         }
@@ -207,22 +207,22 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         /// Calculates gas required per cycle.
         /// </summary>
         private static decimal CalculateGasPerCycle(
-            PlungerLiftWellProperties wellProperties,
-            PlungerLiftCycleResult cycleResult)
+            PLUNGER_LIFT_WELL_PROPERTIES wellProperties,
+            PLUNGER_LIFT_CYCLE_RESULT cycleResult)
         {
             // Gas required to lift liquid slug
             // Based on pressure and volume needed
 
             // Calculate average pressure
-            decimal averagePressure = (wellProperties.CasingPressure + wellProperties.WellheadPressure) / 2m;
-            decimal averageTemperature = (wellProperties.WellheadTemperature + wellProperties.BottomHoleTemperature) / 2m;
+            decimal averagePressure = (wellProperties.CASING_PRESSURE + wellProperties.WELLHEAD_PRESSURE) / 2m;
+            decimal averageTemperature = (wellProperties.WELLHEAD_TEMPERATURE + wellProperties.BOTTOM_HOLE_TEMPERATURE) / 2m;
 
             // Calculate Z-factor
             decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                averagePressure, averageTemperature, wellProperties.GasSpecificGravity);
+                averagePressure, averageTemperature, wellProperties.GAS_SPECIFIC_GRAVITY);
 
             // Liquid slug volume in cubic feet
-            decimal liquidSlugVolume = cycleResult.LiquidSlugSize * 5.615m; // ft³
+            decimal liquidSlugVolume = cycleResult.LIQUID_SLUG_SIZE * 5.615m; // ftÂ³
 
             // Gas volume needed (simplified)
             // Gas must displace liquid and provide lifting force
@@ -238,7 +238,7 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         /// Performs complete plunger lift performance analysis.
         /// </summary>
         public static PlungerLiftPerformanceResult AnalyzePerformance(
-            PlungerLiftWellProperties wellProperties)
+            PLUNGER_LIFT_WELL_PROPERTIES wellProperties)
         {
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
@@ -264,21 +264,21 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         /// Checks plunger lift feasibility.
         /// </summary>
         private static bool CheckFeasibility(
-            PlungerLiftWellProperties wellProperties,
+            PLUNGER_LIFT_WELL_PROPERTIES wellProperties,
             PlungerLiftPerformanceResult performanceResult,
             List<string> reasons)
         {
             bool isFeasible = true;
 
             // Check gas availability
-            if (performanceResult.GasRequirements.AdditionalGasRequired > performanceResult.GasRequirements.AvailableGas * 0.5m)
+            if (performanceResult.GasRequirements.ADDITIONAL_GAS_REQUIRED > performanceResult.GasRequirements.AVAILABLE_GAS * 0.5m)
             {
                 isFeasible = false;
-                reasons.Add($"Insufficient gas: Additional gas required ({performanceResult.GasRequirements.AdditionalGasRequired:F2} Mscf/day) exceeds 50% of available gas.");
+                reasons.Add($"Insufficient gas: Additional gas required ({performanceResult.GasRequirements.ADDITIONAL_GAS_REQUIRED:F2} Mscf/day) exceeds 50% of available gas.");
             }
 
             // Check pressure differential
-            decimal pressureDifferential = wellProperties.CasingPressure - wellProperties.WellheadPressure;
+            decimal pressureDifferential = wellProperties.CASING_PRESSURE - wellProperties.WELLHEAD_PRESSURE;
             if (pressureDifferential < 50m)
             {
                 isFeasible = false;
@@ -286,24 +286,24 @@ namespace Beep.OilandGas.PlungerLift.Calculations
             }
 
             // Check cycle time
-            if (performanceResult.CycleResult.CycleTime > 60m)
+            if (performanceResult.CycleResult.CYCLE_TIME > 60m)
             {
                 isFeasible = false;
-                reasons.Add($"Cycle time too long: {performanceResult.CycleResult.CycleTime:F2} minutes exceeds maximum 60 minutes.");
+                reasons.Add($"Cycle time too long: {performanceResult.CycleResult.CYCLE_TIME:F2} minutes exceeds maximum 60 minutes.");
             }
 
             // Check production rate
-            if (performanceResult.CycleResult.DailyProductionRate < wellProperties.LiquidProductionRate * 0.5m)
+            if (performanceResult.CycleResult.DAILY_PRODUCTION_RATE < wellProperties.LIQUID_PRODUCTION_RATE * 0.5m)
             {
                 isFeasible = false;
-                reasons.Add($"Production rate too low: {performanceResult.CycleResult.DailyProductionRate:F2} bbl/day is less than 50% of desired rate.");
+                reasons.Add($"Production rate too low: {performanceResult.CycleResult.DAILY_PRODUCTION_RATE:F2} bbl/day is less than 50% of desired rate.");
             }
 
             // Check GLR
-            if (performanceResult.GasRequirements.RequiredGasLiquidRatio > 5000m)
+            if (performanceResult.GasRequirements.REQUIRED_GAS_LIQUID_RATIO > 5000m)
             {
                 isFeasible = false;
-                reasons.Add($"Gas-liquid ratio too high: {performanceResult.GasRequirements.RequiredGasLiquidRatio:F2} scf/bbl exceeds maximum 5000 scf/bbl.");
+                reasons.Add($"Gas-liquid ratio too high: {performanceResult.GasRequirements.REQUIRED_GAS_LIQUID_RATIO:F2} scf/bbl exceeds maximum 5000 scf/bbl.");
             }
 
             return isFeasible;
@@ -313,12 +313,12 @@ namespace Beep.OilandGas.PlungerLift.Calculations
         /// Calculates system efficiency.
         /// </summary>
         private static decimal CalculateSystemEfficiency(
-            PlungerLiftWellProperties wellProperties,
+            PLUNGER_LIFT_WELL_PROPERTIES wellProperties,
             PlungerLiftPerformanceResult performanceResult)
         {
             // System efficiency = actual production / potential production
-            decimal potentialProduction = wellProperties.LiquidProductionRate;
-            decimal actualProduction = performanceResult.CycleResult.DailyProductionRate;
+            decimal potentialProduction = wellProperties.LIQUID_PRODUCTION_RATE;
+            decimal actualProduction = performanceResult.CycleResult.DAILY_PRODUCTION_RATE;
 
             if (potentialProduction <= 0)
                 return 0m;
@@ -327,7 +327,7 @@ namespace Beep.OilandGas.PlungerLift.Calculations
 
             // Adjust for gas efficiency
             decimal gasEfficiency = 1.0m;
-            if (performanceResult.GasRequirements.AdditionalGasRequired > 0)
+            if (performanceResult.GasRequirements.ADDITIONAL_GAS_REQUIRED > 0)
             {
                 gasEfficiency = 0.8m; // Reduced efficiency if external gas needed
             }

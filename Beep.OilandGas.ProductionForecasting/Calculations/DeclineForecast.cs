@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.DCA.AdvancedDeclineMethods;
@@ -52,7 +52,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// - Constant Pwf wells
         /// - Natural decline without stimulation
         /// </remarks>
-        public static ProductionForecast GenerateExponentialDeclineForecast(
+        public static PRODUCTION_FORECAST GenerateExponentialDeclineForecast(
             decimal qi,
             decimal di,
             decimal forecastDuration,
@@ -60,7 +60,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         {
             ValidateForecastInputs(qi, di, forecastDuration, timeSteps);
 
-            var forecast = new ProductionForecast
+            var forecast = new PRODUCTION_FORECAST
             {
                 ForecastType = ForecastType.Decline,
                 ForecastDuration = forecastDuration
@@ -81,7 +81,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 double np_double = ArpsDeclineMethods.ExponentialCumulativeProduction((double)qi, (double)di, (double)time);
                 cumulativeProduction = (decimal)np_double;
 
-                forecast.ForecastPoints.Add(new ForecastPoint
+                forecast.ForecastPoints.Add(new FORECAST_POINT
                 {
                     Time = time,
                     ProductionRate = Math.Max(0, productionRate),
@@ -91,13 +91,13 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 });
 
                 if (i == 0)
-                    forecast.InitialProductionRate = productionRate;
+                    forecast.INITIAL_PRODUCTION_RATE = productionRate;
             }
 
             if (forecast.ForecastPoints.Count > 0)
             {
-                forecast.FinalProductionRate = forecast.ForecastPoints.Last().ProductionRate;
-                forecast.TotalCumulativeProduction = forecast.ForecastPoints.Last().CumulativeProduction;
+                forecast.FINAL_PRODUCTION_RATE = forecast.ForecastPoints.Last().PRODUCTION_RATE;
+                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.ForecastPoints.Last().CUMULATIVE_PRODUCTION;
             }
 
             return forecast;
@@ -128,7 +128,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// - Boundary-dominated flow periods
         /// - Depletion-driven production
         /// </remarks>
-        public static ProductionForecast GenerateHarmonicDeclineForecast(
+        public static PRODUCTION_FORECAST GenerateHarmonicDeclineForecast(
             decimal qi,
             decimal di,
             decimal forecastDuration,
@@ -137,7 +137,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         {
             ValidateForecastInputs(qi, di, forecastDuration, timeSteps);
 
-            var forecast = new ProductionForecast
+            var forecast = new PRODUCTION_FORECAST
             {
                 ForecastType = ForecastType.Decline,
                 ForecastDuration = forecastDuration
@@ -174,7 +174,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 double np_double = ArpsDeclineMethods.HarmonicCumulativeProduction((double)qi, (double)di, (double)time);
                 cumulativeProduction = (decimal)np_double;
 
-                forecast.ForecastPoints.Add(new ForecastPoint
+                forecast.ForecastPoints.Add(new FORECAST_POINT
                 {
                     Time = time,
                     ProductionRate = Math.Max(0, productionRate),
@@ -184,7 +184,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 });
 
                 if (i == 0)
-                    forecast.InitialProductionRate = productionRate;
+                    forecast.INITIAL_PRODUCTION_RATE = productionRate;
 
                 if (productionRate == 0)
                     break;
@@ -192,9 +192,9 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
             if (forecast.ForecastPoints.Count > 0)
             {
-                forecast.FinalProductionRate = forecast.ForecastPoints.Last().ProductionRate;
-                forecast.TotalCumulativeProduction = forecast.ForecastPoints.Last().CumulativeProduction;
-                forecast.ForecastDuration = maxTime;
+                forecast.FINAL_PRODUCTION_RATE = forecast.ForecastPoints.Last().PRODUCTION_RATE;
+                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.ForecastPoints.Last().CUMULATIVE_PRODUCTION;
+                forecast.FORECAST_DURATION = maxTime;
             }
 
             return forecast;
@@ -206,7 +206,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// </summary>
         /// <param name="qi">Initial production rate.</param>
         /// <param name="di">Initial decline rate.</param>
-        /// <param name="b">Decline exponent (0 ≤ b ≤ 1). Range: 0.0 (exponential) to 1.0 (harmonic).</param>
+        /// <param name="b">Decline exponent (0 â‰¤ b â‰¤ 1). Range: 0.0 (exponential) to 1.0 (harmonic).</param>
         /// <param name="forecastDuration">Forecast duration.</param>
         /// <param name="economicLimit">Economic limit production rate (optional).</param>
         /// <param name="timeSteps">Number of time steps.</param>
@@ -228,7 +228,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// - Fractured reservoirs: b = 0.4-0.7
         /// - Homogeneous reservoirs: b = 0.8-1.0
         /// </remarks>
-        public static ProductionForecast GenerateHyperbolicDeclineForecast(
+        public static PRODUCTION_FORECAST GenerateHyperbolicDeclineForecast(
             decimal qi,
             decimal di,
             decimal b,
@@ -241,7 +241,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             if (b < 0 || b > 1)
                 throw new ArgumentException("Decline exponent b must be between 0 and 1.", nameof(b));
 
-            var forecast = new ProductionForecast
+            var forecast = new PRODUCTION_FORECAST
             {
                 ForecastType = ForecastType.Decline,
                 ForecastDuration = forecastDuration
@@ -277,7 +277,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 double np_double = ArpsDeclineMethods.HyperbolicCumulativeProduction((double)qi, (double)di, (double)time, (double)b);
                 cumulativeProduction = (decimal)np_double;
 
-                forecast.ForecastPoints.Add(new ForecastPoint
+                forecast.ForecastPoints.Add(new FORECAST_POINT
                 {
                     Time = time,
                     ProductionRate = Math.Max(0, productionRate),
@@ -287,7 +287,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 });
 
                 if (i == 0)
-                    forecast.InitialProductionRate = productionRate;
+                    forecast.INITIAL_PRODUCTION_RATE = productionRate;
 
                 if (productionRate == 0)
                     break;
@@ -295,9 +295,9 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
             if (forecast.ForecastPoints.Count > 0)
             {
-                forecast.FinalProductionRate = forecast.ForecastPoints.Last().ProductionRate;
-                forecast.TotalCumulativeProduction = forecast.ForecastPoints.Last().CumulativeProduction;
-                forecast.ForecastDuration = maxTime;
+                forecast.FINAL_PRODUCTION_RATE = forecast.ForecastPoints.Last().PRODUCTION_RATE;
+                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.ForecastPoints.Last().CUMULATIVE_PRODUCTION;
+                forecast.FORECAST_DURATION = maxTime;
             }
 
             return forecast;
@@ -321,7 +321,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// - Gas wells (conventional): b = 0.9 (typically boundary-dominated)
         /// - Gas wells (unconventional): b = 0.4 (extended transient)
         /// </remarks>
-        public static ProductionForecast GenerateAutoSelectDeclineForecast(
+        public static PRODUCTION_FORECAST GenerateAutoSelectDeclineForecast(
             decimal qi,
             decimal di,
             string wellType = "conventional",
@@ -352,7 +352,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 throw new ArgumentException("Initial production rate (qi) must be positive.", nameof(qi));
 
             if (di <= 0 || di > 2.0m)
-                throw new ArgumentException("Decline rate (di) must be positive and ≤ 2.0.", nameof(di));
+                throw new ArgumentException("Decline rate (di) must be positive and â‰¤ 2.0.", nameof(di));
 
             if (forecastDuration <= 0)
                 throw new ArgumentException("Forecast duration must be positive.", nameof(forecastDuration));

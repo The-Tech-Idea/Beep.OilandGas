@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data;
 
@@ -27,7 +27,7 @@ namespace Beep.OilandGas.Models.Data.Ownership
 
             set { SetProperty(ref ChangeTypeValue, value); }
 
-        } // DivisionOrder, TransferOrder
+        } // DIVISION_ORDER, TRANSFER_ORDER
         private string ChangeIdValue;
 
         public string ChangeId

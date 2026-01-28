@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -104,22 +104,22 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 if (string.IsNullOrWhiteSpace(detail.ALLOCATION_RESULT_ID))
                     throw new RoyaltyException("Allocation detail is missing ALLOCATION_RESULT_ID");
 
-                var allocationResult = await GetAllocationResultAsync(detail.ALLOCATION_RESULT_ID, cn);
-                if (allocationResult == null)
+                var ALLOCATION_RESULT = await GetAllocationResultAsync(detail.ALLOCATION_RESULT_ID, cn);
+                if (ALLOCATION_RESULT == null)
                     throw new RoyaltyException($"Allocation result not found: {detail.ALLOCATION_RESULT_ID}");
 
-                var runTicket = await GetRunTicketAsync(allocationResult.ALLOCATION_REQUEST_ID, cn);
-                var leaseId = runTicket?.LEASE_ID;
+                var RUN_TICKET = await GetRunTicketAsync(ALLOCATION_RESULT.ALLOCATION_REQUEST_ID, cn);
+                var leaseId = RUN_TICKET?.LEASE_ID;
                 if (string.IsNullOrWhiteSpace(leaseId))
                     throw new RoyaltyException("Lease ID is required for royalty calculation");
 
-                var royaltyInterest = await GetRoyaltyInterestAsync(
+                var ROYALTY_INTEREST = await GetRoyaltyInterestAsync(
                     leaseId,
                     detail.ENTITY_ID,
-                    runTicket?.TICKET_DATE_TIME,
+                    RUN_TICKET?.TICKET_DATE_TIME,
                     cn);
 
-                var rawRate = royaltyInterest?.ROYALTY_RATE ?? royaltyInterest?.INTEREST_PERCENTAGE ?? 12.5m;
+                var rawRate = ROYALTY_INTEREST?.ROYALTY_RATE ?? ROYALTY_INTEREST?.INTEREST_PERCENTAGE ?? 12.5m;
                 var royaltyRate = NormalizeRate(rawRate);
 
                 if (royaltyRate < 0 || royaltyRate > 0.5m)
@@ -132,9 +132,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // STEP 3: Calculate gross revenue (Volume x Commodity Price) (Volume x Commodity Price)
                 // Query PRICE_INDEX for commodity price at calculation date
                 // GetCommodityPriceAsync returns fallback $75/BBL if lookup fails
-                var priceDate = runTicket?.TICKET_DATE_TIME ?? DateTime.UtcNow;
-                decimal commodityPrice = runTicket?.PRICE_PER_BARREL > 0
-                    ? runTicket.PRICE_PER_BARREL.Value
+                var priceDate = RUN_TICKET?.TICKET_DATE_TIME ?? DateTime.UtcNow;
+                decimal commodityPrice = RUN_TICKET?.PRICE_PER_BARREL > 0
+                    ? RUN_TICKET.PRICE_PER_BARREL.Value
                     : await GetCommodityPriceAsync("OIL", priceDate, cn);
                 
                 decimal grossRevenue = allocatedVolume * commodityPrice;
@@ -178,8 +178,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 {
                     ROYALTY_CALCULATION_ID = Guid.NewGuid().ToString(),
                     PROPERTY_OR_LEASE_ID = leaseId,
-                    ALLOCATION_RESULT_ID = allocationResult.ALLOCATION_RESULT_ID,
-                    ROYALTY_INTEREST_ID = royaltyInterest?.ROYALTY_INTEREST_ID,
+                    ALLOCATION_RESULT_ID = ALLOCATION_RESULT.ALLOCATION_RESULT_ID,
+                    ROYALTY_INTEREST_ID = ROYALTY_INTEREST?.ROYALTY_INTEREST_ID,
                     ROYALTY_OWNER_ID = detail.ENTITY_ID,
                     ALLOCATION_DETAIL_ID = detail.ALLOCATION_DETAIL_ID,
                     CALCULATION_DATE = DateTime.UtcNow,
@@ -594,11 +594,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             if (royaltyRate <= 0m && !string.IsNullOrWhiteSpace(ownership.DIVISION_ORDER_ID))
             {
-                var divisionOrder = await GetDivisionOrderAsync(ownership.DIVISION_ORDER_ID, cn);
-                if (divisionOrder != null)
+                var DIVISION_ORDER = await GetDivisionOrderAsync(ownership.DIVISION_ORDER_ID, cn);
+                if (DIVISION_ORDER != null)
                 {
-                    royaltyRate = NormalizeFraction(divisionOrder.ROYALTY_INTEREST) +
-                                  NormalizeFraction(divisionOrder.OVERRIDING_ROYALTY_INTEREST);
+                    royaltyRate = NormalizeFraction(DIVISION_ORDER.ROYALTY_INTEREST) +
+                                  NormalizeFraction(DIVISION_ORDER.OVERRIDING_ROYALTY_INTEREST);
                 }
             }
 
@@ -668,12 +668,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 entityType, cn, "DIVISION_ORDER");
 
             var result = await repo.GetByIdAsync(divisionOrderId);
-            var divisionOrder = result as DIVISION_ORDER;
-            if (divisionOrder == null)
+            var DIVISION_ORDER = result as DIVISION_ORDER;
+            if (DIVISION_ORDER == null)
                 return null;
-            if (!string.Equals(divisionOrder.STATUS, "APPROVED", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(DIVISION_ORDER.STATUS, "APPROVED", StringComparison.OrdinalIgnoreCase))
                 return null;
-            return divisionOrder;
+            return DIVISION_ORDER;
         }
 
         private static decimal NormalizeFraction(decimal? value)

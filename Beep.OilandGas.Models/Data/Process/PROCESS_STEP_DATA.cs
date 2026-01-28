@@ -1,8 +1,10 @@
-using System;
+﻿using System;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.ProductionForecasting;
+using Beep.OilandGas.Models.Data.Reporting;
 
 namespace Beep.OilandGas.Models.Data.Process
 {
@@ -32,7 +34,7 @@ namespace Beep.OilandGas.Models.Data.Process
         public WorkOrderUpdateRequest WorkOrderUpdate { get; set; }
         public WorkOrderCreationRequest WorkOrderCreation { get; set; }
         public WellTestRequest WellTest { get; set; }
-        public ProductionForecast ProductionForecast { get; set; }
+        public PRODUCTION_FORECAST PRODUCTION_FORECAST { get; set; }
         public EconomicAnalysisRequest EconomicAnalysis { get; set; }
         public DeclineCurveAnalysisRequest DeclineCurveAnalysis { get; set; }
         public DCARequest DCA { get; set; }

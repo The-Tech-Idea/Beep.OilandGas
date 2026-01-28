@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using SkiaSharp;
@@ -16,21 +16,21 @@ namespace Beep.OilandGas.HeatMap.Statistics
         /// <param name="dataPoints">List of data points.</param>
         /// <param name="contourLevels">Number of contour levels to generate.</param>
         /// <returns>Dictionary mapping contour level to list of points at that level.</returns>
-        public static Dictionary<double, List<HeatMapDataPoint>> CalculateStatisticalContours(
-            List<HeatMapDataPoint> dataPoints,
+        public static Dictionary<double, List<HEAT_MAP_DATA_POINT>> CalculateStatisticalContours(
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             int contourLevels = 5)
         {
             if (dataPoints == null || dataPoints.Count == 0)
-                return new Dictionary<double, List<HeatMapDataPoint>>();
+                return new Dictionary<double, List<HEAT_MAP_DATA_POINT>>();
 
             double minValue = dataPoints.Min(p => p.Value);
             double maxValue = dataPoints.Max(p => p.Value);
             double range = maxValue - minValue;
 
             if (range <= 0)
-                return new Dictionary<double, List<HeatMapDataPoint>>();
+                return new Dictionary<double, List<HEAT_MAP_DATA_POINT>>();
 
-            var contours = new Dictionary<double, List<HeatMapDataPoint>>();
+            var contours = new Dictionary<double, List<HEAT_MAP_DATA_POINT>>();
 
             for (int i = 0; i <= contourLevels; i++)
             {
@@ -53,12 +53,12 @@ namespace Beep.OilandGas.HeatMap.Statistics
         /// <param name="dataPoints">List of data points.</param>
         /// <param name="outlierFactor">Factor for outlier detection (default: 1.5).</param>
         /// <returns>List of outlier points.</returns>
-        public static List<HeatMapDataPoint> IdentifyOutliers(
-            List<HeatMapDataPoint> dataPoints,
+        public static List<HEAT_MAP_DATA_POINT> IdentifyOutliers(
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double outlierFactor = 1.5)
         {
             if (dataPoints == null || dataPoints.Count < 4)
-                return new List<HeatMapDataPoint>();
+                return new List<HEAT_MAP_DATA_POINT>();
 
             var values = dataPoints.Select(p => p.Value).OrderBy(v => v).ToList();
             int n = values.Count;
@@ -84,7 +84,7 @@ namespace Beep.OilandGas.HeatMap.Statistics
         /// <param name="confidenceLevel">Confidence level (0.0 to 1.0, default: 0.95).</param>
         /// <returns>Tuple containing (mean, lowerBound, upperBound).</returns>
         public static (double mean, double lowerBound, double upperBound) CalculateConfidenceInterval(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double confidenceLevel = 0.95)
         {
             if (dataPoints == null || dataPoints.Count == 0)
@@ -112,7 +112,7 @@ namespace Beep.OilandGas.HeatMap.Statistics
         /// <param name="bins">Number of bins in the histogram.</param>
         /// <returns>Dictionary mapping bin center to count.</returns>
         public static Dictionary<double, int> GenerateHistogram(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             int bins = 20)
         {
             if (dataPoints == null || dataPoints.Count == 0)
@@ -220,7 +220,7 @@ namespace Beep.OilandGas.HeatMap.Statistics
         /// <param name="highlightColor">Color for highlighting outliers.</param>
         public static void DrawOutliers(
             SKCanvas canvas,
-            List<HeatMapDataPoint> outliers,
+            List<HEAT_MAP_DATA_POINT> outliers,
             double zoom,
             SKPoint panOffset,
             SKColor highlightColor = default)
@@ -259,7 +259,7 @@ namespace Beep.OilandGas.HeatMap.Statistics
         /// <param name="panOffset">Current pan offset.</param>
         public static void DrawConfidenceInterval(
             SKCanvas canvas,
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             (double mean, double lowerBound, double upperBound) confidenceInterval,
             double zoom,
             SKPoint panOffset)

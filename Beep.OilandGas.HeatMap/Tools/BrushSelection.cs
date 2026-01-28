@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using SkiaSharp;
@@ -156,7 +156,7 @@ namespace Beep.OilandGas.HeatMap.Tools
             isActive = false;
 
             var bounds = GetSelectionBounds();
-            var selectedPoints = GetSelectedPoints(new List<HeatMapDataPoint>(), 0, 0, 1.0f, 0, 0); // Placeholder
+            var selectedPoints = GetSelectedPoints(new List<HEAT_MAP_DATA_POINT>(), 0, 0, 1.0f, 0, 0); // Placeholder
 
             SelectionCompleted?.Invoke(this, new SelectionCompletedEventArgs
             {
@@ -193,15 +193,15 @@ namespace Beep.OilandGas.HeatMap.Tools
         /// <summary>
         /// Gets data points within the selection.
         /// </summary>
-        public List<HeatMapDataPoint> GetSelectedPoints(
-            List<HeatMapDataPoint> dataPoints,
+        public List<HEAT_MAP_DATA_POINT> GetSelectedPoints(
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             float scaleX, float scaleY, float zoom,
             float offsetX, float offsetY)
         {
             if (selectionPoints.Count < 2)
-                return new List<HeatMapDataPoint>();
+                return new List<HEAT_MAP_DATA_POINT>();
 
-            var selected = new List<HeatMapDataPoint>();
+            var selected = new List<HEAT_MAP_DATA_POINT>();
 
             foreach (var point in dataPoints)
             {

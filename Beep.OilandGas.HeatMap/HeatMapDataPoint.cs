@@ -1,12 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Beep.OilandGas.HeatMap
 {
-    public class HeatMapDataPoint
+    public class HEAT_MAP_DATA_POINT
     {
-        public HeatMapDataPoint()
+        public HEAT_MAP_DATA_POINT()
         {
                 
         }
@@ -16,7 +16,7 @@ namespace Beep.OilandGas.HeatMap
         public double OriginalY { get; set; }
         public double Value { get; set; }
         public string Label { get; set; }
-        public HeatMapDataPoint(double originalx,double originaly,double value,string label)
+        public HEAT_MAP_DATA_POINT(double originalx,double originaly,double value,string label)
         {
            
             OriginalX=originalx; 

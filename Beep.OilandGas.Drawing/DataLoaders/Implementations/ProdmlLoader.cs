@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -246,7 +246,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
 
         private void ExtractWellTest(XElement wellTest, ProductionData productionData)
         {
-            var testData = new WellTestData
+            var testData = new WELL_TEST_DATA
             {
                 TestId = wellTest.Element(prodml + "uid")?.Value,
                 TestName = wellTest.Element(prodml + "name")?.Value
@@ -325,14 +325,14 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         public string WellboreIdentifier { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
-        public List<WellTestData> WellTests { get; set; } = new List<WellTestData>();
+        public List<WELL_TEST_DATA> WellTests { get; set; } = new List<WELL_TEST_DATA>();
         public List<FlowData> FlowData { get; set; } = new List<FlowData>();
     }
 
     /// <summary>
     /// Represents well test data from PRODML.
     /// </summary>
-    public class WellTestData
+    public class WELL_TEST_DATA
     {
         public string TestId { get; set; }
         public string TestName { get; set; }

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.Models.Data.Calculations;
@@ -25,7 +25,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         [HttpPost("isothermal")]
-        public ActionResult<FlashResult> PerformIsothermalFlash([FromBody] FlashConditions conditions)
+        public ActionResult<FlashResult> PerformIsothermalFlash([FromBody] FLASH_CONDITIONS conditions)
         {
             try
             {

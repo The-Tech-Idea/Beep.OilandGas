@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.FlashCalculations.Constants;
@@ -14,15 +14,15 @@ namespace Beep.OilandGas.FlashCalculations.Validation
         /// <summary>
         /// Validates flash conditions.
         /// </summary>
-        public static void ValidateFlashConditions(FlashConditions conditions)
+        public static void ValidateFlashConditions(FLASH_CONDITIONS conditions)
         {
             if (conditions == null)
                 throw new ArgumentNullException(nameof(conditions));
 
-            if (conditions.Pressure <= 0)
+            if (conditions.PRESSURE <= 0)
                 throw new InvalidFlashConditionsException("Pressure must be greater than zero.");
 
-            if (conditions.Temperature <= 0)
+            if (conditions.TEMPERATURE <= 0)
                 throw new InvalidFlashConditionsException("Temperature must be greater than zero.");
 
             if (conditions.FeedComposition == null || conditions.FeedComposition.Count == 0)
@@ -35,7 +35,7 @@ namespace Beep.OilandGas.FlashCalculations.Validation
             }
 
             // Validate mole fractions sum to approximately 1.0
-            decimal totalMoleFraction = conditions.FeedComposition.Sum(c => c.MoleFraction);
+            decimal totalMoleFraction = conditions.FeedComposition.Sum(c => c.MOLE_FRACTION);
             if (Math.Abs(totalMoleFraction - 1.0m) > 0.1m)
             {
                 throw new InvalidFlashConditionsException(
@@ -54,23 +54,23 @@ namespace Beep.OilandGas.FlashCalculations.Validation
             if (string.IsNullOrWhiteSpace(component.Name))
                 throw new InvalidComponentException("Component name cannot be empty.");
 
-            if (component.MoleFraction < 0 || component.MoleFraction > 1)
+            if (component.MOLE_FRACTION < 0 || component.MOLE_FRACTION > 1)
                 throw new InvalidComponentException($"Component {component.Name}: Mole fraction must be between 0 and 1.");
 
-            if (component.CriticalTemperature <= 0)
+            if (component.CRITICAL_TEMPERATURE <= 0)
                 throw new InvalidComponentException($"Component {component.Name}: Critical temperature must be greater than zero.");
 
-            if (component.CriticalPressure <= 0)
+            if (component.CRITICAL_PRESSURE <= 0)
                 throw new InvalidComponentException($"Component {component.Name}: Critical pressure must be greater than zero.");
 
-            if (component.MolecularWeight <= 0)
+            if (component.MOLECULAR_WEIGHT <= 0)
                 throw new InvalidComponentException($"Component {component.Name}: Molecular weight must be greater than zero.");
         }
 
         /// <summary>
         /// Validates flash component properties.
         /// </summary>
-        public static void ValidateFlashComponent(FlashComponent component)
+        public static void ValidateFlashComponent(FLASH_COMPONENT component)
         {
             if (component == null)
                 throw new ArgumentNullException(nameof(component));
@@ -78,16 +78,16 @@ namespace Beep.OilandGas.FlashCalculations.Validation
             if (string.IsNullOrWhiteSpace(component.Name))
                 throw new InvalidComponentException("Component name cannot be empty.");
 
-            if (component.MoleFraction < 0 || component.MoleFraction > 1)
+            if (component.MOLE_FRACTION < 0 || component.MOLE_FRACTION > 1)
                 throw new InvalidComponentException($"Component {component.Name}: Mole fraction must be between 0 and 1.");
 
-            if (component.CriticalTemperature <= 0)
+            if (component.CRITICAL_TEMPERATURE <= 0)
                 throw new InvalidComponentException($"Component {component.Name}: Critical temperature must be greater than zero.");
 
-            if (component.CriticalPressure <= 0)
+            if (component.CRITICAL_PRESSURE <= 0)
                 throw new InvalidComponentException($"Component {component.Name}: Critical pressure must be greater than zero.");
 
-            if (component.MolecularWeight <= 0)
+            if (component.MOLECULAR_WEIGHT <= 0)
                 throw new InvalidComponentException($"Component {component.Name}: Molecular weight must be greater than zero.");
         }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using TheTechIdea.Beep.Editor;
@@ -36,8 +36,8 @@ namespace Beep.OilandGas.Models.Data.Trading
             set { SetProperty(ref ContractIdValue, value); }
         }
 
-        private List<ExchangeTransaction> TransactionsValue = new List<ExchangeTransaction>();
-        public List<ExchangeTransaction> Transactions
+        private List<EXCHANGE_TRANSACTION> TransactionsValue = new List<EXCHANGE_TRANSACTION>();
+        public List<EXCHANGE_TRANSACTION> Transactions
         {
             get { return this.TransactionsValue; }
             set { SetProperty(ref TransactionsValue, value); }

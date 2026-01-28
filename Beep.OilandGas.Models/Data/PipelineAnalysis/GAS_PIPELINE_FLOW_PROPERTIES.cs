@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -70,5 +70,12 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
         }
         // Standard PPDM columns
 
+
+        private PIPELINE_PROPERTIES PIPELINEValue;
+        public PIPELINE_PROPERTIES PIPELINE
+        {
+            get { return this.PIPELINEValue; }
+            set { SetProperty(ref PIPELINEValue, value); }
+        }
     }
 }

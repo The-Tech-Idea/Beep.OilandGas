@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
@@ -364,14 +364,14 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         public DateTime CheckDate { get; set; }
         public decimal OverallQualityScore { get; set; }
         public Dictionary<string, decimal> QualityByDataType { get; set; } = new();
-        public List<DataQualityIssue> Issues { get; set; } = new();
+        public List<DATA_QUALITY_ISSUE> Issues { get; set; } = new();
         public List<string> Recommendations { get; set; } = new();
     }
 
     /// <summary>
     /// Data quality issue DTO
     /// </summary>
-    public class DataQualityIssue
+    public class DATA_QUALITY_ISSUE
     {
         public string IssueId { get; set; } = string.Empty;
         public string DataType { get; set; } = string.Empty;

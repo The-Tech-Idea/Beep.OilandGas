@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
@@ -44,10 +44,10 @@ namespace Beep.OilandGas.Models.Data.Trading
             set { SetProperty(ref ContractTypeValue, value); }
 
         }
-        private List<ExchangeParty> PartiesValue = new();
+        private List<EXCHANGE_PARTY> PartiesValue = new();
 
         [Required]
-        public List<ExchangeParty> Parties
+        public List<EXCHANGE_PARTY> Parties
 
         {
 
@@ -79,9 +79,9 @@ namespace Beep.OilandGas.Models.Data.Trading
             set { SetProperty(ref ExpirationDateValue, value); }
 
         }
-        private ExchangeTerms? TermsValue;
+        private EXCHANGE_TERMS? TermsValue;
 
-        public ExchangeTerms? Terms
+        public EXCHANGE_TERMS? Terms
 
         {
 
@@ -90,9 +90,9 @@ namespace Beep.OilandGas.Models.Data.Trading
             set { SetProperty(ref TermsValue, value); }
 
         }
-        private List<ExchangeDeliveryPoint>? DeliveryPointsValue;
+        private List<EXCHANGE_DELIVERY_POINT>? DeliveryPointsValue;
 
-        public List<ExchangeDeliveryPoint>? DeliveryPoints
+        public List<EXCHANGE_DELIVERY_POINT>? DeliveryPoints
 
         {
 
@@ -101,9 +101,9 @@ namespace Beep.OilandGas.Models.Data.Trading
             set { SetProperty(ref DeliveryPointsValue, value); }
 
         }
-        private ExchangePricingTerms? PricingTermsValue;
+        private EXCHANGE_PRICING_TERMS? PricingTermsValue;
 
-        public ExchangePricingTerms? PricingTerms
+        public EXCHANGE_PRICING_TERMS? PricingTerms
 
         {
 

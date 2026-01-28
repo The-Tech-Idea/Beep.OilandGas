@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 
@@ -52,12 +52,12 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to ChokeProperties.
+        /// Maps PPDM39 WELL and related entities to CHOKE_PROPERTIES.
         /// </summary>
         /// <param name="well">The PPDM39 WELL entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity.</param>
-        /// <returns>The mapped ChokeProperties.</returns>
-        public ChokeProperties MapToChokeProperties(
+        /// <returns>The mapped CHOKE_PROPERTIES.</returns>
+        public CHOKE_PROPERTIES MapToChokeProperties(
             WELL well,
             WELL_PRESSURE? wellPressure = null)
         {
@@ -68,7 +68,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getChokeType = _getChokeType ?? ((w) => ChokeType.Bean); // Default to Bean
             var getDischargeCoefficient = _getDischargeCoefficient ?? ValueRetrievers.GetDefaultDischargeCoefficient;
 
-            return new ChokeProperties
+            return new CHOKE_PROPERTIES
             {
                 ChokeDiameter = getChokeDiameter(well),
                 ChokeType = getChokeType(well),
@@ -77,12 +77,12 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to GasChokeProperties.
+        /// Maps PPDM39 WELL and related entities to GAS_CHOKE_PROPERTIES.
         /// </summary>
         /// <param name="well">The PPDM39 WELL entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity.</param>
-        /// <returns>The mapped GasChokeProperties.</returns>
-        public GasChokeProperties MapToGasChokeProperties(
+        /// <returns>The mapped GAS_CHOKE_PROPERTIES.</returns>
+        public GAS_CHOKE_PROPERTIES MapToGasChokeProperties(
             WELL well,
             WELL_PRESSURE? wellPressure = null)
         {
@@ -96,7 +96,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getZFactor = _getZFactor ?? ((w) => throw new InvalidOperationException("Z-factor not available. Provide getZFactor function."));
             var getGasFlowRate = _getGasFlowRate ?? ((w) => throw new InvalidOperationException("Gas flow rate not available. Provide getGasFlowRate function."));
 
-            return new GasChokeProperties
+            return new GAS_CHOKE_PROPERTIES
             {
                 UpstreamPressure = getUpstreamPressure(well, wellPressure),
                 DownstreamPressure = getDownstreamPressure(well, wellPressure),

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data;
 
@@ -86,9 +86,9 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref ApiGravityValue, value); }
 
         }
-        private CrudeOilProperties? PropertiesValue;
+        private CRUDE_OIL_PROPERTIES? PropertiesValue;
 
-        public CrudeOilProperties? Properties
+        public CRUDE_OIL_PROPERTIES? Properties
 
         {
 

@@ -122,5 +122,25 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+        public string WELL_UWI { get; set; }
+        public PermitApplicationType APPLICATION_TYPE { get; set; }
+        public PermitApplicationStatus STATUS { get; set; }
+        public Country COUNTRY { get; set; }
+        public StateProvince STATE_PROVINCE { get; set; }
+        public RegulatoryAuthority REGULATORY_AUTHORITY { get; set; }
+        public DateTime? CREATED_DATE { get; set; }
+        public DateTime? SUBMITTED_DATE { get; set; }
+        public DateTime? RECEIVED_DATE { get; set; }
+        public DateTime? DECISION_DATE { get; set; }
+        public string DECISION { get; set; }
+        public string REFERENCE_NUMBER { get; set; }
+        public string FEES_DESCRIPTION { get; set; }
+        public bool FEES_PAID { get; set; }
+        public string REMARKS { get; set; }
+        public bool SUBMISSION_COMPLETE { get; set; }
+        public string SUBMISSION_DESCRIPTION { get; set; }
+        public List<APPLICATION_ATTACHMENT> ATTACHMENTS { get; set; }
+        public List<APPLICATION_AREA> AREAS { get; set; }
+        public object COMPONENTS { get; set; }
     }
 }

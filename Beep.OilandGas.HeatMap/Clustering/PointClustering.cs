@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -22,7 +22,7 @@ namespace Beep.OilandGas.HeatMap.Clustering
         /// <summary>
         /// Gets or sets the points in this cluster.
         /// </summary>
-        public List<HeatMapDataPoint> Points { get; set; }
+        public List<HEAT_MAP_DATA_POINT> Points { get; set; }
 
         /// <summary>
         /// Gets or sets the aggregated value (e.g., average, sum, max).
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.HeatMap.Clustering
 
         public Cluster()
         {
-            Points = new List<HeatMapDataPoint>();
+            Points = new List<HEAT_MAP_DATA_POINT>();
         }
     }
 
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.HeatMap.Clustering
         /// <param name="aggregationMethod">Method to aggregate values in each cell.</param>
         /// <returns>List of clusters.</returns>
         public static List<Cluster> GridBasedClustering(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double gridSize,
             AggregationMethod aggregationMethod = AggregationMethod.Average)
         {
@@ -171,7 +171,7 @@ namespace Beep.OilandGas.HeatMap.Clustering
         /// <param name="aggregationMethod">Method to aggregate values in each cluster.</param>
         /// <returns>List of clusters.</returns>
         public static List<Cluster> DistanceBasedClustering(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double epsilon,
             int minPoints = 3,
             AggregationMethod aggregationMethod = AggregationMethod.Average)
@@ -180,8 +180,8 @@ namespace Beep.OilandGas.HeatMap.Clustering
                 return new List<Cluster>();
 
             var clusters = new List<Cluster>();
-            var visited = new HashSet<HeatMapDataPoint>();
-            var noise = new HashSet<HeatMapDataPoint>();
+            var visited = new HashSet<HEAT_MAP_DATA_POINT>();
+            var noise = new HashSet<HEAT_MAP_DATA_POINT>();
 
             foreach (var point in dataPoints)
             {
@@ -201,12 +201,12 @@ namespace Beep.OilandGas.HeatMap.Clustering
                 // Create new cluster
                 var cluster = new Cluster
                 {
-                    Points = new List<HeatMapDataPoint> { point }
+                    Points = new List<HEAT_MAP_DATA_POINT> { point }
                 };
                 cluster.Points.AddRange(neighbors);
 
                 // Expand cluster
-                var seedSet = new Queue<HeatMapDataPoint>(neighbors);
+                var seedSet = new Queue<HEAT_MAP_DATA_POINT>(neighbors);
                 while (seedSet.Count > 0)
                 {
                     var currentPoint = seedSet.Dequeue();
@@ -260,7 +260,7 @@ namespace Beep.OilandGas.HeatMap.Clustering
         /// <param name="aggregationMethod">Method to aggregate values in each cluster.</param>
         /// <returns>List of clusters.</returns>
         public static List<Cluster> KMeansClustering(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             int k,
             int maxIterations = 100,
             AggregationMethod aggregationMethod = AggregationMethod.Average)
@@ -374,7 +374,7 @@ namespace Beep.OilandGas.HeatMap.Clustering
         /// <summary>
         /// Aggregates values from a list of points using the specified method.
         /// </summary>
-        private static double AggregateValues(List<HeatMapDataPoint> points, AggregationMethod method)
+        private static double AggregateValues(List<HEAT_MAP_DATA_POINT> points, AggregationMethod method)
         {
             if (points == null || points.Count == 0)
                 return 0;
@@ -414,12 +414,12 @@ namespace Beep.OilandGas.HeatMap.Clustering
         /// <summary>
         /// Gets neighbors of a point within epsilon distance.
         /// </summary>
-        private static List<HeatMapDataPoint> GetNeighbors(
-            HeatMapDataPoint point,
-            List<HeatMapDataPoint> allPoints,
+        private static List<HEAT_MAP_DATA_POINT> GetNeighbors(
+            HEAT_MAP_DATA_POINT point,
+            List<HEAT_MAP_DATA_POINT> allPoints,
             double epsilon)
         {
-            var neighbors = new List<HeatMapDataPoint>();
+            var neighbors = new List<HEAT_MAP_DATA_POINT>();
             double epsilonSquared = epsilon * epsilon;
 
             foreach (var other in allPoints)

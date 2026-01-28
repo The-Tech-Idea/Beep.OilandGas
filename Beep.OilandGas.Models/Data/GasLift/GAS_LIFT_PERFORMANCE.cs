@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data;
 
@@ -55,5 +55,12 @@ namespace Beep.OilandGas.Models.Data.GasLift
         }
 
         // Standard PPDM columns
+
+        private string? STATUSValue;
+        public string? STATUS
+        {
+            get { return this.STATUSValue; }
+            set { SetProperty(ref STATUSValue, value); }
+        }
     }
 }

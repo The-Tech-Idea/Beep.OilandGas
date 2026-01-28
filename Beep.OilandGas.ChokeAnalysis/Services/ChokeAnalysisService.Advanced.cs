@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -29,7 +29,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             if (desiredFlowRate <= 0 || upstreamPressure <= downstreamPressure)
                 throw new ArgumentException("Invalid bean choke parameters");
 
-            _logger?.LogInformation("Designing bean choke: Flow={Flow} Mscf/d, ΔP={Delta} psi",
+            _logger?.LogInformation("Designing bean choke: Flow={Flow} Mscf/d, Î”P={Delta} psi",
                 desiredFlowRate, upstreamPressure - downstreamPressure);
 
             try
@@ -194,7 +194,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     DownstreamPressure = upstreamPressure - totalDP
                 };
 
-                _logger?.LogInformation("Multiphase complete: {Pattern}, Quality={Q:P}, ΔP={DP} psi",
+                _logger?.LogInformation("Multiphase complete: {Pattern}, Quality={Q:P}, Î”P={DP} psi",
                     flowPattern, gasQuality, totalDP);
                 await Task.CompletedTask;
                 return result;
@@ -219,7 +219,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             if (sandProductionRate < 0 || chokeDiameter <= 0)
                 throw new ArgumentException("Invalid erosion parameters");
 
-            _logger?.LogInformation("Predicting erosion: Sand={S} lb/d, Size={Size} μm, Material={M}",
+            _logger?.LogInformation("Predicting erosion: Sand={S} lb/d, Size={Size} Î¼m, Material={M}",
                 sandProductionRate, sandParticleSize, chokeMaterial);
 
             try
@@ -321,7 +321,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     CurrentChokeDiameter = currentChokeDiameter,
                     CurrentBackPressure = currentBP,
                     CurrentProductionRate = currentProduction,
-                    OptimalChokeDiameter = optimal.ChokeDiameter,
+                    OptimalChokeDiameter = optimal.CHOKE_DIAMETER,
                     OptimalBackPressure = optimal.PressureDrop,
                     OptimalProductionRate = optimal.ProductionRate,
                     ProductionIncrease = prodIncrease,
@@ -332,7 +332,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     OpeningCurve = openingCurve
                 };
 
-                _logger?.LogInformation("Optimization: {Current} → {Optimal} STB/d (+{Inc:F1}%)",
+                _logger?.LogInformation("Optimization: {Current} â†’ {Optimal} STB/d (+{Inc:F1}%)",
                     currentProduction, optimal.ProductionRate, prodIncrease);
                 await Task.CompletedTask;
                 return result;
@@ -393,7 +393,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     OperatingConstraints = constraints
                 };
 
-                _logger?.LogInformation("Lift interaction: {Type} efficiency {Current:F1}% → {Optimal:F1}%",
+                _logger?.LogInformation("Lift interaction: {Type} efficiency {Current:F1}% â†’ {Optimal:F1}%",
                     liftSystemType, currentEff, optimalEff);
                 await Task.CompletedTask;
                 return result;
@@ -484,7 +484,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             if (chokeDiameter <= 0 || gasFlowRate <= 0)
                 throw new ArgumentException("Invalid sand assessment parameters");
 
-            _logger?.LogInformation("Sand cut risk: {Well}, Sand={S} lb/d, Size={Size} μm",
+            _logger?.LogInformation("Sand cut risk: {Well}, Sand={S} lb/d, Size={Size} Î¼m",
                 wellUWI, estimatedSandRate, sandGrainSize);
 
             try
@@ -547,7 +547,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
             if (chokeDiameter <= 0 || baselineFlowRate <= 0)
                 throw new ArgumentException("Invalid temperature parameters");
 
-            _logger?.LogInformation("Temperature analysis: Base={Base}°R, Flow={Flow} Mscf/d",
+            _logger?.LogInformation("Temperature analysis: Base={Base}Â°R, Flow={Flow} Mscf/d",
                 baselineTemperature, baselineFlowRate);
 
             try
@@ -556,7 +556,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
 
                 for (decimal temp = tempMin; temp <= tempMax; temp += 20m)
                 {
-                    var props = new GasChokeProperties
+                    var props = new GAS_CHOKE_PROPERTIES
                     {
                         UpstreamPressure = upstreamPressure,
                         DownstreamPressure = downstreamPressure,
@@ -566,28 +566,28 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                         ZFactor = 0
                     };
 
-                    var choke = new ChokeProperties
+                    var choke = new CHOKE_PROPERTIES
                     {
                         ChokeDiameter = chokeDiameter,
                         DischargeCoefficient = 0.85m
                     };
 
                     var flowResult = GasChokeCalculator.CalculateDownholeChokeFlow(choke, props);
-                    decimal efficiency = (flowResult.FlowRate / baselineFlowRate) * 100m;
+                    decimal efficiency = (flowResult.FLOW_RATE / baselineFlowRate) * 100m;
 
                     tempCurve.Add(new TemperatureFlowPoint
                     {
                         Temperature = temp,
-                        FlowRate = flowResult.FlowRate,
+                        FlowRate = flowResult.FLOW_RATE,
                         PressureDrop = upstreamPressure - downstreamPressure,
                         DischargeCoefficient = flowResult.PressureRatio,
                         Efficiency = efficiency
                     });
                 }
 
-                var curve = tempCurve.OrderBy(t => t.Temperature).ToList();
+                var curve = tempCurve.OrderBy(t => t.TEMPERATURE).ToList();
                 decimal flowSensitivity = (curve.Count > 1) ?
-                    (curve.Last().FlowRate - curve.First().FlowRate) / (curve.Last().Temperature - curve.First().Temperature) : 0m;
+                    (curve.Last().FLOW_RATE - curve.First().FLOW_RATE) / (curve.Last().TEMPERATURE - curve.First().TEMPERATURE) : 0m;
 
                 var result = new ChokeTemperatureEffectAnalysis
                 {
@@ -603,7 +603,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     TemperatureControlRecommendation = "Monitor wellhead temperature; cooler improves flow"
                 };
 
-                _logger?.LogInformation("Temperature: Sensitivity={Sens:F3} Mscf/d per °R", flowSensitivity);
+                _logger?.LogInformation("Temperature: Sensitivity={Sens:F3} Mscf/d per Â°R", flowSensitivity);
                 await Task.CompletedTask;
                 return result;
             }

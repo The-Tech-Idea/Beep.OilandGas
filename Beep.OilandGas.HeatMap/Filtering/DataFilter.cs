@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -83,17 +83,17 @@ namespace Beep.OilandGas.HeatMap.Filtering
         /// <summary>
         /// Gets or sets the custom filter function (for Custom filter).
         /// </summary>
-        public Func<HeatMapDataPoint, bool> CustomFilter { get; set; }
+        public Func<HEAT_MAP_DATA_POINT, bool> CustomFilter { get; set; }
 
         /// <summary>
         /// Applies the filter to a list of data points.
         /// </summary>
         /// <param name="dataPoints">List of data points to filter.</param>
         /// <returns>Filtered list of data points.</returns>
-        public List<HeatMapDataPoint> Apply(List<HeatMapDataPoint> dataPoints)
+        public List<HEAT_MAP_DATA_POINT> Apply(List<HEAT_MAP_DATA_POINT> dataPoints)
         {
             if (dataPoints == null)
-                return new List<HeatMapDataPoint>();
+                return new List<HEAT_MAP_DATA_POINT>();
 
             return FilterType switch
             {
@@ -108,7 +108,7 @@ namespace Beep.OilandGas.HeatMap.Filtering
         /// <summary>
         /// Applies value range filter.
         /// </summary>
-        private List<HeatMapDataPoint> ApplyValueRangeFilter(List<HeatMapDataPoint> dataPoints)
+        private List<HEAT_MAP_DATA_POINT> ApplyValueRangeFilter(List<HEAT_MAP_DATA_POINT> dataPoints)
         {
             return dataPoints.Where(p =>
             {
@@ -124,7 +124,7 @@ namespace Beep.OilandGas.HeatMap.Filtering
         /// <summary>
         /// Applies spatial bounds filter.
         /// </summary>
-        private List<HeatMapDataPoint> ApplySpatialBoundsFilter(List<HeatMapDataPoint> dataPoints)
+        private List<HEAT_MAP_DATA_POINT> ApplySpatialBoundsFilter(List<HEAT_MAP_DATA_POINT> dataPoints)
         {
             return dataPoints.Where(p =>
             {
@@ -144,7 +144,7 @@ namespace Beep.OilandGas.HeatMap.Filtering
         /// <summary>
         /// Applies label pattern filter.
         /// </summary>
-        private List<HeatMapDataPoint> ApplyLabelPatternFilter(List<HeatMapDataPoint> dataPoints)
+        private List<HEAT_MAP_DATA_POINT> ApplyLabelPatternFilter(List<HEAT_MAP_DATA_POINT> dataPoints)
         {
             if (string.IsNullOrEmpty(LabelPattern))
                 return dataPoints;
@@ -154,14 +154,14 @@ namespace Beep.OilandGas.HeatMap.Filtering
                 : StringComparison.OrdinalIgnoreCase;
 
             return dataPoints.Where(p =>
-                !string.IsNullOrEmpty(p.Label) &&
-                p.Label.Contains(LabelPattern, comparison)).ToList();
+                !string.IsNullOrEmpty(p.LABEL) &&
+                p.LABEL.Contains(LabelPattern, comparison)).ToList();
         }
 
         /// <summary>
         /// Applies custom filter.
         /// </summary>
-        private List<HeatMapDataPoint> ApplyCustomFilter(List<HeatMapDataPoint> dataPoints)
+        private List<HEAT_MAP_DATA_POINT> ApplyCustomFilter(List<HEAT_MAP_DATA_POINT> dataPoints)
         {
             if (CustomFilter == null)
                 return dataPoints;
@@ -225,10 +225,10 @@ namespace Beep.OilandGas.HeatMap.Filtering
         /// </summary>
         /// <param name="dataPoints">List of data points to filter.</param>
         /// <returns>Filtered list of data points.</returns>
-        public List<HeatMapDataPoint> ApplyFilters(List<HeatMapDataPoint> dataPoints)
+        public List<HEAT_MAP_DATA_POINT> ApplyFilters(List<HEAT_MAP_DATA_POINT> dataPoints)
         {
             if (dataPoints == null || Filters.Count == 0)
-                return dataPoints ?? new List<HeatMapDataPoint>();
+                return dataPoints ?? new List<HEAT_MAP_DATA_POINT>();
 
             if (UseAndLogic)
             {
@@ -243,7 +243,7 @@ namespace Beep.OilandGas.HeatMap.Filtering
             else
             {
                 // Any filter can match (OR logic)
-                var resultSet = new HashSet<HeatMapDataPoint>();
+                var resultSet = new HashSet<HEAT_MAP_DATA_POINT>();
                 foreach (var filter in Filters)
                 {
                     var filtered = filter.Apply(dataPoints);
@@ -301,7 +301,7 @@ namespace Beep.OilandGas.HeatMap.Filtering
         /// <summary>
         /// Creates a custom filter.
         /// </summary>
-        public static DataFilter CreateCustomFilter(Func<HeatMapDataPoint, bool> filterFunction)
+        public static DataFilter CreateCustomFilter(Func<HEAT_MAP_DATA_POINT, bool> filterFunction)
         {
             return new DataFilter
             {

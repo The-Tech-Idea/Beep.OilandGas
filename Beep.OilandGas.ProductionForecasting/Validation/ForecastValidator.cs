@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 using Beep.OilandGas.ProductionForecasting.Constants;
 using Beep.OilandGas.ProductionForecasting.Exceptions;
@@ -14,42 +14,42 @@ namespace Beep.OilandGas.ProductionForecasting.Validation
         /// <summary>
         /// Validates reservoir properties.
         /// </summary>
-        public static void ValidateReservoirProperties(ReservoirForecastProperties reservoir)
+        public static void ValidateReservoirProperties(RESERVOIR_FORECAST_PROPERTIES reservoir)
         {
             if (reservoir == null)
                 throw new ArgumentNullException(nameof(reservoir));
 
-            if (reservoir.InitialPressure <= 0)
+            if (reservoir.INITIAL_PRESSURE <= 0)
                 throw new InvalidReservoirPropertiesException("Initial pressure must be greater than zero.");
 
-            if (reservoir.Permeability <= 0)
+            if (reservoir.PERMEABILITY <= 0)
                 throw new InvalidReservoirPropertiesException("Permeability must be greater than zero.");
 
-            if (reservoir.Thickness <= 0)
+            if (reservoir.THICKNESS <= 0)
                 throw new InvalidReservoirPropertiesException("Thickness must be greater than zero.");
 
-            if (reservoir.DrainageRadius <= 0)
+            if (reservoir.DRAINAGE_RADIUS <= 0)
                 throw new InvalidReservoirPropertiesException("Drainage radius must be greater than zero.");
 
-            if (reservoir.WellboreRadius <= 0)
+            if (reservoir.WELLBORE_RADIUS <= 0)
                 throw new InvalidReservoirPropertiesException("Wellbore radius must be greater than zero.");
 
-            if (reservoir.DrainageRadius <= reservoir.WellboreRadius)
+            if (reservoir.DRAINAGE_RADIUS <= reservoir.WELLBORE_RADIUS)
                 throw new InvalidReservoirPropertiesException("Drainage radius must be greater than wellbore radius.");
 
-            if (reservoir.FormationVolumeFactor <= 0)
+            if (reservoir.FORMATION_VOLUME_FACTOR <= 0)
                 throw new InvalidReservoirPropertiesException("Formation volume factor must be greater than zero.");
 
-            if (reservoir.OilViscosity <= 0)
+            if (reservoir.OIL_VISCOSITY <= 0)
                 throw new InvalidReservoirPropertiesException("Oil viscosity must be greater than zero.");
 
-            if (reservoir.TotalCompressibility <= 0)
+            if (reservoir.TOTAL_COMPRESSIBILITY <= 0)
                 throw new InvalidReservoirPropertiesException("Total compressibility must be greater than zero.");
 
-            if (reservoir.Porosity <= 0 || reservoir.Porosity >= 1)
+            if (reservoir.POROSITY <= 0 || reservoir.POROSITY >= 1)
                 throw new InvalidReservoirPropertiesException("Porosity must be between 0 and 1.");
 
-            if (reservoir.Temperature <= 0)
+            if (reservoir.TEMPERATURE <= 0)
                 throw new InvalidReservoirPropertiesException("Temperature must be greater than zero.");
         }
 
@@ -105,13 +105,13 @@ namespace Beep.OilandGas.ProductionForecasting.Validation
         /// Validates all forecast parameters.
         /// </summary>
         public static void ValidateForecastParameters(
-            ReservoirForecastProperties reservoir,
+            RESERVOIR_FORECAST_PROPERTIES reservoir,
             decimal bottomHolePressure,
             decimal forecastDuration,
             int timeSteps)
         {
             ValidateReservoirProperties(reservoir);
-            ValidateBottomHolePressure(bottomHolePressure, reservoir.InitialPressure);
+            ValidateBottomHolePressure(bottomHolePressure, reservoir.INITIAL_PRESSURE);
             ValidateForecastDuration(forecastDuration);
             ValidateTimeSteps(timeSteps);
         }

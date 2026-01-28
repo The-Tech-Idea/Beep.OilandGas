@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -58,14 +58,14 @@ namespace Beep.OilandGas.Web.Services
     public class CostAllocationResponse
     {
         public bool Success { get; set; }
-        public List<AllocationDetail> Allocations { get; set; } = new();
+        public List<ALLOCATION_DETAIL> Allocations { get; set; } = new();
         public string? ErrorMessage { get; set; }
     }
 
     /// <summary>
     /// Allocation detail
     /// </summary>
-    public class AllocationDetail
+    public class ALLOCATION_DETAIL
     {
         public string EntityId { get; set; } = string.Empty;
         public string EntityType { get; set; } = string.Empty;

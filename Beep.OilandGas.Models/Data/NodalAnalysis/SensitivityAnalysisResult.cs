@@ -5,7 +5,7 @@ using Beep.OilandGas.Models.Data.NodalAnalysis;
 
 namespace Beep.OilandGas.Models.Data
 {
-     public class SensitivityAnalysisResult : ModelEntityBase
+     public class EconomicSensitivityAnalysisResult : ModelEntityBase
      {
          private string AnalysisIdValue = string.Empty;
 
@@ -52,5 +52,9 @@ namespace Beep.OilandGas.Models.Data
              set { SetProperty(ref MostSensitiveParameterValue, value); }
 
          }
-     }
+
+        public List<double> PriceVariation { get; set; }
+        public List<double> VolumeVariation { get; set; }
+        public List<double> CostVariation { get; set; }
+    }
 }

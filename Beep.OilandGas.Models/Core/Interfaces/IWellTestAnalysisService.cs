@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
@@ -21,7 +21,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="testData">Well test data for analysis</param>
         /// <param name="userId">User performing the analysis</param>
         /// <returns>Analysis result containing permeability, skin factor, and reservoir pressure</returns>
-        Task<WellTestAnalysisResult> AnalyzeBuildUpHornerAsync(string wellUWI, WellTestData testData, string userId);
+        Task<WELL_TEST_ANALYSIS_RESULT> AnalyzeBuildUpHornerAsync(string wellUWI, WELL_TEST_DATA testData, string userId);
 
         /// <summary>
         /// Analyzes a build-up test using the Miller-Dyes-Hutchinson (MDH) method.
@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="testData">Well test data for analysis</param>
         /// <param name="userId">User performing the analysis</param>
         /// <returns>Analysis result with alternative method comparison</returns>
-        Task<WellTestAnalysisResult> AnalyzeBuildUpMDHAsync(string wellUWI, WellTestData testData, string userId);
+        Task<WELL_TEST_ANALYSIS_RESULT> AnalyzeBuildUpMDHAsync(string wellUWI, WELL_TEST_DATA testData, string userId);
 
         #endregion
 
@@ -43,7 +43,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="testData">Well test data for analysis</param>
         /// <param name="userId">User performing the analysis</param>
         /// <returns>Analysis result with drawdown parameters</returns>
-        Task<WellTestAnalysisResult> AnalyzeDrawdownAsync(string wellUWI, WellTestData testData, string userId);
+        Task<WELL_TEST_ANALYSIS_RESULT> AnalyzeDrawdownAsync(string wellUWI, WELL_TEST_DATA testData, string userId);
 
         #endregion
 
@@ -56,7 +56,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="pressureData">Time-pressure data points</param>
         /// <param name="smoothingFactor">Smoothing factor for derivative calculation (optional)</param>
         /// <returns>List of pressure-time points with calculated derivatives</returns>
-        Task<List<PressureTimePoint>> CalculateDerivativeAsync(string wellUWI, List<PressureTimePoint> pressureData, double smoothingFactor = 0.05);
+        Task<List<PRESSURE_TIME_POINT>> CalculateDerivativeAsync(string wellUWI, List<PRESSURE_TIME_POINT> pressureData, double smoothingFactor = 0.05);
 
         /// <summary>
         /// Identifies reservoir model from derivative signature.
@@ -64,7 +64,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="wellUWI">Well unique well identifier</param>
         /// <param name="derivativeData">Derivative analysis data</param>
         /// <returns>Identified reservoir model and characteristics</returns>
-        Task<ReservoirModel> IdentifyReservoirModelAsync(string wellUWI, List<PressureTimePoint> derivativeData);
+        Task<ReservoirModel> IdentifyReservoirModelAsync(string wellUWI, List<PRESSURE_TIME_POINT> derivativeData);
 
         #endregion
 
@@ -77,7 +77,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="testData">Well test data for matching</param>
         /// <param name="userId">User performing the analysis</param>
         /// <returns>Type curve matching results with model parameters</returns>
-        Task<TypeCurveMatchResult> PerformTypeCurveMatchingAsync(string wellUWI, WellTestData testData, string userId);
+        Task<TypeCurveMatchResult> PerformTypeCurveMatchingAsync(string wellUWI, WELL_TEST_DATA testData, string userId);
 
         #endregion
 
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="multiRateData">Multi-rate test data</param>
         /// <param name="userId">User performing the analysis</param>
         /// <returns>Multi-rate analysis results</returns>
-        Task<WellTestAnalysisResult> AnalyzeMultiRateAsync(string wellUWI, MultiRateTestData multiRateData, string userId);
+        Task<WELL_TEST_ANALYSIS_RESULT> AnalyzeMultiRateAsync(string wellUWI, MultiRateTestData multiRateData, string userId);
 
         /// <summary>
         /// Performs deconvolution analysis on variable rate data.
@@ -99,7 +99,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="variableRateData">Variable rate production data</param>
         /// <param name="userId">User performing the analysis</param>
         /// <returns>Deconvolved constant rate response</returns>
-        Task<WellTestAnalysisResult> PerformDeconvolutionAsync(string wellUWI, VariableRateData variableRateData, string userId);
+        Task<WELL_TEST_ANALYSIS_RESULT> PerformDeconvolutionAsync(string wellUWI, VariableRateData variableRateData, string userId);
 
         #endregion
 
@@ -111,7 +111,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="wellUWI">Well unique well identifier</param>
         /// <param name="testData">Well test data for boundary detection</param>
         /// <returns>List of detected boundaries and their characteristics</returns>
-        Task<List<ReservoirBoundary>> DetectBoundariesAsync(string wellUWI, WellTestData testData);
+        Task<List<ReservoirBoundary>> DetectBoundariesAsync(string wellUWI, WELL_TEST_DATA testData);
 
         #endregion
 
@@ -123,7 +123,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="wellUWI">Well unique well identifier</param>
         /// <param name="analysisResult">Analysis results to save</param>
         /// <param name="userId">User performing the save</param>
-        Task SaveAnalysisResultAsync(string wellUWI, WellTestAnalysisResult analysisResult, string userId);
+        Task SaveAnalysisResultAsync(string wellUWI, WELL_TEST_ANALYSIS_RESULT analysisResult, string userId);
 
         /// <summary>
         /// Retrieves well test analysis results from persistent storage.
@@ -131,7 +131,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="wellUWI">Well unique well identifier</param>
         /// <param name="testDate">Date of the test (optional)</param>
         /// <returns>List of analysis results for the well</returns>
-        Task<List<WellTestAnalysisResult>> GetAnalysisResultsAsync(string wellUWI, DateTime? testDate = null);
+        Task<List<WELL_TEST_ANALYSIS_RESULT>> GetAnalysisResultsAsync(string wellUWI, DateTime? testDate = null);
 
         /// <summary>
         /// Retrieves analysis history for a well.
@@ -140,7 +140,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="startDate">Start date for history</param>
         /// <param name="endDate">End date for history</param>
         /// <returns>List of historical analysis results</returns>
-        Task<List<WellTestAnalysisResult>> GetAnalysisHistoryAsync(string wellUWI, DateTime startDate, DateTime endDate);
+        Task<List<WELL_TEST_ANALYSIS_RESULT>> GetAnalysisHistoryAsync(string wellUWI, DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Updates previously saved analysis results.
@@ -149,7 +149,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="analysisId">ID of analysis to update</param>
         /// <param name="updatedResult">Updated analysis results</param>
         /// <param name="userId">User performing the update</param>
-        Task UpdateAnalysisResultAsync(string wellUWI, string analysisId, WellTestAnalysisResult updatedResult, string userId);
+        Task UpdateAnalysisResultAsync(string wellUWI, string analysisId, WELL_TEST_ANALYSIS_RESULT updatedResult, string userId);
 
         #endregion
 
@@ -183,7 +183,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="wellUWI">Well unique well identifier</param>
         /// <param name="testData">Test data to validate</param>
         /// <returns>Validation result with quality metrics</returns>
-        Task<TestDataValidationResult> ValidateTestDataAsync(string wellUWI, WellTestData testData);
+        Task<TestDataValidationResult> ValidateTestDataAsync(string wellUWI, WELL_TEST_DATA testData);
 
         /// <summary>
         /// Compares analysis results from different methods.

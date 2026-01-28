@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data;
 
@@ -69,9 +69,9 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the quality adjustments.
         /// </summary>
-        private QualityAdjustments QualityAdjustmentsValue = new();
+        private QUALITY_ADJUSTMENTS QualityAdjustmentsValue = new();
 
-        public QualityAdjustments QualityAdjustments
+        public QUALITY_ADJUSTMENTS QUALITY_ADJUSTMENTS
 
         {
 
@@ -84,9 +84,9 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the location adjustments.
         /// </summary>
-        private LocationAdjustments LocationAdjustmentsValue = new();
+        private LOCATION_ADJUSTMENTS LocationAdjustmentsValue = new();
 
-        public LocationAdjustments LocationAdjustments
+        public LOCATION_ADJUSTMENTS LOCATION_ADJUSTMENTS
 
         {
 
@@ -99,9 +99,9 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the time adjustments.
         /// </summary>
-        private TimeAdjustments TimeAdjustmentsValue = new();
+        private TIME_ADJUSTMENTS TimeAdjustmentsValue = new();
 
-        public TimeAdjustments TimeAdjustments
+        public TIME_ADJUSTMENTS TIME_ADJUSTMENTS
 
         {
 
@@ -115,9 +115,9 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// Gets the total adjustments.
         /// </summary>
         public decimal TotalAdjustments =>
-            QualityAdjustments.TotalAdjustment +
-            LocationAdjustments.TotalAdjustment +
-            TimeAdjustments.TotalAdjustment;
+            (QUALITY_ADJUSTMENTS.TOTAL_ADJUSTMENT ?? 0) +
+            (LOCATION_ADJUSTMENTS.TOTAL_ADJUSTMENT ?? 0) +
+            (TIME_ADJUSTMENTS.TOTAL_ADJUSTMENT ?? 0);
 
         /// <summary>
         /// Gets the adjusted price per barrel.

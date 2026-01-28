@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data.HeatMap;
@@ -40,9 +40,9 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref GeneratedDateValue, value); }
 
         }
-        private List<HeatMapDataPoint> DataPointsValue = new();
+        private List<HEAT_MAP_DATA_POINT> DataPointsValue = new();
 
-        public List<HeatMapDataPoint> DataPoints
+        public List<HEAT_MAP_DATA_POINT> DataPoints
 
         {
 

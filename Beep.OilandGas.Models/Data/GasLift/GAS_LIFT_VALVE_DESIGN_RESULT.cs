@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -52,5 +52,19 @@ namespace Beep.OilandGas.Models.Data.GasLift
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+
+        private decimal EXPECTED_PRODUCTION_RATEValue;
+        public decimal EXPECTED_PRODUCTION_RATE
+        {
+            get { return this.EXPECTED_PRODUCTION_RATEValue; }
+            set { SetProperty(ref EXPECTED_PRODUCTION_RATEValue, value); }
+        }
+
+        private decimal SYSTEM_EFFICIENCYValue;
+        public decimal SYSTEM_EFFICIENCY
+        {
+            get { return this.SYSTEM_EFFICIENCYValue; }
+            set { SetProperty(ref SYSTEM_EFFICIENCYValue, value); }
+        }
     }
 }

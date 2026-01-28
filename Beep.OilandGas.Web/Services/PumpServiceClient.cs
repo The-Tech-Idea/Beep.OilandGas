@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
@@ -100,7 +100,7 @@ namespace Beep.OilandGas.Web.Services
 
         #region Plunger Lift Operations
 
-        public async Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellProperties wellProperties)
+        public async Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PLUNGER_LIFT_WELL_PROPERTIES wellProperties)
         {
             try
             {

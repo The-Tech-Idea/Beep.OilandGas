@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using TheTechIdea.Beep.Editor;
@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Models.Data.Trading
             string contractId,
             DateTime periodStart,
             DateTime periodEnd,
-            List<ExchangeTransaction> transactions)
+            List<EXCHANGE_TRANSACTION> transactions)
         {
             var statement = new ExchangeStatement
             {
@@ -24,36 +24,36 @@ namespace Beep.OilandGas.Models.Data.Trading
                 StatementPeriodEnd = periodEnd,
                 ContractId = contractId,
                 Transactions = transactions.Where(t => 
-                    t.TransactionDate >= periodStart && 
-                    t.TransactionDate <= periodEnd).ToList()
+                    t.TRANSACTION_DATE >= periodStart && 
+                    t.TRANSACTION_DATE <= periodEnd).ToList()
             };
 
             // Calculate receipts summary
             var receiptTransactions = statement.Transactions
-                .Where(t => t.ReceiptVolume > 0)
+                .Where(t => t.RECEIPT_VOLUME > 0)
                 .ToList();
 
             if (receiptTransactions.Count > 0)
             {
                 statement.Receipts = new ExchangeSummary
                 {
-                    TotalVolume = receiptTransactions.Sum(t => t.ReceiptVolume),
-                    AveragePrice = receiptTransactions.Sum(t => t.ReceiptValue) / receiptTransactions.Sum(t => t.ReceiptVolume),
+                    TotalVolume = receiptTransactions.Sum(t => t.RECEIPT_VOLUME ?? 0),
+                    AveragePrice = receiptTransactions.Sum(t => (t.RECEIPT_VOLUME ?? 0) * (t.RECEIPT_PRICE ?? 0)) / receiptTransactions.Sum(t => t.RECEIPT_VOLUME ?? 1),
                     TransactionCount = receiptTransactions.Count
                 };
             }
 
             // Calculate deliveries summary
             var deliveryTransactions = statement.Transactions
-                .Where(t => t.DeliveryVolume > 0)
+                .Where(t => (t.DELIVERY_VOLUME ?? 0) > 0)
                 .ToList();
 
             if (deliveryTransactions.Count > 0)
             {
                 statement.Deliveries = new ExchangeSummary
                 {
-                    TotalVolume = deliveryTransactions.Sum(t => t.DeliveryVolume),
-                    AveragePrice = deliveryTransactions.Sum(t => t.DeliveryValue) / deliveryTransactions.Sum(t => t.DeliveryVolume),
+                    TotalVolume = deliveryTransactions.Sum(t => t.DELIVERY_VOLUME ?? 0),
+                    AveragePrice = deliveryTransactions.Sum(t => (t.DELIVERY_VOLUME ?? 0) * (t.DELIVERY_PRICE ?? 0)) / deliveryTransactions.Sum(t => t.DELIVERY_VOLUME ?? 1),
                     TransactionCount = deliveryTransactions.Count
                 };
             }

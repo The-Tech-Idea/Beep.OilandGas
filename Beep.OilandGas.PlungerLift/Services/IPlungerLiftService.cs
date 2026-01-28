@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -15,7 +15,7 @@ namespace Beep.OilandGas.PlungerLift.Services
         /// <summary>
         /// Designs a plunger lift system for a well
         /// </summary>
-        Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellProperties wellProperties);
+        Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PLUNGER_LIFT_WELL_PROPERTIES wellProperties);
 
         /// <summary>
         /// Optimizes plunger lift design parameters
@@ -222,7 +222,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// <summary>
     /// Plunger lift well properties DTO
     /// </summary>
-    public class PlungerLiftWellProperties
+    public class PLUNGER_LIFT_WELL_PROPERTIES
     {
         public string WellUWI { get; set; } = string.Empty;
         public decimal WellheadPressure { get; set; }

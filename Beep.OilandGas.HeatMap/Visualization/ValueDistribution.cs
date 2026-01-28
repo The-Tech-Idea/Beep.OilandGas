@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using SkiaSharp;
@@ -45,7 +45,7 @@ namespace Beep.OilandGas.HeatMap.Visualization
         /// <param name="maxValue">Maximum value (optional, auto-calculated if not provided).</param>
         /// <returns>List of histogram bins.</returns>
         public static List<HistogramBin> CreateHistogram(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             int? numBins = null,
             double? minValue = null,
             double? maxValue = null)
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.HeatMap.Visualization
         /// <param name="bandwidth">Bandwidth for KDE (optional, auto-calculated if not provided).</param>
         /// <returns>List of (value, density) points.</returns>
         public static List<(double value, double density)> CreateDistributionCurve(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             int numPoints = 100,
             double? bandwidth = null)
         {

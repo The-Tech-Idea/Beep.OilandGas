@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
@@ -30,8 +30,8 @@ namespace Beep.OilandGas.Models.Data.DataManagement
             set { SetProperty(ref ENTITY_IDValue, value); }
         }
 
-        private System.Decimal? OVERALL_SCOREValue;
-        public System.Decimal? OVERALL_SCORE
+        private System.Double? OVERALL_SCOREValue;
+        public System.Double? OVERALL_SCORE
         {
             get { return this.OVERALL_SCOREValue; }
             set { SetProperty(ref OVERALL_SCOREValue, value); }
@@ -79,9 +79,15 @@ namespace Beep.OilandGas.Models.Data.DataManagement
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
-        private System.DateTime? EFFECTIVE_DATEValue;
+       
+        private object ENTITYValue;
+        public object ENTITY
+        {
+            get { return this.ENTITYValue; }
+            set { SetProperty(ref ENTITYValue, value); }
+        }
 
-        private System.DateTime? EXPIRY_DATEValue;
-
+        public string ISSUES_JSON { get; set; }
+        public List<DATA_QUALITY_ISSUE> ISSUES { get; set; } = new List<DATA_QUALITY_ISSUE>();
     }
 }

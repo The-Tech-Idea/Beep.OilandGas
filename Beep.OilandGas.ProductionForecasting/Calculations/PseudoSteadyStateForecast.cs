@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
 
@@ -86,7 +86,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         /// <summary>
         /// Generates two-phase pseudo-steady state production forecast.
         /// </summary>
-        public static ProductionForecast GenerateTwoPhaseForecast(
+        public static PRODUCTION_FORECAST GenerateTwoPhaseForecast(
             RESERVOIR_FORECAST_PROPERTIES reservoir,
             decimal bottomHolePressure,
             decimal bubblePointPressure,
@@ -99,7 +99,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             if (bubblePointPressure <= 0)
                 throw new ArgumentException("Bubble point pressure must be greater than zero.", nameof(bubblePointPressure));
 
-            var forecast = new ProductionForecast
+            var forecast = new PRODUCTION_FORECAST
             {
                 ForecastType = ForecastType.PseudoSteadyStateTwoPhase,
                 ForecastDuration = forecastDuration
@@ -139,7 +139,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
                 cumulativeProduction += productionRate * timeStep;
 
-                forecast.ForecastPoints.Add(new ForecastPoint
+                forecast.ForecastPoints.Add(new FORECAST_POINT
                 {
                     Time = time,
                     ProductionRate = productionRate,
@@ -149,11 +149,11 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 });
 
                 if (i == 0)
-                    forecast.InitialProductionRate = productionRate;
+                    forecast.INITIAL_PRODUCTION_RATE = productionRate;
             }
 
-            forecast.FinalProductionRate = forecast.ForecastPoints.Last().ProductionRate;
-            forecast.TotalCumulativeProduction = cumulativeProduction;
+            forecast.FINAL_PRODUCTION_RATE = forecast.ForecastPoints.Last().PRODUCTION_RATE;
+            forecast.TOTAL_CUMULATIVE_PRODUCTION = cumulativeProduction;
 
             return forecast;
         }
@@ -163,7 +163,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
         private static decimal CalculateProductivityIndex(RESERVOIR_FORECAST_PROPERTIES reservoir)
         {
             // Pseudo-steady state productivity index
-            // J = (0.00708 * k * h) / (B * μ * (ln(re/rw) - 0.75 + S))
+            // J = (0.00708 * k * h) / (B * Î¼ * (ln(re/rw) - 0.75 + S))
             decimal re_rw = (decimal)(reservoir.DRAINAGE_RADIUS / reservoir.WELLBORE_RADIUS);
             decimal ln_re_rw = (decimal)Math.Log((double)re_rw);
 
@@ -197,7 +197,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             decimal bubblePointPressure)
         {
             // Vogel equation for two-phase flow
-            // q = q_max * [1 - 0.2*(Pwf/Pb) - 0.8*(Pwf/Pb)²]
+            // q = q_max * [1 - 0.2*(Pwf/Pb) - 0.8*(Pwf/Pb)Â²]
             // where q_max is at Pwf = 0
 
             decimal productivityIndex = CalculateProductivityIndex(reservoir);

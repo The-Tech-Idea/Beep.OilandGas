@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
@@ -128,9 +128,9 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// <summary>
         /// Gets or sets the quality specifications.
         /// </summary>
-        private CrudeOilSpecifications? QualitySpecificationsValue;
+        private CRUDE_OIL_SPECIFICATIONS? QualitySpecificationsValue;
 
-        public CrudeOilSpecifications? QualitySpecifications
+        public CRUDE_OIL_SPECIFICATIONS? QualitySpecifications
 
         {
 

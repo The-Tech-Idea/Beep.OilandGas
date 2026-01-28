@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data;
@@ -19,10 +19,10 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref ImbalanceIdValue, value); }
 
         }
-        private List<ImbalanceAdjustment> AdjustmentsValue = new();
+        private List<IMBALANCE_ADJUSTMENT> AdjustmentsValue = new();
 
         [Required]
-        public List<ImbalanceAdjustment> Adjustments
+        public List<IMBALANCE_ADJUSTMENT> Adjustments
 
         {
 

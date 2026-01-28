@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.FlashCalculations;
@@ -18,7 +18,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// </summary>
         /// <param name="conditions">Flash calculation conditions.</param>
         /// <returns>Flash calculation results.</returns>
-        public static FlashResult PerformIsothermalFlash(FlashConditions conditions)
+        public static FlashResult PerformIsothermalFlash(FLASH_CONDITIONS conditions)
         {
             if (conditions == null)
                 throw new ArgumentNullException(nameof(conditions));
@@ -58,16 +58,16 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// <summary>
         /// Initializes K-values using Wilson correlation.
         /// </summary>
-        private static List<FlashComponentKValue> InitializeKValues(FlashConditions conditions)
+        private static List<FlashComponentKValue> InitializeKValues(FLASH_CONDITIONS conditions)
         {
             var kValues = new List<FlashComponentKValue>();
 
             foreach (var component in conditions.FeedComposition)
             {
-                // Wilson correlation: K = (Pc/P) * exp(5.37 * (1 + ω) * (1 - Tc/T))
-                decimal kValue = (component.CriticalPressure / conditions.Pressure) *
+                // Wilson correlation: K = (Pc/P) * exp(5.37 * (1 + Ï‰) * (1 - Tc/T))
+                decimal kValue = (component.CriticalPressure / conditions.PRESSURE) *
                                (decimal)Math.Exp((double)(5.37m * (1.0m + component.AcentricFactor) *
-                                                          (1.0m - component.CriticalTemperature / conditions.Temperature)));
+                                                          (1.0m - component.CriticalTemperature / conditions.TEMPERATURE)));
 
                 kValues.Add(new FlashComponentKValue
                 {
@@ -83,11 +83,11 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// Solves Rachford-Rice equation for vapor fraction.
         /// </summary>
         private static decimal SolveRachfordRice(
-            FlashConditions conditions,
+            FLASH_CONDITIONS conditions,
             List<FlashComponentKValue> kValues,
             FlashResult result)
         {
-            // Rachford-Rice: Σ(zi * (Ki - 1) / (1 + V * (Ki - 1))) = 0
+            // Rachford-Rice: Î£(zi * (Ki - 1) / (1 + V * (Ki - 1))) = 0
             // Where V = vapor fraction, zi = feed mole fraction, Ki = K-value
 
             decimal vaporFraction = 0.5m; // Initial guess
@@ -151,7 +151,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// Updates K-values based on current conditions.
         /// </summary>
         private static void UpdateKValues(
-            FlashConditions conditions,
+            FLASH_CONDITIONS conditions,
             List<FlashComponentKValue> kValues,
             decimal vaporFraction)
         {
@@ -161,9 +161,9 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             foreach (var component in conditions.FeedComposition)
             {
                 // Use Wilson correlation with updated conditions
-                decimal kValue = (component.CriticalPressure / conditions.Pressure) *
+                decimal kValue = (component.CriticalPressure / conditions.PRESSURE) *
                                (decimal)Math.Exp((double)(5.37m * (1.0m + component.AcentricFactor) *
-                                                          (1.0m - component.CriticalTemperature / conditions.Temperature)));
+                                                          (1.0m - component.CriticalTemperature / conditions.TEMPERATURE)));
 
                 // Blend with existing K-value
                 var existing = GetKValue(kValues, component.Name);
@@ -176,7 +176,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// Calculates phase compositions.
         /// </summary>
         private static void CalculatePhaseCompositions(
-            FlashConditions conditions,
+            FLASH_CONDITIONS conditions,
             List<FlashComponentKValue> kValues,
             decimal vaporFraction,
             FlashResult result)
@@ -286,7 +286,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// </summary>
         public static PhasePropertiesData CalculateVaporProperties(
             FlashResult flashResult,
-            FlashConditions conditions)
+            FLASH_CONDITIONS conditions)
         {
             var properties = new PhasePropertiesData();
 
@@ -302,10 +302,10 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
 
             // Calculate density using ideal gas law
             decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                conditions.Pressure, conditions.Temperature, molecularWeight / 28.9645m);
+                conditions.PRESSURE, conditions.TEMPERATURE, molecularWeight / 28.9645m);
 
-            properties.Density = (conditions.Pressure * molecularWeight) /
-                               (zFactor * 10.7316m * conditions.Temperature);
+            properties.Density = (conditions.PRESSURE * molecularWeight) /
+                               (zFactor * 10.7316m * conditions.TEMPERATURE);
 
             properties.SpecificGravity = molecularWeight / 28.9645m;
 
@@ -317,7 +317,7 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         /// </summary>
         public static PhasePropertiesData CalculateLiquidProperties(
             FlashResult flashResult,
-            FlashConditions conditions)
+            FLASH_CONDITIONS conditions)
         {
             var properties = new PhasePropertiesData();
 
@@ -344,8 +344,8 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             }
 
             // Simplified density calculation
-            decimal reducedTemperature = conditions.Temperature / averageCriticalTemperature;
-            decimal reducedPressure = conditions.Pressure / averageCriticalPressure;
+            decimal reducedTemperature = conditions.TEMPERATURE / averageCriticalTemperature;
+            decimal reducedPressure = conditions.PRESSURE / averageCriticalPressure;
 
             // Simplified correlation
             decimal liquidDensity = molecularWeight * 62.4m / (1.0m + 0.5m * reducedTemperature);

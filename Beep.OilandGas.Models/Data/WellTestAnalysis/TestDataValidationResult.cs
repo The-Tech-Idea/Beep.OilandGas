@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data;
 
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
         }
         private double DataQualityScoreValue;
 
-        public double DataQualityScore
+        public double DATA_QUALITY_SCORE
 
         {
 

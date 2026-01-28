@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.CompressorAnalysis;
@@ -10,11 +10,11 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
     {
         #region Compressor
 
-        public async Task<CompressorPowerResult> AnalyzeCompressorAsync(CompressorOperatingConditions request, CancellationToken cancellationToken = default)
+        public async Task<COMPRESSOR_POWER_RESULT> AnalyzeCompressorAsync(COMPRESSOR_OPERATING_CONDITIONS request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<CompressorOperatingConditions, CompressorPowerResult>("/api/compressor/analyze", request, cancellationToken);
+                return await PostAsync<COMPRESSOR_OPERATING_CONDITIONS, COMPRESSOR_POWER_RESULT>("/api/compressor/analyze", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
@@ -42,11 +42,11 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<CompressorPowerResult> CalculateCompressorPowerAsync(CompressorOperatingConditions request, CancellationToken cancellationToken = default)
+        public async Task<COMPRESSOR_POWER_RESULT> CalculateCompressorPowerAsync(COMPRESSOR_OPERATING_CONDITIONS request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<CompressorOperatingConditions, CompressorPowerResult>("/api/compressor/power", request, cancellationToken);
+                return await PostAsync<COMPRESSOR_OPERATING_CONDITIONS, COMPRESSOR_POWER_RESULT>("/api/compressor/power", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

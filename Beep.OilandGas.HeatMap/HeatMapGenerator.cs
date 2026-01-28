@@ -1,9 +1,9 @@
-using SkiaSharp;
+﻿using SkiaSharp;
 namespace Beep.OilandGas.HeatMap
 {
     public class HeatMapGenerator
     {
-        public List<HeatMapDataPoint> DataPoints { get; set; }
+        public List<HEAT_MAP_DATA_POINT> DataPoints { get; set; }
       //  public bool IsRedtoGreen { get; set; } = false;
         public SKColor StartColor { get; set; }= SKColors.Gray;
         public SKColor EndColor { get; set; } = SKColors.Black;
@@ -31,7 +31,7 @@ namespace Beep.OilandGas.HeatMap
 
         private SKPoint panOffset = new SKPoint(0, 0); // Start with no panning
        
-        public HeatMapGenerator(List<HeatMapDataPoint> datapoints,double width, double height,  SKColor color)
+        public HeatMapGenerator(List<HEAT_MAP_DATA_POINT> datapoints,double width, double height,  SKColor color)
         {
 
 
@@ -98,9 +98,9 @@ namespace Beep.OilandGas.HeatMap
             }
             
         }
-        public void LoadPoint(List<HeatMapDataPoint> datapoints)
+        public void LoadPoint(List<HEAT_MAP_DATA_POINT> datapoints)
         {
-            DataPoints = new List<HeatMapDataPoint>();
+            DataPoints = new List<HEAT_MAP_DATA_POINT>();
             DataPoints = datapoints;
             ConvertUTMPointsToCanvasCoordinates(ref datapoints);
         }
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.HeatMap
             };
         }
 
-        public void AddDataPoint(HeatMapDataPoint point)
+        public void AddDataPoint(HEAT_MAP_DATA_POINT point)
         {
             DataPoints.Add(point);
         }
@@ -193,7 +193,7 @@ namespace Beep.OilandGas.HeatMap
 
         }
 
-        private void DrawDataPoint(SKCanvas canvas, HeatMapDataPoint point)
+        private void DrawDataPoint(SKCanvas canvas, HEAT_MAP_DATA_POINT point)
         {
             // Convert point coordinates to canvas coordinates
             var margin = 0.01; // 5% margin
@@ -223,16 +223,16 @@ namespace Beep.OilandGas.HeatMap
 
             // Draw the label
             // Adjust the y-offset for the label based on the circle's radius
-            canvas.DrawText(point.Label, (float)x, (float)(y - radius - textPaint.TextSize), textPaint);
+            canvas.DrawText(point.LABEL, (float)x, (float)(y - radius - textPaint.TextSize), textPaint);
         }
-        private static SKColor FromRedtoGreen(HeatMapDataPoint point)
+        private static SKColor FromRedtoGreen(HEAT_MAP_DATA_POINT point)
         {
             byte redComponent = (byte)(255 * (1 - point.Value)); // Red decreases as value increases
             byte greenComponent = (byte)(255 * point.Value); // Green increases as value increases
            return new SKColor(redComponent, greenComponent, 0); // No blue component
 
         }
-        private static SKColor FromRedtoBlue(HeatMapDataPoint point)
+        private static SKColor FromRedtoBlue(HEAT_MAP_DATA_POINT point)
         {
             byte redComponent = (byte)(255 * (1 - point.Value)); // Red decreases as value increases
             byte blueComponent = (byte)(255 * point.Value); // Blue increases as value increases
@@ -328,7 +328,7 @@ namespace Beep.OilandGas.HeatMap
             currentCenterY = center.Y;
             // skControl.Invalidate(); // Invalidate the SKControl to trigger a repaint
         }
-        public void PanTo(HeatMapDataPoint referencePoint)
+        public void PanTo(HEAT_MAP_DATA_POINT referencePoint)
         {
 
             /// Assuming referencePoint.X and referencePoint.Y are normalized [0, 1]
@@ -347,7 +347,7 @@ namespace Beep.OilandGas.HeatMap
             currentCenterY = (float)(-panOffset.Y + (height / 2f) / Zoom);
 
         }
-        public void ConvertUTMPointsToCanvasCoordinates(ref List<HeatMapDataPoint> utmPoints)
+        public void ConvertUTMPointsToCanvasCoordinates(ref List<HEAT_MAP_DATA_POINT> utmPoints)
         {
             if (utmPoints == null || utmPoints.Count == 0)
                 return;
@@ -385,7 +385,7 @@ namespace Beep.OilandGas.HeatMap
             }
         }
 
-        public double[,] ConvertListTo2DArrayUTMtoCanvas(List<HeatMapDataPoint> utmPoints)
+        public double[,] ConvertListTo2DArrayUTMtoCanvas(List<HEAT_MAP_DATA_POINT> utmPoints)
         {
             int width = (int)this.width; // Assuming 'this.width' represents the canvas width
             int height = (int)this.height; // Assuming 'this.height' represents the canvas height

@@ -79,6 +79,8 @@ namespace Beep.OilandGas.Models.Data.DataManagement
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+        public object FIELD_SCORES { get; set; }
+
         private System.DateTime? EFFECTIVE_DATEValue;
 
         private System.DateTime? EXPIRY_DATEValue;

@@ -1,4 +1,4 @@
-using Beep.OilandGas.WellTestAnalysis.Calculations;
+﻿using Beep.OilandGas.WellTestAnalysis.Calculations;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.WellTestAnalysis.Validation;
 
@@ -12,7 +12,7 @@ namespace Beep.OilandGas.WellTestAnalysis
         /// <summary>
         /// Analyzes a build-up test using Horner method.
         /// </summary>
-        public static WellTestAnalysisResult AnalyzeBuildUp(WellTestData data)
+        public static WELL_TEST_ANALYSIS_RESULT AnalyzeBuildUp(WELL_TEST_DATA data)
         {
             WellTestDataValidator.Validate(data);
             return BuildUpAnalysis.AnalyzeHorner(data);
@@ -21,7 +21,7 @@ namespace Beep.OilandGas.WellTestAnalysis
         /// <summary>
         /// Analyzes a build-up test using MDH method.
         /// </summary>
-        public static WellTestAnalysisResult AnalyzeBuildUpMDH(WellTestData data)
+        public static WELL_TEST_ANALYSIS_RESULT AnalyzeBuildUpMDH(WELL_TEST_DATA data)
         {
             WellTestDataValidator.Validate(data);
             return BuildUpAnalysis.AnalyzeMDH(data);
@@ -30,8 +30,8 @@ namespace Beep.OilandGas.WellTestAnalysis
         /// <summary>
         /// Calculates pressure derivative for diagnostic plots.
         /// </summary>
-        public static System.Collections.Generic.List<PressureTimePoint> CalculateDerivative(
-            System.Collections.Generic.List<PressureTimePoint> data, 
+        public static System.Collections.Generic.List<PRESSURE_TIME_POINT> CalculateDerivative(
+            System.Collections.Generic.List<PRESSURE_TIME_POINT> data, 
             double smoothingFactor = Constants.WellTestConstants.DefaultDerivativeSmoothing)
         {
             return DerivativeAnalysis.CalculateDerivative(data, smoothingFactor);
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.WellTestAnalysis
         /// Identifies reservoir model from derivative signature.
         /// </summary>
         public static ReservoirModel IdentifyReservoirModel(
-            System.Collections.Generic.List<PressureTimePoint> derivativeData)
+            System.Collections.Generic.List<PRESSURE_TIME_POINT> derivativeData)
         {
             return DerivativeAnalysis.IdentifyModel(derivativeData);
         }

@@ -238,5 +238,8 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref FieldValue, value); }
 
         }
+
+        public string CurrentPhase { get; set; }
+        public string AreaId { get; set; }
     }
 }

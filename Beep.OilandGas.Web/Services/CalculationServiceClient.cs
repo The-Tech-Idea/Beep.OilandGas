@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.GasLift;
@@ -27,8 +27,8 @@ namespace Beep.OilandGas.Web.Services
 
         #region Gas Lift Operations
 
-        public async Task<GasLiftPotentialResult> AnalyzeGasLiftPotentialAsync(
-            GasLiftWellProperties wellProperties,
+        public async Task<GAS_LIFT_POTENTIAL_RESULT> AnalyzeGasLiftPotentialAsync(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal minGasInjectionRate,
             decimal maxGasInjectionRate,
             int numberOfPoints = 50)
@@ -42,7 +42,7 @@ namespace Beep.OilandGas.Web.Services
                     MaxGasInjectionRate = maxGasInjectionRate,
                     NumberOfPoints = numberOfPoints
                 };
-                var result = await _apiClient.PostAsync<object, GasLiftPotentialResult>(
+                var result = await _apiClient.PostAsync<object, GAS_LIFT_POTENTIAL_RESULT>(
                     "/api/gaslift/analyze-potential", request);
                 return result ?? throw new InvalidOperationException("Failed to analyze gas lift potential");
             }
@@ -53,8 +53,8 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GasLiftValveDesignResult> DesignGasLiftValvesAsync(
-            GasLiftWellProperties wellProperties,
+        public async Task<GAS_LIFT_VALVE_DESIGN_RESULT> DesignGasLiftValvesAsync(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves,
             bool useSIUnits = false)
@@ -68,7 +68,7 @@ namespace Beep.OilandGas.Web.Services
                     NumberOfValves = numberOfValves,
                     UseSIUnits = useSIUnits
                 };
-                var result = await _apiClient.PostAsync<object, GasLiftValveDesignResult>(
+                var result = await _apiClient.PostAsync<object, GAS_LIFT_VALVE_DESIGN_RESULT>(
                     "/api/gaslift/design-valves", request);
                 return result ?? throw new InvalidOperationException("Failed to design gas lift valves");
             }
@@ -79,7 +79,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<bool> SaveGasLiftDesignAsync(GasLiftDesign design, string? userId = null)
+        public async Task<bool> SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, string? userId = null)
         {
             try
             {
@@ -97,18 +97,18 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<GasLiftPerformance> GetGasLiftPerformanceAsync(string wellUWI)
+        public async Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI)
         {
             try
             {
-                var result = await _apiClient.GetAsync<GasLiftPerformance>(
+                var result = await _apiClient.GetAsync<GAS_LIFT_PERFORMANCE>(
                     $"/api/gaslift/performance/{Uri.EscapeDataString(wellUWI)}");
-                return result ?? new GasLiftPerformance { WellUWI = wellUWI };
+                return result ?? new GAS_LIFT_PERFORMANCE { WellUWI = wellUWI };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting gas lift performance for well {WellUWI}", wellUWI);
-                return new GasLiftPerformance { WellUWI = wellUWI };
+                return new GAS_LIFT_PERFORMANCE { WellUWI = wellUWI };
             }
         }
 
@@ -383,7 +383,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<List<NPVProfilePoint>> GenerateNPVProfileAsync(CashFlow[] cashFlows, double minRate = 0.0, double maxRate = 1.0, int points = 50)
+        public async Task<List<NPV_PROFILE_POINT>> GenerateNPVProfileAsync(CashFlow[] cashFlows, double minRate = 0.0, double maxRate = 1.0, int points = 50)
         {
             try
             {
@@ -394,14 +394,14 @@ namespace Beep.OilandGas.Web.Services
                     MaxRate = maxRate,
                     Points = points
                 };
-                var result = await _apiClient.PostAsync<object, List<NPVProfilePoint>>(
+                var result = await _apiClient.PostAsync<object, List<NPV_PROFILE_POINT>>(
                     "/api/economicanalysis/npv-profile", request);
-                return result ?? new List<NPVProfilePoint>();
+                return result ?? new List<NPV_PROFILE_POINT>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating NPV profile");
-                return new List<NPVProfilePoint>();
+                return new List<NPV_PROFILE_POINT>();
             }
         }
 

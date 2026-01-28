@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpGet("operations")]
-        public async Task<ActionResult<List<DrillingOperation>>> GetDrillingOperations([FromQuery] string? wellUWI = null)
+        public async Task<ActionResult<List<DRILLING_OPERATION>>> GetDrillingOperations([FromQuery] string? wellUWI = null)
         {
             try
             {
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpGet("operations/{operationId}")]
-        public async Task<ActionResult<DrillingOperation>> GetDrillingOperation(string operationId)
+        public async Task<ActionResult<DRILLING_OPERATION>> GetDrillingOperation(string operationId)
         {
             try
             {
@@ -56,7 +56,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPost("operations")]
-        public async Task<ActionResult<DrillingOperation>> CreateDrillingOperation([FromBody] CreateDrillingOperation createDto)
+        public async Task<ActionResult<DRILLING_OPERATION>> CreateDrillingOperation([FromBody] CREATE_DRILLING_OPERATION createDto)
         {
             try
             {
@@ -71,7 +71,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPut("operations/{operationId}")]
-        public async Task<ActionResult<DrillingOperation>> UpdateDrillingOperation(string operationId, [FromBody] UpdateDrillingOperation updateDto)
+        public async Task<ActionResult<DRILLING_OPERATION>> UpdateDrillingOperation(string operationId, [FromBody] UpdateDrillingOperation updateDto)
         {
             try
             {
@@ -86,7 +86,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpGet("operations/{operationId}/reports")]
-        public async Task<ActionResult<List<DrillingReport>>> GetDrillingReports(string operationId)
+        public async Task<ActionResult<List<DRILLING_REPORT>>> GetDrillingReports(string operationId)
         {
             try
             {
@@ -101,7 +101,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         }
 
         [HttpPost("operations/{operationId}/reports")]
-        public async Task<ActionResult<DrillingReport>> CreateDrillingReport(string operationId, [FromBody] CreateDrillingReport createDto)
+        public async Task<ActionResult<DRILLING_REPORT>> CreateDrillingReport(string operationId, [FromBody] CreateDrillingReport createDto)
         {
             try
             {

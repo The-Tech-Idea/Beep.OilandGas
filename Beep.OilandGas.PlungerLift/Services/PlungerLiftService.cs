@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -41,7 +41,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
         #region System Design
 
-        public async Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellProperties wellProperties)
+        public async Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PLUNGER_LIFT_WELL_PROPERTIES wellProperties)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -52,7 +52,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var cycleTime = CalculateOptimalCycleTime(wellProperties.ReservoirPressure, wellProperties.WellDepth);
+                var cycleTime = CalculateOptimalCycleTime(wellProperties.ReservoirPressure, wellProperties.WELL_DEPTH);
                 
                 var design = new PlungerLiftDesign
                 {
@@ -1040,23 +1040,23 @@ namespace Beep.OilandGas.PlungerLift.Services
             return baseCycleTime;
         }
 
-        private int DeterminePlungerType(PlungerLiftWellProperties wellProperties)
+        private int DeterminePlungerType(PLUNGER_LIFT_WELL_PROPERTIES wellProperties)
         {
-            if (wellProperties.WellDepth > 10000 && wellProperties.TubingSize <= 2.5m)
+            if (wellProperties.WELL_DEPTH > 10000 && wellProperties.TubingSize <= 2.5m)
                 return 3;
             if (wellProperties.ReservoirPressure < 800)
                 return 2;
             return 1;
         }
 
-        private List<string> GenerateDesignNotes(PlungerLiftWellProperties wellProperties)
+        private List<string> GenerateDesignNotes(PLUNGER_LIFT_WELL_PROPERTIES wellProperties)
         {
             var notes = new List<string>();
             
             if (wellProperties.ReservoirPressure < 500)
                 notes.Add("Low reservoir pressure - consider velocity plunger");
             
-            if (wellProperties.WellDepth > 12000)
+            if (wellProperties.WELL_DEPTH > 12000)
                 notes.Add("Deep well - ensure tubing condition");
             
             if (notes.Count == 0)

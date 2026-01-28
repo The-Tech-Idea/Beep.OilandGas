@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.PlungerLift;
 using Beep.OilandGas.Models.Data;
@@ -17,7 +17,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="wellUWI">Well UWI</param>
         /// <param name="wellProperties">Well properties</param>
         /// <returns>Plunger lift design result</returns>
-        Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PlungerLiftWellProperties wellProperties);
+        Task<PlungerLiftDesign> DesignPlungerLiftSystemAsync(string wellUWI, PLUNGER_LIFT_WELL_PROPERTIES wellProperties);
 
         /// <summary>
         /// Analyzes plunger lift performance.

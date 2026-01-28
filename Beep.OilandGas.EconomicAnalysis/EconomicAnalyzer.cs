@@ -1,4 +1,4 @@
-using Beep.OilandGas.EconomicAnalysis.Calculations;
+﻿using Beep.OilandGas.EconomicAnalysis.Calculations;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
 
 namespace Beep.OilandGas.EconomicAnalysis
@@ -36,7 +36,7 @@ namespace Beep.OilandGas.EconomicAnalysis
         /// <summary>
         /// Generates NPV profile.
         /// </summary>
-        public static System.Collections.Generic.List<NPVProfilePoint> GenerateNPVProfile(
+        public static System.Collections.Generic.List<NPV_PROFILE_POINT> GenerateNPVProfile(
             CashFlow[] cashFlows, double minRate = 0.0, double maxRate = 1.0, int points = 50)
         {
             return EconomicCalculator.GenerateNPVProfile(cashFlows, minRate, maxRate, points);

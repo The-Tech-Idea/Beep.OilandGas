@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -33,7 +33,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             _logger = logger;
         }
 
-        public async Task<PermitApplication> CreateAsync(PermitApplication application, string userId)
+        public async Task<PERMIT_APPLICATION> CreateAsync(PERMIT_APPLICATION application, string userId)
         {
             if (application == null)
                 throw new ArgumentNullException(nameof(application));
@@ -58,7 +58,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             return _mapper.MapToDomain(data);
         }
 
-        public async Task<PermitApplication> UpdateAsync(string applicationId, PermitApplication application, string userId)
+        public async Task<PERMIT_APPLICATION> UpdateAsync(string applicationId, PERMIT_APPLICATION application, string userId)
         {
             if (string.IsNullOrWhiteSpace(applicationId))
                 throw new ArgumentNullException(nameof(applicationId));
@@ -78,7 +78,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             return _mapper.MapToDomain(data);
         }
 
-        public async Task<PermitApplication?> GetByIdAsync(string applicationId)
+        public async Task<PERMIT_APPLICATION?> GetByIdAsync(string applicationId)
         {
             if (string.IsNullOrWhiteSpace(applicationId))
                 throw new ArgumentNullException(nameof(applicationId));
@@ -88,7 +88,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             return result == null ? null : _mapper.MapToDomain(result);
         }
 
-        public async Task<IReadOnlyList<PermitApplication>> GetByStatusAsync(PermitApplicationStatus status)
+        public async Task<IReadOnlyList<PERMIT_APPLICATION>> GetByStatusAsync(PermitApplicationStatus status)
         {
             var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
             var filters = new List<AppFilter>
@@ -105,7 +105,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 .ToList();
         }
 
-        public async Task<PermitApplication> SubmitAsync(string applicationId, string userId)
+        public async Task<PERMIT_APPLICATION> SubmitAsync(string applicationId, string userId)
         {
             var repo = await CreateRepositoryAsync<PERMIT_APPLICATION>("PERMIT_APPLICATION");
             var application = await repo.GetByIdAsync(applicationId) as PERMIT_APPLICATION;
@@ -122,7 +122,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             return _mapper.MapToDomain(application);
         }
 
-        public async Task<PermitApplication> ProcessDecisionAsync(
+        public async Task<PERMIT_APPLICATION> ProcessDecisionAsync(
             string applicationId,
             string decision,
             string decisionRemarks,

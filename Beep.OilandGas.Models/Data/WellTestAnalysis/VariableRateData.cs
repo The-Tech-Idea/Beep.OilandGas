@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data;
 
@@ -17,9 +17,9 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             set { SetProperty(ref ProductionHistoryValue, value); }
 
         }
-        private List<PressureTimePoint> PressureDataValue = new();
+        private List<PRESSURE_TIME_POINT> PressureDataValue = new();
 
-        public List<PressureTimePoint> PressureData
+        public List<PRESSURE_TIME_POINT> PressureData
 
         {
 

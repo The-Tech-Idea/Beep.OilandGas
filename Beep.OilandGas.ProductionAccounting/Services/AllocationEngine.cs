@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -47,12 +47,12 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         /// Supports: ProRata (ownership %), Equation, Volumetric, Yield.
         /// </summary>
         public async Task<ALLOCATION_RESULT> AllocateAsync(
-            RUN_TICKET runTicket,
+            RUN_TICKET RUN_TICKET,
             string allocationMethod,
             string userId,
             string connectionName = "PPDM39")
         {
-            if (runTicket == null)
+            if (RUN_TICKET == null)
                 throw new AllocationException("Run ticket cannot be null");
             if (string.IsNullOrWhiteSpace(allocationMethod))
                 throw new AllocationException("Allocation method required");
@@ -60,22 +60,22 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 throw new AllocationException($"Invalid allocation method: {allocationMethod}");
 
             _logger?.LogInformation("Starting allocation for run ticket {RunTicketId} using method {Method}",
-                runTicket.RUN_TICKET_ID, allocationMethod);
+                RUN_TICKET.RUN_TICKET_ID, allocationMethod);
 
             // Prefer net volume if available, fall back to gross.
-            var volume = (runTicket.NET_VOLUME.HasValue && runTicket.NET_VOLUME.Value > 0)
-                ? runTicket.NET_VOLUME.Value
-                : (runTicket.GROSS_VOLUME ?? 0m);
+            var volume = (RUN_TICKET.NET_VOLUME.HasValue && RUN_TICKET.NET_VOLUME.Value > 0)
+                ? RUN_TICKET.NET_VOLUME.Value
+                : (RUN_TICKET.GROSS_VOLUME ?? 0m);
             if (volume <= 0)
                 throw new AllocationException($"Invalid volume: {volume}");
 
             // Create allocation result
-            var allocationResult = new ALLOCATION_RESULT
+            var ALLOCATION_RESULT = new ALLOCATION_RESULT
             {
                 ALLOCATION_RESULT_ID = Guid.NewGuid().ToString(),
-                ALLOCATION_REQUEST_ID = runTicket.RUN_TICKET_ID,
+                ALLOCATION_REQUEST_ID = RUN_TICKET.RUN_TICKET_ID,
                 ALLOCATION_METHOD = allocationMethod,
-                AFE_ID = runTicket.AFE_ID,
+                AFE_ID = RUN_TICKET.AFE_ID,
                 ALLOCATION_DATE = DateTime.UtcNow,
                 TOTAL_VOLUME = volume,
                 ALLOCATED_VOLUME = 0,  // Will be calculated from details
@@ -94,29 +94,29 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 entityType, connectionName, "ALLOCATION_RESULT");
 
-            await repo.InsertAsync(allocationResult, userId);
+            await repo.InsertAsync(ALLOCATION_RESULT, userId);
 
             _logger?.LogInformation("Allocation created: {AllocationResultId} Total Volume: {TotalVolume}",
-                allocationResult.ALLOCATION_RESULT_ID, volume);
+                ALLOCATION_RESULT.ALLOCATION_RESULT_ID, volume);
 
             if (allocationMethod == AllocationMethods.ProRata)
             {
-                var details = await CreateProRataDetailsAsync(allocationResult, runTicket, userId, connectionName);
+                var details = await CreateProRataDetailsAsync(ALLOCATION_RESULT, RUN_TICKET, userId, connectionName);
                 var allocatedTotal = details.Sum(d => d.ALLOCATED_VOLUME ?? 0m);
-                allocationResult.ALLOCATED_VOLUME = allocatedTotal;
-                allocationResult.ALLOCATION_VARIANCE = (allocationResult.TOTAL_VOLUME ?? 0m) - allocatedTotal;
-                allocationResult.DESCRIPTION = $"Pro-rata allocation for run ticket {runTicket.RUN_TICKET_ID}";
-                allocationResult.ROW_CHANGED_BY = userId;
-                allocationResult.ROW_CHANGED_DATE = DateTime.UtcNow;
+                ALLOCATION_RESULT.ALLOCATED_VOLUME = allocatedTotal;
+                ALLOCATION_RESULT.ALLOCATION_VARIANCE = (ALLOCATION_RESULT.TOTAL_VOLUME ?? 0m) - allocatedTotal;
+                ALLOCATION_RESULT.DESCRIPTION = $"Pro-rata allocation for run ticket {RUN_TICKET.RUN_TICKET_ID}";
+                ALLOCATION_RESULT.ROW_CHANGED_BY = userId;
+                ALLOCATION_RESULT.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-                await repo.UpdateAsync(allocationResult, userId);
+                await repo.UpdateAsync(ALLOCATION_RESULT, userId);
             }
             else
             {
                 throw new AllocationException($"Allocation method not implemented: {allocationMethod}");
             }
 
-            return allocationResult;
+            return ALLOCATION_RESULT;
         }
 
         public async Task<ALLOCATION_RESULT?> GetAllocationAsync(
@@ -190,21 +190,21 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         }
 
         private async Task<List<ALLOCATION_DETAIL>> CreateProRataDetailsAsync(
-            ALLOCATION_RESULT allocationResult,
-            RUN_TICKET runTicket,
+            ALLOCATION_RESULT ALLOCATION_RESULT,
+            RUN_TICKET RUN_TICKET,
             string userId,
             string connectionName)
         {
-            if (allocationResult == null)
+            if (ALLOCATION_RESULT == null)
                 throw new AllocationException("Allocation result is required");
-            if (runTicket == null)
+            if (RUN_TICKET == null)
                 throw new AllocationException("Run ticket is required");
 
-            var ownerships = await GetOwnershipInterestsAsync(runTicket, connectionName);
+            var ownerships = await GetOwnershipInterestsAsync(RUN_TICKET, connectionName);
             if (ownerships.Count == 0)
                 throw new AllocationException("No ownership interests found for allocation");
 
-            var divisionOrders = await GetDivisionOrdersAsync(runTicket, connectionName);
+            var divisionOrders = await GetDivisionOrdersAsync(RUN_TICKET, connectionName);
             ValidateDivisionOrders(ownerships, divisionOrders);
 
             var detailsMetadata = await _metadata.GetTableMetadataAsync("ALLOCATION_DETAIL");
@@ -215,7 +215,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 detailsEntityType, connectionName, "ALLOCATION_DETAIL");
 
-            var totalVolume = allocationResult.TOTAL_VOLUME ?? 0m;
+            var totalVolume = ALLOCATION_RESULT.TOTAL_VOLUME ?? 0m;
             if (totalVolume <= 0m)
                 throw new AllocationException($"Invalid total volume: {totalVolume}");
 
@@ -262,7 +262,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var detail = new ALLOCATION_DETAIL
                 {
                     ALLOCATION_DETAIL_ID = Guid.NewGuid().ToString(),
-                    ALLOCATION_RESULT_ID = allocationResult.ALLOCATION_RESULT_ID,
+                    ALLOCATION_RESULT_ID = ALLOCATION_RESULT.ALLOCATION_RESULT_ID,
                     ENTITY_ID = item.Ownership.OWNER_ID,
                     ENTITY_TYPE = "OWNER",
                     ENTITY_NAME = item.Ownership.OWNER_ID,
@@ -283,7 +283,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         }
 
         private async Task<List<OWNERSHIP_INTEREST>> GetOwnershipInterestsAsync(
-            RUN_TICKET runTicket,
+            RUN_TICKET RUN_TICKET,
             string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("OWNERSHIP_INTEREST");
@@ -294,9 +294,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 entityType, connectionName, "OWNERSHIP_INTEREST");
 
-            var propertyOrLeaseId = !string.IsNullOrWhiteSpace(runTicket.LEASE_ID)
-                ? runTicket.LEASE_ID
-                : runTicket.WELL_ID;
+            var propertyOrLeaseId = !string.IsNullOrWhiteSpace(RUN_TICKET.LEASE_ID)
+                ? RUN_TICKET.LEASE_ID
+                : RUN_TICKET.WELL_ID;
 
             if (string.IsNullOrWhiteSpace(propertyOrLeaseId))
                 throw new AllocationException("Run ticket has no lease or well ID for ownership lookup");
@@ -310,7 +310,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var results = await repo.GetAsync(filters);
             var all = results?.Cast<OWNERSHIP_INTEREST>().ToList() ?? new List<OWNERSHIP_INTEREST>();
 
-            var effectiveDate = runTicket.TICKET_DATE_TIME?.Date;
+            var effectiveDate = RUN_TICKET.TICKET_DATE_TIME?.Date;
             if (effectiveDate.HasValue)
             {
                 return all.Where(o =>
@@ -330,7 +330,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         }
 
         private async Task<List<DIVISION_ORDER>> GetDivisionOrdersAsync(
-            RUN_TICKET runTicket,
+            RUN_TICKET RUN_TICKET,
             string connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync("DIVISION_ORDER");
@@ -341,9 +341,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 _editor, _commonColumnHandler, _defaults, _metadata,
                 entityType, connectionName, "DIVISION_ORDER");
 
-            var propertyOrLeaseId = !string.IsNullOrWhiteSpace(runTicket.LEASE_ID)
-                ? runTicket.LEASE_ID
-                : runTicket.WELL_ID;
+            var propertyOrLeaseId = !string.IsNullOrWhiteSpace(RUN_TICKET.LEASE_ID)
+                ? RUN_TICKET.LEASE_ID
+                : RUN_TICKET.WELL_ID;
 
             if (string.IsNullOrWhiteSpace(propertyOrLeaseId))
                 return new List<DIVISION_ORDER>();
@@ -357,7 +357,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var results = await repo.GetAsync(filters);
             var orders = results?.Cast<DIVISION_ORDER>().ToList() ?? new List<DIVISION_ORDER>();
 
-            var effectiveDate = runTicket.TICKET_DATE_TIME?.Date;
+            var effectiveDate = RUN_TICKET.TICKET_DATE_TIME?.Date;
             if (!effectiveDate.HasValue)
                 return orders;
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Data.HydraulicPumps;
 
@@ -61,13 +61,13 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to HydraulicPumpWellProperties.
+        /// Maps PPDM39 WELL and related entities to HYDRAULIC_PUMP_WELL_PROPERTIES.
         /// </summary>
         /// <param name="well">The PPDM39 WELL entity.</param>
         /// <param name="tubular">Optional WELL_TUBULAR entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity.</param>
-        /// <returns>The mapped HydraulicPumpWellProperties.</returns>
-        public HydraulicPumpWellProperties MapToHydraulicPumpWellProperties(
+        /// <returns>The mapped HYDRAULIC_PUMP_WELL_PROPERTIES.</returns>
+        public HYDRAULIC_PUMP_WELL_PROPERTIES MapToHydraulicPumpWellProperties(
             WELL well,
             WELL_TUBULAR? tubular = null,
             WELL_PRESSURE? wellPressure = null)
@@ -88,7 +88,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getGasSpecificGravity = _getGasSpecificGravity ?? ValueRetrievers.GetGasSpecificGravityDecimal;
             var getDesiredProductionRate = _getDesiredProductionRate ?? ((w) => throw new InvalidOperationException("Desired production rate not available. Provide getDesiredProductionRate function."));
 
-            return new HydraulicPumpWellProperties
+            return new HYDRAULIC_PUMP_WELL_PROPERTIES
             {
                 WellDepth = getWellDepth(well, tubular),
                 TubingDiameter = getTubingDiameter(well, tubular),

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -54,8 +54,8 @@ namespace Beep.OilandGas.GasLift.Services
         /// <summary>
         /// Analyzes gas lift potential for a well (base method - existing)
         /// </summary>
-        public GasLiftPotentialResult AnalyzeGasLiftPotential(
-            GasLiftWellProperties wellProperties,
+        public GAS_LIFT_POTENTIAL_RESULT AnalyzeGasLiftPotential(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal minGasInjectionRate,
             decimal maxGasInjectionRate,
             int numberOfPoints = 50)
@@ -64,13 +64,13 @@ namespace Beep.OilandGas.GasLift.Services
                 throw new ArgumentNullException(nameof(wellProperties));
 
             _logger?.LogInformation("Analyzing gas lift potential for well {WellUWI}: Range {MinRate}-{MaxRate} Mscf/day", 
-                wellProperties.WellUWI, minGasInjectionRate, maxGasInjectionRate);
+                wellProperties.WELL_UWI, minGasInjectionRate, maxGasInjectionRate);
             
             var result = GasLiftPotentialCalculator.AnalyzeGasLiftPotential(
                 wellProperties, minGasInjectionRate, maxGasInjectionRate, numberOfPoints);
             
             _logger?.LogInformation("Gas lift potential analysis completed: OptimalGasInjectionRate={Rate} Mscf/day, MaximumProductionRate={Production} BPD", 
-                result.OptimalGasInjectionRate, result.MaximumProductionRate);
+                result.OPTIMAL_GAS_INJECTION_RATE, result.MAXIMUM_PRODUCTION_RATE);
             
             return result;
         }
@@ -79,7 +79,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// Analyzes economic viability of gas lift based on cost and revenue
         /// </summary>
         public async Task<GasLiftEconomicAnalysisResult> AnalyzeEconomicViabilityAsync(
-            GasLiftPotentialResult potentialResult,
+            GAS_LIFT_POTENTIAL_RESULT potentialResult,
             decimal gasInjectionCostPerMscf,
             decimal oilPricePerBarrel,
             string userId)
@@ -103,15 +103,15 @@ namespace Beep.OilandGas.GasLift.Services
             // Calculate NPV for each performance point
             foreach (var point in potentialResult.PerformancePoints)
             {
-                decimal dailyRevenue = point.ProductionRate * oilPricePerBarrel;
-                decimal dailyCost = point.GasInjectionRate * gasInjectionCostPerMscf;
+                decimal dailyRevenue = point.PRODUCTION_RATE * oilPricePerBarrel;
+                decimal dailyCost = point.GAS_INJECTION_RATE * gasInjectionCostPerMscf;
                 decimal dailyNetRevenue = dailyRevenue - dailyCost;
                 decimal annualNetRevenue = dailyNetRevenue * 365m;
 
                 economicResult.EconomicPoints.Add(new GasLiftEconomicPoint
                 {
-                    GasInjectionRate = point.GasInjectionRate,
-                    ProductionRate = point.ProductionRate,
+                    GasInjectionRate = point.GAS_INJECTION_RATE,
+                    ProductionRate = point.PRODUCTION_RATE,
                     DailyRevenue = dailyRevenue,
                     DailyCost = dailyCost,
                     NetDailyMargin = dailyNetRevenue,
@@ -126,8 +126,8 @@ namespace Beep.OilandGas.GasLift.Services
 
             if (optimalPoint != null)
             {
-                economicResult.OptimalGasInjectionRate = optimalPoint.GasInjectionRate;
-                economicResult.OptimalProductionRate = optimalPoint.ProductionRate;
+                economicResult.OPTIMAL_GAS_INJECTION_RATE = optimalPoint.GAS_INJECTION_RATE;
+                economicResult.OptimalProductionRate = optimalPoint.PRODUCTION_RATE;
                 economicResult.MaximumAnnualNetRevenue = optimalPoint.AnnualNetRevenue;
                 economicResult.IsEconomicallyViable = optimalPoint.AnnualNetRevenue > 0;
             }
@@ -142,7 +142,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// Analyzes risk factors and uncertainty in gas lift design
         /// </summary>
         public async Task<GasLiftRiskAnalysisResult> AnalyzeRiskFactorsAsync(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             string userId)
         {
             if (wellProperties == null)
@@ -150,23 +150,23 @@ namespace Beep.OilandGas.GasLift.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            _logger?.LogInformation("Performing gas lift risk analysis for well {WellUWI}", wellProperties.WellUWI);
+            _logger?.LogInformation("Performing gas lift risk analysis for well {WellUWI}", wellProperties.WELL_UWI);
 
             var riskResult = new GasLiftRiskAnalysisResult
             {
                 AnalysisDate = DateTime.UtcNow,
                 AnalyzedByUser = userId,
-                WellUWI = wellProperties.WellUWI
+                WellUWI = wellProperties.WELL_UWI
             };
 
             // Assess tubing/casing stress risk
-            decimal stressMarginFactor = wellProperties.TubingPressureRating > 0 
-                ? 1.0m - (wellProperties.WellheadPressure / wellProperties.TubingPressureRating)
+            decimal stressMarginFactor = wellProperties.TUBING_PRESSURE_RATING > 0 
+                ? 1.0m - (wellProperties.WELLHEAD_PRESSURE / wellProperties.TUBING_PRESSURE_RATING)
                 : 0.5m;
             riskResult.TubingCasingStressRisk = (1.0m - stressMarginFactor) * 100m;
 
             // Assess scale/corrosion risk (based on water cut and CO2)
-            riskResult.ScaleCorrosionRisk = (wellProperties.WaterCut * 50m) + 20m; // Base 20% + 50% per water cut fraction
+            riskResult.ScaleCorrosionRisk = (wellProperties.WATER_CUT * 50m) + 20m; // Base 20% + 50% per water cut fraction
 
             // Assess valve reliability risk
             riskResult.ValveReliabilityRisk = 15m; // Base risk + conditions
@@ -201,7 +201,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// Analyzes well lift performance constraints
         /// </summary>
         public async Task<GasLiftConstraintAnalysisResult> AnalyzeConstraintsAsync(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             string userId)
         {
             if (wellProperties == null)
@@ -209,20 +209,20 @@ namespace Beep.OilandGas.GasLift.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            _logger?.LogInformation("Analyzing gas lift constraints for well {WellUWI}", wellProperties.WellUWI);
+            _logger?.LogInformation("Analyzing gas lift constraints for well {WellUWI}", wellProperties.WELL_UWI);
 
             var constraintResult = new GasLiftConstraintAnalysisResult
             {
                 AnalysisDate = DateTime.UtcNow,
                 AnalyzedByUser = userId,
-                WellUWI = wellProperties.WellUWI
+                WellUWI = wellProperties.WELL_UWI
             };
 
             // Tubing pressure constraint
-            constraintResult.MaxTubingPressure = wellProperties.TubingPressureRating * 0.9m; // 90% of rating
+            constraintResult.MaxTubingPressure = wellProperties.TUBING_PRESSURE_RATING * 0.9m; // 90% of rating
 
             // Casing pressure constraint
-            constraintResult.MaxCasingPressure = wellProperties.CasingPressureRating * 0.8m; // 80% of rating
+            constraintResult.MaxCasingPressure = wellProperties.CASING_PRESSURE_RATING * 0.8m; // 80% of rating
 
             // Surface equipment constraint
             constraintResult.MaxSurfaceEquipmentPressure = 500m; // Typical separator/process equipment limit
@@ -231,18 +231,18 @@ namespace Beep.OilandGas.GasLift.Services
             constraintResult.MaxAvailableGasSupply = 5000m; // Typical compressor capacity
 
             // Production constraint
-            constraintResult.MaxProductionCapacity = wellProperties.DesiredProductionRate * 1.5m; // 150% of desired
+            constraintResult.MaxProductionCapacity = wellProperties.DESIRED_PRODUCTION_RATE * 1.5m; // 150% of desired
 
             // Temperature constraint
             constraintResult.MaxTubingTemperature = 250m; // Typical polymer/elastomer limit
 
             // Identify active constraints
             constraintResult.ActiveConstraints = new List<string>();
-            if (wellProperties.WellheadPressure > constraintResult.MaxTubingPressure * 0.8m)
+            if (wellProperties.WELLHEAD_PRESSURE > constraintResult.MaxTubingPressure * 0.8m)
                 constraintResult.ActiveConstraints.Add("Tubing Pressure");
-            if (wellProperties.GasOilRatio > 3000m)
+            if (wellProperties.GAS_OIL_RATIO > 3000m)
                 constraintResult.ActiveConstraints.Add("Gas Production");
-            if (wellProperties.WaterCut > 0.7m)
+            if (wellProperties.WATER_CUT > 0.7m)
                 constraintResult.ActiveConstraints.Add("Water Production");
 
             _logger?.LogInformation("Constraint analysis completed: {ConstraintCount} active constraints",
@@ -258,8 +258,8 @@ namespace Beep.OilandGas.GasLift.Services
         /// <summary>
         /// Designs gas lift valves for a well (existing method)
         /// </summary>
-        public GasLiftValveDesignResult DesignValves(
-            GasLiftWellProperties wellProperties,
+        public GAS_LIFT_VALVE_DESIGN_RESULT DesignValves(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves,
             bool useSIUnits = false)
@@ -268,9 +268,9 @@ namespace Beep.OilandGas.GasLift.Services
                 throw new ArgumentNullException(nameof(wellProperties));
 
             _logger?.LogInformation("Designing gas lift valves for well {WellUWI}: {ValveCount} valves, Injection Pressure={Pressure} psia", 
-                wellProperties.WellUWI, numberOfValves, gasInjectionPressure);
+                wellProperties.WELL_UWI, numberOfValves, gasInjectionPressure);
             
-            GasLiftValveDesignResult result;
+            GAS_LIFT_VALVE_DESIGN_RESULT result;
             if (useSIUnits)
             {
                 result = GasLiftValveDesignCalculator.DesignValvesSI(wellProperties, gasInjectionPressure, numberOfValves);
@@ -281,7 +281,7 @@ namespace Beep.OilandGas.GasLift.Services
             }
 
             _logger?.LogInformation("Gas lift valve design completed: {ValveCount} valves, Total Gas Rate={Rate} Mscf/day", 
-                result.Valves.Count, result.TotalGasInjectionRate);
+                result.Valves.Count, result.TOTAL_GAS_INJECTION_RATE);
             
             return result;
         }
@@ -290,7 +290,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// Optimizes valve spacing based on pressure profile
         /// </summary>
         public async Task<List<GasLiftValveOptimizationResult>> OptimizeValveSpacingAsync(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             string userId)
         {
@@ -299,7 +299,7 @@ namespace Beep.OilandGas.GasLift.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            _logger?.LogInformation("Optimizing valve spacing for well {WellUWI}", wellProperties.WellUWI);
+            _logger?.LogInformation("Optimizing valve spacing for well {WellUWI}", wellProperties.WELL_UWI);
 
             var optimizationResults = new List<GasLiftValveOptimizationResult>();
 
@@ -313,8 +313,8 @@ namespace Beep.OilandGas.GasLift.Services
                     optimizationResults.Add(new GasLiftValveOptimizationResult
                     {
                         NumberOfValves = numValves,
-                        TotalGasInjectionRate = valveDesign.TotalGasInjectionRate,
-                        ValveSpacing = wellProperties.WellDepth / numValves,
+                        TotalGasInjectionRate = valveDesign.TOTAL_GAS_INJECTION_RATE,
+                        ValveSpacing = wellProperties.WELL_DEPTH / numValves,
                         DesignQuality = CalculateDesignQuality(valveDesign, wellProperties),
                         CostEffectiveness = CalculateCostEffectiveness(numValves)
                     });
@@ -337,7 +337,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// <summary>
         /// Gets gas lift performance data (existing method)
         /// </summary>
-        public async Task<GasLiftPerformance> GetGasLiftPerformanceAsync(string wellUWI)
+        public async Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellUWI)
         {
             if (string.IsNullOrWhiteSpace(wellUWI))
                 throw new ArgumentException("Well UWI cannot be null or empty", nameof(wellUWI));
@@ -359,14 +359,14 @@ namespace Beep.OilandGas.GasLift.Services
             if (entity == null)
             {
                 _logger?.LogWarning("No gas lift performance data found for well {WellUWI}", wellUWI);
-                return new GasLiftPerformance
+                return new GAS_LIFT_PERFORMANCE
                 {
                     WellUWI = wellUWI,
                     PerformanceDate = DateTime.UtcNow
                 };
             }
 
-            var performance = new GasLiftPerformance
+            var performance = new GAS_LIFT_PERFORMANCE
             {
                 WellUWI = entity.WELL_UWI ?? wellUWI,
                 PerformanceDate = entity.PERFORMANCE_DATE ?? DateTime.UtcNow,
@@ -377,7 +377,7 @@ namespace Beep.OilandGas.GasLift.Services
             };
 
             _logger?.LogInformation("Retrieved gas lift performance for well {WellUWI}: Production={Production} BPD, GasRate={GasRate} Mscf/day",
-                wellUWI, performance.ProductionRate, performance.GasInjectionRate);
+                wellUWI, performance.PRODUCTION_RATE, performance.GAS_INJECTION_RATE);
             
             return performance;
         }
@@ -386,8 +386,8 @@ namespace Beep.OilandGas.GasLift.Services
         /// Diagnoses performance issues and anomalies
         /// </summary>
         public async Task<GasLiftPerformanceDiagnosisResult> DiagnosePerformanceIssuesAsync(
-            GasLiftPerformance currentPerformance,
-            GasLiftPerformance historicalPerformance,
+            GAS_LIFT_PERFORMANCE currentPerformance,
+            GAS_LIFT_PERFORMANCE historicalPerformance,
             string userId)
         {
             if (currentPerformance == null)
@@ -397,34 +397,34 @@ namespace Beep.OilandGas.GasLift.Services
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentNullException(nameof(userId));
 
-            _logger?.LogInformation("Diagnosing performance issues for well {WellUWI}", currentPerformance.WellUWI);
+            _logger?.LogInformation("Diagnosing performance issues for well {WellUWI}", currentPerformance.WELL_UWI);
 
             var diagnosis = new GasLiftPerformanceDiagnosisResult
             {
                 DiagnosisDate = DateTime.UtcNow,
                 DiagnosedByUser = userId,
-                WellUWI = currentPerformance.WellUWI
+                WellUWI = currentPerformance.WELL_UWI
             };
 
             // Calculate production change
-            decimal productionChange = currentPerformance.ProductionRate - historicalPerformance.ProductionRate;
-            decimal productionChangePercent = historicalPerformance.ProductionRate > 0
-                ? (productionChange / historicalPerformance.ProductionRate) * 100m
+            decimal productionChange = currentPerformance.PRODUCTION_RATE - historicalPerformance.PRODUCTION_RATE;
+            decimal productionChangePercent = historicalPerformance.PRODUCTION_RATE > 0
+                ? (productionChange / historicalPerformance.PRODUCTION_RATE) * 100m
                 : 0m;
 
             diagnosis.ProductionChangePercent = productionChangePercent;
 
             // Calculate gas injection change
-            decimal gasInjectionChange = currentPerformance.GasInjectionRate - historicalPerformance.GasInjectionRate;
-            decimal gasInjectionChangePercent = historicalPerformance.GasInjectionRate > 0
-                ? (gasInjectionChange / historicalPerformance.GasInjectionRate) * 100m
+            decimal gasInjectionChange = currentPerformance.GAS_INJECTION_RATE - historicalPerformance.GAS_INJECTION_RATE;
+            decimal gasInjectionChangePercent = historicalPerformance.GAS_INJECTION_RATE > 0
+                ? (gasInjectionChange / historicalPerformance.GAS_INJECTION_RATE) * 100m
                 : 0m;
 
             diagnosis.GasInjectionChangePercent = gasInjectionChangePercent;
 
             // Calculate efficiency change
-            decimal historicalEfficiency = historicalPerformance.Efficiency > 0 ? historicalPerformance.Efficiency : 1.0m;
-            decimal currentEfficiency = currentPerformance.Efficiency > 0 ? currentPerformance.Efficiency : 1.0m;
+            decimal historicalEfficiency = historicalPerformance.EFFICIENCY > 0 ? historicalPerformance.EFFICIENCY : 1.0m;
+            decimal currentEfficiency = currentPerformance.EFFICIENCY > 0 ? currentPerformance.EFFICIENCY : 1.0m;
             diagnosis.EfficiencyChangePercent = ((currentEfficiency - historicalEfficiency) / historicalEfficiency) * 100m;
 
             // Identify performance issues
@@ -432,7 +432,7 @@ namespace Beep.OilandGas.GasLift.Services
                 diagnosis.IssuesDetected.Add("Significant production decline (>20%)");
             if (gasInjectionChangePercent > 50m && productionChangePercent < 5m)
                 diagnosis.IssuesDetected.Add("High gas injection with minimal production increase - possible valve leakage");
-            if (currentPerformance.GasLiquidRatio > 5000m)
+            if (currentPerformance.GAS_LIQUID_RATIO > 5000m)
                 diagnosis.IssuesDetected.Add("Extremely high GLR - may indicate tubing leak or unloading issues");
             if (diagnosis.EfficiencyChangePercent < -30m)
                 diagnosis.IssuesDetected.Add("Significant efficiency loss - recommend valve inspection");
@@ -460,18 +460,18 @@ namespace Beep.OilandGas.GasLift.Services
         /// <summary>
         /// Saves gas lift design to database (existing method)
         /// </summary>
-        public async Task SaveGasLiftDesignAsync(GasLiftDesign design, string userId)
+        public async Task SaveGasLiftDesignAsync(GAS_LIFT_DESIGN design, string userId)
         {
             if (design == null)
                 throw new ArgumentNullException(nameof(design));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
-            _logger?.LogInformation("Saving gas lift design {DesignId} for well {WellUWI}", design.DesignId, design.WellUWI);
+            _logger?.LogInformation("Saving gas lift design {DesignId} for well {WellUWI}", design.DESIGN_ID, design.WELL_UWI);
 
-            if (string.IsNullOrWhiteSpace(design.DesignId))
+            if (string.IsNullOrWhiteSpace(design.DESIGN_ID))
             {
-                design.DesignId = _defaults.FormatIdForTable("GAS_LIFT_DESIGN", Guid.NewGuid().ToString());
+                design.DESIGN_ID = _defaults.FormatIdForTable("GAS_LIFT_DESIGN", Guid.NewGuid().ToString());
             }
 
             // Create repository for GAS_LIFT_DESIGN
@@ -480,12 +480,12 @@ namespace Beep.OilandGas.GasLift.Services
 
             var newEntity = new GAS_LIFT_DESIGN
             {
-                DESIGN_ID = design.DesignId,
-                WELL_UWI = design.WellUWI ?? string.Empty,
-                DESIGN_DATE = design.DesignDate,
-                NUMBER_OF_VALVES = design.NumberOfValves,
-                TOTAL_GAS_INJECTION_RATE = design.TotalGasInjectionRate,
-                EXPECTED_PRODUCTION_RATE = design.ExpectedProductionRate,
+                DESIGN_ID = design.DESIGN_ID,
+                WELL_UWI = design.WELL_UWI ?? string.Empty,
+                DESIGN_DATE = design.DESIGN_DATE,
+                NUMBER_OF_VALVES = design.NUMBER_OF_VALVES,
+                TOTAL_GAS_INJECTION_RATE = design.TOTAL_GAS_INJECTION_RATE,
+                EXPECTED_PRODUCTION_RATE = design.EXPECTED_PRODUCTION_RATE,
                 ACTIVE_IND = "Y"
             };
 
@@ -496,20 +496,20 @@ namespace Beep.OilandGas.GasLift.Services
             }
             await designRepo.InsertAsync(newEntity, userId);
 
-            _logger?.LogInformation("Successfully saved gas lift design {DesignId}", design.DesignId);
+            _logger?.LogInformation("Successfully saved gas lift design {DesignId}", design.DESIGN_ID);
         }
 
         /// <summary>
         /// Saves performance monitoring data
         /// </summary>
-        public async Task SavePerformanceDataAsync(GasLiftPerformance performance, string userId)
+        public async Task SavePerformanceDataAsync(GAS_LIFT_PERFORMANCE performance, string userId)
         {
             if (performance == null)
                 throw new ArgumentNullException(nameof(performance));
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
-            _logger?.LogInformation("Saving performance data for well {WellUWI}", performance.WellUWI);
+            _logger?.LogInformation("Saving performance data for well {WellUWI}", performance.WELL_UWI);
 
             // Create repository for GAS_LIFT_PERFORMANCE
             var performanceRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
@@ -517,12 +517,12 @@ namespace Beep.OilandGas.GasLift.Services
 
             var newEntity = new GAS_LIFT_PERFORMANCE
             {
-                WELL_UWI = performance.WellUWI ?? string.Empty,
-                PERFORMANCE_DATE = performance.PerformanceDate,
-                GAS_INJECTION_RATE = performance.GasInjectionRate,
-                PRODUCTION_RATE = performance.ProductionRate,
-                GAS_LIQUID_RATIO = performance.GasLiquidRatio,
-                EFFICIENCY = performance.Efficiency,
+                WELL_UWI = performance.WELL_UWI ?? string.Empty,
+                PERFORMANCE_DATE = performance.PERFORMANCE_DATE,
+                GAS_INJECTION_RATE = performance.GAS_INJECTION_RATE,
+                PRODUCTION_RATE = performance.PRODUCTION_RATE,
+                GAS_LIQUID_RATIO = performance.GAS_LIQUID_RATIO,
+                EFFICIENCY = performance.EFFICIENCY,
                 ACTIVE_IND = "Y"
             };
 
@@ -533,7 +533,7 @@ namespace Beep.OilandGas.GasLift.Services
             }
             await performanceRepo.InsertAsync(newEntity, userId);
 
-            _logger?.LogInformation("Successfully saved performance data for well {WellUWI}", performance.WellUWI);
+            _logger?.LogInformation("Successfully saved performance data for well {WellUWI}", performance.WELL_UWI);
         }
 
         #endregion
@@ -562,14 +562,14 @@ namespace Beep.OilandGas.GasLift.Services
             return actions;
         }
 
-        private decimal CalculateDesignQuality(GasLiftValveDesignResult design, GasLiftWellProperties wellProperties)
+        private decimal CalculateDesignQuality(GAS_LIFT_VALVE_DESIGN_RESULT design, GAS_LIFT_WELL_PROPERTIES wellProperties)
         {
             // Quality based on valve count appropriateness and balanced injection rates
             decimal uniformity = 0m;
             if (design.Valves.Count > 0)
             {
-                var avgRate = design.Valves.Average(v => v.GasInjectionRate);
-                var variance = design.Valves.Average(v => (v.GasInjectionRate - avgRate) * (v.GasInjectionRate - avgRate));
+                var avgRate = design.Valves.Average(v => v.GAS_INJECTION_RATE);
+                var variance = design.Valves.Average(v => (v.GAS_INJECTION_RATE - avgRate) * (v.GAS_INJECTION_RATE - avgRate));
                 var stdDev = (decimal)Math.Sqrt((double)variance);
                 uniformity = avgRate > 0 ? 100m - (stdDev / avgRate * 100m) : 50m;
             }

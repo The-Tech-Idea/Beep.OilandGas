@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
@@ -67,15 +67,15 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL_TEST and related entities to WellTestData.
+        /// Maps PPDM39 WELL_TEST and related entities to WELL_TEST_DATA.
         /// </summary>
         /// <param name="wellTest">The PPDM39 WELL_TEST entity.</param>
         /// <param name="pressureData">Pressure data points from WELL_TEST_PRESSURE.</param>
         /// <param name="flowData">Flow data points from WELL_TEST_FLOW.</param>
         /// <param name="well">Optional WELL entity for well properties.</param>
         /// <param name="tubular">Optional WELL_TUBULAR for wellbore radius.</param>
-        /// <returns>The mapped WellTestData.</returns>
-        public WellTestData MapToWellTestData(
+        /// <returns>The mapped WELL_TEST_DATA.</returns>
+        public WELL_TEST_DATA MapToWellTestData(
             WELL_TEST wellTest,
             IEnumerable<WELL_TEST_PRESSURE>? pressureData = null,
             IEnumerable<WELL_TEST_FLOW>? flowData = null,
@@ -99,7 +99,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getReservoirTemperature = _getReservoirTemperature ?? ValueRetrievers.GetReservoirTemperatureFahrenheit;
             var getInitialReservoirPressure = _getInitialReservoirPressure ?? GetInitialReservoirPressure;
 
-            var wellTestData = new WellTestData
+            var WELL_TEST_DATA = new WELL_TEST_DATA
             {
                 TestType = getTestType(wellTest),
                 FlowRate = getFlowRate(flowData),
@@ -122,7 +122,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
                 var sortedPressure = pressureData.OrderBy(p => p.EFFECTIVE_DATE).ToList();
                 var startDate = sortedPressure.First().EFFECTIVE_DATE;
                 
-                wellTestData.Time = sortedPressure.Select(p => 
+                WELL_TEST_DATA.Time = sortedPressure.Select(p => 
                     {
                          DateTime effDate = p.EFFECTIVE_DATE ?? DateTime.MinValue;
                          DateTime start = startDate ?? DateTime.MinValue;
@@ -130,11 +130,11 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
                     }).ToList();
                 
                 // Use START_PRESSURE or END_PRESSURE based on test type
-                wellTestData.Pressure = sortedPressure.Select(p => 
+                WELL_TEST_DATA.Pressure = sortedPressure.Select(p => 
                     (double)(p.START_PRESSURE > 0 ? p.START_PRESSURE : p.END_PRESSURE)).ToList();
             }
 
-            return wellTestData;
+            return WELL_TEST_DATA;
         }
 
         /// <summary>

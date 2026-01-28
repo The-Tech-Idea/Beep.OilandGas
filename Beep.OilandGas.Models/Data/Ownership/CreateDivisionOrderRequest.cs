@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Beep.OilandGas.Models.Data;
 
@@ -52,7 +52,7 @@ namespace Beep.OilandGas.Models.Data.Ownership
         }
         private decimal? RoyaltyInterestValue;
 
-        public decimal? RoyaltyInterest
+        public decimal? ROYALTY_INTEREST
 
         {
 

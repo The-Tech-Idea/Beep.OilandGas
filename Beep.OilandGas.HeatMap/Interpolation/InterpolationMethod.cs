@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -65,7 +65,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         /// <param name="maxDistance">Maximum distance to consider for interpolation (default: infinity).</param>
         /// <returns>Interpolated value at the target point.</returns>
         public static double InverseDistanceWeighting(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double targetX,
             double targetY,
             double power = 2.0,
@@ -112,7 +112,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         /// <param name="power">Power parameter for IDW (default: 2.0).</param>
         /// <returns>2D array of interpolated values.</returns>
         public static double[,] GenerateGridIdw(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             int gridWidth,
             int gridHeight,
             double cellSize = 10.0,
@@ -149,7 +149,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         /// <param name="nugget">Nugget parameter for the variogram (default: 0.0).</param>
         /// <returns>Interpolated value at the target point.</returns>
         public static double Kriging(
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double targetX,
             double targetY,
             double range = 100.0,
@@ -306,7 +306,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         /// <returns>Interpolated value at the target point.</returns>
         public static double Interpolate(
             InterpolationMethodType methodType,
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double targetX,
             double targetY,
             double power = 2.0,
@@ -356,7 +356,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         /// <returns>2D array of interpolated values.</returns>
         public static double[,] GenerateGrid(
             InterpolationMethodType methodType,
-            List<HeatMapDataPoint> dataPoints,
+            List<HEAT_MAP_DATA_POINT> dataPoints,
             double minX,
             double maxX,
             double minY,

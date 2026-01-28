@@ -94,5 +94,7 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref ResolvedDateValue, value); }
 
         }
+
+        public object SEVERITY { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,19 +59,19 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
                 {
                     Status = result.Status.ToString(),
                     FieldProductionVolume = result.FieldProductionVolume,
-                    AllocatedVolume = result.AllocatedVolume,
+                    AllocatedVolume = result.ALLOCATED_VOLUME,
                     Discrepancy = result.Discrepancy,
                     DiscrepancyPercentage = result.DiscrepancyPercentage,
                     OilVolume = result.OilVolume != null ? new
                     {
                         FieldVolume = result.OilVolume.FieldVolume,
-                        AllocatedVolume = result.OilVolume.AllocatedVolume,
+                        AllocatedVolume = result.OilVolume.ALLOCATED_VOLUME,
                         Discrepancy = result.OilVolume.Discrepancy
                     } : null,
                     GasVolume = result.GasVolume != null ? new
                     {
                         FieldVolume = result.GasVolume.FieldVolume,
-                        AllocatedVolume = result.GasVolume.AllocatedVolume,
+                        AllocatedVolume = result.GasVolume.ALLOCATED_VOLUME,
                         Discrepancy = result.GasVolume.Discrepancy
                     } : null,
                     Issues = result.Issues?.Select(i => new
@@ -93,7 +93,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
         /// Perform allocation to wells.
         /// </summary>
         [HttpPost("allocate")]
-        public ActionResult<AllocationResult> Allocate(
+        public ActionResult<ALLOCATION_RESULT> Allocate(
             [FromBody] AllocationRequest request, 
             [FromQuery] string? connectionName = null)
         {
@@ -104,8 +104,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
 
                 var wells = request.Entities.Select(e => new WellAllocationData
                 {
-                    WellId = e.EntityId,
-                    WellName = e.EntityName ?? e.EntityId,
+                    WellId = e.ENTITY_ID,
+                    WellName = e.ENTITY_NAME ?? e.ENTITY_ID,
                     WorkingInterest = e.WorkingInterest ?? 0m,
                     NetRevenueInterest = e.NetRevenueInterest ?? 0m,
                     MeasuredProduction = e.ProductionHistory ?? 0m,
@@ -113,9 +113,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
                 }).ToList();
 
                 var result = AllocationEngine.AllocateToWells(
-                    request.TotalVolume,
+                    request.TOTAL_VOLUME,
                     wells,
-                    request.Method);
+                    request.METHOD);
 
                 return Ok(MapToAllocationResultDto(result));
             }
@@ -126,22 +126,22 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
             }
         }
 
-        private AllocationResult MapToAllocationResultDto(AllocationResult result)
+        private ALLOCATION_RESULT MapToAllocationResultDto(ALLOCATION_RESULT result)
         {
-            return new AllocationResult
+            return new ALLOCATION_RESULT
             {
-                AllocationId = result.AllocationId,
-                AllocationDate = result.AllocationDate,
-                Method = result.Method.ToString(),
-                TotalVolume = result.TotalVolume,
-                AllocatedVolume = result.AllocatedVolume,
+                AllocationId = result.ALLOCATION_ID,
+                AllocationDate = result.ALLOCATION_DATE,
+                Method = result.METHOD.ToString(),
+                TotalVolume = result.TOTAL_VOLUME,
+                AllocatedVolume = result.ALLOCATED_VOLUME,
                 AllocationVariance = result.AllocationVariance,
-                Details = result.Details.Select(d => new AllocationDetail
+                Details = result.Details.Select(d => new ALLOCATION_DETAIL
                 {
-                    EntityId = d.EntityId,
-                    EntityName = d.EntityName,
-                    AllocatedVolume = d.AllocatedVolume,
-                    AllocationPercentage = d.AllocationPercentage,
+                    EntityId = d.ENTITY_ID,
+                    EntityName = d.ENTITY_NAME,
+                    AllocatedVolume = d.ALLOCATED_VOLUME,
+                    AllocationPercentage = d.ALLOCATION_PERCENTAGE,
                     WorkingInterest = d.WorkingInterest,
                     NetRevenueInterest = d.NetRevenueInterest
                 }).ToList()

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
@@ -28,7 +28,7 @@ namespace Beep.OilandGas.Client.App.Services.Production
 
         #region Forecasting
 
-        Task<ProductionForecast> CreateForecastAsync(ReservoirForecastProperties request, CancellationToken cancellationToken = default);
+        Task<PRODUCTION_FORECAST> CreateForecastAsync(RESERVOIR_FORECAST_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<DCA_FIT_RESULT> GetDeclineCurveAsync(string wellId, CancellationToken cancellationToken = default);
         Task<PRODUCTION_FORECAST> AnalyzeProductionAsync(RESERVOIR_FORECAST_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<List<PRODUCTION_FORECAST>> GetForecastHistoryAsync(string wellId, CancellationToken cancellationToken = default);

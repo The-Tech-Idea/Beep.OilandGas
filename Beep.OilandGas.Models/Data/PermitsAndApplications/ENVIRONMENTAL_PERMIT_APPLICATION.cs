@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -108,5 +108,38 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+
+        private bool NORMINVOLVEDValue;
+        public object PROPOSED_DEPTH;
+
+        public bool NORMINVOLVED
+        {
+            get { return this.NORMINVOLVEDValue; }
+            set { SetProperty(ref NORMINVOLVEDValue, value); }
+        }
+
+        public PermitApplicationType APPLICATION_TYPE { get; set; }
+        public PermitApplicationStatus STATUS { get; set; }
+        public Country COUNTRY { get; set; }
+        public StateProvince STATE_PROVINCE { get; set; }
+        public RegulatoryAuthority REGULATORY_AUTHORITY { get; set; }
+        public DateTime? CREATED_DATE { get; set; }
+        public DateTime? SUBMITTED_DATE { get; set; }
+        public DateTime? RECEIVED_DATE { get; set; }
+        public DateTime? DECISION_DATE { get; set; }
+        public string DECISION { get; set; }
+        public string REFERENCE_NUMBER { get; set; }
+        public string FEES_DESCRIPTION { get; set; }
+        public bool FEES_PAID { get; set; }
+        public string REMARKS { get; set; }
+        public bool SUBMISSION_COMPLETE { get; set; }
+        public string SUBMISSION_DESCRIPTION { get; set; }
+        public List<APPLICATION_ATTACHMENT> ATTACHMENTS { get; set; }
+        public List<APPLICATION_AREA> AREAS { get; set; }
+        public object COMPONENTS { get; set; }
+        public object WELL_UWI { get; set; }
+        public object TARGET_FORMATION { get; set; }
+        public object DRILLING_METHOD { get; set; }
+        public object SURFACE_OWNER_NOTIFIED { get; set; }
     }
 }

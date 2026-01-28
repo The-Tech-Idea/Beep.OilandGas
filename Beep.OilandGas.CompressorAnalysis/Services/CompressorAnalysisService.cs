@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -168,7 +168,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 decimal compressionRatio = dischargePressure / inletPressure;
 
                 // Create operating conditions
-                var conditions = new CompressorOperatingConditions
+                var conditions = new COMPRESSOR_OPERATING_CONDITIONS
                 {
                     SuctionPressure = inletPressure,
                     DischargePressure = dischargePressure,
@@ -182,15 +182,15 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                     MechanicalEfficiency = CompressorConstants.StandardMechanicalEfficiency
                 };
 
-                CompressorPowerResult powerResult;
+                COMPRESSOR_POWER_RESULT powerResult;
 
                 if (compressorType.Equals("Centrifugal", StringComparison.OrdinalIgnoreCase))
                 {
-                    var centrifugalProps = new CentrifugalCompressorProperties
+                    var centrifugalProps = new CENTRIFUGAL_COMPRESSOR_PROPERTIES
                     {
                         OperatingConditions = conditions,
                         SpecificHeatRatio = CompressorConstants.StandardSpecificHeatRatio,
-                        PolytropicEfficiency = conditions.CompressorEfficiency,
+                        PolytropicEfficiency = conditions.COMPRESSOR_EFFICIENCY,
                         NumberOfStages = 1,
                         Speed = 10000 // Typical centrifugal speed (RPM)
                     };
@@ -199,7 +199,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 }
                 else
                 {
-                    var reciprocatingProps = new ReciprocatingCompressorProperties
+                    var reciprocatingProps = new RECIPROCATING_COMPRESSOR_PROPERTIES
                     {
                         OperatingConditions = conditions,
                         CylinderDiameter = 10.0m, // Typical bore in inches
@@ -223,9 +223,9 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                     GasFlowRate = gasFlowRate,
                     Temperature = inletTemperature,
                     CompressionRatio = compressionRatio,
-                    IsentropicEfficiency = powerResult.OverallEfficiency * 0.9m, // Estimate isentropic
-                    ActualEfficiency = powerResult.OverallEfficiency,
-                    PowerRequired = powerResult.MotorHorsepower,
+                    IsentropicEfficiency = powerResult.OVERALL_EFFICIENCY * 0.9m, // Estimate isentropic
+                    ActualEfficiency = powerResult.OVERALL_EFFICIENCY,
+                    PowerRequired = powerResult.MOTOR_HORSEPOWER,
                     PolyHeatCapacityRatio = CompressorConstants.StandardSpecificHeatRatio
                 };
 
@@ -359,7 +359,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             try
             {
                 // Create operating conditions
-                var conditions = new CompressorOperatingConditions
+                var conditions = new COMPRESSOR_OPERATING_CONDITIONS
                 {
                     SuctionPressure = inletPressure,
                     DischargePressure = requiredDischargePressure,
@@ -372,7 +372,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 };
 
                 // Analyze base case
-                var centrifugalProps = new CentrifugalCompressorProperties
+                var centrifugalProps = new CENTRIFUGAL_COMPRESSOR_PROPERTIES
                 {
                     OperatingConditions = conditions,
                     SpecificHeatRatio = CompressorConstants.StandardSpecificHeatRatio,
@@ -386,15 +386,15 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 // Calculate potential savings with efficiency improvement
                 decimal improvedEfficiency = 0.82m; // Target improved efficiency
                 decimal efficiencyImprovement = improvedEfficiency / 0.75m;
-                decimal potentialSavings = baselineResult.MotorHorsepower * (1m - (1m / efficiencyImprovement));
+                decimal potentialSavings = baselineResult.MOTOR_HORSEPOWER * (1m - (1m / efficiencyImprovement));
 
                 // Analyze isentropic power
                 decimal k = CompressorConstants.StandardSpecificHeatRatio;
                 decimal molecularWeight = gasSpecificGravity * CompressorConstants.AirMolecularWeight;
                 decimal compressionRatio = requiredDischargePressure / inletPressure;
 
-                decimal isentropicHead = (baselineResult.PolytropicHead * 0.88m); // Typical ratio
-                decimal isentropicPower = baselineResult.TheoreticalPower * 0.88m;
+                decimal isentropicHead = (baselineResult.POLYTROPIC_HEAD * 0.88m); // Typical ratio
+                decimal isentropicPower = baselineResult.THEORETICAL_POWER * 0.88m;
 
                 // Analyze isothermal power (theoretical minimum)
                 decimal isothermicPower = isentropicPower * 0.65m; // Typical ratio
@@ -403,20 +403,20 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 {
                     AnalysisId = FormatIdForTable("COMPRESSOR_POWER", Guid.NewGuid().ToString()),
                     AnalysisDate = DateTime.UtcNow,
-                    InletPower = baselineResult.TheoreticalPower,
-                    FrictionLosses = baselineResult.BrakeHorsepower - isentropicPower,
+                    InletPower = baselineResult.THEORETICAL_POWER,
+                    FrictionLosses = baselineResult.BRAKE_HORSEPOWER - isentropicPower,
                     IsothermicPower = isothermicPower,
-                    PolyIsentropicPower = baselineResult.PolytropicHead > 0 ? baselineResult.TheoreticalPower : 0,
+                    PolyIsentropicPower = baselineResult.POLYTROPIC_HEAD > 0 ? baselineResult.THEORETICAL_POWER : 0,
                     IsentropicPower = isentropicPower,
-                    ActualPower = baselineResult.MotorHorsepower,
+                    ActualPower = baselineResult.MOTOR_HORSEPOWER,
                     PowerSavings = potentialSavings,
-                    OptimizationRecommendation = potentialSavings > baselineResult.MotorHorsepower * 0.1m
-                        ? $"Consider upgrading to higher efficiency compressor: potential savings {potentialSavings:F1} HP ({(potentialSavings / baselineResult.MotorHorsepower * 100m):F1}%)"
+                    OptimizationRecommendation = potentialSavings > baselineResult.MOTOR_HORSEPOWER * 0.1m
+                        ? $"Consider upgrading to higher efficiency compressor: potential savings {potentialSavings:F1} HP ({(potentialSavings / baselineResult.MOTOR_HORSEPOWER * 100m):F1}%)"
                         : "Current system is operating near optimal efficiency"
                 };
 
                 _logger?.LogInformation("Optimization complete: Baseline={Baseline} HP, Potential Savings={Savings} HP ({Percent:F1}%)",
-                    baselineResult.MotorHorsepower, potentialSavings, (potentialSavings / baselineResult.MotorHorsepower * 100m));
+                    baselineResult.MOTOR_HORSEPOWER, potentialSavings, (potentialSavings / baselineResult.MOTOR_HORSEPOWER * 100m));
 
                 await Task.CompletedTask;
                 return powerAnalysisResult;

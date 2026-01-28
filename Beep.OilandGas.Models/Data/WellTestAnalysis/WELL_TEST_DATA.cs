@@ -6,7 +6,8 @@ using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Models.Data.WellTestAnalysis
 {
-    public partial class WELL_TEST_DATA : ModelEntityBase {
+    public partial class WELL_TEST_DATA : ModelEntityBase
+    {
         private String WELL_TEST_DATA_IDValue;
         public String WELL_TEST_DATA_ID
         {
@@ -129,5 +130,10 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+        // Analysis Compatibility Properties
+        public System.Collections.Generic.List<double> Time { get; set; } = new System.Collections.Generic.List<double>();
+        public System.Collections.Generic.List<double> Pressure { get; set; } = new System.Collections.Generic.List<double>();
     }
 }
+
+

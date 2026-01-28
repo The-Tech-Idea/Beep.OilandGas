@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 using Beep.OilandGas.HydraulicPumps.Exceptions;
 
@@ -12,87 +12,87 @@ namespace Beep.OilandGas.HydraulicPumps.Validation
         /// <summary>
         /// Validates well properties.
         /// </summary>
-        public static void ValidateWellProperties(HydraulicPumpWellProperties wellProperties)
+        public static void ValidateWellProperties(HYDRAULIC_PUMP_WELL_PROPERTIES wellProperties)
         {
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
 
-            if (wellProperties.WellDepth <= 0)
+            if (wellProperties.WELL_DEPTH <= 0)
                 throw new InvalidWellPropertiesException("Well depth must be greater than zero.");
 
-            if (wellProperties.TubingDiameter <= 0)
+            if (wellProperties.TUBING_DIAMETER <= 0)
                 throw new InvalidWellPropertiesException("Tubing diameter must be greater than zero.");
 
-            if (wellProperties.WellheadPressure < 0)
+            if (wellProperties.WELLHEAD_PRESSURE < 0)
                 throw new InvalidWellPropertiesException("Wellhead pressure cannot be negative.");
 
-            if (wellProperties.BottomHolePressure <= wellProperties.WellheadPressure)
+            if (wellProperties.BOTTOM_HOLE_PRESSURE <= wellProperties.WELLHEAD_PRESSURE)
                 throw new InvalidWellPropertiesException("Bottom hole pressure must be greater than wellhead pressure.");
 
-            if (wellProperties.WaterCut < 0 || wellProperties.WaterCut > 1)
+            if (wellProperties.WATER_CUT < 0 || wellProperties.WATER_CUT > 1)
                 throw new InvalidWellPropertiesException("Water cut must be between 0 and 1.");
 
-            if (wellProperties.GasSpecificGravity <= 0)
+            if (wellProperties.GAS_SPECIFIC_GRAVITY <= 0)
                 throw new InvalidWellPropertiesException("Gas specific gravity must be greater than zero.");
 
-            if (wellProperties.DesiredProductionRate <= 0)
+            if (wellProperties.DESIRED_PRODUCTION_RATE <= 0)
                 throw new InvalidWellPropertiesException("Desired production rate must be greater than zero.");
         }
 
         /// <summary>
         /// Validates jet pump properties.
         /// </summary>
-        public static void ValidateJetPumpProperties(HydraulicJetPumpProperties pumpProperties)
+        public static void ValidateJetPumpProperties(HYDRAULIC_JET_PUMP_PROPERTIES pumpProperties)
         {
             if (pumpProperties == null)
                 throw new ArgumentNullException(nameof(pumpProperties));
 
-            if (pumpProperties.NozzleDiameter <= 0)
+            if (pumpProperties.NOZZLE_DIAMETER <= 0)
                 throw new InvalidPumpPropertiesException("Nozzle diameter must be greater than zero.");
 
-            if (pumpProperties.ThroatDiameter <= 0)
+            if (pumpProperties.THROAT_DIAMETER <= 0)
                 throw new InvalidPumpPropertiesException("Throat diameter must be greater than zero.");
 
-            if (pumpProperties.NozzleDiameter >= pumpProperties.ThroatDiameter)
+            if (pumpProperties.NOZZLE_DIAMETER >= pumpProperties.THROAT_DIAMETER)
                 throw new InvalidPumpPropertiesException("Nozzle diameter must be less than throat diameter.");
 
-            if (pumpProperties.PowerFluidPressure <= 0)
+            if (pumpProperties.POWER_FLUID_PRESSURE <= 0)
                 throw new InvalidPumpPropertiesException("Power fluid pressure must be greater than zero.");
 
-            if (pumpProperties.PowerFluidRate <= 0)
+            if (pumpProperties.POWER_FLUID_RATE <= 0)
                 throw new InvalidPumpPropertiesException("Power fluid rate must be greater than zero.");
 
-            if (pumpProperties.PowerFluidSpecificGravity <= 0)
+            if (pumpProperties.POWER_FLUID_SPECIFIC_GRAVITY <= 0)
                 throw new InvalidPumpPropertiesException("Power fluid specific gravity must be greater than zero.");
         }
 
         /// <summary>
         /// Validates piston pump properties.
         /// </summary>
-        public static void ValidatePistonPumpProperties(HydraulicPistonPumpProperties pumpProperties)
+        public static void ValidatePistonPumpProperties(HYDRAULIC_PISTON_PUMP_PROPERTIES pumpProperties)
         {
             if (pumpProperties == null)
                 throw new ArgumentNullException(nameof(pumpProperties));
 
-            if (pumpProperties.PistonDiameter <= 0)
+            if (pumpProperties.PISTON_DIAMETER <= 0)
                 throw new InvalidPumpPropertiesException("Piston diameter must be greater than zero.");
 
-            if (pumpProperties.RodDiameter >= pumpProperties.PistonDiameter)
+            if (pumpProperties.ROD_DIAMETER >= pumpProperties.PISTON_DIAMETER)
                 throw new InvalidPumpPropertiesException("Rod diameter must be less than piston diameter.");
 
-            if (pumpProperties.StrokeLength <= 0)
+            if (pumpProperties.STROKE_LENGTH <= 0)
                 throw new InvalidPumpPropertiesException("Stroke length must be greater than zero.");
 
-            if (pumpProperties.StrokesPerMinute <= 0)
+            if (pumpProperties.STROKES_PER_MINUTE <= 0)
                 throw new InvalidPumpPropertiesException("Strokes per minute must be greater than zero.");
 
-            if (pumpProperties.PowerFluidPressure <= 0)
+            if (pumpProperties.POWER_FLUID_PRESSURE <= 0)
                 throw new InvalidPumpPropertiesException("Power fluid pressure must be greater than zero.");
 
-            if (pumpProperties.PowerFluidRate <= 0)
+            if (pumpProperties.POWER_FLUID_RATE <= 0)
                 throw new InvalidPumpPropertiesException("Power fluid rate must be greater than zero.");
 
-            if (pumpProperties.PowerFluidSpecificGravity <= 0)
+            if (pumpProperties.POWER_FLUID_SPECIFIC_GRAVITY <= 0)
                 throw new InvalidPumpPropertiesException("Power fluid specific gravity must be greater than zero.");
         }
 
@@ -100,8 +100,8 @@ namespace Beep.OilandGas.HydraulicPumps.Validation
         /// Validates all calculation parameters for jet pump.
         /// </summary>
         public static void ValidateJetPumpCalculationParameters(
-            HydraulicPumpWellProperties wellProperties,
-            HydraulicJetPumpProperties pumpProperties)
+            HYDRAULIC_PUMP_WELL_PROPERTIES wellProperties,
+            HYDRAULIC_JET_PUMP_PROPERTIES pumpProperties)
         {
             ValidateWellProperties(wellProperties);
             ValidateJetPumpProperties(pumpProperties);
@@ -111,8 +111,8 @@ namespace Beep.OilandGas.HydraulicPumps.Validation
         /// Validates all calculation parameters for piston pump.
         /// </summary>
         public static void ValidatePistonPumpCalculationParameters(
-            HydraulicPumpWellProperties wellProperties,
-            HydraulicPistonPumpProperties pumpProperties)
+            HYDRAULIC_PUMP_WELL_PROPERTIES wellProperties,
+            HYDRAULIC_PISTON_PUMP_PROPERTIES pumpProperties)
         {
             ValidateWellProperties(wellProperties);
             ValidatePistonPumpProperties(pumpProperties);

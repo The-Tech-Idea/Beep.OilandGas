@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 using Beep.OilandGas.ChokeAnalysis.Constants;
 using Beep.OilandGas.ChokeAnalysis.Exceptions;
@@ -14,22 +14,22 @@ namespace Beep.OilandGas.ChokeAnalysis.Validation
         /// <summary>
         /// Validates choke properties.
         /// </summary>
-        public static void ValidateChokeProperties(ChokeProperties choke)
+        public static void ValidateChokeProperties(CHOKE_PROPERTIES choke)
         {
             if (choke == null)
                 throw new ArgumentNullException(nameof(choke));
 
-            if (choke.ChokeDiameter < ChokeConstants.MinimumChokeDiameter)
+            if (choke.CHOKE_DIAMETER < ChokeConstants.MinimumChokeDiameter)
                 throw new ChokeParameterOutOfRangeException(
-                    nameof(choke.ChokeDiameter),
-                    $"Choke diameter ({choke.ChokeDiameter} in) is below minimum ({ChokeConstants.MinimumChokeDiameter} in).");
+                    nameof(choke.CHOKE_DIAMETER),
+                    $"Choke diameter ({choke.CHOKE_DIAMETER} in) is below minimum ({ChokeConstants.MinimumChokeDiameter} in).");
 
-            if (choke.ChokeDiameter > ChokeConstants.MaximumChokeDiameter)
+            if (choke.CHOKE_DIAMETER > ChokeConstants.MaximumChokeDiameter)
                 throw new ChokeParameterOutOfRangeException(
-                    nameof(choke.ChokeDiameter),
-                    $"Choke diameter ({choke.ChokeDiameter} in) exceeds maximum ({ChokeConstants.MaximumChokeDiameter} in).");
+                    nameof(choke.CHOKE_DIAMETER),
+                    $"Choke diameter ({choke.CHOKE_DIAMETER} in) exceeds maximum ({ChokeConstants.MaximumChokeDiameter} in).");
 
-            if (choke.DischargeCoefficient <= 0 || choke.DischargeCoefficient > 1.0m)
+            if (choke.DISCHARGE_COEFFICIENT <= 0 || choke.DISCHARGE_COEFFICIENT > 1.0m)
                 throw new InvalidChokePropertiesException(
                     "Discharge coefficient must be between 0 and 1.");
         }
@@ -37,33 +37,33 @@ namespace Beep.OilandGas.ChokeAnalysis.Validation
         /// <summary>
         /// Validates gas choke properties.
         /// </summary>
-        public static void ValidateGasChokeProperties(GasChokeProperties gasProperties)
+        public static void ValidateGasChokeProperties(GAS_CHOKE_PROPERTIES gasProperties)
         {
             if (gasProperties == null)
                 throw new ArgumentNullException(nameof(gasProperties));
 
-            if (gasProperties.UpstreamPressure <= 0)
+            if (gasProperties.UPSTREAM_PRESSURE <= 0)
                 throw new ChokeParameterOutOfRangeException(
-                    nameof(gasProperties.UpstreamPressure),
+                    nameof(gasProperties.UPSTREAM_PRESSURE),
                     "Upstream pressure must be greater than zero.");
 
-            if (gasProperties.DownstreamPressure < 0)
+            if (gasProperties.DOWNSTREAM_PRESSURE < 0)
                 throw new ChokeParameterOutOfRangeException(
-                    nameof(gasProperties.DownstreamPressure),
+                    nameof(gasProperties.DOWNSTREAM_PRESSURE),
                     "Downstream pressure cannot be negative.");
 
-            if (gasProperties.DownstreamPressure >= gasProperties.UpstreamPressure)
+            if (gasProperties.DOWNSTREAM_PRESSURE >= gasProperties.UPSTREAM_PRESSURE)
                 throw new InvalidChokePropertiesException(
                     "Downstream pressure must be less than upstream pressure.");
 
-            if (gasProperties.Temperature <= 0)
+            if (gasProperties.TEMPERATURE <= 0)
                 throw new ChokeParameterOutOfRangeException(
-                    nameof(gasProperties.Temperature),
+                    nameof(gasProperties.TEMPERATURE),
                     "Temperature must be greater than zero.");
 
-            if (gasProperties.GasSpecificGravity <= 0)
+            if (gasProperties.GAS_SPECIFIC_GRAVITY <= 0)
                 throw new ChokeParameterOutOfRangeException(
-                    nameof(gasProperties.GasSpecificGravity),
+                    nameof(gasProperties.GAS_SPECIFIC_GRAVITY),
                     "Gas specific gravity must be greater than zero.");
         }
 
@@ -82,8 +82,8 @@ namespace Beep.OilandGas.ChokeAnalysis.Validation
         /// Validates all calculation parameters.
         /// </summary>
         public static void ValidateCalculationParameters(
-            ChokeProperties choke,
-            GasChokeProperties gasProperties)
+            CHOKE_PROPERTIES choke,
+            GAS_CHOKE_PROPERTIES gasProperties)
         {
             ValidateChokeProperties(choke);
             ValidateGasChokeProperties(gasProperties);

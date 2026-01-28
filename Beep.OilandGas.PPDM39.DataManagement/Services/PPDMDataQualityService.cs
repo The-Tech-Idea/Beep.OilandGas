@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -59,7 +59,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Calculates data quality score for an entity
         /// </summary>
-        public async Task<DataQualityScore> CalculateQualityScoreAsync(object entity, string tableName)
+        public async Task<DATA_QUALITY_SCORE> CalculateQualityScoreAsync(object entity, string tableName)
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
@@ -69,7 +69,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             var entityType = entity.GetType();
             var properties = entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
             var fieldScores = new Dictionary<string, double>();
-            var issues = new List<DataQualityIssue>();
+            var issues = new List<DATA_QUALITY_ISSUE>();
 
             double totalScore = 0;
             int fieldCount = 0;
@@ -88,13 +88,13 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
             var overallScore = fieldCount > 0 ? totalScore / fieldCount : 0;
 
-            var qualityScore = new DataQualityScore
+            var qualityScore = new DATA_QUALITY_SCORE
             {
-                Entity = entity,
-                TableName = tableName,
-                OverallScore = overallScore,
-                FieldScores = fieldScores,
-                Issues = issues
+                ENTITY = entity,
+                TABLE_NAME = tableName,
+                OVERALL_SCORE = overallScore,
+                FIELD_SCORES_JSON = System.Text.Json.JsonSerializer.Serialize(fieldScores),
+                ISSUES_JSON = System.Text.Json.JsonSerializer.Serialize(issues)
             };
 
             // Persist quality score to database
@@ -106,7 +106,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Saves quality score to database
         /// </summary>
-        private async Task SaveQualityScoreAsync(DataQualityScore score, object entity, string tableName)
+        private async Task SaveQualityScoreAsync(DATA_QUALITY_SCORE score, object entity, string tableName)
         {
             // Get entity ID
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
@@ -124,9 +124,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 QUALITY_SCORE_ID = Guid.NewGuid().ToString(),
                 TABLE_NAME = tableName,
                 ENTITY_ID = entityId,
-                OVERALL_SCORE = (decimal)score.OverallScore,
+                OVERALL_SCORE = score.OVERALL_SCORE,
                 SCORE_DATE = DateTime.UtcNow,
-                FIELD_SCORES_JSON = System.Text.Json.JsonSerializer.Serialize(score.FieldScores),
+                FIELD_SCORES_JSON = System.Text.Json.JsonSerializer.Serialize(score.FIELD_SCORES_JSON),
                 ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_DATE = DateTime.UtcNow,
@@ -136,7 +136,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             await _qualityScoreRepository.InsertAsync(qualityScoreEntity, "SYSTEM");
 
             // Save quality issues
-            foreach (var issue in score.Issues)
+            foreach (var issue in score.ISSUES)
             {
                 await SaveQualityIssueAsync(issue, entityId);
             }
@@ -145,17 +145,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Saves quality issue to database
         /// </summary>
-        private async Task SaveQualityIssueAsync(DataQualityIssue issue, string entityId)
+        private async Task SaveQualityIssueAsync(DATA_QUALITY_ISSUE issue, string entityId)
         {
             var issueEntity = new DATA_QUALITY_ISSUE
             {
                 QUALITY_ISSUE_ID = Guid.NewGuid().ToString(),
-                TABLE_NAME = issue.TableName,
-                FIELD_NAME = issue.FieldName,
+                TABLE_NAME = issue.TABLE_NAME,
+                FIELD_NAME = issue.FIELD_NAME,
                 ENTITY_ID = entityId,
-                ISSUE_TYPE = issue.IssueType,
-                ISSUE_DESCRIPTION = issue.IssueDescription,
-                SEVERITY = issue.Severity,
+                ISSUE_TYPE = issue.ISSUE_TYPE,
+                ISSUE_DESCRIPTION = issue.ISSUE_DESCRIPTION,
+                SEVERITY = issue.SEVERITY,
                 ISSUE_DATE = DateTime.UtcNow,
                 RESOLVED_IND = _defaults?.GetActiveIndicatorNo() ?? "N",
                 ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
@@ -170,7 +170,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Calculates data quality metrics for a table
         /// </summary>
-        public async Task<DataQualityMetrics> CalculateTableQualityMetricsAsync(string tableName)
+        public async Task<DATA_QUALITY_METRICS> CalculateTableQualityMetricsAsync(string tableName)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
@@ -268,17 +268,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             var consistencyScore = 100.0; // Would need cross-field validation
             var overallScore = (completenessScore + accuracyScore + consistencyScore) / 3;
 
-            var metrics = new DataQualityMetrics
+            var metrics = new DATA_QUALITY_METRICS
             {
-                TableName = tableName,
-                TotalRecords = totalRecords,
-                CompleteRecords = completeRecords,
-                IncompleteRecords = incompleteRecords,
-                CompletenessScore = completenessScore,
-                AccuracyScore = accuracyScore,
-                ConsistencyScore = consistencyScore,
-                OverallQualityScore = overallScore,
-                FieldMetrics = fieldMetrics
+                TABLE_NAME = tableName,
+                TOTAL_RECORDS = totalRecords,
+                COMPLETE_RECORDS = completeRecords,
+                INCOMPLETE_RECORDS = incompleteRecords,
+                COMPLETENESS_SCORE = completenessScore,
+                ACCURACY_SCORE = accuracyScore,
+                CONSISTENCY_SCORE = consistencyScore,
+                OVERALL_QUALITY_SCORE = overallScore,
+                FIELD_METRICS = fieldMetrics
             };
 
             // Persist metrics to database
@@ -290,21 +290,21 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Saves quality metrics to database
         /// </summary>
-        private async Task SaveQualityMetricsAsync(DataQualityMetrics metrics)
+        private async Task SaveQualityMetricsAsync(DATA_QUALITY_METRICS metrics)
         {
             var metricsEntity = new DATA_QUALITY_METRICS
             {
                 METRICS_ID = Guid.NewGuid().ToString(),
-                TABLE_NAME = metrics.TableName,
-                TOTAL_RECORDS = metrics.TotalRecords,
-                COMPLETE_RECORDS = metrics.CompleteRecords,
-                INCOMPLETE_RECORDS = metrics.IncompleteRecords,
-                COMPLETENESS_SCORE = (decimal)metrics.CompletenessScore,
-                ACCURACY_SCORE = (decimal)metrics.AccuracyScore,
-                CONSISTENCY_SCORE = (decimal)metrics.ConsistencyScore,
-                OVERALL_QUALITY_SCORE = (decimal)metrics.OverallQualityScore,
+                TABLE_NAME = metrics.TABLE_NAME,
+                TOTAL_RECORDS = metrics.TOTAL_RECORDS,
+                COMPLETE_RECORDS = metrics.COMPLETE_RECORDS,
+                INCOMPLETE_RECORDS = metrics.INCOMPLETE_RECORDS,
+                COMPLETENESS_SCORE = metrics.COMPLETENESS_SCORE,
+                ACCURACY_SCORE = metrics.ACCURACY_SCORE,
+                CONSISTENCY_SCORE = metrics.CONSISTENCY_SCORE,
+                OVERALL_QUALITY_SCORE = metrics.OVERALL_QUALITY_SCORE,
                 METRICS_DATE = DateTime.UtcNow,
-                FIELD_METRICS_JSON = System.Text.Json.JsonSerializer.Serialize(metrics.FieldMetrics),
+                FIELD_METRICS_JSON = System.Text.Json.JsonSerializer.Serialize(metrics.FIELD_METRICS),
                 ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
                 PPDM_GUID = Guid.NewGuid().ToString(),
                 ROW_CREATED_DATE = DateTime.UtcNow,
@@ -317,16 +317,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Finds data quality issues in a table
         /// </summary>
-        public async Task<List<DataQualityIssue>> FindQualityIssuesAsync(string tableName, List<string> fieldNames = null)
+        public async Task<List<DATA_QUALITY_ISSUE>> FindQualityIssuesAsync(string tableName, List<string> fieldNames = null)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
 
-            var issues = new List<DataQualityIssue>();
+            var issues = new List<DATA_QUALITY_ISSUE>();
             var metrics = await CalculateTableQualityMetricsAsync(tableName);
 
             // Find issues in each field
-            foreach (var fieldMetric in metrics.FieldMetrics)
+            foreach (var fieldMetric in metrics.FIELD_METRICS)
             {
                 if (fieldNames != null && !fieldNames.Contains(fieldMetric.Key, StringComparer.OrdinalIgnoreCase))
                     continue;
@@ -334,39 +334,39 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 // Low completeness
                 if (fieldMetric.Value.Completeness < 50)
                 {
-                    issues.Add(new DataQualityIssue
+                    issues.Add(new DATA_QUALITY_ISSUE
                     {
-                        TableName = tableName,
-                        FieldName = fieldMetric.Key,
-                        IssueType = "CompletenessIssue",
-                        IssueDescription = $"Field '{fieldMetric.Key}' has low completeness: {fieldMetric.Value.Completeness:F2}%",
-                        Severity = "High"
+                        TABLE_NAME = tableName,
+                        FIELD_NAME = fieldMetric.Key,
+                        ISSUE_TYPE = "CompletenessIssue",
+                        ISSUE_DESCRIPTION = $"Field '{fieldMetric.Key}' has low completeness: {fieldMetric.Value.Completeness:F2}%",
+                        SEVERITY = "High"
                     });
                 }
 
                 // Many null values
                 if (fieldMetric.Value.NullValues > fieldMetric.Value.TotalValues * 0.3)
                 {
-                    issues.Add(new DataQualityIssue
+                    issues.Add(new DATA_QUALITY_ISSUE
                     {
-                        TableName = tableName,
-                        FieldName = fieldMetric.Key,
-                        IssueType = "NullValueIssue",
-                        IssueDescription = $"Field '{fieldMetric.Key}' has {fieldMetric.Value.NullValues} null values ({fieldMetric.Value.NullValues * 100.0 / fieldMetric.Value.TotalValues:F2}%)",
-                        Severity = "Medium"
+                        TABLE_NAME = tableName,
+                        FIELD_NAME = fieldMetric.Key,
+                        ISSUE_TYPE = "NullValueIssue",
+                        ISSUE_DESCRIPTION = $"Field '{fieldMetric.Key}' has {fieldMetric.Value.NullValues} null values ({fieldMetric.Value.NullValues * 100.0 / fieldMetric.Value.TotalValues:F2}%)",
+                        SEVERITY = "Medium"
                     });
                 }
             }
 
             // Overall quality issues
-            if (metrics.OverallQualityScore < 70)
+            if (metrics.OVERALL_QUALITY_SCORE < 70)
             {
-                issues.Add(new DataQualityIssue
+                issues.Add(new DATA_QUALITY_ISSUE
                 {
-                    TableName = tableName,
-                    IssueType = "OverallQualityIssue",
-                    IssueDescription = $"Overall quality score is below threshold: {metrics.OverallQualityScore:F2}%",
-                    Severity = "High"
+                    TABLE_NAME = tableName,
+                    ISSUE_TYPE = "OverallQualityIssue",
+                    ISSUE_DESCRIPTION = $"Overall quality score is below threshold: {metrics.OVERALL_QUALITY_SCORE:F2}%",
+                    SEVERITY = "High"
                 });
             }
 
@@ -376,48 +376,48 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Calculates quality score for a single field
         /// </summary>
-        private double CalculateFieldQuality(PropertyInfo property, object value, string tableName, out List<DataQualityIssue> issues)
+        private double CalculateFieldQuality(PropertyInfo property, object value, string tableName, out List<DATA_QUALITY_ISSUE> issues)
         {
-            issues = new List<DataQualityIssue>();
+            issues = new List<DATA_QUALITY_ISSUE>();
             double score = 100.0;
 
             // Check for null
             if (value == null)
             {
                 score -= 50;
-                issues.Add(new DataQualityIssue
+                issues.Add(new DATA_QUALITY_ISSUE
                 {
-                    TableName = tableName,
-                    FieldName = property.Name,
-                    IssueType = "NullValue",
-                    IssueDescription = $"Field '{property.Name}' is null",
-                    Severity = "Medium"
+                    TABLE_NAME = tableName,
+                    FIELD_NAME = property.Name,
+                    ISSUE_TYPE = "NullValue",
+                    ISSUE_DESCRIPTION = $"Field '{property.Name}' is null",
+                    SEVERITY = "Medium"
                 });
             }
             // Check for empty string
             else if (value is string str && string.IsNullOrWhiteSpace(str))
             {
                 score -= 30;
-                issues.Add(new DataQualityIssue
+                issues.Add(new DATA_QUALITY_ISSUE
                 {
-                    TableName = tableName,
-                    FieldName = property.Name,
-                    IssueType = "EmptyValue",
-                    IssueDescription = $"Field '{property.Name}' is empty",
-                    Severity = "Low"
+                    TABLE_NAME = tableName,
+                    FIELD_NAME = property.Name,
+                    ISSUE_TYPE = "EmptyValue",
+                    ISSUE_DESCRIPTION = $"Field '{property.Name}' is empty",
+                    SEVERITY = "Low"
                 });
             }
             // Check for default values that might indicate missing data
             else if (value is DateTime dt && dt == DateTime.MinValue)
             {
                 score -= 40;
-                issues.Add(new DataQualityIssue
+                issues.Add(new DATA_QUALITY_ISSUE
                 {
-                    TableName = tableName,
-                    FieldName = property.Name,
-                    IssueType = "DefaultValue",
-                    IssueDescription = $"Field '{property.Name}' has default DateTime value",
-                    Severity = "Medium"
+                    TABLE_NAME   = tableName,
+                    FIELD_NAME = property.Name,
+                    ISSUE_TYPE = "DefaultValue",
+                    ISSUE_DESCRIPTION = $"Field '{property.Name}' has default DateTime value",
+                    SEVERITY = "Medium"
                 });
             }
 

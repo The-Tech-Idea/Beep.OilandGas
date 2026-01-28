@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
@@ -7,7 +7,7 @@ using Beep.OilandGas.Models.Core.Interfaces;
 namespace Beep.OilandGas.Web.Services
 {
     /// <summary>
-    /// Service interface for operations (ProspectIdentification, EnhancedRecovery, LeaseAcquisition, DrillingOperation).
+    /// Service interface for operations (ProspectIdentification, EnhancedRecovery, LeaseAcquisition, DRILLING_OPERATION).
     /// </summary>
     public interface IOperationsServiceClient
     {
@@ -29,12 +29,12 @@ namespace Beep.OilandGas.Web.Services
         Task<bool> UpdateLeaseStatusAsync(string leaseId, string status, string? userId = null);
 
         // Drilling Operation Operations
-        Task<List<DrillingOperation>> GetDrillingOperationsAsync(string? wellUWI = null);
-        Task<DrillingOperation?> GetDrillingOperationAsync(string operationId);
-        Task<DrillingOperation> CreateDrillingOperationAsync(CreateDrillingOperation createDto);
-        Task<DrillingOperation> UpdateDrillingOperationAsync(string operationId, UpdateDrillingOperation updateDto);
-        Task<List<DrillingReport>> GetDrillingReportsAsync(string operationId);
-        Task<DrillingReport> CreateDrillingReportAsync(string operationId, CreateDrillingReport createDto);
+        Task<List<DRILLING_OPERATION>> GetDrillingOperationsAsync(string? wellUWI = null);
+        Task<DRILLING_OPERATION?> GetDrillingOperationAsync(string operationId);
+        Task<DRILLING_OPERATION> CreateDrillingOperationAsync(CREATE_DRILLING_OPERATION createDto);
+        Task<DRILLING_OPERATION> UpdateDrillingOperationAsync(string operationId, UpdateDrillingOperation updateDto);
+        Task<List<DRILLING_REPORT>> GetDrillingReportsAsync(string operationId);
+        Task<DRILLING_REPORT> CreateDrillingReportAsync(string operationId, CreateDrillingReport createDto);
     }
 }
 

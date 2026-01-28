@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -48,38 +48,38 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     request.WellId, request.FacilityId);
 
                 // Step 1: Build flash conditions from request or PPDM data
-                FlashConditions flashConditions;
-                if (request.Pressure.HasValue && request.Temperature.HasValue && request.FeedComposition != null)
+                FLASH_CONDITIONS FLASH_CONDITIONS;
+                if (request.PRESSURE.HasValue && request.TEMPERATURE.HasValue && request.FeedComposition != null)
                 {
                     // Use values from request (model types use decimal)
-                    flashConditions = new FlashConditions
+                    FLASH_CONDITIONS = new FLASH_CONDITIONS
                     {
-                        Pressure = (decimal)request.Pressure.Value,
-                        Temperature = (decimal)request.Temperature.Value,
-                        // Map incoming calculation request components to FlashCalculations.FlashComponent
-                        FeedComposition = request.FeedComposition.Select(c => new Beep.OilandGas.Models.Data.FlashCalculations.FlashComponent
+                        Pressure = (decimal)request.PRESSURE.Value,
+                        Temperature = (decimal)request.TEMPERATURE.Value,
+                        // Map incoming calculation request components to FlashCalculations.FLASH_COMPONENT
+                        FeedComposition = request.FeedComposition.Select(c => new Beep.OilandGas.Models.Data.FlashCalculations.FLASH_COMPONENT
                         {
                             Name = c.Name,
-                            MoleFraction = (decimal)c.MoleFraction,
-                            CriticalTemperature = (decimal)c.CriticalTemperature,
-                            CriticalPressure = (decimal)c.CriticalPressure,
-                            AcentricFactor = (decimal)c.AcentricFactor,
-                            MolecularWeight = (decimal)c.MolecularWeight
+                            MoleFraction = (decimal)c.MOLE_FRACTION,
+                            CriticalTemperature = (decimal)c.CRITICAL_TEMPERATURE,
+                            CriticalPressure = (decimal)c.CRITICAL_PRESSURE,
+                            AcentricFactor = (decimal)c.ACENTRIC_FACTOR,
+                            MolecularWeight = (decimal)c.MOLECULAR_WEIGHT
                         }).ToList()
                     };
                 }
                 else
                 {
                     // Retrieve from PPDM data
-                    flashConditions = await GetFlashConditionsFromPPDMAsync(request.WellId ?? string.Empty, request.FacilityId ?? string.Empty);
+                    FLASH_CONDITIONS = await GetFlashConditionsFromPPDMAsync(request.WellId ?? string.Empty, request.FacilityId ?? string.Empty);
                 }
 
                 // Step 2: Perform flash calculation
-                var flashResult = FlashCalculator.PerformIsothermalFlash(flashConditions);
+                var flashResult = FlashCalculator.PerformIsothermalFlash(FLASH_CONDITIONS);
 
                 // Step 3: Calculate phase properties
-                var vaporProperties = FlashCalculator.CalculateVaporProperties(flashResult, flashConditions);
-                var liquidProperties = FlashCalculator.CalculateLiquidProperties(flashResult, flashConditions);
+                var vaporProperties = FlashCalculator.CalculateVaporProperties(flashResult, FLASH_CONDITIONS);
+                var liquidProperties = FlashCalculator.CalculateLiquidProperties(flashResult, FLASH_CONDITIONS);
 
                 // Step 4: Map to DTO
                 var result = MapFlashResultToDTO(flashResult, request, vaporProperties, liquidProperties);
@@ -88,9 +88,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 try
                 {
                     var repository = await GetFlashResultRepositoryAsync();
-                    result.Pressure = flashConditions.Pressure;
-                    result.Temperature = flashConditions.Temperature;
-                    result.FeedCompositionJson = JsonSerializer.Serialize(flashConditions.FeedComposition);
+                    result.PRESSURE = FLASH_CONDITIONS.PRESSURE;
+                    result.TEMPERATURE = FLASH_CONDITIONS.TEMPERATURE;
+                    result.FeedCompositionJson = JsonSerializer.Serialize(FLASH_CONDITIONS.FeedComposition);
                     result.VaporCompositionJson = JsonSerializer.Serialize(result.VaporComposition);
                     result.LiquidCompositionJson = JsonSerializer.Serialize(result.LiquidComposition);
                     result.KValuesJson = JsonSerializer.Serialize(result.KValues);
@@ -143,12 +143,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// <summary>
         /// Retrieves flash conditions from PPDM for a well or facility
         /// </summary>
-        private Task<FlashConditions> GetFlashConditionsFromPPDMAsync(string wellId, string facilityId)
+        private Task<FLASH_CONDITIONS> GetFlashConditionsFromPPDMAsync(string wellId, string facilityId)
         {
             _logger?.LogWarning("Flash conditions retrieval from PPDM is not implemented. " +
                 "Provide Pressure, Temperature, and FeedComposition in the request.");
 
-            return Task.FromException<FlashConditions>(new InvalidOperationException(
+            return Task.FromException<FLASH_CONDITIONS>(new InvalidOperationException(
                 "Flash conditions retrieval from PPDM is not implemented. " +
                 "Provide Pressure, Temperature, and FeedComposition in the request."));
         }
@@ -183,22 +183,22 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 VaporProperties = new PhasePropertiesData
                 {
                     Density = (decimal)vaporProperties.Density,
-                    MolecularWeight = (decimal)vaporProperties.MolecularWeight,
+                    MolecularWeight = (decimal)vaporProperties.MOLECULAR_WEIGHT,
                     SpecificGravity = (decimal)vaporProperties.SpecificGravity,
                     Volume = (decimal)vaporProperties.Volume
                 },
                 LiquidProperties = new PhasePropertiesData
                 {
                     Density = (decimal)liquidProperties.Density,
-                    MolecularWeight = (decimal)liquidProperties.MolecularWeight,
+                    MolecularWeight = (decimal)liquidProperties.MOLECULAR_WEIGHT,
                     SpecificGravity = (decimal)liquidProperties.SpecificGravity,
                     Volume = (decimal)liquidProperties.Volume
                 },
                 AdditionalResults = new FlashCalculationAdditionalResults()
             };
 
-            result.AdditionalResults.Pressure = request.Pressure ?? 0.0m;
-            result.AdditionalResults.Temperature = request.Temperature ?? 0.0m;
+            result.AdditionalResults.PRESSURE = request.PRESSURE ?? 0.0m;
+            result.AdditionalResults.TEMPERATURE = request.TEMPERATURE ?? 0.0m;
             result.AdditionalResults.ComponentCount = request.FeedComposition?.Count ?? 0;
 
             return result;

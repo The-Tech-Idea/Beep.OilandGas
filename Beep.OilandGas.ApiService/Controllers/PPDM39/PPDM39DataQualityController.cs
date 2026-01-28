@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Data;
@@ -90,10 +90,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         ? new System.Collections.Generic.Dictionary<string, DataQualityResult>
                         {
                             {
-                                dashboard.TableName ?? tableName ?? "Unknown",
+                                dashboard.TABLE_NAME ?? tableName ?? "Unknown",
                                 new DataQualityResult
                                 {
-                                    TableName = dashboard.TableName ?? tableName ?? "Unknown",
+                                    TableName = dashboard.TABLE_NAME ?? tableName ?? "Unknown",
                                     OverallQualityScore = dashboard.CurrentMetrics.OverallQualityScore,
                                     TotalRows = dashboard.CurrentMetrics.TotalRecords,
                                     CompleteRows = dashboard.CurrentMetrics.CompleteRecords,
@@ -126,7 +126,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 var fieldList = fields?.ToList();
                 var issues = await _qualityService.FindQualityIssuesAsync(tableName, fieldList);
                 
-                return Ok(issues ?? new System.Collections.Generic.List<DataQualityIssue>());
+                return Ok(issues ?? new System.Collections.Generic.List<DATA_QUALITY_ISSUE>());
             }
             catch (Exception ex)
             {

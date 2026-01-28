@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 
@@ -15,7 +15,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string cn = "PPDM39");
 
         Task<PRODUCTION_SHARING_ENTITLEMENT> CalculateEntitlementAsync(
-            ALLOCATION_DETAIL allocationDetail,
+            ALLOCATION_DETAIL ALLOCATION_DETAIL,
             DateTime productionDate,
             string userId,
             string cn = "PPDM39");

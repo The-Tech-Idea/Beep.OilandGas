@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -14,36 +14,36 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref PERMIT_APPLICATION_IDValue, value); }
         }
 
-        private String APPLICATION_TYPEValue;
-        public String APPLICATION_TYPE
+        private PermitApplicationType APPLICATION_TYPEValue;
+        public PermitApplicationType APPLICATION_TYPE
         {
             get { return this.APPLICATION_TYPEValue; }
             set { SetProperty(ref APPLICATION_TYPEValue, value); }
         }
 
-        private String STATUSValue;
-        public String STATUS
+        private PermitApplicationStatus STATUSValue;
+        public PermitApplicationStatus STATUS
         {
             get { return this.STATUSValue; }
             set { SetProperty(ref STATUSValue, value); }
         }
 
-        private String COUNTRYValue;
-        public String COUNTRY
+        private Country COUNTRYValue;
+        public Country COUNTRY
         {
             get { return this.COUNTRYValue; }
             set { SetProperty(ref COUNTRYValue, value); }
         }
 
-        private String STATE_PROVINCEValue;
-        public String STATE_PROVINCE
+        private StateProvince STATE_PROVINCEValue;
+        public StateProvince STATE_PROVINCE
         {
             get { return this.STATE_PROVINCEValue; }
             set { SetProperty(ref STATE_PROVINCEValue, value); }
         }
 
-        private String REGULATORY_AUTHORITYValue;
-        public String REGULATORY_AUTHORITY
+        private RegulatoryAuthority REGULATORY_AUTHORITYValue;
+        public RegulatoryAuthority REGULATORY_AUTHORITY
         {
             get { return this.REGULATORY_AUTHORITYValue; }
             set { SetProperty(ref REGULATORY_AUTHORITYValue, value); }
@@ -190,5 +190,44 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref ComponentsValue, value); }
 
         }
+
+        private string APPLICATION_IDValue;
+        public string APPLICATION_ID
+        {
+            get { return this.APPLICATION_IDValue; }
+            set { SetProperty(ref APPLICATION_IDValue, value); }
+        }
+
+        private DateTime? EFFECTIVE_DATEValue;
+        public DateTime? EFFECTIVE_DATE
+        {
+            get { return this.EFFECTIVE_DATEValue; }
+            set { SetProperty(ref EFFECTIVE_DATEValue, value); }
+        }
+
+        private DateTime? EXPIRY_DATEValue;
+        public DateTime? EXPIRY_DATE
+        {
+            get { return this.EXPIRY_DATEValue; }
+            set { SetProperty(ref EXPIRY_DATEValue, value); }
+        }
+
+        private bool FEES_PAIDValue;
+        public bool FEES_PAID
+        {
+            get { return this.FEES_PAIDValue; }
+            set { SetProperty(ref FEES_PAIDValue, value); }
+        }
+
+        private bool SUBMISSION_COMPLETEValue;
+        public bool SUBMISSION_COMPLETE
+        {
+            get { return this.SUBMISSION_COMPLETEValue; }
+            set { SetProperty(ref SUBMISSION_COMPLETEValue, value); }
+        }
+
+        public List<APPLICATION_ATTACHMENT> ATTACHMENTS { get; set; }
+        public string? WASTE_TYPE { get; set; }
+        public List<APPLICATION_AREA> Areas { get; set; }
     }
 }

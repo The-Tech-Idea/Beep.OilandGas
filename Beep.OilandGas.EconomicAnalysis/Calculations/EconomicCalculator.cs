@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
@@ -237,19 +237,19 @@ namespace Beep.OilandGas.EconomicAnalysis.Calculations
         /// <summary>
         /// Generates NPV profile.
         /// </summary>
-        public static List<NPVProfilePoint> GenerateNPVProfile(CashFlow[] cashFlows, 
+        public static List<NPV_PROFILE_POINT> GenerateNPVProfile(CashFlow[] cashFlows, 
             double minRate = 0.0, double maxRate = 1.0, int points = 50)
         {
             if (cashFlows == null || cashFlows.Length == 0)
                 throw new ArgumentException("Cash flows cannot be null or empty.", nameof(cashFlows));
 
-            var profile = new List<NPVProfilePoint>();
+            var profile = new List<NPV_PROFILE_POINT>();
 
             for (int i = 0; i <= points; i++)
             {
                 double rate = minRate + (maxRate - minRate) * i / points;
                 double npv = CalculateNPV(cashFlows, rate);
-                profile.Add(new NPVProfilePoint(rate, npv));
+                profile.Add(new NPV_PROFILE_POINT(rate, npv));
             }
 
             return profile;

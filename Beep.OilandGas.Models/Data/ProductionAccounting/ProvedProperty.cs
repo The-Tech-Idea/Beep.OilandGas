@@ -1,5 +1,6 @@
 using System;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.Models.Data.ProductionAccounting
 {

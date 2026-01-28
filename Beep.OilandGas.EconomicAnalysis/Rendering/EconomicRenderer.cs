@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using SkiaSharp;
@@ -11,7 +11,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Rendering
     {
         private readonly EconomicRendererConfiguration configuration;
         private CashFlow[] cashFlows;
-        private List<NPVProfilePoint> npvProfile;
+        private List<NPV_PROFILE_POINT> npvProfile;
         private EconomicResult economicResult;
         
         private double zoom = 1.0;
@@ -45,7 +45,7 @@ namespace Beep.OilandGas.EconomicAnalysis.Rendering
             this.cashFlows = cashFlows;
         }
 
-        public void SetNPVProfile(List<NPVProfilePoint> profile)
+        public void SetNPVProfile(List<NPV_PROFILE_POINT> profile)
         {
             this.npvProfile = profile;
         }
@@ -230,19 +230,19 @@ namespace Beep.OilandGas.EconomicAnalysis.Rendering
             if (npvProfile == null || npvProfile.Count == 0)
                 return;
 
-            double minRate = npvProfile.Min(p => p.DiscountRate);
-            double maxRate = npvProfile.Max(p => p.DiscountRate);
-            double minNPV = npvProfile.Min(p => p.NPV);
-            double maxNPV = npvProfile.Max(p => p.NPV);
+            double minRate = npvProfile.Min(p => p.DISCOUNT_RATE);
+            double maxRate = npvProfile.Max(p => p.DISCOUNT_RATE);
+            double minNPV = (double)npvProfile.Min(p => p.NPV);
+            double maxNPV = (double)npvProfile.Max(p => p.NPV);
             double npvRange = maxNPV - minNPV;
             if (npvRange == 0) npvRange = 1;
 
             using (var path = new SKPath())
             {
                 bool first = true;
-                foreach (var point in npvProfile.OrderBy(p => p.DiscountRate))
+                foreach (var point in npvProfile.OrderBy(p => p.DISCOUNT_RATE))
                 {
-                    float x = plotAreaX + (float)((point.DiscountRate - minRate) / (maxRate - minRate) * plotAreaWidth);
+                    float x = plotAreaX + (float)((point.DISCOUNT_RATE - minRate) / (maxRate - minRate) * plotAreaWidth);
                     float y = plotAreaY + plotAreaHeight - (float)((point.NPV - minNPV) / npvRange * plotAreaHeight);
 
                     if (first)

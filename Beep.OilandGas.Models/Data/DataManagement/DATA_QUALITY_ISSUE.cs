@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
@@ -111,5 +111,15 @@ namespace Beep.OilandGas.Models.Data.DataManagement
 
         private System.DateTime? EXPIRY_DATEValue;
 
+
+       
+        private object RECORD_IDValue;
+        public object RECORD_ID
+        {
+            get { return this.RECORD_IDValue; }
+            set { SetProperty(ref RECORD_IDValue, value); }
+        }
+
+     
     }
 }

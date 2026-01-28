@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
@@ -26,27 +26,27 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
     {
         #region Choke
 
-        Task<ChokeFlowResult> CalculateDownholeChokeFlowAsync(GasChokeProperties request, CancellationToken cancellationToken = default);
-        Task<ChokeFlowResult> CalculateUpholeChokeFlowAsync(GasChokeProperties request, CancellationToken cancellationToken = default);
-        Task<ChokeFlowResult> CalculateDownstreamPressureAsync(GasChokeProperties request, CancellationToken cancellationToken = default);
-        Task<ChokeFlowResult> CalculateRequiredChokeSizeAsync(GasChokeProperties request, CancellationToken cancellationToken = default);
+        Task<CHOKE_FLOW_RESULT> CalculateDownholeChokeFlowAsync(GAS_CHOKE_PROPERTIES request, CancellationToken cancellationToken = default);
+        Task<CHOKE_FLOW_RESULT> CalculateUpholeChokeFlowAsync(GAS_CHOKE_PROPERTIES request, CancellationToken cancellationToken = default);
+        Task<CHOKE_FLOW_RESULT> CalculateDownstreamPressureAsync(GAS_CHOKE_PROPERTIES request, CancellationToken cancellationToken = default);
+        Task<CHOKE_FLOW_RESULT> CalculateRequiredChokeSizeAsync(GAS_CHOKE_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<CHOKE_FLOW_RESULT> AnalyzeChokePerformanceAsync(CHOKE_PROPERTIES request, CancellationToken cancellationToken = default);
 
         #endregion
 
         #region Compressor
 
-        Task<CompressorPowerResult> AnalyzeCompressorAsync(CompressorOperatingConditions request, CancellationToken cancellationToken = default);
+        Task<COMPRESSOR_POWER_RESULT> AnalyzeCompressorAsync(COMPRESSOR_OPERATING_CONDITIONS request, CancellationToken cancellationToken = default);
         Task<COMPRESSOR_POWER_RESULT> DesignCentrifugalCompressorAsync(CENTRIFUGAL_COMPRESSOR_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<COMPRESSOR_POWER_RESULT> DesignReciprocatingCompressorAsync(RECIPROCATING_COMPRESSOR_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<COMPRESSOR_OPERATING_CONDITIONS> GetCompressorPerformanceAsync(string compressorId, CancellationToken cancellationToken = default);
-        Task<CompressorPowerResult> CalculateCompressorPowerAsync(CompressorOperatingConditions request, CancellationToken cancellationToken = default);
+        Task<COMPRESSOR_POWER_RESULT> CalculateCompressorPowerAsync(COMPRESSOR_OPERATING_CONDITIONS request, CancellationToken cancellationToken = default);
 
         #endregion
 
         #region Pipeline
 
-        Task<PipelineFlowAnalysisResult> AnalyzePipelineAsync(Beep.OilandGas.Models.Data.Calculations.AnalyzePipelineFlowRequest request, CancellationToken cancellationToken = default);
+        Task<PIPELINE_FLOW_ANALYSIS_RESULT> AnalyzePipelineAsync(Beep.OilandGas.Models.Data.Calculations.AnalyzePipelineFlowRequest request, CancellationToken cancellationToken = default);
         Task<PIPELINE_FLOW_ANALYSIS_RESULT> CalculatePressureDropAsync(GAS_PIPELINE_FLOW_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<PIPELINE_CAPACITY_RESULT> GetFlowCapacityAsync(string pipelineId, CancellationToken cancellationToken = default);
         Task<PIPELINE_DESIGN> DesignPipelineAsync(PIPELINE_PROPERTIES request, CancellationToken cancellationToken = default);
@@ -56,8 +56,8 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
 
         #region WellTest
 
-        Task<Beep.OilandGas.Models.Data.WellTestAnalysis.WellTestAnalysisResult> AnalyzeBuildUpAsync(WellTestData request, CancellationToken cancellationToken = default);
-        Task<Beep.OilandGas.Models.Data.WellTestAnalysis.WellTestAnalysisResult> AnalyzeDrawdownAsync(WellTestData request, CancellationToken cancellationToken = default);
+        Task<Beep.OilandGas.Models.Data.WellTestAnalysis.WELL_TEST_ANALYSIS_RESULT> AnalyzeBuildUpAsync(WELL_TEST_DATA request, CancellationToken cancellationToken = default);
+        Task<Beep.OilandGas.Models.Data.WellTestAnalysis.WELL_TEST_ANALYSIS_RESULT> AnalyzeDrawdownAsync(WELL_TEST_DATA request, CancellationToken cancellationToken = default);
         Task<WELL_TEST_ANALYSIS_RESULT> GetDerivativeAnalysisAsync(WELL_TEST_DATA request, CancellationToken cancellationToken = default);
         Task<WELL_TEST_ANALYSIS_RESULT> InterpretWellTestAsync(WELL_TEST_DATA request, CancellationToken cancellationToken = default);
         Task<List<WELL_TEST_DATA>> GetWellTestHistoryAsync(string wellId, CancellationToken cancellationToken = default);
@@ -66,8 +66,8 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
 
         #region GasLift
 
-        Task<GasLiftValveDesignResult> DesignGasLiftAsync(GasLiftWellProperties request, CancellationToken cancellationToken = default);
-        Task<GasLiftPotentialResult> OptimizeInjectionAsync(GasLiftWellProperties request, CancellationToken cancellationToken = default);
+        Task<GAS_LIFT_VALVE_DESIGN_RESULT> DesignGasLiftAsync(GAS_LIFT_WELL_PROPERTIES request, CancellationToken cancellationToken = default);
+        Task<GAS_LIFT_POTENTIAL_RESULT> OptimizeInjectionAsync(GAS_LIFT_WELL_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<GAS_LIFT_VALVE_DESIGN_RESULT> GetValveSpacingAsync(GAS_LIFT_WELL_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<GAS_LIFT_PERFORMANCE> GetGasLiftPerformanceAsync(string wellId, CancellationToken cancellationToken = default);
         Task<GAS_LIFT_DESIGN> TroubleshootGasLiftAsync(GAS_LIFT_WELL_PROPERTIES request, CancellationToken cancellationToken = default);
@@ -76,7 +76,7 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
 
         #region PumpPerformance
 
-        Task<ESPDesignResult> AnalyzePumpPerformanceAsync(ESPDesignProperties request, CancellationToken cancellationToken = default);
+        Task<ESP_DESIGN_RESULT> AnalyzePumpPerformanceAsync(ESP_DESIGN_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<ESP_DESIGN_RESULT> GetSystemCurveAsync(ESP_DESIGN_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<ESP_DESIGN_RESULT> OptimizePumpAsync(ESP_DESIGN_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<ESP_DESIGN_RESULT> SelectPumpAsync(ESP_DESIGN_PROPERTIES request, CancellationToken cancellationToken = default);

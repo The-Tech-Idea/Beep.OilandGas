@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -108,5 +108,68 @@ namespace Beep.OilandGas.Models.Data.HydraulicPumps
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+
+        private decimal INLET_PRESSUREValue;
+        public decimal INLET_PRESSURE
+        {
+            get { return this.INLET_PRESSUREValue; }
+            set { SetProperty(ref INLET_PRESSUREValue, value); }
+        }
+
+        private decimal OUTLET_PRESSUREValue;
+        public decimal OUTLET_PRESSURE
+        {
+            get { return this.OUTLET_PRESSUREValue; }
+            set { SetProperty(ref OUTLET_PRESSUREValue, value); }
+        }
+
+        private decimal SPEEDValue;
+        public decimal SPEED
+        {
+            get { return this.SPEEDValue; }
+            set { SetProperty(ref SPEEDValue, value); }
+        }
+
+        private decimal MECHANICAL_EFFICIENCYValue;
+        public decimal MECHANICAL_EFFICIENCY
+        {
+            get { return this.MECHANICAL_EFFICIENCYValue; }
+            set { SetProperty(ref MECHANICAL_EFFICIENCYValue, value); }
+        }
+
+        private decimal OVERALL_EFFICIENCYValue;
+        public decimal OVERALL_EFFICIENCY
+        {
+            get { return this.OVERALL_EFFICIENCYValue; }
+            set { SetProperty(ref OVERALL_EFFICIENCYValue, value); }
+        }
+
+        private decimal INPUT_HORSEPOWERValue;
+        public decimal INPUT_HORSEPOWER
+        {
+            get { return this.INPUT_HORSEPOWERValue; }
+            set { SetProperty(ref INPUT_HORSEPOWERValue, value); }
+        }
+
+        private decimal SLIPPAGEValue;
+        public decimal SLIPPAGE
+        {
+            get { return this.SLIPPAGEValue; }
+            set { SetProperty(ref SLIPPAGEValue, value); }
+        }
+
+        private decimal? OUTLET_TEMPERATUREValue;
+        public decimal? OUTLET_TEMPERATURE
+        {
+            get { return this.OUTLET_TEMPERATUREValue; }
+            set { SetProperty(ref OUTLET_TEMPERATUREValue, value); }
+        }
+
+        private DateTime CALCULATION_TIMEValue;
+        public DateTime CALCULATION_TIME
+        {
+            get { return this.CALCULATION_TIMEValue; }
+            set { SetProperty(ref CALCULATION_TIMEValue, value); }
+        }
     }
 }

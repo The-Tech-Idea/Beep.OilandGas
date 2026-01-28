@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.HydraulicPumps;
@@ -26,16 +26,16 @@ namespace Beep.OilandGas.Client.App.Services.Pumps
 
         #region Plunger Lift
 
-        Task<PlungerLiftPerformanceResult> DesignPlungerLiftAsync(PlungerLiftWellProperties request, CancellationToken cancellationToken = default);
-        Task<PlungerLiftCycleResult> AnalyzePlungerLiftPerformanceAsync(PLUNGER_LIFT_WELL_PROPERTIES request, CancellationToken cancellationToken = default);
+        Task<PlungerLiftPerformanceResult> DesignPlungerLiftAsync(PLUNGER_LIFT_WELL_PROPERTIES request, CancellationToken cancellationToken = default);
+        Task<PLUNGER_LIFT_CYCLE_RESULT> AnalyzePlungerLiftPerformanceAsync(PLUNGER_LIFT_WELL_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<PLUNGER_LIFT_CYCLE_RESULT> SavePlungerLiftDesignAsync(PLUNGER_LIFT_CYCLE_RESULT design, string? userId = null, CancellationToken cancellationToken = default);
 
         #endregion
 
         #region Sucker Rod Pumping
 
-        Task<SuckerRodFlowRatePowerResult> DesignSuckerRodPumpAsync(SuckerRodSystemProperties request, CancellationToken cancellationToken = default);
-        Task<SuckerRodLoadResult> AnalyzeSuckerRodPumpPerformanceAsync(SUCKER_ROD_SYSTEM_PROPERTIES request, CancellationToken cancellationToken = default);
+        Task<SUCKER_ROD_FLOW_RATE_POWER_RESULT> DesignSuckerRodPumpAsync(SUCKER_ROD_SYSTEM_PROPERTIES request, CancellationToken cancellationToken = default);
+        Task<SUCKER_ROD_LOAD_RESULT> AnalyzeSuckerRodPumpPerformanceAsync(SUCKER_ROD_SYSTEM_PROPERTIES request, CancellationToken cancellationToken = default);
         Task<SUCKER_ROD_FLOW_RATE_POWER_RESULT> SaveSuckerRodPumpDesignAsync(SUCKER_ROD_FLOW_RATE_POWER_RESULT design, string? userId = null, CancellationToken cancellationToken = default);
 
         #endregion

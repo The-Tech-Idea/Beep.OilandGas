@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -79,7 +79,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
             // Build field quality scores
             var fieldScores = new Dictionary<string, double>();
-            foreach (var fieldMetric in metrics.FieldMetrics)
+            foreach (var fieldMetric in metrics.FIELD_METRICS)
             {
                 fieldScores[fieldMetric.Key] = fieldMetric.Value.Completeness;
             }
@@ -88,7 +88,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
             {
                 TableName = tableName,
                 LastUpdated = DateTime.UtcNow,
-                OverallQualityScore = metrics.OverallQualityScore,
+                OverallQualityScore = (double)metrics.OVERALL_QUALITY_SCORE,
                 CurrentMetrics = metrics,
                 RecentTrends = trends,
                 ActiveAlerts = alerts.Where(a => !a.IsResolved).ToList(),
@@ -104,7 +104,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Saves dashboard snapshot to database
         /// </summary>
-        private async Task SaveDashboardSnapshotAsync(QualityDashboardData dashboardData, DataQualityMetrics metrics)
+        private async Task SaveDashboardSnapshotAsync(QualityDashboardData dashboardData, DATA_QUALITY_METRICS metrics)
         {
             // Get latest metrics ID
             var metricsFilters = new List<TheTechIdea.Beep.Report.AppFilter>
@@ -178,16 +178,16 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
 
                 while (currentDate <= toDate.Date)
                 {
-                    var baseScore = metrics.OverallQualityScore;
+                    var baseScore = metrics.OVERALL_QUALITY_SCORE;
                     var variation = (random.NextDouble() - 0.5) * 10;
-                    var qualityScore = Math.Max(0, Math.Min(100, baseScore + variation));
+                    var qualityScore = Math.Max(0, Math.Min(100, (decimal)(baseScore + variation)));
 
                     trends.Add(new QualityTrend
                     {
                         Date = currentDate,
-                        QualityScore = qualityScore,
-                        RecordCount = metrics.TotalRecords + random.Next(-10, 10),
-                        IssueCount = metrics.IncompleteRecords + random.Next(-5, 5)
+                        QualityScore = (double)qualityScore,
+                        RecordCount = (int)(metrics.TOTAL_RECORDS + random.Next(-10, 10)),
+                        IssueCount = (int)(metrics.INCOMPLETE_RECORDS + random.Next(-5, 5))
                     });
 
                     currentDate = currentDate.AddDays(1);
@@ -221,9 +221,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     {
                         ALERT_ID = Guid.NewGuid().ToString(),
                         TABLE_NAME = tableName,
-                        FIELD_NAME = issue.FieldName,
+                        FIELD_NAME = issue.FIELD_NAME,
                         SEVERITY = alertSeverity.ToString(),
-                        ALERT_MESSAGE = issue.IssueDescription,
+                        ALERT_MESSAGE = issue.ISSUE_DESCRIPTION,
                         CREATED_DATE = DateTime.UtcNow,
                         RESOLVED_IND = _defaults?.GetActiveIndicatorNo() ?? "N",
                         ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
@@ -238,9 +238,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     {
                         AlertId = alertEntity.ALERT_ID,
                         TableName = tableName,
-                        FieldName = issue.FieldName,
+                        FieldName = issue.FIELD_NAME,
                         Severity = alertSeverity,
-                        AlertMessage = issue.IssueDescription,
+                        AlertMessage = issue.ISSUE_DESCRIPTION,
                         CreatedDate = DateTime.UtcNow,
                         IsResolved = false
                     });
@@ -248,14 +248,14 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 }
 
                 // Add overall quality alerts
-                if (metrics.OverallQualityScore < 70)
+                if (metrics.OVERALL_QUALITY_SCORE < 70)
                 {
                     var alertEntity = new DATA_QUALITY_ALERT
                     {
                         ALERT_ID = Guid.NewGuid().ToString(),
                         TABLE_NAME = tableName,
                         SEVERITY = QualityAlertSeverity.High.ToString(),
-                        ALERT_MESSAGE = $"Overall quality score is below threshold: {metrics.OverallQualityScore:F2}%",
+                        ALERT_MESSAGE = $"Overall quality score is below threshold: {metrics.OVERALL_QUALITY_SCORE:F2}%",
                         CREATED_DATE = DateTime.UtcNow,
                         RESOLVED_IND = _defaults?.GetActiveIndicatorNo() ?? "N",
                         ACTIVE_IND = _defaults?.GetActiveIndicatorYes() ?? "Y",
@@ -313,28 +313,28 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                     .ToList();
             }
 
-            return alerts.OrderByDescending(a => a.Severity).ThenByDescending(a => a.CreatedDate).ToList();
+            return alerts.OrderByDescending(a => a.SEVERITY).ThenByDescending(a => a.CreatedDate).ToList();
         }
 
         /// <summary>
         /// Determines alert severity based on issue and metrics
         /// </summary>
-        private QualityAlertSeverity DetermineSeverity(DataQualityIssue issue, DataQualityMetrics metrics)
+        private QualityAlertSeverity DetermineSeverity(DATA_QUALITY_ISSUE issue, DATA_QUALITY_METRICS metrics)
         {
             // Critical: Primary key issues, data corruption
-            if (issue.IssueType == "PrimaryKeyMissing" || issue.IssueType == "DataCorruption")
+            if (issue.ISSUE_TYPE == "PrimaryKeyMissing" || issue.ISSUE_TYPE == "DataCorruption")
             {
                 return QualityAlertSeverity.Critical;
             }
 
             // High: Required field missing, format errors
-            if (issue.IssueType == "RequiredFieldMissing" || issue.IssueType == "FormatError")
+            if (issue.ISSUE_TYPE == "RequiredFieldMissing" || issue.ISSUE_TYPE == "FormatError")
             {
                 return QualityAlertSeverity.High;
             }
 
             // Medium: Completeness issues, validation errors
-            if (issue.IssueType == "CompletenessIssue" || issue.IssueType == "ValidationError")
+            if (issue.ISSUE_TYPE == "CompletenessIssue" || issue.ISSUE_TYPE == "ValidationError")
             {
                 return QualityAlertSeverity.Medium;
             }

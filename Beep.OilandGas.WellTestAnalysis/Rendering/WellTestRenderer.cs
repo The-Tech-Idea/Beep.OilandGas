@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using SkiaSharp;
@@ -13,9 +13,9 @@ namespace Beep.OilandGas.WellTestAnalysis.Rendering
     public class WellTestRenderer
     {
         private readonly WellTestRendererConfiguration configuration;
-        private List<PressureTimePoint> pressureData;
-        private List<PressureTimePoint> derivativeData;
-        private WellTestAnalysisResult analysisResult;
+        private List<PRESSURE_TIME_POINT> pressureData;
+        private List<PRESSURE_TIME_POINT> derivativeData;
+        private WELL_TEST_ANALYSIS_RESULT analysisResult;
         
         private double zoom = 1.0;
         private SKPoint panOffset = SKPoint.Empty;
@@ -62,25 +62,25 @@ namespace Beep.OilandGas.WellTestAnalysis.Rendering
         /// <summary>
         /// Sets the pressure-time data to render.
         /// </summary>
-        public void SetPressureData(List<PressureTimePoint> data)
+        public void SetPressureData(List<PRESSURE_TIME_POINT> data)
         {
-            this.pressureData = data?.OrderBy(p => p.Time).ToList();
+            this.pressureData = data?.OrderBy(p => p.TIME).ToList();
             UpdateBounds();
         }
 
         /// <summary>
         /// Sets the derivative data to render.
         /// </summary>
-        public void SetDerivativeData(List<PressureTimePoint> data)
+        public void SetDerivativeData(List<PRESSURE_TIME_POINT> data)
         {
-            this.derivativeData = data?.OrderBy(p => p.Time).ToList();
+            this.derivativeData = data?.OrderBy(p => p.TIME).ToList();
             UpdateBounds();
         }
 
         /// <summary>
         /// Sets the analysis result to display.
         /// </summary>
-        public void SetAnalysisResult(WellTestAnalysisResult result)
+        public void SetAnalysisResult(WELL_TEST_ANALYSIS_RESULT result)
         {
             this.analysisResult = result;
         }
@@ -96,16 +96,16 @@ namespace Beep.OilandGas.WellTestAnalysis.Rendering
 
             if (pressureData != null && pressureData.Count > 0)
             {
-                allTimes.AddRange(pressureData.Select(p => p.Time));
-                allPressures.AddRange(pressureData.Select(p => p.Pressure));
+                allTimes.AddRange(pressureData.Where(p => p.TIME.HasValue).Select(p => p.TIME.Value));
+                allPressures.AddRange(pressureData.Where(p => p.PRESSURE.HasValue).Select(p => p.PRESSURE.Value));
             }
 
             if (derivativeData != null && derivativeData.Count > 0)
             {
-                allTimes.AddRange(derivativeData.Select(p => p.Time));
-                allDerivatives.AddRange(derivativeData
-                    .Where(p => p.PressureDerivative.HasValue)
-                    .Select(p => p.PressureDerivative.Value));
+                allTimes.AddRange((IEnumerable<double>)derivativeData.Select(p => p.TIME));
+                allDerivatives.AddRange((IEnumerable<double>)derivativeData
+                    .Where(p => p.PRESSURE_DERIVATIVE.HasValue)
+                    .Select(p => p.PRESSURE_DERIVATIVE.Value));
             }
 
             if (allTimes.Count > 0)
@@ -412,8 +412,8 @@ namespace Beep.OilandGas.WellTestAnalysis.Rendering
                 bool first = true;
                 foreach (var point in pressureData)
                 {
-                    float x = TimeToScreenX(point.Time);
-                    float y = PressureToScreenY(point.Pressure);
+                    float x = TimeToScreenX(point.TIME.HasValue ? point.TIME.Value : 0.0);
+                    float y = PressureToScreenY(point.PRESSURE.HasValue ? point.PRESSURE.Value : 0.0);
 
                     if (first)
                     {
@@ -449,8 +449,8 @@ namespace Beep.OilandGas.WellTestAnalysis.Rendering
                 {
                     foreach (var point in pressureData)
                     {
-                        float x = TimeToScreenX(point.Time);
-                        float y = PressureToScreenY(point.Pressure);
+                        float x = TimeToScreenX((double)point.TIME);
+                        float y = PressureToScreenY((double)point.PRESSURE);
                         canvas.DrawCircle(x, y, configuration.PointSize, paint);
                     }
                 }
@@ -465,7 +465,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Rendering
             if (derivativeData == null || derivativeData.Count == 0)
                 return;
 
-            var validData = derivativeData.Where(p => p.PressureDerivative.HasValue).ToList();
+            var validData = derivativeData.Where(p => p.PRESSURE_DERIVATIVE.HasValue).ToList();
             if (validData.Count == 0)
                 return;
 
@@ -474,8 +474,8 @@ namespace Beep.OilandGas.WellTestAnalysis.Rendering
                 bool first = true;
                 foreach (var point in validData)
                 {
-                    float x = TimeToScreenX(point.Time);
-                    float y = DerivativeToScreenY(point.PressureDerivative.Value);
+                    float x = TimeToScreenX((double)point.TIME);
+                    float y = DerivativeToScreenY((double)point.PRESSURE_DERIVATIVE.Value);
 
                     if (first)
                     {
@@ -597,15 +597,15 @@ namespace Beep.OilandGas.WellTestAnalysis.Rendering
                 y += lineHeight * 1.5f;
 
                 paint.Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Normal);
-                canvas.DrawText($"Permeability: {analysisResult.Permeability:F2} md", x, y, paint);
+                canvas.DrawText($"Permeability: {analysisResult.PERMEABILITY:F2} md", x, y, paint);
                 y += lineHeight;
-                canvas.DrawText($"Skin Factor: {analysisResult.SkinFactor:F2}", x, y, paint);
+                canvas.DrawText($"Skin Factor: {analysisResult.SKIN_FACTOR:F2}", x, y, paint);
                 y += lineHeight;
-                canvas.DrawText($"Reservoir Pressure: {analysisResult.ReservoirPressure:F0} psi", x, y, paint);
+                canvas.DrawText($"Reservoir Pressure: {analysisResult.RESERVOIR_PRESSURE:F0} psi", x, y, paint);
                 y += lineHeight;
-                canvas.DrawText($"PI: {analysisResult.ProductivityIndex:F2} BPD/psi", x, y, paint);
+                canvas.DrawText($"PI: {analysisResult.PRODUCTIVITY_INDEX:F2} BPD/psi", x, y, paint);
                 y += lineHeight;
-                canvas.DrawText($"Flow Efficiency: {analysisResult.FlowEfficiency:P2}", x, y, paint);
+                canvas.DrawText($"Flow Efficiency: {analysisResult.FLOW_EFFICIENCY:P2}", x, y, paint);
             }
         }
 

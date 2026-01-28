@@ -1,8 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TheTechIdea.Beep.Report;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.DataManagement;
+using Beep.OilandGas.Models.Data.Accounting;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
@@ -37,17 +39,17 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Calculates data quality score for an entity
         /// </summary>
-        Task<DataQualityScore> CalculateQualityScoreAsync(object entity, string tableName);
+        Task<DATA_QUALITY_SCORE> CalculateQualityScoreAsync(object entity, string tableName);
 
         /// <summary>
         /// Calculates data quality metrics for a table
         /// </summary>
-        Task<DataQualityMetrics> CalculateTableQualityMetricsAsync(string tableName);
+        Task<DATA_QUALITY_METRICS> CalculateTableQualityMetricsAsync(string tableName);
 
         /// <summary>
         /// Finds data quality issues in a table
         /// </summary>
-        Task<List<DataQualityIssue>> FindQualityIssuesAsync(string tableName, List<string> fieldNames = null);
+        Task<List<DATA_QUALITY_ISSUE>> FindQualityIssuesAsync(string tableName, List<string> fieldNames = null);
     }
 
     /// <summary>

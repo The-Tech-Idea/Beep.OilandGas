@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -156,8 +156,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 var filteredAllocations = new List<ALLOCATION_RESULT>();
                 foreach (var allocation in allocations)
                 {
-                    var runTicket = await GetRunTicketAsync(allocation.ALLOCATION_REQUEST_ID, cn);
-                    if (runTicket != null && string.Equals(runTicket.LEASE_ID, leaseId, StringComparison.OrdinalIgnoreCase))
+                    var RUN_TICKET = await GetRunTicketAsync(allocation.ALLOCATION_REQUEST_ID, cn);
+                    if (RUN_TICKET != null && string.Equals(RUN_TICKET.LEASE_ID, leaseId, StringComparison.OrdinalIgnoreCase))
                         filteredAllocations.Add(allocation);
                 }
 
@@ -440,8 +440,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             foreach (var allocation in allocations)
             {
-                var runTicket = await GetRunTicketAsync(allocation.ALLOCATION_REQUEST_ID, cn);
-                if (runTicket != null && string.Equals(runTicket.LEASE_ID, leaseId, StringComparison.OrdinalIgnoreCase))
+                var RUN_TICKET = await GetRunTicketAsync(allocation.ALLOCATION_REQUEST_ID, cn);
+                if (RUN_TICKET != null && string.Equals(RUN_TICKET.LEASE_ID, leaseId, StringComparison.OrdinalIgnoreCase))
                     filtered.Add(allocation);
             }
 

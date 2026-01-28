@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
@@ -52,9 +52,6 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
 
         // Standard PPDM columns
 
-        private System.String REMARKValue;
-
-        private System.String SOURCEValue;
 
         private System.String ROW_IDValue;
         public System.String ROW_ID
@@ -62,5 +59,13 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             get { return this.ROW_IDValue; }
             set { SetProperty(ref ROW_IDValue, value); }
         }
+
+        private string DELIVERY_IDValue;
+        public string DELIVERY_ID
+        {
+            get { return this.DELIVERY_IDValue; }
+            set { SetProperty(ref DELIVERY_IDValue, value); }
+        }
+
     }
 }

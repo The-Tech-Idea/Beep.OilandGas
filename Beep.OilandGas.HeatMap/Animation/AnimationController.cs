@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -211,7 +211,7 @@ namespace Beep.OilandGas.HeatMap.Animation
         /// <summary>
         /// Gets or sets the data points for this frame.
         /// </summary>
-        public List<HeatMapDataPoint> DataPoints { get; set; }
+        public List<HEAT_MAP_DATA_POINT> DataPoints { get; set; }
 
         /// <summary>
         /// Gets or sets whether this frame is interpolated.

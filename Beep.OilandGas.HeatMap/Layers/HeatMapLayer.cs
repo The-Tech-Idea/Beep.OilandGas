@@ -1,4 +1,4 @@
-using SkiaSharp;
+﻿using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +18,7 @@ namespace Beep.OilandGas.HeatMap.Layers
         /// <summary>
         /// Gets or sets the data points in this layer.
         /// </summary>
-        public List<HeatMapDataPoint> DataPoints { get; set; }
+        public List<HEAT_MAP_DATA_POINT> DataPoints { get; set; }
 
         /// <summary>
         /// Gets or sets whether the layer is visible.
@@ -60,7 +60,7 @@ namespace Beep.OilandGas.HeatMap.Layers
         /// </summary>
         public HeatMapLayer()
         {
-            DataPoints = new List<HeatMapDataPoint>();
+            DataPoints = new List<HEAT_MAP_DATA_POINT>();
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace Beep.OilandGas.HeatMap.Layers
         /// </summary>
         /// <param name="name">Name of the layer.</param>
         /// <param name="dataPoints">Data points in the layer.</param>
-        public HeatMapLayer(string name, List<HeatMapDataPoint> dataPoints)
+        public HeatMapLayer(string name, List<HEAT_MAP_DATA_POINT> dataPoints)
         {
             Name = name ?? throw new ArgumentNullException(nameof(name));
             DataPoints = dataPoints ?? throw new ArgumentNullException(nameof(dataPoints));

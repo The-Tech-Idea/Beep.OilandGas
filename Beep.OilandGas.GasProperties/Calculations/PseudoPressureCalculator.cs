@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.GasProperties;
@@ -19,7 +19,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
         /// <param name="specificGravity">Gas specific gravity (relative to air).</param>
         /// <param name="zFactorCalculator">Function to calculate Z-factor.</param>
         /// <param name="viscosityCalculator">Function to calculate viscosity.</param>
-        /// <returns>Pseudo-pressure in psia²/cp.</returns>
+        /// <returns>Pseudo-pressure in psiaÂ²/cp.</returns>
         public static decimal CalculatePseudoPressure(
             decimal pressure,
             decimal temperature,
@@ -37,7 +37,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
                 throw new ArgumentException("Specific gravity must be greater than zero.", nameof(specificGravity));
 
             // Use Simpson's rule for numerical integration
-            // Pseudo-pressure = 2 * ∫(P / (μ * Z)) dP from 0 to P
+            // Pseudo-pressure = 2 * âˆ«(P / (Î¼ * Z)) dP from 0 to P
             int n = 100; // Number of integration points
             decimal h = pressure / n;
             decimal sum = 0m;
@@ -114,7 +114,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
         /// <summary>
         /// Generates pseudo-pressure curve over a pressure range.
         /// </summary>
-        public static List<PseudoPressureResult> GeneratePseudoPressureCurve(
+        public static List<PSEUDO_PRESSURE_RESULT> GeneratePseudoPressureCurve(
             decimal minPressure,
             decimal maxPressure,
             int numberOfPoints,
@@ -132,7 +132,7 @@ namespace Beep.OilandGas.GasProperties.Calculations
             if (numberOfPoints < 2)
                 throw new ArgumentException("Number of points must be at least 2.", nameof(numberOfPoints));
 
-            var results = new List<PseudoPressureResult>();
+            var results = new List<PSEUDO_PRESSURE_RESULT>();
             decimal pressureStep = (maxPressure - minPressure) / (numberOfPoints - 1);
 
             for (int i = 0; i < numberOfPoints; i++)
@@ -143,12 +143,12 @@ namespace Beep.OilandGas.GasProperties.Calculations
                 decimal pseudoPressure = CalculatePseudoPressure(
                     pressure, temperature, specificGravity, zFactorCalculator, viscosityCalculator);
 
-                results.Add(new PseudoPressureResult
+                results.Add(new PSEUDO_PRESSURE_RESULT
                 {
-                    Pressure = pressure,
-                    ZFactor = zFactor,
-                    Viscosity = viscosity,
-                    PseudoPressure = pseudoPressure
+                    PRESSURE = pressure,
+                    Z_FACTOR = zFactor,
+                    VISCOSITY = viscosity,
+                    PSEUDO_PRESSURE = pseudoPressure
                 });
             }
 

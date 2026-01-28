@@ -116,9 +116,9 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref TotalProjectValueValue, value); }
 
         }
-        private SensitivityAnalysisResult SensitivityAnalysisValue;
+        private InvestmentEvaluationResult SensitivityAnalysisValue;
 
-        public SensitivityAnalysisResult SensitivityAnalysis
+        public InvestmentEvaluationResult SensitivityAnalysis
 
         {
 
@@ -149,5 +149,10 @@ namespace Beep.OilandGas.Models.Data.Calculations
             set { SetProperty(ref InvestmentRatingValue, value); }
 
         }
+
+        public double SensitivityLowCost { get; set; }
+        public double SensitivityHighCost { get; set; }
+        public double SensitivityLowPrice { get; set; }
+        public double SensitivityHighPrice { get; set; }
     }
 }

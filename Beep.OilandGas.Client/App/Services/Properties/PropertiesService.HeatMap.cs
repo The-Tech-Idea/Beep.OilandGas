@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,11 +11,11 @@ namespace Beep.OilandGas.Client.App.Services.Properties
     {
         #region Heat Map
 
-        public async Task<List<HeatMapDataPoint>> GenerateHeatMapAsync(HEAT_MAP_CONFIGURATION request, CancellationToken cancellationToken = default)
+        public async Task<List<HEAT_MAP_DATA_POINT>> GenerateHeatMapAsync(HEAT_MAP_CONFIGURATION request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<HEAT_MAP_CONFIGURATION, List<HeatMapDataPoint>>("/api/heatmap/generate", request, cancellationToken);
+                return await PostAsync<HEAT_MAP_CONFIGURATION, List<HEAT_MAP_DATA_POINT>>("/api/heatmap/generate", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 

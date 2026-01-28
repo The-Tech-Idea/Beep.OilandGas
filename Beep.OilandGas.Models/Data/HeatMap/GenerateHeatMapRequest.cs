@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data.HeatMap;
@@ -7,11 +7,11 @@ namespace Beep.OilandGas.Models.Data
 {
     public class GenerateHeatMapRequest : ModelEntityBase
     {
-        private List<HeatMapDataPoint> DataPointsValue = new();
+        private List<HEAT_MAP_DATA_POINT> DataPointsValue = new();
 
         [Required(ErrorMessage = "DataPoints are required")]
         [MinLength(1, ErrorMessage = "At least one data point is required")]
-        public List<HeatMapDataPoint> DataPoints
+        public List<HEAT_MAP_DATA_POINT> DataPoints
 
         {
 
@@ -21,11 +21,11 @@ namespace Beep.OilandGas.Models.Data
 
         }
 
-        private HeatMapConfiguration ConfigurationValue = null!;
+        private HEAT_MAP_CONFIGURATION ConfigurationValue = null!;
 
 
         [Required(ErrorMessage = "Configuration is required")]
-        public HeatMapConfiguration Configuration
+        public HEAT_MAP_CONFIGURATION Configuration
 
 
         {

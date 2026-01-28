@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 
@@ -16,9 +16,9 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="choke">Choke properties.</param>
         /// <param name="gasProperties">Gas properties.</param>
         /// <returns>Choke flow result with enhanced calculations.</returns>
-        Task<ChokeFlowResult> CalculateDownholeChokeFlowAsync(
-            ChokeProperties choke,
-            GasChokeProperties gasProperties);
+        Task<CHOKE_FLOW_RESULT> CalculateDownholeChokeFlowAsync(
+            CHOKE_PROPERTIES choke,
+            GAS_CHOKE_PROPERTIES gasProperties);
 
         /// <summary>
         /// Calculates gas flow rate through an uphole choke.
@@ -26,9 +26,9 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="choke">Choke properties.</param>
         /// <param name="gasProperties">Gas properties.</param>
         /// <returns>Choke flow result.</returns>
-        Task<ChokeFlowResult> CalculateUpholeChokeFlowAsync(
-            ChokeProperties choke,
-            GasChokeProperties gasProperties);
+        Task<CHOKE_FLOW_RESULT> CalculateUpholeChokeFlowAsync(
+            CHOKE_PROPERTIES choke,
+            GAS_CHOKE_PROPERTIES gasProperties);
 
         /// <summary>
         /// Calculates downstream pressure for a given flow rate and choke configuration.
@@ -38,8 +38,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="flowRate">Target flow rate.</param>
         /// <returns>Calculated downstream pressure.</returns>
         Task<decimal> CalculateDownstreamPressureAsync(
-            ChokeProperties choke,
-            GasChokeProperties gasProperties,
+            CHOKE_PROPERTIES choke,
+            GAS_CHOKE_PROPERTIES gasProperties,
             decimal flowRate);
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="flowRate">Target flow rate.</param>
         /// <returns>Optimal choke diameter.</returns>
         Task<decimal> CalculateRequiredChokeSizeAsync(
-            GasChokeProperties gasProperties,
+            GAS_CHOKE_PROPERTIES gasProperties,
             decimal flowRate);
 
         /// <summary>
@@ -59,8 +59,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="gasProperties">Gas properties.</param>
         /// <returns>Validation result with any errors.</returns>
         Task<ChokeValidationResult> ValidateChokeConfigurationAsync(
-            ChokeProperties choke,
-            GasChokeProperties gasProperties);
+            CHOKE_PROPERTIES choke,
+            GAS_CHOKE_PROPERTIES gasProperties);
 
         /// <summary>
         /// Calculates choke performance characteristics across a range of conditions.
@@ -71,8 +71,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="numberOfPoints">Number of calculation points.</param>
         /// <returns>Performance curve data.</returns>
         Task<ChokePerformanceCurve[]> CalculatePerformanceCurveAsync(
-            ChokeProperties choke,
-            GasChokeProperties gasProperties,
+            CHOKE_PROPERTIES choke,
+            GAS_CHOKE_PROPERTIES gasProperties,
             (decimal Min, decimal Max) pressureRange,
             int numberOfPoints = 20);
     }

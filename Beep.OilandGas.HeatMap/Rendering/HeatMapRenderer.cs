@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
@@ -33,8 +33,8 @@ namespace Beep.OilandGas.HeatMap.Rendering
     /// </summary>
     public class HeatMapRenderer
     {
-        private readonly Configuration.HeatMapConfiguration configuration;
-        private readonly List<HeatMapDataPoint> dataPoints;
+        private readonly Configuration.HEAT_MAP_CONFIGURATION configuration;
+        private readonly List<HEAT_MAP_DATA_POINT> dataPoints;
         private SKColor[] colorScheme;
         private double minValue;
         private double maxValue;
@@ -50,13 +50,13 @@ namespace Beep.OilandGas.HeatMap.Rendering
         private List<HeatMapLayer> layers;
         private List<DataFilter> filters;
         private HeatMapInteraction interaction;
-        private List<HeatMapDataPoint> outliers;
+        private List<HEAT_MAP_DATA_POINT> outliers;
         private StatisticalSummary statistics;
         private TimeSeriesAnimation animation;
         private RealtimeDataManager realtimeManager;
         private double zoom = 1.0;
         private SKPoint panOffset = new SKPoint(0, 0);
-        private HashSet<HeatMapDataPoint> highlightedPoints;
+        private HashSet<HEAT_MAP_DATA_POINT> highlightedPoints;
         private DateTime lastUpdateTime;
         private List<SvgImageOverlay> svgOverlays;
         private List<PieChartOverlay> pieChartOverlays;
@@ -77,10 +77,10 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// </summary>
         /// <param name="dataPoints">The data points to render.</param>
         /// <param name="configuration">The heat map configuration.</param>
-        public HeatMapRenderer(List<HeatMapDataPoint> dataPoints, Configuration.HeatMapConfiguration configuration = null)
+        public HeatMapRenderer(List<HEAT_MAP_DATA_POINT> dataPoints, Configuration.HEAT_MAP_CONFIGURATION configuration = null)
         {
             this.dataPoints = dataPoints ?? throw new ArgumentNullException(nameof(dataPoints));
-            this.configuration = configuration ?? new Configuration.HeatMapConfiguration();
+            this.configuration = configuration ?? new Configuration.HEAT_MAP_CONFIGURATION();
             this.annotations = new HeatMapAnnotations();
             this.layers = new List<HeatMapLayer>();
             this.filters = new List<DataFilter>();
@@ -89,7 +89,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
                 MultiSelectEnabled = configuration.MultiSelectEnabled,
                 TooltipsEnabled = configuration.TooltipsEnabled
             };
-            this.highlightedPoints = new HashSet<HeatMapDataPoint>();
+            this.highlightedPoints = new HashSet<HEAT_MAP_DATA_POINT>();
             this.lastUpdateTime = DateTime.Now;
             this.svgOverlays = new List<SvgImageOverlay>();
             this.pieChartOverlays = new List<PieChartOverlay>();
@@ -154,7 +154,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Gets the data points.
         /// </summary>
-        public List<HeatMapDataPoint> GetDataPoints() => dataPoints;
+        public List<HEAT_MAP_DATA_POINT> GetDataPoints() => dataPoints;
 
         /// <summary>
         /// Gets the bounds of the data (min/max X and Y).
@@ -263,7 +263,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
             }
 
             // Compute interpolation grid if enabled
-            if (configuration.UseInterpolation && configuration.InterpolationMethod != InterpolationMethodType.None)
+            if (configuration.USE_INTERPOLATION && configuration.INTERPOLATION_METHOD != InterpolationMethodType.None)
             {
                 ComputeInterpolationGrid();
                 
@@ -314,8 +314,8 @@ namespace Beep.OilandGas.HeatMap.Rendering
             if (dataPoints.Count == 0)
                 return;
 
-            int gridWidth = (int)((maxX - minX) / configuration.InterpolationCellSize) + 1;
-            int gridHeight = (int)((maxY - minY) / configuration.InterpolationCellSize) + 1;
+            int gridWidth = (int)((maxX - minX) / configuration.INTERPOLATION_CELL_SIZE) + 1;
+            int gridHeight = (int)((maxY - minY) / configuration.INTERPOLATION_CELL_SIZE) + 1;
 
             interpolatedGrid = new double[gridWidth, gridHeight];
 
@@ -323,12 +323,12 @@ namespace Beep.OilandGas.HeatMap.Rendering
             {
                 for (int y = 0; y < gridHeight; y++)
                 {
-                    double targetX = minX + x * configuration.InterpolationCellSize;
-                    double targetY = minY + y * configuration.InterpolationCellSize;
+                    double targetX = minX + x * configuration.INTERPOLATION_CELL_SIZE;
+                    double targetY = minY + y * configuration.INTERPOLATION_CELL_SIZE;
 
                     // Use unified interpolation method that handles both standard and enhanced methods
                     double value = InterpolationMethod.Interpolate(
-                        configuration.InterpolationMethod,
+                        configuration.INTERPOLATION_METHOD,
                         dataPoints,
                         targetX,
                         targetY,
@@ -373,7 +373,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
                 canvas.Scale(scaleX, scaleY);
 
                 // Render interpolation grid if enabled
-                if (configuration.UseInterpolation && gridComputed)
+                if (configuration.USE_INTERPOLATION && gridComputed)
                 {
                     RenderInterpolatedGrid(canvas, width, height);
                 }
@@ -536,7 +536,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Renders a single data point.
         /// </summary>
-        private void RenderDataPoint(SKCanvas canvas, HeatMapDataPoint point)
+        private void RenderDataPoint(SKCanvas canvas, HEAT_MAP_DATA_POINT point)
         {
             double normalizedValue = NormalizeValue(point.Value);
             SKColor color = GetColorFromScheme(normalizedValue);
@@ -556,7 +556,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
             }
 
             // Draw label if enabled
-            if (configuration.ShowLabels && !string.IsNullOrEmpty(point.Label))
+            if (configuration.ShowLabels && !string.IsNullOrEmpty(point.LABEL))
             {
                 using (var textPaint = new SKPaint
                 {
@@ -567,7 +567,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
                 })
                 {
                     canvas.DrawText(
-                        point.Label, 
+                        point.LABEL, 
                         (float)point.X, 
                         (float)point.Y - radius - textPaint.TextSize, 
                         textPaint);
@@ -633,7 +633,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
             }
 
             // Render color scale legend
-            if (configuration.ShowLegend)
+            if (configuration.SHOW_LEGEND)
             {
                 var legend = new ColorScaleLegend(colorScheme, minValue, maxValue)
                 {
@@ -714,7 +714,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Updates the data points and reinitializes the renderer.
         /// </summary>
-        public void UpdateDataPoints(List<HeatMapDataPoint> newDataPoints)
+        public void UpdateDataPoints(List<HEAT_MAP_DATA_POINT> newDataPoints)
         {
             if (newDataPoints == null)
                 throw new ArgumentNullException(nameof(newDataPoints));
@@ -728,13 +728,13 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Updates the configuration and reinitializes the renderer.
         /// </summary>
-        public void UpdateConfiguration(Configuration.HeatMapConfiguration newConfiguration)
+        public void UpdateConfiguration(Configuration.HEAT_MAP_CONFIGURATION newConfiguration)
         {
             if (newConfiguration == null)
                 throw new ArgumentNullException(nameof(newConfiguration));
 
             // Update configuration properties
-            var configType = typeof(Configuration.HeatMapConfiguration);
+            var configType = typeof(Configuration.HEAT_MAP_CONFIGURATION);
             foreach (var prop in configType.GetProperties())
             {
                 if (prop.CanWrite)
@@ -765,7 +765,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
         {
             // Use the unified Interpolate method from InterpolationMethod
             return InterpolationMethod.Interpolate(
-                configuration.InterpolationMethod,
+                configuration.INTERPOLATION_METHOD,
                 dataPoints,
                 targetX,
                 targetY,
@@ -951,7 +951,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Applies all filters to data points.
         /// </summary>
-        private List<HeatMapDataPoint> ApplyFilters(List<HeatMapDataPoint> points)
+        private List<HEAT_MAP_DATA_POINT> ApplyFilters(List<HEAT_MAP_DATA_POINT> points)
         {
             if (filters.Count == 0)
                 return points;
@@ -967,7 +967,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Computes clusters from data points.
         /// </summary>
-        private void ComputeClusters(List<HeatMapDataPoint> points)
+        private void ComputeClusters(List<HEAT_MAP_DATA_POINT> points)
         {
             if (points == null || points.Count == 0)
                 return;
@@ -1125,7 +1125,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Handles real-time points added event.
         /// </summary>
-        private void OnPointsAdded(object sender, List<HeatMapDataPoint> points)
+        private void OnPointsAdded(object sender, List<HEAT_MAP_DATA_POINT> points)
         {
             if (realtimeManager != null && realtimeManager.HighlightNewPoints)
             {
@@ -1143,7 +1143,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Handles real-time points updated event.
         /// </summary>
-        private void OnPointsUpdated(object sender, List<HeatMapDataPoint> points)
+        private void OnPointsUpdated(object sender, List<HEAT_MAP_DATA_POINT> points)
         {
             if (realtimeManager != null && realtimeManager.HighlightUpdatedPoints)
             {
@@ -1159,7 +1159,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Removes highlights from points.
         /// </summary>
-        private void RemoveHighlights(List<HeatMapDataPoint> points)
+        private void RemoveHighlights(List<HEAT_MAP_DATA_POINT> points)
         {
             foreach (var point in points)
             {
@@ -1170,7 +1170,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Renders a data point with layer-specific styling.
         /// </summary>
-        private void RenderDataPoint(SKCanvas canvas, HeatMapDataPoint point, HeatMapLayer layer = null)
+        private void RenderDataPoint(SKCanvas canvas, HEAT_MAP_DATA_POINT point, HeatMapLayer layer = null)
         {
             double normalizedValue = NormalizeValue(point.Value);
             
@@ -1180,11 +1180,11 @@ namespace Beep.OilandGas.HeatMap.Rendering
             {
                 if (layer.CustomColors != null && layer.CustomColors.Length >= 2)
                 {
-                    layerColorScheme = ColorScheme.CreateCustom(layer.CustomColors, configuration.ColorSteps);
+                    layerColorScheme = ColorScheme.CreateCustom(layer.CustomColors, configuration.COLOR_STEPS);
                 }
                 else
                 {
-                    layerColorScheme = ColorScheme.GetColorScheme(layer.ColorSchemeType, configuration.ColorSteps);
+                    layerColorScheme = ColorScheme.GetColorScheme(layer.COLOR_SCHEME_TYPE, configuration.COLOR_STEPS);
                 }
             }
 
@@ -1244,7 +1244,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
             }
 
             // Draw label if enabled
-            if (configuration.ShowLabels && !string.IsNullOrEmpty(point.Label))
+            if (configuration.ShowLabels && !string.IsNullOrEmpty(point.LABEL))
             {
                 using (var textPaint = new SKPaint
                 {
@@ -1255,7 +1255,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
                 })
                 {
                     canvas.DrawText(
-                        point.Label,
+                        point.LABEL,
                         (float)point.X,
                         (float)point.Y - radius - textPaint.TextSize,
                         textPaint);
@@ -1377,12 +1377,12 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Renders a tooltip for a hovered point.
         /// </summary>
-        private void RenderTooltip(SKCanvas canvas, HeatMapDataPoint point, SKPoint position)
+        private void RenderTooltip(SKCanvas canvas, HEAT_MAP_DATA_POINT point, SKPoint position)
         {
             string tooltipText = $"X: {point.X:F2}\nY: {point.Y:F2}\nValue: {point.Value:F2}";
-            if (!string.IsNullOrEmpty(point.Label))
+            if (!string.IsNullOrEmpty(point.LABEL))
             {
-                tooltipText = $"{point.Label}\n{tooltipText}";
+                tooltipText = $"{point.LABEL}\n{tooltipText}";
             }
 
             var textPaint = new SKPaint
@@ -1432,7 +1432,7 @@ namespace Beep.OilandGas.HeatMap.Rendering
         /// <summary>
         /// Renders a point with gradient effect.
         /// </summary>
-        private void RenderPointWithGradient(SKCanvas canvas, HeatMapDataPoint point, SKColor baseColor, float radius)
+        private void RenderPointWithGradient(SKCanvas canvas, HEAT_MAP_DATA_POINT point, SKColor baseColor, float radius)
         {
             var centerX = (float)point.X;
             var centerY = (float)point.Y;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.Models.Data.CompressorAnalysis;
 using Beep.OilandGas.GasProperties.Calculations;
 
@@ -17,8 +17,8 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
         /// <param name="maxPower">Maximum available power in horsepower.</param>
         /// <param name="compressorEfficiency">Compressor efficiency (0-1).</param>
         /// <returns>Compressor pressure calculation results.</returns>
-        public static CompressorPressureResult CalculateRequiredPressure(
-            CompressorOperatingConditions operatingConditions,
+        public static COMPRESSOR_PRESSURE_RESULT CalculateRequiredPressure(
+            COMPRESSOR_OPERATING_CONDITIONS operatingConditions,
             decimal requiredFlowRate,
             decimal maxPower = 1000m,
             decimal compressorEfficiency = 0.75m)
@@ -26,22 +26,22 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             if (operatingConditions == null)
                 throw new ArgumentNullException(nameof(operatingConditions));
 
-            var result = new CompressorPressureResult();
+            var result = new COMPRESSOR_PRESSURE_RESULT();
 
             // Calculate average temperature
-            decimal averageTemperature = (operatingConditions.SuctionTemperature + 
-                                        operatingConditions.DischargeTemperature) / 2m;
+            decimal averageTemperature = (operatingConditions.SUCTION_TEMPERATURE + 
+                                        operatingConditions.DISCHARGE_TEMPERATURE) / 2m;
 
             // Calculate average pressure (initial estimate)
-            decimal averagePressure = operatingConditions.SuctionPressure * 1.5m;
+            decimal averagePressure = operatingConditions.SUCTION_PRESSURE * 1.5m;
 
             // Calculate Z-factor
             decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                averagePressure, averageTemperature, operatingConditions.GasSpecificGravity);
+                averagePressure, averageTemperature, operatingConditions.GAS_SPECIFIC_GRAVITY);
 
             // Calculate adiabatic head for different compression ratios
             decimal k = 1.3m; // Typical for gas
-            decimal molecularWeight = operatingConditions.GasSpecificGravity * 28.9645m;
+            decimal molecularWeight = operatingConditions.GAS_SPECIFIC_GRAVITY * 28.9645m;
             decimal R = 1545.0m;
 
             // Iterate to find maximum compression ratio within power limit
@@ -53,7 +53,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             for (decimal compressionRatio = minCompressionRatio; compressionRatio <= maxCompressionRatio; compressionRatio += 0.1m)
             {
                 // Calculate adiabatic head
-                decimal adiabaticHead = (zFactor * R * operatingConditions.SuctionTemperature / molecularWeight) *
+                decimal adiabaticHead = (zFactor * R * operatingConditions.SUCTION_TEMPERATURE / molecularWeight) *
                                        (k / (k - 1m)) *
                                        ((decimal)Math.Pow((double)compressionRatio, (double)((k - 1m) / k)) - 1m);
 
@@ -72,16 +72,16 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             }
 
             // Calculate discharge pressure
-            result.RequiredDischargePressure = operatingConditions.SuctionPressure * optimalCompressionRatio;
-            result.CompressionRatio = optimalCompressionRatio;
-            result.RequiredPower = optimalPower;
+            result.REQUIRED_DISCHARGE_PRESSURE = operatingConditions.SUCTION_PRESSURE * optimalCompressionRatio;
+            result.COMPRESSION_RATIO = optimalCompressionRatio;
+            result.REQUIRED_POWER = optimalPower;
 
             // Calculate discharge temperature
-            result.DischargeTemperature = operatingConditions.SuctionTemperature *
+            result.DISCHARGE_TEMPERATURE = operatingConditions.SUCTION_TEMPERATURE *
                                         (decimal)Math.Pow((double)optimalCompressionRatio, (double)((k - 1m) / k));
 
             // Check feasibility
-            result.IsFeasible = optimalPower > 0m && optimalPower <= maxPower;
+            result.IS_FEASIBLE = optimalPower > 0m && optimalPower <= maxPower;
 
             return result;
         }
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
         /// Calculates maximum flow rate for given pressure ratio.
         /// </summary>
         public static decimal CalculateMaximumFlowRate(
-            CompressorOperatingConditions operatingConditions,
+            COMPRESSOR_OPERATING_CONDITIONS operatingConditions,
             decimal compressionRatio,
             decimal maxPower,
             decimal compressorEfficiency = 0.75m)
@@ -100,16 +100,16 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
 
             // Calculate adiabatic head
             decimal k = 1.3m;
-            decimal molecularWeight = operatingConditions.GasSpecificGravity * 28.9645m;
+            decimal molecularWeight = operatingConditions.GAS_SPECIFIC_GRAVITY * 28.9645m;
             decimal R = 1545.0m;
-            decimal averagePressure = operatingConditions.SuctionPressure * (1m + compressionRatio) / 2m;
-            decimal averageTemperature = (operatingConditions.SuctionTemperature + 
-                                        operatingConditions.DischargeTemperature) / 2m;
+            decimal averagePressure = operatingConditions.SUCTION_PRESSURE * (1m + compressionRatio) / 2m;
+            decimal averageTemperature = (operatingConditions.SUCTION_TEMPERATURE + 
+                                        operatingConditions.DISCHARGE_TEMPERATURE) / 2m;
 
             decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                averagePressure, averageTemperature, operatingConditions.GasSpecificGravity);
+                averagePressure, averageTemperature, operatingConditions.GAS_SPECIFIC_GRAVITY);
 
-            decimal adiabaticHead = (zFactor * R * operatingConditions.SuctionTemperature / molecularWeight) *
+            decimal adiabaticHead = (zFactor * R * operatingConditions.SUCTION_TEMPERATURE / molecularWeight) *
                                    (k / (k - 1m)) *
                                    ((decimal)Math.Pow((double)compressionRatio, (double)((k - 1m) / k)) - 1m);
 

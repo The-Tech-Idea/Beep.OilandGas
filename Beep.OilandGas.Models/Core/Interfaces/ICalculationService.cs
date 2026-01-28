@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
@@ -30,7 +30,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Performs Well Test Analysis
         /// </summary>
-        Task<WellTestAnalysisResult> PerformWellTestAnalysisAsync(WellTestAnalysisCalculationRequest request);
+        Task<WELL_TEST_ANALYSIS_RESULT> PerformWellTestAnalysisAsync(WellTestAnalysisCalculationRequest request);
 
         /// <summary>
         /// Performs Flash Calculation

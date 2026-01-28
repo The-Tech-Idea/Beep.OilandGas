@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.GasLift;
@@ -19,8 +19,8 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// <param name="gasInjectionPressure">Gas injection pressure in psia.</param>
         /// <param name="numberOfValves">Number of valves to design.</param>
         /// <returns>Gas lift valve design result.</returns>
-        public static GasLiftValveDesignResult DesignValvesUS(
-            GasLiftWellProperties wellProperties,
+        public static GAS_LIFT_VALVE_DESIGN_RESULT DesignValvesUS(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves = 5)
         {
@@ -30,8 +30,8 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// <summary>
         /// Designs gas lift valves for a well (SI units).
         /// </summary>
-        public static GasLiftValveDesignResult DesignValvesSI(
-            GasLiftWellProperties wellProperties,
+        public static GAS_LIFT_VALVE_DESIGN_RESULT DesignValvesSI(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves = 5)
         {
@@ -41,8 +41,8 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// <summary>
         /// Designs gas lift valves for a well.
         /// </summary>
-        private static GasLiftValveDesignResult DesignValves(
-            GasLiftWellProperties wellProperties,
+        private static GAS_LIFT_VALVE_DESIGN_RESULT DesignValves(
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal gasInjectionPressure,
             int numberOfValves,
             bool useSIUnits)
@@ -50,10 +50,10 @@ namespace Beep.OilandGas.GasLift.Calculations
             if (wellProperties == null)
                 throw new ArgumentNullException(nameof(wellProperties));
 
-            if (gasInjectionPressure <= wellProperties.WellheadPressure)
+            if (gasInjectionPressure <= wellProperties.WELLHEAD_PRESSURE)
                 throw new ArgumentException("Gas injection pressure must be greater than wellhead pressure.", nameof(gasInjectionPressure));
 
-            var result = new GasLiftValveDesignResult();
+            var result = new GAS_LIFT_VALVE_DESIGN_RESULT();
 
             // Calculate valve spacing
             var spacingResult = GasLiftValveSpacingCalculator.CalculateValveSpacing(
@@ -66,13 +66,13 @@ namespace Beep.OilandGas.GasLift.Calculations
                 decimal openingPressure = spacingResult.OpeningPressures[i];
 
                 // Calculate temperature at valve depth
-                decimal temperatureGradient = (wellProperties.BottomHoleTemperature - wellProperties.WellheadTemperature) /
-                                             wellProperties.WellDepth;
-                decimal valveTemperature = wellProperties.WellheadTemperature + temperatureGradient * valveDepth;
+                decimal temperatureGradient = (wellProperties.BOTTOM_HOLE_TEMPERATURE - wellProperties.WELLHEAD_TEMPERATURE) /
+                                             wellProperties.WELL_DEPTH;
+                decimal valveTemperature = wellProperties.WELLHEAD_TEMPERATURE + temperatureGradient * valveDepth;
 
                 // Calculate Z-factor at valve conditions
                 decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                    openingPressure, valveTemperature, wellProperties.GasSpecificGravity);
+                    openingPressure, valveTemperature, wellProperties.GAS_SPECIFIC_GRAVITY);
 
                 // Design valve port size
                 decimal portSize = CalculateValvePortSize(
@@ -80,9 +80,9 @@ namespace Beep.OilandGas.GasLift.Calculations
 
                 // Calculate gas injection rate through valve
                 decimal gasInjectionRate = CalculateValveGasInjectionRate(
-                    portSize, openingPressure, gasInjectionPressure, zFactor, valveTemperature, wellProperties.GasSpecificGravity);
+                    portSize, openingPressure, gasInjectionPressure, zFactor, valveTemperature, wellProperties.GAS_SPECIFIC_GRAVITY);
 
-                var valve = new GasLiftValve
+                var valve = new GAS_LIFT_VALVE
                 {
                     Depth = valveDepth,
                     PortSize = portSize,
@@ -97,13 +97,13 @@ namespace Beep.OilandGas.GasLift.Calculations
             }
 
             // Calculate total gas injection rate
-            result.TotalGasInjectionRate = result.Valves.Sum(v => v.GasInjectionRate);
+            result.TOTAL_GAS_INJECTION_RATE = result.Valves.Sum(v => v.GAS_INJECTION_RATE);
 
             // Estimate production rate
-            result.ExpectedProductionRate = EstimateProductionRate(wellProperties, result.TotalGasInjectionRate);
+            result.EXPECTED_PRODUCTION_RATE = EstimateProductionRate(wellProperties, result.TOTAL_GAS_INJECTION_RATE);
 
             // Calculate system efficiency
-            result.SystemEfficiency = CalculateSystemEfficiency(wellProperties, result);
+            result.SYSTEM_EFFICIENCY = CalculateSystemEfficiency(wellProperties, result);
 
             return result;
         }
@@ -112,7 +112,7 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// Calculates valve port size.
         /// </summary>
         private static decimal CalculateValvePortSize(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal valveDepth,
             decimal openingPressure,
             decimal gasInjectionPressure,
@@ -147,7 +147,7 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// Calculates required port area.
         /// </summary>
         private static decimal CalculateRequiredPortArea(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal valveDepth,
             decimal pressureDifferential,
             decimal zFactor,
@@ -156,7 +156,7 @@ namespace Beep.OilandGas.GasLift.Calculations
             // Simplified port area calculation
             // Based on gas flow equation through orifice
 
-            decimal gasDensity = (pressureDifferential * wellProperties.GasSpecificGravity * 28.9645m) /
+            decimal gasDensity = (pressureDifferential * wellProperties.GAS_SPECIFIC_GRAVITY * 28.9645m) /
                                 (zFactor * 10.7316m * temperature);
 
             // Required flow area (simplified)
@@ -216,7 +216,7 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// Estimates production rate with gas lift.
         /// </summary>
         private static decimal EstimateProductionRate(
-            GasLiftWellProperties wellProperties,
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal totalGasInjectionRate)
         {
             // Use gas lift potential calculator
@@ -230,17 +230,17 @@ namespace Beep.OilandGas.GasLift.Calculations
         /// Calculates system efficiency.
         /// </summary>
         private static decimal CalculateSystemEfficiency(
-            GasLiftWellProperties wellProperties,
-            GasLiftValveDesignResult designResult)
+            GAS_LIFT_WELL_PROPERTIES wellProperties,
+            GAS_LIFT_VALVE_DESIGN_RESULT designResult)
         {
             // System efficiency = (Production benefit) / (Gas injection cost)
-            decimal baseProduction = wellProperties.DesiredProductionRate * 0.3m;
-            decimal productionIncrease = designResult.ExpectedProductionRate - baseProduction;
+            decimal baseProduction = wellProperties.DESIRED_PRODUCTION_RATE * 0.3m;
+            decimal productionIncrease = designResult.EXPECTED_PRODUCTION_RATE - baseProduction;
 
-            if (designResult.TotalGasInjectionRate <= 0)
+            if (designResult.TOTAL_GAS_INJECTION_RATE <= 0)
                 return 0m;
 
-            decimal efficiency = productionIncrease / (designResult.TotalGasInjectionRate / 10m); // Simplified
+            decimal efficiency = productionIncrease / (designResult.TOTAL_GAS_INJECTION_RATE / 10m); // Simplified
 
             return Math.Max(0m, Math.Min(1.0m, efficiency));
         }

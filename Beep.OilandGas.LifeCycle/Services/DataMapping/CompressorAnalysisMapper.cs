@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Data.CompressorAnalysis;
 
@@ -52,12 +52,12 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
         }
 
         /// <summary>
-        /// Maps PPDM39 WELL and related entities to CompressorOperatingConditions.
+        /// Maps PPDM39 WELL and related entities to COMPRESSOR_OPERATING_CONDITIONS.
         /// </summary>
         /// <param name="well">The PPDM39 WELL entity.</param>
         /// <param name="wellPressure">Optional WELL_PRESSURE entity.</param>
-        /// <returns>The mapped CompressorOperatingConditions.</returns>
-        public CompressorOperatingConditions MapToCompressorOperatingConditions(
+        /// <returns>The mapped COMPRESSOR_OPERATING_CONDITIONS.</returns>
+        public COMPRESSOR_OPERATING_CONDITIONS MapToCompressorOperatingConditions(
             WELL well,
             WELL_PRESSURE? wellPressure = null)
         {
@@ -74,7 +74,7 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
             var getCompressorEfficiency = _getCompressorEfficiency ?? ValueRetrievers.GetDefaultCompressorEfficiency;
             var getMechanicalEfficiency = _getMechanicalEfficiency ?? ValueRetrievers.GetDefaultMechanicalEfficiency;
 
-            return new CompressorOperatingConditions
+            return new COMPRESSOR_OPERATING_CONDITIONS
             {
                 SuctionPressure = getSuctionPressure(well, wellPressure),
                 DischargePressure = getDischargePressure(well, wellPressure),

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,7 +32,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
         /// Get ownership interests.
         /// </summary>
         [HttpGet("interests")]
-        public ActionResult<List<OwnershipInterest>> GetOwnershipInterests(
+        public ActionResult<List<OWNERSHIP_INTEREST>> GetOwnershipInterests(
             [FromQuery] string? propertyOrLeaseId = null,
             [FromQuery] DateTime? asOfDate = null,
             [FromQuery] string? connectionName = null)
@@ -58,7 +58,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
         /// Register ownership interest.
         /// </summary>
         [HttpPost("interests")]
-        public ActionResult<OwnershipInterest> RegisterOwnershipInterest(
+        public ActionResult<OWNERSHIP_INTEREST> RegisterOwnershipInterest(
             [FromBody] RegisterOwnershipInterestRequest request,
             [FromQuery] string? connectionName = null)
         {
@@ -67,24 +67,24 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var ownerInfo = new OwnerInformation
+                var ownerInfo = new OWNER_INFORMATION
                 {
                     OwnerId = Guid.NewGuid().ToString(),
-                    OwnerName = request.Owner.OwnerName,
-                    TaxId = request.Owner.TaxId
+                    OwnerName = request.OWNER.OWNER_NAME,
+                    TaxId = request.OWNER.TAX_ID
                 };
 
-                var divisionOrder = _service.OwnershipManager.CreateDivisionOrder(
-                    request.PropertyOrLeaseId,
+                var DIVISION_ORDER = _service.OwnershipManager.CreateDivisionOrder(
+                    request.PROPERTY_OR_LEASE_ID,
                     ownerInfo,
-                    request.WorkingInterest,
-                    request.NetRevenueInterest,
-                    request.EffectiveDate);
+                    request.WORKING_INTEREST,
+                    request.NET_REVENUE_INTEREST,
+                    request.EFFECTIVE_DATE);
 
-                _service.OwnershipManager.ApproveDivisionOrder(divisionOrder.DivisionOrderId, "system");
+                _service.OwnershipManager.ApproveDivisionOrder(DIVISION_ORDER.DIVISION_ORDER_ID, "system");
 
-                var interests = _service.OwnershipManager.GetOwnershipInterests(request.PropertyOrLeaseId, request.EffectiveDate);
-                var interest = interests.FirstOrDefault(i => i.OwnerId == ownerInfo.OwnerId);
+                var interests = _service.OwnershipManager.GetOwnershipInterests(request.PROPERTY_OR_LEASE_ID, request.EFFECTIVE_DATE);
+                var interest = interests.FirstOrDefault(i => i.OWNER_ID == ownerInfo.OWNER_ID);
                 if (interest == null)
                     return StatusCode(500, new { error = "Failed to create ownership interest" });
 
@@ -97,18 +97,18 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
             }
         }
 
-        private OwnershipInterest MapToOwnershipInterestDto(OwnershipInterest interest)
+        private OWNERSHIP_INTEREST MapToOwnershipInterestDto(OWNERSHIP_INTEREST interest)
         {
-            return new OwnershipInterest
+            return new OWNERSHIP_INTEREST
             {
-                InterestId = interest.OwnershipId,
-                PropertyOrLeaseId = interest.PropertyOrLeaseId,
-                OwnerId = interest.OwnerId,
-                WorkingInterest = interest.WorkingInterest,
-                NetRevenueInterest = interest.NetRevenueInterest,
-                RoyaltyInterest = interest.RoyaltyInterest,
-                EffectiveDate = interest.EffectiveStartDate,
-                ExpirationDate = interest.EffectiveEndDate
+                InterestId = interest.OWNERSHIP_ID,
+                PropertyOrLeaseId = interest.PROPERTY_OR_LEASE_ID,
+                OwnerId = interest.OWNER_ID,
+                WorkingInterest = interest.WORKING_INTEREST,
+                NetRevenueInterest = interest.NET_REVENUE_INTEREST,
+                ROYALTY_INTEREST = interest.ROYALTY_INTEREST,
+                EffectiveDate = interest.EFFECTIVE_START_DATE,
+                ExpirationDate = interest.EFFECTIVE_END_DATE
             };
         }
     }
