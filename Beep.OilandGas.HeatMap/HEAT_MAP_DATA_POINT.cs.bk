@@ -1,0 +1,28 @@
+using System;
+
+namespace Beep.OilandGas.HeatMap
+{
+    // Lightweight POCO used only inside the HeatMap project to avoid cross-project type coupling.
+    public class HEAT_MAP_DATA_POINT
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double OriginalX { get; set; }
+        public double OriginalY { get; set; }
+        public double Value { get; set; }
+        public double VALUE { get => Value; set => Value = value; }
+        public string? Label { get; set; }
+        public string? LABEL { get => Label; set => Label = value; }
+
+        public HEAT_MAP_DATA_POINT() { }
+        public HEAT_MAP_DATA_POINT(double originalX, double originalY, double value, string? label = null)
+        {
+            OriginalX = originalX;
+            OriginalY = originalY;
+            X = originalX;
+            Y = originalY;
+            Value = value;
+            Label = label;
+        }
+    }
+}

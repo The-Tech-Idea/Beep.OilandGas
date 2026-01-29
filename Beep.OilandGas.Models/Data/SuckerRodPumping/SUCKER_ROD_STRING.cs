@@ -14,19 +14,21 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
             set { SetProperty(ref SUCKER_ROD_STRING_IDValue, value); }
         }
 
-        private Decimal? TOTAL_LENGTHValue;
-        public Decimal? TOTAL_LENGTH
+        private Decimal  TOTAL_LENGTHValue;
+        public Decimal  TOTAL_LENGTH
         {
             get { return this.TOTAL_LENGTHValue; }
             set { SetProperty(ref TOTAL_LENGTHValue, value); }
         }
 
-        private Decimal? TOTAL_WEIGHTValue;
-        public Decimal? TOTAL_WEIGHT
+        private Decimal  TOTAL_WEIGHTValue;
+        public Decimal  TOTAL_WEIGHT
         {
             get { return this.TOTAL_WEIGHTValue; }
             set { SetProperty(ref TOTAL_WEIGHTValue, value); }
         }
+
+        public List<ROD_SECTION> SECTIONS { get; set; }
 
         // Standard PPDM columns
 

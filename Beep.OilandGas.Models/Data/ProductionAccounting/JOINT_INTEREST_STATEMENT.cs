@@ -64,22 +64,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref OPERATORValue, value); }
         }
 
-        private System.Decimal? TOTAL_CHARGESValue;
-        public System.Decimal? TOTAL_CHARGES
+        private System.Decimal  TOTAL_CHARGESValue;
+        public System.Decimal  TOTAL_CHARGES
         {
             get { return this.TOTAL_CHARGESValue; }
             set { SetProperty(ref TOTAL_CHARGESValue, value); }
         }
 
-        private System.Decimal? TOTAL_CREDITSValue;
-        public System.Decimal? TOTAL_CREDITS
+        private System.Decimal  TOTAL_CREDITSValue;
+        public System.Decimal  TOTAL_CREDITS
         {
             get { return this.TOTAL_CREDITSValue; }
             set { SetProperty(ref TOTAL_CREDITSValue, value); }
         }
 
-        private System.Decimal? NET_AMOUNTValue;
-        public System.Decimal? NET_AMOUNT
+        private System.Decimal  NET_AMOUNTValue;
+        public System.Decimal  NET_AMOUNT
         {
             get { return this.NET_AMOUNTValue; }
             set { SetProperty(ref NET_AMOUNTValue, value); }

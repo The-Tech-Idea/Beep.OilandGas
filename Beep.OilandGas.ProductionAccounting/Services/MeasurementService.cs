@@ -61,8 +61,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             var netVolume = ticket.NET_VOLUME;
             if (!netVolume.HasValue && ticket.GROSS_VOLUME.HasValue && ticket.BSW_PERCENTAGE.HasValue)
             {
-                var bswFraction = ticket.BSW_PERCENTAGE.Value / 100m;
-                netVolume = ticket.GROSS_VOLUME.Value * (1m - bswFraction);
+                var bswFraction = ticket.BSW_PERCENTAGE.GetValueOrDefault(0m) / 100m;
+                netVolume = ticket.GROSS_VOLUME.GetValueOrDefault(0m) * (1m - bswFraction);
             }
 
             var measurement = new MEASUREMENT_RECORD

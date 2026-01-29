@@ -21,15 +21,15 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
             set { SetProperty(ref FLASH_CALCULATION_RESULT_IDValue, value); }
         }
 
-        private Decimal? PRESSUREValue;
-        public Decimal? PRESSURE
+        private Decimal PRESSUREValue;
+        public Decimal PRESSURE
         {
             get { return this.PRESSUREValue; }
             set { SetProperty(ref PRESSUREValue, value); }
         }
 
-        private Decimal? TEMPERATUREValue;
-        public Decimal? TEMPERATURE
+        private Decimal TEMPERATUREValue;
+        public Decimal TEMPERATURE
         {
             get { return this.TEMPERATUREValue; }
             set { SetProperty(ref TEMPERATUREValue, value); }

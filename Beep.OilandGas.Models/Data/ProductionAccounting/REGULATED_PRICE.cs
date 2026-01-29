@@ -43,22 +43,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref EFFECTIVE_END_DATEValue, value); }
         }
 
-        private System.Decimal? PRICE_CAPValue;
-        public System.Decimal? PRICE_CAP
+        private System.Decimal  PRICE_CAPValue;
+        public System.Decimal  PRICE_CAP
         {
             get { return this.PRICE_CAPValue; }
             set { SetProperty(ref PRICE_CAPValue, value); }
         }
 
-        private System.Decimal? PRICE_FLOORValue;
-        public System.Decimal? PRICE_FLOOR
+        private System.Decimal  PRICE_FLOORValue;
+        public System.Decimal  PRICE_FLOOR
         {
             get { return this.PRICE_FLOORValue; }
             set { SetProperty(ref PRICE_FLOORValue, value); }
         }
 
-        private System.Decimal? BASE_PRICEValue;
-        public System.Decimal? BASE_PRICE
+        private System.Decimal  BASE_PRICEValue;
+        public System.Decimal  BASE_PRICE
         {
             get { return this.BASE_PRICEValue; }
             set { SetProperty(ref BASE_PRICEValue, value); }

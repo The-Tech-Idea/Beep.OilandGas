@@ -34,22 +34,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref VALUATION_METHODValue, value); }
         }
 
-        private System.Decimal? QUANTITYValue;
-        public System.Decimal? QUANTITY
+        private System.Decimal  QUANTITYValue;
+        public System.Decimal  QUANTITY
         {
             get { return this.QUANTITYValue; }
             set { SetProperty(ref QUANTITYValue, value); }
         }
 
-        private System.Decimal? UNIT_COSTValue;
-        public System.Decimal? UNIT_COST
+        private System.Decimal  UNIT_COSTValue;
+        public System.Decimal  UNIT_COST
         {
             get { return this.UNIT_COSTValue; }
             set { SetProperty(ref UNIT_COSTValue, value); }
         }
 
-        private System.Decimal? TOTAL_VALUEValue;
-        public System.Decimal? TOTAL_VALUE
+        private System.Decimal  TOTAL_VALUEValue;
+        public System.Decimal  TOTAL_VALUE
         {
             get { return this.TOTAL_VALUEValue; }
             set { SetProperty(ref TOTAL_VALUEValue, value); }

@@ -15,36 +15,36 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref QUALITY_ADJUSTMENTS_IDValue, value); }
         }
 
-        private System.Decimal? API_GRAVITY_ADJUSTMENTValue;
-        public System.Decimal? API_GRAVITY_ADJUSTMENT
+        private System.Decimal  API_GRAVITY_ADJUSTMENTValue;
+        public System.Decimal  API_GRAVITY_ADJUSTMENT
         {
             get { return this.API_GRAVITY_ADJUSTMENTValue; }
             set { SetProperty(ref API_GRAVITY_ADJUSTMENTValue, value); }
         }
 
-        private System.Decimal? SULFUR_ADJUSTMENTValue;
-        public System.Decimal? SULFUR_ADJUSTMENT
+        private System.Decimal  SULFUR_ADJUSTMENTValue;
+        public System.Decimal  SULFUR_ADJUSTMENT
         {
             get { return this.SULFUR_ADJUSTMENTValue; }
             set { SetProperty(ref SULFUR_ADJUSTMENTValue, value); }
         }
 
-        private System.Decimal? BSW_ADJUSTMENTValue;
-        public System.Decimal? BSW_ADJUSTMENT
+        private System.Decimal  BSW_ADJUSTMENTValue;
+        public System.Decimal  BSW_ADJUSTMENT
         {
             get { return this.BSW_ADJUSTMENTValue; }
             set { SetProperty(ref BSW_ADJUSTMENTValue, value); }
         }
 
-        private System.Decimal? OTHER_ADJUSTMENTSValue;
-        public System.Decimal? OTHER_ADJUSTMENTS
+        private System.Decimal  OTHER_ADJUSTMENTSValue;
+        public System.Decimal  OTHER_ADJUSTMENTS
         {
             get { return this.OTHER_ADJUSTMENTSValue; }
             set { SetProperty(ref OTHER_ADJUSTMENTSValue, value); }
         }
 
-        private System.Decimal? TOTAL_ADJUSTMENTValue;
-        public System.Decimal? TOTAL_ADJUSTMENT
+        private System.Decimal  TOTAL_ADJUSTMENTValue;
+        public System.Decimal  TOTAL_ADJUSTMENT
         {
             get { return this.TOTAL_ADJUSTMENTValue; }
             set { SetProperty(ref TOTAL_ADJUSTMENTValue, value); }

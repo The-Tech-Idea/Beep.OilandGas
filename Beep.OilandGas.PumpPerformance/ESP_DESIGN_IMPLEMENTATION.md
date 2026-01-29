@@ -170,7 +170,7 @@ double motorPower = SubmersiblePump.CalculateMotorPower(
 ### Pump Performance
 
 - H-Q curve generation
-- Efficiency curve calculation
+-  EFFICIENCY curve calculation
 - Operating point determination
 - Stage selection optimization
 
@@ -179,7 +179,7 @@ double motorPower = SubmersiblePump.CalculateMotorPower(
 - Standard motor sizes (10-300 HP)
 - Standard voltages (230-5000 V)
 - Cable sizing based on current and depth
-- Voltage drop calculations
+- VOLTAGE drop calculations
 
 ---
 

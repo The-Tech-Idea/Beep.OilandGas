@@ -83,7 +83,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (approval == null)
                 throw new ProductionAccountingException($"Approval not found: {approvalId}");
 
-            if (!await ValidateSegregationOfDutiesAsync(approval.ENTITY_NAME, approval.REQUESTED_BY, approverId, approval.AMOUNT ?? 0m, cn))
+            if (!await ValidateSegregationOfDutiesAsync(approval.ENTITY_NAME, approval.REQUESTED_BY, approverId, approval.AMOUNT, cn))
                 throw new ProductionAccountingException("Segregation-of-duties violation: approver must differ from requestor");
 
             approval.STATUS = "APPROVED";

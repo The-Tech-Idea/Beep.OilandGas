@@ -42,15 +42,15 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref LEGAL_DESCRIPTIONValue, value); }
         }
 
-        private Decimal? LATITUDEValue;
-        public Decimal? LATITUDE
+        private Decimal  LATITUDEValue;
+        public Decimal  LATITUDE
         {
             get { return this.LATITUDEValue; }
             set { SetProperty(ref LATITUDEValue, value); }
         }
 
-        private Decimal? LONGITUDEValue;
-        public Decimal? LONGITUDE
+        private Decimal  LONGITUDEValue;
+        public Decimal  LONGITUDE
         {
             get { return this.LONGITUDEValue; }
             set { SetProperty(ref LONGITUDEValue, value); }

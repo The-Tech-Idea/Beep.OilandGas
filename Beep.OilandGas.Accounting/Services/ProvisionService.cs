@@ -46,7 +46,7 @@ namespace Beep.OilandGas.Accounting.Services
         public async Task<ASSET_RETIREMENT_OBLIGATION> RecordAssetRetirementObligationAsync(
             decimal estimatedCost,
             DateTime? estimatedRetirementDate,
-            decimal? discountRate,
+            decimal discountRate,
             string description,
             string userId,
             string? fieldId = null,
@@ -106,7 +106,7 @@ namespace Beep.OilandGas.Accounting.Services
             string aroId,
             decimal updatedEstimatedCost,
             DateTime? updatedRetirementDate,
-            decimal? updatedDiscountRate,
+            decimal updatedDiscountRate,
             string updateReason,
             string userId,
             string? connectionName = null)
@@ -126,7 +126,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (aro == null)
                 throw new InvalidOperationException($"ARO not found: {aroId}");
 
-            var oldPv = aro.PRESENT_VALUE ?? 0m;
+            var oldPv = aro.PRESENT_VALUE is decimal pv ? pv : 0m;
             var newPv = CalculatePresentValue(updatedEstimatedCost, updatedRetirementDate, updatedDiscountRate);
             var delta = newPv - oldPv;
 
@@ -186,7 +186,8 @@ namespace Beep.OilandGas.Accounting.Services
             var aro = await repo.GetByIdAsync(aroId) as ASSET_RETIREMENT_OBLIGATION;
             if (aro == null)
                 throw new InvalidOperationException($"ARO not found: {aroId}");
-            if (!aro.DISCOUNT_RATE.HasValue)
+            // DISCOUNT_RATE is non-nullable decimal on the model; treat values <= 0 as not provided
+            if (aro.DISCOUNT_RATE <= 0m)
                 throw new InvalidOperationException("Discount rate is required for accretion");
 
             var baseDate = aro.ROW_CHANGED_DATE ?? aro.ROW_CREATED_DATE ?? DateTime.UtcNow;
@@ -194,13 +195,13 @@ namespace Beep.OilandGas.Accounting.Services
                 throw new InvalidOperationException("Accretion date must be after the last update date");
 
             var yearFraction = (decimal)(asOfDate - baseDate).TotalDays / 365m;
-            var presentValue = aro.PRESENT_VALUE ?? 0m;
-            var accretion = presentValue * aro.DISCOUNT_RATE.Value * yearFraction;
+            var presentValue = aro.PRESENT_VALUE;
+            var accretion = presentValue * aro.DISCOUNT_RATE * yearFraction;
 
             if (accretion <= 0m)
                 throw new InvalidOperationException("Calculated accretion must be positive");
 
-            aro.ACCRETION_EXPENSE = (aro.ACCRETION_EXPENSE ?? 0m) + accretion;
+            aro.ACCRETION_EXPENSE = (aro.ACCRETION_EXPENSE is decimal ae ? ae : 0m) + accretion;
             aro.PRESENT_VALUE = presentValue + accretion;
             aro.ROW_CHANGED_BY = userId;
             aro.ROW_CHANGED_DATE = DateTime.UtcNow;

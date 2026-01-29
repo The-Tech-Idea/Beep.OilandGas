@@ -29,8 +29,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref SUMMARY_TYPEValue, value); }
         }
 
-        private System.Decimal? TOTAL_VOLUMEValue;
-        public System.Decimal? TOTAL_VOLUME
+        private System.Decimal  TOTAL_VOLUMEValue;
+        public System.Decimal  TOTAL_VOLUME
         {
             get { return this.TOTAL_VOLUMEValue; }
             set { SetProperty(ref TOTAL_VOLUMEValue, value); }
@@ -43,8 +43,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref TRANSACTION_COUNTValue, value); }
         }
 
-        private System.Decimal? AVERAGE_DAILY_VOLUMEValue;
-        public System.Decimal? AVERAGE_DAILY_VOLUME
+        private System.Decimal  AVERAGE_DAILY_VOLUMEValue;
+        public System.Decimal  AVERAGE_DAILY_VOLUME
         {
             get { return this.AVERAGE_DAILY_VOLUMEValue; }
             set { SetProperty(ref AVERAGE_DAILY_VOLUMEValue, value); }

@@ -74,12 +74,17 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (minVolume <= 0m)
                 return null;
 
-            var price = schedule?.PRICE ?? contract.BASE_PRICE ?? 0m;
+            // Resolve price from schedule, contract or obligation. Use GetValueOrDefault to avoid invalid ?? chaining between nullable decimals.
+            // Resolve price: schedule?.PRICE (decimal?) or contract.BASE_PRICE (decimal?)
+            decimal price = 0m;
+            if (schedule?.PRICE is decimal sp)
+                price = sp;
+            else if (contract.BASE_PRICE is decimal cbp)
+                price = cbp;
             var priceOverride = ParseDecimal(obligation.OBLIGATION_DESCRIPTION, "PRICE")
-                ?? ParseDecimal(obligation.REMARK, "PRICE")
-                ?? 0m;
-            if (priceOverride > 0m)
-                price = priceOverride;
+                ?? ParseDecimal(obligation.REMARK, "PRICE");
+            if (priceOverride.HasValue && priceOverride.Value > 0m)
+                price = priceOverride.Value;
 
             if (price <= 0m)
                 return null;

@@ -33,15 +33,15 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
-        private Decimal? WORKING_INTEREST_PERCENTAGEValue;
-        public Decimal? WORKING_INTEREST_PERCENTAGE
+        private Decimal  WORKING_INTEREST_PERCENTAGEValue;
+        public Decimal  WORKING_INTEREST_PERCENTAGE
         {
             get { return this.WORKING_INTEREST_PERCENTAGEValue; }
             set { SetProperty(ref WORKING_INTEREST_PERCENTAGEValue, value); }
         }
 
-        private Decimal? NET_REVENUE_INTEREST_PERCENTAGEValue;
-        public Decimal? NET_REVENUE_INTEREST_PERCENTAGE
+        private Decimal  NET_REVENUE_INTEREST_PERCENTAGEValue;
+        public Decimal  NET_REVENUE_INTEREST_PERCENTAGE
         {
             get { return this.NET_REVENUE_INTEREST_PERCENTAGEValue; }
             set { SetProperty(ref NET_REVENUE_INTEREST_PERCENTAGEValue, value); }

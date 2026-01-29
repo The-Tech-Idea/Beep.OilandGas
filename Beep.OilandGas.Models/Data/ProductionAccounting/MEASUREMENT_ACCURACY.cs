@@ -15,15 +15,15 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref MEASUREMENT_ACCURACY_IDValue, value); }
         }
 
-        private System.Decimal? MINIMUM_ACCURACYValue;
-        public System.Decimal? MINIMUM_ACCURACY
+        private System.Decimal  MINIMUM_ACCURACYValue;
+        public System.Decimal  MINIMUM_ACCURACY
         {
             get { return this.MINIMUM_ACCURACYValue; }
             set { SetProperty(ref MINIMUM_ACCURACYValue, value); }
         }
 
-        private System.Decimal? MAXIMUM_ERRORValue;
-        public System.Decimal? MAXIMUM_ERROR
+        private System.Decimal  MAXIMUM_ERRORValue;
+        public System.Decimal  MAXIMUM_ERROR
         {
             get { return this.MAXIMUM_ERRORValue; }
             set { SetProperty(ref MAXIMUM_ERRORValue, value); }

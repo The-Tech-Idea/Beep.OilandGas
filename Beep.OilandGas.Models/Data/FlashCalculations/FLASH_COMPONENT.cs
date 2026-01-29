@@ -28,36 +28,36 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
             set { SetProperty(ref COMPONENT_NAMEValue, value); }
         }
 
-        private Decimal? MOLE_FRACTIONValue;
-        public Decimal? MOLE_FRACTION
+        private Decimal MOLE_FRACTIONValue;
+        public Decimal MOLE_FRACTION
         {
             get { return this.MOLE_FRACTIONValue; }
             set { SetProperty(ref MOLE_FRACTIONValue, value); }
         }
 
-        private Decimal? CRITICAL_TEMPERATUREValue;
-        public Decimal? CRITICAL_TEMPERATURE
+        private Decimal CRITICAL_TEMPERATUREValue;
+        public Decimal CRITICAL_TEMPERATURE
         {
             get { return this.CRITICAL_TEMPERATUREValue; }
             set { SetProperty(ref CRITICAL_TEMPERATUREValue, value); }
         }
 
-        private Decimal? CRITICAL_PRESSUREValue;
-        public Decimal? CRITICAL_PRESSURE
+        private Decimal CRITICAL_PRESSUREValue;
+        public Decimal CRITICAL_PRESSURE
         {
             get { return this.CRITICAL_PRESSUREValue; }
             set { SetProperty(ref CRITICAL_PRESSUREValue, value); }
         }
 
-        private Decimal? ACENTRIC_FACTORValue;
-        public Decimal? ACENTRIC_FACTOR
+        private Decimal ACENTRIC_FACTORValue;
+        public Decimal ACENTRIC_FACTOR
         {
             get { return this.ACENTRIC_FACTORValue; }
             set { SetProperty(ref ACENTRIC_FACTORValue, value); }
         }
 
-        private Decimal? MOLECULAR_WEIGHTValue;
-        public Decimal? MOLECULAR_WEIGHT
+        private Decimal MOLECULAR_WEIGHTValue;
+        public Decimal MOLECULAR_WEIGHT
         {
             get { return this.MOLECULAR_WEIGHTValue; }
             set { SetProperty(ref MOLECULAR_WEIGHTValue, value); }

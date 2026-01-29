@@ -21,43 +21,43 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
             set { SetProperty(ref PLUNGER_LIFT_WELL_PROPERTIES_IDValue, value); }
         }
 
-        private Decimal? REQUIRED_GAS_INJECTION_RATEValue;
-        public Decimal? REQUIRED_GAS_INJECTION_RATE
+        private decimal REQUIRED_GAS_INJECTION_RATEValue;
+        public decimal REQUIRED_GAS_INJECTION_RATE
         {
             get { return this.REQUIRED_GAS_INJECTION_RATEValue; }
             set { SetProperty(ref REQUIRED_GAS_INJECTION_RATEValue, value); }
         }
 
-        private Decimal? AVAILABLE_GASValue;
-        public Decimal? AVAILABLE_GAS
+        private decimal AVAILABLE_GASValue;
+        public decimal AVAILABLE_GAS
         {
             get { return this.AVAILABLE_GASValue; }
             set { SetProperty(ref AVAILABLE_GASValue, value); }
         }
 
-        private Decimal? ADDITIONAL_GAS_REQUIREDValue;
-        public Decimal? ADDITIONAL_GAS_REQUIRED
+        private decimal ADDITIONAL_GAS_REQUIREDValue;
+        public decimal ADDITIONAL_GAS_REQUIRED
         {
             get { return this.ADDITIONAL_GAS_REQUIREDValue; }
             set { SetProperty(ref ADDITIONAL_GAS_REQUIREDValue, value); }
         }
 
-        private Decimal? REQUIRED_GAS_LIQUID_RATIOValue;
-        public Decimal? REQUIRED_GAS_LIQUID_RATIO
+        private decimal REQUIRED_GAS_LIQUID_RATIOValue;
+        public decimal REQUIRED_GAS_LIQUID_RATIO
         {
             get { return this.REQUIRED_GAS_LIQUID_RATIOValue; }
             set { SetProperty(ref REQUIRED_GAS_LIQUID_RATIOValue, value); }
         }
 
-        private Decimal? MINIMUM_CASING_PRESSUREValue;
-        public Decimal? MINIMUM_CASING_PRESSURE
+        private decimal MINIMUM_CASING_PRESSUREValue;
+        public decimal MINIMUM_CASING_PRESSURE
         {
             get { return this.MINIMUM_CASING_PRESSUREValue; }
             set { SetProperty(ref MINIMUM_CASING_PRESSUREValue, value); }
         }
 
-        private Decimal? MAXIMUM_CASING_PRESSUREValue;
-        public Decimal? MAXIMUM_CASING_PRESSURE
+        private decimal MAXIMUM_CASING_PRESSUREValue;
+        public decimal MAXIMUM_CASING_PRESSURE
         {
             get { return this.MAXIMUM_CASING_PRESSUREValue; }
             set { SetProperty(ref MAXIMUM_CASING_PRESSUREValue, value); }

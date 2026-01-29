@@ -31,7 +31,7 @@ This document summarizes the Phase 1 and Phase 2 enhancements implemented for Be
 **HeadQuantityCalculations** (`Calculations/HeadQuantityCalculations.cs`):
 - Generate complete H-Q curves from data points
 - Interpolate head at specific flow rates
-- Find Best Efficiency Point (BEP)
+- Find Best  EFFICIENCY Point (BEP)
 - Calculate shutoff head (head at zero flow)
 - Support for efficiency and power data
 
@@ -46,21 +46,21 @@ var curve = HeadQuantityCalculations.GenerateHQCurve(flowRates, heads, powers);
 
 // Find BEP
 var bep = HeadQuantityCalculations.FindBestEfficiencyPoint(curve);
-Console.WriteLine($"BEP: {bep.FlowRate} GPM at {bep.Head} ft, Efficiency: {bep.Efficiency:P}");
+Console.WriteLine($"BEP: {bep.FlowRate} GPM at {bep.Head} ft, Efficiency: {bep.EFFICIENCY:P}");
 
 // Interpolate head
 double headAt250 = HeadQuantityCalculations.InterpolateHead(curve, 250);
 ```
 
-#### 3. Comprehensive Efficiency Calculations ✅
+#### 3. Comprehensive  EFFICIENCY Calculations ✅
 
 **EfficiencyCalculations** (`Calculations/EfficiencyCalculations.cs`):
 - **Overall Efficiency**: η = (Q * H * SG) / (3960 * BHP)
 - **Hydraulic Efficiency**: η_h = Actual Head / Theoretical Head
 - **Mechanical Efficiency**: η_m = (BHP - Losses) / BHP
 - **Volumetric Efficiency**: η_v = Actual Flow / Theoretical Flow
-- **Best Efficiency Point (BEP)**: Find maximum efficiency
-- **Efficiency Curves**: Generate efficiency vs flow rate curves
+- **Best  EFFICIENCY Point (BEP)**: Find maximum efficiency
+- ** EFFICIENCY Curves**: Generate efficiency vs flow rate curves
 
 **Usage:**
 ```csharp
@@ -79,8 +79,8 @@ var (flowRate, eff) = EfficiencyCalculations.FindBestEfficiencyPoint(flowRates, 
 #### 4. Power Calculations ✅
 
 **PowerCalculations** (`Calculations/PowerCalculations.cs`):
-- **Brake Horsepower (BHP)**: BHP = (Q * H * SG) / (3960 * η)
-- **Hydraulic Horsepower (WHP)**: WHP = (Q * H * SG) / 3960
+- **Brake HORSEPOWER (BHP)**: BHP = (Q * H * SG) / (3960 * η)
+- **Hydraulic HORSEPOWER (WHP)**: WHP = (Q * H * SG) / 3960
 - **Motor Input Power**: Motor Power = BHP / Motor Efficiency
 - **Power Consumption**: Calculate in kilowatts
 - **Energy Consumption**: kWh calculations
@@ -193,7 +193,7 @@ double maxLift = NPSHCalculations.CalculateMaxAllowableSuctionLift(
 ```
 Beep.PumpPerformance/
 ├── Calculations/
-│   ├── EfficiencyCalculations.cs      # Efficiency calculations
+│   ├── EfficiencyCalculations.cs      #  EFFICIENCY calculations
 │   ├── PowerCalculations.cs           # Power and energy calculations
 │   ├── HeadQuantityCalculations.cs    # H-Q curve generation
 │   ├── SystemCurveCalculations.cs     # System resistance curves

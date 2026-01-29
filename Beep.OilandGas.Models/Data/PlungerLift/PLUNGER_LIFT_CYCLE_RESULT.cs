@@ -21,71 +21,71 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
             set { SetProperty(ref PLUNGER_LIFT_WELL_PROPERTIES_IDValue, value); }
         }
 
-        private Decimal? CYCLE_TIMEValue;
-        public Decimal? CYCLE_TIME
+        private decimal  CYCLE_TIMEValue;
+        public decimal  CYCLE_TIME
         {
             get { return this.CYCLE_TIMEValue; }
             set { SetProperty(ref CYCLE_TIMEValue, value); }
         }
 
-        private Decimal? FALL_TIMEValue;
-        public Decimal? FALL_TIME
+        private decimal  FALL_TIMEValue;
+        public decimal  FALL_TIME
         {
             get { return this.FALL_TIMEValue; }
             set { SetProperty(ref FALL_TIMEValue, value); }
         }
 
-        private Decimal? RISE_TIMEValue;
-        public Decimal? RISE_TIME
+        private decimal  RISE_TIMEValue;
+        public decimal  RISE_TIME
         {
             get { return this.RISE_TIMEValue; }
             set { SetProperty(ref RISE_TIMEValue, value); }
         }
 
-        private Decimal? SHUT_IN_TIMEValue;
-        public Decimal? SHUT_IN_TIME
+        private decimal  SHUT_IN_TIMEValue;
+        public decimal  SHUT_IN_TIME
         {
             get { return this.SHUT_IN_TIMEValue; }
             set { SetProperty(ref SHUT_IN_TIMEValue, value); }
         }
 
-        private Decimal? FALL_VELOCITYValue;
-        public Decimal? FALL_VELOCITY
+        private decimal  FALL_VELOCITYValue;
+        public decimal  FALL_VELOCITY
         {
             get { return this.FALL_VELOCITYValue; }
             set { SetProperty(ref FALL_VELOCITYValue, value); }
         }
 
-        private Decimal? RISE_VELOCITYValue;
-        public Decimal? RISE_VELOCITY
+        private decimal  RISE_VELOCITYValue;
+        public decimal  RISE_VELOCITY
         {
             get { return this.RISE_VELOCITYValue; }
             set { SetProperty(ref RISE_VELOCITYValue, value); }
         }
 
-        private Decimal? LIQUID_SLUG_SIZEValue;
-        public Decimal? LIQUID_SLUG_SIZE
+        private decimal  LIQUID_SLUG_SIZEValue;
+        public decimal  LIQUID_SLUG_SIZE
         {
             get { return this.LIQUID_SLUG_SIZEValue; }
             set { SetProperty(ref LIQUID_SLUG_SIZEValue, value); }
         }
 
-        private Decimal? PRODUCTION_PER_CYCLEValue;
-        public Decimal? PRODUCTION_PER_CYCLE
+        private decimal  PRODUCTION_PER_CYCLEValue;
+        public decimal  PRODUCTION_PER_CYCLE
         {
             get { return this.PRODUCTION_PER_CYCLEValue; }
             set { SetProperty(ref PRODUCTION_PER_CYCLEValue, value); }
         }
 
-        private Decimal? DAILY_PRODUCTION_RATEValue;
-        public Decimal? DAILY_PRODUCTION_RATE
+        private decimal  DAILY_PRODUCTION_RATEValue;
+        public decimal  DAILY_PRODUCTION_RATE
         {
             get { return this.DAILY_PRODUCTION_RATEValue; }
             set { SetProperty(ref DAILY_PRODUCTION_RATEValue, value); }
         }
 
-        private Decimal? CYCLES_PER_DAYValue;
-        public Decimal? CYCLES_PER_DAY
+        private decimal  CYCLES_PER_DAYValue;
+        public decimal  CYCLES_PER_DAY
         {
             get { return this.CYCLES_PER_DAYValue; }
             set { SetProperty(ref CYCLES_PER_DAYValue, value); }

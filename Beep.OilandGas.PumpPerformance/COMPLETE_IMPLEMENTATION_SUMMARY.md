@@ -26,13 +26,13 @@ This document provides a comprehensive summary of all implemented features acros
 
 ### 2. Core Calculations ✅
 
-**Efficiency Calculations:**
+** EFFICIENCY Calculations:**
 - Overall efficiency: η = (Q * H * SG) / (3960 * BHP)
 - Hydraulic efficiency: η_h = Actual Head / Theoretical Head
 - Mechanical efficiency: η_m = (BHP - Losses) / BHP
 - Volumetric efficiency: η_v = Actual Flow / Theoretical Flow
-- Best Efficiency Point (BEP) finding
-- Efficiency curve generation
+- Best  EFFICIENCY Point (BEP) finding
+-  EFFICIENCY curve generation
 
 **Power Calculations:**
 - Brake horsepower (BHP)
@@ -45,7 +45,7 @@ This document provides a comprehensive summary of all implemented features acros
 **H-Q Curve Calculations:**
 - Generate complete H-Q curves
 - Head interpolation
-- Best Efficiency Point finding
+- Best  EFFICIENCY Point finding
 - Shutoff head calculation
 - Curve analysis
 
@@ -123,7 +123,7 @@ This document provides a comprehensive summary of all implemented features acros
 **Configuration Comparison:**
 - Series vs parallel analysis
 - Performance comparison
-- Efficiency comparison
+-  EFFICIENCY comparison
 
 ### 6. Pump Selection & Optimization ✅
 
@@ -144,7 +144,7 @@ This document provides a comprehensive summary of all implemented features acros
 ```
 Beep.PumpPerformance/
 ├── Calculations/
-│   ├── EfficiencyCalculations.cs      # Efficiency calculations
+│   ├── EfficiencyCalculations.cs      #  EFFICIENCY calculations
 │   ├── PowerCalculations.cs           # Power and energy
 │   ├── HeadQuantityCalculations.cs    # H-Q curves
 │   ├── SystemCurveCalculations.cs    # System curves

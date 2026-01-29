@@ -29,8 +29,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref LEASES_ALLOCATEDValue, value); }
         }
 
-        private System.Decimal? TOTAL_ALLOCATED_VOLUMEValue;
-        public System.Decimal? TOTAL_ALLOCATED_VOLUME
+        private System.Decimal  TOTAL_ALLOCATED_VOLUMEValue;
+        public System.Decimal  TOTAL_ALLOCATED_VOLUME
         {
             get { return this.TOTAL_ALLOCATED_VOLUMEValue; }
             set { SetProperty(ref TOTAL_ALLOCATED_VOLUMEValue, value); }

@@ -55,15 +55,15 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref TOTAL_BILL_AMOUNTValue, value); }
         }
 
-        private Decimal? WORKING_INTEREST_SHAREValue;
-        public Decimal? WORKING_INTEREST_SHARE
+        private Decimal  WORKING_INTEREST_SHAREValue;
+        public Decimal  WORKING_INTEREST_SHARE
         {
             get { return this.WORKING_INTEREST_SHAREValue; }
             set { SetProperty(ref WORKING_INTEREST_SHAREValue, value); }
         }
 
-        private Decimal? NET_AMOUNT_DUEValue;
-        public Decimal? NET_AMOUNT_DUE
+        private Decimal  NET_AMOUNT_DUEValue;
+        public Decimal  NET_AMOUNT_DUE
         {
             get { return this.NET_AMOUNT_DUEValue; }
             set { SetProperty(ref NET_AMOUNT_DUEValue, value); }

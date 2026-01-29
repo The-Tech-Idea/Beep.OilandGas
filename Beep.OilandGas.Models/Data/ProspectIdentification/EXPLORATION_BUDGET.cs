@@ -25,8 +25,8 @@ namespace Beep.OilandGas.Models.Data.ProspectIdentification
             }
             set { SetProperty(ref BUDGET_YEARValue, value); }
         }
-        private System.Decimal? BUDGET_AMOUNTValue;
-        public System.Decimal? BUDGET_AMOUNT
+        private System.Decimal  BUDGET_AMOUNTValue;
+        public System.Decimal  BUDGET_AMOUNT
         {
             get
             {
@@ -52,8 +52,8 @@ namespace Beep.OilandGas.Models.Data.ProspectIdentification
             }
             set { SetProperty(ref BUDGET_CATEGORYValue, value); }
         }
-        private System.Decimal? ACTUAL_AMOUNTValue;
-        public System.Decimal? ACTUAL_AMOUNT
+        private System.Decimal  ACTUAL_AMOUNTValue;
+        public System.Decimal  ACTUAL_AMOUNT
         {
             get
             {
@@ -61,8 +61,8 @@ namespace Beep.OilandGas.Models.Data.ProspectIdentification
             }
             set { SetProperty(ref ACTUAL_AMOUNTValue, value); }
         }
-        private System.Decimal? VARIANCEValue;
-        public System.Decimal? VARIANCE
+        private System.Decimal  VARIANCEValue;
+        public System.Decimal  VARIANCE
         {
             get
             {

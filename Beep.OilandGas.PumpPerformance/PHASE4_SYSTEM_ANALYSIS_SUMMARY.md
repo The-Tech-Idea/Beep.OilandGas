@@ -73,13 +73,13 @@ foreach (var point in series.PumpOperatingPoints)
 **PumpSelection** (`SystemAnalysis/PumpSelection.cs`):
 - **Best Pump Selection**: Select optimal pump from candidates
 - **Suitability Filtering**: Find pumps that meet requirements
-- **Efficiency Ranking**: Rank pumps by efficiency
+- ** EFFICIENCY Ranking**: Rank pumps by efficiency
 - **Cost-Effectiveness**: Calculate efficiency per unit cost
 - **Selection Scoring**: Weighted scoring (efficiency vs cost)
 
 **Selection Criteria:**
 - Operating point matching
-- Efficiency at operating point
+-  EFFICIENCY at operating point
 - Cost considerations
 - Configurable preference (efficiency vs cost)
 

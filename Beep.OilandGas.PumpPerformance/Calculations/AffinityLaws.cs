@@ -208,7 +208,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
                 double newFlowRate = point.FlowRate * speedRatio;
                 double newHead = point.Head * Math.Pow(speedRatio, 2);
                 double newPower = point.Power * Math.Pow(speedRatio, 3);
-                double newEfficiency = point.Efficiency; // Efficiency typically remains constant
+                double newEfficiency = point.EFFICIENCY; //  EFFICIENCY typically remains constant
 
                 scaledCurve.Add(new HeadQuantityPoint(newFlowRate, newHead, newEfficiency, newPower));
             }

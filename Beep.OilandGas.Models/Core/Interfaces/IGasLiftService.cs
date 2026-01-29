@@ -20,7 +20,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="maxGasInjectionRate">Maximum gas injection rate</param>
         /// <param name="numberOfPoints">Number of analysis points</param>
         /// <returns>Gas lift potential result</returns>
-        GAS_LIFT_POTENTIAL_RESULT AnalyzeGasLiftPotential(
+        GAS_LIFT_WELL_PROPERTIES AnalyzeGasLiftPotential(
             GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal minGasInjectionRate,
             decimal maxGasInjectionRate,

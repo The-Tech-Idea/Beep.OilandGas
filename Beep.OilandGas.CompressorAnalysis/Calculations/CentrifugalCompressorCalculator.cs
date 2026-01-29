@@ -30,40 +30,40 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             var conditions = compressorProperties.OPERATING_CONDITIONS;
 
             // Calculate compression ratio
-            result.COMPRESSION_RATIO = conditions.DischargePressure / conditions.SuctionPressure;
+            result.COMPRESSION_RATIO = conditions.DISCHARGE_PRESSURE / conditions.SUCTION_PRESSURE;
 
             // Calculate average pressure and temperature
-            decimal averagePressure = (conditions.SuctionPressure + conditions.DischargePressure) / 2m;
-            decimal averageTemperature = (conditions.SuctionTemperature + conditions.DISCHARGE_TEMPERATURE) / 2m;
+            decimal averagePressure = (conditions.SUCTION_PRESSURE + conditions.DISCHARGE_PRESSURE) / 2m;
+            decimal averageTemperature = (conditions.SUCTION_TEMPERATURE + conditions.DISCHARGE_TEMPERATURE) / 2m;
 
             // Calculate Z-factor at average conditions
             decimal zFactor = ZFactorCalculator.CalculateBrillBeggs(
-                averagePressure, averageTemperature, conditions.GasSpecificGravity);
+                averagePressure, averageTemperature, conditions.GAS_SPECIFIC_GRAVITY);
 
             // Calculate polytropic head
             result.POLYTROPIC_HEAD = CalculatePolytropicHead(
-                conditions.SuctionPressure,
-                conditions.DischargePressure,
-                conditions.SuctionTemperature,
+                conditions.SUCTION_PRESSURE,
+                conditions.DISCHARGE_PRESSURE,
+                conditions.SUCTION_TEMPERATURE,
                 compressorProperties.SPECIFIC_HEAT_RATIO,
                 compressorProperties.POLYTROPIC_EFFICIENCY,
                 zFactor,
-                conditions.GasSpecificGravity);
+                conditions.GAS_SPECIFIC_GRAVITY);
 
             // Calculate adiabatic head
             result.ADIABATIC_HEAD = CalculateAdiabaticHead(
-                conditions.SuctionPressure,
-                conditions.DischargePressure,
-                conditions.SuctionTemperature,
+                conditions.SUCTION_PRESSURE,
+                conditions.DISCHARGE_PRESSURE,
+                conditions.SUCTION_TEMPERATURE,
                 compressorProperties.SPECIFIC_HEAT_RATIO,
                 zFactor,
-                conditions.GasSpecificGravity);
+                conditions.GAS_SPECIFIC_GRAVITY);
 
             // Calculate theoretical power
             result.THEORETICAL_POWER = CalculateTheoreticalPower(
-                conditions.GasFlowRate,
+                conditions.GAS_FLOW_RATE,
                 result.POLYTROPIC_HEAD,
-                conditions.GasSpecificGravity,
+                conditions.GAS_SPECIFIC_GRAVITY,
                 averageTemperature,
                 zFactor,
                 averagePressure);
@@ -72,7 +72,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             result.BRAKE_HORSEPOWER = result.THEORETICAL_POWER / compressorProperties.POLYTROPIC_EFFICIENCY;
 
             // Calculate motor horsepower
-            result.MOTOR_HORSEPOWER = result.BRAKE_HORSEPOWER / conditions.MechanicalEfficiency;
+            result.MOTOR_HORSEPOWER = result.BRAKE_HORSEPOWER / conditions.MECHANICAL_EFFICIENCY;
 
             // Calculate power consumption
             if (useSIUnits)
@@ -86,13 +86,13 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
 
             // Calculate discharge temperature
             result.DISCHARGE_TEMPERATURE = CalculateDischargeTemperature(
-                conditions.SuctionTemperature,
+                conditions.SUCTION_TEMPERATURE,
                 result.COMPRESSION_RATIO,
                 compressorProperties.SPECIFIC_HEAT_RATIO,
                 compressorProperties.POLYTROPIC_EFFICIENCY);
 
             // Overall efficiency
-            result.OVERALL_EFFICIENCY = compressorProperties.POLYTROPIC_EFFICIENCY * conditions.MechanicalEfficiency;
+            result.OVERALL_EFFICIENCY = compressorProperties.POLYTROPIC_EFFICIENCY * conditions.MECHANICAL_EFFICIENCY;
 
             return result;
         }
@@ -101,25 +101,25 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
         /// Calculates polytropic head.
         /// </summary>
         private static decimal CalculatePolytropicHead(
-            decimal suctionPressure,
-            decimal dischargePressure,
-            decimal suctionTemperature,
-            decimal specificHeatRatio,
-            decimal polytropicEfficiency,
+            decimal SUCTION_PRESSURE,
+            decimal DISCHARGE_PRESSURE,
+            decimal SUCTION_TEMPERATURE,
+            decimal SPECIFIC_HEAT_RATIO,
+            decimal POLYTROPIC_EFFICIENCY,
             decimal zFactor,
-            decimal gasSpecificGravity)
+            decimal GAS_SPECIFIC_GRAVITY)
         {
             // Polytropic head: Hp = (Z_avg * R * T1 / MW) * (n / (n-1)) * [(P2/P1)^((n-1)/n) - 1]
             // Where n = polytropic exponent = (k * Î·p) / (k - Î·p * (k - 1))
 
-            decimal k = specificHeatRatio;
-            decimal etaP = polytropicEfficiency;
+            decimal k = SPECIFIC_HEAT_RATIO;
+            decimal etaP = POLYTROPIC_EFFICIENCY;
 
             // Polytropic exponent
             decimal n = (k * etaP) / (k - etaP * (k - 1m));
 
             // Compression ratio
-            decimal compressionRatio = dischargePressure / suctionPressure;
+            decimal compressionRatio = DISCHARGE_PRESSURE / SUCTION_PRESSURE;
 
             // Average Z-factor (simplified - using suction Z)
             decimal zAvg = zFactor;
@@ -128,10 +128,10 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             decimal R = 1545.0m; // ft-lbf/(lbmol-R)
 
             // Molecular weight
-            decimal molecularWeight = gasSpecificGravity * 28.9645m;
+            decimal molecularWeight = GAS_SPECIFIC_GRAVITY * 28.9645m;
 
             // Polytropic head
-            decimal head = (zAvg * R * suctionTemperature / molecularWeight) *
+            decimal head = (zAvg * R * SUCTION_TEMPERATURE / molecularWeight) *
                           (n / (n - 1m)) *
                           ((decimal)Math.Pow((double)compressionRatio, (double)((n - 1m) / n)) - 1m);
 
@@ -142,22 +142,22 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
         /// Calculates adiabatic head.
         /// </summary>
         private static decimal CalculateAdiabaticHead(
-            decimal suctionPressure,
-            decimal dischargePressure,
-            decimal suctionTemperature,
-            decimal specificHeatRatio,
+            decimal SUCTION_PRESSURE,
+            decimal DISCHARGE_PRESSURE,
+            decimal SUCTION_TEMPERATURE,
+            decimal SPECIFIC_HEAT_RATIO,
             decimal zFactor,
-            decimal gasSpecificGravity)
+            decimal GAS_SPECIFIC_GRAVITY)
         {
             // Adiabatic head: Ha = (Z_avg * R * T1 / MW) * (k / (k-1)) * [(P2/P1)^((k-1)/k) - 1]
 
-            decimal k = specificHeatRatio;
-            decimal compressionRatio = dischargePressure / suctionPressure;
+            decimal k = SPECIFIC_HEAT_RATIO;
+            decimal compressionRatio = DISCHARGE_PRESSURE / SUCTION_PRESSURE;
             decimal zAvg = zFactor;
             decimal R = 1545.0m;
-            decimal molecularWeight = gasSpecificGravity * 28.9645m;
+            decimal molecularWeight = GAS_SPECIFIC_GRAVITY * 28.9645m;
 
-            decimal head = (zAvg * R * suctionTemperature / molecularWeight) *
+            decimal head = (zAvg * R * SUCTION_TEMPERATURE / molecularWeight) *
                           (k / (k - 1m)) *
                           ((decimal)Math.Pow((double)compressionRatio, (double)((k - 1m) / k)) - 1m);
 
@@ -168,9 +168,9 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
         /// Calculates theoretical power.
         /// </summary>
         private static decimal CalculateTheoreticalPower(
-            decimal gasFlowRate,
+            decimal GAS_FLOW_RATE,
             decimal polytropicHead,
-            decimal gasSpecificGravity,
+            decimal GAS_SPECIFIC_GRAVITY,
             decimal averageTemperature,
             decimal zFactor,
             decimal averagePressure)
@@ -179,10 +179,10 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             // Where W = weight flow rate
 
             // Convert gas flow rate from Mscf/day to scf/min
-            decimal flowRateScfMin = gasFlowRate * 1000m / 1440m; // scf/min
+            decimal flowRateScfMin = GAS_FLOW_RATE * 1000m / 1440m; // scf/min
 
             // Calculate weight flow rate
-            decimal molecularWeight = gasSpecificGravity * 28.9645m;
+            decimal molecularWeight = GAS_SPECIFIC_GRAVITY * 28.9645m;
             decimal weightFlowRate = flowRateScfMin * molecularWeight / 379.0m; // lbm/min
 
             // Theoretical power
@@ -195,22 +195,22 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
         /// Calculates discharge temperature.
         /// </summary>
         private static decimal CalculateDischargeTemperature(
-            decimal suctionTemperature,
+            decimal SUCTION_TEMPERATURE,
             decimal compressionRatio,
-            decimal specificHeatRatio,
-            decimal polytropicEfficiency)
+            decimal SPECIFIC_HEAT_RATIO,
+            decimal POLYTROPIC_EFFICIENCY)
         {
             // Discharge temperature: T2 = T1 * (P2/P1)^((n-1)/n)
             // Where n = polytropic exponent
 
-            decimal k = specificHeatRatio;
-            decimal etaP = polytropicEfficiency;
+            decimal k = SPECIFIC_HEAT_RATIO;
+            decimal etaP = POLYTROPIC_EFFICIENCY;
             decimal n = (k * etaP) / (k - etaP * (k - 1m));
 
-            decimal dischargeTemperature = suctionTemperature *
+            decimal dischargeTemperature = SUCTION_TEMPERATURE *
                                          (decimal)Math.Pow((double)compressionRatio, (double)((n - 1m) / n));
 
-            return Math.Max(suctionTemperature, dischargeTemperature);
+            return Math.Max(SUCTION_TEMPERATURE, dischargeTemperature);
         }
     }
 }

@@ -31,15 +31,15 @@ namespace Beep.OilandGas.Models.Data.Agreement
             set { SetProperty(ref EXPIRATION_DATEValue, value); }
         }
 
-        private System.Decimal? STORAGE_FEEValue;
-        public System.Decimal? STORAGE_FEE
+        private System.Decimal  STORAGE_FEEValue;
+        public System.Decimal  STORAGE_FEE
         {
             get { return this.STORAGE_FEEValue; }
             set { SetProperty(ref STORAGE_FEEValue, value); }
         }
 
-        private System.Decimal? RESERVED_CAPACITYValue;
-        public System.Decimal? RESERVED_CAPACITY
+        private System.Decimal  RESERVED_CAPACITYValue;
+        public System.Decimal  RESERVED_CAPACITY
         {
             get { return this.RESERVED_CAPACITYValue; }
             set { SetProperty(ref RESERVED_CAPACITYValue, value); }

@@ -6,7 +6,7 @@ A comprehensive .NET library for pump performance calculations in oil and gas op
 
 ### Core Functionality
 - **H-Q Curve Calculations**: Generate and analyze Head-Quantity performance curves
-- **Efficiency Calculations**: Overall, hydraulic, mechanical, and volumetric efficiency
+- ** EFFICIENCY Calculations**: Overall, hydraulic, mechanical, and volumetric efficiency
 - **Power Calculations**: Brake horsepower, motor power, energy consumption
 - **System Curve Analysis**: System resistance curves and operating point determination
 - **Affinity Laws**: Performance prediction at different speeds and impeller diameters
@@ -46,7 +46,7 @@ var curve = HeadQuantityCalculations.GenerateHQCurve(flowRates, heads, powers);
 var bep = HeadQuantityCalculations.FindBestEfficiencyPoint(curve);
 ```
 
-### Efficiency Calculations
+###  EFFICIENCY Calculations
 
 ```csharp
 // Calculate overall efficiency
@@ -60,7 +60,7 @@ double efficiency = EfficiencyCalculations.CalculateOverallEfficiency(
 double[] efficiencies = EfficiencyCalculations.CalculateOverallEfficiency(
     flowRates, heads, powers);
 
-// Find Best Efficiency Point
+// Find Best  EFFICIENCY Point
 var (flowRate, eff) = EfficiencyCalculations.FindBestEfficiencyPoint(
     flowRates, efficiencies);
 ```
@@ -255,7 +255,7 @@ All methods include comprehensive input validation. Invalid inputs will throw `I
 
 - **Flow Rate**: Gallons per minute (GPM)
 - **Head**: Feet
-- **Power**: Horsepower (HP) or Kilowatts (kW)
+- **Power**: HORSEPOWER (HP) or Kilowatts (kW)
 - **Pressure**: Pounds per square inch absolute (psia) or gauge (psig)
 - **Speed**: Revolutions per minute (RPM)
 - **Diameter**: Inches

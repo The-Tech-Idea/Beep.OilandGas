@@ -40,8 +40,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref GROSS_COSTValue, value); }
         }
 
-        private Decimal? WORKING_INTEREST_SHAREValue;
-        public Decimal? WORKING_INTEREST_SHARE
+        private Decimal  WORKING_INTEREST_SHAREValue;
+        public Decimal  WORKING_INTEREST_SHARE
         {
             get { return this.WORKING_INTEREST_SHAREValue; }
             set { SetProperty(ref WORKING_INTEREST_SHAREValue, value); }

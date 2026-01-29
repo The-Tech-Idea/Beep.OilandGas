@@ -8,7 +8,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
 {
     /// <summary>
     /// Renders pump performance curves using SkiaSharp.
-    /// Supports H-Q, P-Q, Efficiency curves, system curves, operating points, and multi-pump configurations.
+    /// Supports H-Q, P-Q,  EFFICIENCY curves, system curves, operating points, and multi-pump configurations.
     /// </summary>
     public class PumpPerformanceRenderer
     {
@@ -104,7 +104,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
         }
 
         /// <summary>
-        /// Sets the Best Efficiency Point (BEP).
+        /// Sets the Best  EFFICIENCY Point (BEP).
         /// </summary>
         public void SetBEP(HeadQuantityPoint bep)
         {
@@ -173,7 +173,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
                 allFlowRates.AddRange(hqCurve.Select(p => p.FlowRate));
                 allHeads.AddRange(hqCurve.Select(p => p.Head));
                 allPowers.AddRange(hqCurve.Select(p => p.Power));
-                allEfficiencies.AddRange(hqCurve.Select(p => p.Efficiency));
+                allEfficiencies.AddRange(hqCurve.Select(p => p.EFFICIENCY));
             }
 
             if (systemCurve != null && systemCurve.Count > 0)
@@ -191,7 +191,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
                         allFlowRates.AddRange(curve.Select(p => p.FlowRate));
                         allHeads.AddRange(curve.Select(p => p.Head));
                         allPowers.AddRange(curve.Select(p => p.Power));
-                        allEfficiencies.AddRange(curve.Select(p => p.Efficiency));
+                        allEfficiencies.AddRange(curve.Select(p => p.EFFICIENCY));
                     }
                 }
             }
@@ -642,7 +642,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
                 foreach (var point in sortedCurve)
                 {
                     float x = FlowRateToScreenX(point.FlowRate);
-                    float y = EfficiencyToScreenY(point.Efficiency);
+                    float y = EfficiencyToScreenY(point.EFFICIENCY);
 
                     if (first)
                     {
@@ -669,7 +669,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
 
             if (configuration.ShowEfficiencyPoints)
             {
-                DrawPoints(canvas, sortedCurve.Select(p => (FlowRateToScreenX(p.FlowRate), EfficiencyToScreenY(p.Efficiency))).ToList(),
+                DrawPoints(canvas, sortedCurve.Select(p => (FlowRateToScreenX(p.FlowRate), EfficiencyToScreenY(p.EFFICIENCY))).ToList(),
                     configuration.EfficiencyCurveColor, configuration.PointSize);
             }
         }
@@ -951,7 +951,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
         }
 
         /// <summary>
-        /// Draws the Best Efficiency Point (BEP).
+        /// Draws the Best  EFFICIENCY Point (BEP).
         /// </summary>
         private void DrawBEP(SKCanvas canvas)
         {
@@ -994,7 +994,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
                     Typeface = SKTypeface.FromFamilyName("Arial", SKFontStyle.Bold)
                 })
                 {
-                    string label = $"BEP: {FormatFlowRate(bepPoint.FlowRate)}, {FormatHead(bepPoint.Head)}, η={bepPoint.Efficiency:P1}";
+                    string label = $"BEP: {FormatFlowRate(bepPoint.FlowRate)}, {FormatHead(bepPoint.Head)}, η={bepPoint.EFFICIENCY:P1}";
                     paint.TextAlign = SKTextAlign.Left;
                     canvas.DrawText(label, x + configuration.BEPPointSize + 5f, y + 15f, paint);
                 }

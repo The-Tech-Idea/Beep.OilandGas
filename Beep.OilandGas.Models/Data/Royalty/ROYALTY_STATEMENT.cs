@@ -42,22 +42,22 @@ namespace Beep.OilandGas.Models.Data.Royalty
             set { SetProperty(ref STATEMENT_PERIOD_ENDValue, value); }
         }
 
-        private System.Decimal? TOTAL_ROYALTY_AMOUNTValue;
-        public System.Decimal? TOTAL_ROYALTY_AMOUNT
+        private System.Decimal  TOTAL_ROYALTY_AMOUNTValue;
+        public System.Decimal  TOTAL_ROYALTY_AMOUNT
         {
             get { return this.TOTAL_ROYALTY_AMOUNTValue; }
             set { SetProperty(ref TOTAL_ROYALTY_AMOUNTValue, value); }
         }
 
-        private System.Decimal? TOTAL_DEDUCTIONSValue;
-        public System.Decimal? TOTAL_DEDUCTIONS
+        private System.Decimal  TOTAL_DEDUCTIONSValue;
+        public System.Decimal  TOTAL_DEDUCTIONS
         {
             get { return this.TOTAL_DEDUCTIONSValue; }
             set { SetProperty(ref TOTAL_DEDUCTIONSValue, value); }
         }
 
-        private System.Decimal? NET_PAYMENT_AMOUNTValue;
-        public System.Decimal? NET_PAYMENT_AMOUNT
+        private System.Decimal  NET_PAYMENT_AMOUNTValue;
+        public System.Decimal  NET_PAYMENT_AMOUNT
         {
             get { return this.NET_PAYMENT_AMOUNTValue; }
             set { SetProperty(ref NET_PAYMENT_AMOUNTValue, value); }

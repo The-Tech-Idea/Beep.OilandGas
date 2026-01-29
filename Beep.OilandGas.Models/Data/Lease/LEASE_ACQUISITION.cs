@@ -36,8 +36,8 @@ namespace Beep.OilandGas.Models.Data.Lease
             set { SetProperty(ref LOCATIONIDValue, value); }
         }
 
-        private Decimal? ACREAGE_SIZEValue;
-        public Decimal? ACREAGE_SIZE
+        private Decimal  ACREAGE_SIZEValue;
+        public Decimal  ACREAGE_SIZE
         {
             get { return this.ACREAGE_SIZEValue; }
             set { SetProperty(ref ACREAGE_SIZEValue, value); }
@@ -50,8 +50,8 @@ namespace Beep.OilandGas.Models.Data.Lease
             set { SetProperty(ref ACQUISITION_DATEValue, value); }
         }
 
-        private Decimal? ACQUISITION_COSTValue;
-        public Decimal? ACQUISITION_COST
+        private Decimal  ACQUISITION_COSTValue;
+        public Decimal  ACQUISITION_COST
         {
             get { return this.ACQUISITION_COSTValue; }
             set { SetProperty(ref ACQUISITION_COSTValue, value); }
@@ -106,15 +106,15 @@ namespace Beep.OilandGas.Models.Data.Lease
             set { SetProperty(ref LEASE_EXPIRATIONValue, value); }
         }
 
-        private Decimal? WORKING_INTERESTValue;
-        public Decimal? WORKING_INTEREST
+        private Decimal  WORKING_INTERESTValue;
+        public Decimal  WORKING_INTEREST
         {
             get { return this.WORKING_INTERESTValue; }
             set { SetProperty(ref WORKING_INTERESTValue, value); }
         }
 
-        private Decimal? NET_REVENUE_INTERESTValue;
-        public Decimal? NET_REVENUE_INTEREST
+        private Decimal  NET_REVENUE_INTERESTValue;
+        public Decimal  NET_REVENUE_INTEREST
         {
             get { return this.NET_REVENUE_INTERESTValue; }
             set { SetProperty(ref NET_REVENUE_INTERESTValue, value); }

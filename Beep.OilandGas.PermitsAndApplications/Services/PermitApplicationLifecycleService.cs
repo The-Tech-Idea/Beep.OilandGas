@@ -41,7 +41,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var data = _mapper.MapToData(application);
             SetAuditFields(data, userId);
             data.ACTIVE_IND = "Y";
-            data.STATUS = string.IsNullOrWhiteSpace(data.STATUS) ? "DRAFT" : data.STATUS;
+            data.STATUS =  data.STATUS;
             data.CREATED_DATE ??= DateTime.UtcNow;
 
             if (string.IsNullOrWhiteSpace(data.PERMIT_APPLICATION_ID))
@@ -112,7 +112,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             if (application == null)
                 throw new InvalidOperationException($"Permit application not found: {applicationId}");
 
-            application.STATUS = "SUBMITTED";
+            application.STATUS = PermitApplicationStatus.Submitted;
             application.SUBMITTED_DATE = DateTime.UtcNow;
             application.SUBMISSION_COMPLETE_IND = "Y";
             SetAuditFields(application, userId);
@@ -139,12 +139,12 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
             if (string.Equals(decision, "Approved", StringComparison.OrdinalIgnoreCase))
             {
-                application.STATUS = "APPROVED";
+                application.STATUS = PermitApplicationStatus.Approved;
                 application.EFFECTIVE_DATE = DateTime.UtcNow;
             }
             else if (string.Equals(decision, "Rejected", StringComparison.OrdinalIgnoreCase))
             {
-                application.STATUS = "REJECTED";
+                application.STATUS =  PermitApplicationStatus.Rejected;
             }
 
             SetAuditFields(application, userId);
@@ -176,10 +176,10 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             };
         }
 
-        private async Task AddStatusHistoryIfChangedAsync(string? previousStatus, string? nextStatus, string applicationId, string userId)
+        private async Task AddStatusHistoryIfChangedAsync(PermitApplicationStatus? previousStatus, PermitApplicationStatus? nextStatus, string applicationId, string userId)
         {
-            var normalizedPrevious = PermitStatusTransitionRules.Normalize(previousStatus);
-            var normalizedNext = PermitStatusTransitionRules.Normalize(nextStatus);
+            var normalizedPrevious = PermitStatusTransitionRules.Normalize(previousStatus.ToString());
+            var normalizedNext = PermitStatusTransitionRules.Normalize(nextStatus.ToString());
 
             if (string.Equals(normalizedPrevious, normalizedNext, StringComparison.OrdinalIgnoreCase))
                 return;
@@ -187,17 +187,17 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             if (!PermitStatusTransitionRules.IsTransitionAllowed(normalizedPrevious, normalizedNext))
                 throw new InvalidOperationException($"Invalid status transition: {normalizedPrevious} -> {normalizedNext}");
 
-            await AddStatusHistoryAsync(applicationId, normalizedNext, "Status updated", userId);
+            await AddStatusHistoryAsync(applicationId, previousStatus, "Status updated", userId);
         }
 
-        private async Task AddStatusHistoryAsync(string applicationId, string? status, string? remarks, string userId)
+        private async Task AddStatusHistoryAsync(string applicationId, PermitApplicationStatus? status, string? remarks, string userId)
         {
             var historyRepo = await CreateRepositoryAsync<PERMIT_STATUS_HISTORY>("PERMIT_STATUS_HISTORY");
             var history = new PERMIT_STATUS_HISTORY
             {
                 PERMIT_STATUS_HISTORY_ID = GenerateStatusHistoryId(),
                 PERMIT_APPLICATION_ID = applicationId,
-                STATUS = PermitStatusTransitionRules.Normalize(status),
+                STATUS = PermitStatusTransitionRules.Normalize(status.ToString()),
                 STATUS_DATE = DateTime.UtcNow,
                 STATUS_REMARKS = remarks,
                 UPDATED_BY = userId,

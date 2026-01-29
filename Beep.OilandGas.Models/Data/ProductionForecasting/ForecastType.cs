@@ -31,6 +31,9 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
         ReservoirSim,
         Ensamble,
         Harmonic,
-        Hyperbolic
+        Hyperbolic,
+        Exponential,
+        Economic,
+        BoundaryDominated
     }
 }

@@ -63,7 +63,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
         /// <param name="flowRate">Flow rate (GPM)</param>
         /// <param name="head">Head (feet)</param>
         /// <param name="power">Brake horsepower</param>
-        /// <returns>Efficiency value (0-1)</returns>
+        /// <returns> EFFICIENCY value (0-1)</returns>
         Task<double> GetEfficiencyAsync(double flowRate, double head, double power);
 
         /// <summary>

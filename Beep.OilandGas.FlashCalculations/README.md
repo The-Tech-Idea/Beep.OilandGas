@@ -49,40 +49,40 @@ using Beep.OilandGas.FlashCalculations.Validation;
 // Define components
 var methane = new Component
 {
-    Name = "Methane",
-    MoleFraction = 0.5m,
+    NAME = "Methane",
+    MOLE_FRACTION =  0.5m,
     CriticalTemperature = 343.0m, // Rankine
     CriticalPressure = 667.8m, // psia
     AcentricFactor = 0.008m,
-    MolecularWeight = 16.04m
+    MOLECULAR_WEIGHT = 16.04m
 };
 
 var ethane = new Component
 {
-    Name = "Ethane",
-    MoleFraction = 0.3m,
+    NAME = "Ethane",
+    MOLE_FRACTION =  0.3m,
     CriticalTemperature = 549.6m, // Rankine
     CriticalPressure = 707.8m, // psia
     AcentricFactor = 0.098m,
-    MolecularWeight = 30.07m
+    MOLECULAR_WEIGHT = 30.07m
 };
 
 var propane = new Component
 {
-    Name = "Propane",
-    MoleFraction = 0.2m,
+    NAME = "Propane",
+    MOLE_FRACTION =  0.2m,
     CriticalTemperature = 665.7m, // Rankine
     CriticalPressure = 616.3m, // psia
     AcentricFactor = 0.152m,
-    MolecularWeight = 44.10m
+    MOLECULAR_WEIGHT = 44.10m
 };
 
 // Define flash conditions
 var conditions = new FlashConditions
 {
-    Pressure = 500m, // psia
-    Temperature = 540m, // Rankine
-    FeedComposition = new List<Component> { methane, ethane, propane }
+    PRESSURE = 500m, // psia
+    TEMPERATURE = 540m, // Rankine
+    FEED_COMPOSITION = new List<Component> { methane, ethane, propane }
 };
 
 // Validate conditions
@@ -123,14 +123,14 @@ foreach (var kvp in flashResult.KValues)
 // Calculate vapor phase properties
 var vaporProperties = FlashCalculator.CalculateVaporProperties(flashResult, conditions);
 
-Console.WriteLine($"Vapor Molecular Weight: {vaporProperties.MolecularWeight:F2} lb/lbmol");
+Console.WriteLine($"Vapor Molecular Weight: {vaporProperties.MOLECULAR_WEIGHT:F2} lb/lbmol");
 Console.WriteLine($"Vapor Density: {vaporProperties.Density:F4} lb/ft³");
 Console.WriteLine($"Vapor Specific Gravity: {vaporProperties.SpecificGravity:F4}");
 
 // Calculate liquid phase properties
 var liquidProperties = FlashCalculator.CalculateLiquidProperties(flashResult, conditions);
 
-Console.WriteLine($"Liquid Molecular Weight: {liquidProperties.MolecularWeight:F2} lb/lbmol");
+Console.WriteLine($"Liquid Molecular Weight: {liquidProperties.MOLECULAR_WEIGHT:F2} lb/lbmol");
 Console.WriteLine($"Liquid Density: {liquidProperties.Density:F4} lb/ft³");
 Console.WriteLine($"Liquid Specific Gravity: {liquidProperties.SpecificGravity:F4}");
 ```
@@ -141,23 +141,23 @@ Console.WriteLine($"Liquid Specific Gravity: {liquidProperties.SpecificGravity:F
 // Create a more complex mixture
 var components = new List<Component>
 {
-    new Component { Name = "C1", MoleFraction = 0.4m, CriticalTemperature = 343.0m, 
-                    CriticalPressure = 667.8m, AcentricFactor = 0.008m, MolecularWeight = 16.04m },
-    new Component { Name = "C2", MoleFraction = 0.25m, CriticalTemperature = 549.6m, 
-                    CriticalPressure = 707.8m, AcentricFactor = 0.098m, MolecularWeight = 30.07m },
-    new Component { Name = "C3", MoleFraction = 0.15m, CriticalTemperature = 665.7m, 
-                    CriticalPressure = 616.3m, AcentricFactor = 0.152m, MolecularWeight = 44.10m },
-    new Component { Name = "iC4", MoleFraction = 0.1m, CriticalTemperature = 734.1m, 
-                    CriticalPressure = 527.9m, AcentricFactor = 0.176m, MolecularWeight = 58.12m },
-    new Component { Name = "nC4", MoleFraction = 0.1m, CriticalTemperature = 765.3m, 
-                    CriticalPressure = 550.7m, AcentricFactor = 0.193m, MolecularWeight = 58.12m }
+    new Component { NAME = "C1", MOLE_FRACTION =  0.4m, CriticalTemperature = 343.0m, 
+                    CriticalPressure = 667.8m, AcentricFactor = 0.008m, MOLECULAR_WEIGHT = 16.04m },
+    new Component { NAME = "C2", MOLE_FRACTION =  0.25m, CriticalTemperature = 549.6m, 
+                    CriticalPressure = 707.8m, AcentricFactor = 0.098m, MOLECULAR_WEIGHT = 30.07m },
+    new Component { NAME = "C3", MOLE_FRACTION =  0.15m, CriticalTemperature = 665.7m, 
+                    CriticalPressure = 616.3m, AcentricFactor = 0.152m, MOLECULAR_WEIGHT = 44.10m },
+    new Component { NAME = "iC4", MOLE_FRACTION =  0.1m, CriticalTemperature = 734.1m, 
+                    CriticalPressure = 527.9m, AcentricFactor = 0.176m, MOLECULAR_WEIGHT = 58.12m },
+    new Component { NAME = "nC4", MOLE_FRACTION =  0.1m, CriticalTemperature = 765.3m, 
+                    CriticalPressure = 550.7m, AcentricFactor = 0.193m, MOLECULAR_WEIGHT = 58.12m }
 };
 
 var flashConditions = new FlashConditions
 {
-    Pressure = 1000m, // psia
-    Temperature = 560m, // Rankine
-    FeedComposition = components
+    PRESSURE = 1000m, // psia
+    TEMPERATURE = 560m, // Rankine
+    FEED_COMPOSITION = components
 };
 
 var result = FlashCalculator.PerformIsothermalFlash(flashConditions);

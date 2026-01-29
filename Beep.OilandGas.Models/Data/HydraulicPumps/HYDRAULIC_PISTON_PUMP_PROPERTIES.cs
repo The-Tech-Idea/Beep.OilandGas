@@ -21,50 +21,50 @@ namespace Beep.OilandGas.Models.Data.HydraulicPumps
             set { SetProperty(ref HYDRAULIC_PUMP_WELL_PROPERTIES_IDValue, value); }
         }
 
-        private Decimal? PISTON_DIAMETERValue;
-        public Decimal? PISTON_DIAMETER
+        private Decimal  PISTON_DIAMETERValue;
+        public Decimal  PISTON_DIAMETER
         {
             get { return this.PISTON_DIAMETERValue; }
             set { SetProperty(ref PISTON_DIAMETERValue, value); }
         }
 
-        private Decimal? ROD_DIAMETERValue;
-        public Decimal? ROD_DIAMETER
+        private Decimal  ROD_DIAMETERValue;
+        public Decimal  ROD_DIAMETER
         {
             get { return this.ROD_DIAMETERValue; }
             set { SetProperty(ref ROD_DIAMETERValue, value); }
         }
 
-        private Decimal? STROKE_LENGTHValue;
-        public Decimal? STROKE_LENGTH
+        private Decimal  STROKE_LENGTHValue;
+        public Decimal  STROKE_LENGTH
         {
             get { return this.STROKE_LENGTHValue; }
             set { SetProperty(ref STROKE_LENGTHValue, value); }
         }
 
-        private Decimal? STROKES_PER_MINUTEValue;
-        public Decimal? STROKES_PER_MINUTE
+        private Decimal  STROKES_PER_MINUTEValue;
+        public Decimal  STROKES_PER_MINUTE
         {
             get { return this.STROKES_PER_MINUTEValue; }
             set { SetProperty(ref STROKES_PER_MINUTEValue, value); }
         }
 
-        private Decimal? POWER_FLUID_PRESSUREValue;
-        public Decimal? POWER_FLUID_PRESSURE
+        private Decimal  POWER_FLUID_PRESSUREValue;
+        public Decimal  POWER_FLUID_PRESSURE
         {
             get { return this.POWER_FLUID_PRESSUREValue; }
             set { SetProperty(ref POWER_FLUID_PRESSUREValue, value); }
         }
 
-        private Decimal? POWER_FLUID_RATEValue;
-        public Decimal? POWER_FLUID_RATE
+        private Decimal  POWER_FLUID_RATEValue;
+        public Decimal  POWER_FLUID_RATE
         {
             get { return this.POWER_FLUID_RATEValue; }
             set { SetProperty(ref POWER_FLUID_RATEValue, value); }
         }
 
-        private Decimal? POWER_FLUID_SPECIFIC_GRAVITYValue;
-        public Decimal? POWER_FLUID_SPECIFIC_GRAVITY
+        private Decimal  POWER_FLUID_SPECIFIC_GRAVITYValue;
+        public Decimal  POWER_FLUID_SPECIFIC_GRAVITY
         {
             get { return this.POWER_FLUID_SPECIFIC_GRAVITYValue; }
             set { SetProperty(ref POWER_FLUID_SPECIFIC_GRAVITYValue, value); }

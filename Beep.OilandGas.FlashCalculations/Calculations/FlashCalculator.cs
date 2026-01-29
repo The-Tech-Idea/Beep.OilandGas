@@ -23,19 +23,19 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             if (conditions == null)
                 throw new ArgumentNullException(nameof(conditions));
 
-            if (conditions.FeedComposition == null || conditions.FeedComposition.Count == 0)
+            if (conditions.FEED_COMPOSITION == null || conditions.FEED_COMPOSITION.Count == 0)
                 throw new ArgumentException("Feed composition cannot be empty.", nameof(conditions));
 
             var result = new FlashResult();
 
             // Normalize feed composition
-            decimal totalMoleFraction = conditions.FeedComposition.Sum(c => c.MoleFraction);
+            decimal totalMoleFraction = conditions.FEED_COMPOSITION.Sum(c => c.MOLE_FRACTION);
             if (Math.Abs(totalMoleFraction - 1.0m) > 0.01m)
             {
                 // Normalize
-                foreach (var component in conditions.FeedComposition)
+                foreach (var component in conditions.FEED_COMPOSITION)
                 {
-                    component.MoleFraction /= totalMoleFraction;
+                    component.MOLE_FRACTION /= totalMoleFraction;
                 }
             }
 
@@ -62,16 +62,16 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
         {
             var kValues = new List<FlashComponentKValue>();
 
-            foreach (var component in conditions.FeedComposition)
+            foreach (var component in conditions.FEED_COMPOSITION)
             {
                 // Wilson correlation: K = (Pc/P) * exp(5.37 * (1 + Ï‰) * (1 - Tc/T))
-                decimal kValue = (component.CriticalPressure / conditions.PRESSURE) *
-                               (decimal)Math.Exp((double)(5.37m * (1.0m + component.AcentricFactor) *
-                                                          (1.0m - component.CriticalTemperature / conditions.TEMPERATURE)));
+                decimal kValue = (component.CRITICAL_PRESSURE / conditions.PRESSURE) *
+                               (decimal)Math.Exp((double)(5.37m * (1.0m + component.ACENTRIC_FACTOR) *
+                                                          (1.0m - component.CRITICAL_TEMPERATURE / conditions.TEMPERATURE)));
 
                 kValues.Add(new FlashComponentKValue
                 {
-                    ComponentName = component.Name,
+                    ComponentName = component.NAME,
                     KValue = Math.Max(0.001m, Math.Min(1000m, kValue))
                 });
             }
@@ -104,10 +104,10 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
                 decimal functionValue = 0m;
                 decimal derivative = 0m;
 
-                foreach (var component in conditions.FeedComposition)
+                foreach (var component in conditions.FEED_COMPOSITION)
                 {
-                    decimal kValue = GetKValue(kValues, component.Name);
-                    decimal zi = component.MoleFraction;
+                    decimal kValue = GetKValue(kValues, component.NAME);
+                    decimal zi = component.MOLE_FRACTION;
                     decimal denominator = 1.0m + vaporFraction * (kValue - 1.0m);
 
                     if (Math.Abs(denominator) < 0.0001m)
@@ -158,17 +158,17 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             // Simplified K-value update
             // In practice, would use more sophisticated methods (Peng-Robinson, Soave-Redlich-Kwong, etc.)
 
-            foreach (var component in conditions.FeedComposition)
+            foreach (var component in conditions.FEED_COMPOSITION)
             {
                 // Use Wilson correlation with updated conditions
-                decimal kValue = (component.CriticalPressure / conditions.PRESSURE) *
-                               (decimal)Math.Exp((double)(5.37m * (1.0m + component.AcentricFactor) *
-                                                          (1.0m - component.CriticalTemperature / conditions.TEMPERATURE)));
+                decimal kValue = (component.CRITICAL_PRESSURE / conditions.PRESSURE) *
+                               (decimal)Math.Exp((double)(5.37m * (1.0m + component.ACENTRIC_FACTOR) *
+                                                          (1.0m - component.CRITICAL_TEMPERATURE / conditions.TEMPERATURE)));
 
                 // Blend with existing K-value
-                var existing = GetKValue(kValues, component.Name);
+                var existing = GetKValue(kValues, component.NAME);
                 var updated = 0.7m * existing + 0.3m * kValue;
-                SetKValue(kValues, component.Name, Math.Max(0.001m, Math.Min(1000m, updated)));
+                SetKValue(kValues, component.NAME, Math.Max(0.001m, Math.Min(1000m, updated)));
             }
         }
 
@@ -184,10 +184,10 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             result.LiquidComposition ??= new List<FlashComponentFraction>();
             result.VaporComposition ??= new List<FlashComponentFraction>();
 
-            foreach (var component in conditions.FeedComposition)
+            foreach (var component in conditions.FEED_COMPOSITION)
             {
-                decimal zi = component.MoleFraction;
-                decimal ki = GetKValue(kValues, component.Name);
+                decimal zi = component.MOLE_FRACTION;
+                decimal ki = GetKValue(kValues, component.NAME);
 
                 // Liquid composition: xi = zi / (1 + V * (Ki - 1))
                 decimal denominator = 1.0m + vaporFraction * (ki - 1.0m);
@@ -199,8 +199,8 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
                 // Vapor composition: yi = Ki * xi
                 decimal yi = ki * xi;
 
-                SetCompositionFraction(result.LiquidComposition, component.Name, Math.Max(0m, Math.Min(1m, xi)));
-                SetCompositionFraction(result.VaporComposition, component.Name, Math.Max(0m, Math.Min(1m, yi)));
+                SetCompositionFraction(result.LiquidComposition, component.NAME, Math.Max(0m, Math.Min(1m, xi)));
+                SetCompositionFraction(result.VaporComposition, component.NAME, Math.Max(0m, Math.Min(1m, yi)));
             }
 
             // Normalize compositions
@@ -292,10 +292,10 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
 
             // Calculate molecular weight
             decimal molecularWeight = 0m;
-            foreach (var component in conditions.FeedComposition)
+            foreach (var component in conditions.FEED_COMPOSITION)
             {
-                decimal yi = GetCompositionFraction(flashResult.VaporComposition, component.Name);
-                molecularWeight += yi * component.MolecularWeight;
+                decimal yi = GetCompositionFraction(flashResult.VaporComposition, component.NAME);
+                molecularWeight += yi * component.MOLECULAR_WEIGHT;
             }
 
             properties.MolecularWeight = molecularWeight;
@@ -323,10 +323,10 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
 
             // Calculate molecular weight
             decimal molecularWeight = 0m;
-            foreach (var component in conditions.FeedComposition)
+            foreach (var component in conditions.FEED_COMPOSITION)
             {
-                decimal xi = GetCompositionFraction(flashResult.LiquidComposition, component.Name);
-                molecularWeight += xi * component.MolecularWeight;
+                decimal xi = GetCompositionFraction(flashResult.LiquidComposition, component.NAME);
+                molecularWeight += xi * component.MOLECULAR_WEIGHT;
             }
 
             properties.MolecularWeight = molecularWeight;
@@ -336,11 +336,11 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
             decimal averageCriticalTemperature = 0m;
             decimal averageCriticalPressure = 0m;
 
-            foreach (var component in conditions.FeedComposition)
+            foreach (var component in conditions.FEED_COMPOSITION)
             {
-                decimal xi = GetCompositionFraction(flashResult.LiquidComposition, component.Name);
-                averageCriticalTemperature += xi * component.CriticalTemperature;
-                averageCriticalPressure += xi * component.CriticalPressure;
+                decimal xi = GetCompositionFraction(flashResult.LiquidComposition, component.NAME);
+                averageCriticalTemperature += xi * component.CRITICAL_TEMPERATURE;
+                averageCriticalPressure += xi * component.CRITICAL_PRESSURE;
             }
 
             // Simplified density calculation

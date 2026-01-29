@@ -69,7 +69,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
         /// </summary>
         public bool ShowPQPoints { get; set; } = false;
 
-        // Efficiency Curve Colors
+        //  EFFICIENCY Curve Colors
         /// <summary>
         /// Gets or sets the efficiency curve color.
         /// </summary>
@@ -117,7 +117,7 @@ namespace Beep.OilandGas.PumpPerformance.Rendering
         /// </summary>
         public bool ShowOperatingPointLabel { get; set; } = true;
 
-        // Best Efficiency Point (BEP)
+        // Best  EFFICIENCY Point (BEP)
         /// <summary>
         /// Gets or sets the BEP point color.
         /// </summary>

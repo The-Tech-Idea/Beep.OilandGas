@@ -27,8 +27,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref PAYMENT_DATEValue, value); }
         }
 
-        private System.Decimal? PAYMENT_AMOUNTValue;
-        public System.Decimal? PAYMENT_AMOUNT
+        private System.Decimal  PAYMENT_AMOUNTValue;
+        public System.Decimal  PAYMENT_AMOUNT
         {
             get { return this.PAYMENT_AMOUNTValue; }
             set { SetProperty(ref PAYMENT_AMOUNTValue, value); }

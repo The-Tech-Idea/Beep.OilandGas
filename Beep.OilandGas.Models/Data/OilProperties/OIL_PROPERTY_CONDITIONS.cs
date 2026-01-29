@@ -14,29 +14,29 @@ namespace Beep.OilandGas.Models.Data.OilProperties
             set { SetProperty(ref OIL_PROPERTY_CONDITIONS_IDValue, value); }
         }
 
-        private Decimal? PRESSUREValue;
-        public Decimal? PRESSURE
+        private Decimal  PRESSUREValue;
+        public Decimal  PRESSURE
         {
             get { return this.PRESSUREValue; }
             set { SetProperty(ref PRESSUREValue, value); }
         }
 
-        private Decimal? TEMPERATUREValue;
-        public Decimal? TEMPERATURE
+        private Decimal  TEMPERATUREValue;
+        public Decimal  TEMPERATURE
         {
             get { return this.TEMPERATUREValue; }
             set { SetProperty(ref TEMPERATUREValue, value); }
         }
 
-        private Decimal? API_GRAVITYValue;
-        public Decimal? API_GRAVITY
+        private Decimal  API_GRAVITYValue;
+        public Decimal  API_GRAVITY
         {
             get { return this.API_GRAVITYValue; }
             set { SetProperty(ref API_GRAVITYValue, value); }
         }
 
-        private Decimal? GAS_SPECIFIC_GRAVITYValue;
-        public Decimal? GAS_SPECIFIC_GRAVITY
+        private Decimal  GAS_SPECIFIC_GRAVITYValue;
+        public Decimal  GAS_SPECIFIC_GRAVITY
         {
             get { return this.GAS_SPECIFIC_GRAVITYValue; }
             set { SetProperty(ref GAS_SPECIFIC_GRAVITYValue, value); }

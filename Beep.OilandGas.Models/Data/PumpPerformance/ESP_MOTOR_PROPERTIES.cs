@@ -21,29 +21,29 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
             set { SetProperty(ref ESP_DESIGN_RESULT_IDValue, value); }
         }
 
-        private Decimal? HORSEPOWERValue;
-        public Decimal? HORSEPOWER
+        private Decimal HORSEPOWERValue;
+        public Decimal HORSEPOWER
         {
             get { return this.HORSEPOWERValue; }
             set { SetProperty(ref HORSEPOWERValue, value); }
         }
 
-        private Decimal? VOLTAGEValue;
-        public Decimal? VOLTAGE
+        private Decimal VOLTAGEValue;
+        public Decimal VOLTAGE
         {
             get { return this.VOLTAGEValue; }
             set { SetProperty(ref VOLTAGEValue, value); }
         }
 
-        private Decimal? EFFICIENCYValue;
-        public Decimal? EFFICIENCY
+        private Decimal EFFICIENCYValue;
+        public Decimal EFFICIENCY
         {
             get { return this.EFFICIENCYValue; }
             set { SetProperty(ref EFFICIENCYValue, value); }
         }
 
-        private Decimal? POWER_FACTORValue;
-        public Decimal? POWER_FACTOR
+        private Decimal POWER_FACTORValue;
+        public Decimal POWER_FACTOR
         {
             get { return this.POWER_FACTORValue; }
             set { SetProperty(ref POWER_FACTORValue, value); }

@@ -26,7 +26,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// <summary>
         /// Gets or sets the efficiency at this point (0 to 1).
         /// </summary>
-        public double Efficiency { get; set; }
+        public double  EFFICIENCY { get; set; }
 
         /// <summary>
         /// Gets or sets the power at this point in horsepower.
@@ -39,7 +39,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         {
             FlowRate = flowRate;
             Head = head;
-            Efficiency = efficiency;
+             EFFICIENCY = efficiency;
             Power = power;
         }
     }
@@ -127,7 +127,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         }
 
         /// <summary>
-        /// Finds the Best Efficiency Point (BEP) on the H-Q curve.
+        /// Finds the Best  EFFICIENCY Point (BEP) on the H-Q curve.
         /// </summary>
         /// <param name="curve">H-Q curve data points.</param>
         /// <returns>HeadQuantityPoint at the best efficiency point.</returns>
@@ -137,7 +137,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
                 throw new InvalidInputException(nameof(curve), 
                     "Curve data cannot be null or empty.");
 
-            var bep = curve.OrderByDescending(p => p.Efficiency).First();
+            var bep = curve.OrderByDescending(p => p.EFFICIENCY).First();
             return bep;
         }
 

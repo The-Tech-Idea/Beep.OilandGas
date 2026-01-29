@@ -21,8 +21,8 @@ namespace Beep.OilandGas.Models.Data.GasLift
             set { SetProperty(ref GAS_LIFT_WELL_PROPERTIES_IDValue, value); }
         }
 
-        private Decimal? TOTAL_GAS_INJECTION_RATEValue;
-        public Decimal? TOTAL_GAS_INJECTION_RATE
+        private  Decimal  TOTAL_GAS_INJECTION_RATEValue;
+        public  Decimal  TOTAL_GAS_INJECTION_RATE
         {
             get { return this.TOTAL_GAS_INJECTION_RATEValue; }
             set { SetProperty(ref TOTAL_GAS_INJECTION_RATEValue, value); }
@@ -66,5 +66,7 @@ namespace Beep.OilandGas.Models.Data.GasLift
             get { return this.SYSTEM_EFFICIENCYValue; }
             set { SetProperty(ref SYSTEM_EFFICIENCYValue, value); }
         }
+
+        public List<GAS_LIFT_VALVE> Valves { get; set; }=new List<GAS_LIFT_VALVE>();
     }
 }

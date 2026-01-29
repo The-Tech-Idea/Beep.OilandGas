@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using Beep.OilandGas.Models.HeatMap;
+using SkiaSharp;
 using System;
 using System.IO;
 
@@ -116,9 +117,9 @@ namespace Beep.OilandGas.HeatMap.Export
                     writer.WriteLine($"  <circle cx=\"{point.X}\" cy=\"{point.Y}\" r=\"{radius}\" fill=\"{color}\" opacity=\"0.7\"/>");
 
                     // Add label if present
-                    if (!string.IsNullOrEmpty(point.LABEL))
+                    if (!string.IsNullOrEmpty(point.Label))
                     {
-                        writer.WriteLine($"  <text x=\"{point.X}\" y=\"{point.Y - radius - 5}\" font-size=\"10\" text-anchor=\"middle\">{point.LABEL}</text>");
+                        writer.WriteLine($"  <text x=\"{point.X}\" y=\"{point.Y - radius - 5}\" font-size=\"10\" text-anchor=\"middle\">{point.Label}</text>");
                     }
                 }
 
@@ -159,11 +160,11 @@ namespace Beep.OilandGas.HeatMap.Export
                 {
                     if (includeOriginalCoordinates)
                     {
-                        writer.WriteLine($"{point.X},{point.Y},{point.Value},{point.LABEL ?? ""},{point.ORIGINAL_X},{point.ORIGINAL_Y}");
+                        writer.WriteLine($"{point.X},{point.Y},{point.Value},{point.Label ?? ""},{point.OriginalY},{point.OriginalY}");
                     }
                     else
                     {
-                        writer.WriteLine($"{point.X},{point.Y},{point.Value},{point.LABEL ?? ""}");
+                        writer.WriteLine($"{point.X},{point.Y},{point.Value},{point.Label ?? ""}");
                     }
                 }
             }

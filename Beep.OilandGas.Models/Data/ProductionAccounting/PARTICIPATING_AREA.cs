@@ -45,8 +45,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref EXPIRATION_DATEValue, value); }
         }
 
-        private System.Decimal? TOTAL_PARTICIPATIONValue;
-        public System.Decimal? TOTAL_PARTICIPATION
+        private System.Decimal  TOTAL_PARTICIPATIONValue;
+        public System.Decimal  TOTAL_PARTICIPATION
         {
             get { return this.TOTAL_PARTICIPATIONValue; }
             set { SetProperty(ref TOTAL_PARTICIPATIONValue, value); }

@@ -21,29 +21,29 @@ namespace Beep.OilandGas.Models.Data.GasProperties
             set { SetProperty(ref GAS_COMPOSITION_IDValue, value); }
         }
 
-        private Decimal? AVERAGE_PRESSUREValue;
-        public Decimal? AVERAGE_PRESSURE
+        private Decimal  AVERAGE_PRESSUREValue;
+        public Decimal  AVERAGE_PRESSURE
         {
             get { return this.AVERAGE_PRESSUREValue; }
             set { SetProperty(ref AVERAGE_PRESSUREValue, value); }
         }
 
-        private Decimal? AVERAGE_TEMPERATUREValue;
-        public Decimal? AVERAGE_TEMPERATURE
+        private Decimal  AVERAGE_TEMPERATUREValue;
+        public Decimal  AVERAGE_TEMPERATURE
         {
             get { return this.AVERAGE_TEMPERATUREValue; }
             set { SetProperty(ref AVERAGE_TEMPERATUREValue, value); }
         }
 
-        private Decimal? AVERAGE_Z_FACTORValue;
-        public Decimal? AVERAGE_Z_FACTOR
+        private Decimal  AVERAGE_Z_FACTORValue;
+        public Decimal  AVERAGE_Z_FACTOR
         {
             get { return this.AVERAGE_Z_FACTORValue; }
             set { SetProperty(ref AVERAGE_Z_FACTORValue, value); }
         }
 
-        private Decimal? AVERAGE_VISCOSITYValue;
-        public Decimal? AVERAGE_VISCOSITY
+        private Decimal  AVERAGE_VISCOSITYValue;
+        public Decimal  AVERAGE_VISCOSITY
         {
             get { return this.AVERAGE_VISCOSITYValue; }
             set { SetProperty(ref AVERAGE_VISCOSITYValue, value); }

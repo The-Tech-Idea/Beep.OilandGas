@@ -84,13 +84,13 @@ namespace Beep.OilandGas.GasLift.Calculations
 
                 var valve = new GAS_LIFT_VALVE
                 {
-                    Depth = valveDepth,
-                    PortSize = portSize,
-                    OpeningPressure = openingPressure,
-                    ClosingPressure = openingPressure * 0.9m, // 10% below opening
-                    ValveType = GasLiftValveType.InjectionPressureOperated,
-                    Temperature = valveTemperature,
-                    GasInjectionRate = gasInjectionRate
+                    DEPTH = valveDepth,
+                    PORT_SIZE = portSize,
+                    OPENING_PRESSURE = openingPressure,
+                    CLOSING_PRESSURE = openingPressure * 0.9m, // 10% below opening
+                    VALVE_TYPE = GasLiftValveType.InjectionPressureOperated,
+                    TEMPERATURE = valveTemperature,
+                    GAS_INJECTION_RATE = gasInjectionRate
                 };
 
                 result.Valves.Add(valve);
@@ -223,7 +223,7 @@ namespace Beep.OilandGas.GasLift.Calculations
             var potentialResult = GasLiftPotentialCalculator.AnalyzeGasLiftPotential(
                 wellProperties, totalGasInjectionRate * 0.8m, totalGasInjectionRate * 1.2m, 10);
 
-            return potentialResult.MaximumProductionRate;
+            return potentialResult.MAXIMUM_PRODUCTION_RATE;
         }
 
         /// <summary>

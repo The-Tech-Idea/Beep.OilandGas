@@ -28,22 +28,22 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
             set { SetProperty(ref CABLE_SIZEValue, value); }
         }
 
-        private Decimal? CABLE_LENGTHValue;
-        public Decimal? CABLE_LENGTH
+        private Decimal  CABLE_LENGTHValue;
+        public Decimal  CABLE_LENGTH
         {
             get { return this.CABLE_LENGTHValue; }
             set { SetProperty(ref CABLE_LENGTHValue, value); }
         }
 
-        private Decimal? RESISTANCE_PER_1000_FEETValue;
-        public Decimal? RESISTANCE_PER_1000_FEET
+        private Decimal  RESISTANCE_PER_1000_FEETValue;
+        public Decimal  RESISTANCE_PER_1000_FEET
         {
             get { return this.RESISTANCE_PER_1000_FEETValue; }
             set { SetProperty(ref RESISTANCE_PER_1000_FEETValue, value); }
         }
 
-        private Decimal? VOLTAGE_DROPValue;
-        public Decimal? VOLTAGE_DROP
+        private Decimal  VOLTAGE_DROPValue;
+        public Decimal  VOLTAGE_DROP
         {
             get { return this.VOLTAGE_DROPValue; }
             set { SetProperty(ref VOLTAGE_DROPValue, value); }

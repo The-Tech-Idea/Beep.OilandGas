@@ -36,8 +36,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref TO_OWNER_IDValue, value); }
         }
 
-        private System.Decimal? INTEREST_TRANSFERREDValue;
-        public System.Decimal? INTEREST_TRANSFERRED
+        private System.Decimal  INTEREST_TRANSFERREDValue;
+        public System.Decimal  INTEREST_TRANSFERRED
         {
             get { return this.INTEREST_TRANSFERREDValue; }
             set { SetProperty(ref INTEREST_TRANSFERREDValue, value); }

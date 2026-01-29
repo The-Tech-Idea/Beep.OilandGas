@@ -36,8 +36,8 @@ namespace Beep.OilandGas.Models.Data.Lease
             set { SetProperty(ref LEASE_NAMEValue, value); }
         }
 
-        private System.Decimal? NET_PROFIT_INTERESTValue;
-        public System.Decimal? NET_PROFIT_INTEREST
+        private System.Decimal  NET_PROFIT_INTERESTValue;
+        public System.Decimal  NET_PROFIT_INTEREST
         {
             get { return this.NET_PROFIT_INTERESTValue; }
             set { SetProperty(ref NET_PROFIT_INTERESTValue, value); }
@@ -50,8 +50,8 @@ namespace Beep.OilandGas.Models.Data.Lease
             set { SetProperty(ref COSTS_RECOVERABLEValue, value); }
         }
 
-        private System.Decimal? RECOVERY_PERCENTAGEValue;
-        public System.Decimal? RECOVERY_PERCENTAGE
+        private System.Decimal  RECOVERY_PERCENTAGEValue;
+        public System.Decimal  RECOVERY_PERCENTAGE
         {
             get { return this.RECOVERY_PERCENTAGEValue; }
             set { SetProperty(ref RECOVERY_PERCENTAGEValue, value); }
@@ -73,22 +73,22 @@ namespace Beep.OilandGas.Models.Data.Lease
             set { SetProperty(ref PRIMARY_TERM_MONTHSValue, value); }
         }
 
-        private System.Decimal? WORKING_INTERESTValue;
-        public System.Decimal? WORKING_INTEREST
+        private System.Decimal  WORKING_INTERESTValue;
+        public System.Decimal  WORKING_INTEREST
         {
             get { return this.WORKING_INTERESTValue; }
             set { SetProperty(ref WORKING_INTERESTValue, value); }
         }
 
-        private System.Decimal? NET_REVENUE_INTERESTValue;
-        public System.Decimal? NET_REVENUE_INTEREST
+        private System.Decimal  NET_REVENUE_INTERESTValue;
+        public System.Decimal  NET_REVENUE_INTEREST
         {
             get { return this.NET_REVENUE_INTERESTValue; }
             set { SetProperty(ref NET_REVENUE_INTERESTValue, value); }
         }
 
-        private System.Decimal? ROYALTY_RATEValue;
-        public System.Decimal? ROYALTY_RATE
+        private System.Decimal  ROYALTY_RATEValue;
+        public System.Decimal  ROYALTY_RATE
         {
             get { return this.ROYALTY_RATEValue; }
             set { SetProperty(ref ROYALTY_RATEValue, value); }

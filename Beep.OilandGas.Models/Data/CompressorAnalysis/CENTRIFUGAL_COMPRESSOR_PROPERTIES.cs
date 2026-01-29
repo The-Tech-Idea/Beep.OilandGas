@@ -21,15 +21,15 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
             set { SetProperty(ref COMPRESSOR_OPERATING_CONDITIONS_IDValue, value); }
         }
 
-        private Decimal? POLYTROPIC_EFFICIENCYValue;
-        public Decimal? POLYTROPIC_EFFICIENCY
+        private Decimal POLYTROPIC_EFFICIENCYValue;
+        public Decimal POLYTROPIC_EFFICIENCY
         {
             get { return this.POLYTROPIC_EFFICIENCYValue; }
             set { SetProperty(ref POLYTROPIC_EFFICIENCYValue, value); }
         }
 
-        private Decimal? SPECIFIC_HEAT_RATIOValue;
-        public Decimal? SPECIFIC_HEAT_RATIO
+        private Decimal SPECIFIC_HEAT_RATIOValue;
+        public Decimal SPECIFIC_HEAT_RATIO
         {
             get { return this.SPECIFIC_HEAT_RATIOValue; }
             set { SetProperty(ref SPECIFIC_HEAT_RATIOValue, value); }
@@ -42,8 +42,8 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
             set { SetProperty(ref NUMBER_OF_STAGESValue, value); }
         }
 
-        private Decimal? SPEEDValue;
-        public Decimal? SPEED
+        private Decimal SPEEDValue;
+        public Decimal SPEED
         {
             get { return this.SPEEDValue; }
             set { SetProperty(ref SPEEDValue, value); }

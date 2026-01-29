@@ -71,7 +71,7 @@ namespace Beep.OilandGas.PumpPerformance.SystemAnalysis
         /// <summary>
         /// Gets or sets the efficiency.
         /// </summary>
-        public double Efficiency { get; set; }
+        public double  EFFICIENCY { get; set; }
     }
 
     /// <summary>
@@ -135,7 +135,7 @@ namespace Beep.OilandGas.PumpPerformance.SystemAnalysis
                 if (curvePoint != null)
                 {
                     point.Power = curvePoint.Power;
-                    point.Efficiency = curvePoint.Efficiency;
+                    point. EFFICIENCY = curvePoint.EFFICIENCY;
                     result.TotalPower += curvePoint.Power;
                 }
 
@@ -212,7 +212,7 @@ namespace Beep.OilandGas.PumpPerformance.SystemAnalysis
                 if (curvePoint != null)
                 {
                     point.Power = curvePoint.Power;
-                    point.Efficiency = curvePoint.Efficiency;
+                    point. EFFICIENCY = curvePoint.EFFICIENCY;
                     result.TotalPower += curvePoint.Power;
                 }
 
@@ -262,7 +262,7 @@ namespace Beep.OilandGas.PumpPerformance.SystemAnalysis
                 }
 
                 combinedCurve.Add(new HeadQuantityPoint(
-                    point.FlowRate, combinedHead, point.Efficiency, combinedPower));
+                    point.FlowRate, combinedHead, point.EFFICIENCY, combinedPower));
             }
 
             return combinedCurve;

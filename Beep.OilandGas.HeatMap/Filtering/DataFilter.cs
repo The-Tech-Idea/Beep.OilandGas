@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Beep.OilandGas.Models.HeatMap;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -154,8 +155,8 @@ namespace Beep.OilandGas.HeatMap.Filtering
                 : StringComparison.OrdinalIgnoreCase;
 
             return dataPoints.Where(p =>
-                !string.IsNullOrEmpty(p.LABEL) &&
-                p.LABEL.Contains(LabelPattern, comparison)).ToList();
+                !string.IsNullOrEmpty(p.Label) &&
+                p.Label.Contains(LabelPattern, comparison)).ToList();
         }
 
         /// <summary>

@@ -127,15 +127,15 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Calculate cumulative imbalance
-                decimal cumulativeOverproduction = 0;
-                decimal cumulativeUnderproduction = 0;
+                decimal cumulativeOverproduction = 0m;
+                decimal cumulativeUnderproduction = 0m;
 
                 foreach (var adj in adjustments)
                 {
                     if (adj.ADJUSTMENT_TYPE == ImbalanceType.Overproduced)
-                        cumulativeOverproduction += adj.ADJUSTMENT_AMOUNT ?? 0;
+                        cumulativeOverproduction += ((decimal?)adj.ADJUSTMENT_AMOUNT) ?? 0m;
                     else
-                        cumulativeUnderproduction += adj.ADJUSTMENT_AMOUNT ?? 0;
+                        cumulativeUnderproduction += ((decimal?)adj.ADJUSTMENT_AMOUNT) ?? 0m;
                 }
 
                 // Net imbalance (positive = over, negative = under)
@@ -173,11 +173,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // Calculate net outstanding imbalance
                 decimal overproduced = adjustments
                     .Where(a => a.ADJUSTMENT_TYPE == ImbalanceType.Overproduced)
-                    .Sum(a => a.ADJUSTMENT_AMOUNT ?? 0);
+                    .Sum(a => ((decimal?)a.ADJUSTMENT_AMOUNT) ?? 0m);
 
                 decimal underproduced = adjustments
                     .Where(a => a.ADJUSTMENT_TYPE == ImbalanceType.Underproduced)
-                    .Sum(a => a.ADJUSTMENT_AMOUNT ?? 0);
+                    .Sum(a => ((decimal?)a.ADJUSTMENT_AMOUNT) ?? 0m);
 
                 decimal netImbalance = overproduced - underproduced;
 

@@ -139,7 +139,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
             if (deviation > 0.15)
             {
                 status = "Warning";
-                warnings.Add("Efficiency deviation from theoretical is significant");
+                warnings.Add(" EFFICIENCY deviation from theoretical is significant");
                 recommendations.Add("Inspect pump for wear or mechanical issues");
             }
 
@@ -238,7 +238,7 @@ namespace Beep.OilandGas.PumpPerformance.Services
             if (specificGravity <= 0)
                 throw new ArgumentException("Specific gravity must be positive", nameof(specificGravity));
             if (efficiency <= 0 || efficiency > 1)
-                throw new ArgumentException("Efficiency must be between 0 and 1", nameof(efficiency));
+                throw new ArgumentException(" EFFICIENCY must be between 0 and 1", nameof(efficiency));
 
             _logger?.LogInformation("Calculating power requirement for Q={Flow}, H={Head}, SG={SG}, η={Efficiency}", 
                 flowRate, head, specificGravity, efficiency);

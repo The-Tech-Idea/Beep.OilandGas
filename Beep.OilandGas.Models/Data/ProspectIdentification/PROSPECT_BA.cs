@@ -39,8 +39,8 @@ private  System.String ROLE_TYPEValue;
 
           set { SetProperty(ref  ROLE_TYPEValue, value); }
         } 
-private  System.Decimal? WORKING_INTERESTValue; 
- public System.Decimal? WORKING_INTEREST
+private  System.Decimal  WORKING_INTERESTValue; 
+ public System.Decimal  WORKING_INTEREST
         {  
             get  
             {  
@@ -49,8 +49,8 @@ private  System.Decimal? WORKING_INTERESTValue;
 
           set { SetProperty(ref  WORKING_INTERESTValue, value); }
         } 
-private  System.Decimal? CARRIED_INTERESTValue; 
- public System.Decimal? CARRIED_INTEREST
+private  System.Decimal  CARRIED_INTERESTValue; 
+ public System.Decimal  CARRIED_INTEREST
         {  
             get  
             {  

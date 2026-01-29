@@ -115,9 +115,9 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         /// Gets the total adjustments.
         /// </summary>
         public decimal TotalAdjustments =>
-            (QUALITY_ADJUSTMENTS.TOTAL_ADJUSTMENT ?? 0) +
-            (LOCATION_ADJUSTMENTS.TOTAL_ADJUSTMENT ?? 0) +
-            (TIME_ADJUSTMENTS.TOTAL_ADJUSTMENT ?? 0);
+            (QUALITY_ADJUSTMENTS.TOTAL_ADJUSTMENT ) +
+            (LOCATION_ADJUSTMENTS.TOTAL_ADJUSTMENT ) +
+            (TIME_ADJUSTMENTS.TOTAL_ADJUSTMENT );
 
         /// <summary>
         /// Gets the adjusted price per barrel.

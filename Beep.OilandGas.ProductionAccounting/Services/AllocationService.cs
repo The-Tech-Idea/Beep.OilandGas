@@ -164,7 +164,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             try
             {
                 // Validation 1: Total volume must be positive
-                if (allocation.TOTAL_VOLUME == null || allocation.TOTAL_VOLUME <= 0)
+                if (allocation.TOTAL_VOLUME <= 0)
                 {
                     _logger?.LogWarning("Allocation {AllocationResultId}: Invalid total volume {Volume}",
                         allocation.ALLOCATION_RESULT_ID, allocation.TOTAL_VOLUME);
@@ -172,7 +172,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Validation 2: Allocated volume must not exceed total volume
-                if (allocation.ALLOCATED_VOLUME.GetValueOrDefault(0) > allocation.TOTAL_VOLUME)
+                if (allocation.ALLOCATED_VOLUME > allocation.TOTAL_VOLUME)
                 {
                     _logger?.LogWarning("Allocation {AllocationResultId}: Allocated volume exceeds total",
                         allocation.ALLOCATION_RESULT_ID);
@@ -189,7 +189,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Validation 4: All details must have positive volumes
-                var invalidDetails = details.Where(d => d.ALLOCATED_VOLUME == null || d.ALLOCATED_VOLUME <= 0).ToList();
+                var invalidDetails = details.Where(d => d.ALLOCATED_VOLUME <= 0).ToList();
                 if (invalidDetails.Any())
                 {
                     _logger?.LogWarning("Allocation {AllocationResultId}: Found {Count} details with invalid volume",
@@ -198,9 +198,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 }
 
                 // Validation 5: Sum of details should match allocated volume (within tolerance)
-                var detailSum = details.Sum(d => d.ALLOCATED_VOLUME ?? 0);
+                var detailSum = details.Sum(d => d.ALLOCATED_VOLUME) ?? 0m;
                 var tolerance = allocation.TOTAL_VOLUME * 0.0001m;  // 0.01% tolerance
-                if (Math.Abs(detailSum - (allocation.ALLOCATED_VOLUME ?? 0)) > tolerance)
+                if (Math.Abs(detailSum - allocation.ALLOCATED_VOLUME.GetValueOrDefault(0m)) > tolerance)
                 {
                     _logger?.LogWarning("Allocation {AllocationResultId}: Detail sum {DetailSum} != allocated {Allocated}",
                         allocation.ALLOCATION_RESULT_ID, detailSum, allocation.ALLOCATED_VOLUME);

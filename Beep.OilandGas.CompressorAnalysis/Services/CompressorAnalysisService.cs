@@ -37,7 +37,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         /// <param name="requiredFlowRate">Required gas flow rate in Mscf/day.</param>
         /// <param name="requiredDischargePressure">Required discharge pressure in psia.</param>
         /// <param name="requiredInletPressure">Required inlet pressure in psia.</param>
-        /// <param name="gasSpecificGravity">Gas specific gravity (air = 1.0).</param>
+        /// <param name="GAS_SPECIFIC_GRAVITY">Gas specific gravity (air = 1.0).</param>
         /// <param name="designTemperature">Design temperature in degrees Rankine.</param>
         /// <param name="compressorType">Type of compressor: "Centrifugal" or "Reciprocating".</param>
         /// <returns>CompressorDesign with design specifications and stage breakdown.</returns>
@@ -45,7 +45,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
             decimal requiredFlowRate,
             decimal requiredDischargePressure,
             decimal requiredInletPressure,
-            decimal gasSpecificGravity,
+            decimal GAS_SPECIFIC_GRAVITY,
             decimal designTemperature,
             string compressorType = "Centrifugal")
         {
@@ -53,8 +53,8 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 throw new ArgumentException("Flow rate must be greater than zero", nameof(requiredFlowRate));
             if (requiredDischargePressure <= requiredInletPressure)
                 throw new ArgumentException("Discharge pressure must be greater than inlet pressure", nameof(requiredDischargePressure));
-            if (gasSpecificGravity <= 0)
-                throw new ArgumentException("Gas specific gravity must be greater than zero", nameof(gasSpecificGravity));
+            if (GAS_SPECIFIC_GRAVITY <= 0)
+                throw new ArgumentException("Gas specific gravity must be greater than zero", nameof(GAS_SPECIFIC_GRAVITY));
             if (designTemperature <= 0)
                 throw new ArgumentException("Design temperature must be greater than zero", nameof(designTemperature));
 
@@ -88,7 +88,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
 
                     // Estimate stage power (simplified calculation)
                     decimal stagePower = EstimateStagepower(requiredFlowRate / recommendedStages, currentPressure, 
-                        stageDischargePressure, gasSpecificGravity, designTemperature, stageEfficiency);
+                        stageDischargePressure, GAS_SPECIFIC_GRAVITY, designTemperature, stageEfficiency);
 
                     stages.Add(new CompressorStage
                     {
@@ -115,7 +115,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                     RequiredFlowRate = requiredFlowRate,
                     RequiredDischargePressure = requiredDischargePressure,
                     RequiredInletPressure = requiredInletPressure,
-                    GasSpecificGravity = gasSpecificGravity,
+                    GasSpecificGravity = GAS_SPECIFIC_GRAVITY,
                     DesignTemperature = designTemperature,
                     RecommendedStages = recommendedStages,
                     EstimatedEfficiency = averageEfficiency,
@@ -141,45 +141,45 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         /// Calculates actual efficiencies, power consumption, and discharge conditions.
         /// </summary>
         /// <param name="inletPressure">Inlet pressure in psia.</param>
-        /// <param name="dischargePressure">Discharge pressure in psia.</param>
-        /// <param name="gasFlowRate">Gas flow rate in Mscf/day.</param>
+        /// <param name="DISCHARGE_PRESSURE">Discharge pressure in psia.</param>
+        /// <param name="GAS_FLOW_RATE">Gas flow rate in Mscf/day.</param>
         /// <param name="inletTemperature">Inlet temperature in degrees Rankine.</param>
-        /// <param name="gasSpecificGravity">Gas specific gravity (air = 1.0).</param>
+        /// <param name="GAS_SPECIFIC_GRAVITY">Gas specific gravity (air = 1.0).</param>
         /// <param name="compressorType">Type of compressor: "Centrifugal" or "Reciprocating".</param>
         /// <returns>CompressorPerformance with calculated performance metrics.</returns>
         public async Task<CompressorPerformance> AnalyzePerformanceAsync(
             decimal inletPressure,
-            decimal dischargePressure,
-            decimal gasFlowRate,
+            decimal DISCHARGE_PRESSURE,
+            decimal GAS_FLOW_RATE,
             decimal inletTemperature,
-            decimal gasSpecificGravity,
+            decimal GAS_SPECIFIC_GRAVITY,
             string compressorType = "Centrifugal")
         {
-            if (inletPressure <= 0 || dischargePressure <= 0 || gasFlowRate <= 0 || inletTemperature <= 0 || gasSpecificGravity <= 0)
+            if (inletPressure <= 0 || DISCHARGE_PRESSURE <= 0 || GAS_FLOW_RATE <= 0 || inletTemperature <= 0 || GAS_SPECIFIC_GRAVITY <= 0)
                 throw new ArgumentException("All input parameters must be greater than zero");
-            if (dischargePressure <= inletPressure)
+            if (DISCHARGE_PRESSURE <= inletPressure)
                 throw new ArgumentException("Discharge pressure must be greater than inlet pressure");
 
             _logger?.LogInformation("Starting performance analysis: Type={Type}, Inlet={Inlet} psia, Discharge={Discharge} psia",
-                compressorType, inletPressure, dischargePressure);
+                compressorType, inletPressure, DISCHARGE_PRESSURE);
 
             try
             {
-                decimal compressionRatio = dischargePressure / inletPressure;
+                decimal compressionRatio = DISCHARGE_PRESSURE / inletPressure;
 
                 // Create operating conditions
                 var conditions = new COMPRESSOR_OPERATING_CONDITIONS
                 {
-                    SuctionPressure = inletPressure,
-                    DischargePressure = dischargePressure,
-                    SuctionTemperature = inletTemperature,
-                    DischargeTemperature = inletTemperature, // Will be updated
-                    GasFlowRate = gasFlowRate,
-                    GasSpecificGravity = gasSpecificGravity,
-                    CompressorEfficiency = compressorType.Equals("Centrifugal", StringComparison.OrdinalIgnoreCase)
+                    SUCTION_PRESSURE = inletPressure,
+                    DISCHARGE_PRESSURE = DISCHARGE_PRESSURE,
+                    SUCTION_TEMPERATURE = inletTemperature,
+                    DISCHARGE_TEMPERATURE = inletTemperature, // Will be updated
+                    GAS_FLOW_RATE = GAS_FLOW_RATE,
+                    GAS_SPECIFIC_GRAVITY = GAS_SPECIFIC_GRAVITY,
+                    COMPRESSOR_EFFICIENCY = compressorType.Equals("Centrifugal", StringComparison.OrdinalIgnoreCase)
                         ? CompressorConstants.StandardPolytropicEfficiency
                         : CompressorConstants.StandardReciprocatingEfficiency,
-                    MechanicalEfficiency = CompressorConstants.StandardMechanicalEfficiency
+                    MECHANICAL_EFFICIENCY = CompressorConstants.StandardMECHANICAL_EFFICIENCY
                 };
 
                 COMPRESSOR_POWER_RESULT powerResult;
@@ -188,11 +188,11 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 {
                     var centrifugalProps = new CENTRIFUGAL_COMPRESSOR_PROPERTIES
                     {
-                        OperatingConditions = conditions,
-                        SpecificHeatRatio = CompressorConstants.StandardSpecificHeatRatio,
-                        PolytropicEfficiency = conditions.COMPRESSOR_EFFICIENCY,
-                        NumberOfStages = 1,
-                        Speed = 10000 // Typical centrifugal speed (RPM)
+                        OPERATING_CONDITIONS = conditions,
+                        SPECIFIC_HEAT_RATIO = CompressorConstants.StandardSpecificHeatRatio,
+                        POLYTROPIC_EFFICIENCY = conditions.COMPRESSOR_EFFICIENCY,
+                        NUMBER_OF_STAGES = 1,
+                        SPEED = 10000 // Typical centrifugal SPEED (RPM)
                     };
                     CompressorValidator.ValidateCentrifugalCompressorProperties(centrifugalProps);
                     powerResult = CentrifugalCompressorCalculator.CalculatePower(centrifugalProps);
@@ -201,13 +201,13 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 {
                     var reciprocatingProps = new RECIPROCATING_COMPRESSOR_PROPERTIES
                     {
-                        OperatingConditions = conditions,
-                        CylinderDiameter = 10.0m, // Typical bore in inches
-                        StrokeLength = 12.0m, // Typical stroke in inches
-                        RotationalSpeed = 300m, // Typical RPM
-                        NumberOfCylinders = 2,
-                        VolumetricEfficiency = CompressorConstants.StandardVolumetricEfficiency,
-                        ClearanceFactor = (int)(CompressorConstants.StandardClearanceFactor * 100) // Convert percentage to int
+                        OPERATING_CONDITIONS = conditions,
+                        CYLINDER_DIAMETER = 10.0m, // Typical bore in inches
+                        STROKE_LENGTH = 12.0m, // Typical stroke in inches
+                        ROTATIONAL_SPEED = 300m, // Typical RPM
+                        NUMBER_OF_CYLINDERS = 2,
+                        VOLUMETRIC_EFFICIENCY = CompressorConstants.StandardVolumetricEfficiency,
+                        CLEARANCE_FACTOR = (int)(CompressorConstants.StandardClearanceFactor * 100) // Convert percentage to int
                     };
                     CompressorValidator.ValidateReciprocatingCompressorProperties(reciprocatingProps);
                     powerResult = ReciprocatingCompressorCalculator.CalculatePower(reciprocatingProps);
@@ -219,8 +219,8 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                     AnalysisDate = DateTime.UtcNow,
                     CompressorType = compressorType,
                     InletPressure = inletPressure,
-                    DischargePressure = dischargePressure,
-                    GasFlowRate = gasFlowRate,
+                    DischargePressure = DISCHARGE_PRESSURE,
+                    GasFlowRate = GAS_FLOW_RATE,
                     Temperature = inletTemperature,
                     CompressionRatio = compressionRatio,
                     IsentropicEfficiency = powerResult.OVERALL_EFFICIENCY * 0.9m, // Estimate isentropic
@@ -247,29 +247,29 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         /// volumetric, mechanical, and overall efficiency.
         /// </summary>
         /// <param name="inletPressure">Inlet pressure in psia.</param>
-        /// <param name="dischargePressure">Discharge pressure in psia.</param>
+        /// <param name="DISCHARGE_PRESSURE">Discharge pressure in psia.</param>
         /// <param name="inletTemperature">Inlet temperature in degrees Rankine.</param>
         /// <param name="dischargeTemperature">Discharge temperature in degrees Rankine.</param>
-        /// <param name="gasSpecificGravity">Gas specific gravity (air = 1.0).</param>
-        /// <returns>CompressorEfficiencyAnalysis with calculated efficiency values.</returns>
+        /// <param name="GAS_SPECIFIC_GRAVITY">Gas specific gravity (air = 1.0).</param>
+        /// <returns>COMPRESSOR_EFFICIENCYAnalysis with calculated efficiency values.</returns>
         public async Task<CompressorEfficiencyAnalysis> CalculateEfficiencyAsync(
             decimal inletPressure,
-            decimal dischargePressure,
+            decimal DISCHARGE_PRESSURE,
             decimal inletTemperature,
             decimal dischargeTemperature,
-            decimal gasSpecificGravity)
+            decimal GAS_SPECIFIC_GRAVITY)
         {
-            if (inletPressure <= 0 || dischargePressure <= 0 || inletTemperature <= 0 || dischargeTemperature <= 0 || gasSpecificGravity <= 0)
+            if (inletPressure <= 0 || DISCHARGE_PRESSURE <= 0 || inletTemperature <= 0 || dischargeTemperature <= 0 || GAS_SPECIFIC_GRAVITY <= 0)
                 throw new ArgumentException("All input parameters must be greater than zero");
             if (dischargeTemperature < inletTemperature)
                 throw new ArgumentException("Discharge temperature cannot be less than inlet temperature");
 
             _logger?.LogInformation("Starting efficiency calculation: P1={P1}, P2={P2}, T1={T1}, T2={T2}",
-                inletPressure, dischargePressure, inletTemperature, dischargeTemperature);
+                inletPressure, DISCHARGE_PRESSURE, inletTemperature, dischargeTemperature);
 
             try
             {
-                decimal compressionRatio = dischargePressure / inletPressure;
+                decimal compressionRatio = DISCHARGE_PRESSURE / inletPressure;
                 decimal k = CompressorConstants.StandardSpecificHeatRatio;
 
                 // Calculate isentropic discharge temperature
@@ -289,10 +289,10 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 volumetricEfficiency = Math.Max(0.70m, Math.Min(1.0m, volumetricEfficiency));
 
                 // Estimate mechanical efficiency
-                decimal mechanicalEfficiency = CompressorConstants.StandardMechanicalEfficiency;
+                decimal MECHANICAL_EFFICIENCY = CompressorConstants.StandardMECHANICAL_EFFICIENCY;
 
                 // Calculate overall efficiency
-                decimal overallEfficiency = isentropicEfficiency * volumetricEfficiency * mechanicalEfficiency;
+                decimal overallEfficiency = isentropicEfficiency * volumetricEfficiency * MECHANICAL_EFFICIENCY;
 
                 // Determine efficiency trend (-1 to +1, where +1 is improving)
                 decimal efficiencyTrend = (isentropicEfficiency > 0.75m) ? 0.5m : -0.5m;
@@ -312,7 +312,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                     IsentropicEfficiency = isentropicEfficiency,
                     PolyIsentropicEfficiency = polyIsentropicEfficiency,
                     VolumetricEfficiency = volumetricEfficiency,
-                    MechanicalEfficiency = mechanicalEfficiency,
+                    MechanicalEfficiency = MECHANICAL_EFFICIENCY,
                     OverallEfficiency = overallEfficiency,
                     EfficiencyTrend = efficiencyTrend,
                     EfficiencyStatus = efficiencyStatus
@@ -338,17 +338,17 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         /// <param name="requiredFlowRate">Required gas flow rate in Mscf/day.</param>
         /// <param name="requiredDischargePressure">Required discharge pressure in psia.</param>
         /// <param name="inletPressure">Inlet pressure in psia.</param>
-        /// <param name="gasSpecificGravity">Gas specific gravity (air = 1.0).</param>
+        /// <param name="GAS_SPECIFIC_GRAVITY">Gas specific gravity (air = 1.0).</param>
         /// <param name="designTemperature">Design temperature in degrees Rankine.</param>
         /// <returns>CompressorPowerAnalysis with optimization recommendations.</returns>
         public async Task<CompressorPowerAnalysis> OptimizeCompressorAsync(
             decimal requiredFlowRate,
             decimal requiredDischargePressure,
             decimal inletPressure,
-            decimal gasSpecificGravity,
+            decimal GasSpecificGravity,
             decimal designTemperature)
         {
-            if (requiredFlowRate <= 0 || requiredDischargePressure <= 0 || inletPressure <= 0 || gasSpecificGravity <= 0 || designTemperature <= 0)
+            if (requiredFlowRate <= 0 || requiredDischargePressure <= 0 || inletPressure <= 0 || GasSpecificGravity <= 0 || designTemperature <= 0)
                 throw new ArgumentException("All input parameters must be greater than zero");
             if (requiredDischargePressure <= inletPressure)
                 throw new ArgumentException("Discharge pressure must be greater than inlet pressure");
@@ -361,24 +361,24 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 // Create operating conditions
                 var conditions = new COMPRESSOR_OPERATING_CONDITIONS
                 {
-                    SuctionPressure = inletPressure,
-                    DischargePressure = requiredDischargePressure,
-                    SuctionTemperature = designTemperature,
-                    DischargeTemperature = designTemperature * 1.2m, // Estimate
-                    GasFlowRate = requiredFlowRate,
-                    GasSpecificGravity = gasSpecificGravity,
-                    CompressorEfficiency = 0.75m,
-                    MechanicalEfficiency = 0.95m
+                    SUCTION_PRESSURE = inletPressure,
+                    DISCHARGE_PRESSURE = requiredDischargePressure,
+                    SUCTION_TEMPERATURE = designTemperature,
+                    DISCHARGE_TEMPERATURE = designTemperature * 1.2m, // Estimate
+                    GAS_FLOW_RATE = requiredFlowRate,
+                    GAS_SPECIFIC_GRAVITY = GasSpecificGravity,
+                    COMPRESSOR_EFFICIENCY = 0.75m,
+                    MECHANICAL_EFFICIENCY = 0.95m
                 };
 
                 // Analyze base case
                 var centrifugalProps = new CENTRIFUGAL_COMPRESSOR_PROPERTIES
                 {
-                    OperatingConditions = conditions,
-                    SpecificHeatRatio = CompressorConstants.StandardSpecificHeatRatio,
-                    PolytropicEfficiency = 0.75m,
-                    NumberOfStages = 2,
-                    Speed = 10000
+                    OPERATING_CONDITIONS = conditions,
+                    SPECIFIC_HEAT_RATIO = CompressorConstants.StandardSpecificHeatRatio,
+                    POLYTROPIC_EFFICIENCY = 0.75m,
+                    NUMBER_OF_STAGES = 2,
+                    SPEED = 10000
                 };
 
                 var baselineResult = CentrifugalCompressorCalculator.CalculatePower(centrifugalProps);
@@ -390,7 +390,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
 
                 // Analyze isentropic power
                 decimal k = CompressorConstants.StandardSpecificHeatRatio;
-                decimal molecularWeight = gasSpecificGravity * CompressorConstants.AirMolecularWeight;
+                decimal molecularWeight = GasSpecificGravity * CompressorConstants.AirMolecularWeight;
                 decimal compressionRatio = requiredDischargePressure / inletPressure;
 
                 decimal isentropicHead = (baselineResult.POLYTROPIC_HEAD * 0.88m); // Typical ratio
@@ -433,18 +433,18 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         /// </summary>
         /// <param name="operatingHoursPerYear">Estimated operating hours per year.</param>
         /// <param name="inletPressure">Inlet pressure in psia.</param>
-        /// <param name="dischargePressure">Discharge pressure in psia.</param>
+        /// <param name="DISCHARGE_PRESSURE">Discharge pressure in psia.</param>
         /// <param name="compressorType">Type of compressor: "Centrifugal" or "Reciprocating".</param>
         /// <returns>CompressorMaintenancePrediction with maintenance schedule.</returns>
         public async Task<CompressorMaintenancePrediction> PredictMaintenanceAsync(
             decimal operatingHoursPerYear,
             decimal inletPressure,
-            decimal dischargePressure,
+            decimal DISCHARGE_PRESSURE,
             string compressorType = "Centrifugal")
         {
-            if (operatingHoursPerYear <= 0 || inletPressure <= 0 || dischargePressure <= 0)
+            if (operatingHoursPerYear <= 0 || inletPressure <= 0 || DISCHARGE_PRESSURE <= 0)
                 throw new ArgumentException("All input parameters must be greater than zero");
-            if (dischargePressure <= inletPressure)
+            if (DISCHARGE_PRESSURE <= inletPressure)
                 throw new ArgumentException("Discharge pressure must be greater than inlet pressure");
 
             _logger?.LogInformation("Starting maintenance prediction: Type={Type}, Hours/Year={Hours}",
@@ -452,7 +452,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
 
             try
             {
-                decimal compressionRatio = dischargePressure / inletPressure;
+                decimal compressionRatio = DISCHARGE_PRESSURE / inletPressure;
                 int overallStressLevel = (int)Math.Min(100m, compressionRatio * 15m); // 0-100 scale
 
                 // Estimate hours to maintenance based on type and stress
@@ -526,19 +526,19 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         /// Identifies surge limit, choking limit, and optimal operating point.
         /// </summary>
         /// <param name="inletPressure">Inlet pressure in psia.</param>
-        /// <param name="gasSpecificGravity">Gas specific gravity (air = 1.0).</param>
+        /// <param name="GAS_SPECIFIC_GRAVITY">Gas specific gravity (air = 1.0).</param>
         /// <param name="inletTemperature">Inlet temperature in degrees Rankine.</param>
         /// <returns>CompressorPressureFlowAnalysis with performance map.</returns>
         public async Task<CompressorPressureFlowAnalysis> AnalyzePressureFlowAsync(
             decimal inletPressure,
-            decimal gasSpecificGravity,
+            decimal GAS_SPECIFIC_GRAVITY,
             decimal inletTemperature)
         {
-            if (inletPressure <= 0 || gasSpecificGravity <= 0 || inletTemperature <= 0)
+            if (inletPressure <= 0 || GAS_SPECIFIC_GRAVITY <= 0 || inletTemperature <= 0)
                 throw new ArgumentException("All input parameters must be greater than zero");
 
             _logger?.LogInformation("Starting pressure-flow analysis: P1={P1}, SG={SG}, T={T}",
-                inletPressure, gasSpecificGravity, inletTemperature);
+                inletPressure, GAS_SPECIFIC_GRAVITY, inletTemperature);
 
             try
             {
@@ -598,14 +598,14 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
         private decimal EstimateStagepower(
             decimal stageFlowRate,
             decimal inletPressure,
-            decimal dischargePressure,
-            decimal gasSpecificGravity,
+            decimal DISCHARGE_PRESSURE,
+            decimal GAS_SPECIFIC_GRAVITY,
             decimal temperature,
             decimal efficiency)
         {
-            decimal compressionRatio = dischargePressure / inletPressure;
+            decimal compressionRatio = DISCHARGE_PRESSURE / inletPressure;
             decimal k = CompressorConstants.StandardSpecificHeatRatio;
-            decimal molecularWeight = gasSpecificGravity * CompressorConstants.AirMolecularWeight;
+            decimal molecularWeight = GAS_SPECIFIC_GRAVITY * CompressorConstants.AirMolecularWeight;
 
             // Calculate adiabatic head
             decimal adiabaticHead = (1545.0m * temperature / molecularWeight) *

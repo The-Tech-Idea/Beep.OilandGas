@@ -77,22 +77,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref BSW_PERCENTAGEValue, value); }
         }
 
-        private System.Decimal? NET_VOLUMEValue;
-        public System.Decimal? NET_VOLUME
+        private System.Decimal?  NET_VOLUMEValue;
+        public System.Decimal?  NET_VOLUME
         {
             get { return this.NET_VOLUMEValue; }
             set { SetProperty(ref NET_VOLUMEValue, value); }
         }
 
-        private System.Decimal? TEMPERATUREValue;
-        public System.Decimal? TEMPERATURE
+        private System.Decimal  TEMPERATUREValue;
+        public System.Decimal  TEMPERATURE
         {
             get { return this.TEMPERATUREValue; }
             set { SetProperty(ref TEMPERATUREValue, value); }
         }
 
-        private System.Decimal? API_GRAVITYValue;
-        public System.Decimal? API_GRAVITY
+        private System.Decimal  API_GRAVITYValue;
+        public System.Decimal  API_GRAVITY
         {
             get { return this.API_GRAVITYValue; }
             set { SetProperty(ref API_GRAVITYValue, value); }

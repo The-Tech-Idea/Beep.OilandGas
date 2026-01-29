@@ -44,22 +44,22 @@ namespace Beep.OilandGas.Models.Data.Agreement
             set { SetProperty(ref EXPIRATION_DATEValue, value); }
         }
 
-        private System.Decimal? TARIFF_RATEValue;
-        public System.Decimal? TARIFF_RATE
+        private System.Decimal  TARIFF_RATEValue;
+        public System.Decimal  TARIFF_RATE
         {
             get { return this.TARIFF_RATEValue; }
             set { SetProperty(ref TARIFF_RATEValue, value); }
         }
 
-        private System.Decimal? MINIMUM_VOLUME_COMMITMENTValue;
-        public System.Decimal? MINIMUM_VOLUME_COMMITMENT
+        private System.Decimal  MINIMUM_VOLUME_COMMITMENTValue;
+        public System.Decimal  MINIMUM_VOLUME_COMMITMENT
         {
             get { return this.MINIMUM_VOLUME_COMMITMENTValue; }
             set { SetProperty(ref MINIMUM_VOLUME_COMMITMENTValue, value); }
         }
 
-        private System.Decimal? MAXIMUM_CAPACITYValue;
-        public System.Decimal? MAXIMUM_CAPACITY
+        private System.Decimal  MAXIMUM_CAPACITYValue;
+        public System.Decimal  MAXIMUM_CAPACITY
         {
             get { return this.MAXIMUM_CAPACITYValue; }
             set { SetProperty(ref MAXIMUM_CAPACITYValue, value); }

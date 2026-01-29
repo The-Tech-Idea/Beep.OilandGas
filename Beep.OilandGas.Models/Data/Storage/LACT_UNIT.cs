@@ -35,15 +35,15 @@ namespace Beep.OilandGas.Models.Data.Storage
             set { SetProperty(ref METER_TYPEValue, value); }
         }
 
-        private System.Decimal? MAXIMUM_FLOW_RATEValue;
-        public System.Decimal? MAXIMUM_FLOW_RATE
+        private System.Decimal  MAXIMUM_FLOW_RATEValue;
+        public System.Decimal  MAXIMUM_FLOW_RATE
         {
             get { return this.MAXIMUM_FLOW_RATEValue; }
             set { SetProperty(ref MAXIMUM_FLOW_RATEValue, value); }
         }
 
-        private System.Decimal? METER_FACTORValue;
-        public System.Decimal? METER_FACTOR
+        private System.Decimal  METER_FACTORValue;
+        public System.Decimal  METER_FACTOR
         {
             get { return this.METER_FACTORValue; }
             set { SetProperty(ref METER_FACTORValue, value); }

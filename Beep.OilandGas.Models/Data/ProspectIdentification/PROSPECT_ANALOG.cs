@@ -59,8 +59,8 @@ private  System.String ANALOG_FIELD_IDValue;
 
           set { SetProperty(ref  ANALOG_FIELD_IDValue, value); }
         } 
-private  System.Decimal? SIMILARITY_SCOREValue; 
- public System.Decimal? SIMILARITY_SCORE
+private  System.Decimal  SIMILARITY_SCOREValue; 
+ public System.Decimal  SIMILARITY_SCORE
         {  
             get  
             {  

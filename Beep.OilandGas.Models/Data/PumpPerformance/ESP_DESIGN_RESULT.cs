@@ -136,5 +136,6 @@ namespace Beep.OilandGas.Models.Data.PumpPerformance
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+        public List<ESP_PUMP_POINT> PERFORMANCE_POINTS { get; set; }
     }
 }

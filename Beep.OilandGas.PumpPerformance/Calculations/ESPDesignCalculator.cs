@@ -61,20 +61,20 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
 
             return new ESP_DESIGN_RESULT
             {
-                PumpStages = pumpStages,
-                RequiredHorsepower = requiredHorsepower,
-                MotorHorsepower = motor.HORSEPOWER,
-                MotorVoltage = motor.VOLTAGE,
-                MotorCurrent = CalculateMotorCurrent(motor, requiredHorsepower),
-                CableSize = cable.CABLE_SIZE,
-                CableLength = cable.CABLE_LENGTH,
-                SystemEfficiency = systemEfficiency,
-                PumpEfficiency = operatingPoint.EFFICIENCY,
-                MotorEfficiency = motor.EFFICIENCY,
-                PowerConsumption = powerConsumption,
-                OperatingFlowRate = operatingPoint.FLOW_RATE,
-                OperatingHead = operatingPoint.HEAD,
-                PerformancePoints = performancePoints
+                PUMP_STAGES = pumpStages,
+                REQUIRED_HORSEPOWER = requiredHorsepower,
+                MOTOR_HORSEPOWER = motor.HORSEPOWER,
+                MOTOR_VOLTAGE = motor.VOLTAGE,
+                MOTOR_CURRENT = CalculateMotorCurrent(motor, requiredHorsepower),
+                CABLE_SIZE = cable.CABLE_SIZE,
+                CABLE_LENGTH = cable.CABLE_LENGTH,
+                SYSTEM_EFFICIENCY = systemEfficiency,
+                PUMP_EFFICIENCY = operatingPoint.EFFICIENCY,
+                MOTOR_EFFICIENCY = motor.EFFICIENCY,
+                POWER_CONSUMPTION = powerConsumption,
+                OPERATING_FLOW_RATE = operatingPoint.FLOW_RATE,
+                OPERATING_HEAD = operatingPoint.HEAD,
+                PERFORMANCE_POINTS = performancePoints
             };
         }
 
@@ -211,10 +211,10 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
 
                 points.Add(new ESP_PUMP_POINT
                 {
-                    FlowRate = flowRate,
-                    Head = head,
-                    Efficiency = efficiency,
-                    Horsepower = horsepower
+                    FLOW_RATE = flowRate,
+                    HEAD = head,
+                    EFFICIENCY = efficiency,
+                    HORSEPOWER = horsepower
                 });
             }
 
@@ -243,7 +243,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// </summary>
         private static decimal CalculatePumpEfficiency(decimal flowRate, decimal designFlowRate)
         {
-            // Efficiency curve: peak at design flow rate
+            //  EFFICIENCY curve: peak at design flow rate
             decimal flowRatio = flowRate / designFlowRate;
             decimal efficiency = 0.7m * (1.0m - (decimal)Math.Pow((double)(flowRatio - 1.0m), 2.0));
 
@@ -315,10 +315,10 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
 
             return new ESP_MOTOR_PROPERTIES
             {
-                Horsepower = selectedHorsepower,
-                Voltage = selectedVoltage,
-                Efficiency = 0.9m,
-                PowerFactor = 0.85m
+                HORSEPOWER = selectedHorsepower,
+                VOLTAGE = selectedVoltage,
+                EFFICIENCY = 0.9m,
+                POWER_FACTOR = 0.85m
             };
         }
 
@@ -363,10 +363,10 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
 
             return new ESP_CABLE_PROPERTIES
             {
-                CableSize = cableSize,
-                CableLength = cableLength,
-                ResistancePer1000Feet = resistance,
-                VoltageDrop = voltageDrop
+                CABLE_SIZE = cableSize,
+                CABLE_LENGTH = cableLength,
+                RESISTANCE_PER_1000_FEET = resistance,
+                VOLTAGE_DROP = voltageDrop
             };
         }
 

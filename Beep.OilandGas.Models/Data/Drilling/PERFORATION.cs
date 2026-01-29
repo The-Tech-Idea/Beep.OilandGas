@@ -22,15 +22,15 @@ namespace Beep.OilandGas.Models.Data.Drilling
             set { SetProperty(ref COMPLETION_IDValue, value); }
         }
 
-        private Decimal? TOP_DEPTHValue;
-        public Decimal? TOP_DEPTH
+        private Decimal  TOP_DEPTHValue;
+        public Decimal  TOP_DEPTH
         {
             get { return this.TOP_DEPTHValue; }
             set { SetProperty(ref TOP_DEPTHValue, value); }
         }
 
-        private Decimal? BOTTOM_DEPTHValue;
-        public Decimal? BOTTOM_DEPTH
+        private Decimal  BOTTOM_DEPTHValue;
+        public Decimal  BOTTOM_DEPTH
         {
             get { return this.BOTTOM_DEPTHValue; }
             set { SetProperty(ref BOTTOM_DEPTHValue, value); }

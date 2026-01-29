@@ -52,11 +52,11 @@ namespace Beep.OilandGas.ProductionAccounting.Services
 
             if (obligation.ESTIMATED_RETIREMENT_DATE.HasValue
                 && obligation.ESTIMATED_COST > 0m
-                && obligation.DISCOUNT_RATE.HasValue)
+                && obligation.DISCOUNT_RATE > 0m)
             {
                 var years = Math.Max(0.0,
                     (obligation.ESTIMATED_RETIREMENT_DATE.Value - asOfDate).TotalDays / 365.0);
-                var discountFactor = Math.Pow(1 + (double)obligation.DISCOUNT_RATE.Value, years);
+                var discountFactor = Math.Pow(1 + (double)obligation.DISCOUNT_RATE, years);
                 obligation.PRESENT_VALUE = obligation.ESTIMATED_COST / (decimal)discountFactor;
             }
 
@@ -115,9 +115,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (existing == null)
                 return null;
 
-            if (existing.PRESENT_VALUE.HasValue && existing.DISCOUNT_RATE.HasValue)
+            if (existing.PRESENT_VALUE > 0m && existing.DISCOUNT_RATE > 0m)
             {
-                var accretion = existing.PRESENT_VALUE.Value * existing.DISCOUNT_RATE.Value / 12m;
+                var accretion = existing.PRESENT_VALUE * existing.DISCOUNT_RATE / 12m;
                 existing.ACCRETION_EXPENSE = accretion;
                 existing.PRESENT_VALUE += accretion;
             }

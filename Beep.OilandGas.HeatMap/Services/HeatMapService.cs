@@ -59,7 +59,7 @@ namespace Beep.OilandGas.HeatMap.Services
             _logger?.LogInformation("Generating heat map with {PointCount} data points", dataPoints.Count);
 
             // Convert from Models.HeatMap.HEAT_MAP_DATA_POINT to HeatMap.HEAT_MAP_DATA_POINT for the generator
-            var generatorDataPoints = dataPoints.Select(p => new HEAT_MAP_DATA_POINT(p.ORIGINAL_X, p.ORIGINAL_Y, p.Value, p.LABEL)
+            var generatorDataPoints = dataPoints.Select(p => new HEAT_MAP_DATA_POINT(p.OriginalX, p.OriginalY, p.Value, p.LABEL)
             {
                 X = p.X,
                 Y = p.Y
@@ -150,9 +150,9 @@ namespace Beep.OilandGas.HeatMap.Services
 
             var config = new HeatMapConfigurationRecord
             {
-                ConfigurationId = entity.HEAT_MAP_ID ?? string.Empty,
-                ConfigurationName = entity.CONFIGURATION_NAME ?? string.Empty,
-                CreatedDate = entity.ROW_CREATED_DATE ?? DateTime.UtcNow
+                ConfigurationId = entity.map_id ?? string.Empty,
+                ConfigurationName = entity.config_name ?? string.Empty,
+                CreatedDate = entity.row_created_date ?? DateTime.UtcNow
             };
 
             _logger?.LogInformation("Successfully retrieved heat map configuration {HeatMapId}", heatMapId);

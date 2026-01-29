@@ -29,22 +29,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref UNIT_IDValue, value); }
         }
 
-        private System.Decimal? TRACT_PARTICIPATIONValue;
-        public System.Decimal? TRACT_PARTICIPATION
+        private System.Decimal  TRACT_PARTICIPATIONValue;
+        public System.Decimal  TRACT_PARTICIPATION
         {
             get { return this.TRACT_PARTICIPATIONValue; }
             set { SetProperty(ref TRACT_PARTICIPATIONValue, value); }
         }
 
-        private System.Decimal? WORKING_INTERESTValue;
-        public System.Decimal? WORKING_INTEREST
+        private System.Decimal  WORKING_INTERESTValue;
+        public System.Decimal  WORKING_INTEREST
         {
             get { return this.WORKING_INTERESTValue; }
             set { SetProperty(ref WORKING_INTERESTValue, value); }
         }
 
-        private System.Decimal? NET_REVENUE_INTERESTValue;
-        public System.Decimal? NET_REVENUE_INTEREST
+        private System.Decimal  NET_REVENUE_INTERESTValue;
+        public System.Decimal  NET_REVENUE_INTEREST
         {
             get { return this.NET_REVENUE_INTERESTValue; }
             set { SetProperty(ref NET_REVENUE_INTERESTValue, value); }

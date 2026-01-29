@@ -29,15 +29,15 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref WITHHOLDING_TYPEValue, value); }
         }
 
-        private System.Decimal? WITHHOLDING_RATEValue;
-        public System.Decimal? WITHHOLDING_RATE
+        private System.Decimal  WITHHOLDING_RATEValue;
+        public System.Decimal  WITHHOLDING_RATE
         {
             get { return this.WITHHOLDING_RATEValue; }
             set { SetProperty(ref WITHHOLDING_RATEValue, value); }
         }
 
-        private System.Decimal? AMOUNTValue;
-        public System.Decimal? AMOUNT
+        private System.Decimal  AMOUNTValue;
+        public System.Decimal  AMOUNT
         {
             get { return this.AMOUNTValue; }
             set { SetProperty(ref AMOUNTValue, value); }

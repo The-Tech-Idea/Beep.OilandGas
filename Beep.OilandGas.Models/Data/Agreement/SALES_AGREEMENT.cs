@@ -51,8 +51,8 @@ namespace Beep.OilandGas.Models.Data.Agreement
             set { SetProperty(ref PRICING_METHODValue, value); }
         }
 
-        private System.Decimal? BASE_PRICEValue;
-        public System.Decimal? BASE_PRICE
+        private System.Decimal  BASE_PRICEValue;
+        public System.Decimal  BASE_PRICE
         {
             get { return this.BASE_PRICEValue; }
             set { SetProperty(ref BASE_PRICEValue, value); }
@@ -65,8 +65,8 @@ namespace Beep.OilandGas.Models.Data.Agreement
             set { SetProperty(ref PRICE_INDEXValue, value); }
         }
 
-        private System.Decimal? DIFFERENTIALValue;
-        public System.Decimal? DIFFERENTIAL
+        private System.Decimal  DIFFERENTIALValue;
+        public System.Decimal  DIFFERENTIAL
         {
             get { return this.DIFFERENTIALValue; }
             set { SetProperty(ref DIFFERENTIALValue, value); }

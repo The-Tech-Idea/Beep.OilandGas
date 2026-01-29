@@ -25,17 +25,17 @@ namespace Beep.OilandGas.FlashCalculations.Validation
             if (conditions.TEMPERATURE <= 0)
                 throw new InvalidFlashConditionsException("Temperature must be greater than zero.");
 
-            if (conditions.FeedComposition == null || conditions.FeedComposition.Count == 0)
+            if (conditions.FEED_COMPOSITION  == null || conditions.FEED_COMPOSITION .Count == 0)
                 throw new InvalidFlashConditionsException("Feed composition cannot be empty.");
 
             // Validate components
-            foreach (var component in conditions.FeedComposition)
+            foreach (var component in conditions.FEED_COMPOSITION )
             {
                 ValidateFlashComponent(component);
             }
 
             // Validate mole fractions sum to approximately 1.0
-            decimal totalMoleFraction = conditions.FeedComposition.Sum(c => c.MOLE_FRACTION);
+            decimal totalMoleFraction = conditions.FEED_COMPOSITION .Sum(c => c.MOLE_FRACTION);
             if (Math.Abs(totalMoleFraction - 1.0m) > 0.1m)
             {
                 throw new InvalidFlashConditionsException(
@@ -51,20 +51,20 @@ namespace Beep.OilandGas.FlashCalculations.Validation
             if (component == null)
                 throw new ArgumentNullException(nameof(component));
 
-            if (string.IsNullOrWhiteSpace(component.Name))
+            if (string.IsNullOrWhiteSpace(component.NAME))
                 throw new InvalidComponentException("Component name cannot be empty.");
 
             if (component.MOLE_FRACTION < 0 || component.MOLE_FRACTION > 1)
-                throw new InvalidComponentException($"Component {component.Name}: Mole fraction must be between 0 and 1.");
+                throw new InvalidComponentException($"Component {component.NAME}: Mole fraction must be between 0 and 1.");
 
             if (component.CRITICAL_TEMPERATURE <= 0)
-                throw new InvalidComponentException($"Component {component.Name}: Critical temperature must be greater than zero.");
+                throw new InvalidComponentException($"Component {component.NAME}: Critical temperature must be greater than zero.");
 
             if (component.CRITICAL_PRESSURE <= 0)
-                throw new InvalidComponentException($"Component {component.Name}: Critical pressure must be greater than zero.");
+                throw new InvalidComponentException($"Component {component.NAME}: Critical pressure must be greater than zero.");
 
             if (component.MOLECULAR_WEIGHT <= 0)
-                throw new InvalidComponentException($"Component {component.Name}: Molecular weight must be greater than zero.");
+                throw new InvalidComponentException($"Component {component.NAME}: Molecular weight must be greater than zero.");
         }
 
         /// <summary>
@@ -75,20 +75,20 @@ namespace Beep.OilandGas.FlashCalculations.Validation
             if (component == null)
                 throw new ArgumentNullException(nameof(component));
 
-            if (string.IsNullOrWhiteSpace(component.Name))
+            if (string.IsNullOrWhiteSpace(component.NAME))
                 throw new InvalidComponentException("Component name cannot be empty.");
 
             if (component.MOLE_FRACTION < 0 || component.MOLE_FRACTION > 1)
-                throw new InvalidComponentException($"Component {component.Name}: Mole fraction must be between 0 and 1.");
+                throw new InvalidComponentException($"Component {component.NAME}: Mole fraction must be between 0 and 1.");
 
             if (component.CRITICAL_TEMPERATURE <= 0)
-                throw new InvalidComponentException($"Component {component.Name}: Critical temperature must be greater than zero.");
+                throw new InvalidComponentException($"Component {component.NAME}: Critical temperature must be greater than zero.");
 
             if (component.CRITICAL_PRESSURE <= 0)
-                throw new InvalidComponentException($"Component {component.Name}: Critical pressure must be greater than zero.");
+                throw new InvalidComponentException($"Component {component.NAME}: Critical pressure must be greater than zero.");
 
             if (component.MOLECULAR_WEIGHT <= 0)
-                throw new InvalidComponentException($"Component {component.Name}: Molecular weight must be greater than zero.");
+                throw new InvalidComponentException($"Component {component.NAME}: Molecular weight must be greater than zero.");
         }
 
         /// <summary>

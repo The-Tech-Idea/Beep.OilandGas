@@ -21,43 +21,43 @@ namespace Beep.OilandGas.Models.Data.CompressorAnalysis
             set { SetProperty(ref COMPRESSOR_OPERATING_CONDITIONS_IDValue, value); }
         }
 
-        private Decimal? CYLINDER_DIAMETERValue;
-        public Decimal? CYLINDER_DIAMETER
+        private Decimal  CYLINDER_DIAMETERValue;
+        public Decimal  CYLINDER_DIAMETER
         {
             get { return this.CYLINDER_DIAMETERValue; }
             set { SetProperty(ref CYLINDER_DIAMETERValue, value); }
         }
 
-        private Decimal? STROKE_LENGTHValue;
-        public Decimal? STROKE_LENGTH
+        private Decimal  STROKE_LENGTHValue;
+        public Decimal  STROKE_LENGTH
         {
             get { return this.STROKE_LENGTHValue; }
             set { SetProperty(ref STROKE_LENGTHValue, value); }
         }
 
-        private Decimal? ROTATIONAL_SPEEDValue;
-        public Decimal? ROTATIONAL_SPEED
+        private Decimal  ROTATIONAL_SPEEDValue;
+        public Decimal  ROTATIONAL_SPEED
         {
             get { return this.ROTATIONAL_SPEEDValue; }
             set { SetProperty(ref ROTATIONAL_SPEEDValue, value); }
         }
 
-        private Int32? NUMBER_OF_CYLINDERSValue;
-        public Int32? NUMBER_OF_CYLINDERS
+        private Int32 NUMBER_OF_CYLINDERSValue;
+        public Int32 NUMBER_OF_CYLINDERS
         {
             get { return this.NUMBER_OF_CYLINDERSValue; }
             set { SetProperty(ref NUMBER_OF_CYLINDERSValue, value); }
         }
 
-        private Decimal? VOLUMETRIC_EFFICIENCYValue;
-        public Decimal? VOLUMETRIC_EFFICIENCY
+        private Decimal  VOLUMETRIC_EFFICIENCYValue;
+        public Decimal  VOLUMETRIC_EFFICIENCY
         {
             get { return this.VOLUMETRIC_EFFICIENCYValue; }
             set { SetProperty(ref VOLUMETRIC_EFFICIENCYValue, value); }
         }
 
-        private Decimal? CLEARANCE_FACTORValue;
-        public Decimal? CLEARANCE_FACTOR
+        private Decimal  CLEARANCE_FACTORValue;
+        public Decimal  CLEARANCE_FACTOR
         {
             get { return this.CLEARANCE_FACTORValue; }
             set { SetProperty(ref CLEARANCE_FACTORValue, value); }

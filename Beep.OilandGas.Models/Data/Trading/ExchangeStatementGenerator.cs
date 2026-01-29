@@ -37,23 +37,23 @@ namespace Beep.OilandGas.Models.Data.Trading
             {
                 statement.Receipts = new ExchangeSummary
                 {
-                    TotalVolume = receiptTransactions.Sum(t => t.RECEIPT_VOLUME ?? 0),
-                    AveragePrice = receiptTransactions.Sum(t => (t.RECEIPT_VOLUME ?? 0) * (t.RECEIPT_PRICE ?? 0)) / receiptTransactions.Sum(t => t.RECEIPT_VOLUME ?? 1),
+                    TotalVolume = receiptTransactions.Sum(t => t.RECEIPT_VOLUME  ),
+                    AveragePrice = receiptTransactions.Sum(t => (t.RECEIPT_VOLUME  ) * (t.RECEIPT_PRICE  )) / receiptTransactions.Sum(t => t.RECEIPT_VOLUME ),
                     TransactionCount = receiptTransactions.Count
                 };
             }
 
             // Calculate deliveries summary
             var deliveryTransactions = statement.Transactions
-                .Where(t => (t.DELIVERY_VOLUME ?? 0) > 0)
+                .Where(t => (t.DELIVERY_VOLUME  ) > 0)
                 .ToList();
 
             if (deliveryTransactions.Count > 0)
             {
                 statement.Deliveries = new ExchangeSummary
                 {
-                    TotalVolume = deliveryTransactions.Sum(t => t.DELIVERY_VOLUME ?? 0),
-                    AveragePrice = deliveryTransactions.Sum(t => (t.DELIVERY_VOLUME ?? 0) * (t.DELIVERY_PRICE ?? 0)) / deliveryTransactions.Sum(t => t.DELIVERY_VOLUME ?? 1),
+                    TotalVolume = deliveryTransactions.Sum(t => t.DELIVERY_VOLUME  ),
+                    AveragePrice = deliveryTransactions.Sum(t => (t.DELIVERY_VOLUME  ) * (t.DELIVERY_PRICE  )) / deliveryTransactions.Sum(t => t.DELIVERY_VOLUME),
                     TransactionCount = deliveryTransactions.Count
                 };
             }

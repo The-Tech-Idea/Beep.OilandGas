@@ -62,15 +62,15 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref SOURCE_MODULEValue, value); }
         }
 
-        private System.Decimal? TOTAL_DEBITValue;
-        public System.Decimal? TOTAL_DEBIT
+        private System.Decimal?  TOTAL_DEBITValue;
+        public System.Decimal?  TOTAL_DEBIT
         {
             get { return this.TOTAL_DEBITValue; }
             set { SetProperty(ref TOTAL_DEBITValue, value); }
         }
 
-        private System.Decimal? TOTAL_CREDITValue;
-        public System.Decimal? TOTAL_CREDIT
+        private System.Decimal?  TOTAL_CREDITValue;
+        public System.Decimal?  TOTAL_CREDIT
         {
             get { return this.TOTAL_CREDITValue; }
             set { SetProperty(ref TOTAL_CREDITValue, value); }

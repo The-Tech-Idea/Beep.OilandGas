@@ -29,15 +29,15 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref ENTITY_IDValue, value); }
         }
 
-        private System.Decimal? ALLOCATED_VOLUMEValue;
-        public System.Decimal? ALLOCATED_VOLUME
+        private System.Decimal  ALLOCATED_VOLUMEValue;
+        public System.Decimal  ALLOCATED_VOLUME
         {
             get { return this.ALLOCATED_VOLUMEValue; }
             set { SetProperty(ref ALLOCATED_VOLUMEValue, value); }
         }
 
-        private System.Decimal? ALLOCATION_PERCENTAGEValue;
-        public System.Decimal? ALLOCATION_PERCENTAGE
+        private System.Decimal  ALLOCATION_PERCENTAGEValue;
+        public System.Decimal  ALLOCATION_PERCENTAGE
         {
             get { return this.ALLOCATION_PERCENTAGEValue; }
             set { SetProperty(ref ALLOCATION_PERCENTAGEValue, value); }

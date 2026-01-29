@@ -126,7 +126,7 @@ namespace Beep.OilandGas.PumpPerformance.PumpTypes
 
             if (Math.Abs(efficiency) < Epsilon)
                 throw new InvalidInputException(nameof(efficiency), 
-                    "Efficiency cannot be zero for power calculation.");
+                    " EFFICIENCY cannot be zero for power calculation.");
 
             return (flowRate * pressureDifferential) / (1714.0 * efficiency);
         }

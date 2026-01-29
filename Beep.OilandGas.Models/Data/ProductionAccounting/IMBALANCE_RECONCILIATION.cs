@@ -22,22 +22,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref RECONCILIATION_DATEValue, value); }
         }
 
-        private System.Decimal? TOTAL_IMBALANCE_BEFOREValue;
-        public System.Decimal? TOTAL_IMBALANCE_BEFORE
+        private System.Decimal  TOTAL_IMBALANCE_BEFOREValue;
+        public System.Decimal  TOTAL_IMBALANCE_BEFORE
         {
             get { return this.TOTAL_IMBALANCE_BEFOREValue; }
             set { SetProperty(ref TOTAL_IMBALANCE_BEFOREValue, value); }
         }
 
-        private System.Decimal? TOTAL_ADJUSTMENTSValue;
-        public System.Decimal? TOTAL_ADJUSTMENTS
+        private System.Decimal  TOTAL_ADJUSTMENTSValue;
+        public System.Decimal  TOTAL_ADJUSTMENTS
         {
             get { return this.TOTAL_ADJUSTMENTSValue; }
             set { SetProperty(ref TOTAL_ADJUSTMENTSValue, value); }
         }
 
-        private System.Decimal? TOTAL_IMBALANCE_AFTERValue;
-        public System.Decimal? TOTAL_IMBALANCE_AFTER
+        private System.Decimal  TOTAL_IMBALANCE_AFTERValue;
+        public System.Decimal  TOTAL_IMBALANCE_AFTER
         {
             get { return this.TOTAL_IMBALANCE_AFTERValue; }
             set { SetProperty(ref TOTAL_IMBALANCE_AFTERValue, value); }

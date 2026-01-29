@@ -41,36 +41,36 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref DUE_DATEValue, value); }
         }
 
-        private System.Decimal? SUBTOTALValue;
-        public System.Decimal? SUBTOTAL
+        private System.Decimal  SUBTOTALValue;
+        public System.Decimal  SUBTOTAL
         {
             get { return this.SUBTOTALValue; }
             set { SetProperty(ref SUBTOTALValue, value); }
         }
 
-        private System.Decimal? TAX_AMOUNTValue;
-        public System.Decimal? TAX_AMOUNT
+        private System.Decimal  TAX_AMOUNTValue;
+        public System.Decimal  TAX_AMOUNT
         {
             get { return this.TAX_AMOUNTValue; }
             set { SetProperty(ref TAX_AMOUNTValue, value); }
         }
 
-        private System.Decimal? TOTAL_AMOUNTValue;
-        public System.Decimal? TOTAL_AMOUNT
+        private System.Decimal  TOTAL_AMOUNTValue;
+        public System.Decimal  TOTAL_AMOUNT
         {
             get { return this.TOTAL_AMOUNTValue; }
             set { SetProperty(ref TOTAL_AMOUNTValue, value); }
         }
 
-        private System.Decimal? PAID_AMOUNTValue;
-        public System.Decimal? PAID_AMOUNT
+        private System.Decimal  PAID_AMOUNTValue;
+        public System.Decimal  PAID_AMOUNT
         {
             get { return this.PAID_AMOUNTValue; }
             set { SetProperty(ref PAID_AMOUNTValue, value); }
         }
 
-        private System.Decimal? BALANCE_DUEValue;
-        public System.Decimal? BALANCE_DUE
+        private System.Decimal  BALANCE_DUEValue;
+        public System.Decimal  BALANCE_DUE
         {
             get { return this.BALANCE_DUEValue; }
             set { SetProperty(ref BALANCE_DUEValue, value); }

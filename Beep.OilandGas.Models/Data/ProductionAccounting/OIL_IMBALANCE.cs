@@ -29,29 +29,29 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref PERIOD_ENDValue, value); }
         }
 
-        private System.Decimal? NOMINATED_VOLUMEValue;
-        public System.Decimal? NOMINATED_VOLUME
+        private System.Decimal  NOMINATED_VOLUMEValue;
+        public System.Decimal  NOMINATED_VOLUME
         {
             get { return this.NOMINATED_VOLUMEValue; }
             set { SetProperty(ref NOMINATED_VOLUMEValue, value); }
         }
 
-        private System.Decimal? ACTUAL_VOLUMEValue;
-        public System.Decimal? ACTUAL_VOLUME
+        private System.Decimal  ACTUAL_VOLUMEValue;
+        public System.Decimal  ACTUAL_VOLUME
         {
             get { return this.ACTUAL_VOLUMEValue; }
             set { SetProperty(ref ACTUAL_VOLUMEValue, value); }
         }
 
-        private System.Decimal? IMBALANCE_AMOUNTValue;
-        public System.Decimal? IMBALANCE_AMOUNT
+        private System.Decimal  IMBALANCE_AMOUNTValue;
+        public System.Decimal  IMBALANCE_AMOUNT
         {
             get { return this.IMBALANCE_AMOUNTValue; }
             set { SetProperty(ref IMBALANCE_AMOUNTValue, value); }
         }
 
-        private System.Decimal? IMBALANCE_PERCENTAGEValue;
-        public System.Decimal? IMBALANCE_PERCENTAGE
+        private System.Decimal  IMBALANCE_PERCENTAGEValue;
+        public System.Decimal  IMBALANCE_PERCENTAGE
         {
             get { return this.IMBALANCE_PERCENTAGEValue; }
             set { SetProperty(ref IMBALANCE_PERCENTAGEValue, value); }
@@ -64,8 +64,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref STATUSValue, value); }
         }
 
-        private System.Decimal? TOLERANCE_PERCENTAGEValue;
-        public System.Decimal? TOLERANCE_PERCENTAGE
+        private System.Decimal  TOLERANCE_PERCENTAGEValue;
+        public System.Decimal  TOLERANCE_PERCENTAGE
         {
             get { return this.TOLERANCE_PERCENTAGEValue; }
             set { SetProperty(ref TOLERANCE_PERCENTAGEValue, value); }

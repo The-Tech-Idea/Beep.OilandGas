@@ -99,22 +99,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref TANK_BATTERY_IDValue, value); }
         }
 
-        private System.Decimal? TEMPERATUREValue;
-        public System.Decimal? TEMPERATURE
+        private System.Decimal  TEMPERATUREValue;
+        public System.Decimal  TEMPERATURE
         {
             get { return this.TEMPERATUREValue; }
             set { SetProperty(ref TEMPERATUREValue, value); }
         }
 
-        private System.Decimal? PRESSUREValue;
-        public System.Decimal? PRESSURE
+        private System.Decimal  PRESSUREValue;
+        public System.Decimal  PRESSURE
         {
             get { return this.PRESSUREValue; }
             set { SetProperty(ref PRESSUREValue, value); }
         }
 
-        private System.Decimal? API_GRAVITYValue;
-        public System.Decimal? API_GRAVITY
+        private System.Decimal  API_GRAVITYValue;
+        public System.Decimal  API_GRAVITY
         {
             get { return this.API_GRAVITYValue; }
             set { SetProperty(ref API_GRAVITYValue, value); }
@@ -127,8 +127,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref CRUDE_OIL_PROPERTIES_IDValue, value); }
         }
 
-        private System.Decimal? ACCURACYValue;
-        public System.Decimal? ACCURACY
+        private System.Decimal  ACCURACYValue;
+        public System.Decimal  ACCURACY
         {
             get { return this.ACCURACYValue; }
             set { SetProperty(ref ACCURACYValue, value); }

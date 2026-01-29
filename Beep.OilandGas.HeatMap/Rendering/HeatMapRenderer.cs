@@ -25,6 +25,7 @@ using Beep.OilandGas.HeatMap.Aggregation;
 using Beep.OilandGas.HeatMap.Density;
 using Beep.OilandGas.HeatMap.Visualization;
 using Beep.OilandGas.HeatMap.Contour;
+using Beep.OilandGas.Models.HeatMap;
 
 namespace Beep.OilandGas.HeatMap.Rendering
 {
@@ -1180,11 +1181,11 @@ namespace Beep.OilandGas.HeatMap.Rendering
             {
                 if (layer.CustomColors != null && layer.CustomColors.Length >= 2)
                 {
-                    layerColorScheme = ColorScheme.CreateCustom(layer.CustomColors, configuration.COLOR_STEPS);
+                    layerColorScheme = ColorScheme.CreateCustom(layer.CustomColors, configuration.ColorSteps);
                 }
                 else
                 {
-                    layerColorScheme = ColorScheme.GetColorScheme(layer.COLOR_SCHEME_TYPE, configuration.COLOR_STEPS);
+                    layerColorScheme = ColorScheme.GetColorScheme(layer.ColorSchemeType, configuration.ColorSteps);
                 }
             }
 

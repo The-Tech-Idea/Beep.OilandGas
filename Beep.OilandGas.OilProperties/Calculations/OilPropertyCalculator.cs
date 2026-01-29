@@ -21,20 +21,22 @@ namespace Beep.OilandGas.OilProperties.Calculations
             var properties = new OilPropertyResult();
 
             // Calculate API gravity
-            properties.API_GRAVITY = conditions.API_GRAVITY;
+            properties.ApiGravity = conditions.API_GRAVITY;
 
             // Calculate specific gravity from API gravity
             properties.SpecificGravity = CalculateSpecificGravity(conditions.API_GRAVITY);
 
-            // Calculate solution GOR if not provided
-            decimal solutionGOR = conditions.SOLUTION_GAS_OIL_RATIO ?? 
-                                 CalculateSolutionGOR(conditions);
+            // Calculate solution GOR if not provided (SOLUTION_GAS_OIL_RATIO is nullable)
+            decimal solutionGOR = (conditions.SOLUTION_GAS_OIL_RATIO.HasValue && conditions.SOLUTION_GAS_OIL_RATIO.Value > 0m)
+                                 ? conditions.SOLUTION_GAS_OIL_RATIO.Value
+                                 : CalculateSolutionGOR(conditions);
 
-            properties.SOLUTION_GAS_OIL_RATIO = solutionGOR;
+            properties.SolutionGasOilRatio = solutionGOR;
 
-            // Calculate bubble point pressure if not provided
-            decimal bubblePointPressure = conditions.BUBBLE_POINT_PRESSURE ?? 
-                                         CalculateBubblePointPressure(conditions);
+            // Calculate bubble point pressure if not provided (BUBBLE_POINT_PRESSURE is nullable)
+            decimal bubblePointPressure = (conditions.BUBBLE_POINT_PRESSURE.HasValue && conditions.BUBBLE_POINT_PRESSURE.Value > 0m)
+                                         ? conditions.BUBBLE_POINT_PRESSURE.Value
+                                         : CalculateBubblePointPressure(conditions);
 
             // Calculate formation volume factor
             properties.FormationVolumeFactor = CalculateFormationVolumeFactor(
@@ -46,7 +48,7 @@ namespace Beep.OilandGas.OilProperties.Calculations
 
             // Calculate oil viscosity
             properties.Viscosity = CalculateOilViscosity(
-                conditions, properties.API_GRAVITY, solutionGOR);
+                conditions, properties.ApiGravity, solutionGOR);
 
             // Calculate compressibility
             properties.Compressibility = CalculateOilCompressibility(
@@ -98,7 +100,10 @@ namespace Beep.OilandGas.OilProperties.Calculations
             // Standing correlation: Pb = 18.2 * ((Rs / Î³g)^0.83 * 10^(0.00091*T - 0.0125*API) - 1.4)
             decimal temperatureF = conditions.TEMPERATURE - 460m; // Convert Rankine to Fahrenheit
 
-            decimal solutionGOR = conditions.SOLUTION_GAS_OIL_RATIO ?? CalculateSolutionGOR(conditions);
+            // SOLUTION_GAS_OIL_RATIO is nullable; use HasValue/Value
+            decimal solutionGOR = (conditions.SOLUTION_GAS_OIL_RATIO.HasValue && conditions.SOLUTION_GAS_OIL_RATIO.Value > 0m)
+                                 ? conditions.SOLUTION_GAS_OIL_RATIO.Value
+                                 : CalculateSolutionGOR(conditions);
 
             if (solutionGOR <= 0)
                 return 0m;
@@ -202,7 +207,7 @@ namespace Beep.OilandGas.OilProperties.Calculations
                 return 0.000001m;
             }
 
-            decimal solutionGOR = conditions.SOLUTION_GAS_OIL_RATIO ?? 0m;
+            decimal solutionGOR = conditions.SOLUTION_GAS_OIL_RATIO.GetValueOrDefault(0m);
             decimal pressureDifference = conditions.PRESSURE - bubblePointPressure;
 
             if (pressureDifference <= 0)
@@ -224,27 +229,27 @@ namespace Beep.OilandGas.OilProperties.Calculations
             var result = new BUBBLE_POINT_RESULT();
 
             // If solution GOR is provided, calculate bubble point pressure
-            if (conditions.SOLUTION_GAS_OIL_RATIO.HasValue)
+            if (conditions.SOLUTION_GAS_OIL_RATIO.HasValue && conditions.SOLUTION_GAS_OIL_RATIO.Value > 0m)
             {
-                result.SOLUTION_GAS_OIL_RATIO = conditions.SOLUTION_GAS_OIL_RATIO.Value;
+                result.SOLUTION_GAS_OIL_RATIO = conditions.SOLUTION_GAS_OIL_RATIO.GetValueOrDefault(0m);
                 result.BUBBLE_POINT_PRESSURE = CalculateBubblePointPressure(conditions);
             }
             else
             {
                 // If bubble point pressure is provided, calculate solution GOR
-                if (conditions.BUBBLE_POINT_PRESSURE.HasValue)
+                if (conditions.BUBBLE_POINT_PRESSURE.HasValue && conditions.BUBBLE_POINT_PRESSURE.Value > 0m)
                 {
-                    result.BUBBLE_POINT_PRESSURE = conditions.BUBBLE_POINT_PRESSURE.Value;
+                    result.BUBBLE_POINT_PRESSURE = conditions.BUBBLE_POINT_PRESSURE.GetValueOrDefault(0m);
                     
                     // Iterate to find solution GOR that gives this bubble point
                     decimal solutionGOR = CalculateSolutionGOR(conditions);
                     var testConditions = new OIL_PROPERTY_CONDITIONS
                     {
-                        Pressure = result.BUBBLE_POINT_PRESSURE,
-                        Temperature = conditions.TEMPERATURE,
-                        ApiGravity = conditions.API_GRAVITY,
-                        GasSpecificGravity = conditions.GAS_SPECIFIC_GRAVITY,
-                        SolutionGasOilRatio = solutionGOR
+                        PRESSURE = result.BUBBLE_POINT_PRESSURE,
+                        TEMPERATURE = conditions.TEMPERATURE,
+                        API_GRAVITY = conditions.API_GRAVITY,
+                        GAS_SPECIFIC_GRAVITY = conditions.GAS_SPECIFIC_GRAVITY,
+                        SOLUTION_GAS_OIL_RATIO = solutionGOR
                     };
 
                     decimal calculatedBubblePoint = CalculateBubblePointPressure(testConditions);

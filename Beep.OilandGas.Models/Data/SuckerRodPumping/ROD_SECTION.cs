@@ -21,29 +21,29 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
             set { SetProperty(ref SUCKER_ROD_STRING_IDValue, value); }
         }
 
-        private Decimal? DIAMETERValue;
-        public Decimal? DIAMETER
+        private Decimal  DIAMETERValue;
+        public Decimal  DIAMETER
         {
             get { return this.DIAMETERValue; }
             set { SetProperty(ref DIAMETERValue, value); }
         }
 
-        private Decimal? LENGTHValue;
-        public Decimal? LENGTH
+        private Decimal  LENGTHValue;
+        public Decimal  LENGTH
         {
             get { return this.LENGTHValue; }
             set { SetProperty(ref LENGTHValue, value); }
         }
 
-        private Decimal? DENSITYValue;
-        public Decimal? DENSITY
+        private Decimal  DENSITYValue;
+        public Decimal  DENSITY
         {
             get { return this.DENSITYValue; }
             set { SetProperty(ref DENSITYValue, value); }
         }
 
-        private Decimal? WEIGHTValue;
-        public Decimal? WEIGHT
+        private Decimal  WEIGHTValue;
+        public Decimal  WEIGHT
         {
             get { return this.WEIGHTValue; }
             set { SetProperty(ref WEIGHTValue, value); }

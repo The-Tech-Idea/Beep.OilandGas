@@ -433,6 +433,12 @@ namespace Beep.OilandGas.HeatMap.Configuration
         /// Gets or sets whether to show reference lines.
         /// </summary>
         public bool ShowReferenceLines { get; set; } = false;
+        public string map_id { get; internal set; }
+        public string config_name { get; internal set; }
+        public DateTime? row_created_date { get; internal set; }
+        public string HEAT_MAP_ID { get; internal set; }
+        public string CONFIGURATION_NAME { get; internal set; }
+        public string ACTIVE_IND { get; internal set; }
 
         /// <summary>
         /// Gets the color scheme based on the configuration.

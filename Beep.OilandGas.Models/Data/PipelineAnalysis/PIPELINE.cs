@@ -275,8 +275,8 @@ private  System.String REMARKValue;
 
 private  System.String SOURCEValue; 
 
-private  System.Decimal? DIAMETERValue; 
- public System.Decimal? DIAMETER
+private  System.Decimal  DIAMETERValue; 
+ public System.Decimal  DIAMETER
         {  
             get  
             {  
@@ -295,8 +295,8 @@ private  System.String DIAMETER_OUOMValue;
 
           set { SetProperty(ref  DIAMETER_OUOMValue, value); }
         } 
-private  System.Decimal? LENGTHValue; 
- public System.Decimal? LENGTH
+private  System.Decimal  LENGTHValue; 
+ public System.Decimal  LENGTH
         {  
             get  
             {  

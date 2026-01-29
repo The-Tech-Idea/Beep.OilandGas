@@ -34,7 +34,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
 
             if (Math.Abs(efficiency) < Epsilon)
                 throw new InvalidInputException(nameof(efficiency), 
-                    "Efficiency cannot be zero for brake horsepower calculation.");
+                    " EFFICIENCY cannot be zero for brake horsepower calculation.");
 
             double hydraulicPower = (flowRate * head * specificGravity) / HorsepowerConversionFactor;
             return hydraulicPower / efficiency;

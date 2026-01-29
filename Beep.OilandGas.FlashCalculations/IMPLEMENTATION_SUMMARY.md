@@ -89,7 +89,7 @@ Successfully created `Beep.OilandGas.FlashCalculations` library with comprehensi
 
 ### Flash Calculations
 
-- **Isothermal Flash** - Pressure and temperature specified
+- **Isothermal Flash** - PRESSURE and temperature specified
 - **Rachford-Rice Solver** - Newton-Raphson iteration
 - **Wilson Correlation** - K-value initialization
 - **Convergence Monitoring** - Iteration tracking and error reporting
@@ -104,7 +104,7 @@ Successfully created `Beep.OilandGas.FlashCalculations` library with comprehensi
 ### Integration
 
 - **Z-Factor Integration** - Uses gas properties library
-- **Gas Property Support** - Temperature and pressure handling
+- **Gas Property Support** - TEMPERATURE and pressure handling
 
 ---
 
@@ -157,7 +157,7 @@ Where:
 
 - ✅ Z-factor calculations (Brill-Beggs)
 - ✅ Gas property support
-- ✅ Temperature and pressure handling
+- ✅ TEMPERATURE and pressure handling
 
 ### Future Integration
 

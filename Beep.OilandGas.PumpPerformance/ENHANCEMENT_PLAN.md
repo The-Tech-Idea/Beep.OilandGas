@@ -29,14 +29,14 @@ Beep.PumpPerformance provides pump performance calculations for oil and gas oper
    - Variable speed pump calculations
    - System curve calculations
    - Operating point determination
-   - Best Efficiency Point (BEP) calculation
+   - Best  EFFICIENCY Point (BEP) calculation
 
-2. **Comprehensive Efficiency Calculations**
+2. **Comprehensive  EFFICIENCY Calculations**
    - Hydraulic efficiency
    - Mechanical efficiency
    - Volumetric efficiency
    - Overall efficiency
-   - Efficiency curves generation
+   -  EFFICIENCY curves generation
 
 3. **Power Calculations**
    - Brake horsepower (BHP) calculations
@@ -115,7 +115,7 @@ Beep.PumpPerformance provides pump performance calculations for oil and gas oper
 2. **Performance Reports**
    - Generate detailed performance reports
    - Comparison reports
-   - Efficiency analysis reports
+   -  EFFICIENCY analysis reports
    - Export to PDF/Excel
 
 3. **Interactive Charts**
@@ -135,7 +135,7 @@ Beep.PumpPerformance provides pump performance calculations for oil and gas oper
 2. **Performance Monitoring**
    - Performance degradation tracking
    - Predictive maintenance indicators
-   - Efficiency trending
+   -  EFFICIENCY trending
    - Alert generation
 
 3. **Data Import/Export**

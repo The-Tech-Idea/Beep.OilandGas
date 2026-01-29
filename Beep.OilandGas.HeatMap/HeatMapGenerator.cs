@@ -1,4 +1,5 @@
-﻿using SkiaSharp;
+﻿using Beep.OilandGas.Models.HeatMap;
+using SkiaSharp;
 namespace Beep.OilandGas.HeatMap
 {
     public class HeatMapGenerator
@@ -223,7 +224,7 @@ namespace Beep.OilandGas.HeatMap
 
             // Draw the label
             // Adjust the y-offset for the label based on the circle's radius
-            canvas.DrawText(point.LABEL, (float)x, (float)(y - radius - textPaint.TextSize), textPaint);
+            canvas.DrawText(point.Label, (float)x, (float)(y - radius - textPaint.TextSize), textPaint);
         }
         private static SKColor FromRedtoGreen(HEAT_MAP_DATA_POINT point)
         {

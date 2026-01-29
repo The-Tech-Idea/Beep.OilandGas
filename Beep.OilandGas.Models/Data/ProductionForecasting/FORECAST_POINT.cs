@@ -21,36 +21,36 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
             set { SetProperty(ref PRODUCTION_FORECAST_IDValue, value); }
         }
 
-        private Decimal? TIMEValue;
-        public Decimal? TIME
+        private Decimal  TIMEValue;
+        public Decimal  TIME
         {
             get { return this.TIMEValue; }
             set { SetProperty(ref TIMEValue, value); }
         }
 
-        private Decimal? PRODUCTION_RATEValue;
-        public Decimal? PRODUCTION_RATE
+        private Decimal  PRODUCTION_RATEValue;
+        public Decimal  PRODUCTION_RATE
         {
             get { return this.PRODUCTION_RATEValue; }
             set { SetProperty(ref PRODUCTION_RATEValue, value); }
         }
 
-        private Decimal? CUMULATIVE_PRODUCTIONValue;
-        public Decimal? CUMULATIVE_PRODUCTION
+        private Decimal  CUMULATIVE_PRODUCTIONValue;
+        public Decimal  CUMULATIVE_PRODUCTION
         {
             get { return this.CUMULATIVE_PRODUCTIONValue; }
             set { SetProperty(ref CUMULATIVE_PRODUCTIONValue, value); }
         }
 
-        private Decimal? RESERVOIR_PRESSUREValue;
-        public Decimal? RESERVOIR_PRESSURE
+        private Decimal  RESERVOIR_PRESSUREValue;
+        public Decimal  RESERVOIR_PRESSURE
         {
             get { return this.RESERVOIR_PRESSUREValue; }
             set { SetProperty(ref RESERVOIR_PRESSUREValue, value); }
         }
 
-        private Decimal? BOTTOM_HOLE_PRESSUREValue;
-        public Decimal? BOTTOM_HOLE_PRESSURE
+        private Decimal  BOTTOM_HOLE_PRESSUREValue;
+        public Decimal  BOTTOM_HOLE_PRESSURE
         {
             get { return this.BOTTOM_HOLE_PRESSUREValue; }
             set { SetProperty(ref BOTTOM_HOLE_PRESSUREValue, value); }
@@ -89,15 +89,15 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
 
         public DateTime FORECAST_DATE { get; set; }
 
-        private decimal? DECLINE_EXPONENTValue;
-        public decimal? DECLINE_EXPONENT
+        private Decimal  DECLINE_EXPONENTValue;
+        public Decimal  DECLINE_EXPONENT
         {
             get { return this.DECLINE_EXPONENTValue; }
             set { SetProperty(ref DECLINE_EXPONENTValue, value); }
         }
 
-        private string FORECAST_METHODValue;
-        public string FORECAST_METHOD
+        private ForecastType FORECAST_METHODValue;
+        public ForecastType FORECAST_METHOD
         {
             get { return this.FORECAST_METHODValue; }
             set { SetProperty(ref FORECAST_METHODValue, value); }

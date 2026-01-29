@@ -27,36 +27,36 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref REVENUE_TRANSACTION_IDValue, value); }
         }
 
-        private System.Decimal? OIL_VOLUMEValue;
-        public System.Decimal? OIL_VOLUME
+        private System.Decimal  OIL_VOLUMEValue;
+        public System.Decimal  OIL_VOLUME
         {
             get { return this.OIL_VOLUMEValue; }
             set { SetProperty(ref OIL_VOLUMEValue, value); }
         }
 
-        private System.Decimal? GAS_VOLUMEValue;
-        public System.Decimal? GAS_VOLUME
+        private System.Decimal  GAS_VOLUMEValue;
+        public System.Decimal  GAS_VOLUME
         {
             get { return this.GAS_VOLUMEValue; }
             set { SetProperty(ref GAS_VOLUMEValue, value); }
         }
 
-        private System.Decimal? OIL_REVENUEValue;
-        public System.Decimal? OIL_REVENUE
+        private System.Decimal  OIL_REVENUEValue;
+        public System.Decimal  OIL_REVENUE
         {
             get { return this.OIL_REVENUEValue; }
             set { SetProperty(ref OIL_REVENUEValue, value); }
         }
 
-        private System.Decimal? GAS_REVENUEValue;
-        public System.Decimal? GAS_REVENUE
+        private System.Decimal  GAS_REVENUEValue;
+        public System.Decimal  GAS_REVENUE
         {
             get { return this.GAS_REVENUEValue; }
             set { SetProperty(ref GAS_REVENUEValue, value); }
         }
 
-        private System.Decimal? ROYALTY_AMOUNTValue;
-        public System.Decimal? ROYALTY_AMOUNT
+        private System.Decimal  ROYALTY_AMOUNTValue;
+        public System.Decimal  ROYALTY_AMOUNT
         {
             get { return this.ROYALTY_AMOUNTValue; }
             set { SetProperty(ref ROYALTY_AMOUNTValue, value); }

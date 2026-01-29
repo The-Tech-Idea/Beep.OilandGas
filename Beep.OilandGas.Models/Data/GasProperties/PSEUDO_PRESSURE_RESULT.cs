@@ -21,29 +21,29 @@ namespace Beep.OilandGas.Models.Data.GasProperties
             set { SetProperty(ref GAS_COMPOSITION_IDValue, value); }
         }
 
-        private Decimal? PRESSUREValue;
-        public Decimal? PRESSURE
+        private Decimal  PRESSUREValue;
+        public Decimal  PRESSURE
         {
             get { return this.PRESSUREValue; }
             set { SetProperty(ref PRESSUREValue, value); }
         }
 
-        private Decimal? PSEUDO_PRESSUREValue;
-        public Decimal? PSEUDO_PRESSURE
+        private Decimal  PSEUDO_PRESSUREValue;
+        public Decimal  PSEUDO_PRESSURE
         {
             get { return this.PSEUDO_PRESSUREValue; }
             set { SetProperty(ref PSEUDO_PRESSUREValue, value); }
         }
 
-        private Decimal? Z_FACTORValue;
-        public Decimal? Z_FACTOR
+        private Decimal  Z_FACTORValue;
+        public Decimal  Z_FACTOR
         {
             get { return this.Z_FACTORValue; }
             set { SetProperty(ref Z_FACTORValue, value); }
         }
 
-        private Decimal? VISCOSITYValue;
-        public Decimal? VISCOSITY
+        private Decimal  VISCOSITYValue;
+        public Decimal  VISCOSITY
         {
             get { return this.VISCOSITYValue; }
             set { SetProperty(ref VISCOSITYValue, value); }

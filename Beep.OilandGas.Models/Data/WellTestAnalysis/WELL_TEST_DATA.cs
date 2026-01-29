@@ -15,8 +15,8 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             set { SetProperty(ref WELL_TEST_DATA_IDValue, value); }
         }
 
-        private Decimal? FLOW_RATEValue;
-        public Decimal? FLOW_RATE
+        private Decimal  FLOW_RATEValue;
+        public Decimal  FLOW_RATE
         {
             get { return this.FLOW_RATEValue; }
             set { SetProperty(ref FLOW_RATEValue, value); }
@@ -29,8 +29,8 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             set { SetProperty(ref WELLBORE_RADIUSValue, value); }
         }
 
-        private Decimal? FORMATION_THICKNESSValue;
-        public Decimal? FORMATION_THICKNESS
+        private Decimal  FORMATION_THICKNESSValue;
+        public Decimal  FORMATION_THICKNESS
         {
             get { return this.FORMATION_THICKNESSValue; }
             set { SetProperty(ref FORMATION_THICKNESSValue, value); }
@@ -92,8 +92,8 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             set { SetProperty(ref GAS_SPECIFIC_GRAVITYValue, value); }
         }
 
-        private Decimal? RESERVOIR_TEMPERATUREValue;
-        public Decimal? RESERVOIR_TEMPERATURE
+        private Decimal  RESERVOIR_TEMPERATUREValue;
+        public Decimal  RESERVOIR_TEMPERATURE
         {
             get { return this.RESERVOIR_TEMPERATUREValue; }
             set { SetProperty(ref RESERVOIR_TEMPERATUREValue, value); }

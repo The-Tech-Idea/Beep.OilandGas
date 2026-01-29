@@ -116,7 +116,7 @@ namespace Beep.OilandGas.PumpPerformance.SystemAnalysis
                     Math.Abs(p.FlowRate - operatingPoint.Value.flowRate) < 0.1);
                 if (curvePoint != null)
                 {
-                    efficiency = curvePoint.Efficiency;
+                    efficiency = curvePoint.EFFICIENCY;
                 }
                 else
                 {
@@ -223,7 +223,7 @@ namespace Beep.OilandGas.PumpPerformance.SystemAnalysis
         /// Calculates cost-effectiveness ratio (efficiency per unit cost).
         /// </summary>
         /// <param name="candidate">Pump candidate.</param>
-        /// <param name="operatingEfficiency">Efficiency at operating point.</param>
+        /// <param name="operatingEfficiency"> EFFICIENCY at operating point.</param>
         /// <returns>Cost-effectiveness ratio (higher is better).</returns>
         public static double CalculateCostEffectiveness(
             PumpCandidate candidate,
@@ -263,7 +263,7 @@ namespace Beep.OilandGas.PumpPerformance.SystemAnalysis
                     Math.Abs(p.FlowRate - operatingPoint.Value.flowRate) < 0.1);
                 if (curvePoint != null)
                 {
-                    efficiency = curvePoint.Efficiency;
+                    efficiency = curvePoint.EFFICIENCY;
                 }
 
                 rankings.Add((candidate, efficiency));

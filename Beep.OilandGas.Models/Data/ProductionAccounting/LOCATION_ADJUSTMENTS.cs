@@ -15,22 +15,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref LOCATION_ADJUSTMENTS_IDValue, value); }
         }
 
-        private System.Decimal? LOCATION_DIFFERENTIALValue;
-        public System.Decimal? LOCATION_DIFFERENTIAL
+        private System.Decimal  LOCATION_DIFFERENTIALValue;
+        public System.Decimal  LOCATION_DIFFERENTIAL
         {
             get { return this.LOCATION_DIFFERENTIALValue; }
             set { SetProperty(ref LOCATION_DIFFERENTIALValue, value); }
         }
 
-        private System.Decimal? TRANSPORTATION_ADJUSTMENTValue;
-        public System.Decimal? TRANSPORTATION_ADJUSTMENT
+        private System.Decimal  TRANSPORTATION_ADJUSTMENTValue;
+        public System.Decimal  TRANSPORTATION_ADJUSTMENT
         {
             get { return this.TRANSPORTATION_ADJUSTMENTValue; }
             set { SetProperty(ref TRANSPORTATION_ADJUSTMENTValue, value); }
         }
 
-        private System.Decimal? TOTAL_ADJUSTMENTValue;
-        public System.Decimal? TOTAL_ADJUSTMENT
+        private System.Decimal  TOTAL_ADJUSTMENTValue;
+        public System.Decimal  TOTAL_ADJUSTMENT
         {
             get { return this.TOTAL_ADJUSTMENTValue; }
             set { SetProperty(ref TOTAL_ADJUSTMENTValue, value); }

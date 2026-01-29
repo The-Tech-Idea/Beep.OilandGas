@@ -61,15 +61,15 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref CAPITALIZED_COSTValue, value); }
         }
 
-        private Decimal? PRODUCTION_BOEValue;
-        public Decimal? PRODUCTION_BOE
+        private Decimal  PRODUCTION_BOEValue;
+        public Decimal  PRODUCTION_BOE
         {
             get { return this.PRODUCTION_BOEValue; }
             set { SetProperty(ref PRODUCTION_BOEValue, value); }
         }
 
-        private Decimal? TOTAL_RESERVES_BOEValue;
-        public Decimal? TOTAL_RESERVES_BOE
+        private Decimal  TOTAL_RESERVES_BOEValue;
+        public Decimal  TOTAL_RESERVES_BOE
         {
             get { return this.TOTAL_RESERVES_BOEValue; }
             set { SetProperty(ref TOTAL_RESERVES_BOEValue, value); }

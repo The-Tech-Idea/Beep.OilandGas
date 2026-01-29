@@ -48,7 +48,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Constants
         /// <summary>
         /// Standard mechanical efficiency.
         /// </summary>
-        public const decimal StandardMechanicalEfficiency = 0.95m;
+        public const decimal StandardMECHANICAL_EFFICIENCY = 0.95m;
 
         /// <summary>
         /// Standard volumetric efficiency for reciprocating compressors.

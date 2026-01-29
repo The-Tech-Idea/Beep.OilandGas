@@ -42,8 +42,8 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref PASSED_INDValue, value); }
         }
 
-        private Decimal? TEST_PRESSUREValue;
-        public Decimal? TEST_PRESSURE
+        private Decimal  TEST_PRESSUREValue;
+        public Decimal  TEST_PRESSURE
         {
             get { return this.TEST_PRESSUREValue; }
             set { SetProperty(ref TEST_PRESSUREValue, value); }

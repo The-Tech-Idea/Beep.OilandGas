@@ -61,11 +61,11 @@ namespace Beep.OilandGas.Accounting.Services
             foreach (var partyId in relatedPartyBaIds)
             {
                 var arTotal = arInvoices.Where(x => string.Equals(x.CUSTOMER_BA_ID, partyId, StringComparison.OrdinalIgnoreCase))
-                    .Sum(x => x.TOTAL_AMOUNT ?? 0m);
+                    .Sum(x => x.TOTAL_AMOUNT is decimal ta ? ta : 0m);
                 var apTotal = apInvoices.Where(x => string.Equals(x.VENDOR_BA_ID, partyId, StringComparison.OrdinalIgnoreCase))
-                    .Sum(x => x.TOTAL_AMOUNT ?? 0m);
+                    .Sum(x => x.TOTAL_AMOUNT is decimal ta2 ? ta2 : 0m);
                 var invoiceTotal = invoices.Where(x => string.Equals(x.CUSTOMER_BA_ID, partyId, StringComparison.OrdinalIgnoreCase))
-                    .Sum(x => x.TOTAL_AMOUNT ?? 0m);
+                    .Sum(x => x.TOTAL_AMOUNT is decimal ta3 ? ta3 : 0m);
                 var leaseCount = leaseContracts.Count(x => string.Equals(x.LESSOR_BA_ID, partyId, StringComparison.OrdinalIgnoreCase));
 
                 sb.AppendLine($"Party: {partyId}");

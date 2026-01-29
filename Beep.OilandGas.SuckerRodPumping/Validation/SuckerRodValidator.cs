@@ -64,26 +64,26 @@ namespace Beep.OilandGas.SuckerRodPumping.Validation
             if (rodString == null)
                 throw new ArgumentNullException(nameof(rodString));
 
-            if (rodString.Sections == null || rodString.Sections.Count == 0)
+            if (rodString.SECTIONS == null || rodString.SECTIONS.Count == 0)
                 throw new InvalidRodStringException("Rod string must have at least one section.");
 
-            foreach (var section in rodString.Sections)
+            foreach (var section in rodString.SECTIONS)
             {
-                if (section.Diameter <= 0)
+                if (section.DIAMETER <= 0)
                     throw new InvalidRodStringException($"Rod section diameter must be greater than zero.");
 
-                if (section.Length <= 0)
+                if (section.LENGTH <= 0)
                     throw new InvalidRodStringException($"Rod section length must be greater than zero.");
 
-                if (section.Density <= 0)
+                if (section.DENSITY <= 0)
                     throw new InvalidRodStringException($"Rod section density must be greater than zero.");
             }
 
             // Calculate total length
             decimal totalLength = 0m;
-            foreach (var section in rodString.Sections)
+            foreach (var section in rodString.SECTIONS)
             {
-                totalLength += section.Length;
+                totalLength += section.LENGTH;
             }
             rodString.TOTAL_LENGTH = totalLength;
         }

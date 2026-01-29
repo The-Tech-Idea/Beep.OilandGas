@@ -85,7 +85,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         /// <summary>
         /// Calculates hydraulic efficiency.
         /// Formula: η_h = (Actual Head) / (Theoretical Head)
-        /// For simplified calculation: η_h ≈ Overall Efficiency / Mechanical Efficiency
+        /// For simplified calculation: η_h ≈ Overall  EFFICIENCY / Mechanical Efficiency
         /// </summary>
         /// <param name="actualHead">Actual head developed by the pump in feet.</param>
         /// <param name="theoreticalHead">Theoretical head in feet.</param>
@@ -107,8 +107,8 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
 
         /// <summary>
         /// Calculates mechanical efficiency.
-        /// Formula: η_m = (Brake Horsepower - Mechanical Losses) / Brake Horsepower
-        /// Simplified: η_m ≈ Overall Efficiency / (Hydraulic Efficiency * Volumetric Efficiency)
+        /// Formula: η_m = (Brake HORSEPOWER - Mechanical Losses) / Brake HORSEPOWER
+        /// Simplified: η_m ≈ Overall  EFFICIENCY / (Hydraulic  EFFICIENCY * Volumetric Efficiency)
         /// </summary>
         /// <param name="brakeHorsepower">Brake horsepower (BHP).</param>
         /// <param name="mechanicalLosses">Mechanical losses in horsepower.</param>
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
         }
 
         /// <summary>
-        /// Calculates the Best Efficiency Point (BEP) from efficiency data.
+        /// Calculates the Best  EFFICIENCY Point (BEP) from efficiency data.
         /// </summary>
         /// <param name="flowRates">Array of flow rates.</param>
         /// <param name="efficiencies">Array of efficiency values.</param>

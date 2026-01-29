@@ -29,22 +29,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref BASE_PRICE_INDEXValue, value); }
         }
 
-        private System.Decimal? LOCATION_DIFFERENTIALValue;
-        public System.Decimal? LOCATION_DIFFERENTIAL
+        private System.Decimal  LOCATION_DIFFERENTIALValue;
+        public System.Decimal  LOCATION_DIFFERENTIAL
         {
             get { return this.LOCATION_DIFFERENTIALValue; }
             set { SetProperty(ref LOCATION_DIFFERENTIALValue, value); }
         }
 
-        private System.Decimal? QUALITY_DIFFERENTIALValue;
-        public System.Decimal? QUALITY_DIFFERENTIAL
+        private System.Decimal  QUALITY_DIFFERENTIALValue;
+        public System.Decimal  QUALITY_DIFFERENTIAL
         {
             get { return this.QUALITY_DIFFERENTIALValue; }
             set { SetProperty(ref QUALITY_DIFFERENTIALValue, value); }
         }
 
-        private System.Decimal? TIME_DIFFERENTIALValue;
-        public System.Decimal? TIME_DIFFERENTIAL
+        private System.Decimal  TIME_DIFFERENTIALValue;
+        public System.Decimal  TIME_DIFFERENTIAL
         {
             get { return this.TIME_DIFFERENTIALValue; }
             set { SetProperty(ref TIME_DIFFERENTIALValue, value); }

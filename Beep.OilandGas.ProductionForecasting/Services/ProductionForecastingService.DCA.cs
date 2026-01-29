@@ -39,14 +39,14 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 HistoricalData = new List<ForecastProductionDataPoint>()
             };
 
-            foreach (var p in pf.ForecastPoints.Take(10))
+            foreach (var p in pf.FORECAST_POINTS.Take(10))
             {
                 analysis.HistoricalData.Add(new ForecastProductionDataPoint
                 {
-                    Date = endDate.AddDays((double)p.Time),
-                    Time = p.Time,
-                    OilRate = p.ProductionRate,
-                    Cumulative = p.CumulativeProduction
+                    Date = endDate.AddDays((double)p.TIME),
+                    Time = p.TIME,
+                    OilRate = p.PRODUCTION_RATE,
+                    Cumulative = p.CUMULATIVE_PRODUCTION
                 });
             }
 
@@ -89,21 +89,21 @@ namespace Beep.OilandGas.ProductionForecasting.Services
                 WellUWI = wellUWI,
                 FieldId = null,
                 ForecastDate = DateTime.UtcNow,
-                ForecastMethod = Models.Data.ProductionForecasting.FORECAST_TYPE.Decline,
+                ForecastMethod = ForecastType.Decline,
                 ForecastPoints = new List<ProductionForecastPoint>(),
                 EstimatedReserves = pf.TOTAL_CUMULATIVE_PRODUCTION,
                 Status = "Generated"
             };
 
             var start = endDate;
-            foreach (var p in pf.ForecastPoints)
+            foreach (var p in pf.FORECAST_POINTS)
             {
-                var date = start.AddDays((double)p.Time);
+                var date = start.AddDays((double)p.TIME);
                 dto.ForecastPoints.Add(new ProductionForecastPoint
                 {
                     Date = date,
-                    OilRate = p.ProductionRate,
-                    CumulativeOil = p.CumulativeProduction
+                    OilRate = p.PRODUCTION_RATE,
+                    CumulativeOil = p.CUMULATIVE_PRODUCTION
                 });
             }
 

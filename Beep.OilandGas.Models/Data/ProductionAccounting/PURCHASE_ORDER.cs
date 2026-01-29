@@ -41,8 +41,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref EXPECTED_DELIVERY_DATEValue, value); }
         }
 
-        private System.Decimal? TOTAL_AMOUNTValue;
-        public System.Decimal? TOTAL_AMOUNT
+        private System.Decimal  TOTAL_AMOUNTValue;
+        public System.Decimal  TOTAL_AMOUNT
         {
             get { return this.TOTAL_AMOUNTValue; }
             set { SetProperty(ref TOTAL_AMOUNTValue, value); }

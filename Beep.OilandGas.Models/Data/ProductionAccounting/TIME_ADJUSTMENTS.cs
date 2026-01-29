@@ -15,22 +15,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref TIME_ADJUSTMENTS_IDValue, value); }
         }
 
-        private System.Decimal? TIME_DIFFERENTIALValue;
-        public System.Decimal? TIME_DIFFERENTIAL
+        private System.Decimal  TIME_DIFFERENTIALValue;
+        public System.Decimal  TIME_DIFFERENTIAL
         {
             get { return this.TIME_DIFFERENTIALValue; }
             set { SetProperty(ref TIME_DIFFERENTIALValue, value); }
         }
 
-        private System.Decimal? INTEREST_ADJUSTMENTValue;
-        public System.Decimal? INTEREST_ADJUSTMENT
+        private System.Decimal  INTEREST_ADJUSTMENTValue;
+        public System.Decimal  INTEREST_ADJUSTMENT
         {
             get { return this.INTEREST_ADJUSTMENTValue; }
             set { SetProperty(ref INTEREST_ADJUSTMENTValue, value); }
         }
 
-        private System.Decimal? TOTAL_ADJUSTMENTValue;
-        public System.Decimal? TOTAL_ADJUSTMENT
+        private System.Decimal  TOTAL_ADJUSTMENTValue;
+        public System.Decimal  TOTAL_ADJUSTMENT
         {
             get { return this.TOTAL_ADJUSTMENTValue; }
             set { SetProperty(ref TOTAL_ADJUSTMENTValue, value); }

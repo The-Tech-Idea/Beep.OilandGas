@@ -33,18 +33,20 @@ namespace Beep.OilandGas.OilProperties.Validation
             if (conditions.GAS_SPECIFIC_GRAVITY <= 0)
                 throw new InvalidOilPropertyConditionsException("Gas specific gravity must be greater than zero.");
 
-            if (conditions.SOLUTION_GAS_OIL_RATIO.HasValue && 
-                (conditions.SOLUTION_GAS_OIL_RATIO.Value < OilPropertyConstants.MinimumSolutionGOR || 
-                 conditions.SOLUTION_GAS_OIL_RATIO.Value > OilPropertyConstants.MaximumSolutionGOR))
+            // SOLUTION_GAS_OIL_RATIO is a non-nullable decimal in the model; treat values <= 0 as not provided
+            if (conditions.SOLUTION_GAS_OIL_RATIO > 0m && 
+                (conditions.SOLUTION_GAS_OIL_RATIO < OilPropertyConstants.MinimumSolutionGOR || 
+                 conditions.SOLUTION_GAS_OIL_RATIO > OilPropertyConstants.MaximumSolutionGOR))
             {
                 throw new OilPropertyParameterOutOfRangeException(
                     nameof(conditions.SOLUTION_GAS_OIL_RATIO),
                     $"Solution GOR must be between {OilPropertyConstants.MinimumSolutionGOR} and {OilPropertyConstants.MaximumSolutionGOR} scf/STB.");
             }
 
-            if (conditions.BUBBLE_POINT_PRESSURE.HasValue && 
-                (conditions.BUBBLE_POINT_PRESSURE.Value < OilPropertyConstants.MinimumBubblePointPressure || 
-                 conditions.BUBBLE_POINT_PRESSURE.Value > OilPropertyConstants.MaximumBubblePointPressure))
+            // BUBBLE_POINT_PRESSURE is a non-nullable decimal in the model; treat values <= 0 as not provided
+            if (conditions.BUBBLE_POINT_PRESSURE > 0m && 
+                (conditions.BUBBLE_POINT_PRESSURE < OilPropertyConstants.MinimumBubblePointPressure || 
+                 conditions.BUBBLE_POINT_PRESSURE > OilPropertyConstants.MaximumBubblePointPressure))
             {
                 throw new OilPropertyParameterOutOfRangeException(
                     nameof(conditions.BUBBLE_POINT_PRESSURE),

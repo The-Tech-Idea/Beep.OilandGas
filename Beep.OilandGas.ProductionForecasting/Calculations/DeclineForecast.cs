@@ -62,8 +62,8 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
             var forecast = new PRODUCTION_FORECAST
             {
-                ForecastType = ForecastType.Decline,
-                ForecastDuration = forecastDuration
+                FORECAST_TYPE = ForecastType.Decline,
+                FORECAST_DURATION = forecastDuration
             };
 
             decimal timeStep = forecastDuration / timeSteps;
@@ -81,23 +81,23 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 double np_double = ArpsDeclineMethods.ExponentialCumulativeProduction((double)qi, (double)di, (double)time);
                 cumulativeProduction = (decimal)np_double;
 
-                forecast.ForecastPoints.Add(new FORECAST_POINT
+                forecast.FORECAST_POINTS.Add(new FORECAST_POINT
                 {
-                    Time = time,
-                    ProductionRate = Math.Max(0, productionRate),
-                    CumulativeProduction = cumulativeProduction,
-                    DeclineExponent = 0m,
-                    ForecastMethod = "Exponential Decline"
+                    TIME = time,
+                    PRODUCTION_RATE = Math.Max(0, productionRate),
+                    CUMULATIVE_PRODUCTION = cumulativeProduction,
+                    DECLINE_EXPONENT = 0m,
+                    FORECAST_METHOD =  ForecastType.Exponential
                 });
 
                 if (i == 0)
                     forecast.INITIAL_PRODUCTION_RATE = productionRate;
             }
 
-            if (forecast.ForecastPoints.Count > 0)
+            if (forecast.FORECAST_POINTS.Count > 0)
             {
-                forecast.FINAL_PRODUCTION_RATE = forecast.ForecastPoints.Last().PRODUCTION_RATE;
-                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.ForecastPoints.Last().CUMULATIVE_PRODUCTION;
+                forecast.FINAL_PRODUCTION_RATE = forecast.FORECAST_POINTS.Last().PRODUCTION_RATE;
+                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.FORECAST_POINTS.Last().CUMULATIVE_PRODUCTION;
             }
 
             return forecast;
@@ -139,8 +139,8 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
             var forecast = new PRODUCTION_FORECAST
             {
-                ForecastType = ForecastType.Decline,
-                ForecastDuration = forecastDuration
+                FORECAST_TYPE = ForecastType.Decline,
+                FORECAST_DURATION = forecastDuration
             };
 
             decimal timeStep = forecastDuration / timeSteps;
@@ -174,13 +174,13 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 double np_double = ArpsDeclineMethods.HarmonicCumulativeProduction((double)qi, (double)di, (double)time);
                 cumulativeProduction = (decimal)np_double;
 
-                forecast.ForecastPoints.Add(new FORECAST_POINT
+                forecast.FORECAST_POINTS.Add(new FORECAST_POINT
                 {
-                    Time = time,
-                    ProductionRate = Math.Max(0, productionRate),
-                    CumulativeProduction = cumulativeProduction,
-                    DeclineExponent = 1m,
-                    ForecastMethod = "Harmonic Decline"
+                     TIME = time,
+                    PRODUCTION_RATE = Math.Max(0, productionRate),
+                    CUMULATIVE_PRODUCTION = cumulativeProduction,
+                    DECLINE_EXPONENT = 1m,
+                    FORECAST_METHOD =  ForecastType.Harmonic
                 });
 
                 if (i == 0)
@@ -190,10 +190,10 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                     break;
             }
 
-            if (forecast.ForecastPoints.Count > 0)
+            if (forecast.FORECAST_POINTS.Count > 0)
             {
-                forecast.FINAL_PRODUCTION_RATE = forecast.ForecastPoints.Last().PRODUCTION_RATE;
-                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.ForecastPoints.Last().CUMULATIVE_PRODUCTION;
+                forecast.FINAL_PRODUCTION_RATE = forecast.FORECAST_POINTS.Last().PRODUCTION_RATE;
+                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.FORECAST_POINTS.Last().CUMULATIVE_PRODUCTION;
                 forecast.FORECAST_DURATION = maxTime;
             }
 
@@ -243,8 +243,8 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
             var forecast = new PRODUCTION_FORECAST
             {
-                ForecastType = ForecastType.Decline,
-                ForecastDuration = forecastDuration
+                FORECAST_TYPE = ForecastType.Decline,
+                FORECAST_DURATION = forecastDuration
             };
 
             decimal timeStep = forecastDuration / timeSteps;
@@ -277,13 +277,13 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 double np_double = ArpsDeclineMethods.HyperbolicCumulativeProduction((double)qi, (double)di, (double)time, (double)b);
                 cumulativeProduction = (decimal)np_double;
 
-                forecast.ForecastPoints.Add(new FORECAST_POINT
+                forecast.FORECAST_POINTS.Add(new FORECAST_POINT
                 {
-                    Time = time,
-                    ProductionRate = Math.Max(0, productionRate),
-                    CumulativeProduction = cumulativeProduction,
-                    DeclineExponent = b,
-                    ForecastMethod = $"Hyperbolic Decline (b={b:F2})"
+                     TIME = time,
+                    PRODUCTION_RATE = Math.Max(0, productionRate),
+                    CUMULATIVE_PRODUCTION = cumulativeProduction,
+                    DECLINE_EXPONENT = b,
+                    FORECAST_METHOD = ForecastType.Hyperbolic
                 });
 
                 if (i == 0)
@@ -293,10 +293,10 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                     break;
             }
 
-            if (forecast.ForecastPoints.Count > 0)
+            if (forecast.FORECAST_POINTS.Count > 0)
             {
-                forecast.FINAL_PRODUCTION_RATE = forecast.ForecastPoints.Last().PRODUCTION_RATE;
-                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.ForecastPoints.Last().CUMULATIVE_PRODUCTION;
+                forecast.FINAL_PRODUCTION_RATE = forecast.FORECAST_POINTS.Last().PRODUCTION_RATE;
+                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.FORECAST_POINTS.Last().CUMULATIVE_PRODUCTION;
                 forecast.FORECAST_DURATION = maxTime;
             }
 
@@ -358,7 +358,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                 throw new ArgumentException("Forecast duration must be positive.", nameof(forecastDuration));
 
             if (timeSteps < 2)
-                throw new ArgumentException("Time steps must be at least 2.", nameof(timeSteps));
+                throw new ArgumentException(" TIME steps must be at least 2.", nameof(timeSteps));
         }
 
         /// <summary>

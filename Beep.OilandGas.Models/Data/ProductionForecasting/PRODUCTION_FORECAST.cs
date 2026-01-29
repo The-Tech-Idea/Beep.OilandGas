@@ -28,29 +28,29 @@ namespace Beep.OilandGas.Models.Data.ProductionForecasting
             set { SetProperty(ref FORECAST_TYPEValue, value); }
         }
 
-        private Decimal? FORECAST_DURATIONValue;
-        public Decimal? FORECAST_DURATION
+        private decimal  FORECAST_DURATIONValue;
+        public decimal  FORECAST_DURATION
         {
             get { return this.FORECAST_DURATIONValue; }
             set { SetProperty(ref FORECAST_DURATIONValue, value); }
         }
 
-        private Decimal? INITIAL_PRODUCTION_RATEValue;
-        public Decimal? INITIAL_PRODUCTION_RATE
+        private decimal  INITIAL_PRODUCTION_RATEValue;
+        public decimal  INITIAL_PRODUCTION_RATE
         {
             get { return this.INITIAL_PRODUCTION_RATEValue; }
             set { SetProperty(ref INITIAL_PRODUCTION_RATEValue, value); }
         }
 
-        private Decimal? FINAL_PRODUCTION_RATEValue;
-        public Decimal? FINAL_PRODUCTION_RATE
+        private decimal  FINAL_PRODUCTION_RATEValue;
+        public decimal  FINAL_PRODUCTION_RATE
         {
             get { return this.FINAL_PRODUCTION_RATEValue; }
             set { SetProperty(ref FINAL_PRODUCTION_RATEValue, value); }
         }
 
-        private Decimal? TOTAL_CUMULATIVE_PRODUCTIONValue;
-        public Decimal? TOTAL_CUMULATIVE_PRODUCTION
+        private decimal  TOTAL_CUMULATIVE_PRODUCTIONValue;
+        public decimal  TOTAL_CUMULATIVE_PRODUCTION
         {
             get { return this.TOTAL_CUMULATIVE_PRODUCTIONValue; }
             set { SetProperty(ref TOTAL_CUMULATIVE_PRODUCTIONValue, value); }

@@ -22,8 +22,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref MEASUREMENT_COUNTValue, value); }
         }
 
-        private System.Decimal? AVERAGE_ACCURACYValue;
-        public System.Decimal? AVERAGE_ACCURACY
+        private System.Decimal  AVERAGE_ACCURACYValue;
+        public System.Decimal  AVERAGE_ACCURACY
         {
             get { return this.AVERAGE_ACCURACYValue; }
             set { SetProperty(ref AVERAGE_ACCURACYValue, value); }

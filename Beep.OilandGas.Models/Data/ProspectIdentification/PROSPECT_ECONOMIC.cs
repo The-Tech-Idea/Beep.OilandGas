@@ -29,8 +29,8 @@ private  System.String ECONOMIC_IDValue;
 
           set { SetProperty(ref  ECONOMIC_IDValue, value); }
         } 
-private  System.Decimal? NPVValue; 
- public System.Decimal? NPV
+private  System.Decimal  NPVValue; 
+ public System.Decimal  NPV
         {  
             get  
             {  
@@ -39,8 +39,8 @@ private  System.Decimal? NPVValue;
 
           set { SetProperty(ref  NPVValue, value); }
         } 
-private  System.Decimal? EMVValue; 
- public System.Decimal? EMV
+private  System.Decimal  EMVValue; 
+ public System.Decimal  EMV
         {  
             get  
             {  
@@ -49,8 +49,8 @@ private  System.Decimal? EMVValue;
 
           set { SetProperty(ref  EMVValue, value); }
         } 
-private  System.Decimal? IRRValue; 
- public System.Decimal? IRR
+private  System.Decimal  IRRValue; 
+ public System.Decimal  IRR
         {  
             get  
             {  
@@ -59,8 +59,8 @@ private  System.Decimal? IRRValue;
 
           set { SetProperty(ref  IRRValue, value); }
         } 
-private  System.Decimal? PAYBACK_PERIODValue; 
- public System.Decimal? PAYBACK_PERIOD
+private  System.Decimal  PAYBACK_PERIODValue; 
+ public System.Decimal  PAYBACK_PERIOD
         {  
             get  
             {  
@@ -79,8 +79,8 @@ private  System.String PAYBACK_PERIOD_OUOMValue;
 
           set { SetProperty(ref  PAYBACK_PERIOD_OUOMValue, value); }
         } 
-private  System.Decimal? DEVELOPMENT_COSTValue; 
- public System.Decimal? DEVELOPMENT_COST
+private  System.Decimal  DEVELOPMENT_COSTValue; 
+ public System.Decimal  DEVELOPMENT_COST
         {  
             get  
             {  
@@ -89,8 +89,8 @@ private  System.Decimal? DEVELOPMENT_COSTValue;
 
           set { SetProperty(ref  DEVELOPMENT_COSTValue, value); }
         } 
-private  System.Decimal? OPERATING_COSTValue; 
- public System.Decimal? OPERATING_COST
+private  System.Decimal  OPERATING_COSTValue; 
+ public System.Decimal  OPERATING_COST
         {  
             get  
             {  
@@ -99,8 +99,8 @@ private  System.Decimal? OPERATING_COSTValue;
 
           set { SetProperty(ref  OPERATING_COSTValue, value); }
         } 
-private  System.Decimal? ABANDONMENT_COSTValue; 
- public System.Decimal? ABANDONMENT_COST
+private  System.Decimal  ABANDONMENT_COSTValue; 
+ public System.Decimal  ABANDONMENT_COST
         {  
             get  
             {  
@@ -109,8 +109,8 @@ private  System.Decimal? ABANDONMENT_COSTValue;
 
           set { SetProperty(ref  ABANDONMENT_COSTValue, value); }
         } 
-private  System.Decimal? OIL_PRICEValue; 
- public System.Decimal? OIL_PRICE
+private  System.Decimal  OIL_PRICEValue; 
+ public System.Decimal  OIL_PRICE
         {  
             get  
             {  
@@ -119,8 +119,8 @@ private  System.Decimal? OIL_PRICEValue;
 
           set { SetProperty(ref  OIL_PRICEValue, value); }
         } 
-private  System.Decimal? GAS_PRICEValue; 
- public System.Decimal? GAS_PRICE
+private  System.Decimal  GAS_PRICEValue; 
+ public System.Decimal  GAS_PRICE
         {  
             get  
             {  
@@ -129,8 +129,8 @@ private  System.Decimal? GAS_PRICEValue;
 
           set { SetProperty(ref  GAS_PRICEValue, value); }
         } 
-private  System.Decimal? DISCOUNT_RATEValue; 
- public System.Decimal? DISCOUNT_RATE
+private  System.Decimal  DISCOUNT_RATEValue; 
+ public System.Decimal  DISCOUNT_RATE
         {  
             get  
             {  
@@ -139,8 +139,8 @@ private  System.Decimal? DISCOUNT_RATEValue;
 
           set { SetProperty(ref  DISCOUNT_RATEValue, value); }
         } 
-private  System.Decimal? INFLATION_RATEValue; 
- public System.Decimal? INFLATION_RATE
+private  System.Decimal  INFLATION_RATEValue; 
+ public System.Decimal  INFLATION_RATE
         {  
             get  
             {  

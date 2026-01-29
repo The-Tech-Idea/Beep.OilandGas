@@ -21,15 +21,15 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
             set { SetProperty(ref NODAL_ANALYSIS_IDValue, value); }
         }
 
-        private Decimal? FLOW_RATEValue;
-        public Decimal? FLOW_RATE
+        private Decimal  FLOW_RATEValue;
+        public Decimal  FLOW_RATE
         {
             get { return this.FLOW_RATEValue; }
             set { SetProperty(ref FLOW_RATEValue, value); }
         }
 
-        private Decimal? REQUIRED_BOTTOMHOLE_PRESSUREValue;
-        public Decimal? REQUIRED_BOTTOMHOLE_PRESSURE
+        private Decimal  REQUIRED_BOTTOMHOLE_PRESSUREValue;
+        public Decimal  REQUIRED_BOTTOMHOLE_PRESSURE
         {
             get { return this.REQUIRED_BOTTOMHOLE_PRESSUREValue; }
             set { SetProperty(ref REQUIRED_BOTTOMHOLE_PRESSUREValue, value); }

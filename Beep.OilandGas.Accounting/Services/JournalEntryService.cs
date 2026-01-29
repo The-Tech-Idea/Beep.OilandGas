@@ -379,8 +379,9 @@ namespace Beep.OilandGas.Accounting.Services
             if (entry == null)
                 throw new ArgumentNullException(nameof(entry));
 
-            decimal debits = entry.TOTAL_DEBIT ?? 0;
-            decimal credits = entry.TOTAL_CREDIT ?? 0;
+            // Use pattern matching to handle both nullable and non-nullable representations of TOTAL_DEBIT/TOTAL_CREDIT
+            decimal debits = entry.TOTAL_DEBIT is decimal td ? td : 0m;
+            decimal credits = entry.TOTAL_CREDIT is decimal tc ? tc : 0m;
 
             if (Math.Abs(debits - credits) > BalanceTolerance)
                 throw new InvalidOperationException($"Journal entry not balanced: Debits {debits} != Credits {credits}");

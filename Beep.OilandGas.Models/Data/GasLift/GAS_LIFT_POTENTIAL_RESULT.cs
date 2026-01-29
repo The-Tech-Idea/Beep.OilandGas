@@ -66,5 +66,6 @@ namespace Beep.OilandGas.Models.Data.GasLift
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+        public IEnumerable<GasLiftEconomicPoint> PERFORMANCE_POINTS { get; set; }
     }
 }

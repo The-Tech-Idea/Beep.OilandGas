@@ -321,7 +321,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     CurrentChokeDiameter = currentChokeDiameter,
                     CurrentBackPressure = currentBP,
                     CurrentProductionRate = currentProduction,
-                    OptimalChokeDiameter = optimal.CHOKE_DIAMETER,
+                    OptimalChokeDiameter = optimal.ChokeDiameter,
                     OptimalBackPressure = optimal.PressureDrop,
                     OptimalProductionRate = optimal.ProductionRate,
                     ProductionIncrease = prodIncrease,
@@ -558,36 +558,36 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                 {
                     var props = new GAS_CHOKE_PROPERTIES
                     {
-                        UpstreamPressure = upstreamPressure,
-                        DownstreamPressure = downstreamPressure,
-                        Temperature = temp,
-                        GasSpecificGravity = 0.7m,
-                        FlowRate = baselineFlowRate,
-                        ZFactor = 0
+                        UPSTREAM_PRESSURE = upstreamPressure,
+                        DOWNSTREAM_PRESSURE = downstreamPressure,
+                        TEMPERATURE = temp,
+                        GAS_SPECIFIC_GRAVITY = 0.7m,
+                        FLOW_RATE = baselineFlowRate,
+                        Z_FACTOR = 0
                     };
 
                     var choke = new CHOKE_PROPERTIES
                     {
-                        ChokeDiameter = chokeDiameter,
-                        DischargeCoefficient = 0.85m
+                        CHOKE_DIAMETER = chokeDiameter,
+                        DISCHARGE_COEFFICIENT = 0.85m
                     };
 
                     var flowResult = GasChokeCalculator.CalculateDownholeChokeFlow(choke, props);
-                    decimal efficiency = (flowResult.FLOW_RATE / baselineFlowRate) * 100m;
+                    decimal efficiency = (decimal)((flowResult.FLOW_RATE / baselineFlowRate) * 100m);
 
                     tempCurve.Add(new TemperatureFlowPoint
                     {
                         Temperature = temp,
                         FlowRate = flowResult.FLOW_RATE,
                         PressureDrop = upstreamPressure - downstreamPressure,
-                        DischargeCoefficient = flowResult.PressureRatio,
+                        DischargeCoefficient = flowResult.PRESSURE_RATIO,
                         Efficiency = efficiency
                     });
                 }
 
-                var curve = tempCurve.OrderBy(t => t.TEMPERATURE).ToList();
+                var curve = tempCurve.OrderBy(t => t.Temperature).ToList();
                 decimal flowSensitivity = (curve.Count > 1) ?
-                    (curve.Last().FLOW_RATE - curve.First().FLOW_RATE) / (curve.Last().TEMPERATURE - curve.First().TEMPERATURE) : 0m;
+                    (curve.Last().FlowRate - curve.First().FlowRate) / (curve.Last().Temperature - curve.First().Temperature) : 0m;
 
                 var result = new ChokeTemperatureEffectAnalysis
                 {

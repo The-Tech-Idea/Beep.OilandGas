@@ -14,8 +14,8 @@ namespace Beep.OilandGas.Models.Data.ChokeAnalysis
             set { SetProperty(ref CHOKE_PROPERTIES_IDValue, value); }
         }
 
-        private Decimal? CHOKE_DIAMETERValue;
-        public Decimal? CHOKE_DIAMETER
+        private Decimal  CHOKE_DIAMETERValue;
+        public Decimal  CHOKE_DIAMETER
         {
             get { return this.CHOKE_DIAMETERValue; }
             set { SetProperty(ref CHOKE_DIAMETERValue, value); }
@@ -28,12 +28,14 @@ namespace Beep.OilandGas.Models.Data.ChokeAnalysis
             set { SetProperty(ref CHOKE_TYPEValue, value); }
         }
 
-        private Decimal? DISCHARGE_COEFFICIENTValue;
-        public Decimal? DISCHARGE_COEFFICIENT
+        private Decimal  DISCHARGE_COEFFICIENTValue;
+        public Decimal  DISCHARGE_COEFFICIENT
         {
             get { return this.DISCHARGE_COEFFICIENTValue; }
             set { SetProperty(ref DISCHARGE_COEFFICIENTValue, value); }
         }
+
+        public decimal CHOKE_AREA { get; set; }
 
         // Standard PPDM columns
 

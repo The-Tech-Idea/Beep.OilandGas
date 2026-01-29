@@ -21,50 +21,50 @@ namespace Beep.OilandGas.Models.Data.GasLift
             set { SetProperty(ref GAS_LIFT_DESIGN_IDValue, value); }
         }
 
-        private Decimal? DEPTHValue;
-        public Decimal? DEPTH
+        private  decimal  DEPTHValue;
+        public  decimal  DEPTH
         {
             get { return this.DEPTHValue; }
             set { SetProperty(ref DEPTHValue, value); }
         }
 
-        private Decimal? PORT_SIZEValue;
-        public Decimal? PORT_SIZE
+        private  decimal  PORT_SIZEValue;
+        public  decimal  PORT_SIZE
         {
             get { return this.PORT_SIZEValue; }
             set { SetProperty(ref PORT_SIZEValue, value); }
         }
 
-        private Decimal? OPENING_PRESSUREValue;
-        public Decimal? OPENING_PRESSURE
+        private  decimal  OPENING_PRESSUREValue;
+        public  decimal  OPENING_PRESSURE
         {
             get { return this.OPENING_PRESSUREValue; }
             set { SetProperty(ref OPENING_PRESSUREValue, value); }
         }
 
-        private Decimal? CLOSING_PRESSUREValue;
-        public Decimal? CLOSING_PRESSURE
+        private  decimal  CLOSING_PRESSUREValue;
+        public  decimal  CLOSING_PRESSURE
         {
             get { return this.CLOSING_PRESSUREValue; }
             set { SetProperty(ref CLOSING_PRESSUREValue, value); }
         }
 
-        private String VALVE_TYPEValue;
-        public String VALVE_TYPE
+        private GasLiftValveType VALVE_TYPEValue;
+        public GasLiftValveType VALVE_TYPE
         {
             get { return this.VALVE_TYPEValue; }
             set { SetProperty(ref VALVE_TYPEValue, value); }
         }
 
-        private Decimal? TEMPERATUREValue;
-        public Decimal? TEMPERATURE
+        private  decimal  TEMPERATUREValue;
+        public  decimal  TEMPERATURE
         {
             get { return this.TEMPERATUREValue; }
             set { SetProperty(ref TEMPERATUREValue, value); }
         }
 
-        private Decimal? GAS_INJECTION_RATEValue;
-        public Decimal? GAS_INJECTION_RATE
+        private  decimal  GAS_INJECTION_RATEValue;
+        public  decimal  GAS_INJECTION_RATE
         {
             get { return this.GAS_INJECTION_RATEValue; }
             set { SetProperty(ref GAS_INJECTION_RATEValue, value); }

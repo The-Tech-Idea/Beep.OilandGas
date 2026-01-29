@@ -67,8 +67,8 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
             var forecast = new PRODUCTION_FORECAST
             {
-                ForecastType = ForecastType.Transient,
-                ForecastDuration = forecastDuration
+                FORECAST_TYPE = ForecastType.Transient,
+                FORECAST_DURATION = forecastDuration
             };
 
             decimal timeStep = forecastDuration / timeSteps;
@@ -108,24 +108,24 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
                 cumulativeProduction += productionRate * timeStep;
 
-                forecast.ForecastPoints.Add(new FORECAST_POINT
+                forecast.FORECAST_POINTS.Add(new FORECAST_POINT
                 {
-                    Time = time,
-                    ProductionRate = Math.Max(0, productionRate),
-                    CumulativeProduction = cumulativeProduction,
-                    ReservoirPressure = currentPressure,
-                    BottomHolePressure = bottomHolePressure,
-                    ForecastMethod = isTransient ? "Transient Flow" : "Transient to Boundary-Dominated Transition"
+                     TIME = time,
+                    PRODUCTION_RATE = Math.Max(0, productionRate),
+                    CUMULATIVE_PRODUCTION = cumulativeProduction,
+                    RESERVOIR_PRESSURE = currentPressure,
+                    BOTTOM_HOLE_PRESSURE = bottomHolePressure,
+                    FORECAST_METHOD = ForecastType.Transient
                 });
 
                 if (i == 0)
                     forecast.INITIAL_PRODUCTION_RATE = productionRate;
             }
 
-            if (forecast.ForecastPoints.Count > 0)
+            if (forecast.FORECAST_POINTS.Count > 0)
             {
-                forecast.FINAL_PRODUCTION_RATE = forecast.ForecastPoints.Last().PRODUCTION_RATE;
-                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.ForecastPoints.Last().CUMULATIVE_PRODUCTION;
+                forecast.FINAL_PRODUCTION_RATE = forecast.FORECAST_POINTS.Last().PRODUCTION_RATE;
+                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.FORECAST_POINTS.Last().CUMULATIVE_PRODUCTION;
             }
 
             return forecast;
@@ -161,8 +161,8 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
             var forecast = new PRODUCTION_FORECAST
             {
-                ForecastType = ForecastType.Transient,
-                ForecastDuration = forecastDuration
+                FORECAST_TYPE = ForecastType.Transient,
+                FORECAST_DURATION = forecastDuration
             };
 
             decimal timeStep = forecastDuration / timeSteps;
@@ -188,14 +188,14 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
                 cumulativeProduction += productionRate * timeStep;
 
-                forecast.ForecastPoints.Add(new FORECAST_POINT
+                forecast.FORECAST_POINTS.Add(new FORECAST_POINT
                 {
-                    Time = time,
-                    ProductionRate = Math.Max(0, productionRate),
-                    CumulativeProduction = cumulativeProduction,
-                    ReservoirPressure = currentPressure,
-                    BottomHolePressure = bottomHolePressure,
-                    ForecastMethod = "Boundary-Dominated Flow"
+                     TIME = time,
+                    PRODUCTION_RATE = Math.Max(0, productionRate),
+                    CUMULATIVE_PRODUCTION = cumulativeProduction,
+                    RESERVOIR_PRESSURE = currentPressure,
+                    BOTTOM_HOLE_PRESSURE = bottomHolePressure,
+                    FORECAST_METHOD = ForecastType.BoundaryDominated
                 });
 
                 if (i == 0)
@@ -206,10 +206,10 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
                     break;
             }
 
-            if (forecast.ForecastPoints.Count > 0)
+            if (forecast.FORECAST_POINTS.Count > 0)
             {
-                forecast.FINAL_PRODUCTION_RATE = forecast.ForecastPoints.Last().PRODUCTION_RATE;
-                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.ForecastPoints.Last().CUMULATIVE_PRODUCTION;
+                forecast.FINAL_PRODUCTION_RATE = forecast.FORECAST_POINTS.Last().PRODUCTION_RATE;
+                forecast.TOTAL_CUMULATIVE_PRODUCTION = forecast.FORECAST_POINTS.Last().CUMULATIVE_PRODUCTION;
             }
 
             return forecast;
@@ -263,10 +263,10 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             decimal viscosity = reservoir.OIL_VISCOSITY;
             decimal formationVolumeFactor = reservoir.FORMATION_VOLUME_FACTOR;
             decimal skinFactor = reservoir.SKIN_FACTOR;
-            decimal wellRadius = well.WELLBORE_RADIUS;
+            decimal wellRadius = well.WellboreRadius;
 
             // For transient, use approximate external radius
-            decimal drainageRadius = well.DRAINAGE_RADIUS;
+            decimal drainageRadius = well.DrainageRadius;
             decimal ln_re_rw = (decimal)Math.Log((double)(drainageRadius / wellRadius));
 
             // Transient flow factor
@@ -296,7 +296,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
             // Pressure decline = q * B / (phi * ct * V_p) * sqrt(t)
             decimal poreVolume = (decimal)Math.PI * 
-                                (well.DRAINAGE_RADIUS * well.DRAINAGE_RADIUS) *
+                                (well.DrainageRadius * well.DrainageRadius) *
                                 reservoir.THICKNESS * 
                                 reservoir.POROSITY;
 
@@ -334,7 +334,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             // Transient time = (phi * mu * ct * r_wÂ² * t_dimensionless) / (0.0002637 * k)
             decimal transientTime = 
                 (reservoir.POROSITY * reservoir.OIL_VISCOSITY * reservoir.TOTAL_COMPRESSIBILITY * 
-                 well.WELLBORE_RADIUS * well.WELLBORE_RADIUS * dimensionlessTimeTransition) /
+                 well.WellboreRadius * well.WellboreRadius * dimensionlessTimeTransition) /
                 (0.0002637m * reservoir.PERMEABILITY);
 
             return Math.Max(1m, transientTime);  // At least 1 day
@@ -354,7 +354,7 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
             decimal formationVolumeFactor = reservoir.FORMATION_VOLUME_FACTOR;
             decimal skinFactor = reservoir.SKIN_FACTOR;
 
-            decimal ln_re_rw = (decimal)Math.Log((double)(well.DRAINAGE_RADIUS / well.WELLBORE_RADIUS));
+            decimal ln_re_rw = (decimal)Math.Log((double)(well.DrainageRadius / well.WellboreRadius));
 
             decimal denominator = viscosity * formationVolumeFactor * 
                                 (ln_re_rw + 0.8686m * skinFactor);

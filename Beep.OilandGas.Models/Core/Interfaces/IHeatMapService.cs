@@ -1,49 +1,50 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Beep.OilandGas.Models.Data.HeatMap;
-using Beep.OilandGas.Models.Data;
+﻿//using System.Collections.Generic;
+//using System.Threading.Tasks;
 
-namespace Beep.OilandGas.Models.Core.Interfaces
-{
-    /// <summary>
-    /// Service interface for heat map generation and management.
-    /// Provides heat map creation, persistence, and integration with field data.
-    /// </summary>
-    public interface IHeatMapService
-    {
-        /// <summary>
-        /// Generates a heat map from data points.
-        /// </summary>
-        /// <param name="dataPoints">Data points for heat map</param>
-        /// <param name="configuration">Heat map configuration</param>
-        /// <returns>Generated heat map</returns>
-        Task<HeatMapResult> GenerateHeatMapAsync(List<HEAT_MAP_DATA_POINT> dataPoints, HeatMapConfigurationRecord configuration);
+//using Beep.OilandGas.Models.Data;
+//using Beep.OilandGas.Models.Data.HeatMap;
 
-        /// <summary>
-        /// Saves heat map configuration to database.
-        /// </summary>
-        /// <param name="configuration">Heat map configuration</param>
-        /// <param name="userId">User ID for audit</param>
-        /// <returns>Heat map identifier</returns>
-        Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationRecord configuration, string userId);
+//namespace Beep.OilandGas.Models.Core.Interfaces
+//{
+//    /// <summary>
+//    /// Service interface for heat map generation and management.
+//    /// Provides heat map creation, persistence, and integration with field data.
+//    /// </summary>
+//    public interface IHeatMapService
+//    {
+//        /// <summary>
+//        /// Generates a heat map from data points.
+//        /// </summary>
+//        /// <param name="dataPoints">Data points for heat map</param>
+//        /// <param name="configuration">Heat map configuration</param>
+//        /// <returns>Generated heat map</returns>
+//        Task<HeatMapResult> GenerateHeatMapAsync(List<HEAT_MAP_DATA_POINT> dataPoints, HeatMapConfigurationRecord configuration);
 
-        /// <summary>
-        /// Gets heat map configuration from database.
-        /// </summary>
-        /// <param name="heatMapId">Heat map identifier</param>
-        /// <returns>Heat map configuration</returns>
-        Task<HeatMapConfigurationRecord?> GetHeatMapConfigurationAsync(string heatMapId);
+//        /// <summary>
+//        /// Saves heat map configuration to database.
+//        /// </summary>
+//        /// <param name="configuration">Heat map configuration</param>
+//        /// <param name="userId">User ID for audit</param>
+//        /// <returns>Heat map identifier</returns>
+//        Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationRecord configuration, string userId);
 
-        /// <summary>
-        /// Generates heat map from field production data.
-        /// </summary>
-        /// <param name="fieldId">Field identifier</param>
-        /// <param name="startDate">Start date</param>
-        /// <param name="endDate">End date</param>
-        /// <returns>Generated heat map</returns>
-        Task<HeatMapResult> GenerateProductionHeatMapAsync(string fieldId, System.DateTime startDate, System.DateTime endDate);
-    }
-}
+//        /// <summary>
+//        /// Gets heat map configuration from database.
+//        /// </summary>
+//        /// <param name="heatMapId">Heat map identifier</param>
+//        /// <returns>Heat map configuration</returns>
+//        Task<HeatMapConfigurationRecord?> GetHeatMapConfigurationAsync(string heatMapId);
+
+//        /// <summary>
+//        /// Generates heat map from field production data.
+//        /// </summary>
+//        /// <param name="fieldId">Field identifier</param>
+//        /// <param name="startDate">Start date</param>
+//        /// <param name="endDate">End date</param>
+//        /// <returns>Generated heat map</returns>
+//        Task<HeatMapResult> GenerateProductionHeatMapAsync(string fieldId, System.DateTime startDate, System.DateTime endDate);
+//    }
+//}
 
 
 

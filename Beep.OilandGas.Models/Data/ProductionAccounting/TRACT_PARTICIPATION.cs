@@ -36,29 +36,29 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref PARTICIPATING_AREA_IDValue, value); }
         }
 
-        private System.Decimal? PARTICIPATION_PERCENTAGEValue;
-        public System.Decimal? PARTICIPATION_PERCENTAGE
+        private System.Decimal  PARTICIPATION_PERCENTAGEValue;
+        public System.Decimal  PARTICIPATION_PERCENTAGE
         {
             get { return this.PARTICIPATION_PERCENTAGEValue; }
             set { SetProperty(ref PARTICIPATION_PERCENTAGEValue, value); }
         }
 
-        private System.Decimal? WORKING_INTERESTValue;
-        public System.Decimal? WORKING_INTEREST
+        private System.Decimal  WORKING_INTERESTValue;
+        public System.Decimal  WORKING_INTEREST
         {
             get { return this.WORKING_INTERESTValue; }
             set { SetProperty(ref WORKING_INTERESTValue, value); }
         }
 
-        private System.Decimal? NET_REVENUE_INTERESTValue;
-        public System.Decimal? NET_REVENUE_INTEREST
+        private System.Decimal  NET_REVENUE_INTERESTValue;
+        public System.Decimal  NET_REVENUE_INTEREST
         {
             get { return this.NET_REVENUE_INTERESTValue; }
             set { SetProperty(ref NET_REVENUE_INTERESTValue, value); }
         }
 
-        private System.Decimal? TRACT_ACREAGEValue;
-        public System.Decimal? TRACT_ACREAGE
+        private System.Decimal  TRACT_ACREAGEValue;
+        public System.Decimal  TRACT_ACREAGE
         {
             get { return this.TRACT_ACREAGEValue; }
             set { SetProperty(ref TRACT_ACREAGEValue, value); }

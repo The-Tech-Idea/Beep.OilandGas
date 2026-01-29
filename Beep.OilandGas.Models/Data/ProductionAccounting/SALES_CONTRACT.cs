@@ -45,8 +45,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref COMMODITY_TYPEValue, value); }
         }
 
-        private System.Decimal? BASE_PRICEValue;
-        public System.Decimal? BASE_PRICE
+        private System.Decimal?  BASE_PRICEValue;
+        public System.Decimal?  BASE_PRICE
         {
             get { return this.BASE_PRICEValue; }
             set { SetProperty(ref BASE_PRICEValue, value); }

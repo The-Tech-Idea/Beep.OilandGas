@@ -57,29 +57,29 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref LEASE_IDValue, value); }
         }
 
-        private System.Decimal? PRODUCTION_VOLUMEValue;
-        public System.Decimal? PRODUCTION_VOLUME
+        private System.Decimal  PRODUCTION_VOLUMEValue;
+        public System.Decimal  PRODUCTION_VOLUME
         {
             get { return this.PRODUCTION_VOLUMEValue; }
             set { SetProperty(ref PRODUCTION_VOLUMEValue, value); }
         }
 
-        private System.Decimal? REVENUEValue;
-        public System.Decimal? REVENUE
+        private System.Decimal  REVENUEValue;
+        public System.Decimal  REVENUE
         {
             get { return this.REVENUEValue; }
             set { SetProperty(ref REVENUEValue, value); }
         }
 
-        private System.Decimal? COSTSValue;
-        public System.Decimal? COSTS
+        private System.Decimal  COSTSValue;
+        public System.Decimal  COSTS
         {
             get { return this.COSTSValue; }
             set { SetProperty(ref COSTSValue, value); }
         }
 
-        private System.Decimal? NET_PROFITValue;
-        public System.Decimal? NET_PROFIT
+        private System.Decimal  NET_PROFITValue;
+        public System.Decimal  NET_PROFIT
         {
             get { return this.NET_PROFITValue; }
             set { SetProperty(ref NET_PROFITValue, value); }

@@ -48,22 +48,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref FILING_DATEValue, value); }
         }
 
-        private System.Decimal? TOTAL_TAX_LIABILITYValue;
-        public System.Decimal? TOTAL_TAX_LIABILITY
+        private System.Decimal  TOTAL_TAX_LIABILITYValue;
+        public System.Decimal  TOTAL_TAX_LIABILITY
         {
             get { return this.TOTAL_TAX_LIABILITYValue; }
             set { SetProperty(ref TOTAL_TAX_LIABILITYValue, value); }
         }
 
-        private System.Decimal? TAX_PAIDValue;
-        public System.Decimal? TAX_PAID
+        private System.Decimal  TAX_PAIDValue;
+        public System.Decimal  TAX_PAID
         {
             get { return this.TAX_PAIDValue; }
             set { SetProperty(ref TAX_PAIDValue, value); }
         }
 
-        private System.Decimal? TAX_DUEValue;
-        public System.Decimal? TAX_DUE
+        private System.Decimal  TAX_DUEValue;
+        public System.Decimal  TAX_DUE
         {
             get { return this.TAX_DUEValue; }
             set { SetProperty(ref TAX_DUEValue, value); }

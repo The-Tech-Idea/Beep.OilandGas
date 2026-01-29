@@ -120,92 +120,92 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
             set { SetProperty(ref PLUNGER_LIFT_WELL_PROPERTIES_IDValue, value); }
         }
 
-        private Decimal? WELL_DEPTHValue;
-        public Decimal? WELL_DEPTH
+        private decimal  WELL_DEPTHValue;
+        public decimal  WELL_DEPTH
         {
             get { return this.WELL_DEPTHValue; }
             set { SetProperty(ref WELL_DEPTHValue, value); }
         }
 
-        private Decimal? TUBING_DIAMETERValue;
-        public Decimal? TUBING_DIAMETER
+        private decimal  TUBING_DIAMETERValue;
+        public decimal  TUBING_DIAMETER
         {
             get { return this.TUBING_DIAMETERValue; }
             set { SetProperty(ref TUBING_DIAMETERValue, value); }
         }
 
-        private Decimal? PLUNGER_DIAMETERValue;
-        public Decimal? PLUNGER_DIAMETER
+        private decimal  PLUNGER_DIAMETERValue;
+        public decimal  PLUNGER_DIAMETER
         {
             get { return this.PLUNGER_DIAMETERValue; }
             set { SetProperty(ref PLUNGER_DIAMETERValue, value); }
         }
 
-        private Decimal? WELLHEAD_PRESSUREValue;
-        public Decimal? WELLHEAD_PRESSURE
+        private decimal  WELLHEAD_PRESSUREValue;
+        public decimal  WELLHEAD_PRESSURE
         {
             get { return this.WELLHEAD_PRESSUREValue; }
             set { SetProperty(ref WELLHEAD_PRESSUREValue, value); }
         }
 
-        private Decimal? CASING_PRESSUREValue;
-        public Decimal? CASING_PRESSURE
+        private decimal  CASING_PRESSUREValue;
+        public decimal  CASING_PRESSURE
         {
             get { return this.CASING_PRESSUREValue; }
             set { SetProperty(ref CASING_PRESSUREValue, value); }
         }
 
-        private Decimal? BOTTOM_HOLE_PRESSUREValue;
-        public Decimal? BOTTOM_HOLE_PRESSURE
+        private decimal  BOTTOM_HOLE_PRESSUREValue;
+        public decimal  BOTTOM_HOLE_PRESSURE
         {
             get { return this.BOTTOM_HOLE_PRESSUREValue; }
             set { SetProperty(ref BOTTOM_HOLE_PRESSUREValue, value); }
         }
 
-        private Decimal? WELLHEAD_TEMPERATUREValue;
-        public Decimal? WELLHEAD_TEMPERATURE
+        private decimal  WELLHEAD_TEMPERATUREValue;
+        public decimal  WELLHEAD_TEMPERATURE
         {
             get { return this.WELLHEAD_TEMPERATUREValue; }
             set { SetProperty(ref WELLHEAD_TEMPERATUREValue, value); }
         }
 
-        private Decimal? BOTTOM_HOLE_TEMPERATUREValue;
-        public Decimal? BOTTOM_HOLE_TEMPERATURE
+        private decimal  BOTTOM_HOLE_TEMPERATUREValue;
+        public decimal  BOTTOM_HOLE_TEMPERATURE
         {
             get { return this.BOTTOM_HOLE_TEMPERATUREValue; }
             set { SetProperty(ref BOTTOM_HOLE_TEMPERATUREValue, value); }
         }
 
-        private Decimal? OIL_GRAVITYValue;
-        public Decimal? OIL_GRAVITY
+        private decimal  OIL_GRAVITYValue;
+        public decimal  OIL_GRAVITY
         {
             get { return this.OIL_GRAVITYValue; }
             set { SetProperty(ref OIL_GRAVITYValue, value); }
         }
 
-        private Decimal? WATER_CUTValue;
-        public Decimal? WATER_CUT
+        private decimal  WATER_CUTValue;
+        public decimal  WATER_CUT
         {
             get { return this.WATER_CUTValue; }
             set { SetProperty(ref WATER_CUTValue, value); }
         }
 
-        private Decimal? GAS_OIL_RATIOValue;
-        public Decimal? GAS_OIL_RATIO
+        private decimal  GAS_OIL_RATIOValue;
+        public decimal  GAS_OIL_RATIO
         {
             get { return this.GAS_OIL_RATIOValue; }
             set { SetProperty(ref GAS_OIL_RATIOValue, value); }
         }
 
-        private Decimal? GAS_SPECIFIC_GRAVITYValue;
-        public Decimal? GAS_SPECIFIC_GRAVITY
+        private decimal  GAS_SPECIFIC_GRAVITYValue;
+        public decimal  GAS_SPECIFIC_GRAVITY
         {
             get { return this.GAS_SPECIFIC_GRAVITYValue; }
             set { SetProperty(ref GAS_SPECIFIC_GRAVITYValue, value); }
         }
 
-        private Decimal? LIQUID_PRODUCTION_RATEValue;
-        public Decimal? LIQUID_PRODUCTION_RATE
+        private decimal  LIQUID_PRODUCTION_RATEValue;
+        public decimal  LIQUID_PRODUCTION_RATE
         {
             get { return this.LIQUID_PRODUCTION_RATEValue; }
             set { SetProperty(ref LIQUID_PRODUCTION_RATEValue, value); }

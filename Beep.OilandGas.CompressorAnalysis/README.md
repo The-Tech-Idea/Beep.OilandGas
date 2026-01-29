@@ -55,25 +55,25 @@ using Beep.OilandGas.CompressorAnalysis.Calculations;
 // Define operating conditions
 var operatingConditions = new CompressorOperatingConditions
 {
-    SuctionPressure = 100m, // psia
-    DischargePressure = 500m, // psia
-    SuctionTemperature = 520m, // Rankine
+    SUCTION_PRESSURE = 100m, // psia
+    DISCHARGE_PRESSURE = 500m, // psia
+    SUCTION_TEMPERATURE = 520m, // Rankine
     DischargeTemperature = 600m, // Rankine
-    GasFlowRate = 1000m, // Mscf/day
-    GasSpecificGravity = 0.65m,
+    GAS_FLOW_RATE = 1000m, // Mscf/day
+    GAS_SPECIFIC_GRAVITY = 0.65m,
     GasMolecularWeight = 18.8m,
-    CompressorEfficiency = 0.75m,
-    MechanicalEfficiency = 0.95m
+    COMPRESSOR_EFFICIENCY = 0.75m,
+    MECHANICAL_EFFICIENCY = 0.95m
 };
 
 // Define centrifugal compressor properties
 var compressorProperties = new CentrifugalCompressorProperties
 {
     OperatingConditions = operatingConditions,
-    PolytropicEfficiency = 0.75m,
-    SpecificHeatRatio = 1.3m,
-    NumberOfStages = 1,
-    Speed = 3600m // RPM
+    POLYTROPIC_EFFICIENCY = 0.75m,
+    SPECIFIC_HEAT_RATIO = 1.3m,
+    NUMBER_OF_STAGES = 1,
+    SPEED = 3600m // RPM
 };
 
 // Calculate power requirements
@@ -127,7 +127,7 @@ var pressureResult = CompressorPressureCalculator.CalculateRequiredPressure(
     operatingConditions,
     requiredFlowRate: 1500m, // Mscf/day
     maxPower: 500m, // HP
-    compressorEfficiency: 0.75m);
+    COMPRESSOR_EFFICIENCY: 0.75m);
 
 // Access results
 Console.WriteLine($"Required Discharge Pressure: {pressureResult.RequiredDischargePressure:F2} psia");
@@ -141,7 +141,7 @@ decimal maxFlowRate = CompressorPressureCalculator.CalculateMaximumFlowRate(
     operatingConditions,
     compressionRatio: 5.0m,
     maxPower: 500m,
-    compressorEfficiency: 0.75m);
+    COMPRESSOR_EFFICIENCY: 0.75m);
 
 Console.WriteLine($"Maximum Flow Rate: {maxFlowRate:F2} Mscf/day");
 ```

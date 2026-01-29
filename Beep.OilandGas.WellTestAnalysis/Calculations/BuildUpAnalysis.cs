@@ -24,7 +24,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             if (!Enum.TryParse<WellTestType>(data.TEST_TYPE, out var testType) || testType != WellTestType.BuildUp)
                 throw new InvalidWellTestDataException(nameof(data.TEST_TYPE), "Horner analysis requires build-up test data.");
 
-            double productionTime = (double)(data.PRODUCTION_TIME ?? 0m);
+            double productionTime = (double)data.PRODUCTION_TIME;
             if (productionTime <= 0)
                 throw new InvalidWellTestDataException(nameof(data.PRODUCTION_TIME), "Production time must be positive for Horner analysis.");
 
@@ -63,47 +63,47 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                 throw new AnalysisConvergenceException("Invalid slope from Horner analysis.");
 
             // Convert data fields to double for calculation
-            double flowRate = (double)(data.FLOW_RATE ?? 0m);
-            double bFactor = (double)(data.OIL_FORMATION_VOLUME_FACTOR ?? 1m);
-            double mu = (double)(data.OIL_VISCOSITY ?? 1m);
-            double formationThickness = (double)(data.FORMATION_THICKNESS ?? 1m);
+            double flowRate = (double)data.FLOW_RATE;
+            double bFactor = (double)(data.OIL_FORMATION_VOLUME_FACTOR == 0m ? 1m : data.OIL_FORMATION_VOLUME_FACTOR);
+            double mu = (double)(data.OIL_VISCOSITY == 0m ? 1m : data.OIL_VISCOSITY);
+            double formationThickness = (double)(data.FORMATION_THICKNESS == 0m ? 1m : data.FORMATION_THICKNESS);
 
             double permeability = (162.6 * flowRate * bFactor * mu) / (m * formationThickness);
-            result.PERMEABILITY = (decimal?)permeability;
+            result.PERMEABILITY = (decimal)permeability;
 
             // Calculate skin factor: s = 1.151 * [(P1hr - Pwf) / m - log(k / (Ï† * Î¼ * ct * rwÂ²)) - 3.23]
             // Extrapolate to Horner time = 1 (Î”t = tp)
             double p1hr = intercept + slope * Math.Log10(1.0);
             double pws = pressures[0]; // Initial shut-in pressure
 
-            double porosity = (double)(data.POROSITY ?? 0m);
-            double totalCompressibility = (double)(data.TOTAL_COMPRESSIBILITY ?? 1m);
-            double rw = (double)(data.WELLBORE_RADIUS ?? 1m);
+            double porosity = (double)data.POROSITY;
+            double totalCompressibility = (double)(data.TOTAL_COMPRESSIBILITY == 0m ? 1m : data.TOTAL_COMPRESSIBILITY);
+            double rw = (double)(data.WELLBORE_RADIUS == 0m ? 1m : data.WELLBORE_RADIUS);
 
             double logTerm = Math.Log10(permeability / (porosity * mu * totalCompressibility * Math.Pow(rw, 2)));
             double skin = 1.151 * ((p1hr - pws) / m - logTerm - 3.23);
-            result.SKIN_FACTOR = (decimal?)skin;
+            result.SKIN_FACTOR = (decimal)skin;
 
             // Extrapolate to infinite time (Horner time = 1) for reservoir pressure
-            result.RESERVOIR_PRESSURE = (decimal?)intercept;
+            result.RESERVOIR_PRESSURE = (decimal)intercept;
 
             // Calculate productivity index
-            double reservoirPressure = (double)(result.RESERVOIR_PRESSURE ?? 0m);
+            double reservoirPressure = (double)result.RESERVOIR_PRESSURE;
             double pj = flowRate / (reservoirPressure - pws);
-            result.PRODUCTIVITY_INDEX = (decimal?)pj;
+            result.PRODUCTIVITY_INDEX = (decimal)pj;
 
             // Calculate flow efficiency
             double deltaPs = skin * m / 1.151;
             double flowEfficiency = (reservoirPressure - pws - deltaPs) / (reservoirPressure - pws);
-            result.FLOW_EFFICIENCY = (decimal?)flowEfficiency;
+            result.FLOW_EFFICIENCY = (decimal)flowEfficiency;
 
             // Calculate damage ratio
-            result.DAMAGE_RATIO = (decimal?)(1.0 / flowEfficiency);
+            result.DAMAGE_RATIO = (decimal)(1.0 / flowEfficiency);
 
             // Calculate radius of investigation
             double lastTime = data.Time.Last();
             double radius = Math.Sqrt(permeability * lastTime / (948 * porosity * mu * totalCompressibility));
-            result.RADIUS_OF_INVESTIGATION = (decimal?)radius;
+            result.RADIUS_OF_INVESTIGATION = (decimal)radius;
 
             // Calculate R-squared
             result.R_SQUARED = (decimal)CalculateRSquared(logHornerTime, analysisPressures, slope, intercept);
@@ -151,41 +151,41 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
                 throw new AnalysisConvergenceException("Invalid slope from MDH analysis.");
 
             // Convert inputs to double
-            double flowRate2 = (double)(data.FLOW_RATE ?? 0m);
-            double bFactor2 = (double)(data.OIL_FORMATION_VOLUME_FACTOR ?? 1m);
-            double mu2 = (double)(data.OIL_VISCOSITY ?? 1m);
-            double formationThickness2 = (double)(data.FORMATION_THICKNESS ?? 1m);
+            double flowRate2 = (double)data.FLOW_RATE;
+            double bFactor2 = (double)(data.OIL_FORMATION_VOLUME_FACTOR == 0m ? 1m : data.OIL_FORMATION_VOLUME_FACTOR);
+            double mu2 = (double)(data.OIL_VISCOSITY == 0m ? 1m : data.OIL_VISCOSITY);
+            double formationThickness2 = (double)(data.FORMATION_THICKNESS == 0m ? 1m : data.FORMATION_THICKNESS);
 
             double permeability2 = (162.6 * flowRate2 * bFactor2 * mu2) / (m * formationThickness2);
-            result.PERMEABILITY = (decimal?)permeability2;
+            result.PERMEABILITY = (decimal)permeability2;
 
             double p1hr2 = intercept + slope * Math.Log10(1.0);
             double pws2 = pressures[0];
 
-            double porosity2 = (double)(data.POROSITY ?? 0m);
-            double totalCompressibility2 = (double)(data.TOTAL_COMPRESSIBILITY ?? 1m);
-            double rw2 = (double)(data.WELLBORE_RADIUS ?? 1m);
+            double porosity2 = (double)data.POROSITY;
+            double totalCompressibility2 = (double)(data.TOTAL_COMPRESSIBILITY == 0m ? 1m : data.TOTAL_COMPRESSIBILITY);
+            double rw2 = (double)(data.WELLBORE_RADIUS == 0m ? 1m : data.WELLBORE_RADIUS);
 
             double logTerm2 = Math.Log10(permeability2 / (porosity2 * mu2 * totalCompressibility2 * Math.Pow(rw2, 2)));
             double skin2 = 1.151 * ((p1hr2 - pws2) / m - logTerm2 - 3.23);
-            result.SKIN_FACTOR = (decimal?)skin2;
+            result.SKIN_FACTOR = (decimal)skin2;
 
             // Reservoir pressure extrapolation
-            double prodTime2 = (double)(data.PRODUCTION_TIME ?? 0m);
-            result.RESERVOIR_PRESSURE = (decimal?)(intercept + slope * Math.Log10(prodTime2));
+            double prodTime2 = (double)data.PRODUCTION_TIME;
+            result.RESERVOIR_PRESSURE = (decimal)(intercept + slope * Math.Log10(prodTime2));
 
-            double reservoirPressure2 = (double)(result.RESERVOIR_PRESSURE ?? 0m);
+            double reservoirPressure2 = (double)result.RESERVOIR_PRESSURE;
             double pj2 = flowRate2 / (reservoirPressure2 - pws2);
-            result.PRODUCTIVITY_INDEX = (decimal?)pj2;
+            result.PRODUCTIVITY_INDEX = (decimal)pj2;
 
             double deltaPs2 = skin2 * m / 1.151;
             double flowEfficiency2 = (reservoirPressure2 - pws2 - deltaPs2) / (reservoirPressure2 - pws2);
-            result.FLOW_EFFICIENCY = (decimal?)flowEfficiency2;
-            result.DAMAGE_RATIO = (decimal?)(1.0 / flowEfficiency2);
+            result.FLOW_EFFICIENCY = (decimal)flowEfficiency2;
+            result.DAMAGE_RATIO = (decimal)(1.0 / flowEfficiency2);
 
             double lastTime2 = data.Time.Last();
             double radius2 = Math.Sqrt(permeability2 * lastTime2 / (948 * porosity2 * mu2 * totalCompressibility2));
-            result.RADIUS_OF_INVESTIGATION = (decimal?)radius2;
+            result.RADIUS_OF_INVESTIGATION = (decimal)radius2;
 
             result.R_SQUARED = (decimal)CalculateRSquared(analysisLogTime, analysisPressures, slope, intercept);
 

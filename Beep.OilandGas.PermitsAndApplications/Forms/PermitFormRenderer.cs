@@ -40,10 +40,10 @@ namespace Beep.OilandGas.PermitsAndApplications.Forms
             value = key switch
             {
                 "APPLICATION_ID" => application.PERMIT_APPLICATION_ID,
-                "APPLICATION_TYPE" => application.APPLICATION_TYPE,
-                "COUNTRY" => application.COUNTRY,
-                "STATE_PROVINCE" => application.STATE_PROVINCE,
-                "REGULATORY_AUTHORITY" => application.REGULATORY_AUTHORITY,
+                "APPLICATION_TYPE" => application.APPLICATION_TYPE.ToString(),
+                "COUNTRY" => application.COUNTRY.ToString(),
+                "STATE_PROVINCE" => application.STATE_PROVINCE.ToString(),
+                "REGULATORY_AUTHORITY" => application.REGULATORY_AUTHORITY.ToString(),
                 "APPLICANT_ID" => application.APPLICANT_ID,
                 "OPERATOR_ID" => application.OPERATOR_ID,
                 "RELATED_WELL_UWI" => application.RELATED_WELL_UWI,

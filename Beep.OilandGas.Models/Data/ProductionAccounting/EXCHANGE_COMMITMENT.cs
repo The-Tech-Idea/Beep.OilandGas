@@ -29,8 +29,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref COMMITMENT_TYPEValue, value); }
         }
 
-        private System.Decimal? COMMITTED_VOLUMEValue;
-        public System.Decimal? COMMITTED_VOLUME
+        private System.Decimal  COMMITTED_VOLUMEValue;
+        public System.Decimal  COMMITTED_VOLUME
         {
             get { return this.COMMITTED_VOLUMEValue; }
             set { SetProperty(ref COMMITTED_VOLUMEValue, value); }
@@ -50,8 +50,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref DELIVERY_PERIOD_ENDValue, value); }
         }
 
-        private System.Decimal? ACTUAL_VOLUME_DELIVEREDValue;
-        public System.Decimal? ACTUAL_VOLUME_DELIVERED
+        private System.Decimal  ACTUAL_VOLUME_DELIVEREDValue;
+        public System.Decimal  ACTUAL_VOLUME_DELIVERED
         {
             get { return this.ACTUAL_VOLUME_DELIVEREDValue; }
             set { SetProperty(ref ACTUAL_VOLUME_DELIVEREDValue, value); }
@@ -64,15 +64,15 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref STATUSValue, value); }
         }
 
-        private System.Decimal? REMAINING_COMMITMENTValue;
-        public System.Decimal? REMAINING_COMMITMENT
+        private System.Decimal  REMAINING_COMMITMENTValue;
+        public System.Decimal  REMAINING_COMMITMENT
         {
             get { return this.REMAINING_COMMITMENTValue; }
             set { SetProperty(ref REMAINING_COMMITMENTValue, value); }
         }
 
-        private System.Decimal? FULFILLMENT_PERCENTAGEValue;
-        public System.Decimal? FULFILLMENT_PERCENTAGE
+        private System.Decimal  FULFILLMENT_PERCENTAGEValue;
+        public System.Decimal  FULFILLMENT_PERCENTAGE
         {
             get { return this.FULFILLMENT_PERCENTAGEValue; }
             set { SetProperty(ref FULFILLMENT_PERCENTAGEValue, value); }

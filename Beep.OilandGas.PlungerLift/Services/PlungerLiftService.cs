@@ -52,7 +52,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                var cycleTime = CalculateOptimalCycleTime(wellProperties.ReservoirPressure, wellProperties.WELL_DEPTH);
+                var cycleTime = CalculateOptimalCycleTime(wellProperties.ReservoirPressure, wellProperties.WellDepth);
                 
                 var design = new PlungerLiftDesign
                 {
@@ -1042,7 +1042,7 @@ namespace Beep.OilandGas.PlungerLift.Services
 
         private int DeterminePlungerType(PLUNGER_LIFT_WELL_PROPERTIES wellProperties)
         {
-            if (wellProperties.WELL_DEPTH > 10000 && wellProperties.TubingSize <= 2.5m)
+            if (wellProperties.WellDepth > 10000 && wellProperties.TubingSize <= 2.5m)
                 return 3;
             if (wellProperties.ReservoirPressure < 800)
                 return 2;
@@ -1056,7 +1056,7 @@ namespace Beep.OilandGas.PlungerLift.Services
             if (wellProperties.ReservoirPressure < 500)
                 notes.Add("Low reservoir pressure - consider velocity plunger");
             
-            if (wellProperties.WELL_DEPTH > 12000)
+            if (wellProperties.WellDepth > 12000)
                 notes.Add("Deep well - ensure tubing condition");
             
             if (notes.Count == 0)

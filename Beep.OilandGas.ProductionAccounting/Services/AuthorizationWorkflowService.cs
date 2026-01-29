@@ -103,7 +103,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             if (afe.ESTIMATED_COST.HasValue)
             {
                 var projected = (afe.ACTUAL_COST ?? 0m) + cost.AMOUNT;
-                if (projected > afe.ESTIMATED_COST.Value)
+                if (projected > afe.ESTIMATED_COST.GetValueOrDefault(0m))
                     return false;
             }
 

@@ -21,50 +21,50 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
             set { SetProperty(ref PIPELINE_PROPERTIES_IDValue, value); }
         }
 
-        private Decimal? FLOW_RATEValue;
-        public Decimal? FLOW_RATE
+        private decimal  FLOW_RATEValue;
+        public decimal  FLOW_RATE
         {
             get { return this.FLOW_RATEValue; }
             set { SetProperty(ref FLOW_RATEValue, value); }
         }
 
-        private Decimal? PRESSURE_DROPValue;
-        public Decimal? PRESSURE_DROP
+        private decimal  PRESSURE_DROPValue;
+        public decimal  PRESSURE_DROP
         {
             get { return this.PRESSURE_DROPValue; }
             set { SetProperty(ref PRESSURE_DROPValue, value); }
         }
 
-        private Decimal? FLOW_VELOCITYValue;
-        public Decimal? FLOW_VELOCITY
+        private decimal  FLOW_VELOCITYValue;
+        public decimal  FLOW_VELOCITY
         {
             get { return this.FLOW_VELOCITYValue; }
             set { SetProperty(ref FLOW_VELOCITYValue, value); }
         }
 
-        private Decimal? REYNOLDS_NUMBERValue;
-        public Decimal? REYNOLDS_NUMBER
+        private decimal  REYNOLDS_NUMBERValue;
+        public decimal  REYNOLDS_NUMBER
         {
             get { return this.REYNOLDS_NUMBERValue; }
             set { SetProperty(ref REYNOLDS_NUMBERValue, value); }
         }
 
-        private Decimal? FRICTION_FACTORValue;
-        public Decimal? FRICTION_FACTOR
+        private decimal  FRICTION_FACTORValue;
+        public decimal  FRICTION_FACTOR
         {
             get { return this.FRICTION_FACTORValue; }
             set { SetProperty(ref FRICTION_FACTORValue, value); }
         }
 
-        private Decimal? PRESSURE_GRADIENTValue;
-        public Decimal? PRESSURE_GRADIENT
+        private decimal  PRESSURE_GRADIENTValue;
+        public decimal  PRESSURE_GRADIENT
         {
             get { return this.PRESSURE_GRADIENTValue; }
             set { SetProperty(ref PRESSURE_GRADIENTValue, value); }
         }
 
-        private Decimal? OUTLET_PRESSUREValue;
-        public Decimal? OUTLET_PRESSURE
+        private decimal  OUTLET_PRESSUREValue;
+        public decimal  OUTLET_PRESSURE
         {
             get { return this.OUTLET_PRESSUREValue; }
             set { SetProperty(ref OUTLET_PRESSUREValue, value); }
@@ -95,7 +95,7 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
         }
         public double FlowRate
         {
-            get { return (double)(this.FLOW_RATE ?? 0); }
+            get { return (double)(this.FLOW_RATE ); }
             set { this.FLOW_RATE = (decimal)value; }
         }
         // Missing PPDM property for InletPressure, adding usage
@@ -112,17 +112,17 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
 
         public double OutletPressure
         {
-            get { return (double)(this.OUTLET_PRESSURE ?? 0); }
+            get { return (double)(this.OUTLET_PRESSURE ); }
             set { this.OUTLET_PRESSURE = (decimal)value; }
         }
         public double PressureDrop
         {
-            get { return (double)(this.PRESSURE_DROP ?? 0); }
+            get { return (double)(this.PRESSURE_DROP ); }
             set { this.PRESSURE_DROP = (decimal)value; }
         }
         public double Velocity
         {
-            get { return (double)(this.FLOW_VELOCITY ?? 0); }
+            get { return (double)(this.FLOW_VELOCITY); }
             set { this.FLOW_VELOCITY = (decimal)value; }
         }
         public string FlowRegime

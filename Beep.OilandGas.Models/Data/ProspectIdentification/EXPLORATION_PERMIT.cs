@@ -61,8 +61,8 @@ namespace Beep.OilandGas.Models.Data.ProspectIdentification
             }
             set { SetProperty(ref PERMIT_END_DATEValue, value); }
         }
-        private System.Decimal? PERMIT_AREAValue;
-        public System.Decimal? PERMIT_AREA
+        private System.Decimal  PERMIT_AREAValue;
+        public System.Decimal  PERMIT_AREA
         {
             get
             {

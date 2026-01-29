@@ -21,29 +21,29 @@ namespace Beep.OilandGas.Models.Data.PipelineAnalysis
             set { SetProperty(ref PIPELINE_PROPERTIES_IDValue, value); }
         }
 
-        private Decimal? LIQUID_FLOW_RATEValue;
-        public Decimal? LIQUID_FLOW_RATE
+        private Decimal  LIQUID_FLOW_RATEValue;
+        public Decimal  LIQUID_FLOW_RATE
         {
             get { return this.LIQUID_FLOW_RATEValue; }
             set { SetProperty(ref LIQUID_FLOW_RATEValue, value); }
         }
 
-        private Decimal? LIQUID_SPECIFIC_GRAVITYValue;
-        public Decimal? LIQUID_SPECIFIC_GRAVITY
+        private Decimal  LIQUID_SPECIFIC_GRAVITYValue;
+        public Decimal  LIQUID_SPECIFIC_GRAVITY
         {
             get { return this.LIQUID_SPECIFIC_GRAVITYValue; }
             set { SetProperty(ref LIQUID_SPECIFIC_GRAVITYValue, value); }
         }
 
-        private Decimal? LIQUID_VISCOSITYValue;
-        public Decimal? LIQUID_VISCOSITY
+        private Decimal  LIQUID_VISCOSITYValue;
+        public Decimal  LIQUID_VISCOSITY
         {
             get { return this.LIQUID_VISCOSITYValue; }
             set { SetProperty(ref LIQUID_VISCOSITYValue, value); }
         }
 
-        private Decimal? LIQUID_DENSITYValue;
-        public Decimal? LIQUID_DENSITY
+        private Decimal  LIQUID_DENSITYValue;
+        public Decimal  LIQUID_DENSITY
         {
             get { return this.LIQUID_DENSITYValue; }
             set { SetProperty(ref LIQUID_DENSITYValue, value); }

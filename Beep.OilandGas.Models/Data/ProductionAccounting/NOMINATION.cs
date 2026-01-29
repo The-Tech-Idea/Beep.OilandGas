@@ -29,8 +29,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref PERIOD_ENDValue, value); }
         }
 
-        private System.Decimal? NOMINATED_VOLUMEValue;
-        public System.Decimal? NOMINATED_VOLUME
+        private System.Decimal  NOMINATED_VOLUMEValue;
+        public System.Decimal  NOMINATED_VOLUME
         {
             get { return this.NOMINATED_VOLUMEValue; }
             set { SetProperty(ref NOMINATED_VOLUMEValue, value); }

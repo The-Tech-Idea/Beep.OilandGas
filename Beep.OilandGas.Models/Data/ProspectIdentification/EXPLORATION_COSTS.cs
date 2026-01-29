@@ -21,29 +21,29 @@ namespace Beep.OilandGas.Models.Data.ProspectIdentification
             set { SetProperty(ref PROPERTY_IDValue, value); }
         }
 
-        private System.Decimal? GEOLOGICAL_GEOPHYSICAL_COSTSValue;
-        public System.Decimal? GEOLOGICAL_GEOPHYSICAL_COSTS
+        private System.Decimal  GEOLOGICAL_GEOPHYSICAL_COSTSValue;
+        public System.Decimal  GEOLOGICAL_GEOPHYSICAL_COSTS
         {
             get { return this.GEOLOGICAL_GEOPHYSICAL_COSTSValue; }
             set { SetProperty(ref GEOLOGICAL_GEOPHYSICAL_COSTSValue, value); }
         }
 
-        private System.Decimal? EXPLORATORY_DRILLING_COSTSValue;
-        public System.Decimal? EXPLORATORY_DRILLING_COSTS
+        private System.Decimal  EXPLORATORY_DRILLING_COSTSValue;
+        public System.Decimal  EXPLORATORY_DRILLING_COSTS
         {
             get { return this.EXPLORATORY_DRILLING_COSTSValue; }
             set { SetProperty(ref EXPLORATORY_DRILLING_COSTSValue, value); }
         }
 
-        private System.Decimal? EXPLORATORY_WELL_EQUIPMENTValue;
-        public System.Decimal? EXPLORATORY_WELL_EQUIPMENT
+        private System.Decimal  EXPLORATORY_WELL_EQUIPMENTValue;
+        public System.Decimal  EXPLORATORY_WELL_EQUIPMENT
         {
             get { return this.EXPLORATORY_WELL_EQUIPMENTValue; }
             set { SetProperty(ref EXPLORATORY_WELL_EQUIPMENTValue, value); }
         }
 
-        private System.Decimal? TOTAL_EXPLORATION_COSTSValue;
-        public System.Decimal? TOTAL_EXPLORATION_COSTS
+        private System.Decimal  TOTAL_EXPLORATION_COSTSValue;
+        public System.Decimal  TOTAL_EXPLORATION_COSTS
         {
             get { return this.TOTAL_EXPLORATION_COSTSValue; }
             set { SetProperty(ref TOTAL_EXPLORATION_COSTSValue, value); }

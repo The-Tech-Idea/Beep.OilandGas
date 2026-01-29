@@ -134,7 +134,7 @@ Successfully created `Beep.OilandGas.CompressorAnalysis` library with comprehens
 
 ### Reciprocating Compressor Calculations
 
-- **Displacement** - Based on cylinder dimensions and speed
+- **Displacement** - Based on cylinder dimensions and SPEED
 - **Volumetric Efficiency** - Accounts for clearance and compression ratio
 - **Power** - Based on compression work
 - **Discharge Temperature** - Based on adiabatic compression

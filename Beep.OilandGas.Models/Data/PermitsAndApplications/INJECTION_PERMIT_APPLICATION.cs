@@ -42,15 +42,15 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref INJECTION_FLUIDValue, value); }
         }
 
-        private Decimal? MAXIMUM_INJECTION_PRESSUREValue;
-        public Decimal? MAXIMUM_INJECTION_PRESSURE
+        private Decimal  MAXIMUM_INJECTION_PRESSUREValue;
+        public Decimal  MAXIMUM_INJECTION_PRESSURE
         {
             get { return this.MAXIMUM_INJECTION_PRESSUREValue; }
             set { SetProperty(ref MAXIMUM_INJECTION_PRESSUREValue, value); }
         }
 
-        private Decimal? MAXIMUM_INJECTION_RATEValue;
-        public Decimal? MAXIMUM_INJECTION_RATE
+        private Decimal  MAXIMUM_INJECTION_RATEValue;
+        public Decimal  MAXIMUM_INJECTION_RATE
         {
             get { return this.MAXIMUM_INJECTION_RATEValue; }
             set { SetProperty(ref MAXIMUM_INJECTION_RATEValue, value); }

@@ -57,8 +57,8 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
                 zFactor);
 
             // Calculate brake horsepower
-            decimal compressorEfficiency = 0.85m; // Typical for reciprocating
-            result.BRAKE_HORSEPOWER = result.THEORETICAL_POWER / compressorEfficiency;
+            decimal COMPRESSOR_EFFICIENCY = 0.85m; // Typical for reciprocating
+            result.BRAKE_HORSEPOWER = result.THEORETICAL_POWER / COMPRESSOR_EFFICIENCY;
 
             // Calculate motor horsepower
             result.MOTOR_HORSEPOWER = result.BRAKE_HORSEPOWER / conditions.MECHANICAL_EFFICIENCY;
@@ -73,7 +73,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
                 1.3m); // Typical k
 
             // Overall efficiency
-            result.OVERALL_EFFICIENCY = compressorEfficiency * conditions.MECHANICAL_EFFICIENCY;
+            result.OVERALL_EFFICIENCY = COMPRESSOR_EFFICIENCY * conditions.MECHANICAL_EFFICIENCY;
 
             // Polytropic head (not typically used for reciprocating, but set for consistency)
             result.POLYTROPIC_HEAD = result.ADIABATIC_HEAD;
@@ -85,20 +85,20 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
         /// Calculates adiabatic head.
         /// </summary>
         private static decimal CalculateAdiabaticHead(
-            decimal suctionPressure,
-            decimal dischargePressure,
-            decimal suctionTemperature,
-            decimal specificHeatRatio,
+            decimal SUCTION_PRESSURE,
+            decimal DISCHARGE_PRESSURE,
+            decimal SUCTION_TEMPERATURE,
+            decimal SPECIFIC_HEAT_RATIO,
             decimal zFactor,
-            decimal gasSpecificGravity)
+            decimal GAS_SPECIFIC_GRAVITY)
         {
-            decimal k = specificHeatRatio;
-            decimal compressionRatio = dischargePressure / suctionPressure;
+            decimal k = SPECIFIC_HEAT_RATIO;
+            decimal compressionRatio = DISCHARGE_PRESSURE / SUCTION_PRESSURE;
             decimal zAvg = zFactor;
             decimal R = 1545.0m;
-            decimal molecularWeight = gasSpecificGravity * 28.9645m;
+            decimal molecularWeight = GAS_SPECIFIC_GRAVITY * 28.9645m;
 
-            decimal head = (zAvg * R * suctionTemperature / molecularWeight) *
+            decimal head = (zAvg * R * SUCTION_TEMPERATURE / molecularWeight) *
                           (k / (k - 1m)) *
                           ((decimal)Math.Pow((double)compressionRatio, (double)((k - 1m) / k)) - 1m);
 
@@ -148,16 +148,16 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
         /// Calculates discharge temperature.
         /// </summary>
         private static decimal CalculateDischargeTemperature(
-            decimal suctionTemperature,
+            decimal SUCTION_TEMPERATURE,
             decimal compressionRatio,
-            decimal specificHeatRatio)
+            decimal SPECIFIC_HEAT_RATIO)
         {
-            decimal k = specificHeatRatio;
+            decimal k = SPECIFIC_HEAT_RATIO;
 
-            decimal dischargeTemperature = suctionTemperature *
+            decimal dischargeTemperature = SUCTION_TEMPERATURE *
                                          (decimal)Math.Pow((double)compressionRatio, (double)((k - 1m) / k));
 
-            return Math.Max(suctionTemperature, dischargeTemperature);
+            return Math.Max(SUCTION_TEMPERATURE, dischargeTemperature);
         }
     }
 }

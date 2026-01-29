@@ -70,7 +70,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Validation
                 throw new InvalidCompressorPropertiesException("Number of stages must be greater than zero.");
 
             if (properties.SPEED <= 0)
-                throw new InvalidCompressorPropertiesException("Compressor speed must be greater than zero.");
+                throw new InvalidCompressorPropertiesException("Compressor SPEED must be greater than zero.");
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Validation
                 throw new InvalidCompressorPropertiesException("Stroke length must be greater than zero.");
 
             if (properties.ROTATIONAL_SPEED <= 0)
-                throw new InvalidCompressorPropertiesException("Rotational speed must be greater than zero.");
+                throw new InvalidCompressorPropertiesException("Rotational SPEED must be greater than zero.");
 
             if (properties.NUMBER_OF_CYLINDERS <= 0)
                 throw new InvalidCompressorPropertiesException("Number of cylinders must be greater than zero.");

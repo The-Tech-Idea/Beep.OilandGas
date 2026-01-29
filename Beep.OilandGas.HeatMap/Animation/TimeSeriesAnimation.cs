@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Beep.OilandGas.Models.HeatMap;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -207,7 +208,7 @@ namespace Beep.OilandGas.HeatMap.Animation
                     X = kvp.Key.Item1,
                     Y = kvp.Key.Item2,
                     Value = interpolatedValue,
-                    Label = p1?.LABEL ?? p2?.LABEL
+                    Label = p1?.Label ?? p2?.Label
                 });
             }
 

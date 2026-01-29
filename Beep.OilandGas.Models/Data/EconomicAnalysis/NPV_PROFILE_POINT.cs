@@ -21,15 +21,15 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
             set { SetProperty(ref ECONOMIC_ANALYSIS_RESULT_IDValue, value); }
         }
 
-        private Decimal? RATEValue;
-        public Decimal? RATE
+        private Decimal  RATEValue;
+        public Decimal  RATE
         {
             get { return this.RATEValue; }
             set { SetProperty(ref RATEValue, value); }
         }
 
-        private Decimal? NPVValue;
-        public Decimal? NPV
+        private Decimal  NPVValue;
+        public Decimal  NPV
         {
             get { return this.NPVValue; }
             set { SetProperty(ref NPVValue, value); }
@@ -71,8 +71,8 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 
         public NPV_PROFILE_POINT(double rate, double npv)
         {
-            RATE = (decimal?)rate;
-            NPV = (decimal?)npv;
+            RATE = (decimal)rate;
+            NPV = (decimal)npv;
         }
 
         public double DISCOUNT_RATE

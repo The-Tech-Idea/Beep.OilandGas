@@ -35,8 +35,8 @@ namespace Beep.OilandGas.Models.Data.Storage
             set { SetProperty(ref LEASE_IDValue, value); }
         }
 
-        private System.Decimal? CURRENT_INVENTORYValue;
-        public System.Decimal? CURRENT_INVENTORY
+        private System.Decimal  CURRENT_INVENTORYValue;
+        public System.Decimal  CURRENT_INVENTORY
         {
             get { return this.CURRENT_INVENTORYValue; }
             set { SetProperty(ref CURRENT_INVENTORYValue, value); }

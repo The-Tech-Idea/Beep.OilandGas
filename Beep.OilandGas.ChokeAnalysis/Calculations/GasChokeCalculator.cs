@@ -64,12 +64,12 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
 
             return new CHOKE_FLOW_RESULT
             {
-                FlowRate = flowRate,
-                DownstreamPressure = gasProperties.DOWNSTREAM_PRESSURE,
-                UpstreamPressure = gasProperties.UPSTREAM_PRESSURE,
-                PressureRatio = pressureRatio,
-                FlowRegime = flowRegime,
-                CriticalPressureRatio = criticalPressureRatio
+                FLOW_RATE = flowRate,
+                DOWNSTREAM_PRESSURE = gasProperties.DOWNSTREAM_PRESSURE,
+                UPSTREAM_PRESSURE = gasProperties.UPSTREAM_PRESSURE,
+                PRESSURE_RATIO = pressureRatio,
+                FLOW_REGIME = flowRegime,
+                CRITICAL_PRESSURE_RATIO = criticalPressureRatio
             };
         }
 
@@ -106,7 +106,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
                 throw new ArgumentNullException(nameof(gasProperties));
 
             // Calculate Z-factor
-            decimal zFactor = gasProperties.ZFACTOR;
+            decimal zFactor = gasProperties.Z_FACTOR;
             if (zFactor <= 0)
             {
                 zFactor = ZFactorCalculator.CalculateBrillBeggs(
@@ -148,7 +148,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
                 throw new ArgumentException("Flow rate must be greater than zero.", nameof(flowRate));
 
             // Calculate Z-factor
-            decimal zFactor = gasProperties.ZFACTOR;
+            decimal zFactor = gasProperties.Z_FACTOR;
             if (zFactor <= 0)
             {
                 zFactor = ZFactorCalculator.CalculateBrillBeggs(
@@ -203,14 +203,14 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
         private static decimal CalculateImprovedZFactor(GAS_CHOKE_PROPERTIES gasProperties)
         {
             // Use existing Z-factor if valid
-            if (gasProperties.ZFACTOR > 0 && gasProperties.ZFACTOR <= 3)
+            if (gasProperties.Z_FACTOR > 0 && gasProperties.Z_FACTOR <= 3)
             {
                 // Apply high-pressure corrections for improved accuracy
                 if (gasProperties.UPSTREAM_PRESSURE > 3000m)
                 {
-                    return gasProperties.ZFACTOR * 1.02m; // 2% correction for high pressure
+                    return gasProperties.Z_FACTOR * 1.02m; // 2% correction for high pressure
                 }
-                return gasProperties.ZFACTOR;
+                return gasProperties.Z_FACTOR;
             }
 
             // Calculate using Brill-Beggs as primary method
@@ -298,7 +298,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
             decimal g = ChokeConstants.GravitationalAcceleration;
             decimal R = ChokeConstants.UniversalGasConstant;
 
-            decimal area = choke.ChokeArea / ChokeConstants.SquareInchesToSquareFeet; // Convert to ftÂ²
+            decimal area = choke.CHOKE_AREA / ChokeConstants.SquareInchesToSquareFeet; // Convert to ftÂ²
             decimal upstreamPressure = gasProperties.UPSTREAM_PRESSURE;
             decimal temperature = gasProperties.TEMPERATURE;
 
@@ -326,7 +326,7 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
             decimal g = ChokeConstants.GravitationalAcceleration;
             decimal R = ChokeConstants.UniversalGasConstant;
 
-            decimal area = choke.ChokeArea / ChokeConstants.SquareInchesToSquareFeet;
+            decimal area = choke.CHOKE_AREA / ChokeConstants.SquareInchesToSquareFeet;
             decimal upstreamPressure = gasProperties.UPSTREAM_PRESSURE;
             decimal temperature = gasProperties.TEMPERATURE;
 
@@ -362,18 +362,18 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
 
                 var testProperties = new GAS_CHOKE_PROPERTIES
                 {
-                    UpstreamPressure = gasProperties.UPSTREAM_PRESSURE,
-                    DownstreamPressure = downstreamPressure,
-                    Temperature = gasProperties.TEMPERATURE,
-                    GasSpecificGravity = gasProperties.GAS_SPECIFIC_GRAVITY,
-                    ZFactor = zFactor
+                    UPSTREAM_PRESSURE = gasProperties.UPSTREAM_PRESSURE,
+                    DOWNSTREAM_PRESSURE = downstreamPressure,
+                    TEMPERATURE = gasProperties.TEMPERATURE,
+                    GAS_SPECIFIC_GRAVITY = gasProperties.GAS_SPECIFIC_GRAVITY,
+                    Z_FACTOR = zFactor
                 };
 
                 var testChoke = new CHOKE_PROPERTIES
                 {
-                    ChokeDiameter = choke.CHOKE_DIAMETER,
-                    ChokeType = choke.CHOKE_TYPE,
-                    DischargeCoefficient = dischargeCoefficient
+                    CHOKE_DIAMETER = choke.CHOKE_DIAMETER,
+                    CHOKE_TYPE = choke.CHOKE_TYPE,
+                    DISCHARGE_COEFFICIENT = dischargeCoefficient
                 };
                 var result = CalculateDownholeChokeFlow(testChoke, testProperties);
                 decimal calculatedFlowRate = result.FLOW_RATE;

@@ -232,10 +232,11 @@ namespace Beep.OilandGas.EconomicAnalysis.Rendering
 
             double minRate = npvProfile.Min(p => p.DISCOUNT_RATE);
             double maxRate = npvProfile.Max(p => p.DISCOUNT_RATE);
-            double minNPV = (double)npvProfile.Min(p => p.NPV);
-            double maxNPV = (double)npvProfile.Max(p => p.NPV);
-            double npvRange = maxNPV - minNPV;
-            if (npvRange == 0) npvRange = 1;
+            // Use decimal for NPV calculations to avoid mixing decimal and double
+            decimal minNPV = npvProfile.Min(p => p.NPV);
+            decimal maxNPV = npvProfile.Max(p => p.NPV);
+            decimal npvRange = maxNPV - minNPV;
+            if (npvRange == 0m) npvRange = 1m;
 
             using (var path = new SKPath())
             {
@@ -243,7 +244,9 @@ namespace Beep.OilandGas.EconomicAnalysis.Rendering
                 foreach (var point in npvProfile.OrderBy(p => p.DISCOUNT_RATE))
                 {
                     float x = plotAreaX + (float)((point.DISCOUNT_RATE - minRate) / (maxRate - minRate) * plotAreaWidth);
-                    float y = plotAreaY + plotAreaHeight - (float)((point.NPV - minNPV) / npvRange * plotAreaHeight);
+                    // Compute Y using decimal arithmetic then cast to float for rendering
+                    decimal ratio = npvRange == 0m ? 0m : (point.NPV - minNPV) / npvRange;
+                    float y = plotAreaY + plotAreaHeight - (float)(ratio * (decimal)plotAreaHeight);
 
                     if (first)
                     {
@@ -269,9 +272,9 @@ namespace Beep.OilandGas.EconomicAnalysis.Rendering
             }
 
             // Draw zero line
-            if (minNPV < 0 && maxNPV > 0)
+            if (minNPV < 0m && maxNPV > 0m)
             {
-                float zeroY = plotAreaY + plotAreaHeight - (float)(-minNPV / npvRange * plotAreaHeight);
+                float zeroY = plotAreaY + plotAreaHeight - (float)((-minNPV / npvRange) * (decimal)plotAreaHeight);
                 using (var paint = new SKPaint
                 {
                     Color = configuration.ZeroLineColor,

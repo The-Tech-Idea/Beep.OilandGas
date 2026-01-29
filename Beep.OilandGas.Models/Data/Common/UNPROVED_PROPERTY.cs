@@ -21,8 +21,8 @@ namespace Beep.OilandGas.Models.Data.Common
             set { SetProperty(ref PROPERTY_NAMEValue, value); }
         }
 
-        private System.Decimal? ACQUISITION_COSTValue;
-        public System.Decimal? ACQUISITION_COST
+        private System.Decimal  ACQUISITION_COSTValue;
+        public System.Decimal  ACQUISITION_COST
         {
             get { return this.ACQUISITION_COSTValue; }
             set { SetProperty(ref ACQUISITION_COSTValue, value); }
@@ -42,22 +42,22 @@ namespace Beep.OilandGas.Models.Data.Common
             set { SetProperty(ref PROPERTY_TYPEValue, value); }
         }
 
-        private System.Decimal? WORKING_INTERESTValue;
-        public System.Decimal? WORKING_INTEREST
+        private System.Decimal  WORKING_INTERESTValue;
+        public System.Decimal  WORKING_INTEREST
         {
             get { return this.WORKING_INTERESTValue; }
             set { SetProperty(ref WORKING_INTERESTValue, value); }
         }
 
-        private System.Decimal? NET_REVENUE_INTERESTValue;
-        public System.Decimal? NET_REVENUE_INTEREST
+        private System.Decimal  NET_REVENUE_INTERESTValue;
+        public System.Decimal  NET_REVENUE_INTEREST
         {
             get { return this.NET_REVENUE_INTERESTValue; }
             set { SetProperty(ref NET_REVENUE_INTERESTValue, value); }
         }
 
-        private System.Decimal? ACCUMULATED_IMPAIRMENTValue;
-        public System.Decimal? ACCUMULATED_IMPAIRMENT
+        private System.Decimal  ACCUMULATED_IMPAIRMENTValue;
+        public System.Decimal  ACCUMULATED_IMPAIRMENT
         {
             get { return this.ACCUMULATED_IMPAIRMENTValue; }
             set { SetProperty(ref ACCUMULATED_IMPAIRMENTValue, value); }

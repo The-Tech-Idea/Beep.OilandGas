@@ -69,15 +69,15 @@ namespace Beep.OilandGas.SuckerRodPumping.Calculations
         {
             decimal totalWeight = 0m;
 
-            foreach (var section in rodString.Sections)
+            foreach (var section in rodString.SECTIONS)
             {
                 // Calculate section weight
-                decimal rodArea = (decimal)Math.PI * section.Diameter * section.Diameter / 4m; // square inches
-                decimal rodVolume = rodArea * section.Length * 12m; // cubic inches
+                decimal rodArea = (decimal)Math.PI * section.DIAMETER * section.DIAMETER / 4m; // square inches
+                decimal rodVolume = rodArea * section.LENGTH * 12m; // cubic inches
                 decimal rodVolumeFt3 = rodVolume / 1728m; // cubic feet
-                decimal sectionWeight = rodVolumeFt3 * section.Density; // pounds
+                decimal sectionWeight = rodVolumeFt3 * section.DENSITY; // pounds
 
-                section.Weight = sectionWeight;
+                section.WEIGHT = sectionWeight;
                 totalWeight += sectionWeight;
             }
 

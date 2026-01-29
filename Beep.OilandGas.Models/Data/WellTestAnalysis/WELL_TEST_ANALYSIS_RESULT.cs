@@ -21,50 +21,50 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             set { SetProperty(ref WELL_TEST_DATA_IDValue, value); }
         }
 
-        private Decimal? PERMEABILITYValue;
-        public Decimal? PERMEABILITY
+        private Decimal  PERMEABILITYValue;
+        public Decimal  PERMEABILITY
         {
             get { return this.PERMEABILITYValue; }
             set { SetProperty(ref PERMEABILITYValue, value); }
         }
 
-        private Decimal? SKIN_FACTORValue;
-        public Decimal? SKIN_FACTOR
+        private Decimal  SKIN_FACTORValue;
+        public Decimal  SKIN_FACTOR
         {
             get { return this.SKIN_FACTORValue; }
             set { SetProperty(ref SKIN_FACTORValue, value); }
         }
 
-        private Decimal? RESERVOIR_PRESSUREValue;
-        public Decimal? RESERVOIR_PRESSURE
+        private Decimal  RESERVOIR_PRESSUREValue;
+        public Decimal  RESERVOIR_PRESSURE
         {
             get { return this.RESERVOIR_PRESSUREValue; }
             set { SetProperty(ref RESERVOIR_PRESSUREValue, value); }
         }
 
-        private Decimal? PRODUCTIVITY_INDEXValue;
-        public Decimal? PRODUCTIVITY_INDEX
+        private Decimal  PRODUCTIVITY_INDEXValue;
+        public Decimal  PRODUCTIVITY_INDEX
         {
             get { return this.PRODUCTIVITY_INDEXValue; }
             set { SetProperty(ref PRODUCTIVITY_INDEXValue, value); }
         }
 
-        private Decimal? FLOW_EFFICIENCYValue;
-        public Decimal? FLOW_EFFICIENCY
+        private Decimal  FLOW_EFFICIENCYValue;
+        public Decimal  FLOW_EFFICIENCY
         {
             get { return this.FLOW_EFFICIENCYValue; }
             set { SetProperty(ref FLOW_EFFICIENCYValue, value); }
         }
 
-        private Decimal? DAMAGE_RATIOValue;
-        public Decimal? DAMAGE_RATIO
+        private Decimal  DAMAGE_RATIOValue;
+        public Decimal  DAMAGE_RATIO
         {
             get { return this.DAMAGE_RATIOValue; }
             set { SetProperty(ref DAMAGE_RATIOValue, value); }
         }
 
-        private Decimal? RADIUS_OF_INVESTIGATIONValue;
-        public Decimal? RADIUS_OF_INVESTIGATION
+        private Decimal  RADIUS_OF_INVESTIGATIONValue;
+        public Decimal  RADIUS_OF_INVESTIGATION
         {
             get { return this.RADIUS_OF_INVESTIGATIONValue; }
             set { SetProperty(ref RADIUS_OF_INVESTIGATIONValue, value); }
@@ -77,8 +77,8 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             set { SetProperty(ref IDENTIFIED_MODELValue, value); }
         }
 
-        private Decimal? R_SQUAREDValue;
-        public Decimal? R_SQUARED
+        private Decimal  R_SQUAREDValue;
+        public Decimal  R_SQUARED
         {
             get { return this.R_SQUAREDValue; }
             set { SetProperty(ref R_SQUAREDValue, value); }

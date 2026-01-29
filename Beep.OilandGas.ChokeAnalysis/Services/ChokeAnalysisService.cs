@@ -223,12 +223,12 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
                     {
                         var testProperties = new GAS_CHOKE_PROPERTIES
                         {
-                            UpstreamPressure = gasProperties.UPSTREAM_PRESSURE,
-                            DownstreamPressure = pressureRange.Min + (i * pressureStep),
-                            Temperature = gasProperties.TEMPERATURE,
-                            GasSpecificGravity = gasProperties.GAS_SPECIFIC_GRAVITY,
-                            ZFactor = gasProperties.ZFACTOR,
-                            FlowRate = gasProperties.FLOW_RATE
+                            UPSTREAM_PRESSURE = gasProperties.UPSTREAM_PRESSURE,
+                            DOWNSTREAM_PRESSURE = pressureRange.Min + (i * pressureStep),
+                            TEMPERATURE = gasProperties.TEMPERATURE,
+                            GAS_SPECIFIC_GRAVITY = gasProperties.GAS_SPECIFIC_GRAVITY,
+                            Z_FACTOR = gasProperties.Z_FACTOR,
+                            FLOW_RATE = gasProperties.FLOW_RATE
                         };
 
                         var flowResult = GasChokeCalculator.CalculateDownholeChokeFlow(choke, testProperties);

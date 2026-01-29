@@ -27,36 +27,36 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref CALCULATION_DATEValue, value); }
         }
 
-        private System.Decimal? NET_CAPITALIZED_COSTValue;
-        public System.Decimal? NET_CAPITALIZED_COST
+        private System.Decimal  NET_CAPITALIZED_COSTValue;
+        public System.Decimal  NET_CAPITALIZED_COST
         {
             get { return this.NET_CAPITALIZED_COSTValue; }
             set { SetProperty(ref NET_CAPITALIZED_COSTValue, value); }
         }
 
-        private System.Decimal? DISCOUNTED_FUTURE_NET_CASH_FLOWSValue;
-        public System.Decimal? DISCOUNTED_FUTURE_NET_CASH_FLOWS
+        private System.Decimal  DISCOUNTED_FUTURE_NET_CASH_FLOWSValue;
+        public System.Decimal  DISCOUNTED_FUTURE_NET_CASH_FLOWS
         {
             get { return this.DISCOUNTED_FUTURE_NET_CASH_FLOWSValue; }
             set { SetProperty(ref DISCOUNTED_FUTURE_NET_CASH_FLOWSValue, value); }
         }
 
-        private System.Decimal? CEILING_VALUEValue;
-        public System.Decimal? CEILING_VALUE
+        private System.Decimal  CEILING_VALUEValue;
+        public System.Decimal  CEILING_VALUE
         {
             get { return this.CEILING_VALUEValue; }
             set { SetProperty(ref CEILING_VALUEValue, value); }
         }
 
-        private System.Decimal? IMPAIRMENT_AMOUNTValue;
-        public System.Decimal? IMPAIRMENT_AMOUNT
+        private System.Decimal  IMPAIRMENT_AMOUNTValue;
+        public System.Decimal  IMPAIRMENT_AMOUNT
         {
             get { return this.IMPAIRMENT_AMOUNTValue; }
             set { SetProperty(ref IMPAIRMENT_AMOUNTValue, value); }
         }
 
-        private System.Decimal? DISCOUNT_RATEValue;
-        public System.Decimal? DISCOUNT_RATE
+        private System.Decimal  DISCOUNT_RATEValue;
+        public System.Decimal  DISCOUNT_RATE
         {
             get { return this.DISCOUNT_RATEValue; }
             set { SetProperty(ref DISCOUNT_RATEValue, value); }

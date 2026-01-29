@@ -101,8 +101,8 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
             var forecast = new PRODUCTION_FORECAST
             {
-                ForecastType = ForecastType.PseudoSteadyStateTwoPhase,
-                ForecastDuration = forecastDuration
+                FORECAST_TYPE = ForecastType.PseudoSteadyStateTwoPhase,
+                FORECAST_DURATION = forecastDuration
             };
 
             decimal timeStep = forecastDuration / timeSteps;
@@ -139,20 +139,20 @@ namespace Beep.OilandGas.ProductionForecasting.Calculations
 
                 cumulativeProduction += productionRate * timeStep;
 
-                forecast.ForecastPoints.Add(new FORECAST_POINT
+                forecast.FORECAST_POINTS.Add(new FORECAST_POINT
                 {
-                    Time = time,
-                    ProductionRate = productionRate,
-                    CumulativeProduction = cumulativeProduction,
-                    ReservoirPressure = currentPressure,
-                    BottomHolePressure = bottomHolePressure
+                     TIME = time,
+                    PRODUCTION_RATE = productionRate,
+                    CUMULATIVE_PRODUCTION = cumulativeProduction,
+                    RESERVOIR_PRESSURE = currentPressure,
+                    BOTTOM_HOLE_PRESSURE = bottomHolePressure
                 });
 
                 if (i == 0)
                     forecast.INITIAL_PRODUCTION_RATE = productionRate;
             }
 
-            forecast.FINAL_PRODUCTION_RATE = forecast.ForecastPoints.Last().PRODUCTION_RATE;
+            forecast.FINAL_PRODUCTION_RATE = forecast.FORECAST_POINTS.Last().PRODUCTION_RATE;
             forecast.TOTAL_CUMULATIVE_PRODUCTION = cumulativeProduction;
 
             return forecast;

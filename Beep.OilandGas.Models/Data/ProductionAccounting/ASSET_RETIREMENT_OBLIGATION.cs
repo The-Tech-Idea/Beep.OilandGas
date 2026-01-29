@@ -47,22 +47,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref ESTIMATED_RETIREMENT_DATEValue, value); }
         }
 
-        private Decimal? DISCOUNT_RATEValue;
-        public Decimal? DISCOUNT_RATE
+        private Decimal  DISCOUNT_RATEValue;
+        public Decimal  DISCOUNT_RATE
         {
             get { return this.DISCOUNT_RATEValue; }
             set { SetProperty(ref DISCOUNT_RATEValue, value); }
         }
 
-        private Decimal? PRESENT_VALUEValue;
-        public Decimal? PRESENT_VALUE
+        private Decimal  PRESENT_VALUEValue;
+        public Decimal  PRESENT_VALUE
         {
             get { return this.PRESENT_VALUEValue; }
             set { SetProperty(ref PRESENT_VALUEValue, value); }
         }
 
-        private Decimal? ACCRETION_EXPENSEValue;
-        public Decimal? ACCRETION_EXPENSE
+        private Decimal  ACCRETION_EXPENSEValue;
+        public Decimal  ACCRETION_EXPENSE
         {
             get { return this.ACCRETION_EXPENSEValue; }
             set { SetProperty(ref ACCRETION_EXPENSEValue, value); }

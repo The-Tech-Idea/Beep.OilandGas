@@ -29,8 +29,8 @@ private  System.String ESTIMATE_IDValue;
 
           set { SetProperty(ref  ESTIMATE_IDValue, value); }
         } 
-private  System.Decimal? OIL_VOLUME_P10Value; 
- public System.Decimal? OIL_VOLUME_P10
+private  System.Decimal  OIL_VOLUME_P10Value; 
+ public System.Decimal  OIL_VOLUME_P10
         {  
             get  
             {  
@@ -39,8 +39,8 @@ private  System.Decimal? OIL_VOLUME_P10Value;
 
           set { SetProperty(ref  OIL_VOLUME_P10Value, value); }
         } 
-private  System.Decimal? OIL_VOLUME_P50Value; 
- public System.Decimal? OIL_VOLUME_P50
+private  System.Decimal  OIL_VOLUME_P50Value; 
+ public System.Decimal  OIL_VOLUME_P50
         {  
             get  
             {  
@@ -49,8 +49,8 @@ private  System.Decimal? OIL_VOLUME_P50Value;
 
           set { SetProperty(ref  OIL_VOLUME_P50Value, value); }
         } 
-private  System.Decimal? OIL_VOLUME_P90Value; 
- public System.Decimal? OIL_VOLUME_P90
+private  System.Decimal  OIL_VOLUME_P90Value; 
+ public System.Decimal  OIL_VOLUME_P90
         {  
             get  
             {  
@@ -59,8 +59,8 @@ private  System.Decimal? OIL_VOLUME_P90Value;
 
           set { SetProperty(ref  OIL_VOLUME_P90Value, value); }
         } 
-private  System.Decimal? GAS_VOLUME_P10Value; 
- public System.Decimal? GAS_VOLUME_P10
+private  System.Decimal  GAS_VOLUME_P10Value; 
+ public System.Decimal  GAS_VOLUME_P10
         {  
             get  
             {  
@@ -69,8 +69,8 @@ private  System.Decimal? GAS_VOLUME_P10Value;
 
           set { SetProperty(ref  GAS_VOLUME_P10Value, value); }
         } 
-private  System.Decimal? GAS_VOLUME_P50Value; 
- public System.Decimal? GAS_VOLUME_P50
+private  System.Decimal  GAS_VOLUME_P50Value; 
+ public System.Decimal  GAS_VOLUME_P50
         {  
             get  
             {  
@@ -79,8 +79,8 @@ private  System.Decimal? GAS_VOLUME_P50Value;
 
           set { SetProperty(ref  GAS_VOLUME_P50Value, value); }
         } 
-private  System.Decimal? GAS_VOLUME_P90Value; 
- public System.Decimal? GAS_VOLUME_P90
+private  System.Decimal  GAS_VOLUME_P90Value; 
+ public System.Decimal  GAS_VOLUME_P90
         {  
             get  
             {  
@@ -99,8 +99,8 @@ private  System.String VOLUME_OUOMValue;
 
           set { SetProperty(ref  VOLUME_OUOMValue, value); }
         } 
-private  System.Decimal? UNRISKED_OIL_VOLUMEValue; 
- public System.Decimal? UNRISKED_OIL_VOLUME
+private  System.Decimal  UNRISKED_OIL_VOLUMEValue; 
+ public System.Decimal  UNRISKED_OIL_VOLUME
         {  
             get  
             {  
@@ -109,8 +109,8 @@ private  System.Decimal? UNRISKED_OIL_VOLUMEValue;
 
           set { SetProperty(ref  UNRISKED_OIL_VOLUMEValue, value); }
         } 
-private  System.Decimal? UNRISKED_GAS_VOLUMEValue; 
- public System.Decimal? UNRISKED_GAS_VOLUME
+private  System.Decimal  UNRISKED_GAS_VOLUMEValue; 
+ public System.Decimal  UNRISKED_GAS_VOLUME
         {  
             get  
             {  
@@ -119,8 +119,8 @@ private  System.Decimal? UNRISKED_GAS_VOLUMEValue;
 
           set { SetProperty(ref  UNRISKED_GAS_VOLUMEValue, value); }
         } 
-private  System.Decimal? RISKED_OIL_VOLUMEValue; 
- public System.Decimal? RISKED_OIL_VOLUME
+private  System.Decimal  RISKED_OIL_VOLUMEValue; 
+ public System.Decimal  RISKED_OIL_VOLUME
         {  
             get  
             {  
@@ -129,8 +129,8 @@ private  System.Decimal? RISKED_OIL_VOLUMEValue;
 
           set { SetProperty(ref  RISKED_OIL_VOLUMEValue, value); }
         } 
-private  System.Decimal? RISKED_GAS_VOLUMEValue; 
- public System.Decimal? RISKED_GAS_VOLUME
+private  System.Decimal  RISKED_GAS_VOLUMEValue; 
+ public System.Decimal  RISKED_GAS_VOLUME
         {  
             get  
             {  
@@ -139,8 +139,8 @@ private  System.Decimal? RISKED_GAS_VOLUMEValue;
 
           set { SetProperty(ref  RISKED_GAS_VOLUMEValue, value); }
         } 
-private  System.Decimal? RECOVERY_FACTORValue; 
- public System.Decimal? RECOVERY_FACTOR
+private  System.Decimal  RECOVERY_FACTORValue; 
+ public System.Decimal  RECOVERY_FACTOR
         {  
             get  
             {  
@@ -149,8 +149,8 @@ private  System.Decimal? RECOVERY_FACTORValue;
 
           set { SetProperty(ref  RECOVERY_FACTORValue, value); }
         } 
-private  System.Decimal? FORMATION_VOLUME_FACTORValue; 
- public System.Decimal? FORMATION_VOLUME_FACTOR
+private  System.Decimal  FORMATION_VOLUME_FACTORValue; 
+ public System.Decimal  FORMATION_VOLUME_FACTOR
         {  
             get  
             {  

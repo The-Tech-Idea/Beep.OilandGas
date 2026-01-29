@@ -26,29 +26,29 @@ namespace Beep.OilandGas.Models.Data.GasLift
             set { SetProperty(ref PERFORMANCE_DATEValue, value); }
         }
 
-        private decimal? GAS_INJECTION_RATEValue;
-        public decimal? GAS_INJECTION_RATE
+        private  decimal  GAS_INJECTION_RATEValue;
+        public  decimal  GAS_INJECTION_RATE
         {
             get { return this.GAS_INJECTION_RATEValue; }
             set { SetProperty(ref GAS_INJECTION_RATEValue, value); }
         }
 
-        private decimal? PRODUCTION_RATEValue;
-        public decimal? PRODUCTION_RATE
+        private  decimal  PRODUCTION_RATEValue;
+        public  decimal  PRODUCTION_RATE
         {
             get { return this.PRODUCTION_RATEValue; }
             set { SetProperty(ref PRODUCTION_RATEValue, value); }
         }
 
-        private decimal? GAS_LIQUID_RATIOValue;
-        public decimal? GAS_LIQUID_RATIO
+        private  decimal  GAS_LIQUID_RATIOValue;
+        public  decimal  GAS_LIQUID_RATIO
         {
             get { return this.GAS_LIQUID_RATIOValue; }
             set { SetProperty(ref GAS_LIQUID_RATIOValue, value); }
         }
 
-        private decimal? EFFICIENCYValue;
-        public decimal? EFFICIENCY
+        private  decimal  EFFICIENCYValue;
+        public  decimal  EFFICIENCY
         {
             get { return this.EFFICIENCYValue; }
             set { SetProperty(ref EFFICIENCYValue, value); }

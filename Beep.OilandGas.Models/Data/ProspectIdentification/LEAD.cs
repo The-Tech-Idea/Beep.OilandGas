@@ -115,8 +115,8 @@ namespace Beep.OilandGas.Models.Data.ProspectIdentification
             }
             set { SetProperty(ref REJECTION_REASONValue, value); }
         }
-        private System.Decimal? LATITUDEValue;
-        public System.Decimal? LATITUDE
+        private System.Decimal  LATITUDEValue;
+        public System.Decimal  LATITUDE
         {
             get
             {
@@ -124,8 +124,8 @@ namespace Beep.OilandGas.Models.Data.ProspectIdentification
             }
             set { SetProperty(ref LATITUDEValue, value); }
         }
-        private System.Decimal? LONGITUDEValue;
-        public System.Decimal? LONGITUDE
+        private System.Decimal  LONGITUDEValue;
+        public System.Decimal  LONGITUDE
         {
             get
             {
@@ -133,8 +133,8 @@ namespace Beep.OilandGas.Models.Data.ProspectIdentification
             }
             set { SetProperty(ref LONGITUDEValue, value); }
         }
-        private System.Decimal? ELEVATIONValue;
-        public System.Decimal? ELEVATION
+        private System.Decimal  ELEVATIONValue;
+        public System.Decimal  ELEVATION
         {
             get
             {
@@ -169,8 +169,8 @@ namespace Beep.OilandGas.Models.Data.ProspectIdentification
             }
             set { SetProperty(ref INITIAL_RISK_ASSESSMENTValue, value); }
         }
-        private System.Decimal? INITIAL_VOLUME_ESTIMATE_OILValue;
-        public System.Decimal? INITIAL_VOLUME_ESTIMATE_OIL
+        private System.Decimal  INITIAL_VOLUME_ESTIMATE_OILValue;
+        public System.Decimal  INITIAL_VOLUME_ESTIMATE_OIL
         {
             get
             {
@@ -178,8 +178,8 @@ namespace Beep.OilandGas.Models.Data.ProspectIdentification
             }
             set { SetProperty(ref INITIAL_VOLUME_ESTIMATE_OILValue, value); }
         }
-        private System.Decimal? INITIAL_VOLUME_ESTIMATE_GASValue;
-        public System.Decimal? INITIAL_VOLUME_ESTIMATE_GAS
+        private System.Decimal  INITIAL_VOLUME_ESTIMATE_GASValue;
+        public System.Decimal  INITIAL_VOLUME_ESTIMATE_GAS
         {
             get
             {

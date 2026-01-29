@@ -144,9 +144,12 @@ namespace Beep.OilandGas.Accounting.Services
             invoice.TAX_AMOUNT = request.TaxAmount ?? invoice.TAX_AMOUNT;
             if (request.Subtotal.HasValue || request.TaxAmount.HasValue)
             {
-                invoice.TOTAL_AMOUNT = (invoice.SUBTOTAL ?? 0m) + (invoice.TAX_AMOUNT ?? 0m);
-                var paid = invoice.PAID_AMOUNT ?? 0m;
-                invoice.BALANCE_DUE = Math.Max(0m, (invoice.TOTAL_AMOUNT ?? 0m) - paid);
+                // Safely handle TOTAL_AMOUNT/TAX_AMOUNT/PAID_AMOUNT which may be nullable or non-nullable
+                var subtotalVal = invoice.SUBTOTAL is decimal s ? s : 0m;
+                var taxVal = invoice.TAX_AMOUNT is decimal t ? t : 0m;
+                invoice.TOTAL_AMOUNT = subtotalVal + taxVal;
+                var paid = invoice.PAID_AMOUNT is decimal p ? p : 0m;
+                invoice.BALANCE_DUE = Math.Max(0m, (invoice.TOTAL_AMOUNT is decimal ta ? ta : 0m) - paid);
             }
             invoice.CURRENCY_CODE = request.CurrencyCode ?? invoice.CURRENCY_CODE;
             invoice.DESCRIPTION = request.Description ?? invoice.DESCRIPTION;
@@ -186,7 +189,7 @@ namespace Beep.OilandGas.Accounting.Services
             var invoice = await GetInvoiceAsync(request.InvoiceId, connectionName);
             if (invoice == null)
                 throw new InvalidOperationException($"Invoice not found: {request.InvoiceId}");
-            var currentBalance = (invoice.TOTAL_AMOUNT ?? 0m) - (invoice.PAID_AMOUNT ?? 0m);
+            var currentBalance = (invoice.TOTAL_AMOUNT is decimal ta2 ? ta2 : 0m) - (invoice.PAID_AMOUNT is decimal pa2 ? pa2 : 0m);
             if (request.PaymentAmount > currentBalance + 0.01m)
                 throw new InvalidOperationException("Payment amount exceeds invoice balance");
 
@@ -208,8 +211,8 @@ namespace Beep.OilandGas.Accounting.Services
             var paymentRepo = await GetRepoAsync<INVOICE_PAYMENT>("INVOICE_PAYMENT", connectionName);
             await paymentRepo.InsertAsync(payment, userId);
 
-            invoice.PAID_AMOUNT = (invoice.PAID_AMOUNT ?? 0m) + request.PaymentAmount;
-            invoice.BALANCE_DUE = Math.Max(0m, (invoice.TOTAL_AMOUNT ?? 0m) - (invoice.PAID_AMOUNT ?? 0m));
+            invoice.PAID_AMOUNT = (invoice.PAID_AMOUNT is decimal paidSoFar ? paidSoFar : 0m) + request.PaymentAmount;
+            invoice.BALANCE_DUE = Math.Max(0m, (invoice.TOTAL_AMOUNT is decimal totalAmt ? totalAmt : 0m) - (invoice.PAID_AMOUNT is decimal paidNow ? paidNow : 0m));
             invoice.STATUS = invoice.BALANCE_DUE == 0m ? InvoiceStatuses.Paid : InvoiceStatuses.PartiallyPaid;
             invoice.ROW_CHANGED_BY = userId;
             invoice.ROW_CHANGED_DATE = DateTime.UtcNow;
@@ -285,7 +288,7 @@ namespace Beep.OilandGas.Accounting.Services
             await _basisPosting.PostBalancedEntryByAccountAsync(
                 GetAccountId(AccountMappingKeys.AccountsReceivable, DefaultGlAccounts.AccountsReceivable),
                 GetAccountId(AccountMappingKeys.Revenue, DefaultGlAccounts.Revenue),
-                invoice.TOTAL_AMOUNT ?? 0m,
+                (invoice.TOTAL_AMOUNT is decimal totalForPosting ? totalForPosting : 0m),
                 $"Invoice approved {invoice.INVOICE_NUMBER}",
                 approverId,
                 connectionName ?? ConnectionName);
@@ -356,8 +359,8 @@ namespace Beep.OilandGas.Accounting.Services
                 throw new InvalidOperationException($"Invoice not found: {invoiceId}");
 
             var payments = await GetInvoicePaymentsAsync(invoiceId, connectionName);
-            var totalPaid = payments.Sum(p => p.PAYMENT_AMOUNT ?? 0m);
-            var totalAmount = invoice.TOTAL_AMOUNT ?? 0m;
+            var totalPaid = payments.Sum(p => p.PAYMENT_AMOUNT is decimal pa3 ? pa3 : 0m);
+            var totalAmount = invoice.TOTAL_AMOUNT is decimal ta3 ? ta3 : 0m;
             var balance = totalAmount - totalPaid;
             var paymentStatus = balance switch
             {

@@ -29,8 +29,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref VALUATION_DATEValue, value); }
         }
 
-        private System.Decimal? BASE_PRICEValue;
-        public System.Decimal? BASE_PRICE
+        private System.Decimal  BASE_PRICEValue;
+        public System.Decimal  BASE_PRICE
         {
             get { return this.BASE_PRICEValue; }
             set { SetProperty(ref BASE_PRICEValue, value); }
@@ -57,29 +57,29 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref TIME_ADJUSTMENTS_JSONValue, value); }
         }
 
-        private System.Decimal? TOTAL_ADJUSTMENTSValue;
-        public System.Decimal? TOTAL_ADJUSTMENTS
+        private System.Decimal  TOTAL_ADJUSTMENTSValue;
+        public System.Decimal  TOTAL_ADJUSTMENTS
         {
             get { return this.TOTAL_ADJUSTMENTSValue; }
             set { SetProperty(ref TOTAL_ADJUSTMENTSValue, value); }
         }
 
-        private System.Decimal? ADJUSTED_PRICEValue;
-        public System.Decimal? ADJUSTED_PRICE
+        private System.Decimal  ADJUSTED_PRICEValue;
+        public System.Decimal  ADJUSTED_PRICE
         {
             get { return this.ADJUSTED_PRICEValue; }
             set { SetProperty(ref ADJUSTED_PRICEValue, value); }
         }
 
-        private System.Decimal? NET_VOLUMEValue;
-        public System.Decimal? NET_VOLUME
+        private System.Decimal  NET_VOLUMEValue;
+        public System.Decimal  NET_VOLUME
         {
             get { return this.NET_VOLUMEValue; }
             set { SetProperty(ref NET_VOLUMEValue, value); }
         }
 
-        private System.Decimal? TOTAL_VALUEValue;
-        public System.Decimal? TOTAL_VALUE
+        private System.Decimal  TOTAL_VALUEValue;
+        public System.Decimal  TOTAL_VALUE
         {
             get { return this.TOTAL_VALUEValue; }
             set { SetProperty(ref TOTAL_VALUEValue, value); }

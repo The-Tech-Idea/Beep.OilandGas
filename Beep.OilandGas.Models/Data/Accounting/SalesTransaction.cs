@@ -42,43 +42,43 @@ namespace Beep.OilandGas.Models.Data.Accounting
             set { SetProperty(ref SALES_DATEValue, value); }
         }
 
-        private System.Decimal? NET_VOLUMEValue;
-        public System.Decimal? NET_VOLUME
+        private System.Decimal  NET_VOLUMEValue;
+        public System.Decimal  NET_VOLUME
         {
             get { return this.NET_VOLUMEValue; }
             set { SetProperty(ref NET_VOLUMEValue, value); }
         }
 
-        private System.Decimal? PRICE_PER_BARRELValue;
-        public System.Decimal? PRICE_PER_BARREL
+        private System.Decimal  PRICE_PER_BARRELValue;
+        public System.Decimal  PRICE_PER_BARREL
         {
             get { return this.PRICE_PER_BARRELValue; }
             set { SetProperty(ref PRICE_PER_BARRELValue, value); }
         }
 
-        private System.Decimal? TOTAL_AMOUNTValue;
-        public System.Decimal? TOTAL_AMOUNT
+        private System.Decimal  TOTAL_AMOUNTValue;
+        public System.Decimal  TOTAL_AMOUNT
         {
             get { return this.TOTAL_AMOUNTValue; }
             set { SetProperty(ref TOTAL_AMOUNTValue, value); }
         }
 
-        private System.Decimal? TOTAL_COSTSValue;
-        public System.Decimal? TOTAL_COSTS
+        private System.Decimal  TOTAL_COSTSValue;
+        public System.Decimal  TOTAL_COSTS
         {
             get { return this.TOTAL_COSTSValue; }
             set { SetProperty(ref TOTAL_COSTSValue, value); }
         }
 
-        private System.Decimal? TOTAL_TAXESValue;
-        public System.Decimal? TOTAL_TAXES
+        private System.Decimal  TOTAL_TAXESValue;
+        public System.Decimal  TOTAL_TAXES
         {
             get { return this.TOTAL_TAXESValue; }
             set { SetProperty(ref TOTAL_TAXESValue, value); }
         }
 
-        private System.Decimal? NET_REVENUEValue;
-        public System.Decimal? NET_REVENUE
+        private System.Decimal  NET_REVENUEValue;
+        public System.Decimal  NET_REVENUE
         {
             get { return this.NET_REVENUEValue; }
             set { SetProperty(ref NET_REVENUEValue, value); }

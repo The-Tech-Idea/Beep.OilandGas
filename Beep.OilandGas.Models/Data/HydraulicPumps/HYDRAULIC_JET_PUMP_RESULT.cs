@@ -21,64 +21,64 @@ namespace Beep.OilandGas.Models.Data.HydraulicPumps
             set { SetProperty(ref HYDRAULIC_JET_PUMP_PROPERTIES_IDValue, value); }
         }
 
-        private Decimal? PRODUCTION_RATEValue;
-        public Decimal? PRODUCTION_RATE
+        private Decimal  PRODUCTION_RATEValue;
+        public Decimal  PRODUCTION_RATE
         {
             get { return this.PRODUCTION_RATEValue; }
             set { SetProperty(ref PRODUCTION_RATEValue, value); }
         }
 
-        private Decimal? TOTAL_FLOW_RATEValue;
-        public Decimal? TOTAL_FLOW_RATE
+        private Decimal  TOTAL_FLOW_RATEValue;
+        public Decimal  TOTAL_FLOW_RATE
         {
             get { return this.TOTAL_FLOW_RATEValue; }
             set { SetProperty(ref TOTAL_FLOW_RATEValue, value); }
         }
 
-        private Decimal? PRODUCTION_RATIOValue;
-        public Decimal? PRODUCTION_RATIO
+        private Decimal  PRODUCTION_RATIOValue;
+        public Decimal  PRODUCTION_RATIO
         {
             get { return this.PRODUCTION_RATIOValue; }
             set { SetProperty(ref PRODUCTION_RATIOValue, value); }
         }
 
-        private Decimal? PUMP_EFFICIENCYValue;
-        public Decimal? PUMP_EFFICIENCY
+        private Decimal  PUMP_EFFICIENCYValue;
+        public Decimal  PUMP_EFFICIENCY
         {
             get { return this.PUMP_EFFICIENCYValue; }
             set { SetProperty(ref PUMP_EFFICIENCYValue, value); }
         }
 
-        private Decimal? POWER_FLUID_HORSEPOWERValue;
-        public Decimal? POWER_FLUID_HORSEPOWER
+        private Decimal  POWER_FLUID_HORSEPOWERValue;
+        public Decimal  POWER_FLUID_HORSEPOWER
         {
             get { return this.POWER_FLUID_HORSEPOWERValue; }
             set { SetProperty(ref POWER_FLUID_HORSEPOWERValue, value); }
         }
 
-        private Decimal? HYDRAULIC_HORSEPOWERValue;
-        public Decimal? HYDRAULIC_HORSEPOWER
+        private Decimal  HYDRAULIC_HORSEPOWERValue;
+        public Decimal  HYDRAULIC_HORSEPOWER
         {
             get { return this.HYDRAULIC_HORSEPOWERValue; }
             set { SetProperty(ref HYDRAULIC_HORSEPOWERValue, value); }
         }
 
-        private Decimal? SYSTEM_EFFICIENCYValue;
-        public Decimal? SYSTEM_EFFICIENCY
+        private Decimal  SYSTEM_EFFICIENCYValue;
+        public Decimal  SYSTEM_EFFICIENCY
         {
             get { return this.SYSTEM_EFFICIENCYValue; }
             set { SetProperty(ref SYSTEM_EFFICIENCYValue, value); }
         }
 
-        private Decimal? PUMP_INTAKE_PRESSUREValue;
-        public Decimal? PUMP_INTAKE_PRESSURE
+        private Decimal  PUMP_INTAKE_PRESSUREValue;
+        public Decimal  PUMP_INTAKE_PRESSURE
         {
             get { return this.PUMP_INTAKE_PRESSUREValue; }
             set { SetProperty(ref PUMP_INTAKE_PRESSUREValue, value); }
         }
 
-        private Decimal? PUMP_DISCHARGE_PRESSUREValue;
-        public Decimal? PUMP_DISCHARGE_PRESSURE
+        private Decimal  PUMP_DISCHARGE_PRESSUREValue;
+        public Decimal  PUMP_DISCHARGE_PRESSURE
         {
             get { return this.PUMP_DISCHARGE_PRESSUREValue; }
             set { SetProperty(ref PUMP_DISCHARGE_PRESSUREValue, value); }

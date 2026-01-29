@@ -15,6 +15,10 @@
 		<RepositoryUrl>https://github.com/The-Tech-Idea/</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Include="HEAT_MAP_DATA_POINT.cs.bk" />
+	</ItemGroup>
 	<ItemGroup>
 		<None Include="..\..\InstallationScripts\LogoGFx\128\SimpleODM.png">
 			<Pack>True</Pack>

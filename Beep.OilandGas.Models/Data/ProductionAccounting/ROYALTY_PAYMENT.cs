@@ -50,8 +50,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref PAYMENT_PERIOD_ENDValue, value); }
         }
 
-        private System.Decimal? ROYALTY_AMOUNTValue;
-        public System.Decimal? ROYALTY_AMOUNT
+        private System.Decimal  ROYALTY_AMOUNTValue;
+        public System.Decimal  ROYALTY_AMOUNT
         {
             get { return this.ROYALTY_AMOUNTValue; }
             set { SetProperty(ref ROYALTY_AMOUNTValue, value); }
@@ -85,8 +85,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref STATUSValue, value); }
         }
 
-        private System.Decimal? NET_PAYMENT_AMOUNTValue;
-        public System.Decimal? NET_PAYMENT_AMOUNT
+        private System.Decimal  NET_PAYMENT_AMOUNTValue;
+        public System.Decimal  NET_PAYMENT_AMOUNT
         {
             get { return this.NET_PAYMENT_AMOUNTValue; }
             set { SetProperty(ref NET_PAYMENT_AMOUNTValue, value); }

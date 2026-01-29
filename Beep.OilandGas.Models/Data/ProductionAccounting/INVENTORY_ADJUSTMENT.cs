@@ -34,15 +34,15 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref ADJUSTMENT_TYPEValue, value); }
         }
 
-        private System.Decimal? QUANTITY_ADJUSTMENTValue;
-        public System.Decimal? QUANTITY_ADJUSTMENT
+        private System.Decimal  QUANTITY_ADJUSTMENTValue;
+        public System.Decimal  QUANTITY_ADJUSTMENT
         {
             get { return this.QUANTITY_ADJUSTMENTValue; }
             set { SetProperty(ref QUANTITY_ADJUSTMENTValue, value); }
         }
 
-        private System.Decimal? UNIT_COST_ADJUSTMENTValue;
-        public System.Decimal? UNIT_COST_ADJUSTMENT
+        private System.Decimal  UNIT_COST_ADJUSTMENTValue;
+        public System.Decimal  UNIT_COST_ADJUSTMENT
         {
             get { return this.UNIT_COST_ADJUSTMENTValue; }
             set { SetProperty(ref UNIT_COST_ADJUSTMENTValue, value); }

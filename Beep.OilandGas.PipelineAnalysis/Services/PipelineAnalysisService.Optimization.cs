@@ -189,7 +189,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
 
             try
             {
-                var pressureRise = request.OutletPressure - request.InletPressure;
+                var pressureRise = request.OutletPressure - request.InletPressure ;
                 var requiredHP = (request.DesignFlowRate * pressureRise) / 1714m; // Rule of thumb for liquid
                 var equipmentType = request.EquipmentType ?? "Centrifugal Pump";
                 var recommendedModel = DetermineEquipmentModel(equipmentType, requiredHP);

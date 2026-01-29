@@ -29,8 +29,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref ADJUSTMENT_TYPEValue, value); }
         }
 
-        private System.Decimal? ADJUSTMENT_AMOUNTValue;
-        public System.Decimal? ADJUSTMENT_AMOUNT
+        private System.Decimal?  ADJUSTMENT_AMOUNTValue;
+        public System.Decimal?  ADJUSTMENT_AMOUNT
         {
             get { return this.ADJUSTMENT_AMOUNTValue; }
             set { SetProperty(ref ADJUSTMENT_AMOUNTValue, value); }

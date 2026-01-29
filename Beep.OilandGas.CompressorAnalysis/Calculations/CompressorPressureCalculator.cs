@@ -15,13 +15,13 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
         /// <param name="operatingConditions">Operating conditions.</param>
         /// <param name="requiredFlowRate">Required flow rate in Mscf/day.</param>
         /// <param name="maxPower">Maximum available power in horsepower.</param>
-        /// <param name="compressorEfficiency">Compressor efficiency (0-1).</param>
+        /// <param name="COMPRESSOR_EFFICIENCY">Compressor efficiency (0-1).</param>
         /// <returns>Compressor pressure calculation results.</returns>
         public static COMPRESSOR_PRESSURE_RESULT CalculateRequiredPressure(
             COMPRESSOR_OPERATING_CONDITIONS operatingConditions,
             decimal requiredFlowRate,
             decimal maxPower = 1000m,
-            decimal compressorEfficiency = 0.75m)
+            decimal COMPRESSOR_EFFICIENCY = 0.75m)
         {
             if (operatingConditions == null)
                 throw new ArgumentNullException(nameof(operatingConditions));
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
                 decimal weightFlowRate = flowRateScfMin * molecularWeight / 379.0m; // lbm/min
 
                 // Calculate required power
-                decimal requiredPower = (weightFlowRate * adiabaticHead) / (33000m * compressorEfficiency);
+                decimal requiredPower = (weightFlowRate * adiabaticHead) / (33000m * COMPRESSOR_EFFICIENCY);
 
                 if (requiredPower <= maxPower && requiredPower > optimalPower)
                 {
@@ -93,7 +93,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             COMPRESSOR_OPERATING_CONDITIONS operatingConditions,
             decimal compressionRatio,
             decimal maxPower,
-            decimal compressorEfficiency = 0.75m)
+            decimal COMPRESSOR_EFFICIENCY = 0.75m)
         {
             if (operatingConditions == null)
                 throw new ArgumentNullException(nameof(operatingConditions));
@@ -114,7 +114,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
                                    ((decimal)Math.Pow((double)compressionRatio, (double)((k - 1m) / k)) - 1m);
 
             // Calculate maximum weight flow rate
-            decimal maxWeightFlowRate = (maxPower * 33000m * compressorEfficiency) / adiabaticHead; // lbm/min
+            decimal maxWeightFlowRate = (maxPower * 33000m * COMPRESSOR_EFFICIENCY) / adiabaticHead; // lbm/min
 
             // Convert to Mscf/day
             decimal maxFlowRateScfMin = maxWeightFlowRate * 379.0m / molecularWeight; // scf/min

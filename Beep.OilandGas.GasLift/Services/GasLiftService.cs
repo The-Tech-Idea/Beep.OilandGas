@@ -54,7 +54,7 @@ namespace Beep.OilandGas.GasLift.Services
         /// <summary>
         /// Analyzes gas lift potential for a well (base method - existing)
         /// </summary>
-        public GAS_LIFT_POTENTIAL_RESULT AnalyzeGasLiftPotential(
+        public GAS_LIFT_WELL_PROPERTIES AnalyzeGasLiftPotential(
             GAS_LIFT_WELL_PROPERTIES wellProperties,
             decimal minGasInjectionRate,
             decimal maxGasInjectionRate,
@@ -101,17 +101,17 @@ namespace Beep.OilandGas.GasLift.Services
             };
 
             // Calculate NPV for each performance point
-            foreach (var point in potentialResult.PerformancePoints)
+            foreach (var point in potentialResult.PERFORMANCE_POINTS)
             {
-                decimal dailyRevenue = point.PRODUCTION_RATE * oilPricePerBarrel;
-                decimal dailyCost = point.GAS_INJECTION_RATE * gasInjectionCostPerMscf;
+                decimal dailyRevenue = point.ProductionRate * oilPricePerBarrel;
+                decimal dailyCost = point.GasInjectionRate * gasInjectionCostPerMscf;
                 decimal dailyNetRevenue = dailyRevenue - dailyCost;
                 decimal annualNetRevenue = dailyNetRevenue * 365m;
 
                 economicResult.EconomicPoints.Add(new GasLiftEconomicPoint
                 {
-                    GasInjectionRate = point.GAS_INJECTION_RATE,
-                    ProductionRate = point.PRODUCTION_RATE,
+                    GasInjectionRate = point.GasInjectionRate,
+                    ProductionRate = point.ProductionRate,
                     DailyRevenue = dailyRevenue,
                     DailyCost = dailyCost,
                     NetDailyMargin = dailyNetRevenue,
@@ -126,8 +126,8 @@ namespace Beep.OilandGas.GasLift.Services
 
             if (optimalPoint != null)
             {
-                economicResult.OPTIMAL_GAS_INJECTION_RATE = optimalPoint.GAS_INJECTION_RATE;
-                economicResult.OptimalProductionRate = optimalPoint.PRODUCTION_RATE;
+                economicResult.OptimalGasInjectionRate = optimalPoint.GasInjectionRate;
+                economicResult.OptimalProductionRate = optimalPoint.ProductionRate;
                 economicResult.MaximumAnnualNetRevenue = optimalPoint.AnnualNetRevenue;
                 economicResult.IsEconomicallyViable = optimalPoint.AnnualNetRevenue > 0;
             }
@@ -361,19 +361,19 @@ namespace Beep.OilandGas.GasLift.Services
                 _logger?.LogWarning("No gas lift performance data found for well {WellUWI}", wellUWI);
                 return new GAS_LIFT_PERFORMANCE
                 {
-                    WellUWI = wellUWI,
-                    PerformanceDate = DateTime.UtcNow
+                    WELL_UWI = wellUWI,
+                    PERFORMANCE_DATE = DateTime.UtcNow
                 };
             }
 
             var performance = new GAS_LIFT_PERFORMANCE
             {
-                WellUWI = entity.WELL_UWI ?? wellUWI,
-                PerformanceDate = entity.PERFORMANCE_DATE ?? DateTime.UtcNow,
-                GasInjectionRate = entity.GAS_INJECTION_RATE ?? 0,
-                ProductionRate = entity.PRODUCTION_RATE ?? 0,
-                GasLiquidRatio = entity.GAS_LIQUID_RATIO ?? 0,
-                Efficiency = entity.EFFICIENCY ?? 0
+                WELL_UWI = entity.WELL_UWI ?? wellUWI,
+                PERFORMANCE_DATE = entity.PERFORMANCE_DATE ?? DateTime.UtcNow,
+                GAS_INJECTION_RATE = entity.GAS_INJECTION_RATE ,
+                PRODUCTION_RATE = entity.PRODUCTION_RATE ,
+                GAS_LIQUID_RATIO = entity.GAS_LIQUID_RATIO,
+                EFFICIENCY = entity.EFFICIENCY
             };
 
             _logger?.LogInformation("Retrieved gas lift performance for well {WellUWI}: Production={Production} BPD, GasRate={GasRate} Mscf/day",

@@ -28,15 +28,15 @@ namespace Beep.OilandGas.Models.Data.Trading
             set { SetProperty(ref TRANSACTION_DATEValue, value); }
         }
 
-        private System.Decimal? RECEIPT_VOLUMEValue;
-        public System.Decimal? RECEIPT_VOLUME
+        private System.Decimal  RECEIPT_VOLUMEValue;
+        public System.Decimal  RECEIPT_VOLUME
         {
             get { return this.RECEIPT_VOLUMEValue; }
             set { SetProperty(ref RECEIPT_VOLUMEValue, value); }
         }
 
-        private System.Decimal? RECEIPT_PRICEValue;
-        public System.Decimal? RECEIPT_PRICE
+        private System.Decimal  RECEIPT_PRICEValue;
+        public System.Decimal  RECEIPT_PRICE
         {
             get { return this.RECEIPT_PRICEValue; }
             set { SetProperty(ref RECEIPT_PRICEValue, value); }
@@ -49,15 +49,15 @@ namespace Beep.OilandGas.Models.Data.Trading
             set { SetProperty(ref RECEIPT_LOCATIONValue, value); }
         }
 
-        private System.Decimal? DELIVERY_VOLUMEValue;
-        public System.Decimal? DELIVERY_VOLUME
+        private System.Decimal  DELIVERY_VOLUMEValue;
+        public System.Decimal  DELIVERY_VOLUME
         {
             get { return this.DELIVERY_VOLUMEValue; }
             set { SetProperty(ref DELIVERY_VOLUMEValue, value); }
         }
 
-        private System.Decimal? DELIVERY_PRICEValue;
-        public System.Decimal? DELIVERY_PRICE
+        private System.Decimal  DELIVERY_PRICEValue;
+        public System.Decimal  DELIVERY_PRICE
         {
             get { return this.DELIVERY_PRICEValue; }
             set { SetProperty(ref DELIVERY_PRICEValue, value); }

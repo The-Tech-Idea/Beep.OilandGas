@@ -21,15 +21,15 @@ namespace Beep.OilandGas.Models.Data.OilProperties
             set { SetProperty(ref OIL_PROPERTY_CONDITIONS_IDValue, value); }
         }
 
-        private Decimal? SOLUTION_GAS_OIL_RATIOValue;
-        public Decimal? SOLUTION_GAS_OIL_RATIO
+        private Decimal  SOLUTION_GAS_OIL_RATIOValue;
+        public Decimal  SOLUTION_GAS_OIL_RATIO
         {
             get { return this.SOLUTION_GAS_OIL_RATIOValue; }
             set { SetProperty(ref SOLUTION_GAS_OIL_RATIOValue, value); }
         }
 
-        private Decimal? BUBBLE_POINT_PRESSUREValue;
-        public Decimal? BUBBLE_POINT_PRESSURE
+        private Decimal  BUBBLE_POINT_PRESSUREValue;
+        public Decimal  BUBBLE_POINT_PRESSURE
         {
             get { return this.BUBBLE_POINT_PRESSUREValue; }
             set { SetProperty(ref BUBBLE_POINT_PRESSUREValue, value); }

@@ -29,15 +29,15 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref PROPERTY_OR_LEASE_IDValue, value); }
         }
 
-        private System.Decimal? INTEREST_PERCENTAGEValue;
-        public System.Decimal? INTEREST_PERCENTAGE
+        private System.Decimal  INTEREST_PERCENTAGEValue;
+        public System.Decimal  INTEREST_PERCENTAGE
         {
             get { return this.INTEREST_PERCENTAGEValue; }
             set { SetProperty(ref INTEREST_PERCENTAGEValue, value); }
         }
 
-        private System.Decimal? ROYALTY_RATEValue;
-        public System.Decimal? ROYALTY_RATE
+        private System.Decimal  ROYALTY_RATEValue;
+        public System.Decimal  ROYALTY_RATE
         {
             get { return this.ROYALTY_RATEValue; }
             set { SetProperty(ref ROYALTY_RATEValue, value); }

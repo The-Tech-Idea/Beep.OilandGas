@@ -22,22 +22,22 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref EXCHANGE_CONTRACT_IDValue, value); }
         }
 
-        private System.Decimal? EXCHANGE_RATIOValue;
-        public System.Decimal? EXCHANGE_RATIO
+        private System.Decimal  EXCHANGE_RATIOValue;
+        public System.Decimal  EXCHANGE_RATIO
         {
             get { return this.EXCHANGE_RATIOValue; }
             set { SetProperty(ref EXCHANGE_RATIOValue, value); }
         }
 
-        private System.Decimal? MINIMUM_VOLUMEValue;
-        public System.Decimal? MINIMUM_VOLUME
+        private System.Decimal  MINIMUM_VOLUMEValue;
+        public System.Decimal  MINIMUM_VOLUME
         {
             get { return this.MINIMUM_VOLUMEValue; }
             set { SetProperty(ref MINIMUM_VOLUMEValue, value); }
         }
 
-        private System.Decimal? MAXIMUM_VOLUMEValue;
-        public System.Decimal? MAXIMUM_VOLUME
+        private System.Decimal  MAXIMUM_VOLUMEValue;
+        public System.Decimal  MAXIMUM_VOLUME
         {
             get { return this.MAXIMUM_VOLUMEValue; }
             set { SetProperty(ref MAXIMUM_VOLUMEValue, value); }

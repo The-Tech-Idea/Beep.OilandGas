@@ -21,43 +21,43 @@ namespace Beep.OilandGas.Models.Data.HydraulicPumps
             set { SetProperty(ref HYDRAULIC_PUMP_WELL_PROPERTIES_IDValue, value); }
         }
 
-        private Decimal? NOZZLE_DIAMETERValue;
-        public Decimal? NOZZLE_DIAMETER
+        private Decimal  NOZZLE_DIAMETERValue;
+        public Decimal  NOZZLE_DIAMETER
         {
             get { return this.NOZZLE_DIAMETERValue; }
             set { SetProperty(ref NOZZLE_DIAMETERValue, value); }
         }
 
-        private Decimal? THROAT_DIAMETERValue;
-        public Decimal? THROAT_DIAMETER
+        private Decimal  THROAT_DIAMETERValue;
+        public Decimal  THROAT_DIAMETER
         {
             get { return this.THROAT_DIAMETERValue; }
             set { SetProperty(ref THROAT_DIAMETERValue, value); }
         }
 
-        private Decimal? DIFFUSER_DIAMETERValue;
-        public Decimal? DIFFUSER_DIAMETER
+        private Decimal  DIFFUSER_DIAMETERValue;
+        public Decimal  DIFFUSER_DIAMETER
         {
             get { return this.DIFFUSER_DIAMETERValue; }
             set { SetProperty(ref DIFFUSER_DIAMETERValue, value); }
         }
 
-        private Decimal? POWER_FLUID_PRESSUREValue;
-        public Decimal? POWER_FLUID_PRESSURE
+        private Decimal  POWER_FLUID_PRESSUREValue;
+        public Decimal  POWER_FLUID_PRESSURE
         {
             get { return this.POWER_FLUID_PRESSUREValue; }
             set { SetProperty(ref POWER_FLUID_PRESSUREValue, value); }
         }
 
-        private Decimal? POWER_FLUID_RATEValue;
-        public Decimal? POWER_FLUID_RATE
+        private Decimal  POWER_FLUID_RATEValue;
+        public Decimal  POWER_FLUID_RATE
         {
             get { return this.POWER_FLUID_RATEValue; }
             set { SetProperty(ref POWER_FLUID_RATEValue, value); }
         }
 
-        private Decimal? POWER_FLUID_SPECIFIC_GRAVITYValue;
-        public Decimal? POWER_FLUID_SPECIFIC_GRAVITY
+        private Decimal  POWER_FLUID_SPECIFIC_GRAVITYValue;
+        public Decimal  POWER_FLUID_SPECIFIC_GRAVITY
         {
             get { return this.POWER_FLUID_SPECIFIC_GRAVITYValue; }
             set { SetProperty(ref POWER_FLUID_SPECIFIC_GRAVITYValue, value); }

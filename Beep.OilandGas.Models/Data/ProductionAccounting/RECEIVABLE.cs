@@ -48,15 +48,15 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref DUE_DATEValue, value); }
         }
 
-        private System.Decimal? ORIGINAL_AMOUNTValue;
-        public System.Decimal? ORIGINAL_AMOUNT
+        private System.Decimal  ORIGINAL_AMOUNTValue;
+        public System.Decimal  ORIGINAL_AMOUNT
         {
             get { return this.ORIGINAL_AMOUNTValue; }
             set { SetProperty(ref ORIGINAL_AMOUNTValue, value); }
         }
 
-        private System.Decimal? AMOUNT_PAIDValue;
-        public System.Decimal? AMOUNT_PAID
+        private System.Decimal  AMOUNT_PAIDValue;
+        public System.Decimal  AMOUNT_PAID
         {
             get { return this.AMOUNT_PAIDValue; }
             set { SetProperty(ref AMOUNT_PAIDValue, value); }

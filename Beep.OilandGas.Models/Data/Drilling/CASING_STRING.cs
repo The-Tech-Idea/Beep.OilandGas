@@ -29,22 +29,22 @@ namespace Beep.OilandGas.Models.Data.Drilling
             set { SetProperty(ref CASING_TYPEValue, value); }
         }
 
-        private Decimal? TOP_DEPTHValue;
-        public Decimal? TOP_DEPTH
+        private Decimal  TOP_DEPTHValue;
+        public Decimal  TOP_DEPTH
         {
             get { return this.TOP_DEPTHValue; }
             set { SetProperty(ref TOP_DEPTHValue, value); }
         }
 
-        private Decimal? BOTTOM_DEPTHValue;
-        public Decimal? BOTTOM_DEPTH
+        private Decimal  BOTTOM_DEPTHValue;
+        public Decimal  BOTTOM_DEPTH
         {
             get { return this.BOTTOM_DEPTHValue; }
             set { SetProperty(ref BOTTOM_DEPTHValue, value); }
         }
 
-        private Decimal? DIAMETERValue;
-        public Decimal? DIAMETER
+        private Decimal  DIAMETERValue;
+        public Decimal  DIAMETER
         {
             get { return this.DIAMETERValue; }
             set { SetProperty(ref DIAMETERValue, value); }
@@ -64,8 +64,8 @@ namespace Beep.OilandGas.Models.Data.Drilling
             set { SetProperty(ref GRADEValue, value); }
         }
 
-        private Decimal? WEIGHTValue;
-        public Decimal? WEIGHT
+        private Decimal  WEIGHTValue;
+        public Decimal  WEIGHT
         {
             get { return this.WEIGHTValue; }
             set { SetProperty(ref WEIGHTValue, value); }

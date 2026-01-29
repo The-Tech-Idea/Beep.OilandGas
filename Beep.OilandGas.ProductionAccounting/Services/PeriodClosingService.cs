@@ -641,8 +641,8 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // Filter for unbalanced entries
                 foreach (var entry in entries)
                 {
-                    var debit = entry.TOTAL_DEBIT ?? 0;
-                    var credit = entry.TOTAL_CREDIT ?? 0;
+                    var debit = entry.TOTAL_DEBIT is decimal d ? d : 0m;
+                    var credit = entry.TOTAL_CREDIT is decimal c ? c : 0m;
 
                     // Allow 0.01 tolerance for floating point
                     if (Math.Abs(debit - credit) > 0.01m)

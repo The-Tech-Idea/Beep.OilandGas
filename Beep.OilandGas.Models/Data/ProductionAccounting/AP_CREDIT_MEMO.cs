@@ -34,8 +34,8 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             set { SetProperty(ref CREDIT_MEMO_DATEValue, value); }
         }
 
-        private System.Decimal? CREDIT_AMOUNTValue;
-        public System.Decimal? CREDIT_AMOUNT
+        private System.Decimal  CREDIT_AMOUNTValue;
+        public System.Decimal  CREDIT_AMOUNT
         {
             get { return this.CREDIT_AMOUNTValue; }
             set { SetProperty(ref CREDIT_AMOUNTValue, value); }
