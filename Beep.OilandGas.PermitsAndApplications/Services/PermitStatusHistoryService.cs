@@ -77,16 +77,35 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             if (application == null)
                 throw new InvalidOperationException($"Permit application not found: {applicationId}");
 
-            var currentStatus = PermitStatusTransitionRules.Normalize(application.STATUS);
+            var currentStatus = PermitStatusTransitionRules.Normalize(application.STATUS.ToString());
             var nextStatus = PermitStatusTransitionRules.Normalize(status);
             if (!PermitStatusTransitionRules.IsTransitionAllowed(currentStatus, nextStatus))
                 throw new InvalidOperationException($"Invalid status transition: {currentStatus} -> {nextStatus}");
+            // Convert normalized nextStatus to enum value
+            // Convert "UNDER_REVIEW" -> "UnderReview" etc for Enum.TryParse
+            string ToPascal(string s)
+            {
+                if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+                var parts = s.Split(new[] { '_', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < parts.Length; i++)
+                    parts[i] = parts[i].Substring(0, 1).ToUpperInvariant() + parts[i].Substring(1).ToLowerInvariant();
+                return string.Join(string.Empty, parts);
+            }
 
-            application.STATUS = status;
-            if (status.Equals("SUBMITTED", StringComparison.OrdinalIgnoreCase))
+            var nextStatusEnumParsed = ToPascal(nextStatus);
+            if (!Enum.TryParse<PermitApplicationStatus>(nextStatusEnumParsed, ignoreCase: true, out var nextStatusEnum))
+            {
+                throw new InvalidOperationException($"Unknown permit status: {status}");
+            }
+
+            // If moving to Submitted, set submitted date if not already set
+            if (nextStatusEnum == PermitApplicationStatus.Submitted)
             {
                 application.SUBMITTED_DATE ??= DateTime.UtcNow;
             }
+
+            // Update status on application
+            application.STATUS = nextStatusEnum;
 
             SetAuditFields(application, userId);
             await applicationRepo.UpdateAsync(application, userId);
@@ -96,7 +115,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             {
                 PERMIT_STATUS_HISTORY_ID = GenerateStatusHistoryId(),
                 PERMIT_APPLICATION_ID = applicationId,
-                STATUS = status,
+                STATUS = nextStatusEnum,
                 STATUS_DATE = DateTime.UtcNow,
                 STATUS_REMARKS = remarks,
                 UPDATED_BY = userId,
@@ -106,7 +125,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             SetAuditFields(history, userId);
             await historyRepo.InsertAsync(history, userId);
 
-            _logger?.LogInformation("Updated permit status to {Status} for {ApplicationId}", status, applicationId);
+            _logger?.LogInformation("Updated permit status to {Status} for {ApplicationId}", nextStatusEnum, applicationId);
             return application;
         }
 

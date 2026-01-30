@@ -37,6 +37,24 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             _logger = logger;
         }
 
+        // Explicit overload to satisfy interface which uses string parameters
+        public async Task<JURISDICTION_REQUIREMENTS> GetJurisdictionRequirementsAsync(
+            string country,
+            string stateProvince,
+            string authority)
+        {
+            if (string.IsNullOrWhiteSpace(country)) throw new ArgumentNullException(nameof(country));
+            if (string.IsNullOrWhiteSpace(stateProvince)) throw new ArgumentNullException(nameof(stateProvince));
+            if (string.IsNullOrWhiteSpace(authority)) throw new ArgumentNullException(nameof(authority));
+
+            // Try parse enums, fallback to defaults
+            Enum.TryParse<Country>(country, true, out var parsedCountry);
+            Enum.TryParse<StateProvince>(stateProvince, true, out var parsedState);
+            Enum.TryParse<RegulatoryAuthority>(authority, true, out var parsedAuthority);
+
+            return await GetJurisdictionRequirementsAsync(parsedCountry, parsedState, parsedAuthority);
+        }
+
         /// <summary>
         /// Creates a new permit application.
         /// </summary>
@@ -52,7 +70,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 SetAuditFields(application, userId);
                 application.ACTIVE_IND = "Y";
                 application.CREATED_DATE = DateTime.UtcNow;
-                application.STATUS = "Draft";
+                application.STATUS =  PermitApplicationStatus.Draft;
 
                 // Generate ID if not provided
                 if (string.IsNullOrEmpty(application.PERMIT_APPLICATION_ID))
@@ -216,7 +234,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                     throw new InvalidOperationException($"Cannot submit invalid application. Errors: {string.Join(", ", validation.Errors)}");
 
                 ValidateStatusTransition(application.STATUS, "SUBMITTED");
-                application.STATUS = "SUBMITTED";
+                application.STATUS =   PermitApplicationStatus.Submitted;
                 application.SUBMITTED_DATE = DateTime.UtcNow;
                 application.SUBMISSION_COMPLETE_IND = "Y";
 
@@ -257,13 +275,13 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 if (decision == "Approved")
                 {
                     ValidateStatusTransition(application.STATUS, "APPROVED");
-                    application.STATUS = "Approved";
+                    application.STATUS =  PermitApplicationStatus.Approved;
                     application.EFFECTIVE_DATE = DateTime.UtcNow;
                 }
                 else if (decision == "Rejected")
                 {
                     ValidateStatusTransition(application.STATUS, "REJECTED");
-                    application.STATUS = "Rejected";
+                    application.STATUS =  PermitApplicationStatus.Rejected;
                 }
 
                 var updated = await UpdatePermitApplicationAsync(applicationId, application, userId);
@@ -474,15 +492,15 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
                 var attachments = await GetApplicationAttachmentsAsync(applicationId);
                 var requiredForms = GetRequiredFormsForValidation(application);
-                var applicationType = NormalizeApplicationType(application.APPLICATION_TYPE);
+                var applicationType = application.APPLICATION_TYPE;
 
-                var drillingApplication = applicationType == "DRILLING"
+                var drillingApplication = applicationType == PermitApplicationType.Drilling
                     ? await GetDrillingApplicationAsync(applicationId)
                     : null;
-                var environmentalApplication = applicationType == "ENVIRONMENTAL"
+                var environmentalApplication = applicationType ==  PermitApplicationType.Environmental
                     ? await GetEnvironmentalApplicationAsync(applicationId)
                     : null;
-                var injectionApplication = applicationType == "INJECTION"
+                var injectionApplication = applicationType ==  PermitApplicationType.Injection
                     ? await GetInjectionApplicationAsync(applicationId)
                     : null;
 
@@ -512,9 +530,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         /// Retrieves jurisdiction requirements for a specific authority.
         /// </summary>
         public async Task<JURISDICTION_REQUIREMENTS> GetJurisdictionRequirementsAsync(
-            string country,
-            string stateProvince,
-            string authority)
+            Country country,
+            StateProvince stateProvince,
+            RegulatoryAuthority authority)
         {
             try
             {
@@ -525,9 +543,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "COUNTRY", Operator = "=", FilterValue = country },
-                    new AppFilter { FieldName = "STATE_PROVINCE", Operator = "=", FilterValue = stateProvince },
-                    new AppFilter { FieldName = "REGULATORY_AUTHORITY", Operator = "=", FilterValue = authority },
+                    new AppFilter { FieldName = "COUNTRY", Operator = "=", FilterValue = country.ToString() },
+                    new AppFilter { FieldName = "STATE_PROVINCE", Operator = "=", FilterValue = stateProvince.ToString() },
+                    new AppFilter { FieldName = "REGULATORY_AUTHORITY", Operator = "=", FilterValue = authority.ToString() },
                     new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
                 };
 
@@ -644,8 +662,8 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 var builder = new PermitFormPayloadBuilder();
                 var payload = builder.BuildJsonPayload(
                     context,
-                    NormalizeAuthority(application.REGULATORY_AUTHORITY),
-                    applicationType,
+                    application.REGULATORY_AUTHORITY,
+                    application.APPLICATION_TYPE,
                     configDirectory);
 
                 _logger?.LogInformation("Generated form payload JSON for application: {ApplicationId}", applicationId);
@@ -695,9 +713,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                     environmentalApplication,
                     injectionApplication);
 
-                var authority = NormalizeAuthority(application.REGULATORY_AUTHORITY);
+                var authority = NormalizeAuthority(application.REGULATORY_AUTHORITY.ToString());
                 var builder = new PermitFormPayloadBuilder();
-                var payloads = builder.BuildPayloads(context, authority, applicationType, configDirectory);
+                var payloads = builder.BuildPayloads(context, application.REGULATORY_AUTHORITY, application.APPLICATION_TYPE, configDirectory);
 
                 var storagePath = Path.Combine(outputDirectory, applicationId);
                 Directory.CreateDirectory(storagePath);
@@ -775,9 +793,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                     environmentalApplication,
                     injectionApplication);
 
-                var authority = NormalizeAuthority(application.REGULATORY_AUTHORITY);
+                var authority = NormalizeAuthority(application.REGULATORY_AUTHORITY.ToString());
                 var builder = new PermitFormPayloadBuilder();
-                var payloads = builder.BuildPayloads(context, authority, applicationType, configDirectory);
+                var payloads = builder.BuildPayloads(context, application.REGULATORY_AUTHORITY, application.APPLICATION_TYPE    , configDirectory);
 
                 var writer = new PermitFormPacketWriter();
                 var files = writer.WritePackets(payloads, outputDirectory, applicationId, authority, applicationType);
@@ -1192,9 +1210,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             return $"FL-{timestamp}";
         }
 
-        private void ValidateStatusTransition(string? currentStatus, string? nextStatus)
+        private void ValidateStatusTransition(PermitApplicationStatus? currentStatus, string? nextStatus)
         {
-            var normalizedCurrent = PermitStatusTransitionRules.Normalize(currentStatus);
+            var normalizedCurrent = PermitStatusTransitionRules.Normalize(currentStatus.ToString());
             var normalizedNext = PermitStatusTransitionRules.Normalize(nextStatus);
 
             if (PermitStatusTransitionRules.IsTransitionAllowed(normalizedCurrent, normalizedNext))
@@ -1203,14 +1221,14 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             throw new InvalidOperationException($"Invalid status transition: {normalizedCurrent} -> {normalizedNext}");
         }
 
-        private async Task AddStatusHistoryAsync(string applicationId, string? status, string? remarks, string userId)
+        private async Task AddStatusHistoryAsync(string applicationId, PermitApplicationStatus? status, string? remarks, string userId)
         {
             var repo = await CreateRepositoryAsync<PERMIT_STATUS_HISTORY>("PERMIT_STATUS_HISTORY");
             var history = new PERMIT_STATUS_HISTORY
             {
                 PERMIT_STATUS_HISTORY_ID = GenerateStatusHistoryId(),
                 PERMIT_APPLICATION_ID = applicationId,
-                STATUS = PermitStatusTransitionRules.Normalize(status),
+                STATUS = status,
                 STATUS_DATE = DateTime.UtcNow,
                 STATUS_REMARKS = remarks,
                 UPDATED_BY = userId,
@@ -1235,9 +1253,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var forms = new List<REQUIRED_FORM>();
 
             var registry = new PermitFormTemplateRegistry();
-            var normalizedAuthority = NormalizeAuthority(application.REGULATORY_AUTHORITY);
+            var normalizedAuthority = NormalizeAuthority(application.REGULATORY_AUTHORITY.ToString());
             var normalizedType = NormalizeApplicationType(application.APPLICATION_TYPE);
-            var templates = registry.GetTemplates(normalizedAuthority, normalizedType);
+            var templates = registry.GetTemplates(application.REGULATORY_AUTHORITY, application.APPLICATION_TYPE);
 
             foreach (var template in templates)
             {
@@ -1261,28 +1279,28 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             return form;
         }
 
-        private decimal GetJurisdictionFeeMultiplier(string authority)
+        private decimal GetJurisdictionFeeMultiplier(RegulatoryAuthority authority)
         {
             // Simplified fee multipliers by jurisdiction
-            return NormalizeAuthority(authority) switch
+            return authority switch
             {
-                "RRC" => 1.0m,    // Texas RRC - base rate
-                "TCEQ" => 1.2m,   // Texas TCEQ - higher for environmental
-                "EPA" => 1.5m,    // Federal EPA - highest fees
-                "AER" => 1.1m,    // Alberta Energy Regulator
-                "BCER" => 1.1m,   // BC Energy Regulator
-                "CNH" => 1.3m,    // Mexico CNH
+                RegulatoryAuthority.RRC => 1.0m,    // Texas RRC - base rate
+                RegulatoryAuthority.TCEQ => 1.2m,   // Texas TCEQ - higher for environmental
+                RegulatoryAuthority.EPA => 1.5m,    // Federal EPA - highest fees
+                RegulatoryAuthority.AER => 1.1m,    // Alberta Energy Regulator
+                RegulatoryAuthority.BCER => 1.1m,   // BC Energy Regulator
+                RegulatoryAuthority.CNH => 1.3m,    // Mexico CNH
                 _ => 1.0m         // Default
             };
         }
 
-        private decimal GetApplicationTypeFeeMultiplier(string applicationType)
+        private decimal GetApplicationTypeFeeMultiplier(PermitApplicationType applicationType)
         {
-            return NormalizeApplicationType(applicationType) switch
+            return applicationType switch
             {
-                "DRILLING" => 1.5m,      // Drilling permits are most complex
-                "ENVIRONMENTAL" => 1.3m, // Environmental assessments are detailed
-                "INJECTION" => 1.2m,     // Injection permits require monitoring
+                PermitApplicationType.Drilling => 1.5m,      // Drilling permits are most complex
+                PermitApplicationType.Environmental => 1.3m, // Environmental assessments are detailed
+                PermitApplicationType.Injection => 1.2m,     // Injection permits require monitoring
                 _ => 1.0m                // Default
             };
         }
@@ -1290,9 +1308,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
         private List<REQUIRED_FORM> GetRequiredFormsForValidation(PERMIT_APPLICATION application)
         {
             var registry = new PermitFormTemplateRegistry();
-            var normalizedAuthority = NormalizeAuthority(application.REGULATORY_AUTHORITY);
+            var normalizedAuthority = NormalizeAuthority(application.REGULATORY_AUTHORITY.ToString());
             var normalizedType = NormalizeApplicationType(application.APPLICATION_TYPE);
-            var templates = registry.GetTemplates(normalizedAuthority, normalizedType);
+            var templates = registry.GetTemplates(application.REGULATORY_AUTHORITY, application.APPLICATION_TYPE);
 
             return templates.Select(template => new REQUIRED_FORM
             {
@@ -1303,26 +1321,22 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             }).ToList();
         }
 
-        private static string NormalizeApplicationType(string applicationType)
+        private static string NormalizeApplicationType(PermitApplicationType applicationType)
         {
-            if (string.IsNullOrWhiteSpace(applicationType))
-                return "OTHER";
+           
 
-            var normalized = applicationType.Trim().ToUpperInvariant().Replace(" ", "_");
-
-            return normalized switch
+            return applicationType switch
             {
-                "DRILLING" => "DRILLING",
-                "DRILLING_PERMIT" => "DRILLING",
-                "ENVIRONMENTAL" => "ENVIRONMENTAL",
-                "ENVIRONMENTAL_PERMIT" => "ENVIRONMENTAL",
-                "INJECTION" => "INJECTION",
-                "INJECTION_PERMIT" => "INJECTION",
-                "STORAGE" => "STORAGE",
-                "FACILITY" => "FACILITY",
-                "SEISMIC" => "SEISMIC",
-                "GROUNDWATER" => "GROUNDWATER",
-                _ => normalized
+                PermitApplicationType.Drilling =>"DRILLING",
+
+                PermitApplicationType.Environmental => "ENVIRONMENTAL",
+
+                PermitApplicationType.Injection => "INJECTION",
+                PermitApplicationType.Storage => "STORAGE",
+                 PermitApplicationType.Facility => "FACILITY",
+                 PermitApplicationType.Seismic => "SEISMIC",
+                 PermitApplicationType.Groundwater => "GROUNDWATER",
+                _ => "OTHER"
             };
         }
 

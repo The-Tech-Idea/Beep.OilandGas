@@ -153,7 +153,30 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             DRILLING_PERMIT_APPLICATION application,
             APPLICATION? existingApplication = null)
         {
-            var ppdmApplication = MapToPPDM39(application, existingApplication);
+            // Convert DRILLING_PERMIT_APPLICATION to base PERMIT_APPLICATION for reuse
+            var baseApp = new PERMIT_APPLICATION
+            {
+                PERMIT_APPLICATION_ID = application.PERMIT_APPLICATION_ID,
+                APPLICATION_TYPE = application.APPLICATION_TYPE,
+                STATUS = application.STATUS,
+                COUNTRY = application.COUNTRY,
+                STATE_PROVINCE = application.STATE_PROVINCE,
+                REGULATORY_AUTHORITY = application.REGULATORY_AUTHORITY,
+                SUBMITTED_DATE = application.SUBMITTED_DATE,
+                RECEIVED_DATE = application.RECEIVED_DATE,
+                DECISION_DATE = application.DECISION_DATE,
+                EFFECTIVE_DATE = application.EFFECTIVE_DATE,
+                EXPIRY_DATE = application.EXPIRY_DATE,
+                DECISION = application.DECISION,
+                REFERENCE_NUMBER = application.REFERENCE_NUMBER,
+                FEES_DESCRIPTION = application.FEES_DESCRIPTION,
+                FEES_PAID = application.FEES_PAID,
+                REMARKS = application.REMARKS,
+                SUBMISSION_COMPLETE = application.SUBMISSION_COMPLETE,
+                SUBMISSION_DESCRIPTION = application.SUBMISSION_DESCRIPTION
+            };
+
+            var ppdmApplication = MapToPPDM39(baseApp, existingApplication);
             
             // Add drilling-specific information to components or remarks
             if (!string.IsNullOrEmpty(application.TARGET_FORMATION))
@@ -175,7 +198,30 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             ENVIRONMENTAL_PERMIT_APPLICATION application,
             APPLICATION? existingApplication = null)
         {
-            var ppdmApplication = MapToPPDM39(application, existingApplication);
+            var baseApp = new PERMIT_APPLICATION
+            {
+                PERMIT_APPLICATION_ID = application.PERMIT_APPLICATION_ID,
+                APPLICATION_TYPE = application.APPLICATION_TYPE,
+                STATUS = application.STATUS,
+                COUNTRY = application.COUNTRY,
+                STATE_PROVINCE = application.STATE_PROVINCE,
+                REGULATORY_AUTHORITY = application.REGULATORY_AUTHORITY,
+                SUBMITTED_DATE = application.SUBMITTED_DATE,
+                RECEIVED_DATE = application.RECEIVED_DATE,
+                DECISION_DATE = application.DECISION_DATE,
+                EFFECTIVE_DATE = application.EFFECTIVE_DATE,
+                EXPIRY_DATE = application.EXPIRY_DATE,
+                DECISION = application.DECISION,
+                REFERENCE_NUMBER = application.REFERENCE_NUMBER,
+                FEES_DESCRIPTION = application.FEES_DESCRIPTION,
+                FEES_PAID = application.FEES_PAID,
+                REMARKS = application.REMARKS,
+                SUBMISSION_COMPLETE = application.SUBMISSION_COMPLETE,
+                SUBMISSION_DESCRIPTION = application.SUBMISSION_DESCRIPTION,
+                WASTE_TYPE = application.WASTE_TYPE
+            };
+
+            var ppdmApplication = MapToPPDM39(baseApp, existingApplication);
             
             // Add environmental-specific information
             if (!string.IsNullOrEmpty(application.WASTE_TYPE))
@@ -193,7 +239,30 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             INJECTION_PERMIT_APPLICATION application,
             APPLICATION? existingApplication = null)
         {
-            var ppdmApplication = MapToPPDM39(application, existingApplication);
+            var baseApp = new PERMIT_APPLICATION
+            {
+                PERMIT_APPLICATION_ID = application.PERMIT_APPLICATION_ID,
+                APPLICATION_TYPE = application.APPLICATION_TYPE,
+                STATUS = application.STATUS,
+                COUNTRY = application.COUNTRY,
+                STATE_PROVINCE = application.STATE_PROVINCE,
+                REGULATORY_AUTHORITY = application.REGULATORY_AUTHORITY,
+                SUBMITTED_DATE = application.SUBMITTED_DATE,
+                RECEIVED_DATE = application.RECEIVED_DATE,
+                DECISION_DATE = application.DECISION_DATE,
+                EFFECTIVE_DATE = application.EFFECTIVE_DATE,
+                EXPIRY_DATE = application.EXPIRY_DATE,
+                DECISION = application.DECISION,
+                REFERENCE_NUMBER = application.REFERENCE_NUMBER,
+                FEES_DESCRIPTION = application.FEES_DESCRIPTION,
+                FEES_PAID = application.FEES_PAID,
+                REMARKS = application.REMARKS,
+                SUBMISSION_COMPLETE = application.SUBMISSION_COMPLETE,
+                SUBMISSION_DESCRIPTION = application.SUBMISSION_DESCRIPTION,
+                // injection-specific properties not present on base are appended to remarks later
+            };
+
+            var ppdmApplication = MapToPPDM39(baseApp, existingApplication);
             
             // Add injection-specific information
             if (!string.IsNullOrEmpty(application.INJECTION_TYPE))
@@ -208,14 +277,14 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
             return ppdmApplication;
         }
 
-        private PermitApplicationType MapApplicationType(string? applicationType)
+        private PermitApplicationType MapApplicationType(string applicationType)
         {
             if (string.IsNullOrWhiteSpace(applicationType))
                 return PermitApplicationType.Other;
 
             return applicationType.ToUpper() switch
             {
-                "DRILLING" => PermitApplicationType.Drilling,
+                "DRILLING" =>PermitApplicationType.Drilling,
                 "ENVIRONMENTAL" => PermitApplicationType.Environmental,
                 "INJECTION" => PermitApplicationType.Injection,
                 "STORAGE" => PermitApplicationType.Storage,

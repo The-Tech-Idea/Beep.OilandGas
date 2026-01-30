@@ -33,19 +33,19 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation
                 {
                     new RequiredFieldRule.RequiredFieldDefinition(
                         "APPLICATION_TYPE",
-                        app => string.IsNullOrWhiteSpace(app.APPLICATION_TYPE),
+                        app => string.IsNullOrWhiteSpace(app.APPLICATION_TYPE.ToString()),
                         "Application type is required."),
                     new RequiredFieldRule.RequiredFieldDefinition(
                         "COUNTRY",
-                        app => string.IsNullOrWhiteSpace(app.COUNTRY),
+                        app => string.IsNullOrWhiteSpace(app.COUNTRY.ToString()),
                         "Country is required."),
                     new RequiredFieldRule.RequiredFieldDefinition(
                         "STATE_PROVINCE",
-                        app => string.IsNullOrWhiteSpace(app.STATE_PROVINCE),
+                        app => string.IsNullOrWhiteSpace(app.STATE_PROVINCE.ToString()),
                         "State or province is required."),
                     new RequiredFieldRule.RequiredFieldDefinition(
                         "REGULATORY_AUTHORITY",
-                        app => string.IsNullOrWhiteSpace(app.REGULATORY_AUTHORITY),
+                        app => string.IsNullOrWhiteSpace(app.REGULATORY_AUTHORITY.ToString()),
                         "Regulatory authority is required."),
                     new RequiredFieldRule.RequiredFieldDefinition(
                         "APPLICANT_ID",

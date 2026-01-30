@@ -87,8 +87,8 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 Array.Empty<APPLICATION_ATTACHMENT>(),
                 Array.Empty<REQUIRED_FORM>(),
                 null,
-                PermitStatusTransitionRules.Normalize(application.REGULATORY_AUTHORITY),
-                PermitStatusTransitionRules.Normalize(application.APPLICATION_TYPE),
+                application.REGULATORY_AUTHORITY,
+               application.APPLICATION_TYPE,
                 drilling,
                 environmental,
                 injection);
@@ -105,13 +105,13 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
 
         private void ValidateCoreFields(PERMIT_APPLICATION application, PermitComplianceResult result)
         {
-            if (string.IsNullOrWhiteSpace(application.APPLICATION_TYPE))
+            if (string.IsNullOrWhiteSpace(application.APPLICATION_TYPE.ToString()))
                 result.Violations.Add("Application type is required.");
-            if (string.IsNullOrWhiteSpace(application.COUNTRY))
+            if (string.IsNullOrWhiteSpace(application.COUNTRY.ToString()))
                 result.Violations.Add("Country is required.");
-            if (string.IsNullOrWhiteSpace(application.STATE_PROVINCE))
+            if (string.IsNullOrWhiteSpace(application.STATE_PROVINCE.ToString()))
                 result.Violations.Add("State/Province is required.");
-            if (string.IsNullOrWhiteSpace(application.REGULATORY_AUTHORITY))
+            if (string.IsNullOrWhiteSpace(application.REGULATORY_AUTHORITY.ToString()))
                 result.Violations.Add("Regulatory authority is required.");
             if (string.IsNullOrWhiteSpace(application.APPLICANT_ID))
                 result.Violations.Add("Applicant ID is required.");
@@ -125,9 +125,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             IReadOnlyList<MIT_RESULT> mitResults,
             PermitComplianceResult result)
         {
-            var type = application.APPLICATION_TYPE?.ToUpperInvariant();
+            var type = application.APPLICATION_TYPE;
 
-            if (type == "DRILLING")
+            if (type ==  PermitApplicationType.Drilling)
             {
                 if (drilling == null)
                 {
@@ -146,7 +146,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 if (string.IsNullOrWhiteSpace(drilling.SURFACE_OWNER_NOTIFIED_IND))
                     result.Warnings.Add("Surface owner notification is not recorded.");
             }
-            else if (type == "ENVIRONMENTAL")
+            else if (type ==  PermitApplicationType.Environmental)
             {
                 if (environmental == null)
                 {
@@ -163,7 +163,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                 if (string.IsNullOrWhiteSpace(environmental.MONITORING_PLAN))
                     result.Warnings.Add("Monitoring plan is not recorded.");
             }
-            else if (type == "INJECTION")
+            else if (type ==  PermitApplicationType.Injection)
             {
                 if (injection == null)
                 {
@@ -194,19 +194,19 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             IReadOnlyList<MIT_RESULT> mitResults,
             PermitComplianceResult result)
         {
-            var authority = application.REGULATORY_AUTHORITY?.ToUpperInvariant();
-            if (string.IsNullOrWhiteSpace(authority))
+            var authority = application.REGULATORY_AUTHORITY;
+            if (string.IsNullOrWhiteSpace(authority.ToString()))
                 return;
 
             switch (authority)
             {
-                case "RRC":
+                case RegulatoryAuthority.RRC:
                     ApplyRrcRules(application, drilling, environmental, injection, mitResults, result);
                     break;
-                case "TCEQ":
+                case RegulatoryAuthority.TCEQ:
                     ApplyTceqRules(application, environmental, injection, result);
                     break;
-                case "AER":
+                case RegulatoryAuthority.AER:
                     ApplyAerRules(application, drilling, environmental, result);
                     break;
             }
@@ -220,8 +220,8 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             IReadOnlyList<MIT_RESULT> mitResults,
             PermitComplianceResult result)
         {
-            var type = application.APPLICATION_TYPE?.ToUpperInvariant();
-            if (type == "DRILLING" && drilling != null)
+            var type = application.APPLICATION_TYPE;
+            if (type == PermitApplicationType.Drilling && drilling != null)
             {
                 if (string.IsNullOrWhiteSpace(drilling.SURFACE_OWNER_NOTIFIED_IND))
                     result.Violations.Add("RRC drilling requires surface owner notification.");
@@ -229,7 +229,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                     result.Violations.Add("RRC drilling requires legal description or well UWI.");
             }
 
-            if (type == "ENVIRONMENTAL" && environmental != null)
+            if (type ==  PermitApplicationType.Environmental && environmental != null)
             {
                 if (string.IsNullOrWhiteSpace(environmental.DISPOSAL_METHOD))
                     result.Violations.Add("RRC environmental permits require disposal method.");
@@ -237,7 +237,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                     result.Warnings.Add("RRC environmental permits recommend monitoring plan.");
             }
 
-            if (type == "INJECTION" && injection != null)
+            if (type == PermitApplicationType.Injection && injection != null)
             {
                 if (string.IsNullOrWhiteSpace(injection.INJECTION_ZONE))
                     result.Violations.Add("RRC injection requires injection zone.");
@@ -252,8 +252,8 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             INJECTION_PERMIT_APPLICATION? injection,
             PermitComplianceResult result)
         {
-            var type = application.APPLICATION_TYPE?.ToUpperInvariant();
-            if (type == "ENVIRONMENTAL" && environmental != null)
+            var type = application.APPLICATION_TYPE;
+            if (type ==  PermitApplicationType.Environmental && environmental != null)
             {
                 if (string.IsNullOrWhiteSpace(environmental.WASTE_TYPE))
                     result.Violations.Add("TCEQ environmental permits require waste type.");
@@ -263,7 +263,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                     result.Violations.Add("TCEQ environmental permits require monitoring plan.");
             }
 
-            if (type == "INJECTION" && injection != null)
+            if (type ==  PermitApplicationType.Injection && injection != null)
             {
                 if (string.IsNullOrWhiteSpace(injection.INJECTION_FLUID))
                     result.Violations.Add("TCEQ injection permits require injection fluid.");
@@ -278,8 +278,8 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             ENVIRONMENTAL_PERMIT_APPLICATION? environmental,
             PermitComplianceResult result)
         {
-            var type = application.APPLICATION_TYPE?.ToUpperInvariant();
-            if (type == "DRILLING" && drilling != null)
+            var type = application.APPLICATION_TYPE;
+            if (type ==  PermitApplicationType.Drilling && drilling != null)
             {
                 if (string.IsNullOrWhiteSpace(drilling.SURFACE_OWNER_NOTIFIED_IND))
                     result.Violations.Add("AER drilling requires surface owner consultation.");
@@ -288,7 +288,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
                     result.Warnings.Add("AER drilling recommends environmental assessment reference.");
             }
 
-            if (type == "ENVIRONMENTAL" && environmental != null)
+            if (type == PermitApplicationType.Environmental && environmental != null)
             {
                 if (string.IsNullOrWhiteSpace(environmental.ENVIRONMENTAL_IMPACT))
                     result.Warnings.Add("AER environmental permits recommend impact summary.");
@@ -314,9 +314,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var repo = await CreateRepositoryAsync<JURISDICTION_REQUIREMENTS>("JURISDICTION_REQUIREMENTS");
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "COUNTRY", Operator = "=", FilterValue = application.COUNTRY },
-                new AppFilter { FieldName = "STATE_PROVINCE", Operator = "=", FilterValue = application.STATE_PROVINCE },
-                new AppFilter { FieldName = "REGULATORY_AUTHORITY", Operator = "=", FilterValue = application.REGULATORY_AUTHORITY },
+                new AppFilter { FieldName = "COUNTRY", Operator = "=", FilterValue = application.COUNTRY.ToString() },
+                new AppFilter { FieldName = "STATE_PROVINCE", Operator = "=", FilterValue = application.STATE_PROVINCE.ToString() },
+                new AppFilter { FieldName = "REGULATORY_AUTHORITY", Operator = "=", FilterValue = application.REGULATORY_AUTHORITY.ToString() },
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
 

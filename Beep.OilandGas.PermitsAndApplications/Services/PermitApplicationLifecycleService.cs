@@ -197,7 +197,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             {
                 PERMIT_STATUS_HISTORY_ID = GenerateStatusHistoryId(),
                 PERMIT_APPLICATION_ID = applicationId,
-                STATUS = PermitStatusTransitionRules.Normalize(status.ToString()),
+                STATUS = status,
                 STATUS_DATE = DateTime.UtcNow,
                 STATUS_REMARKS = remarks,
                 UPDATED_BY = userId,

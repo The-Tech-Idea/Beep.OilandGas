@@ -49,12 +49,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 // Step 1: Build flash conditions from request or PPDM data
                 FLASH_CONDITIONS FLASH_CONDITIONS;
-                if (request.PRESSURE.HasValue && request.TEMPERATURE.HasValue && request.FeedComposition != null)
+                if (request.Pressure.HasValue && request.TEMPERATURE.HasValue && request.FeedComposition != null)
                 {
                     // Use values from request (model types use decimal)
                     FLASH_CONDITIONS = new FLASH_CONDITIONS
                     {
-                        Pressure = (decimal)request.PRESSURE.Value,
+                        PRESSURE = (decimal)request.PRESSURE.Value,
                         Temperature = (decimal)request.TEMPERATURE.Value,
                         // Map incoming calculation request components to FlashCalculations.FLASH_COMPONENT
                         FeedComposition = request.FeedComposition.Select(c => new Beep.OilandGas.Models.Data.FlashCalculations.FLASH_COMPONENT

@@ -41,7 +41,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     request.WellId, request.PoolId, request.FieldId);
 
                 // Check if this is a physics-based forecast (uses reservoir properties instead of historical data)
-                var forecastTypeStr = request.AdditionalParameters?.FORECAST_TYPE ?? string.Empty;
+                var forecastTypeStr = request.AdditionalParameters?.ForecastType ?? string.Empty;
                 var isPhysicsBased = !string.IsNullOrEmpty(forecastTypeStr) &&
                     (forecastTypeStr.StartsWith("PHYSICS", StringComparison.OrdinalIgnoreCase) ||
                      forecastTypeStr.Equals("PSEUDO_STEADY_STATE", StringComparison.OrdinalIgnoreCase) ||
@@ -406,10 +406,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     throw new InvalidOperationException("Reservoir properties not found. Cannot perform physics-based forecast.");
                 }
 
-                var forecastTypeStr = request.AdditionalParameters?.FORECAST_TYPE ?? "PSEUDO_STEADY_STATE_SINGLE_PHASE";
+                var forecastTypeStr = request.AdditionalParameters?.ForecastType ?? "PSEUDO_STEADY_STATE_SINGLE_PHASE";
 
                 var bottomHolePressure = (decimal)(request.AdditionalParameters?.BottomHolePressure ?? 1000m);
-                var forecastDuration = (decimal)(request.AdditionalParameters?.FORECAST_DURATION ?? 1825m);
+                var forecastDuration = (decimal)(request.AdditionalParameters?.ForecastDuration ?? 1825m);
                 var timeSteps = request.AdditionalParameters?.TimeSteps ?? 100;
                 var bubblePointPressure = (decimal)(request.AdditionalParameters?.BubblePointPressure ?? 0m);
 
@@ -438,7 +438,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                             INITIAL_PRODUCTION_RATE = res2.INITIAL_PRODUCTION_RATE,
                             FINAL_PRODUCTION_RATE = res2.FINAL_PRODUCTION_RATE,
                             TOTAL_CUMULATIVE_PRODUCTION = res2.TOTAL_CUMULATIVE_PRODUCTION,
-                            FORECAST_POINTS = res2.ForecastPoints.Select(p => new FORECAST_POINT
+                            FORECAST_POINTS = res2.FORECAST_POINTS.Select(p => new FORECAST_POINT
                             {
                                 TIME = p.Time,
                                 PRODUCTION_RATE = p.ProductionRate,

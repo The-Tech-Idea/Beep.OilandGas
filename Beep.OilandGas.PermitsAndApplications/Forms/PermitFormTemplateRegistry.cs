@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.PermitsAndApplications;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -161,10 +162,10 @@ namespace Beep.OilandGas.PermitsAndApplications.Forms
                 })
         };
 
-        public IReadOnlyList<PermitFormTemplate> GetTemplates(string authority, string applicationType)
+        public IReadOnlyList<PermitFormTemplate> GetTemplates(RegulatoryAuthority authority, PermitApplicationType applicationType)
         {
-            var normalizedAuthority = Normalize(authority);
-            var normalizedType = Normalize(applicationType);
+            var normalizedAuthority = Normalize(authority.ToString());
+            var normalizedType = Normalize(applicationType.ToString());
 
             return _templates
                 .Where(template =>

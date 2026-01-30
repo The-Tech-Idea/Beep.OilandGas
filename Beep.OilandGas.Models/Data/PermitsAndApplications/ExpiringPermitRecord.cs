@@ -12,15 +12,15 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref PermitApplicationIdValue, value); }
         }
 
-        private string? ApplicationTypeValue;
-        public string? ApplicationType
+        private PermitApplicationType? ApplicationTypeValue;
+        public PermitApplicationType? ApplicationType
         {
             get { return this.ApplicationTypeValue; }
             set { SetProperty(ref ApplicationTypeValue, value); }
         }
 
-        private string? StatusValue;
-        public string? Status
+        private PermitApplicationStatus? StatusValue;
+        public PermitApplicationStatus? Status
         {
             get { return this.StatusValue; }
             set { SetProperty(ref StatusValue, value); }
@@ -33,8 +33,8 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref ExpiryDateValue, value); }
         }
 
-        private string? RegulatoryAuthorityValue;
-        public string? RegulatoryAuthority
+        private RegulatoryAuthority? RegulatoryAuthorityValue;
+        public RegulatoryAuthority? RegulatoryAuthority
         {
             get { return this.RegulatoryAuthorityValue; }
             set { SetProperty(ref RegulatoryAuthorityValue, value); }

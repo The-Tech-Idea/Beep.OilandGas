@@ -82,7 +82,7 @@ namespace Beep.OilandGas.PermitsAndApplications.DataMapping
 
             return applicationType.ToUpperInvariant() switch
             {
-                "DRILLING" => PermitApplicationType.Drilling,
+                "DRILLING" =>PermitApplicationType.Drilling,
                 "ENVIRONMENTAL" => PermitApplicationType.Environmental,
                 "INJECTION" => PermitApplicationType.Injection,
                 "STORAGE" => PermitApplicationType.Storage,

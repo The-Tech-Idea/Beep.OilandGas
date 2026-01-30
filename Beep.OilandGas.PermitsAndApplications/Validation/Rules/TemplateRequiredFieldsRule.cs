@@ -18,7 +18,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
         public PermitValidationRuleResult Evaluate(PermitValidationRequest request)
         {
             var result = new PermitValidationRuleResult();
-            var templates = _registry.GetTemplates(request.NormalizedAuthority, request.NormalizedApplicationType);
+            var templates = _registry.GetTemplates(request.RegulatoryAuthority, request.ApplicationType);
 
             var requiredFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var template in templates)
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
                     result.MissingRequiredFieldCount++;
                     result.Issues.Add(new PermitValidationIssue(
                         "CONFIG_REQUIRED_FIELD",
-                        $"Required field missing for {request.NormalizedAuthority}: {field}.",
+                        $"Required field missing for {request.RegulatoryAuthority}: {field}.",
                         PermitValidationSeverity.Error,
                         field));
                 }

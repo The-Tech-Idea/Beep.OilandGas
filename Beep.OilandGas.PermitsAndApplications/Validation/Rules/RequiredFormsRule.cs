@@ -15,7 +15,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
             if (request.RequiredForms.Count == 0)
                 return result;
 
-            var status = Normalize(request.Application.STATUS);
+            var status = Normalize(request.Application.STATUS.ToString());
             var submissionComplete = string.Equals(request.Application.SUBMISSION_COMPLETE_IND, "Y", StringComparison.OrdinalIgnoreCase);
             if (status == "DRAFT" && !submissionComplete)
                 return result;

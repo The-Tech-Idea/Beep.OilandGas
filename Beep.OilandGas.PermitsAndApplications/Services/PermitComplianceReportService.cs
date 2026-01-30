@@ -98,10 +98,10 @@ namespace Beep.OilandGas.PermitsAndApplications.Services
             var applications = results.Select(r => r as PERMIT_APPLICATION).Where(r => r != null).ToList();
 
             return applications
-                .GroupBy(a => a.STATUS ?? "UNKNOWN", StringComparer.OrdinalIgnoreCase)
+                .GroupBy(a => a.STATUS)
                 .Select(g => new ComplianceStatusCount
                 {
-                    Status = g.Key,
+                    Status = g.Key.ToString(),
                     Count = g.Count()
                 })
                 .ToList();

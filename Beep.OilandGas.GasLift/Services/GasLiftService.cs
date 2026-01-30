@@ -103,15 +103,15 @@ namespace Beep.OilandGas.GasLift.Services
             // Calculate NPV for each performance point
             foreach (var point in potentialResult.PERFORMANCE_POINTS)
             {
-                decimal dailyRevenue = point.ProductionRate * oilPricePerBarrel;
-                decimal dailyCost = point.GasInjectionRate * gasInjectionCostPerMscf;
+                decimal dailyRevenue = point.PRODUCTION_RATE * oilPricePerBarrel;
+                decimal dailyCost = point.GAS_INJECTION_RATE * gasInjectionCostPerMscf;
                 decimal dailyNetRevenue = dailyRevenue - dailyCost;
                 decimal annualNetRevenue = dailyNetRevenue * 365m;
 
                 economicResult.EconomicPoints.Add(new GasLiftEconomicPoint
                 {
-                    GasInjectionRate = point.GasInjectionRate,
-                    ProductionRate = point.ProductionRate,
+                    GasInjectionRate = point.GAS_INJECTION_RATE,
+                    ProductionRate = point.PRODUCTION_RATE,
                     DailyRevenue = dailyRevenue,
                     DailyCost = dailyCost,
                     NetDailyMargin = dailyNetRevenue,

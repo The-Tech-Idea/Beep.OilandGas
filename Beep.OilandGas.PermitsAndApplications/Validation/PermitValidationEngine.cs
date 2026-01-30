@@ -27,16 +27,16 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation
             if (application == null)
                 throw new ArgumentNullException(nameof(application));
 
-            var normalizedAuthority = Normalize(application.REGULATORY_AUTHORITY);
-            var normalizedApplicationType = Normalize(application.APPLICATION_TYPE);
+            var normalizedAuthority = Normalize(application.REGULATORY_AUTHORITY.ToString());
+            var normalizedApplicationType = Normalize(application.APPLICATION_TYPE.ToString());
 
             var request = new PermitValidationRequest(
                 application,
                 attachments ?? Array.Empty<APPLICATION_ATTACHMENT>(),
                 requiredForms ?? Array.Empty<REQUIRED_FORM>(),
                 requirements,
-                normalizedAuthority,
-                normalizedApplicationType,
+                application.REGULATORY_AUTHORITY,
+                application.APPLICATION_TYPE,
                 drillingApplication,
                 environmentalApplication,
                 injectionApplication);

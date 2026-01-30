@@ -19,8 +19,8 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
             set { SetProperty(ref PERMIT_APPLICATION_IDValue, value); }
         }
 
-        private string? STATUSValue;
-        public string? STATUS
+        private PermitApplicationStatus? STATUSValue;
+        public PermitApplicationStatus? STATUS
         {
             get { return this.STATUSValue; }
             set { SetProperty(ref STATUSValue, value); }

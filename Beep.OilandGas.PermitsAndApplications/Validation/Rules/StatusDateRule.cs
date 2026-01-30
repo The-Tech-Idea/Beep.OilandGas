@@ -9,9 +9,9 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
         public PermitValidationRuleResult Evaluate(PermitValidationRequest request)
         {
             var result = new PermitValidationRuleResult();
-            var status = Normalize(request.Application.STATUS);
+            var status = request.Application.STATUS;
 
-            if (status == "SUBMITTED" && request.Application.SUBMITTED_DATE == null)
+            if (status ==  Models.Data.PermitsAndApplications.PermitApplicationStatus.Submitted && request.Application.SUBMITTED_DATE == null)
             {
                 result.Issues.Add(new PermitValidationIssue(
                     "STATUS_DATE",
@@ -20,7 +20,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
                     "SUBMITTED_DATE"));
             }
 
-            if (status == "UNDER_REVIEW" && request.Application.RECEIVED_DATE == null)
+            if (status ==  Models.Data.PermitsAndApplications.PermitApplicationStatus.UnderReview && request.Application.RECEIVED_DATE == null)
             {
                 result.Issues.Add(new PermitValidationIssue(
                     "STATUS_DATE",
@@ -29,7 +29,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
                     "RECEIVED_DATE"));
             }
 
-            if ((status == "APPROVED" || status == "REJECTED") && request.Application.DECISION_DATE == null)
+            if ((status ==  Models.Data.PermitsAndApplications.PermitApplicationStatus.Approved || status ==  Models.Data.PermitsAndApplications.PermitApplicationStatus.Rejected) && request.Application.DECISION_DATE == null)
             {
                 result.Issues.Add(new PermitValidationIssue(
                     "STATUS_DATE",
@@ -38,7 +38,7 @@ namespace Beep.OilandGas.PermitsAndApplications.Validation.Rules
                     "DECISION_DATE"));
             }
 
-            if (status == "APPROVED" && request.Application.EFFECTIVE_DATE == null)
+            if (status ==  Models.Data.PermitsAndApplications.PermitApplicationStatus.Approved && request.Application.EFFECTIVE_DATE == null)
             {
                 result.Issues.Add(new PermitValidationIssue(
                     "STATUS_DATE",

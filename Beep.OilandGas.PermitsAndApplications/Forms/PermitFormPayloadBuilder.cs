@@ -1,3 +1,4 @@
+using Beep.OilandGas.Models.Data.PermitsAndApplications;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -23,8 +24,8 @@ namespace Beep.OilandGas.PermitsAndApplications.Forms
 
         public IReadOnlyList<PermitFormPayload> BuildPayloads(
             PermitFormRenderContext context,
-            string authority,
-            string applicationType,
+            RegulatoryAuthority authority,
+            PermitApplicationType applicationType,
             string? configDirectory = null)
         {
             if (context == null)
@@ -58,8 +59,8 @@ namespace Beep.OilandGas.PermitsAndApplications.Forms
 
         public string BuildJsonPayload(
             PermitFormRenderContext context,
-            string authority,
-            string applicationType,
+            RegulatoryAuthority authority,
+            PermitApplicationType applicationType,
             string? configDirectory = null)
         {
             var payloads = BuildPayloads(context, authority, applicationType, configDirectory);

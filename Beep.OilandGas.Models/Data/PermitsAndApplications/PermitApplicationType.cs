@@ -10,6 +10,7 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
         Facility,
         Seismic,
         Groundwater,
-        Other
+        Other,
+        DRILLING_PERMIT
     }
 }

@@ -26,6 +26,7 @@ using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.Models.Data.CompressorAnalysis;
 using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data.LifeCycle;
+using Beep.OilandGas.Models.Data.Drilling;
 
 namespace Beep.OilandGas.LifeCycle.Services.Development
 {
@@ -607,7 +608,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// <summary>
         /// Analyzes gas lift potential for a well
         /// </summary>
-        public async Task<GAS_LIFT_POTENTIAL_RESULT> AnalyzeGasLiftPotentialAsync(
+        public async Task<GAS_LIFT_WELL_PROPERTIES> AnalyzeGasLiftPotentialAsync(
             string fieldId,
             string wellId,
             decimal minGasInjectionRate = 100m,
@@ -780,20 +781,20 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 // This is a simplified implementation - in production, you would retrieve actual values
                 var wellProperties = new GAS_LIFT_WELL_PROPERTIES
                 {
-                    WellDepth = !string.IsNullOrEmpty(well.FINAL_TD_OUOM) && well.FINAL_TD_OUOM == "FT" 
+                    WELL_DEPTH = !string.IsNullOrEmpty(well.FINAL_TD_OUOM) && well.FINAL_TD_OUOM == "FT" 
                         ? well.FINAL_TD 
                         : 10000m, // Default 10,000 feet
-                    TubingDiameter = 3, // Default 3" - would retrieve from WELL_EQUIPMENT
-                    CasingDiameter = 7.0m, // Default - would retrieve from WELL_EQUIPMENT
-                    WellheadPressure = 100m, // Default - would retrieve from well test or production data
-                    BottomHolePressure = 2000m, // Default - would retrieve from well test or reservoir data
-                    WellheadTemperature = 520m, // Default 60Â°F = 520Â°R
-                    BottomHoleTemperature = 580m, // Default 120Â°F = 580Â°R
-                    OilGravity = 35m, // Default 35 API - would retrieve from reservoir/fluid data
-                    WaterCut = 0.3m, // Default 30% - would retrieve from production data
-                    GasOilRatio = 500m, // Default 500 scf/bbl - would retrieve from production data
-                    GasSpecificGravity = 0.65m, // Default - would retrieve from gas analysis
-                    DesiredProductionRate = 2000m // Default 2000 bbl/day
+                    TUBING_DIAMETER = 3, // Default 3" - would retrieve from WELL_EQUIPMENT
+                    CASING_DIAMETER = 7.0m, // Default - would retrieve from WELL_EQUIPMENT
+                    WELLHEAD_PRESSURE = 100m, // Default - would retrieve from well test or production data
+                    BOTTOM_HOLE_PRESSURE = 2000m, // Default - would retrieve from well test or reservoir data
+                    WELLHEAD_TEMPERATURE = 520m, // Default 60Â°F = 520Â°R
+                    BOTTOM_HOLE_TEMPERATURE = 580m, // Default 120Â°F = 580Â°R
+                    OIL_GRAVITY = 35m, // Default 35 API - would retrieve from reservoir/fluid data
+                    WATER_CUT = 0.3m, // Default 30% - would retrieve from production data
+                    GAS_OIL_RATIO = 500m, // Default 500 scf/bbl - would retrieve from production data
+                    GAS_SPECIFIC_GRAVITY = 0.65m, // Default - would retrieve from gas analysis
+                    DESIRED_PRODUCTION_RATE = 2000m // Default 2000 bbl/day
                 };
 
                 _logger?.LogWarning("Using default values for some well properties. For accurate analysis, provide well properties in request or ensure PPDM data is complete.");
@@ -812,7 +813,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         /// </summary>
         private async Task StoreGasLiftPotentialResultsAsync(
             string wellId,
-            GAS_LIFT_POTENTIAL_RESULT result,
+            GAS_LIFT_WELL_PROPERTIES result,
             string userId)
         {
             try
@@ -839,12 +840,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                         OptimalGasInjectionRate = result.OPTIMAL_GAS_INJECTION_RATE,
                         MaximumProductionRate = result.MAXIMUM_PRODUCTION_RATE,
                         OptimalGasLiquidRatio = result.OPTIMAL_GAS_LIQUID_RATIO,
-                        PerformancePoints = result.PerformancePoints.Select(p => new
+                        PerformancePoints = result.PERFORMANCE_POINTS.Select(p => new
                         {
                             p.GasInjectionRate,
                             p.ProductionRate,
                             p.GasLiquidRatio,
-                            p.BOTTOM_HOLE_PRESSURE
+                            p.BottomHolePressure
                         })
                     })
                 };
@@ -887,17 +888,17 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                         ["WELL_EQUIPMENT_ID"] = Guid.NewGuid().ToString(),
                         ["WELL_ID"] = wellId,
                         ["EQUIPMENT_TYPE"] = "GAS_LIFT_VALVE",
-                        ["EQUIPMENT_NAME"] = $"Gas Lift Valve at {valve.Depth:F0} ft",
-                        ["DESCRIPTION"] = $"Port size: {valve.PortSize:F3} in, Opening pressure: {valve.OpeningPressure:F2} psia",
+                        ["EQUIPMENT_NAME"] = $"Gas Lift Valve at {valve.DEPTH:F0} ft",
+                        ["DESCRIPTION"] = $"Port size: {valve.PORT_SIZE:F3} in, Opening pressure: {valve.OPENING_PRESSURE:F2} psia",
                         ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
                         {
-                            valve.Depth,
-                            valve.PortSize,
-                            valve.OpeningPressure,
-                            valve.ClosingPressure,
-                            valve.ValveType,
-                            valve.Temperature,
-                            valve.GasInjectionRate
+                            valve.DEPTH,
+                            valve.PORT_SIZE,
+                            valve.OPENING_PRESSURE,
+                            valve.CLOSING_PRESSURE,
+                            valve.VALVE_TYPE,
+                            valve.TEMPERATURE,
+                            valve.GAS_INJECTION_RATE
                         })
                     };
 
@@ -992,12 +993,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     // Gas pipeline capacity
                     var gasFlowProperties = new GAS_PIPELINE_FLOW_PROPERTIES
                     {
-                        Pipeline = PIPELINE_PROPERTIES,
-                        GasFlowRate = gasFlowRate ?? 1000m, // Default
-                        GasSpecificGravity = gasSpecificGravity ?? 0.65m,
-                        GasMolecularWeight = (gasSpecificGravity ?? 0.65m) * 28.9645m,
-                        BasePressure = 14.7m,
-                        BaseTemperature = 520m
+                        PIPELINE_PROPERTIES = PIPELINE_PROPERTIES,
+                        GAS_FLOW_RATE = gasFlowRate ?? 1000m, // Default
+                        GAS_SPECIFIC_GRAVITY = gasSpecificGravity ?? 0.65m,
+                        GAS_MOLECULAR_WEIGHT = (gasSpecificGravity ?? 0.65m) * 28.9645m,
+                        BASE_PRESSURE = 14.7m,
+                        BASE_TEMPERATURE = 520m
                     };
 
                     result = PipelineCapacityCalculator.CalculateGasPipelineCapacity(gasFlowProperties);
@@ -1007,10 +1008,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     // Liquid pipeline capacity
                     var liquidFlowProperties = new LIQUID_PIPELINE_FLOW_PROPERTIES
                     {
-                        Pipeline = PIPELINE_PROPERTIES,
-                        LiquidFlowRate = liquidFlowRate ?? 1000m, // Default
-                        LiquidSpecificGravity = liquidSpecificGravity ?? 0.85m,
-                        LiquidViscosity = 1.0m
+                        PIPELINE_PROPERTIES = PIPELINE_PROPERTIES,
+                        LIQUID_FLOW_RATE = liquidFlowRate ?? 1000m, // Default
+                        LIQUID_SPECIFIC_GRAVITY = liquidSpecificGravity ?? 0.85m,
+                        LIQUID_VISCOSITY = 1.0m
                     };
 
                     result = PipelineCapacityCalculator.CalculateLiquidPipelineCapacity(liquidFlowProperties);
@@ -1058,12 +1059,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     // Gas pipeline flow
                     var gasFlowProperties = new GAS_PIPELINE_FLOW_PROPERTIES
                     {
-                        Pipeline = PIPELINE_PROPERTIES,
-                        GasFlowRate = gasFlowRate ?? 1000m,
-                        GasSpecificGravity = gasSpecificGravity ?? 0.65m,
-                        GasMolecularWeight = (gasSpecificGravity ?? 0.65m) * 28.9645m,
-                        BasePressure = 14.7m,
-                        BaseTemperature = 520m
+                        PIPELINE_PROPERTIES = PIPELINE_PROPERTIES,
+                        GAS_FLOW_RATE = gasFlowRate ?? 1000m,
+                        GAS_SPECIFIC_GRAVITY = gasSpecificGravity ?? 0.65m,
+                        GAS_MOLECULAR_WEIGHT = (gasSpecificGravity ?? 0.65m) * 28.9645m,
+                        BASE_PRESSURE = 14.7m,
+                        BASE_TEMPERATURE = 520m
                     };
 
                     result = PipelineFlowCalculator.CalculateGasFlow(gasFlowProperties);
@@ -1073,10 +1074,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     // Liquid pipeline flow
                     var liquidFlowProperties = new LIQUID_PIPELINE_FLOW_PROPERTIES
                     {
-                        Pipeline = PIPELINE_PROPERTIES,
-                        LiquidFlowRate = liquidFlowRate ?? 1000m,
-                        LiquidSpecificGravity = liquidSpecificGravity ?? 0.85m,
-                        LiquidViscosity = 1.0m
+                        PIPELINE_PROPERTIES = PIPELINE_PROPERTIES,
+                        LIQUID_FLOW_RATE = liquidFlowRate ?? 1000m,
+                        LIQUID_SPECIFIC_GRAVITY = liquidSpecificGravity ?? 0.85m,
+                        LIQUID_VISCOSITY = 1.0m
                     };
 
                     result = PipelineFlowCalculator.CalculateLiquidFlow(liquidFlowProperties);
@@ -1141,17 +1142,17 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 // This is a simplified implementation - in production, you would retrieve actual values from PIPELINE and related tables
                 var PIPELINE_PROPERTIES = new PIPELINE_PROPERTIES
                 {
-                    Diameter = !string.IsNullOrEmpty(pipeline.DIAMETER_OUOM) && pipeline.DIAMETER_OUOM == "IN"
-                        ? (pipeline.DIAMETER ?? 12m)
+                    DIAMETER = !string.IsNullOrEmpty(pipeline.DIAMETER_OUOM) && pipeline.DIAMETER_OUOM == "IN"
+                        ? (pipeline.DIAMETER is decimal pd ? pd : 12m)
                         : 12m, // Default 12 inches
-                    Length = !string.IsNullOrEmpty(pipeline.LENGTH_OUOM) && pipeline.LENGTH_OUOM == "FT"
-                        ? (pipeline.LENGTH ?? 50000m)
+                    LENGTH = !string.IsNullOrEmpty(pipeline.LENGTH_OUOM) && pipeline.LENGTH_OUOM == "FT"
+                        ? (pipeline.LENGTH is decimal pl ? pl : 50000m)
                         : 50000m, // Default 50,000 feet
-                    Roughness = 0.00015m, // Default for steel pipe
-                    ElevationChange = 0m, // Would retrieve from pipeline route data
-                    InletPressure = 1000m, // Default - would retrieve from operational data
-                    OutletPressure = 500m, // Default - would retrieve from operational data
-                    AverageTemperature = 540m // Default 80Â°F = 540Â°R
+                    ROUGHNESS = 0.00015m, // Default for steel pipe
+                    ELEVATION_CHANGE = 0m, // Would retrieve from pipeline route data
+                    INLET_PRESSURE = 1000m, // Default - would retrieve from operational data
+                    OUTLET_PRESSURE = 500m, // Default - would retrieve from operational data
+                    AVERAGE_TEMPERATURE = 540m // Default 80Â°F = 540Â°R
                 };
 
                 _logger?.LogWarning("Using default values for some pipeline properties. For accurate analysis, provide pipeline properties in request or ensure PPDM data is complete.");
@@ -1372,15 +1373,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 // This is a simplified implementation - in production, you would retrieve actual values
                 var operatingConditions = new COMPRESSOR_OPERATING_CONDITIONS
                 {
-                    SuctionPressure = suctionPressure ?? 100m, // Default 100 psia
-                    DischargePressure = dischargePressure ?? 500m, // Default 500 psia
-                    SuctionTemperature = 520m, // Default 60Â°F = 520Â°R
-                    DischargeTemperature = 600m, // Default 140Â°F = 600Â°R
-                    GasFlowRate = gasFlowRate ?? 1000m, // Default 1000 Mscf/day
-                    GasSpecificGravity = gasSpecificGravity ?? 0.65m,
-                    GasMolecularWeight = (gasSpecificGravity ?? 0.65m) * 28.9645m,
-                    CompressorEfficiency = 0.75m,
-                    MechanicalEfficiency = 0.95m
+                    SUCTION_PRESSURE = suctionPressure ?? 100m, // Default 100 psia
+                    DISCHARGE_PRESSURE = dischargePressure ?? 500m, // Default 500 psia
+                    SUCTION_TEMPERATURE = 520m, // Default 60Â°F = 520Â°R
+                    DISCHARGE_TEMPERATURE = 600m, // Default 140Â°F = 600Â°R
+                    GAS_FLOW_RATE = gasFlowRate ?? 1000m, // Default 1000 Mscf/day
+                    GAS_SPECIFIC_GRAVITY = gasSpecificGravity ?? 0.65m,
+                    GAS_MOLECULAR_WEIGHT = (gasSpecificGravity ?? 0.65m) * 28.9645m,
+                    COMPRESSOR_EFFICIENCY = 0.75m,
+                    MECHANICAL_EFFICIENCY = 0.95m
                 };
 
                 _logger?.LogWarning("Using default values for some compressor operating conditions. For accurate analysis, provide values in request or ensure PPDM data is complete.");
@@ -1404,11 +1405,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             // This is a simplified implementation
             return new CENTRIFUGAL_COMPRESSOR_PROPERTIES
             {
-                OperatingConditions = operatingConditions,
-                PolytropicEfficiency = 0.75m,
-                SpecificHeatRatio = 1.3m,
-                NumberOfStages = 1,
-                Speed = 3600 // Default 3600 RPM
+                OPERATING_CONDITIONS = operatingConditions,
+                POLYTROPIC_EFFICIENCY = 0.75m,
+                SPECIFIC_HEAT_RATIO = 1.3m,
+                NUMBER_OF_STAGES = 1,
+                SPEED = 3600 // Default 3600 RPM
             };
         }
 
@@ -1422,13 +1423,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             // This is a simplified implementation
             return new RECIPROCATING_COMPRESSOR_PROPERTIES
             {
-                OperatingConditions = operatingConditions,
-                CylinderDiameter = 12m, // Default 12 inches
-                StrokeLength = 6m, // Default 6 inches
-                RotationalSpeed = 300m, // Default 300 RPM
-                NumberOfCylinders = 2,
-                VolumetricEfficiency = 0.85m,
-                ClearanceFactor = (int)0.05m
+                OPERATING_CONDITIONS = operatingConditions,
+                CYLINDER_DIAMETER = 12m, // Default 12 inches
+                STROKE_LENGTH = 6m, // Default 6 inches
+                ROTATIONAL_SPEED = 300m, // Default 300 RPM
+                NUMBER_OF_CYLINDERS = 2,
+                VOLUMETRIC_EFFICIENCY = 0.85m,
+                CLEARANCE_FACTOR = (int)0.05m
             };
         }
 
@@ -1580,8 +1581,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 {
                     WellPlanId = Guid.NewGuid().ToString(),
                     PlanId = planId,
-                    WellName = wellPlanData.WELL_NAME ?? "Well",
-                    WellType = wellPlanData.WELL_TYPE ?? "PRODUCTION",
+                    WellName = wellPlanData.WellName ?? "Well",
+                    WellType = wellPlanData.WellType ?? "PRODUCTION",
                     Status = "DESIGNED",
                     CreatedDate = DateTime.UtcNow
                 };
@@ -1642,10 +1643,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
 
                 return new DRILLING_OPERATION
                 {
-                    OperationId = operationId,
-                    WellUWI = wellId,
-                    SpudDate = drillingData.PlannedSpudDate ?? DateTime.UtcNow,
-                    Status = "IN_PROGRESS"
+                    OPERATION_ID = operationId,
+                    WELL_UWI = wellId,
+                    SPUD_DATE = drillingData.PlannedSpudDate ?? DateTime.UtcNow,
+                    STATUS = "IN_PROGRESS"
                 };
             }
             catch (Exception ex)

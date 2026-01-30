@@ -59,7 +59,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
 
                 // Step 2: Validate discount rate
-                double discountRate = (double)request.DISCOUNT_RATE / 100.0; // Convert percentage to decimal
+                double discountRate = (double)request.DiscountRate / 100.0; // Convert percentage to decimal
 
                 if (discountRate < 0 || discountRate > 1)
                 {
@@ -458,7 +458,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             // Map cash flows to cash flow points
             decimal cumulativeCashFlow = 0;
             decimal cumulativeDiscountedCashFlow = 0;
-            double discountRate = (double)request.DISCOUNT_RATE / 100.0;
+            double discountRate = (double)request.DiscountRate / 100.0;
 
             foreach (var cf in cashFlows.OrderBy(c => c.Period))
             {
