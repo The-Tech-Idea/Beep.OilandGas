@@ -91,18 +91,18 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             return new SUCKER_ROD_SYSTEM_PROPERTIES
             {
-                WellDepth = getWellDepth(well, tubular),
-                TubingDiameter = getTubingDiameter(well, tubular),
-                RodDiameter = getRodDiameter(well),
-                PumpDiameter = getPumpDiameter(well),
-                StrokeLength = getStrokeLength(well),
-                StrokesPerMinute = getStrokesPerMinute(well),
-                WellheadPressure = getWellheadPressure(well, wellPressure),
-                BottomHolePressure = getBottomHolePressure(well, wellPressure),
-                OilGravity = getOilGravity(well),
-                WaterCut = getWaterCut(well),
-                GasOilRatio = getGasOilRatio(well),
-                GasSpecificGravity = getGasSpecificGravity(well)
+                WELL_DEPTH = getWellDepth(well, tubular),
+                TUBING_DIAMETER = getTubingDiameter(well, tubular),
+                ROD_DIAMETER = getRodDiameter(well),
+                PUMP_DIAMETER = getPumpDiameter(well),
+                STROKE_LENGTH = getStrokeLength(well),
+                STROKES_PER_MINUTE = getStrokesPerMinute(well),
+                WELLHEAD_PRESSURE = getWellheadPressure(well, wellPressure),
+                BOTTOM_HOLE_PRESSURE = getBottomHolePressure(well, wellPressure),
+                OIL_GRAVITY = getOilGravity(well),
+                WATER_CUT = getWaterCut(well),
+                GAS_OIL_RATIO = getGasOilRatio(well),
+                GAS_SPECIFIC_GRAVITY = getGasSpecificGravity(well)
             };
         }
     }

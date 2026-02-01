@@ -84,16 +84,16 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             return new GAS_LIFT_WELL_PROPERTIES
             {
-                WellDepth = getWellDepth(well, tubular),
-                WellheadPressure = getWellheadPressure(well, wellPressure),
-                BottomHolePressure = getBottomHolePressure(well, wellPressure),
-                WellheadTemperature = getWellheadTemperature(well, wellPressure),
-                BottomHoleTemperature = getBottomHoleTemperature(well, wellPressure),
-                OilGravity = getOilGravity(well),
-                WaterCut = getWaterCut(well),
-                GasOilRatio = getGasOilRatio(well),
-                GasSpecificGravity = getGasSpecificGravity(well),
-                DesiredProductionRate = getDesiredProductionRate(well)
+                WELL_DEPTH = getWellDepth(well, tubular),
+                WELLHEAD_PRESSURE = getWellheadPressure(well, wellPressure),
+                BOTTOM_HOLE_PRESSURE = getBottomHolePressure(well, wellPressure),
+                WELLHEAD_TEMPERATURE = getWellheadTemperature(well, wellPressure),
+                BOTTOM_HOLE_TEMPERATURE = getBottomHoleTemperature(well, wellPressure),
+                OIL_GRAVITY = getOilGravity(well),
+                WATER_CUT = getWaterCut(well),
+                GAS_OIL_RATIO = getGasOilRatio(well),
+                GAS_SPECIFIC_GRAVITY = getGasSpecificGravity(well),
+                DESIRED_PRODUCTION_RATE = getDesiredProductionRate(well)
             };
         }
     }

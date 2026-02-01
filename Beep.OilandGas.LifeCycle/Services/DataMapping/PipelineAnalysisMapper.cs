@@ -83,13 +83,13 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             return new PIPELINE_PROPERTIES
             {
-                Diameter = getPipelineDiameter(well),
-                Length = getPipelineLength(well),
-                Roughness = getPipelineRoughness(well),
-                ElevationChange = getElevationChange(well),
-                InletPressure = getInletPressure(well, wellPressure),
-                OutletPressure = getOutletPressure(well, wellPressure),
-                AverageTemperature = getAverageTemperature(well, wellPressure)
+                DIAMETER = getPipelineDiameter(well),
+                LENGTH = getPipelineLength(well),
+                ROUGHNESS = getPipelineRoughness(well),
+                ELEVATION_CHANGE = getElevationChange(well),
+                INLET_PRESSURE = getInletPressure(well, wellPressure),
+                OUTLET_PRESSURE = getOutletPressure(well, wellPressure),
+                AVERAGE_TEMPERATURE = getAverageTemperature(well, wellPressure)
             };
         }
 
@@ -113,10 +113,10 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             return new GAS_PIPELINE_FLOW_PROPERTIES
             {
-                Pipeline = pipeline,
-                GasFlowRate = getGasFlowRate(well),
-                GasSpecificGravity = getGasSpecificGravity(well),
-                GasMolecularWeight = getGasMolecularWeight(well)
+                PIPELINE = pipeline,
+                GAS_FLOW_RATE = getGasFlowRate(well),
+                GAS_SPECIFIC_GRAVITY = getGasSpecificGravity(well),
+                GAS_MOLECULAR_WEIGHT = getGasMolecularWeight(well)
             };
         }
 
@@ -140,10 +140,10 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             return new LIQUID_PIPELINE_FLOW_PROPERTIES
             {
-                Pipeline = pipeline,
-                LiquidFlowRate = getLiquidFlowRate(well),
-                LiquidSpecificGravity = getLiquidSpecificGravity(well),
-                LiquidViscosity = getLiquidViscosity(well)
+                PIPELINE = pipeline,
+                LIQUID_FLOW_RATE = getLiquidFlowRate(well),
+                LIQUID_SPECIFIC_GRAVITY = getLiquidSpecificGravity(well),
+                LIQUID_VISCOSITY = getLiquidViscosity(well)
             };
         }
     }

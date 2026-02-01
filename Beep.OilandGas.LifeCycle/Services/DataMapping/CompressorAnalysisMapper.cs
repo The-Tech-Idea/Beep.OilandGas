@@ -76,15 +76,15 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             return new COMPRESSOR_OPERATING_CONDITIONS
             {
-                SuctionPressure = getSuctionPressure(well, wellPressure),
-                DischargePressure = getDischargePressure(well, wellPressure),
-                SuctionTemperature = getSuctionTemperature(well, wellPressure),
-                DischargeTemperature = getDischargeTemperature(well, wellPressure),
-                GasFlowRate = getGasFlowRate(well),
-                GasSpecificGravity = getGasSpecificGravity(well),
-                GasMolecularWeight = getGasMolecularWeight(well),
-                CompressorEfficiency = getCompressorEfficiency(well),
-                MechanicalEfficiency = getMechanicalEfficiency(well)
+                SUCTION_PRESSURE = getSuctionPressure(well, wellPressure),
+                DISCHARGE_PRESSURE = getDischargePressure(well, wellPressure),
+                SUCTION_TEMPERATURE = getSuctionTemperature(well, wellPressure),
+                DISCHARGE_TEMPERATURE = getDischargeTemperature(well, wellPressure),
+                GAS_FLOW_RATE = getGasFlowRate(well),
+                GAS_SPECIFIC_GRAVITY = getGasSpecificGravity(well),
+                GAS_MOLECULAR_WEIGHT = getGasMolecularWeight(well),
+                COMPRESSOR_EFFICIENCY = getCompressorEfficiency(well),
+                MECHANICAL_EFFICIENCY = getMechanicalEfficiency(well)
             };
         }
     }

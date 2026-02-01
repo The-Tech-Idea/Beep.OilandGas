@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Models.Data;
@@ -319,6 +320,10 @@ namespace Beep.OilandGas.Models.Data.WellTestAnalysis
             get { return this.IS_SUCCESSFULValue; }
             set { SetProperty(ref IS_SUCCESSFULValue, value); }
         }
+
+        public WellTestAnalysisAdditionalResults? AdditionalResults { get; set; }
+        public List<WellTestDataPoint>? DiagnosticPoints { get; set; }
+        public List<WellTestDataPoint>? DerivativePoints { get; set; }
 
         public double RSQUARED { get; set; }
     }

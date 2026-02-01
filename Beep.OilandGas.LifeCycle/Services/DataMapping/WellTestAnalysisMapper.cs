@@ -101,19 +101,19 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             var WELL_TEST_DATA = new WELL_TEST_DATA
             {
-                TestType = getTestType(wellTest),
-                FlowRate = getFlowRate(flowData),
-                WellboreRadius = well != null ? getWellboreRadius(well, tubular) : throw new ArgumentNullException(nameof(well), "WELL entity is required for wellbore radius."),
-                FormationThickness = well != null ? getFormationThickness(well) : throw new ArgumentNullException(nameof(well), "WELL entity is required for formation thickness."),
-                Porosity = well != null ? getPorosity(well) : throw new ArgumentNullException(nameof(well), "WELL entity is required for porosity."),
-                TotalCompressibility = well != null ? getTotalCompressibility(well) : throw new ArgumentNullException(nameof(well), "WELL entity is required for total compressibility."),
-                OilViscosity = well != null ? getOilViscosity(well) : throw new ArgumentNullException(nameof(well), "WELL entity is required for oil viscosity."),
-                OilFormationVolumeFactor = well != null ? getOilFormationVolumeFactor(well) : throw new ArgumentNullException(nameof(well), "WELL entity is required for oil formation volume factor."),
-                ProductionTime = getProductionTime(flowData),
-                IsGasWell = well != null ? isGasWell(well) : false,
-                GasSpecificGravity = well != null ? getGasSpecificGravity(well) : 0.65,
-                ReservoirTemperature = well != null ? getReservoirTemperature(well) : 200.0,
-                InitialReservoirPressure = getInitialReservoirPressure(pressureData)
+                TEST_TYPE = getTestType(wellTest).ToString(),
+                FLOW_RATE = (decimal)getFlowRate(flowData),
+                WELLBORE_RADIUS = well != null ? (decimal)getWellboreRadius(well, tubular) : throw new ArgumentNullException(nameof(well), "WELL entity is required for wellbore radius."),
+                FORMATION_THICKNESS = well != null ? (decimal)getFormationThickness(well) : throw new ArgumentNullException(nameof(well), "WELL entity is required for formation thickness."),
+                POROSITY = well != null ? (decimal)getPorosity(well) : throw new ArgumentNullException(nameof(well), "WELL entity is required for porosity."),
+                TOTAL_COMPRESSIBILITY = well != null ? (decimal)getTotalCompressibility(well) : throw new ArgumentNullException(nameof(well), "WELL entity is required for total compressibility."),
+                OIL_VISCOSITY = well != null ? (decimal)getOilViscosity(well) : throw new ArgumentNullException(nameof(well), "WELL entity is required for oil viscosity."),
+                OIL_FORMATION_VOLUME_FACTOR = well != null ? (decimal)getOilFormationVolumeFactor(well) : throw new ArgumentNullException(nameof(well), "WELL entity is required for oil formation volume factor."),
+                PRODUCTION_TIME = (decimal)getProductionTime(flowData),
+                IS_GAS_WELL = well != null ? isGasWell(well) : false,
+                GAS_SPECIFIC_GRAVITY = well != null ? (decimal)getGasSpecificGravity(well) : 0.65m,
+                RESERVOIR_TEMPERATURE = well != null ? (decimal)getReservoirTemperature(well) : 200.0m,
+                INITIAL_RESERVOIR_PRESSURE = (decimal)getInitialReservoirPressure(pressureData)
             };
 
             // Map pressure and time data from WELL_TEST_PRESSURE

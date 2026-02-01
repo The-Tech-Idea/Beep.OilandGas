@@ -440,11 +440,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                             TOTAL_CUMULATIVE_PRODUCTION = res2.TOTAL_CUMULATIVE_PRODUCTION,
                             FORECAST_POINTS = res2.FORECAST_POINTS.Select(p => new FORECAST_POINT
                             {
-                                TIME = p.Time,
-                                PRODUCTION_RATE = p.ProductionRate,
-                                CUMULATIVE_PRODUCTION = p.CumulativeProduction,
-                                RESERVOIR_PRESSURE = p.ReservoirPressure,
-                                BOTTOM_HOLE_PRESSURE = p.BottomHolePressure
+                                TIME = p.TIME,
+                                PRODUCTION_RATE = p.PRODUCTION_RATE,
+                                CUMULATIVE_PRODUCTION = p.CUMULATIVE_PRODUCTION,
+                                RESERVOIR_PRESSURE = p.RESERVOIR_PRESSURE,
+                                BOTTOM_HOLE_PRESSURE = p.BOTTOM_HOLE_PRESSURE
                             }).ToList()
                         };
                         break;

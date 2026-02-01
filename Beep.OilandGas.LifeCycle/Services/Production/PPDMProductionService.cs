@@ -592,9 +592,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 {
                     var CHOKE_PROPERTIES = new CHOKE_PROPERTIES
                     {
-                        ChokeDiameter = optimalDiameter,
-                        ChokeType = ChokeType.Bean,
-                        DischargeCoefficient = 0.85m
+                        CHOKE_DIAMETER = optimalDiameter,
+                        CHOKE_TYPE = ChokeType.Bean.ToString(),
+                        DISCHARGE_COEFFICIENT = 0.85m
                     };
 
                     CHOKE_FLOW_RESULT result;
@@ -628,9 +628,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
 
                 var finalChoke = new CHOKE_PROPERTIES
                 {
-                    ChokeDiameter = optimalDiameter,
-                    ChokeType = ChokeType.Bean,
-                    DischargeCoefficient = 0.85m
+                    CHOKE_DIAMETER = optimalDiameter,
+                    CHOKE_TYPE = ChokeType.Bean.ToString(),
+                    DISCHARGE_COEFFICIENT = 0.85m
                 };
 
                 // Store sizing results
@@ -663,9 +663,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 // This is a simplified implementation - in production, you would retrieve actual values
                 var CHOKE_PROPERTIES = new CHOKE_PROPERTIES
                 {
-                    ChokeDiameter = chokeDiameter ?? 0.5m, // Default 1/2 inch
-                    ChokeType = ChokeType.Bean,
-                    DischargeCoefficient = 0.85m // Typical for bean choke
+                    CHOKE_DIAMETER = chokeDiameter ?? 0.5m, // Default 1/2 inch
+                    CHOKE_TYPE = ChokeType.Bean.ToString(),
+                    DISCHARGE_COEFFICIENT = 0.85m // Typical for bean choke
                 };
 
                 _logger?.LogWarning("Using default values for choke properties. For accurate analysis, provide choke diameter in request or ensure PPDM data is complete.");
@@ -696,12 +696,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 // This is a simplified implementation - in production, you would retrieve actual values
                 var gasProperties = new GAS_CHOKE_PROPERTIES
                 {
-                    UpstreamPressure = upstreamPressure ?? 1000m, // Default 1000 psia
-                    DownstreamPressure = downstreamPressure ?? 500m, // Default 500 psia
-                    Temperature = 540m, // Default 80Â°F = 540Â°R
-                    GasSpecificGravity = gasSpecificGravity ?? 0.65m,
-                    FlowRate = gasFlowRate ?? 1000m, // Default 1000 Mscf/day
-                    ZFactor = 0.9m // Default - would calculate from pressure/temperature
+                    UPSTREAM_PRESSURE = upstreamPressure ?? 1000m, // Default 1000 psia
+                    DOWNSTREAM_PRESSURE = downstreamPressure ?? 500m, // Default 500 psia
+                    TEMPERATURE = 540m, // Default 80Â°F = 540Â°R
+                    GAS_SPECIFIC_GRAVITY = gasSpecificGravity ?? 0.65m,
+                    FLOW_RATE = gasFlowRate ?? 1000m, // Default 1000 Mscf/day
+                    Z_FACTOR = 0.9m // Default - would calculate from pressure/temperature
                 };
 
                 _logger?.LogWarning("Using default values for some gas properties. For accurate analysis, provide values in request or ensure PPDM data is complete.");
@@ -801,7 +801,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                         ChokeDiameter = CHOKE_PROPERTIES.CHOKE_DIAMETER,
                         ChokeType = CHOKE_PROPERTIES.CHOKE_TYPE.ToString(),
                         DischargeCoefficient = CHOKE_PROPERTIES.DISCHARGE_COEFFICIENT,
-                        ChokeArea = CHOKE_PROPERTIES.ChokeArea,
+                        ChokeArea = CHOKE_PROPERTIES.CHOKE_AREA,
                         TargetFlowRate = targetFlowRate,
                         AnalysisDate = DateTime.UtcNow
                     })
@@ -926,20 +926,20 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
                 // This is a simplified implementation - in production, you would retrieve actual values
                 var systemProperties = new SUCKER_ROD_SYSTEM_PROPERTIES
                 {
-                    WellDepth = 5000m, // Default - would retrieve from WELL table
-                    TubingDiameter = 2.875m, // Default - would retrieve from WELL_EQUIPMENT
-                    RodDiameter = rodDiameter ?? 0.875m, // Default 7/8 inch
-                    PumpDiameter = pumpDiameter ?? 1.5m, // Default 1.5 inches
-                    StrokeLength = strokeLength ?? 60m, // Default 60 inches
-                    StrokesPerMinute = strokesPerMinute ?? 10m, // Default 10 SPM
-                    WellheadPressure = 100m, // Default - would retrieve from production data
-                    BottomHolePressure = 2000m, // Default - would retrieve from reservoir data
-                    OilGravity = 35m, // Default 35 API
-                    WaterCut = 0.3m, // Default 30%
-                    GasOilRatio = 500m, // Default 500 scf/bbl
-                    GasSpecificGravity = 0.65m, // Default
-                    RodDensity = 490m, // Steel
-                    PumpEfficiency = 0.85m
+                    WELL_DEPTH = 5000m, // Default - would retrieve from WELL table
+                    TUBING_DIAMETER = 2.875m, // Default - would retrieve from WELL_EQUIPMENT
+                    ROD_DIAMETER = rodDiameter ?? 0.875m, // Default 7/8 inch
+                    PUMP_DIAMETER = pumpDiameter ?? 1.5m, // Default 1.5 inches
+                    STROKE_LENGTH = strokeLength ?? 60m, // Default 60 inches
+                    STROKES_PER_MINUTE = strokesPerMinute ?? 10m, // Default 10 SPM
+                    WELLHEAD_PRESSURE = 100m, // Default - would retrieve from production data
+                    BOTTOM_HOLE_PRESSURE = 2000m, // Default - would retrieve from reservoir data
+                    OIL_GRAVITY = 35m, // Default 35 API
+                    WATER_CUT = 0.3m, // Default 30%
+                    GAS_OIL_RATIO = 500m, // Default 500 scf/bbl
+                    GAS_SPECIFIC_GRAVITY = 0.65m, // Default
+                    ROD_DENSITY = 490m, // Steel
+                    PUMP_EFFICIENCY = 0.85m
                 };
 
                 _logger?.LogWarning("Using default values for some sucker rod system properties. For accurate analysis, provide values in request or ensure PPDM data is complete.");
@@ -963,18 +963,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             // This is a simplified implementation - in production, you would retrieve actual rod string from PPDM
             var rodString = new SUCKER_ROD_STRING
             {
-                TotalLength = systemProperties.WELL_DEPTH
+                TOTAL_LENGTH = systemProperties.WELL_DEPTH,
+                SECTIONS = new List<ROD_SECTION>()
             };
 
             // Create a single rod section (simplified - actual systems may have multiple sections)
             var section = new ROD_SECTION
             {
-                Diameter = systemProperties.ROD_DIAMETER,
-                Length = systemProperties.WELL_DEPTH,
-                Density = systemProperties.ROD_DENSITY
+                DIAMETER = systemProperties.ROD_DIAMETER,
+                LENGTH = systemProperties.WELL_DEPTH,
+                DENSITY = systemProperties.ROD_DENSITY
             };
 
-            rodString.Sections.Add(section);
+            rodString.SECTIONS.Add(section);
 
             return rodString;
         }

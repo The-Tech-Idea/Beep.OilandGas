@@ -30,13 +30,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             try
             {
                 // Validate request
-                if (string.IsNullOrEmpty(request.WELL_ID) && string.IsNullOrEmpty(request.TEST_ID))
+                if (string.IsNullOrEmpty(request.WellId) && string.IsNullOrEmpty(request.TestId))
                 {
                     throw new ArgumentException("At least one of WellId or TestId must be provided");
                 }
 
                 _logger?.LogInformation("Starting Well Test Analysis for WellId: {WellId}, TestId: {TestId}",
-                    request.WELL_ID, request.TEST_ID);
+                    request.WellId, request.TestId);
 
                 // Step 1: Build well test data from request or PPDM data
                 WELL_TEST_DATA WELL_TEST_DATA;
@@ -47,32 +47,34 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     {
                         Time = request.PressureTimeData.Select(p => (double)(p.Time ?? 0)).ToList(),
                         Pressure = request.PressureTimeData.Select(p => (double)(p.Pressure ?? 0)).ToList(),
-                        FlowRate = request.FLOW_RATE.HasValue ? (double)request.FLOW_RATE.Value : 0.0,
-                        WellboreRadius = request.WELLBORE_RADIUS.HasValue ? (double)request.WELLBORE_RADIUS.Value : 0.25,
-                        FormationThickness = request.FORMATION_THICKNESS.HasValue ? (double)request.FORMATION_THICKNESS.Value : 50.0,
-                        Porosity = request.POROSITY.HasValue ? (double)request.POROSITY.Value : 0.2,
-                        TotalCompressibility = request.TOTAL_COMPRESSIBILITY.HasValue ? (double)request.TOTAL_COMPRESSIBILITY.Value : 1e-5,
-                        OilViscosity = request.OIL_VISCOSITY.HasValue ? (double)request.OIL_VISCOSITY.Value : 1.5,
-                        OilFormationVolumeFactor = request.OIL_FORMATION_VOLUME_FACTOR.HasValue ? (double)request.OIL_FORMATION_VOLUME_FACTOR.Value : 1.2,
-                        ProductionTime = request.PRODUCTION_TIME.HasValue ? (double)request.PRODUCTION_TIME.Value : 0.0,
-                        IsGasWell = request.IS_GAS_WELL ?? false,
-                        GasSpecificGravity = request.GAS_SPECIFIC_GRAVITY.HasValue ? (double)request.GAS_SPECIFIC_GRAVITY.Value : 0.65,
-                        ReservoirTemperature = request.RESERVOIR_TEMPERATURE.HasValue ? (double)request.RESERVOIR_TEMPERATURE.Value : 150.0,
-                        InitialReservoirPressure = request.INITIAL_RESERVOIR_PRESSURE.HasValue ? (double)request.INITIAL_RESERVOIR_PRESSURE.Value : 0.0,
-                        TestType = request.ANALYSIS_TYPE?.ToUpper() == "DRAWDOWN" ? WellTestType.Drawdown : WellTestType.BuildUp
+                        FLOW_RATE = request.FlowRate ?? 0.0m,
+                        WELLBORE_RADIUS = request.WellboreRadius ?? 0.25m,
+                        FORMATION_THICKNESS = request.FormationThickness ?? 50.0m,
+                        POROSITY = request.Porosity ?? 0.2m,
+                        TOTAL_COMPRESSIBILITY = request.TotalCompressibility ?? 1e-5m,
+                        OIL_VISCOSITY = request.OilViscosity ?? 1.5m,
+                        OIL_FORMATION_VOLUME_FACTOR = request.OilFormationVolumeFactor ?? 1.2m,
+                        PRODUCTION_TIME = request.ProductionTime ?? 0.0m,
+                        IS_GAS_WELL = request.IsGasWell ?? false,
+                        GAS_SPECIFIC_GRAVITY = request.GasSpecificGravity ?? 0.65m,
+                        RESERVOIR_TEMPERATURE = request.ReservoirTemperature ?? 150.0m,
+                        INITIAL_RESERVOIR_PRESSURE = request.InitialReservoirPressure ?? 0.0m,
+                        TEST_TYPE = request.AnalysisType?.ToUpper() == "DRAWDOWN"
+                            ? WellTestType.Drawdown.ToString()
+                            : WellTestType.BuildUp.ToString()
                     };
                 }
                 else
                 {
                     // Retrieve from PPDM data
-                    WELL_TEST_DATA = await GetWellTestDataFromPPDMAsync(request.WELL_ID ?? string.Empty, request.TEST_ID ?? string.Empty);
+                    WELL_TEST_DATA = await GetWellTestDataFromPPDMAsync(request.WellId ?? string.Empty, request.TestId ?? string.Empty);
                 }
 
                 // Step 2: Perform well test analysis
                 WELL_TEST_ANALYSIS_RESULT analysisResult;
-                string analysisMethod = request.ANALYSIS_METHOD?.ToUpper() ?? "HORNER";
+                string analysisMethod = request.AnalysisMethod?.ToUpper() ?? "HORNER";
 
-                if (request.ANALYSIS_TYPE?.ToUpper() == "BUILDUP")
+                if (request.AnalysisType?.ToUpper() == "BUILDUP")
                 {
                     if (analysisMethod == "MDH")
                     {
@@ -107,7 +109,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     result.DIAGNOSTIC_DATA_JSON = JsonSerializer.Serialize(result.DiagnosticPoints ?? new List<WellTestDataPoint>());
                     result.DERIVATIVE_DATA_JSON = JsonSerializer.Serialize(result.DerivativePoints ?? new List<WellTestDataPoint>());
 
-                    await InsertAnalysisResultAsync(repository, result, request.USER_ID);
+                    await InsertAnalysisResultAsync(repository, result, request.UserId);
                     _logger?.LogInformation("Stored Well Test Analysis result with ID: {CalculationId}", result.CALCULATION_ID);
                 }
                 catch (Exception storeEx)
@@ -121,7 +123,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error performing Well Test Analysis for WellId: {WellId}, TestId: {TestId}",
-                    request.WELL_ID, request.TEST_ID);
+                    request.WellId, request.TestId);
 
                 // Try to store error result
                 try
@@ -129,16 +131,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     var repository = await GetWellTestResultRepositoryAsync();
                     var errorResult = new WELL_TEST_ANALYSIS_RESULT
                     {
-                        CalculationId = Guid.NewGuid().ToString(),
-                        WellId = request.WELL_ID,
-                        TestId = request.TEST_ID,
-                        AnalysisType = request.ANALYSIS_TYPE,
-                        AnalysisMethod = request.ANALYSIS_METHOD ?? "HORNER",
-                        CalculationDate = DateTime.UtcNow,
-                        Status = "FAILED",
-                        ErrorMessage = ex.Message
+                        CALCULATION_ID = Guid.NewGuid().ToString(),
+                        WELL_ID = request.WellId,
+                        TEST_ID = request.TestId,
+                        ANALYSIS_TYPE = request.AnalysisType,
+                        ANALYSIS_METHOD = request.AnalysisMethod ?? "HORNER",
+                        CALCULATION_DATE = DateTime.UtcNow,
+                        STATUS = "FAILED",
+                        ERROR_MESSAGE = ex.Message
                     };
-                    await InsertAnalysisResultAsync(repository, errorResult, request.USER_ID);
+                    await InsertAnalysisResultAsync(repository, errorResult, request.UserId);
                 }
                 catch (Exception storeEx)
                 {
@@ -177,32 +179,32 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             var result = new WELL_TEST_ANALYSIS_RESULT
             {
-                CalculationId = Guid.NewGuid().ToString(),
-                WellId = request.WELL_ID,
-                TestId = request.TEST_ID,
-                AnalysisType = request.ANALYSIS_TYPE,
-                AnalysisMethod = request.ANALYSIS_METHOD ?? "HORNER",
-                CalculationDate = DateTime.UtcNow,
-                Status = "SUCCESS",
-                UserId = request.USER_ID,
-                Permeability = analysisResult.PERMEABILITY,
-                SkinFactor = analysisResult.SKIN_FACTOR,
-                ReservoirPressure = analysisResult.RESERVOIR_PRESSURE,
-                ProductivityIndex = analysisResult.PRODUCTIVITY_INDEX,
-                FlowEfficiency = analysisResult.FLOW_EFFICIENCY,
-                DamageRatio = analysisResult.DAMAGE_RATIO,
-                RadiusOfInvestigation = analysisResult.RADIUS_OF_INVESTIGATION,
+                CALCULATION_ID = Guid.NewGuid().ToString(),
+                WELL_ID = request.WellId,
+                TEST_ID = request.TestId,
+                ANALYSIS_TYPE = request.AnalysisType,
+                ANALYSIS_METHOD = request.AnalysisMethod ?? "HORNER",
+                CALCULATION_DATE = DateTime.UtcNow,
+                STATUS = "SUCCESS",
+                USER_ID = request.UserId,
+                PERMEABILITY = analysisResult.PERMEABILITY,
+                SKIN_FACTOR = analysisResult.SKIN_FACTOR,
+                RESERVOIR_PRESSURE = analysisResult.RESERVOIR_PRESSURE,
+                PRODUCTIVITY_INDEX = analysisResult.PRODUCTIVITY_INDEX,
+                FLOW_EFFICIENCY = analysisResult.FLOW_EFFICIENCY,
+                DAMAGE_RATIO = analysisResult.DAMAGE_RATIO,
+                RADIUS_OF_INVESTIGATION = analysisResult.RADIUS_OF_INVESTIGATION,
                 // IdentifiedModel = identifiedModel,
-                RSquared = analysisResult.RSQUARED,
+                R_SQUARED = analysisResult.R_SQUARED,
                 DiagnosticPoints = request.PressureTimeData,
                 // DerivativePoints = derivativePoints...
                 AdditionalResults = new WellTestAnalysisAdditionalResults()
             };
 
-            result.ADDITIONAL_RESULTS.ANALYSIS_METHOD = analysisResult.ANALYSIS_METHOD;
-            result.ADDITIONAL_RESULTS.FLOW_RATE = request.FLOW_RATE ?? 0.0m;
-            result.ADDITIONAL_RESULTS.WELLBORE_RADIUS = request.WELLBORE_RADIUS ?? 0.25m;
-            result.ADDITIONAL_RESULTS.FORMATION_THICKNESS = request.FORMATION_THICKNESS ?? 50.0m;
+            result.AdditionalResults.AnalysisMethod = analysisResult.ANALYSIS_METHOD;
+            result.AdditionalResults.FlowRate = request.FlowRate ?? 0.0m;
+            result.AdditionalResults.WellboreRadius = request.WellboreRadius ?? 0.25m;
+            result.AdditionalResults.FormationThickness = request.FormationThickness ?? 50.0m;
 
             return result;
         }

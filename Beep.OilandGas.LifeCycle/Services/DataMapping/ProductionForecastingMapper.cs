@@ -93,18 +93,18 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             var forecastProperties = new RESERVOIR_FORECAST_PROPERTIES
             {
-                InitialPressure = getInitialPressure(ppdm39Well, wellPressure),
-                Permeability = getPermeability(ppdm39Well),
-                Thickness = getThickness(ppdm39Well),
-                DrainageRadius = getDrainageRadius(ppdm39Well),
-                WellboreRadius = getWellboreRadius(ppdm39Well, tubular),
-                FormationVolumeFactor = getFormationVolumeFactor(ppdm39Well),
-                OilViscosity = getOilViscosity(ppdm39Well),
-                TotalCompressibility = getTotalCompressibility(ppdm39Well),
-                Porosity = getPorosity(ppdm39Well),
-                SkinFactor = getSkinFactor(ppdm39Well),
-                GasSpecificGravity = getGasSpecificGravity(ppdm39Well),
-                Temperature = getTemperature(ppdm39Well, wellPressure)
+                INITIAL_PRESSURE = getInitialPressure(ppdm39Well, wellPressure),
+                PERMEABILITY = getPermeability(ppdm39Well),
+                THICKNESS = getThickness(ppdm39Well),
+                DRAINAGE_RADIUS = getDrainageRadius(ppdm39Well),
+                WELLBORE_RADIUS = getWellboreRadius(ppdm39Well, tubular),
+                FORMATION_VOLUME_FACTOR = getFormationVolumeFactor(ppdm39Well),
+                OIL_VISCOSITY = getOilViscosity(ppdm39Well),
+                TOTAL_COMPRESSIBILITY = getTotalCompressibility(ppdm39Well),
+                POROSITY = getPorosity(ppdm39Well),
+                SKIN_FACTOR = getSkinFactor(ppdm39Well),
+                GAS_SPECIFIC_GRAVITY = getGasSpecificGravity(ppdm39Well),
+                TEMPERATURE = getTemperature(ppdm39Well, wellPressure)
             };
 
             return forecastProperties;

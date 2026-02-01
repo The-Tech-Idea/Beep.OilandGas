@@ -70,9 +70,9 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             return new CHOKE_PROPERTIES
             {
-                ChokeDiameter = getChokeDiameter(well),
-                ChokeType = getChokeType(well),
-                DischargeCoefficient = getDischargeCoefficient(well)
+                CHOKE_DIAMETER = getChokeDiameter(well),
+                CHOKE_TYPE = getChokeType(well).ToString(),
+                DISCHARGE_COEFFICIENT = getDischargeCoefficient(well)
             };
         }
 
@@ -98,12 +98,12 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             return new GAS_CHOKE_PROPERTIES
             {
-                UpstreamPressure = getUpstreamPressure(well, wellPressure),
-                DownstreamPressure = getDownstreamPressure(well, wellPressure),
-                Temperature = getTemperature(well, wellPressure),
-                GasSpecificGravity = getGasSpecificGravity(well),
-                ZFactor = getZFactor(well),
-                FlowRate = getGasFlowRate(well)
+                UPSTREAM_PRESSURE = getUpstreamPressure(well, wellPressure),
+                DOWNSTREAM_PRESSURE = getDownstreamPressure(well, wellPressure),
+                TEMPERATURE = getTemperature(well, wellPressure),
+                GAS_SPECIFIC_GRAVITY = getGasSpecificGravity(well),
+                Z_FACTOR = getZFactor(well),
+                FLOW_RATE = getGasFlowRate(well)
             };
         }
     }

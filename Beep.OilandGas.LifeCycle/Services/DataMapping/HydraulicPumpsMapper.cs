@@ -90,18 +90,18 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             return new HYDRAULIC_PUMP_WELL_PROPERTIES
             {
-                WellDepth = getWellDepth(well, tubular),
-                TubingDiameter = getTubingDiameter(well, tubular),
-                CasingDiameter = getCasingDiameter(well, tubular),
-                WellheadPressure = getWellheadPressure(well, wellPressure),
-                BottomHolePressure = getBottomHolePressure(well, wellPressure),
-                WellheadTemperature = getWellheadTemperature(well, wellPressure),
-                BottomHoleTemperature = getBottomHoleTemperature(well, wellPressure),
-                OilGravity = getOilGravity(well),
-                WaterCut = getWaterCut(well),
-                GasOilRatio = (int)getGasOilRatio(well),
-                GasSpecificGravity = (int)getGasSpecificGravity(well),
-                DesiredProductionRate = (int)getDesiredProductionRate(well)
+                WELL_DEPTH = getWellDepth(well, tubular),
+                TUBING_DIAMETER = getTubingDiameter(well, tubular),
+                CASING_DIAMETER = getCasingDiameter(well, tubular),
+                WELLHEAD_PRESSURE = getWellheadPressure(well, wellPressure),
+                BOTTOM_HOLE_PRESSURE = getBottomHolePressure(well, wellPressure),
+                WELLHEAD_TEMPERATURE = getWellheadTemperature(well, wellPressure),
+                BOTTOM_HOLE_TEMPERATURE = getBottomHoleTemperature(well, wellPressure),
+                OIL_GRAVITY = getOilGravity(well),
+                WATER_CUT = getWaterCut(well),
+                GAS_OIL_RATIO = (int)getGasOilRatio(well),
+                GAS_SPECIFIC_GRAVITY = (int)getGasSpecificGravity(well),
+                DESIRED_PRODUCTION_RATE = (int)getDesiredProductionRate(well)
             };
         }
     }

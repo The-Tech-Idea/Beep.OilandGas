@@ -94,19 +94,19 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             return new PLUNGER_LIFT_WELL_PROPERTIES
             {
-                WellDepth = getWellDepth(well, tubular),
-                TubingDiameter = getTubingDiameter(well, tubular),
-                PlungerDiameter = getPlungerDiameter(well),
-                WellheadPressure = getWellheadPressure(well, wellPressure),
-                CasingPressure = getCasingPressure(well, wellPressure),
-                BottomHolePressure = getBottomHolePressure(well, wellPressure),
-                WellheadTemperature = getWellheadTemperature(well, wellPressure),
-                BottomHoleTemperature = getBottomHoleTemperature(well, wellPressure),
-                OilGravity = getOilGravity(well),
-                WaterCut = getWaterCut(well),
-                GasOilRatio = getGasOilRatio(well),
-                GasSpecificGravity = getGasSpecificGravity(well),
-                LiquidProductionRate = getLiquidProductionRate(well)
+                WELL_DEPTH = getWellDepth(well, tubular),
+                TUBING_DIAMETER = getTubingDiameter(well, tubular),
+                PLUNGER_DIAMETER = getPlungerDiameter(well),
+                WELLHEAD_PRESSURE = getWellheadPressure(well, wellPressure),
+                CASING_PRESSURE = getCasingPressure(well, wellPressure),
+                BOTTOM_HOLE_PRESSURE = getBottomHolePressure(well, wellPressure),
+                WELLHEAD_TEMPERATURE = getWellheadTemperature(well, wellPressure),
+                BOTTOM_HOLE_TEMPERATURE = getBottomHoleTemperature(well, wellPressure),
+                OIL_GRAVITY = getOilGravity(well),
+                WATER_CUT = getWaterCut(well),
+                GAS_OIL_RATIO = getGasOilRatio(well),
+                GAS_SPECIFIC_GRAVITY = getGasSpecificGravity(well),
+                LIQUID_PRODUCTION_RATE = getLiquidProductionRate(well)
             };
         }
     }

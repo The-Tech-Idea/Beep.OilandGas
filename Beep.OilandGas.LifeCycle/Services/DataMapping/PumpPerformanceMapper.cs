@@ -89,18 +89,18 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             return new ESP_DESIGN_PROPERTIES
             {
-                DesiredFlowRate = desiredFlowRate,
-                TotalDynamicHead = totalDynamicHead,
-                WellDepth = getWellDepth(well, tubular),
-                CasingDiameter = getCasingDiameter(well, tubular),
-                TubingDiameter = getTubingDiameter(well, tubular),
-                OilGravity = getOilGravity(well),
-                WaterCut = getWaterCut(well),
-                GasOilRatio = getGasOilRatio(well),
-                WellheadPressure = getWellheadPressure(well, wellPressure),
-                BottomHoleTemperature = getBottomHoleTemperature(well, wellPressure),
-                GasSpecificGravity = getGasSpecificGravity(well),
-                PumpSettingDepth = getPumpSettingDepth(well, tubular)
+                DESIRED_FLOW_RATE = desiredFlowRate,
+                TOTAL_DYNAMIC_HEAD = totalDynamicHead,
+                WELL_DEPTH = getWellDepth(well, tubular),
+                CASING_DIAMETER = getCasingDiameter(well, tubular),
+                TUBING_DIAMETER = getTubingDiameter(well, tubular),
+                OIL_GRAVITY = getOilGravity(well),
+                WATER_CUT = getWaterCut(well),
+                GAS_OIL_RATIO = getGasOilRatio(well),
+                WELLHEAD_PRESSURE = getWellheadPressure(well, wellPressure),
+                BOTTOM_HOLE_TEMPERATURE = getBottomHoleTemperature(well, wellPressure),
+                GAS_SPECIFIC_GRAVITY = getGasSpecificGravity(well),
+                PUMP_SETTING_DEPTH = getPumpSettingDepth(well, tubular)
             };
         }
     }

@@ -54,9 +54,9 @@ namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 
             return new FLASH_CONDITIONS
             {
-                Pressure = getPressure(well, wellPressure),
-                Temperature = getTemperature(well, wellPressure),
-                FeedComposition = getFeedComposition(well).Cast<FLASH_COMPONENT>().ToList()
+                PRESSURE = getPressure(well, wellPressure),
+                TEMPERATURE = getTemperature(well, wellPressure),
+                FEED_COMPOSITION = getFeedComposition(well).Cast<FLASH_COMPONENT>().ToList()
             };
         }
     }

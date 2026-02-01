@@ -97,8 +97,8 @@ namespace Beep.OilandGas.LifeCycle.Services.PipelineManagement
                     Properties = new Dictionary<string, object>
                     {
                         { "PipelineType", createdPipeline.PIPELINE_TYPE ?? string.Empty },
-                        { "Diameter", createdPipeline.DIAMETER ?? 0 },
-                        { "Length", createdPipeline.LENGTH ?? 0 }
+                        { "Diameter", createdPipeline.DIAMETER },
+                        { "Length", createdPipeline.LENGTH }
                     }
                 };
             }
