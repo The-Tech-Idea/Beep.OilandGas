@@ -71,11 +71,7 @@ namespace Beep.OilandGas.Accounting.Services
                     throw new InvalidOperationException($"Account {accountNumber} not found");
 
                 // Get GL entries for this account
-                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY_LINE");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}");
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "JOURNAL_ENTRY_LINE");
+                var repo = await GetRepoAsync<JOURNAL_ENTRY_LINE>("JOURNAL_ENTRY_LINE", ConnectionName);
 
                 var filters = new List<AppFilter>
                 {
@@ -153,6 +149,15 @@ namespace Beep.OilandGas.Accounting.Services
                 _logger?.LogError(ex, "Error generating GL detail report: {Message}", ex.Message);
                 throw;
             }
+        }
+
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), cn, tableName);
         }
 
         /// <summary>

@@ -248,27 +248,17 @@ namespace Beep.OilandGas.Models.Data.Lease
             set { SetProperty(ref FieldIdValue, value); }
 
         }
-        private object StartDateValue;
-
-        public object StartDate
-
+        private DateTime? StartDateValue;
+        public DateTime? StartDate
         {
-
             get { return this.StartDateValue; }
-
             set { SetProperty(ref StartDateValue, value); }
-
         }
-        private object EndDateValue;
-
-        public object EndDate
-
+        private DateTime? EndDateValue;
+        public DateTime? EndDate
         {
-
             get { return this.EndDateValue; }
-
             set { SetProperty(ref EndDateValue, value); }
-
         }
     }
 }

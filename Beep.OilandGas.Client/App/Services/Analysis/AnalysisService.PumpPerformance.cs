@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.PumpPerformance;
-using Beep.OilandGas.Models.Data.PumpPerformance;
 
 namespace Beep.OilandGas.Client.App.Services.Analysis
 {

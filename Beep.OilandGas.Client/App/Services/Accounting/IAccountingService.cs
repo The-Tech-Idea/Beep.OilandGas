@@ -1,5 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Models.Data.ProductionOperations;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
 namespace Beep.OilandGas.Client.App.Services.Accounting
 {
@@ -8,12 +12,12 @@ namespace Beep.OilandGas.Client.App.Services.Accounting
     /// </summary>
     public interface IAccountingService
     {
-        Task<object> GetProductionDataAsync(string wellId, CancellationToken cancellationToken = default);
-        Task<object> SaveProductionDataAsync(object productionData, CancellationToken cancellationToken = default);
-        Task<object> CalculateRoyaltyAsync(object request, CancellationToken cancellationToken = default);
-        Task<object> GetCostSummaryAsync(string entityId, CancellationToken cancellationToken = default);
-        Task<object> GetRevenueSummaryAsync(string entityId, CancellationToken cancellationToken = default);
-        Task<object> AllocateProductionAsync(object allocationRequest, CancellationToken cancellationToken = default);
+        Task<List<ProductionData>> GetProductionDataAsync(string wellId, CancellationToken cancellationToken = default);
+        Task<ProductionData> SaveProductionDataAsync(ProductionData productionData, CancellationToken cancellationToken = default);
+        Task<RoyaltyCalculationResult> CalculateRoyaltyAsync(RoyaltyCalculationRequest request, CancellationToken cancellationToken = default);
+        Task<CostSummary> GetCostSummaryAsync(string entityId, CancellationToken cancellationToken = default);
+        Task<RevenueSummary> GetRevenueSummaryAsync(string entityId, CancellationToken cancellationToken = default);
+        Task<AllocationResult> AllocateProductionAsync(AllocationRequest allocationRequest, CancellationToken cancellationToken = default);
     }
 }
 

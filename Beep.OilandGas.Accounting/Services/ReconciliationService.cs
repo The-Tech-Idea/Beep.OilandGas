@@ -96,6 +96,30 @@ namespace Beep.OilandGas.Accounting.Services
             };
         }
 
+        public async Task<Beep.OilandGas.Accounting.Models.ReconciliationDashboardDTO> GetReconciliationDashboardAsync(DateTime? asOfDate = null)
+        {
+            var date = asOfDate ?? DateTime.Today;
+            var summaries = new List<AccountingModels.ReconciliationSummary>();
+
+            summaries.Add(await ReconcileAccountsReceivableAsync(date));
+            summaries.Add(await ReconcileAccountsPayableAsync(date));
+            summaries.Add(await ReconcileInventoryAsync(date));
+
+            var totalDiscrepancy = summaries.Sum(s => Math.Abs(s.Difference));
+            var modulesInSync = summaries.Count(s => s.Difference == 0);
+            var modulesOutOfSync = summaries.Count(s => s.Difference != 0);
+
+            return new Beep.OilandGas.Accounting.Models.ReconciliationDashboardDTO
+            {
+                AsOfDate = date,
+                Summaries = summaries,
+                OverallStatus = totalDiscrepancy == 0,
+                TotalDiscrepancy = totalDiscrepancy,
+                ModulesInSync = modulesInSync,
+                ModulesOutOfSync = modulesOutOfSync
+            };
+        }
+
         private async Task<decimal> GetArBalanceAsync(DateTime? asOfDate)
         {
             var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE");
@@ -151,12 +175,10 @@ namespace Beep.OilandGas.Accounting.Services
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(T);
-
+            
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, ConnectionName, tableName);
+                typeof(T), ConnectionName, tableName);
         }
 
         private string GetAccountId(string key, string fallback)

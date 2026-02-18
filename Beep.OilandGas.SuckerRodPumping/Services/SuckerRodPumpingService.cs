@@ -145,22 +145,28 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
         /// <summary>
         /// Analyzes pump performance with diagnosis of issues
         /// </summary>
-        public async Task<SuckerRodPumpPerformance> AnalyzePerformanceAsync(string pumpId)
+        public async Task<SuckerRodPumpPerformance> AnalyzePerformanceAsync(string pumpId, SuckerRodAnalyzeRequest request)
         {
-            if (string.IsNullOrWhiteSpace(pumpId))
-                throw new ArgumentException("Pump ID cannot be null or empty", nameof(pumpId));
+            if (string.IsNullOrWhiteSpace(pumpId)) throw new ArgumentException("Pump ID cannot be null or empty", nameof(pumpId));
+            if (request == null) throw new ArgumentNullException(nameof(request));
 
             _logger?.LogInformation("Analyzing sucker rod pump performance for pump {PumpId}", pumpId);
+
+            // 1. Calculate Loads (API 11L)
+            var loads = SuckerRodLoadCalculator.CalculateLoads(request.SystemProperties, request.RodString);
+
+            // 2. Calculate Power & Flow
+            var powerFlow = SuckerRodFlowRatePowerCalculator.CalculateFlowRateAndPower(request.SystemProperties, loads);
 
             var performance = new SuckerRodPumpPerformance
             {
                 PumpId = pumpId,
                 PerformanceDate = DateTime.UtcNow,
-                FlowRate = 50m, // Default estimated flow
-                Efficiency = 0.65m, // Typical SRP efficiency 60-70%
-                PowerConsumption = 5m, // Default estimated power (HP)
-                RodLoadPercentage = 75m, // Typical operating load %
-                Status = "Analyzed"
+                FlowRate = powerFlow.PRODUCTION_RATE,
+                Efficiency = powerFlow.SYSTEM_EFFICIENCY,
+                PowerConsumption = powerFlow.MOTOR_HORSEPOWER,
+                RodLoadPercentage = (loads.MAXIMUM_STRESS / 100000m) * 100m, // Assuming yield constraint or similar
+                Status = "Analyzed with API 11L"
             };
 
             return await Task.FromResult(performance);

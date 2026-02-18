@@ -1,3 +1,0 @@
-﻿Found 0 case-insensitive duplicates in same directory:
-
-

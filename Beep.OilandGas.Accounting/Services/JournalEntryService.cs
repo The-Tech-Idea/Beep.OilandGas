@@ -110,13 +110,7 @@ namespace Beep.OilandGas.Accounting.Services
                 };
 
                 // Insert entry header
-                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(JOURNAL_ENTRY);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "JOURNAL_ENTRY");
+                var repo = await GetRepoAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY");
 
                 await repo.InsertAsync(entry, userId);
 
@@ -307,13 +301,7 @@ namespace Beep.OilandGas.Accounting.Services
             _logger?.LogInformation("Getting GL entries for account {Account} from {StartDate} to {EndDate}",
                 glAccount, start.ToShortDateString(), end.ToShortDateString());
 
-            var metadata = await _metadata.GetTableMetadataAsync("GL_ENTRY");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(GL_ENTRY);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "GL_ENTRY");
+            var repo = await GetRepoAsync<GL_ENTRY>("GL_ENTRY", cn);
 
             var filters = new List<AppFilter>
             {
@@ -346,13 +334,7 @@ namespace Beep.OilandGas.Accounting.Services
             _logger?.LogInformation("Getting balance for GL account {Account} as of {Date}",
                 glAccount, asOfDate.ToShortDateString());
 
-            var metadata = await _metadata.GetTableMetadataAsync("GL_ENTRY");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(GL_ENTRY);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "GL_ENTRY");
+            var repo = await GetRepoAsync<GL_ENTRY>("GL_ENTRY", cn);
 
             var filters = new List<AppFilter>
             {
@@ -427,13 +409,7 @@ namespace Beep.OilandGas.Accounting.Services
                 entry.ROW_CHANGED_BY = userId;
                 entry.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(JOURNAL_ENTRY);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "JOURNAL_ENTRY");
+                var repo = await GetRepoAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY");
 
                 await repo.UpdateAsync(entry, userId);
 
@@ -493,13 +469,7 @@ namespace Beep.OilandGas.Accounting.Services
                 originalEntry.ROW_CHANGED_BY = userId;
                 originalEntry.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(JOURNAL_ENTRY);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "JOURNAL_ENTRY");
+                var repo = await GetRepoAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY");
 
                 await repo.UpdateAsync(originalEntry, userId);
 
@@ -524,13 +494,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(JOURNAL_ENTRY);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "JOURNAL_ENTRY");
+                var repo = await GetRepoAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY");
 
                 var entry = await repo.GetByIdAsync(journalEntryId);
                 return entry as JOURNAL_ENTRY;
@@ -549,13 +513,7 @@ namespace Beep.OilandGas.Accounting.Services
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY_LINE");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(JOURNAL_ENTRY_LINE);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "JOURNAL_ENTRY_LINE");
+                var repo = await GetRepoAsync<JOURNAL_ENTRY_LINE>("JOURNAL_ENTRY_LINE");
 
                 var filters = new List<AppFilter>
                 {
@@ -579,13 +537,7 @@ namespace Beep.OilandGas.Accounting.Services
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY_LINE");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(JOURNAL_ENTRY_LINE);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "JOURNAL_ENTRY_LINE");
+                var repo = await GetRepoAsync<JOURNAL_ENTRY_LINE>("JOURNAL_ENTRY_LINE");
 
                 int lineNumber = 1;
                 foreach (var item in lineItems)
@@ -616,13 +568,7 @@ namespace Beep.OilandGas.Accounting.Services
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("GL_ENTRY");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(GL_ENTRY);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "GL_ENTRY");
+                var repo = await GetRepoAsync<GL_ENTRY>("GL_ENTRY");
 
                 foreach (var item in lineItems)
                 {
@@ -676,6 +622,14 @@ namespace Beep.OilandGas.Accounting.Services
                 _logger?.LogError(ex, "Error generating entry number");
                 throw;
             }
+        }
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName = null)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), connectionName ?? ConnectionName, tableName);
         }
     }
 }

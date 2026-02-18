@@ -1,5 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data.Drilling;
+using Beep.OilandGas.Models.Data.ProductionOperations;
+using Beep.OilandGas.Models.Data.EnhancedRecovery;
 
 namespace Beep.OilandGas.Client.App.Services.Operations
 {
@@ -8,10 +11,10 @@ namespace Beep.OilandGas.Client.App.Services.Operations
     /// </summary>
     public interface IOperationsService
     {
-        Task<object> CreateDrillingOperationAsync(object request, CancellationToken cancellationToken = default);
-        Task<object> GetDrillingOperationAsync(string operationId, CancellationToken cancellationToken = default);
-        Task<object> CreateProductionOperationAsync(object request, CancellationToken cancellationToken = default);
-        Task<object> AnalyzeEnhancedRecoveryAsync(object request, CancellationToken cancellationToken = default);
+        Task<DrillingOperation> CreateDrillingOperationAsync(DrillingOperation request, CancellationToken cancellationToken = default);
+        Task<DrillingOperation> GetDrillingOperationAsync(string operationId, CancellationToken cancellationToken = default);
+        Task<ProductionOperation> CreateProductionOperationAsync(ProductionOperation request, CancellationToken cancellationToken = default);
+        Task<EnhancedRecoveryAnalysis> AnalyzeEnhancedRecoveryAsync(EnhancedRecoveryAnalysis request, CancellationToken cancellationToken = default);
     }
 }
 

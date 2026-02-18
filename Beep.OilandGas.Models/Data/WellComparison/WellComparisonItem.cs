@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
+using Beep.OilandGas.Models.Data.WellComparison;
+
 namespace Beep.OilandGas.Models.Data
 {
     public class WellComparisonItem : ModelEntityBase
@@ -52,13 +54,13 @@ namespace Beep.OilandGas.Models.Data
         }
 
         /// <summary>
-        /// Field values for this well (keyed by field name)
+        /// Field values for this well
         /// </summary>
-        public Dictionary<string, object> FieldValues { get; set; } = new Dictionary<string, object>();
+        public List<ComparisonValue> Values { get; set; } = new List<ComparisonValue>();
 
         /// <summary>
         /// Additional metadata for this well
         /// </summary>
-        public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
+        public List<ComparisonValue> Metadata { get; set; } = new List<ComparisonValue>();
     }
 }

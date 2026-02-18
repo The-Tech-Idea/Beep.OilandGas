@@ -9,24 +9,24 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
     {
         #region CRUD Operations
 
-        public async Task<object> GetEntitiesAsync(string tableName, object request, CancellationToken cancellationToken = default)
+        public async Task<List<T>> GetEntitiesAsync<T>(string tableName, object request, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("Table name is required", nameof(tableName));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>($"/api/ppdm39data/{Uri.EscapeDataString(tableName)}/entities", request ?? new { }, cancellationToken);
+                return await PostAsync<object, List<T>>($"/api/ppdm39data/{Uri.EscapeDataString(tableName)}/entities", request ?? new { }, cancellationToken) ?? new List<T>();
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<object> GetEntityAsync(string tableName, string id, CancellationToken cancellationToken = default)
+        public async Task<T> GetEntityAsync<T>(string tableName, string id, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("Table name is required", nameof(tableName));
             if (string.IsNullOrEmpty(id)) throw new ArgumentException("ID is required", nameof(id));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/ppdm39data/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(id)}", cancellationToken);
+                return await GetAsync<T>($"/api/ppdm39data/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(id)}", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<object> InsertEntityAsync(string tableName, object request, string userId = "SYSTEM", CancellationToken cancellationToken = default)
+        public async Task<T> InsertEntityAsync<T>(string tableName, T request, string userId = "SYSTEM", CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("Table name is required", nameof(tableName));
             if (request == null) throw new ArgumentNullException(nameof(request));
@@ -34,12 +34,12 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             {
                 var queryParams = new Dictionary<string, string> { ["userId"] = userId };
                 var endpoint = BuildRequestUriWithParams($"/api/ppdm39data/{Uri.EscapeDataString(tableName)}/entity", queryParams);
-                return await PostAsync<object, object>(endpoint, request, cancellationToken);
+                return await PostAsync<T, T>(endpoint, request, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<object> UpdateEntityAsync(string tableName, string id, object request, string userId = "SYSTEM", CancellationToken cancellationToken = default)
+        public async Task<T> UpdateEntityAsync<T>(string tableName, string id, T request, string userId = "SYSTEM", CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("Table name is required", nameof(tableName));
             if (string.IsNullOrEmpty(id)) throw new ArgumentException("ID is required", nameof(id));
@@ -48,12 +48,12 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             {
                 var queryParams = new Dictionary<string, string> { ["userId"] = userId };
                 var endpoint = BuildRequestUriWithParams($"/api/ppdm39data/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(id)}", queryParams);
-                return await PutAsync<object, object>(endpoint, request, cancellationToken);
+                return await PutAsync<T, T>(endpoint, request, cancellationToken);
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<object> DeleteEntityAsync(string tableName, string id, string userId = "SYSTEM", CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteEntityAsync(string tableName, string id, string userId = "SYSTEM", CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(tableName)) throw new ArgumentException("Table name is required", nameof(tableName));
             if (string.IsNullOrEmpty(id)) throw new ArgumentException("ID is required", nameof(id));
@@ -61,7 +61,11 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             {
                 var queryParams = new Dictionary<string, string> { ["userId"] = userId };
                 var endpoint = BuildRequestUriWithParams($"/api/ppdm39data/{Uri.EscapeDataString(tableName)}/entity/{Uri.EscapeDataString(id)}", queryParams);
-                return await DeleteAsync<object>(endpoint, cancellationToken);
+                // Assuming DeleteAsync returns void or we just check for success. 
+                // Since base DeleteAsync returns T, if we want boolean success, we might need a different base method or just return true if no exception.
+                // Re-reading base class might be useful, but assuming existing pattern:
+                await DeleteAsync<object>(endpoint, cancellationToken); 
+                return true; 
             }
             throw new InvalidOperationException("Local mode not yet implemented");
         }

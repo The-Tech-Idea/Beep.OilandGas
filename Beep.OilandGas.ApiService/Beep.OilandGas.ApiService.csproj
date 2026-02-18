@@ -16,13 +16,8 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
-    <PackageReference Include="TheTechIdea.Beep.AssemblyLoader" Version="2.0.24" />
-    <PackageReference Include="TheTechIdea.Beep.Container" Version="1.0.0.94" />
-    <PackageReference Include="TheTechIdea.Beep.Container.Model" Version="1.0.0.49" />
-    <PackageReference Include="TheTechIdea.Beep.Container.Shared" Version="1.0.1" />
     <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.63" />
     <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.120" />
-    <PackageReference Include="TheTechIdea.Beep.DMLogger" Version="2.0.3" />
     <PackageReference Include="TheTechIdea.Beep.DuckDBDataSourceCore" Version="1.0.45" />
     <PackageReference Include="TheTechIdea.Beep.JsonLoader" Version="2.0.4" />
     <PackageReference Include="TheTechIdea.Beep.MongoDBDataSourceCore" Version="1.0.56" />

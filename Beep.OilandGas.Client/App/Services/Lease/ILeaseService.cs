@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data.Lease;
+using LeaseModel = Beep.OilandGas.Models.Data.Lease.Lease;
 
 namespace Beep.OilandGas.Client.App.Services.Lease
 {
@@ -9,18 +11,18 @@ namespace Beep.OilandGas.Client.App.Services.Lease
     /// </summary>
     public interface ILeaseService
     {
-        Task<object> CreateLeaseAcquisitionAsync(object request, CancellationToken cancellationToken = default);
-        Task<object> GetLeaseTermsAsync(string leaseId, CancellationToken cancellationToken = default);
-        Task<object> GetRoyaltyObligationsAsync(string leaseId, CancellationToken cancellationToken = default);
-        Task<object> GetLeaseStatusAsync(string leaseId, CancellationToken cancellationToken = default);
-        Task<object> UpdateLeaseAsync(string leaseId, object request, CancellationToken cancellationToken = default);
-        Task<List<object>> GetLeasesByOperatorAsync(string operatorId, CancellationToken cancellationToken = default);
-        Task<object> GetLeaseExpirationAsync(string leaseId, CancellationToken cancellationToken = default);
-        Task<object> RenewLeaseAsync(string leaseId, object request, CancellationToken cancellationToken = default);
-        Task<object> TransferLeaseAsync(string leaseId, object transferRequest, CancellationToken cancellationToken = default);
-        Task<List<object>> GetLeasePaymentHistoryAsync(string leaseId, CancellationToken cancellationToken = default);
-        Task<object> CalculateBonusPaymentAsync(object request, CancellationToken cancellationToken = default);
-        Task<object> GetLeaseGeometryAsync(string leaseId, CancellationToken cancellationToken = default);
+        Task<LeaseModel> CreateLeaseAcquisitionAsync(LeaseModel request, CancellationToken cancellationToken = default);
+        Task<LeaseModel> GetLeaseTermsAsync(string leaseId, CancellationToken cancellationToken = default);
+        Task<List<Royalty>> GetRoyaltyObligationsAsync(string leaseId, CancellationToken cancellationToken = default);
+        Task<string> GetLeaseStatusAsync(string leaseId, CancellationToken cancellationToken = default);
+        Task<LeaseModel> UpdateLeaseAsync(string leaseId, LeaseModel request, CancellationToken cancellationToken = default);
+        Task<List<LeaseModel>> GetLeasesByOperatorAsync(string operatorId, CancellationToken cancellationToken = default);
+        Task<DateTime?> GetLeaseExpirationAsync(string leaseId, CancellationToken cancellationToken = default);
+        Task<LeaseModel> RenewLeaseAsync(string leaseId, LeaseModel request, CancellationToken cancellationToken = default);
+        Task<LeaseModel> TransferLeaseAsync(string leaseId, TransferLeaseRequest transferRequest, CancellationToken cancellationToken = default);
+        Task<List<LeasePayment>> GetLeasePaymentHistoryAsync(string leaseId, CancellationToken cancellationToken = default);
+        Task<BonusPaymentResult> CalculateBonusPaymentAsync(BonusPaymentRequest request, CancellationToken cancellationToken = default);
+        Task<LeaseGeometry> GetLeaseGeometryAsync(string leaseId, CancellationToken cancellationToken = default);
     }
 }
 

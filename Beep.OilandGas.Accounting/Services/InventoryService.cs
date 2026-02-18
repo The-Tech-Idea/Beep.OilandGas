@@ -86,15 +86,11 @@ namespace Beep.OilandGas.Accounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var metadata = await _metadata.GetTableMetadataAsync("INVENTORY_ITEM");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(INVENTORY_ITEM);
-
-                var repo = new PPDMGenericRepository(
+                var itemRepo = new PPDMGenericRepository(
                     _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "INVENTORY_ITEM");
+                    typeof(INVENTORY_ITEM), ConnectionName, "INVENTORY_ITEM");
 
-                await repo.InsertAsync(item, userId);
+                await itemRepo.InsertAsync(item, userId);
                 _logger?.LogInformation("Inventory item {ItemNumber} created", itemNumber);
                 return item;
             }
@@ -183,13 +179,7 @@ namespace Beep.OilandGas.Accounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var txnMetadata = await _metadata.GetTableMetadataAsync("INVENTORY_TRANSACTION");
-                var txnEntityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{txnMetadata.EntityTypeName}")
-                    ?? typeof(INVENTORY_TRANSACTION);
-
-                var txnRepo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    txnEntityType, ConnectionName, "INVENTORY_TRANSACTION");
+                var txnRepo = await GetRepoAsync<INVENTORY_TRANSACTION>("INVENTORY_TRANSACTION");
 
                 await txnRepo.InsertAsync(transaction, userId);
 
@@ -204,13 +194,7 @@ namespace Beep.OilandGas.Accounting.Services
                 item.ROW_CHANGED_BY = userId;
                 item.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-                var itemMetadata = await _metadata.GetTableMetadataAsync("INVENTORY_ITEM");
-                var itemEntityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{itemMetadata.EntityTypeName}")
-                    ?? typeof(INVENTORY_ITEM);
-
-                var itemRepo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    itemEntityType, ConnectionName, "INVENTORY_ITEM");
+                var itemRepo = await GetRepoAsync<INVENTORY_ITEM>("INVENTORY_ITEM");
 
                 await itemRepo.UpdateAsync(item, userId);
 
@@ -306,13 +290,7 @@ namespace Beep.OilandGas.Accounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var txnMetadata = await _metadata.GetTableMetadataAsync("INVENTORY_TRANSACTION");
-                var txnEntityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{txnMetadata.EntityTypeName}")
-                    ?? typeof(INVENTORY_TRANSACTION);
-
-                var txnRepo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    txnEntityType, ConnectionName, "INVENTORY_TRANSACTION");
+                var txnRepo = await GetRepoAsync<INVENTORY_TRANSACTION>("INVENTORY_TRANSACTION");
 
                 await txnRepo.InsertAsync(transaction, userId);
 
@@ -321,13 +299,7 @@ namespace Beep.OilandGas.Accounting.Services
                 item.ROW_CHANGED_BY = userId;
                 item.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-                var itemMetadata = await _metadata.GetTableMetadataAsync("INVENTORY_ITEM");
-                var itemEntityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{itemMetadata.EntityTypeName}")
-                    ?? typeof(INVENTORY_ITEM);
-
-                var itemRepo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    itemEntityType, ConnectionName, "INVENTORY_ITEM");
+                var itemRepo = await GetRepoAsync<INVENTORY_ITEM>("INVENTORY_ITEM");
 
                 await itemRepo.UpdateAsync(item, userId);
 
@@ -354,13 +326,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("INVENTORY_ITEM");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(INVENTORY_ITEM);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "INVENTORY_ITEM");
+                var repo = await GetRepoAsync<INVENTORY_ITEM>("INVENTORY_ITEM");
 
                 var item = await repo.GetByIdAsync(itemId);
                 return item as INVENTORY_ITEM;
@@ -379,13 +345,7 @@ namespace Beep.OilandGas.Accounting.Services
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("INVENTORY_ITEM");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(INVENTORY_ITEM);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "INVENTORY_ITEM");
+                var repo = await GetRepoAsync<INVENTORY_ITEM>("INVENTORY_ITEM");
 
                 var filters = new List<AppFilter>
                 {
@@ -412,13 +372,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("INVENTORY_TRANSACTION");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(INVENTORY_TRANSACTION);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "INVENTORY_TRANSACTION");
+                var repo = await GetRepoAsync<INVENTORY_TRANSACTION>("INVENTORY_TRANSACTION");
 
                 var filters = new List<AppFilter>
                 {
@@ -444,6 +398,15 @@ namespace Beep.OilandGas.Accounting.Services
             // Default: Weighted Average Cost
             decimal avgCost = item.UNIT_COST ?? 0m;
             return quantityUsed * avgCost;
+        }
+
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), ConnectionName, tableName);
         }
 
         private string GetAccountId(string key, string fallback)

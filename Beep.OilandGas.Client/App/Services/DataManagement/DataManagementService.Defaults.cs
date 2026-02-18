@@ -32,7 +32,8 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 if (!string.IsNullOrEmpty(userId))
                     queryParams["userId"] = userId;
 
-                return await GetAsync<string?>("/api/datamanagement/defaults/value", queryParams, cancellationToken);
+                var endpoint = BuildRequestUriWithParams("/api/datamanagement/defaults/value", queryParams);
+                return await GetAsync<string?>(endpoint, cancellationToken);
             }
 
             throw new InvalidOperationException("Local mode not yet implemented");
@@ -60,7 +61,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     description
                 };
 
-                await PostAsync<object, object>("/api/datamanagement/defaults/value", request, (Dictionary<string, string>?)cancellationToken);
+                await PostAsync<object, object>("/api/datamanagement/defaults/value", request, cancellationToken);
             }
             else
             {
@@ -85,7 +86,8 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 if (!string.IsNullOrEmpty(userId))
                     queryParams["userId"] = userId;
 
-                return await GetAsync<Dictionary<string, string>>("/api/datamanagement/defaults/category", queryParams, cancellationToken) 
+                var endpoint = BuildRequestUriWithParams("/api/datamanagement/defaults/category", queryParams);
+                return await GetAsync<Dictionary<string, string>>(endpoint, cancellationToken) 
                     ?? new Dictionary<string, string>();
             }
 
@@ -106,7 +108,8 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 if (!string.IsNullOrEmpty(userId))
                     queryParams["userId"] = userId;
 
-                return await GetAsync<Dictionary<string, string>>("/api/datamanagement/defaults/database", queryParams, cancellationToken) 
+                var endpoint = BuildRequestUriWithParams("/api/datamanagement/defaults/database", queryParams);
+                return await GetAsync<Dictionary<string, string>>(endpoint, cancellationToken) 
                     ?? new Dictionary<string, string>();
             }
 
@@ -128,7 +131,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     userId
                 };
 
-                await PostAsync<object, object>("/api/datamanagement/defaults/initialize", request, (Dictionary<string, string>?)cancellationToken);
+                await PostAsync<object, object>("/api/datamanagement/defaults/initialize", request, cancellationToken);
             }
             else
             {
@@ -151,7 +154,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     userId
                 };
 
-                await PostAsync<object, object>("/api/datamanagement/defaults/reset", request, (Dictionary<string, string>?)cancellationToken);
+                await PostAsync<object, object>("/api/datamanagement/defaults/reset", request, cancellationToken);
             }
             else
             {
@@ -163,7 +166,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
         {
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                return await GetAsync<Dictionary<string, string>>("/api/datamanagement/defaults/standard", (Dictionary<string, string>?)null, cancellationToken) 
+                return await GetAsync<Dictionary<string, string>>("/api/datamanagement/defaults/standard", cancellationToken) 
                     ?? new Dictionary<string, string>();
             }
 

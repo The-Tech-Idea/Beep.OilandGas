@@ -4,10 +4,6 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
-using Beep.OilandGas.Models.Data.FlashCalculations;
-using Beep.OilandGas.Models.Data.NodalAnalysis;
-using Beep.OilandGas.Models.Data.EconomicAnalysis;
-
 namespace Beep.OilandGas.Client.App.Services.Calculations
 {
     /// <summary>

@@ -118,12 +118,10 @@ namespace Beep.OilandGas.Accounting.Services
         private async Task<List<GL_ENTRY>> GetGlEntriesAsync(DateTime start, DateTime end, string cn, string? bookId)
         {
             var metadata = await _metadata.GetTableMetadataAsync("GL_ENTRY");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(GL_ENTRY);
-
+            
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "GL_ENTRY");
+                typeof(GL_ENTRY), cn, "GL_ENTRY");
 
             var filters = new List<AppFilter>
             {

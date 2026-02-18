@@ -317,6 +317,193 @@ namespace Beep.OilandGas.Accounting.Services
             return entry;
         }
 
+        public async Task<LEASE_ACCOUNTING_ENTRY> RemeasureLeaseAsync(
+            string leaseId,
+            DateTime remeasurementDate,
+            decimal newDiscountRate,
+            string userId,
+            string? connectionName = null)
+        {
+            if (string.IsNullOrWhiteSpace(leaseId))
+                throw new ArgumentNullException(nameof(leaseId));
+            if (newDiscountRate <= 0m)
+                throw new InvalidOperationException("New discount rate must be positive");
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentNullException(nameof(userId));
+
+            var cn = connectionName ?? ConnectionName;
+            var lease = await GetLeaseAsync(leaseId, cn);
+            if (lease == null)
+                throw new InvalidOperationException($"Lease not found: {leaseId}");
+
+            var lastEntry = await GetLatestLeaseEntryAsync(leaseId, cn);
+            var currentLiability = lastEntry?.LEASE_LIABILITY ?? 0m;
+            var currentRou = lastEntry?.ROU_ASSET ?? 0m;
+
+            var allPayments = await GetLeasePaymentsAsync(leaseId, cn);
+            var futurePayments = allPayments.Where(p => p.PAYMENT_DATE > remeasurementDate).ToList();
+            
+            var newLiability = CalculatePresentValue(futurePayments, remeasurementDate, newDiscountRate);
+            var adjustment = newLiability - currentLiability;
+
+            lease.DISCOUNT_RATE = newDiscountRate;
+            lease.ROW_CHANGED_BY = userId;
+            lease.ROW_CHANGED_DATE = DateTime.UtcNow;
+            var leaseRepo = await GetRepoAsync<LEASE_CONTRACT>("LEASE_CONTRACT", cn);
+            await leaseRepo.UpdateAsync(lease, userId);
+
+            var entry = await CreateLeaseAccountingEntryAsync(
+                leaseId,
+                remeasurementDate,
+                currentRou + adjustment,
+                newLiability,
+                lease.CURRENCY_CODE,
+                userId,
+                cn);
+
+            var debitAccount = adjustment > 0 
+                ? GetAccountId(AccountMappingKeys.RightOfUseAsset, DefaultGlAccounts.RightOfUseAsset)
+                : GetAccountId(AccountMappingKeys.LeaseLiability, DefaultGlAccounts.LeaseLiability);
+            
+            var creditAccount = adjustment > 0
+                ? GetAccountId(AccountMappingKeys.LeaseLiability, DefaultGlAccounts.LeaseLiability)
+                : GetAccountId(AccountMappingKeys.RightOfUseAsset, DefaultGlAccounts.RightOfUseAsset);
+
+            await _basisPosting.PostBalancedEntryByAccountAsync(
+                debitAccount,
+                creditAccount,
+                Math.Abs(adjustment),
+                $"Lease remeasurement {leaseId} (CPI/Rate Change)",
+                userId,
+                cn);
+
+            _logger?.LogInformation("Remeasured lease {LeaseId}. Adjustment: {Adjustment}", leaseId, adjustment);
+            return entry;
+        }
+
+        public async Task<LEASE_ACCOUNTING_ENTRY> ModifyLeaseAsync(
+            string leaseId,
+            DateTime modificationDate,
+            int newTermMonths,
+            decimal newDiscountRate,
+            string userId,
+            string? connectionName = null)
+        {
+             if (string.IsNullOrWhiteSpace(leaseId))
+                throw new ArgumentNullException(nameof(leaseId));
+            if (newTermMonths <= 0)
+                throw new InvalidOperationException("New term must be positive");
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentNullException(nameof(userId));
+
+            var cn = connectionName ?? ConnectionName;
+            var lease = await GetLeaseAsync(leaseId, cn);
+            if (lease == null)
+                throw new InvalidOperationException($"Lease not found: {leaseId}");
+
+            var lastEntry = await GetLatestLeaseEntryAsync(leaseId, cn);
+            var currentLiability = lastEntry?.LEASE_LIABILITY ?? 0m;
+            var currentRou = lastEntry?.ROU_ASSET ?? 0m;
+
+            lease.TERM_MONTHS = newTermMonths;
+            lease.DISCOUNT_RATE = newDiscountRate;
+            lease.ROW_CHANGED_BY = userId;
+            lease.ROW_CHANGED_DATE = DateTime.UtcNow;
+            
+            var leaseRepo = await GetRepoAsync<LEASE_CONTRACT>("LEASE_CONTRACT", cn);
+            await leaseRepo.UpdateAsync(lease, userId);
+
+            var allPayments = await GetLeasePaymentsAsync(leaseId, cn);
+            var futurePayments = allPayments.Where(p => p.PAYMENT_DATE > modificationDate).ToList();
+            var newLiability = CalculatePresentValue(futurePayments, modificationDate, newDiscountRate);
+
+            var adjustment = newLiability - currentLiability;
+
+            var entry = await CreateLeaseAccountingEntryAsync(
+                leaseId,
+                modificationDate,
+                currentRou + adjustment,
+                newLiability,
+                lease.CURRENCY_CODE,
+                userId,
+                cn);
+
+             var debitAccount = adjustment > 0 
+                ? GetAccountId(AccountMappingKeys.RightOfUseAsset, DefaultGlAccounts.RightOfUseAsset)
+                : GetAccountId(AccountMappingKeys.LeaseLiability, DefaultGlAccounts.LeaseLiability);
+            
+            var creditAccount = adjustment > 0
+                ? GetAccountId(AccountMappingKeys.LeaseLiability, DefaultGlAccounts.LeaseLiability)
+                : GetAccountId(AccountMappingKeys.RightOfUseAsset, DefaultGlAccounts.RightOfUseAsset);
+
+            await _basisPosting.PostBalancedEntryByAccountAsync(
+                debitAccount,
+                creditAccount,
+                Math.Abs(adjustment),
+                $"Lease modification {leaseId}",
+                userId,
+                cn);
+
+            _logger?.LogInformation("Modified lease {LeaseId}. Term: {Term}, Adjustment: {Adjustment}", leaseId, newTermMonths, adjustment);
+            return entry;
+        }
+
+        public async Task<List<LeaseMaturityBucket>> GenerateMaturityAnalysisAsync(string? connectionName = null)
+        {
+            var cn = connectionName ?? ConnectionName;
+            var leaseRepo = await GetRepoAsync<LEASE_CONTRACT>("LEASE_CONTRACT", cn);
+            
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "STATUS", Operator = "=", FilterValue = "ACTIVE" },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = _defaults.GetActiveIndicatorYes() }
+            };
+
+            var leases = (await leaseRepo.GetAsync(filters)).Cast<LEASE_CONTRACT>().ToList();
+            var buckets = new List<LeaseMaturityBucket>();
+
+            var today = DateTime.Today;
+
+            foreach (var lease in leases)
+            {
+                var payments = await GetLeasePaymentsAsync(lease.LEASE_ID, cn);
+                var futurePayments = payments.Where(p => p.PAYMENT_DATE >= today).ToList();
+
+                foreach (var p in futurePayments)
+                {
+                    if (!p.PAYMENT_DATE.HasValue) continue;
+
+                    var yearDiff = (p.PAYMENT_DATE.Value - today).TotalDays / 365.0;
+                    string bucket;
+
+                    if (yearDiff <= 1) bucket = "Year 1";
+                    else if (yearDiff <= 2) bucket = "Year 2";
+                    else if (yearDiff <= 3) bucket = "Year 3";
+                    else if (yearDiff <= 4) bucket = "Year 4";
+                    else if (yearDiff <= 5) bucket = "Year 5";
+                    else bucket = "Thereafter";
+
+                    var existing = buckets.FirstOrDefault(b => b.Bucket == bucket);
+                    if (existing == null)
+                    {
+                        existing = new LeaseMaturityBucket { Bucket = bucket, TotalUndiscountedCashFlows = 0m };
+                        buckets.Add(existing);
+                    }
+                    existing.TotalUndiscountedCashFlows += p.PAYMENT_AMOUNT ?? 0m;
+                    existing.LeaseCount++;
+                }
+            }
+
+            return buckets.OrderBy(b => b.Bucket).ToList();
+        }
+
+        public class LeaseMaturityBucket
+        {
+            public string Bucket { get; set; } = string.Empty;
+            public decimal TotalUndiscountedCashFlows { get; set; }
+            public int LeaseCount { get; set; }
+        }
+
         private async Task<LEASE_CONTRACT?> GetLeaseAsync(string leaseId, string cn)
         {
             var repo = await GetRepoAsync<LEASE_CONTRACT>("LEASE_CONTRACT", cn);
@@ -430,12 +617,10 @@ namespace Beep.OilandGas.Accounting.Services
         {
             var cn = connectionName ?? ConnectionName;
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(T);
 
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                typeof(T), cn, tableName);
         }
 
         private string GetAccountId(string key, string fallback)

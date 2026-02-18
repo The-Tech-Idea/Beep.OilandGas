@@ -1,8 +1,0 @@
-C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Models\Core\Interfaces\IGasPropertiesService.cs(48,65): error CS0234: The type or namespace name 'GasComposition' does not exist in the namespace 'Beep.OilandGas.Models.Data' (are you missing an assembly reference?) [C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj::TargetFramework=net10.0]
-C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Models\Core\Interfaces\IGasPropertiesService.cs(55,41): error CS0234: The type or namespace name 'GasComposition' does not exist in the namespace 'Beep.OilandGas.Models.Data' (are you missing an assembly reference?) [C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj::TargetFramework=net10.0]
-
-Build FAILED.
-    34 Warning(s)
-    2 Error(s)
-
-Time Elapsed 00:00:05.24

@@ -40,6 +40,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
+		<ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
 	</ItemGroup>
 
 </Project>

@@ -112,13 +112,7 @@ namespace Beep.OilandGas.Accounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var metadata = await _metadata.GetTableMetadataAsync("AP_PAYMENT");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(AP_PAYMENT);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "AP_PAYMENT");
+                var repo = await GetRepoAsync<AP_PAYMENT>("AP_PAYMENT");
 
                 await repo.InsertAsync(payment, userId);
 
@@ -150,13 +144,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("AP_PAYMENT");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(AP_PAYMENT);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "AP_PAYMENT");
+                var repo = await GetRepoAsync<AP_PAYMENT>("AP_PAYMENT");
 
                 var filters = new List<AppFilter>
                 {
@@ -201,13 +189,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("AP_PAYMENT");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(AP_PAYMENT);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "AP_PAYMENT");
+                var repo = await GetRepoAsync<AP_PAYMENT>("AP_PAYMENT");
 
                 var payment = await repo.GetByIdAsync(paymentId);
                 return payment as AP_PAYMENT;
@@ -226,13 +208,7 @@ namespace Beep.OilandGas.Accounting.Services
         {
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("AP_PAYMENT");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(AP_PAYMENT);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "AP_PAYMENT");
+                var repo = await GetRepoAsync<AP_PAYMENT>("AP_PAYMENT");
 
                 var filters = new List<AppFilter>
                 {
@@ -266,6 +242,14 @@ namespace Beep.OilandGas.Accounting.Services
                 _logger?.LogError(ex, "Error generating payment number");
                 throw;
             }
+        }
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName = null)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), connectionName ?? ConnectionName, tableName);
         }
     }
 }

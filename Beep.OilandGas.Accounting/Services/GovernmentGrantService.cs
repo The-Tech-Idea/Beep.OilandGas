@@ -209,12 +209,10 @@ namespace Beep.OilandGas.Accounting.Services
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(T);
-
+            
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, tableName);
+                typeof(T), cn, tableName);
         }
 
         private string GetAccountId(string key, string fallback)

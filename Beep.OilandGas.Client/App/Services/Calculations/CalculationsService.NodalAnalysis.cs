@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
-using Beep.OilandGas.Models.Data.NodalAnalysis;
 
 namespace Beep.OilandGas.Client.App.Services.Calculations
 {

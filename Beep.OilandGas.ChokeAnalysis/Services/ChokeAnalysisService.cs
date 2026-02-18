@@ -1,10 +1,13 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ChokeAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ChokeAnalysis.Calculations;
 using Beep.OilandGas.ChokeAnalysis.Validation;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PPDM39.Core;
 
 namespace Beep.OilandGas.ChokeAnalysis.Services
 {
@@ -14,11 +17,68 @@ namespace Beep.OilandGas.ChokeAnalysis.Services
     /// </summary>
     public partial class ChokeAnalysisService : IChokeAnalysisService
     {
-        private readonly ILogger<ChokeAnalysisService> _logger;
+        private readonly ILogger<ChokeAnalysisService>? _logger;
 
-        public ChokeAnalysisService(ILogger<ChokeAnalysisService> logger = null)
+        public ChokeAnalysisService(ILogger<ChokeAnalysisService>? logger = null)
         {
             _logger = logger;
+        }
+
+        /// <summary>
+        /// Calculates gas flow rate through a downhole choke using PPDM entities.
+        /// </summary>
+        public async Task<CHOKE_FLOW_RESULT> CalculateDownholeChokeFlowAsync(
+            WELL well,
+            WELL_TEST_FLOW_MEAS? flowMeas = null,
+            WELL_TUBULAR? tubing = null,
+            WELL_PRESSURE? pressure = null)
+        {
+            return await Task.Run(async () =>
+            {
+                try
+                {
+                    _logger?.LogInformation("Calculating downhole choke flow from PPDM entities for Well: {UWI}", well.UWI);
+
+                    // 1. Construct CHOKE_PROPERTIES
+                    var chokeDiameter = flowMeas != null && flowMeas.SURFACE_CHOKE_DIAMETER > 0 
+                        ? (decimal)flowMeas.SURFACE_CHOKE_DIAMETER 
+                        : 0.5m; // Default or throw? Using 0.5 as explicit default for now if missing.
+
+                    var choke = new CHOKE_PROPERTIES
+                    {
+                        CHOKE_DIAMETER = chokeDiameter,
+                        CHOKE_TYPE = ChokeType.Bean.ToString(), // Default converted to string
+                        DISCHARGE_COEFFICIENT = ValueRetrievers.GetDefaultDischargeCoefficient(well)
+                    };
+
+                    // 2. Construct GAS_CHOKE_PROPERTIES
+                    // We need to handle potential nulls or missing data gracefully or throw meaningful errors
+                    // Using ValueRetrievers helpers which might throw InvalidOperationException if data is missing, which is good.
+                    
+                    var gasProperties = new GAS_CHOKE_PROPERTIES
+                    {
+                        // Using specific gravity from Well if available
+                        GAS_SPECIFIC_GRAVITY = ValueRetrievers.GetGasSpecificGravityDecimal(well),
+                         // Temperature at wellhead
+                        TEMPERATURE = ValueRetrievers.GetWellheadTemperatureInRankine(well, pressure),
+                         // Upstream Pressure (Wellhead Pressure)
+                        UPSTREAM_PRESSURE = ValueRetrievers.GetWellheadPressureDecimal(well, pressure),
+                         // Downstream Pressure (Estimated as 80% if not provided otherwise)
+                        DOWNSTREAM_PRESSURE = ValueRetrievers.GetDownstreamPressure80Percent(well, pressure),
+                        
+                        Z_FACTOR = 0.9m, // Default or calculate?
+                        FLOW_RATE = 0m // To be calculated
+                    };
+
+                    // 3. Call core calculation
+                    return await CalculateDownholeChokeFlowAsync(choke, gasProperties);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "Error calculating downhole choke flow from PPDM entities");
+                    throw;
+                }
+            });
         }
 
         /// <summary>

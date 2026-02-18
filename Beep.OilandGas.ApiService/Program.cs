@@ -153,12 +153,16 @@ builder.Services.AddAuthentication(options =>
 // REGISTER BEEP FRAMEWORK SERVICES
 // ============================================
 // Use the modern BeepService registration pattern
-var beepService = builder.Services.AddBeepServices(options =>
+// ============================================
+// REGISTER BEEP FRAMEWORK SERVICES
+// ============================================
+// Use the modern BeepService registration pattern for Web API
+builder.Services.AddBeepForWeb(options =>
 {
     options.DirectoryPath = builder.Configuration["Beep:ConfigPath"] ?? Path.Combine(AppContext.BaseDirectory, "Config");
-    options.ContainerName = builder.Configuration["Beep:ContainerName"] ?? "PPDM39ApiContainer";
+    options.AppRepoName = builder.Configuration["Beep:ContainerName"] ?? "PPDM39ApiContainer";
     options.ConfigType = BeepConfigType.DataConnector;
-    options.ServiceLifetime = ServiceLifetime.Singleton;
+    // ServiceLifetime is Scoped by default for Web
     options.EnableAutoMapping = true;
     options.EnableAssemblyLoading = false; // We'll load assemblies after app startup
     options.EnableConfigurationValidation = true;
@@ -167,13 +171,13 @@ var beepService = builder.Services.AddBeepServices(options =>
 // Log Beep configuration
 Log.Information("Beep Service Configuration: {Summary}", BeepServiceRegistration.GetConfigurationSummary());
 
-// Access DMEEditor and related services from BeepService
-builder.Services.AddSingleton(sp => beepService.DMEEditor);
-builder.Services.AddSingleton(sp => beepService.Config_editor);
-builder.Services.AddSingleton(sp => beepService.lg);
-builder.Services.AddSingleton(sp => beepService.util);
-builder.Services.AddSingleton(sp => beepService.Erinfo);
-builder.Services.AddSingleton(sp => beepService.LLoader);
+// Access DMEEditor and related services from BeepService via DI (Scoped)
+builder.Services.AddScoped(sp => sp.GetRequiredService<IBeepService>().DMEEditor);
+builder.Services.AddScoped(sp => sp.GetRequiredService<IBeepService>().Config_editor);
+builder.Services.AddScoped(sp => sp.GetRequiredService<IBeepService>().lg);
+builder.Services.AddScoped(sp => sp.GetRequiredService<IBeepService>().util);
+builder.Services.AddScoped(sp => sp.GetRequiredService<IBeepService>().Erinfo);
+builder.Services.AddScoped(sp => sp.GetRequiredService<IBeepService>().LLoader);
 
 // ============================================
 // REGISTER PPDM39 SERVICES
@@ -1685,5 +1689,8 @@ app.MapGet("/api/auth-check", (HttpContext context) =>
 .WithName("AuthCheck");
 
 Log.Information("Beep Oil and Gas PPDM39 API started successfully");
+
+// Add BeepForWeb middleware for connection cleanup
+app.UseBeepForWeb();
 
 app.Run();

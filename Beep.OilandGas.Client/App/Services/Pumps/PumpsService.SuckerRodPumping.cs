@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
-using Beep.OilandGas.Models.Data.SuckerRodPumping;
 
 namespace Beep.OilandGas.Client.App.Services.Pumps
 {

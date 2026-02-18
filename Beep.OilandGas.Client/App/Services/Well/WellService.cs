@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.WellComparison;
 
 namespace Beep.OilandGas.Client.App.Services.Well
 {
@@ -16,26 +18,26 @@ namespace Beep.OilandGas.Client.App.Services.Well
         {
         }
 
-        public async Task<object> CompareWellsAsync(object request, CancellationToken cancellationToken = default)
+        public async Task<WellComparisonData> CompareWellsAsync(CompareWellsRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/well/compare", request, cancellationToken);
+                return await PostAsync<CompareWellsRequest, WellComparisonData>("/api/well/compare", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<object> CompareWellsMultiSourceAsync(object request, CancellationToken cancellationToken = default)
+        public async Task<WellComparisonData> CompareWellsMultiSourceAsync(CompareWellsMultiSourceRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await PostAsync<object, object>("/api/well/compare-multi-source", request, cancellationToken);
+                return await PostAsync<CompareWellsMultiSourceRequest, WellComparisonData>("/api/well/compare-multi-source", request, cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<List<object>> GetComparisonFieldsAsync(CancellationToken cancellationToken = default)
+        public async Task<List<ComparisonField>> GetComparisonFieldsAsync(CancellationToken cancellationToken = default)
         {
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<List<object>>("/api/well/comparison-fields", cancellationToken);
+                return await GetAsync<List<ComparisonField>>("/api/well/comparison-fields", cancellationToken);
             throw new InvalidOperationException("Local mode not yet implemented");
         }
     }

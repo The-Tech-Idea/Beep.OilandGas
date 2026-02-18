@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.AccessControl;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.Client.App.Services.AccessControl
@@ -38,20 +41,18 @@ namespace Beep.OilandGas.Client.App.Services.AccessControl
             return await localService.CheckAssetAccessAsync(userId, assetId, assetType);
         }
 
-        public async Task<List<object>> GetUserAccessibleAssetsAsync(string userId, string? assetType = null, CancellationToken cancellationToken = default)
+        public async Task<List<AssetAccess>> GetUserAccessibleAssetsAsync(string userId, string? assetType = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(userId)) throw new ArgumentException("User ID is required", nameof(userId));
 
             if (AccessMode == ServiceAccessMode.Remote)
             {
-                var queryParams = new Dictionary<string, string> { ["userId"] = userId };
+                var queryParams = new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(assetType)) queryParams["assetType"] = assetType;
-                var endpoint = BuildRequestUriWithParams("/api/accesscontrol/accessible-assets", queryParams);
-                return await GetAsync<List<object>>(endpoint, cancellationToken);
+                var endpoint = BuildRequestUriWithParams($"/api/ppdm39access/user/{Uri.EscapeDataString(userId)}/assets", queryParams);
+                return await GetAsync<List<AssetAccess>>(endpoint, cancellationToken);
             }
-            var localService = GetLocalService<IAccessControlLocalService>();
-            if (localService == null) throw new InvalidOperationException("IAccessControlLocalService not available");
-            return await localService.GetUserAccessibleAssetsAsync(userId, assetType);
+            throw new InvalidOperationException("Local mode not yet implemented");
         }
 
         public async Task<List<string>> GetUserRolesAsync(string userId, CancellationToken cancellationToken = default)

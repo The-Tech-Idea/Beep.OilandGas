@@ -38,6 +38,36 @@ namespace Beep.OilandGas.WellTestAnalysis
         }
 
         /// <summary>
+        /// Analyzes a drawdown test (constant rate).
+        /// </summary>
+        public static WELL_TEST_ANALYSIS_RESULT AnalyzeDrawdown(WELL_TEST_DATA data)
+        {
+            WellTestDataValidator.Validate(data);
+            return DrawdownAnalysis.AnalyzeDrawdown(data);
+        }
+
+        /// <summary>
+        /// Analyzes a gas well build-up test using Pseudo-Pressure m(p) method.
+        /// </summary>
+        /// <param name="data">Well test data.</param>
+        /// <param name="gasGravity">Gas specific gravity (Air=1.0).</param>
+        /// <param name="reservoirTemperature">Reservoir temperature in Rankin.</param>
+        /// <param name="n2">Mole fraction of Nitrogen (optional).</param>
+        /// <param name="co2">Mole fraction of CO2 (optional).</param>
+        /// <param name="h2s">Mole fraction of H2S (optional).</param>
+        public static WELL_TEST_ANALYSIS_RESULT AnalyzeGasBuildUp(
+            WELL_TEST_DATA data, 
+            double gasGravity, 
+            double reservoirTemperature,
+            double n2 = 0,
+            double co2 = 0,
+            double h2s = 0)
+        {
+            WellTestDataValidator.Validate(data);
+            return GasWellAnalysis.AnalyzeGasBuildUp(data, gasGravity, reservoirTemperature, n2, co2, h2s);
+        }
+
+        /// <summary>
         /// Identifies reservoir model from derivative signature.
         /// </summary>
         public static ReservoirModel IdentifyReservoirModel(

@@ -61,6 +61,6 @@ namespace Beep.OilandGas.Models.Data.LifeCycle
             set { SetProperty(ref StatusValue, value); }
 
         }
-        public Dictionary<string, object>? Properties { get; set; }
+        public List<WellProperty> Properties { get; set; } = new List<WellProperty>();
     }
 }

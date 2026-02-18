@@ -3,6 +3,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
+using System.Collections.Generic;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data.FieldOrchestrator;
+using Beep.OilandGas.Models.Data.EnhancedRecovery;
+
 namespace Beep.OilandGas.Client.App.Services.Field
 {
     /// <summary>
@@ -37,31 +43,31 @@ namespace Beep.OilandGas.Client.App.Services.Field
             return await localService.GetCurrentFieldAsync();
         }
 
-        public async Task<object> GetFieldDetailsAsync(string fieldId, CancellationToken cancellationToken = default)
+        public async Task<FieldOrchestratorResponse> GetFieldDetailsAsync(string fieldId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(fieldId)) throw new ArgumentException("Field ID is required", nameof(fieldId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/fieldorchestrator/field/{Uri.EscapeDataString(fieldId)}", cancellationToken);
+                return await GetAsync<FieldOrchestratorResponse>($"/api/fieldorchestrator/field/{Uri.EscapeDataString(fieldId)}", cancellationToken);
             var localService = GetLocalService<IFieldLocalService>();
             if (localService == null) throw new InvalidOperationException("IFieldLocalService not available");
             return await localService.GetFieldDetailsAsync(fieldId);
         }
 
-        public async Task<object> GetFieldWellsAsync(string fieldId, CancellationToken cancellationToken = default)
+        public async Task<List<WELL>> GetFieldWellsAsync(string fieldId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(fieldId)) throw new ArgumentException("Field ID is required", nameof(fieldId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/fieldorchestrator/field/{Uri.EscapeDataString(fieldId)}/wells", cancellationToken);
+                return await GetAsync<List<WELL>>($"/api/fieldorchestrator/field/{Uri.EscapeDataString(fieldId)}/wells", cancellationToken);
             var localService = GetLocalService<IFieldLocalService>();
             if (localService == null) throw new InvalidOperationException("IFieldLocalService not available");
             return await localService.GetFieldWellsAsync(fieldId);
         }
 
-        public async Task<object> GetFieldProductionSummaryAsync(string fieldId, CancellationToken cancellationToken = default)
+        public async Task<FieldProductionSummary> GetFieldProductionSummaryAsync(string fieldId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(fieldId)) throw new ArgumentException("Field ID is required", nameof(fieldId));
             if (AccessMode == ServiceAccessMode.Remote)
-                return await GetAsync<object>($"/api/fieldorchestrator/field/{Uri.EscapeDataString(fieldId)}/production-summary", cancellationToken);
+                return await GetAsync<FieldProductionSummary>($"/api/fieldorchestrator/field/{Uri.EscapeDataString(fieldId)}/production-summary", cancellationToken);
             var localService = GetLocalService<IFieldLocalService>();
             if (localService == null) throw new InvalidOperationException("IFieldLocalService not available");
             return await localService.GetFieldProductionSummaryAsync(fieldId);
@@ -72,9 +78,9 @@ namespace Beep.OilandGas.Client.App.Services.Field
     {
         Task SetCurrentFieldAsync(string fieldId);
         Task<string?> GetCurrentFieldAsync();
-        Task<object> GetFieldDetailsAsync(string fieldId);
-        Task<object> GetFieldWellsAsync(string fieldId);
-        Task<object> GetFieldProductionSummaryAsync(string fieldId);
+        Task<FieldOrchestratorResponse> GetFieldDetailsAsync(string fieldId);
+        Task<List<WELL>> GetFieldWellsAsync(string fieldId);
+        Task<FieldProductionSummary> GetFieldProductionSummaryAsync(string fieldId);
     }
 }
 

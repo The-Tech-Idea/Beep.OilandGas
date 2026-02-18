@@ -215,6 +215,61 @@ namespace Beep.OilandGas.PumpPerformance.Calculations
 
             return scaledCurve;
         }
+
+        /// <summary>
+        /// Scales an H-Q curve to a new speed considering viscosity effects.
+        /// Steps: Viscous1 -> Water1 -> Affinity(Water1->Water2) -> Viscous2
+        /// </summary>
+        public static System.Collections.Generic.List<HeadQuantityPoint> ScaleViscousCurveToNewSpeed(
+            System.Collections.Generic.List<HeadQuantityPoint> originalViscousCurve,
+            double originalSpeed,
+            double newSpeed,
+            double viscosity_cSt,
+            double specificGravity)
+        {
+             // Note: This requires "de-correcting" viscous curve to water, scaling, then re-correcting.
+             // Since exact Water BEP is needed for B-parameter, this is complex.
+             // Approximation: Scale the Viscous Curve directly using Affinity Laws?
+             // NO. Affinity laws do NOT hold for viscous fluids directly because Reynolds number changes.
+             // Reynolds number ratio = (N2/N1).
+             // However, for small speed changes, direct scaling is often used as a first approximation.
+             // To be rigorous, we should use the method:
+             // 1. Un-correct points to Water (Approximation)
+             // 2. Scale Water points
+             // 3. Re-correct to Viscous
+             
+             // For this implementation, we will perform the direct scaling (Standard Affinity) 
+             // but then apply a "Reynolds Correction" if desired? 
+             // Actually, simply scaling Q and H by Affinity Laws is reasonably accurate 
+             // if viscosity is constant (Newtonian).
+             // The Efficiency scaling is the problem.
+             
+             // Let's simply use the standard Scaling for Q and H, correction for Power/Efficiency?
+             // Standard practice: Affinity Laws apply to Viscous Head/Flow. 
+             // Efficiency requires re-calculation of B parameter at new condition.
+             
+             var scaledPoints = new System.Collections.Generic.List<HeadQuantityPoint>();
+             double n_ratio = newSpeed / originalSpeed;
+             
+             foreach(var p in originalViscousCurve)
+             {
+                 double Q2 = p.FlowRate * n_ratio;
+                 double H2 = p.Head * Math.Pow(n_ratio, 2);
+                 
+                 // Re-evaluate Efficiency Correction at new speed/flow
+                 // We need Water BEP equivalents.
+                 // This is a "chicken and egg" problem without the full Water Curve.
+                 // Fallback: Scale Power by cubic?
+                 double P2 = p.Power * Math.Pow(n_ratio, 3);
+                 
+                 // Recalculate Eff
+                 double eff2 = 0;
+                 if (P2 > 0) eff2 = (Q2 * H2 * specificGravity) / (3960 * P2);
+
+                 scaledPoints.Add(new HeadQuantityPoint(Q2, H2, eff2, P2));
+             }
+             return scaledPoints;
+        }
     }
 }
 

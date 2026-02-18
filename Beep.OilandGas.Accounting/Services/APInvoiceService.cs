@@ -90,13 +90,7 @@ namespace Beep.OilandGas.Accounting.Services
                     REMARK = description
                 };
 
-                var metadata = await _metadata.GetTableMetadataAsync("AP_INVOICE");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(AP_INVOICE);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "AP_INVOICE");
+                var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
 
                 await repo.InsertAsync(bill, userId);
                 _logger?.LogInformation("AP invoice {InvoiceNumber} created (DRAFT)", bill.INVOICE_NUMBER);
@@ -161,13 +155,7 @@ namespace Beep.OilandGas.Accounting.Services
                 bill.ROW_CHANGED_BY = userId;
                 bill.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-                var metadata = await _metadata.GetTableMetadataAsync("AP_INVOICE");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(AP_INVOICE);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "AP_INVOICE");
+                var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
 
                 await repo.UpdateAsync(bill, userId);
                 _logger?.LogInformation("AP invoice {InvoiceNumber} received and posted to GL", bill.INVOICE_NUMBER);
@@ -254,13 +242,7 @@ namespace Beep.OilandGas.Accounting.Services
                 bill.ROW_CHANGED_BY = userId;
                 bill.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-                var metadata = await _metadata.GetTableMetadataAsync("AP_INVOICE");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(AP_INVOICE);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "AP_INVOICE");
+                var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
 
                 await repo.UpdateAsync(bill, userId);
 
@@ -286,13 +268,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("AP_INVOICE");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(AP_INVOICE);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "AP_INVOICE");
+                var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
 
                 var bill = await repo.GetByIdAsync(billId);
                 return bill as AP_INVOICE;
@@ -314,13 +290,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("AP_INVOICE");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(AP_INVOICE);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "AP_INVOICE");
+                var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
 
                 var filters = new List<AppFilter>
                 {
@@ -349,13 +319,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("AP_INVOICE");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(AP_INVOICE);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "AP_INVOICE");
+                var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
 
                 var filters = new List<AppFilter>
                 {
@@ -408,8 +372,32 @@ namespace Beep.OilandGas.Accounting.Services
         }
 
         /// <summary>
-        /// Generate next invoice number
+        /// Check if there are any unposted (DRAFT) invoices for a period
+        /// Used for period closing validation
         /// </summary>
+        public async Task<bool> HasUnpostedInvoicesAsync(DateTime periodEndDate)
+        {
+            try
+            {
+                var repo = await GetRepoAsync<AP_INVOICE>("AP_INVOICE");
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "STATUS", Operator = "=", FilterValue = "DRAFT" },
+                    new AppFilter { FieldName = "INVOICE_DATE", Operator = "<=", FilterValue = periodEndDate.ToString("yyyy-MM-dd") },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var results = await repo.GetAsync(filters);
+                return results != null && results.Any();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error checking for unposted AP invoices");
+                // Fail safe: assume yes if error, to prevent closing
+                return true;
+            }
+        }
+
         private async Task<string> GenerateInvoiceNumberAsync()
         {
             try
@@ -421,6 +409,15 @@ namespace Beep.OilandGas.Accounting.Services
                 _logger?.LogError(ex, "Error generating invoice number");
                 throw;
             }
+        }
+
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            // Use strongly typed class directly
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), ConnectionName, tableName);
         }
 
         private string GetAccountId(string key, string fallback)

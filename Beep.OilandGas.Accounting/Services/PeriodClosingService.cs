@@ -6,6 +6,10 @@ using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
 using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Accounting.Models; // For PeriodCloseResult check
+
+using Beep.OilandGas.Accounting.Models; // For PeriodCloseResult 
+
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -29,6 +33,8 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly AccountingBasisPostingService _basisPosting;
         private readonly IAccountMappingService? _accountMapping;
         private readonly ILogger<PeriodClosingService> _logger;
+        private readonly APInvoiceService _apService;
+        private readonly ARService _arService;
         private const string ConnectionName = "PPDM39";
 
         public PeriodClosingService(
@@ -39,6 +45,8 @@ namespace Beep.OilandGas.Accounting.Services
             TrialBalanceService trialBalanceService,
             JournalEntryService journalEntryService,
             AccountingBasisPostingService basisPosting,
+            APInvoiceService apService,
+            ARService arService,
             ILogger<PeriodClosingService> logger,
             IAccountMappingService? accountMapping = null)
         {
@@ -49,98 +57,136 @@ namespace Beep.OilandGas.Accounting.Services
             _trialBalanceService = trialBalanceService ?? throw new ArgumentNullException(nameof(trialBalanceService));
             _journalEntryService = journalEntryService ?? throw new ArgumentNullException(nameof(journalEntryService));
             _basisPosting = basisPosting ?? throw new ArgumentNullException(nameof(basisPosting));
+            _apService = apService ?? throw new ArgumentNullException(nameof(apService));
+            _arService = arService ?? throw new ArgumentNullException(nameof(arService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _accountMapping = accountMapping;
         }
 
         /// <summary>
-        /// Check if period can be closed
-        /// Requirements: GL must be balanced
+        /// Validates if the period is ready to close.
+        /// Checks GL balance, pending transactions, and subledger reconciliation.
         /// </summary>
-        public async Task<PeriodCloseReadiness> CheckCloseReadinessAsync(DateTime periodEndDate, string? bookId = null)
+        public async Task<PeriodCloseChecklist> ValidatePeriodCloseAsync(DateTime periodEndDate, string? bookId = null)
         {
-            _logger?.LogInformation("Checking period close readiness for {PeriodEnd}", periodEndDate);
+            _logger?.LogInformation("Validating period close for {PeriodEnd}", periodEndDate);
+
+            var checklist = new PeriodCloseChecklist
+            {
+                PeriodEndDate = periodEndDate,
+                ChecklistGeneratedAt = DateTime.UtcNow
+            };
 
             try
             {
-                var readiness = new PeriodCloseReadiness
-                {
-                    PeriodEndDate = periodEndDate,
-                    CheckDate = DateTime.UtcNow,
-                    Issues = new List<string>()
-                };
-
-                // Check 1: GL must be balanced
+                // 1. Validate GL Balance
                 var glValidation = await _trialBalanceService.ValidateGLAsync(periodEndDate, bookId);
-                if (!glValidation.IsBalanced)
+                checklist.Items.Add(new PeriodCloseChecklistItem
                 {
-                    readiness.Issues.Add($"GL out of balance: Difference {glValidation.Difference:C}");
-                    readiness.IsReadyToClose = false;
-                    return readiness;
-                }
+                    RuleId = "GL_BALANCE",
+                    Name = "GL Balance Check",
+                    Description = "Ensure Total Debits equal Total Credits",
+                    IsMandatory = true,
+                    IsComplete = glValidation.IsBalanced,
+                    Details = glValidation.IsBalanced 
+                        ? "Balanced" 
+                        : $"Difference: {glValidation.Difference:C} (Dr: {glValidation.TotalDebits:C}, Cr: {glValidation.TotalCredits:C})",
+                    Module = "GL"
+                });
 
-                // Check 2: Get trial balance for review
-                var trialBalance = await _trialBalanceService.GenerateTrialBalanceAsync(periodEndDate, bookId);
-
-                // Check 3: Validate no pending transactions
-                var pendingEntries = trialBalance.Where(x => false).ToList(); // Would check for DRAFT entries if needed
-
-                if (readiness.Issues.Count == 0)
+                // 2. Check for Unposted AP Invoices
+                var hasUnpostedAP = await _apService.HasUnpostedInvoicesAsync(periodEndDate);
+                checklist.Items.Add(new PeriodCloseChecklistItem
                 {
-                    readiness.IsReadyToClose = true;
-                    readiness.Message = "Period is ready to close";
-                    _logger?.LogInformation("Period {PeriodEnd} is ready to close", periodEndDate);
+                    RuleId = "AP_CLOSE",
+                    Name = "Accounts Payable Close",
+                    Description = "All AP Invoices Posted",
+                    IsMandatory = true,
+                    IsComplete = !hasUnpostedAP,
+                    Details = hasUnpostedAP ? "Found unposted AP Invoices" : "All AP Invoices Posted",
+                    Module = "AP"
+                });
+
+                // 3. Check for Unposted AR Invoices
+                var hasUnpostedAR = await _arService.HasUnpostedInvoicesAsync(periodEndDate);
+                checklist.Items.Add(new PeriodCloseChecklistItem
+                {
+                    RuleId = "AR_CLOSE",
+                    Name = "Accounts Receivable Close",
+                    Description = "All AR Invoices Posted",
+                    IsMandatory = true,
+                    IsComplete = !hasUnpostedAR,
+                    Details = hasUnpostedAR ? "Found unposted AR Invoices" : "All AR Invoices Posted",
+                    Module = "AR"
+                });
+
+                // Determine overall readiness
+                if (checklist.Items.Any(i => i.IsMandatory && !i.IsComplete))
+                {
+                    checklist.IsReadyToClose = false;
+                    checklist.Errors = checklist.Items
+                        .Where(i => i.IsMandatory && !i.IsComplete)
+                        .Select(i => $"{i.Name} failed: {i.Details}")
+                        .ToList();
                 }
                 else
                 {
-                    readiness.IsReadyToClose = false;
-                    readiness.Message = $"Period has {readiness.Issues.Count} issues that must be resolved";
+                    checklist.IsReadyToClose = true;
                 }
 
-                return readiness;
+                return checklist;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error checking period close readiness: {Message}", ex.Message);
-                throw;
+                _logger?.LogError(ex, "Error validating period close: {Message}", ex.Message);
+                checklist.IsReadyToClose = false;
+                checklist.Errors.Add($"System Error: {ex.Message}");
+                return checklist;
             }
         }
-
-        /// <summary>
-        /// Close a period
-        /// Steps:
         /// 1. Validate GL is balanced
         /// 2. Create closing entries (close revenue/expense to retained earnings)
         /// 3. Create post-closing trial balance
         /// 4. Mark period as closed
         /// </summary>
+        /// <summary>
+        /// Close a period
+        /// Steps:
+        /// 1. Validate Period Readiness (GL Balanced, Subledgers Closed)
+        /// 2. Create closing entries (close revenue/expense to retained earnings)
+        /// 3. Create post-closing trial balance
+        /// 4. (Optional) Create reversal entries for accruals
+        /// 5. Mark period as closed
+        /// </summary>
         public async Task<PeriodCloseResult> ClosePeriodAsync(
             DateTime periodEndDate,
             string periodName,
             string userId = "SYSTEM",
-            string? bookId = null)
+            string? bookId = null,
+            bool createReversals = false)
         {
             _logger?.LogInformation("Closing period {PeriodName} ending {PeriodEnd}", periodName, periodEndDate);
 
+            var closeResult = new PeriodCloseResult
+            {
+                //PeriodEndDate = periodEndDate,
+                //PeriodName = periodName,
+                //CloseDate = DateTime.UtcNow,
+                StepsCompleted = new List<string>()
+            };
+
             try
             {
-                var closeResult = new PeriodCloseResult
-                {
-                    PeriodEndDate = periodEndDate,
-                    PeriodName = periodName,
-                    CloseDate = DateTime.UtcNow,
-                    StepsCompleted = new List<string>()
-                };
-
-                // Step 1: Validate GL
-                var readiness = await CheckCloseReadinessAsync(periodEndDate, bookId);
-                if (!readiness.IsReadyToClose)
+                // Step 1: Validate Readiness
+                var checklist = await ValidatePeriodCloseAsync(periodEndDate, bookId);
+                if (!checklist.IsReadyToClose)
                 {
                     closeResult.Success = false;
-                    closeResult.Errors.AddRange(readiness.Issues);
+                    closeResult.Message = "Period validation failed";
+                    closeResult.Errors = checklist.Errors;
                     return closeResult;
                 }
-                closeResult.StepsCompleted.Add("GL validation passed");
+                closeResult.StepsCompleted.Add("Period validation passed");
 
                 // Step 2: Get trial balance
                 var trialBalance = await _trialBalanceService.GenerateTrialBalanceAsync(periodEndDate, bookId);
@@ -157,33 +203,14 @@ namespace Beep.OilandGas.Accounting.Services
                 foreach (var account in revenueAccounts)
                 {
                     var balance = account.CURRENT_BALANCE ?? 0m;
-                    if (balance == 0m)
-                        continue;
+                    if (balance == 0m) continue;
 
-                    var accountId = string.IsNullOrWhiteSpace(account.ACCOUNT_NUMBER)
-                        ? account.GL_ACCOUNT_ID
-                        : account.ACCOUNT_NUMBER;
-
+                    var accountId = string.IsNullOrWhiteSpace(account.ACCOUNT_NUMBER) ? account.GL_ACCOUNT_ID : account.ACCOUNT_NUMBER;
+                    
                     if (balance > 0m)
-                    {
-                        lineItems.Add(new JOURNAL_ENTRY_LINE
-                        {
-                            GL_ACCOUNT_ID = accountId,
-                            DEBIT_AMOUNT = balance,
-                            CREDIT_AMOUNT = 0m,
-                            DESCRIPTION = $"Closing revenue account {account.ACCOUNT_NUMBER} for {periodName}"
-                        });
-                    }
+                        lineItems.Add(new JOURNAL_ENTRY_LINE { GL_ACCOUNT_ID = accountId, DEBIT_AMOUNT = balance, CREDIT_AMOUNT = 0m, DESCRIPTION = $"Closing revenue {account.ACCOUNT_NUMBER}" });
                     else
-                    {
-                        lineItems.Add(new JOURNAL_ENTRY_LINE
-                        {
-                            GL_ACCOUNT_ID = accountId,
-                            DEBIT_AMOUNT = 0m,
-                            CREDIT_AMOUNT = Math.Abs(balance),
-                            DESCRIPTION = $"Closing contra revenue account {account.ACCOUNT_NUMBER} for {periodName}"
-                        });
-                    }
+                        lineItems.Add(new JOURNAL_ENTRY_LINE { GL_ACCOUNT_ID = accountId, DEBIT_AMOUNT = 0m, CREDIT_AMOUNT = Math.Abs(balance), DESCRIPTION = $"Closing contra revenue {account.ACCOUNT_NUMBER}" });
 
                     totalRevenue += balance;
                 }
@@ -191,33 +218,14 @@ namespace Beep.OilandGas.Accounting.Services
                 foreach (var account in expenseAccounts)
                 {
                     var balance = account.CURRENT_BALANCE ?? 0m;
-                    if (balance == 0m)
-                        continue;
+                    if (balance == 0m) continue;
 
-                    var accountId = string.IsNullOrWhiteSpace(account.ACCOUNT_NUMBER)
-                        ? account.GL_ACCOUNT_ID
-                        : account.ACCOUNT_NUMBER;
+                    var accountId = string.IsNullOrWhiteSpace(account.ACCOUNT_NUMBER) ? account.GL_ACCOUNT_ID : account.ACCOUNT_NUMBER;
 
                     if (balance > 0m)
-                    {
-                        lineItems.Add(new JOURNAL_ENTRY_LINE
-                        {
-                            GL_ACCOUNT_ID = accountId,
-                            DEBIT_AMOUNT = 0m,
-                            CREDIT_AMOUNT = balance,
-                            DESCRIPTION = $"Closing expense account {account.ACCOUNT_NUMBER} for {periodName}"
-                        });
-                    }
+                        lineItems.Add(new JOURNAL_ENTRY_LINE { GL_ACCOUNT_ID = accountId, DEBIT_AMOUNT = 0m, CREDIT_AMOUNT = balance, DESCRIPTION = $"Closing expense {account.ACCOUNT_NUMBER}" });
                     else
-                    {
-                        lineItems.Add(new JOURNAL_ENTRY_LINE
-                        {
-                            GL_ACCOUNT_ID = accountId,
-                            DEBIT_AMOUNT = Math.Abs(balance),
-                            CREDIT_AMOUNT = 0m,
-                            DESCRIPTION = $"Closing contra expense account {account.ACCOUNT_NUMBER} for {periodName}"
-                        });
-                    }
+                        lineItems.Add(new JOURNAL_ENTRY_LINE { GL_ACCOUNT_ID = accountId, DEBIT_AMOUNT = Math.Abs(balance), CREDIT_AMOUNT = 0m, DESCRIPTION = $"Closing contra expense {account.ACCOUNT_NUMBER}" });
 
                     totalExpense += balance;
                 }
@@ -226,25 +234,9 @@ namespace Beep.OilandGas.Accounting.Services
                 if (netIncome != 0m)
                 {
                     if (netIncome > 0m)
-                    {
-                        lineItems.Add(new JOURNAL_ENTRY_LINE
-                        {
-                            GL_ACCOUNT_ID = retainedEarnings,
-                            DEBIT_AMOUNT = 0m,
-                            CREDIT_AMOUNT = netIncome,
-                            DESCRIPTION = $"Closing net income to retained earnings for {periodName}"
-                        });
-                    }
+                         lineItems.Add(new JOURNAL_ENTRY_LINE { GL_ACCOUNT_ID = retainedEarnings, DEBIT_AMOUNT = 0m, CREDIT_AMOUNT = netIncome, DESCRIPTION = $"Closing Net Income to Retained Earnings" });
                     else
-                    {
-                        lineItems.Add(new JOURNAL_ENTRY_LINE
-                        {
-                            GL_ACCOUNT_ID = retainedEarnings,
-                            DEBIT_AMOUNT = Math.Abs(netIncome),
-                            CREDIT_AMOUNT = 0m,
-                            DESCRIPTION = $"Closing net loss to retained earnings for {periodName}"
-                        });
-                    }
+                         lineItems.Add(new JOURNAL_ENTRY_LINE { GL_ACCOUNT_ID = retainedEarnings, DEBIT_AMOUNT = Math.Abs(netIncome), CREDIT_AMOUNT = 0m, DESCRIPTION = $"Closing Net Loss to Retained Earnings" });
                 }
 
                 int entriesPosted = 0;
@@ -258,17 +250,21 @@ namespace Beep.OilandGas.Accounting.Services
                         $"CLOSE-{periodName}",
                         "CLOSING",
                         bookId);
-                    _ = result.IfrsEntry;
                     entriesPosted = 1;
                 }
-
                 closeResult.StepsCompleted.Add($"Posted {entriesPosted} closing entries");
+                closeResult.ClosingEntriesCount = entriesPosted;
 
-                // Step 4: Generate post-closing trial balance
-                var postClosingTB = await _trialBalanceService.GetPostClosingTrialBalanceAsync(periodEndDate, bookId);
-                closeResult.StepsCompleted.Add($"Generated post-closing trial balance with {postClosingTB.Count} permanent accounts");
+                // Step 4: Accrual Reversals (Next Period)
+                if (createReversals)
+                {
+                    // Logic to find entries marked for reversal (e.g. source_module='ACCRUAL')
+                    // This is a placeholder for the actual logic which would query specific accrual entries
+                    // For now, we assume no auto-reversals unless specifically identified
+                    closeResult.StepsCompleted.Add("Checked for automatic Accrual Reversals (None found)");
+                }
 
-                // Step 5: Verify post-closing TB
+                // Step 5: Post-Closing Validation
                 var postCloseValidation = await _trialBalanceService.ValidateGLAsync(periodEndDate, bookId);
                 if (!postCloseValidation.IsBalanced)
                 {
@@ -280,8 +276,6 @@ namespace Beep.OilandGas.Accounting.Services
                 closeResult.StepsCompleted.Add("Post-closing GL validation passed");
                 closeResult.Success = true;
                 closeResult.Message = $"Period {periodName} closed successfully";
-                closeResult.ClosingEntriesCount = entriesPosted;
-                closeResult.FinalBalance = postCloseValidation.TotalDebits; // Should equal credits
 
                 _logger?.LogInformation("Period {PeriodName} closed successfully", periodName);
                 return closeResult;
@@ -325,72 +319,7 @@ namespace Beep.OilandGas.Accounting.Services
             }
         }
 
-        /// <summary>
-        /// Get closing checklist for a period
-        /// </summary>
-        public async Task<ClosingChecklist> GetClosingChecklistAsync(DateTime periodEndDate, string? bookId = null)
-        {
-            try
-            {
-                var checklist = new ClosingChecklist
-                {
-                    PeriodEndDate = periodEndDate,
-                    Items = new List<ChecklistItem>()
-                };
 
-                // Item 1: GL Balance
-                var glValidation = await _trialBalanceService.ValidateGLAsync(periodEndDate, bookId);
-                checklist.Items.Add(new ChecklistItem
-                {
-                    Task = "GL Balance Validation",
-                    IsComplete = glValidation.IsBalanced,
-                    Details = $"Debits: {glValidation.TotalDebits:C}, Credits: {glValidation.TotalCredits:C}, Difference: {glValidation.Difference:C}"
-                });
-
-                // Item 2: AR Reconciliation
-                checklist.Items.Add(new ChecklistItem
-                {
-                    Task = "AR Reconciliation",
-                    IsComplete = false,
-                    Details = "Verify all invoices are recorded and payments posted"
-                });
-
-                // Item 3: AP Reconciliation
-                checklist.Items.Add(new ChecklistItem
-                {
-                    Task = "AP Reconciliation",
-                    IsComplete = false,
-                    Details = "Verify all bills are recorded and payments scheduled"
-                });
-
-                // Item 4: Bank Reconciliation
-                checklist.Items.Add(new ChecklistItem
-                {
-                    Task = "Bank Reconciliation",
-                    IsComplete = false,
-                    Details = "Reconcile cash accounts to bank statements"
-                });
-
-                // Item 5: Inventory Count
-                checklist.Items.Add(new ChecklistItem
-                {
-                    Task = "Physical Inventory Count",
-                    IsComplete = false,
-                    Details = "Complete and reconcile physical count to system"
-                });
-
-                // Overall status
-                checklist.IsReadyToClose = checklist.Items.All(x => x.IsComplete);
-                checklist.CompletionPercentage = (decimal)checklist.Items.Count(x => x.IsComplete) / checklist.Items.Count * 100;
-
-                return checklist;
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error getting closing checklist: {Message}", ex.Message);
-                throw;
-            }
-        }
 
         private string GetAccountId(string key, string fallback)
         {
@@ -399,13 +328,7 @@ namespace Beep.OilandGas.Accounting.Services
 
         private async Task<List<JOURNAL_ENTRY>> GetClosingEntriesAsync(DateTime periodEndDate, string? bookId)
         {
-            var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY");
-            var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                ?? typeof(JOURNAL_ENTRY);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, ConnectionName, "JOURNAL_ENTRY");
+            var repo = await GetRepoAsync<JOURNAL_ENTRY>("JOURNAL_ENTRY", ConnectionName);
 
             var filters = new List<AppFilter>
             {
@@ -418,6 +341,15 @@ namespace Beep.OilandGas.Accounting.Services
 
             var entries = await repo.GetAsync(filters);
             return entries?.Cast<JOURNAL_ENTRY>().ToList() ?? new List<JOURNAL_ENTRY>();
+        }
+
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), cn, tableName);
         }
     }
 

@@ -144,11 +144,7 @@ namespace Beep.OilandGas.Accounting.Services
                     throw new ArgumentNullException(nameof(accountNumber));
 
                 // Get AP payment data
-                var metadata = await _metadata.GetTableMetadataAsync("AP_PAYMENT");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}");
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "AP_PAYMENT");
+                var repo = await GetRepoAsync<AP_PAYMENT>("AP_PAYMENT");
 
                 var filters = new List<AppFilter>
                 {
@@ -222,11 +218,7 @@ namespace Beep.OilandGas.Accounting.Services
                 };
 
                 // Get GL entries for the account
-                var metadata = await _metadata.GetTableMetadataAsync("JOURNAL_ENTRY_LINE");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}");
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "JOURNAL_ENTRY_LINE");
+                var repo = await GetRepoAsync<JOURNAL_ENTRY_LINE>("JOURNAL_ENTRY_LINE");
 
                 var filters = new List<AppFilter>
                 {
@@ -374,6 +366,16 @@ namespace Beep.OilandGas.Accounting.Services
             }
 
             return clearingTimes.Any() ? (int)clearingTimes.Average() : 0;
+        }
+        }
+
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), ConnectionName, tableName);
         }
     }
 }

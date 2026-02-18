@@ -69,6 +69,7 @@ namespace Beep.OilandGas.Accounting.Services
         GaapLeaseAccountingService GaapLeases { get; }
         AccountingBasisPostingService BasisPosting { get; }
         PeriodClosingService PeriodClosing { get; }
+        AccountMappingService AccountMapping { get; }
     }
 
     /// <summary>
@@ -78,7 +79,76 @@ namespace Beep.OilandGas.Accounting.Services
     {
         public AccountingServices(
             GLAccountService glAccounts,
+            AccountMappingService accountMapping,
             JournalEntryService journalEntries,
+            TrialBalanceService trialBalance,
+            FinancialStatementService financialStatements,
+            GeneralLedgerReportService generalLedgerReports,
+            BankReconciliationService bankReconciliation,
+            BudgetService budgets,
+            DashboardService dashboard,
+            TaxCalculationService taxes,
+            DepreciationService depreciation,
+            CostAllocationService costAllocations,
+            CostCenterService costCenters,
+            InventoryService inventory,
+            InventoryLcmService inventoryLcm,
+            PurchaseOrderService purchaseOrders,
+            APInvoiceService accountsPayableInvoices,
+            APPaymentService accountsPayablePayments,
+            ARService accountsReceivable,
+            InvoiceService invoices,
+            ReconciliationService reconciliation,
+            CashFlowService cashFlow,
+            AccountingPolicyService accountingPolicies,
+            ErrorCorrectionService errorCorrections,
+            FixedAssetLifecycleService fixedAssets,
+            ProvisionService provisions,
+            PerformanceObligationService performanceObligations,
+            LeaseAccountingService leases,
+            PresentationService presentation,
+            EventsAfterReportingService eventsAfterReporting,
+            TaxProvisionService taxProvisions,
+            CurrencyTranslationService currencyTranslation,
+            ImpairmentService impairments,
+            IntangibleAssetService intangibles,
+            RelatedPartyDisclosureService relatedParties,
+            EmployeeBenefitsService employeeBenefits,
+            GovernmentGrantService governmentGrants,
+            BorrowingCostService borrowingCosts,
+            RetirementBenefitPlanService retirementBenefitPlans,
+            SeparateFinancialStatementService separateFinancialStatements,
+            EquityMethodInvestmentService equityInvestments,
+            HyperinflationRestatementService hyperinflation,
+            FinancialInstrumentService financialInstruments,
+            EarningsPerShareService earningsPerShare,
+            InterimReportingService interimReporting,
+            InvestmentPropertyService investmentProperties,
+            AgricultureService agriculture,
+            InsuranceContractsService insuranceContracts,
+            ExpectedCreditLossService expectedCreditLoss,
+            FairValueMeasurementService fairValueMeasurement,
+            FirstTimeAdoptionService firstTimeAdoption,
+            ShareBasedPaymentService shareBasedPayments,
+            BusinessCombinationService businessCombinations,
+            AssetsHeldForSaleService assetsHeldForSale,
+            ExplorationEvaluationService explorationEvaluation,
+            OperatingSegmentService operatingSegments,
+            ConsolidationService consolidation,
+            JointArrangementsService jointArrangements,
+            InvestmentDisclosureService investmentDisclosures,
+            RegulatoryDeferralService regulatoryDeferrals,
+            FinancialInstrumentDisclosureService financialInstrumentDisclosures,
+            PresentationEnhancementService presentationEnhancements,
+            SubsidiaryDisclosureService subsidiaryDisclosures,
+            CeclService cecl,
+            GaapRevenueRecognitionService gaapRevenueRecognition,
+            GaapLeaseAccountingService gaapLeases,
+            AccountingBasisPostingService basisPosting,
+            PeriodClosingService periodClosing)
+        {
+            GlAccounts = glAccounts ?? throw new ArgumentNullException(nameof(glAccounts));
+            AccountMapping = accountMapping ?? throw new ArgumentNullException(nameof(accountMapping));
             TrialBalanceService trialBalance,
             FinancialStatementService financialStatements,
             GeneralLedgerReportService generalLedgerReports,
@@ -215,6 +285,7 @@ namespace Beep.OilandGas.Accounting.Services
         }
 
         public GLAccountService GlAccounts { get; }
+        public AccountMappingService AccountMapping { get; }
         public JournalEntryService JournalEntries { get; }
         public TrialBalanceService TrialBalance { get; }
         public FinancialStatementService FinancialStatements { get; }

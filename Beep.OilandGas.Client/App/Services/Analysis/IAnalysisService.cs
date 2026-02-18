@@ -7,12 +7,6 @@ using Beep.OilandGas.Models.Data.PipelineAnalysis;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Data.PumpPerformance;
-using Beep.OilandGas.Models.Data.ChokeAnalysis;
-using Beep.OilandGas.Models.Data.CompressorAnalysis;
-using Beep.OilandGas.Models.Data.PipelineAnalysis;
-using Beep.OilandGas.Models.Data.WellTestAnalysis;
-using Beep.OilandGas.Models.Data.GasLift;
-using Beep.OilandGas.Models.Data.PumpPerformance;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
 using Beep.OilandGas.Models.Data.Calculations;
 

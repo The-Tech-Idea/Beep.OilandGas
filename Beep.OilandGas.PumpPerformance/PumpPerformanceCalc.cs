@@ -125,5 +125,34 @@ namespace Beep.OilandGas.PumpPerformance
             }
         }
 
+        /// <summary>
+        /// Calculates the performance of a pump handling viscous fluid using HI 9.6.7 correction factors.
+        /// </summary>
+        /// <param name="waterFlowRate">Flow rate with water (GPM).</param>
+        /// <param name="waterHead">Head with water (feet).</param>
+        /// <param name="waterEfficiency">Efficiency with water (0-1).</param>
+        /// <param name="speed">Pump speed (RPM).</param>
+        /// <param name="viscosity_cSt">Kinematic viscosity (cSt).</param>
+        /// <param name="specificGravity">Specific gravity.</param>
+        /// <returns>A tuple containing (ViscousFlow, ViscousHead, ViscousEfficiency, ViscousBHP).</returns>
+        public static (double Q_vis, double H_vis, double Eff_vis, double BHP_vis) CalculateViscousPerformance(
+            double waterFlowRate,
+            double waterHead,
+            double waterEfficiency,
+            double speed,
+            double viscosity_cSt,
+            double specificGravity)
+        {
+            // Calculate correction factors
+            var (C_Q, C_H, C_eta) = ViscosityCorrectionCalculator.CalculateCorrectionFactors(
+                waterFlowRate, waterHead, speed, viscosity_cSt);
+
+            // Calculate viscous performance
+            var result = ViscosityCorrectionCalculator.CalculateViscousPerformance(
+                waterFlowRate, waterHead, waterEfficiency, specificGravity, C_Q, C_H, C_eta);
+
+            return result;
+        }
+
     }
 }

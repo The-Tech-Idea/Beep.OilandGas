@@ -4,6 +4,7 @@ namespace Beep.OilandGas.Accounting.Constants
     /// Default GL account IDs used for common postings.
     /// These align with the conventions used across Accounting services.
     /// </summary>
+    [Obsolete("Use IAccountMappingService instead. This class is only for seeding defaults.")]
     public static class DefaultGlAccounts
     {
         public const string Cash = "1000";

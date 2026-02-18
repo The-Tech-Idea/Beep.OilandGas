@@ -19,21 +19,21 @@ namespace Beep.OilandGas.Client.App.Services.Analysis
             if (AccessMode == ServiceAccessMode.Local)
             {
                 var service = GetLocalService<IPipelineAnalysisService>();
-                var result = await service.AnalyzePipelineFlowAsync(request.PipelineId, request.FLOW_RATE, request.InletPressure);
+                var result = await service.AnalyzePipelineFlowAsync(request.PipelineId, request.FlowRate, request.InletPressure);
 
                 return new PIPELINE_FLOW_ANALYSIS_RESULT
                 {
-                    AnalysisId = result.AnalysisId,
-                    PipelineId = result.PipelineId,
-                    AnalysisDate = result.AnalysisDate,
-                    FlowRate = result.FLOW_RATE,
-                    InletPressure = result.InletPressure,
-                    OutletPressure = result.OUTLET_PRESSURE,
-                    PressureDrop = result.PRESSURE_DROP,
-                    Velocity = result.Velocity,
-                    FlowRegime = result.FLOW_REGIME,
-                    Status = result.Status,
-                    Recommendations = result.Recommendations
+                    AnalysisId = result.CalculationId,
+                    PipelineId = result.PipelineId ?? string.Empty,
+                    AnalysisDate = result.CalculationDate,
+                    FlowRate = (double)result.FlowRate,
+                    InletPressure = (double)result.InletPressure,
+                    OutletPressure = (double)result.OutletPressure,
+                    PressureDrop = (double)result.PressureDrop,
+                    Velocity = result.Velocity != null ? Convert.ToDouble(result.Velocity) : 0,
+                    FlowRegime = result.FlowRegime ?? string.Empty,
+                    Status = result.Status ?? string.Empty,
+                    Recommendations = result.Recommendations?.ToString() ?? string.Empty
                 };
             }
 

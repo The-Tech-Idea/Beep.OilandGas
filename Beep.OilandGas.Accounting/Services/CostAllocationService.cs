@@ -280,13 +280,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (Math.Abs(totalPercentage - 100m) > 0.01m)
                 throw new InvalidOperationException($"Allocation percentages must sum to 100 (got {totalPercentage})");
 
-            var metadata = await _metadata.GetTableMetadataAsync("COST_ALLOCATION");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(COST_ALLOCATION);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "COST_ALLOCATION");
+            var repo = await GetRepoAsync<COST_ALLOCATION>("COST_ALLOCATION", cn);
 
             var results = new List<COST_ALLOCATION>();
             foreach (var allocation in allocations)
@@ -314,13 +308,7 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(costCenterId))
                 return;
 
-            var metadata = await _metadata.GetTableMetadataAsync("COST_CENTER");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(COST_CENTER);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, cn, "COST_CENTER");
+            var repo = await GetRepoAsync<COST_CENTER>("COST_CENTER", cn);
 
             var result = await repo.GetByIdAsync(costCenterId);
             var center = result as COST_CENTER;
@@ -482,6 +470,16 @@ namespace Beep.OilandGas.Accounting.Services
                 _logger?.LogError(ex, "Error exporting allocation result: {Message}", ex.Message);
                 throw;
             }
+        }
+        }
+
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn)
+        {
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+            
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), cn, tableName);
         }
     }
 }

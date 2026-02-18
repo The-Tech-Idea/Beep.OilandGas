@@ -4,22 +4,11 @@
 			"path": "."
 		},
 		{
-			"path": "../../fahadTheTechIdea/MyWebSite/TheTechIdeaWeb"
+			"path": "../BeepDM"
 		},
 		{
-			"path": "../../../../OneDrive/SimpleInfoapps/PPDM/html"
-		},
-		{
-			"path": "../BeepDM/DataManagementEngineStandard"
-		},
-		{
-			"path": "../BeepDM/DataManagementModelsStandard"
-		},
-		{
-			"path": "../Beep.Shell/BeepShell"
+			"path": "../Beep.Sample"
 		}
 	],
-	"settings": {
-		"powershell.cwd": "Beep.OilandGas"
-	}
+	"settings": {}
 }

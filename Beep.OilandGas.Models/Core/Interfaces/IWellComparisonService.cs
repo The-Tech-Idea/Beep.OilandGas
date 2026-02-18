@@ -16,7 +16,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <param name="fieldNames">Optional list of specific fields to compare. If null, compares all common fields</param>
         /// <param name="connectionName">Connection name (defaults to repository connection)</param>
         /// <returns>WellComparison with side-by-side comparison</returns>
-        Task<WellComparison> CompareWellsAsync(
+        Task<WellComparisonData> CompareWellsAsync(
             List<string> wellIdentifiers,
             List<string> fieldNames = null,
             string connectionName = null);
@@ -26,8 +26,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// </summary>
         /// <param name="wellComparisons">List of well identifiers with their data sources</param>
         /// <param name="fieldNames">Optional list of specific fields to compare</param>
-        /// <returns>WellComparison with side-by-side comparison across data sources</returns>
-        Task<WellComparison> CompareWellsFromMultipleSourcesAsync(
+        /// <returns>WellComparisonData with side-by-side comparison across data sources</returns>
+        Task<WellComparisonData> CompareWellsFromMultipleSourcesAsync(
             List<WellSourceMapping> wellComparisons,
             List<string> fieldNames = null);
 

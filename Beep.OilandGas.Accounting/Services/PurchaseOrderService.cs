@@ -76,13 +76,7 @@ namespace Beep.OilandGas.Accounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var metadata = await _metadata.GetTableMetadataAsync("PURCHASE_ORDER");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(PURCHASE_ORDER);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "PURCHASE_ORDER");
+                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER", ConnectionName);
 
                 await repo.InsertAsync(po, userId);
                 _logger?.LogInformation("PO {PONumber} created (DRAFT)", po.PO_NUMBER);
@@ -118,13 +112,7 @@ namespace Beep.OilandGas.Accounting.Services
                 po.ROW_CHANGED_BY = userId;
                 po.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-                var metadata = await _metadata.GetTableMetadataAsync("PURCHASE_ORDER");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(PURCHASE_ORDER);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "PURCHASE_ORDER");
+                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER", ConnectionName);
 
                 await repo.UpdateAsync(po, userId);
                 _logger?.LogInformation("PO {PONumber} approved", po.PO_NUMBER);
@@ -178,13 +166,7 @@ namespace Beep.OilandGas.Accounting.Services
                     ROW_CREATED_DATE = DateTime.UtcNow
                 };
 
-                var metadata = await _metadata.GetTableMetadataAsync("PO_RECEIPT");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(PO_RECEIPT);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "PO_RECEIPT");
+                var repo = await GetRepoAsync<PO_RECEIPT>("PO_RECEIPT", ConnectionName);
 
                 await repo.InsertAsync(receipt, userId);
 
@@ -210,13 +192,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("PURCHASE_ORDER");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(PURCHASE_ORDER);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "PURCHASE_ORDER");
+                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER", ConnectionName);
 
                 var po = await repo.GetByIdAsync(poId);
                 return po as PURCHASE_ORDER;
@@ -238,13 +214,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("PURCHASE_ORDER");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(PURCHASE_ORDER);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "PURCHASE_ORDER");
+                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER", ConnectionName);
 
                 var filters = new List<AppFilter>
                 {
@@ -272,13 +242,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             try
             {
-                var metadata = await _metadata.GetTableMetadataAsync("PO_RECEIPT");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(PO_RECEIPT);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "PO_RECEIPT");
+                var repo = await GetRepoAsync<PO_RECEIPT>("PO_RECEIPT", ConnectionName);
 
                 var filters = new List<AppFilter>
                 {
@@ -314,13 +278,7 @@ namespace Beep.OilandGas.Accounting.Services
                 po.ROW_CHANGED_BY = userId;
                 po.ROW_CHANGED_DATE = DateTime.UtcNow;
 
-                var metadata = await _metadata.GetTableMetadataAsync("PURCHASE_ORDER");
-                var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                    ?? typeof(PURCHASE_ORDER);
-
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, ConnectionName, "PURCHASE_ORDER");
+                var repo = await GetRepoAsync<PURCHASE_ORDER>("PURCHASE_ORDER", ConnectionName);
 
                 await repo.UpdateAsync(po, userId);
                 _logger?.LogInformation("PO {PONumber} closed", po.PO_NUMBER);
@@ -370,16 +328,19 @@ namespace Beep.OilandGas.Accounting.Services
             if (string.IsNullOrWhiteSpace(poLineItemId))
                 return null;
 
-            var metadata = await _metadata.GetTableMetadataAsync("PO_LINE_ITEM");
-            var entityType = Type.GetType($"Beep.OilandGas.Models.Data.ProductionAccounting.{metadata.EntityTypeName}")
-                ?? typeof(PO_LINE_ITEM);
-
-            var repo = new PPDMGenericRepository(
-                _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, ConnectionName, "PO_LINE_ITEM");
+            var repo = await GetRepoAsync<PO_LINE_ITEM>("PO_LINE_ITEM", ConnectionName);
 
             var lineItem = await repo.GetByIdAsync(poLineItemId);
             return lineItem as PO_LINE_ITEM;
+        }
+        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName = null)
+        {
+            var cn = connectionName ?? ConnectionName;
+            var metadata = await _metadata.GetTableMetadataAsync(tableName);
+
+            return new PPDMGenericRepository(
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), cn, tableName);
         }
     }
 }

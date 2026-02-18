@@ -1,5 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.FieldOrchestrator;
+using Beep.OilandGas.Models.Data.EnhancedRecovery;
 
 namespace Beep.OilandGas.Client.App.Services.Field
 {
@@ -10,9 +15,9 @@ namespace Beep.OilandGas.Client.App.Services.Field
     {
         Task SetCurrentFieldAsync(string fieldId, CancellationToken cancellationToken = default);
         Task<string?> GetCurrentFieldAsync(CancellationToken cancellationToken = default);
-        Task<object> GetFieldDetailsAsync(string fieldId, CancellationToken cancellationToken = default);
-        Task<object> GetFieldWellsAsync(string fieldId, CancellationToken cancellationToken = default);
-        Task<object> GetFieldProductionSummaryAsync(string fieldId, CancellationToken cancellationToken = default);
+        Task<FieldOrchestratorResponse> GetFieldDetailsAsync(string fieldId, CancellationToken cancellationToken = default);
+        Task<List<WELL>> GetFieldWellsAsync(string fieldId, CancellationToken cancellationToken = default);
+        Task<FieldProductionSummary> GetFieldProductionSummaryAsync(string fieldId, CancellationToken cancellationToken = default);
     }
 }
 

@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
 
+using Beep.OilandGas.Models.Data.FieldOrchestrator;
+
 namespace Beep.OilandGas.Models.Data
 {
     public class FieldOrchestratorResponse : ModelEntityBase
     {
-        private object? FieldValue;
+        private Field? FieldValue;
 
-        public object? Field
+        public Field? Field
 
         {
 

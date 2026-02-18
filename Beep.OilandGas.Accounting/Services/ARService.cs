@@ -488,12 +488,32 @@ namespace Beep.OilandGas.Accounting.Services
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName)
         {
             var metadata = await _metadata.GetTableMetadataAsync(tableName);
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")
-                ?? typeof(T);
-
+            // Use strongly typed class directly
             return new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
-                entityType, connectionName ?? ConnectionName, tableName);
+                typeof(T), connectionName ?? ConnectionName, tableName);
+        }
+
+        public async Task<bool> HasUnpostedInvoicesAsync(DateTime periodEndDate)
+        {
+             try
+            {
+                var repo = await GetRepoAsync<AR_INVOICE>("AR_INVOICE", null);
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "STATUS", Operator = "=", FilterValue = InvoiceStatuses.Draft },
+                    new AppFilter { FieldName = "INVOICE_DATE", Operator = "<=", FilterValue = periodEndDate.ToString("yyyy-MM-dd") },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var results = await repo.GetAsync(filters);
+                return results != null && results.Any();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error checking for unposted AR invoices");
+                return true;
+            }
         }
 
         private string GetAccountId(string key, string fallback)

@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data;
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Data.Common;
+using Beep.OilandGas.Models.Data.DataManagement;
 
 namespace Beep.OilandGas.Client.App.Services.DataManagement
 {
@@ -17,7 +20,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
 
         #region Batch Operations
 
-        public async Task<List<object>> InsertBatchAsync(string tableName, List<object> entities, string userId, int batchSize = 100, CancellationToken cancellationToken = default)
+        public async Task<List<T>> InsertBatchAsync<T>(string tableName, List<T> entities, string userId, int batchSize = 100, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
@@ -36,14 +39,14 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     batchSize
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/batch/insert", request, cancellationToken);
-                return result is List<object> list ? list : new List<object>();
+                var result = await PostAsync<object, List<T>>($"/api/datamanagement/repository/{tableName}/batch/insert", request, cancellationToken);
+                return result ?? new List<T>();
             }
 
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<List<object>> UpdateBatchAsync(string tableName, List<object> entities, string userId, int batchSize = 100, CancellationToken cancellationToken = default)
+        public async Task<List<T>> UpdateBatchAsync<T>(string tableName, List<T> entities, string userId, int batchSize = 100, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
@@ -62,8 +65,8 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     batchSize
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/batch/update", request, cancellationToken);
-                return result is List<object> list ? list : new List<object>();
+                var result = await PostAsync<object, List<T>>($"/api/datamanagement/repository/{tableName}/batch/update", request, cancellationToken);
+                return result ?? new List<T>();
             }
 
             throw new InvalidOperationException("Local mode not yet implemented");
@@ -89,10 +92,10 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     batchSize
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/batch/delete", request, cancellationToken);
-                if (result is Dictionary<string, object> dict && dict.ContainsKey("deletedCount"))
+                var result = await PostAsync<object, Dictionary<string, object>>($"/api/datamanagement/repository/{tableName}/batch/delete", request, cancellationToken);
+                if (result != null && result.ContainsKey("deletedCount"))
                 {
-                    return Convert.ToInt32(dict["deletedCount"]);
+                    return Convert.ToInt32(result["deletedCount"]);
                 }
                 return 0;
             }
@@ -100,7 +103,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<List<object>> UpsertBatchAsync(string tableName, List<object> entities, string userId, int batchSize = 100, CancellationToken cancellationToken = default)
+        public async Task<List<T>> UpsertBatchAsync<T>(string tableName, List<T> entities, string userId, int batchSize = 100, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
@@ -119,8 +122,8 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     batchSize
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/batch/upsert", request, cancellationToken);
-                return result is List<object> list ? list : new List<object>();
+                var result = await PostAsync<object, List<T>>($"/api/datamanagement/repository/{tableName}/batch/upsert", request, cancellationToken);
+                return result ?? new List<T>();
             }
 
             throw new InvalidOperationException("Local mode not yet implemented");
@@ -130,7 +133,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
 
         #region Import/Export
 
-        public async Task<object> ImportFromCsvAsync(string tableName, string csvFilePath, string userId, Dictionary<string, string>? columnMapping = null, bool skipHeaderRow = true, bool validateForeignKeys = true, CancellationToken cancellationToken = default)
+        public async Task<ImportResult> ImportFromCsvAsync(string tableName, string csvFilePath, string userId, Dictionary<string, string>? columnMapping = null, bool skipHeaderRow = true, bool validateForeignKeys = true, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
@@ -153,7 +156,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     validateForeignKeys
                 };
 
-                return await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/import/csv", request, cancellationToken);
+                return await PostAsync<object, ImportResult>($"/api/datamanagement/repository/{tableName}/import/csv", request, cancellationToken);
             }
 
             throw new InvalidOperationException("Local mode not yet implemented");
@@ -176,10 +179,10 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     includeHeaders
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/export/csv", request, cancellationToken);
-                if (result is Dictionary<string, object> dict && dict.ContainsKey("exportedCount"))
+                var result = await PostAsync<object, Dictionary<string, object>>($"/api/datamanagement/repository/{tableName}/export/csv", request, cancellationToken);
+                if (result != null && result.ContainsKey("exportedCount"))
                 {
-                    return Convert.ToInt32(dict["exportedCount"]);
+                    return Convert.ToInt32(result["exportedCount"]);
                 }
                 return 0;
             }
@@ -191,7 +194,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
 
         #region Pagination & Aggregation
 
-        public async Task<object> GetPaginatedAsync(string tableName, List<object>? filters = null, int pageNumber = 1, int pageSize = 50, string? sortField = null, string sortDirection = "ASC", CancellationToken cancellationToken = default)
+        public async Task<PaginatedResult<T>> GetPaginatedAsync<T>(string tableName, List<object>? filters = null, int pageNumber = 1, int pageSize = 50, string? sortField = null, string sortDirection = "ASC", CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
@@ -212,8 +215,9 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     filters = filters ?? new List<object>()
                 };
 
-                return await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/paginated", request, queryParams, cancellationToken) 
-                    ?? new { Items = new List<object>(), TotalCount = 0L, PageNumber = pageNumber, PageSize = pageSize, TotalPages = 0 };
+                var endpoint = BuildRequestUriWithParams($"/api/datamanagement/repository/{tableName}/paginated", queryParams);
+                return await PostAsync<object, PaginatedResult<T>>(endpoint, request, cancellationToken) 
+                    ?? new PaginatedResult<T> { Items = new List<T>(), TotalCount = 0L, PageNumber = pageNumber, PageSize = pageSize };
             }
 
             throw new InvalidOperationException("Local mode not yet implemented");
@@ -231,10 +235,10 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     filters = filters ?? new List<object>()
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/count", request, cancellationToken);
-                if (result is Dictionary<string, object> dict && dict.ContainsKey("count"))
+                var result = await PostAsync<object, Dictionary<string, object>>($"/api/datamanagement/repository/{tableName}/count", request, cancellationToken);
+                if (result != null && result.ContainsKey("count"))
                 {
-                    return Convert.ToInt64(dict["count"]);
+                    return Convert.ToInt64(result["count"]);
                 }
                 return 0L;
             }
@@ -260,10 +264,10 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     filters = filters ?? new List<object>()
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/aggregate", request, cancellationToken);
-                if (result is Dictionary<string, object> dict && dict.ContainsKey("value"))
+                var result = await PostAsync<object, Dictionary<string, object>>($"/api/datamanagement/repository/{tableName}/aggregate", request, cancellationToken);
+                if (result != null && result.ContainsKey("value"))
                 {
-                    var value = dict["value"];
+                    var value = result["value"];
                     if (value != null)
                         return Convert.ToDecimal(value);
                 }
@@ -294,11 +298,11 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     filters = filters ?? new List<object>()
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/grouped-aggregate", request, cancellationToken);
-                if (result is Dictionary<string, object> dict)
+                var result = await PostAsync<object, Dictionary<string, object>>($"/api/datamanagement/repository/{tableName}/grouped-aggregate", request, cancellationToken);
+                if (result != null)
                 {
                     var grouped = new Dictionary<string, decimal?>();
-                    foreach (var kvp in dict)
+                    foreach (var kvp in result)
                     {
                         if (kvp.Value != null)
                             grouped[kvp.Key] = Convert.ToDecimal(kvp.Value);
@@ -313,7 +317,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<List<object?>> GetDistinctAsync(string tableName, string fieldName, List<object>? filters = null, CancellationToken cancellationToken = default)
+        public async Task<List<T?>> GetDistinctAsync<T>(string tableName, string fieldName, List<object>? filters = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
@@ -328,8 +332,8 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     filters = filters ?? new List<object>()
                 };
 
-                var result = await PostAsync<object, object>($"/api/datamanagement/repository/{tableName}/distinct", request, cancellationToken);
-                return result is List<object> list ? list.Cast<object?>().ToList() : new List<object?>();
+                var result = await PostAsync<object, List<T?>>($"/api/datamanagement/repository/{tableName}/distinct", request, cancellationToken);
+                return result ?? new List<T?>();
             }
 
             throw new InvalidOperationException("Local mode not yet implemented");
@@ -339,7 +343,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
 
         #region Relationship Navigation
 
-        public async Task<List<object>> GetRelatedEntitiesAsync(string tableName, string entityId, string relatedTableName, string? foreignKeyColumn = null, CancellationToken cancellationToken = default)
+        public async Task<List<T>> GetRelatedEntitiesAsync<T>(string tableName, string entityId, string relatedTableName, string? foreignKeyColumn = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
@@ -358,14 +362,15 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 if (!string.IsNullOrEmpty(foreignKeyColumn))
                     queryParams["foreignKeyColumn"] = foreignKeyColumn;
 
-                var result = await GetAsync<object>($"/api/datamanagement/repository/{tableName}/related", queryParams, cancellationToken);
-                return result is List<object> list ? list : new List<object>();
+                var endpoint = BuildRequestUriWithParams($"/api/datamanagement/repository/{tableName}/related", queryParams);
+                var result = await GetAsync<List<T>>(endpoint, cancellationToken);
+                return result ?? new List<T>();
             }
 
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<object?> GetParentEntityAsync(string tableName, string entityId, string parentTableName, string? foreignKeyColumn = null, CancellationToken cancellationToken = default)
+        public async Task<T?> GetParentEntityAsync<T>(string tableName, string entityId, string parentTableName, string? foreignKeyColumn = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
@@ -384,7 +389,8 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                 if (!string.IsNullOrEmpty(foreignKeyColumn))
                     queryParams["foreignKeyColumn"] = foreignKeyColumn;
 
-                return await GetAsync<object>($"/api/datamanagement/repository/{tableName}/parent", queryParams, cancellationToken);
+                var endpoint = BuildRequestUriWithParams($"/api/datamanagement/repository/{tableName}/parent", queryParams);
+                return await GetAsync<T>(endpoint, cancellationToken);
             }
 
             throw new InvalidOperationException("Local mode not yet implemented");
@@ -404,14 +410,23 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     { "entityId", entityId }
                 };
 
-                var result = await GetAsync<object>($"/api/datamanagement/repository/{tableName}/relationships", queryParams, cancellationToken);
-                if (result is Dictionary<string, object> dict)
+                var endpoint = BuildRequestUriWithParams($"/api/datamanagement/repository/{tableName}/relationships", queryParams);
+                var result = await GetAsync<Dictionary<string, object>>(endpoint, cancellationToken);
+                if (result != null)
                 {
                     var relationships = new Dictionary<string, List<object>>();
-                    foreach (var kvp in dict)
+                    foreach (var kvp in result)
                     {
                         if (kvp.Value is List<object> list)
                             relationships[kvp.Key] = list;
+                        else if (kvp.Value is System.Text.Json.JsonElement element && element.ValueKind == System.Text.Json.JsonValueKind.Array)
+                        {
+                             // Simple handling for JSON element if using System.Text.Json
+                             // For now assuming existing object serialization handles this or we return raw objects
+                             // This part might need adjustment based on JSON serializer used (Newtonsoft vs System.Text.Json)
+                             // Leaving as object list for now as 'Relationships' structure is dynamic
+                             relationships[kvp.Key] = new List<object>(); 
+                        }
                         else
                             relationships[kvp.Key] = new List<object>();
                     }
@@ -423,7 +438,7 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
             throw new InvalidOperationException("Local mode not yet implemented");
         }
 
-        public async Task<List<object>> GetChildrenByParentKeyAsync(string tableName, string parentTableName, object parentKey, CancellationToken cancellationToken = default)
+        public async Task<List<T>> GetChildrenByParentKeyAsync<T>(string tableName, string parentTableName, object parentKey, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(tableName))
                 throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
@@ -440,8 +455,9 @@ namespace Beep.OilandGas.Client.App.Services.DataManagement
                     { "parentKey", parentKey.ToString() ?? string.Empty }
                 };
 
-                var result = await GetAsync<object>($"/api/datamanagement/repository/{tableName}/children", queryParams, cancellationToken);
-                return result is List<object> list ? list : new List<object>();
+                var endpoint = BuildRequestUriWithParams($"/api/datamanagement/repository/{tableName}/children", queryParams);
+                var result = await GetAsync<List<T>>(endpoint, cancellationToken);
+                return result ?? new List<T>();
             }
 
             throw new InvalidOperationException("Local mode not yet implemented");
