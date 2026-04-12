@@ -1,0 +1,61 @@
+namespace Beep.OilandGas.Branchs;
+
+public static class PPDM39Categories
+{
+    public static List<PPDM39Category> GetAll() => new()
+    {
+        new(1, "Additives", "Chemical additives and treatment substances"),
+        new(2, "Applications", "Application systems and software"),
+        new(3, "Areas", "Geographic and administrative areas"),
+        new(4, "Business Associates", "Business partners and organizations"),
+        new(5, "Classification / Taxonomy", "Classification systems and taxonomies"),
+        new(6, "Consents", "Consent and permission records"),
+        new(7, "Consultations / Disputes", "Consultation, advisory records, contests and disputes"),
+        new(8, "Contracts / Agreements", "Contracts and legal agreements"),
+        new(9, "Coordinate Reference Systems", "Spatial reference and coordinate systems"),
+        new(10, "Ecozones", "Ecological zones and environments"),
+        new(11, "Entitlements / Security", "Entitlements and security credentials"),
+        new(12, "Equipment", "Equipment and machinery"),
+        new(13, "Facilities", "Facilities and infrastructure"),
+        new(14, "Fields", "Oil and gas fields"),
+        new(15, "Financial", "Financial data and transactions"),
+        new(16, "Fossils", "Fossil catalogue types and reference data (fossil entity records are classified under Paleontology)"),
+        new(17, "HSE / Incidents", "Health, safety, environment and incidents"),
+        new(18, "Instruments", "Instruments and measurement devices"),
+        new(19, "Interest Sets / Partnerships", "Interest sets and partnership agreements"),
+        new(20, "Lithology", "Lithology and rock type data"),
+        new(21, "Notifications", "Notifications and alerts"),
+        new(22, "Obligations", "Regulatory and contractual obligations"),
+        new(23, "Other", "Other uncategorized data"),
+        new(24, "PPDM Data Management", "PPDM data management and administration"),
+        new(25, "Paleontology", "Paleontological data and analysis"),
+        new(26, "Pools", "Reservoir pools and accumulations"),
+        new(27, "Production Entities", "Production entities and systems"),
+        new(28, "Production Lease Units", "Production lease units (PLUs)"),
+        new(29, "Production Strings", "Production strings and tubing"),
+        new(30, "Projects", "Projects and work programs"),
+        new(31, "Rate Schedules", "Rate schedules and tariffs"),
+        new(32, "Records Management", "Records management and archiving"),
+        new(33, "Reference Values", "Reference data and lookup values"),
+        new(34, "Reporting Hierarchies", "Reporting and organizational hierarchies"),
+        new(35, "Reserves", "Reserve estimates and classifications"),
+        new(36, "Restrictions / Environment", "Environmental restrictions and regulations"),
+        new(37, "Sample Analysis", "Sample analysis and laboratory data"),
+        new(38, "Sample Masters", "Sample master records"),
+        new(39, "Seismic", "Seismic data and surveys"),
+        new(40, "Sources", "Data sources and provenance"),
+        new(41, "Spacing Units", "Well spacing units"),
+        new(42, "Spatial Descriptions", "Spatial and geometric descriptions"),
+        new(43, "Spatial Parcels", "Spatial parcels and boundaries"),
+        new(44, "Stratigraphy", "Stratigraphic data and formations"),
+        new(45, "Substances / Products", "Substances and products"),
+        new(46, "Support Facilities", "Support facilities and services"),
+        new(47, "Units of Measure", "Units of measure and conversions"),
+        new(48, "Volume Conversions", "Volume conversion factors"),
+        new(49, "Well Logs", "Well log data and interpretations"),
+        new(50, "Wells", "Well records and data"),
+        new(51, "Work Orders", "Work orders and maintenance")
+    };
+}
+
+public record PPDM39Category(int Id, string Name, string Description);

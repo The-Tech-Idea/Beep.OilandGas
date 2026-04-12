@@ -16,8 +16,9 @@ using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Repositories;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Beep.Editor.DataSources;
+
 using TheTechIdea.Beep.Report;
+using Beep.OilandGas.Models.Enums;
 
 namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
 {
@@ -119,7 +120,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.SeedData
             // General / PPDM
             totalSeeded += await SeedEnumAsync<R_CONDITION_TYPE>(typeof(PpdmCondition), "CONDITION_TYPE", "LONG_NAME", "REMARK", userId);
             totalSeeded += await SeedEnumAsync<R_DIRECTION>(typeof(PpdmDirection), "DIRECTION", "LONG_NAME", "REMARK", userId);
-            totalSeeded += await SeedEnumAsync<R_PROJECT_STEP>(typeof(PpdmLifecyclePhase), "PROJECT_STEP_ID", "LONG_NAME", "REMARK", userId); // Project Steps often Phase ID
+            totalSeeded += await SeedEnumAsync<PROJECT_STEP>(typeof(PpdmLifecyclePhase), "PROJECT_STEP_ID", "LONG_NAME", "REMARK", userId); // Project Steps often Phase ID
             totalSeeded += await SeedEnumAsync<R_WELL_ACTIVITY_CAUSE>(typeof(WellControlMethod), "ACTIVITY_CAUSE", "LONG_NAME", "REMARK", userId);
 
 

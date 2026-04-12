@@ -1,6 +1,7 @@
 ﻿using System;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.Models.Data.PipelineAnalysis;
+using Beep.OilandGas.PPDM39.Core;
 
 namespace Beep.OilandGas.LifeCycle.Services.DataMapping
 {

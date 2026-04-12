@@ -62,5 +62,6 @@ namespace Beep.OilandGas.Models.Data
         /// Additional metadata for this well
         /// </summary>
         public List<ComparisonValue> Metadata { get; set; } = new List<ComparisonValue>();
+        public List<string> FieldValues { get; set; }
     }
 }

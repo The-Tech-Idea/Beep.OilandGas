@@ -471,7 +471,7 @@ namespace Beep.OilandGas.Accounting.Services
                 throw;
             }
         }
-        }
+        
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string cn)
         {

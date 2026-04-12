@@ -1,0 +1,78 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Beep.OilandGas.Branchs</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Data\ppdm38tabledescr.json" />
+    <EmbeddedResource Include="Data\PPDM39Metadata.json" />
+    <EmbeddedResource Include="Data\PPDM39TableToModuleMapping.json" />
+    <EmbeddedResource Include="GFX\additives.svg" />
+    <EmbeddedResource Include="GFX\applications.svg" />
+    <EmbeddedResource Include="GFX\areas.svg" />
+    <EmbeddedResource Include="GFX\business-associates.svg" />
+    <EmbeddedResource Include="GFX\category.svg" />
+    <EmbeddedResource Include="GFX\classification.svg" />
+    <EmbeddedResource Include="GFX\consents.svg" />
+    <EmbeddedResource Include="GFX\consultations.svg" />
+    <EmbeddedResource Include="GFX\contracts.svg" />
+    <EmbeddedResource Include="GFX\coordinate-reference.svg" />
+    <EmbeddedResource Include="GFX\ecozones.svg" />
+    <EmbeddedResource Include="GFX\entitlements.svg" />
+    <EmbeddedResource Include="GFX\equipment.svg" />
+    <EmbeddedResource Include="GFX\facilities.svg" />
+    <EmbeddedResource Include="GFX\fields.svg" />
+    <EmbeddedResource Include="GFX\financial.svg" />
+    <EmbeddedResource Include="GFX\fossils.svg" />
+    <EmbeddedResource Include="GFX\hse-incidents.svg" />
+    <EmbeddedResource Include="GFX\instruments.svg" />
+    <EmbeddedResource Include="GFX\interest-sets.svg" />
+    <EmbeddedResource Include="GFX\lithology.svg" />
+    <EmbeddedResource Include="GFX\notifications.svg" />
+    <EmbeddedResource Include="GFX\obligations.svg" />
+    <EmbeddedResource Include="GFX\other.svg" />
+    <EmbeddedResource Include="GFX\paleontology.svg" />
+    <EmbeddedResource Include="GFX\pools.svg" />
+    <EmbeddedResource Include="GFX\ppdm-data-management.svg" />
+    <EmbeddedResource Include="GFX\ppdm39.svg" />
+    <EmbeddedResource Include="GFX\production-entities.svg" />
+    <EmbeddedResource Include="GFX\production-lease-units.svg" />
+    <EmbeddedResource Include="GFX\production-strings.svg" />
+    <EmbeddedResource Include="GFX\projects.svg" />
+    <EmbeddedResource Include="GFX\rate-schedules.svg" />
+    <EmbeddedResource Include="GFX\records-management.svg" />
+    <EmbeddedResource Include="GFX\reference-values.svg" />
+    <EmbeddedResource Include="GFX\reporting-hierarchies.svg" />
+    <EmbeddedResource Include="GFX\reserves.svg" />
+    <EmbeddedResource Include="GFX\restrictions-environment.svg" />
+    <EmbeddedResource Include="GFX\sample-analysis.svg" />
+    <EmbeddedResource Include="GFX\sample-masters.svg" />
+    <EmbeddedResource Include="GFX\seismic.svg" />
+    <EmbeddedResource Include="GFX\sources.svg" />
+    <EmbeddedResource Include="GFX\spacing-units.svg" />
+    <EmbeddedResource Include="GFX\spatial-descriptions.svg" />
+    <EmbeddedResource Include="GFX\spatial-parcels.svg" />
+    <EmbeddedResource Include="GFX\stratigraphy.svg" />
+    <EmbeddedResource Include="GFX\substances-products.svg" />
+    <EmbeddedResource Include="GFX\support-facilities.svg" />
+    <EmbeddedResource Include="GFX\units-of-measure.svg" />
+    <EmbeddedResource Include="GFX\volume-conversions.svg" />
+    <EmbeddedResource Include="GFX\well-logs.svg" />
+    <EmbeddedResource Include="GFX\wells.svg" />
+    <EmbeddedResource Include="GFX\work-orders.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TheTechIdea.Beep.TreeNodes" Version="1.0.16" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.86">
+      <ExcludeAssets>contentFiles</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.139" />
+    <PackageReference Include="TheTechIdea.Beep.Vis.Modules" Version="2.0.38" />
+  </ItemGroup>
+
+</Project>

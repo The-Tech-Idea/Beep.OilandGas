@@ -1,5 +1,6 @@
 ﻿using System;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
+using Beep.OilandGas.PPDM39.Core;
 using Beep.OilandGas.PPDM39.Models;
 
 

@@ -49,7 +49,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             // Get unique sorted pressures to build an integration table
             var allPressures = data.Pressure.Distinct().OrderBy(p => p).ToList();
             if (allPressures.Count < 2)
-                 throw new AnalysisConvergnceException("Insufficient pressure resolution for gas analysis.");
+                 throw new AnalysisConvergenceException("Insufficient pressure resolution for gas analysis.");
             
             // Build m(p) lookup table
             var mpTable = BuildPseudoPressureTable(allPressures, gasGravity, reservoirTemperature, n2, co2, h2s);

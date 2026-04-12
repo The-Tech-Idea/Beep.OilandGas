@@ -367,7 +367,7 @@ namespace Beep.OilandGas.Accounting.Services
 
             return clearingTimes.Any() ? (int)clearingTimes.Average() : 0;
         }
-        }
+        
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
         {

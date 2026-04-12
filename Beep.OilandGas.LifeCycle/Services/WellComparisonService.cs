@@ -42,7 +42,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         /// <summary>
         /// Compares multiple wells by their identifiers (UWIs)
         /// </summary>
-        public async Task<WellComparison> CompareWellsAsync(
+        public async Task<WellComparisonData> CompareWellsAsync(
             List<string> wellIdentifiers,
             List<string> fieldNames = null,
             string connectionName = null)
@@ -78,7 +78,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         /// <summary>
         /// Compares wells from different data sources
         /// </summary>
-        public async Task<WellComparison> CompareWellsFromMultipleSourcesAsync(
+        public async Task<WellComparisonData> CompareWellsFromMultipleSourcesAsync(
             List<WellSourceMapping> wellComparisons,
             List<string> fieldNames = null)
         {
@@ -257,12 +257,12 @@ namespace Beep.OilandGas.LifeCycle.Services
         /// <summary>
         /// Builds comparison DTO from list of wells
         /// </summary>
-        private async Task<WellComparison> BuildComparisonAsync(
+        private async Task<WellComparisonData> BuildComparisonAsync(
             List<WELL> wells,
             List<string> fieldNames,
             string connectionName)
         {
-            var comparison = new WellComparison();
+            var comparison = new WellComparisonData();
 
             // Get available fields
             var availableFields = await GetAvailableComparisonFieldsAsync();
@@ -327,11 +327,11 @@ namespace Beep.OilandGas.LifeCycle.Services
         /// <summary>
         /// Builds comparison DTO from wells from multiple sources
         /// </summary>
-        private async Task<WellComparison> BuildComparisonFromMultipleSourcesAsync(
+        private async Task<WellComparisonData> BuildComparisonFromMultipleSourcesAsync(
             List<(WELL well, string dataSource)> wells,
             List<string> fieldNames)
         {
-            var comparison = new WellComparison();
+            var comparison = new WellComparisonData();
 
             // Get available fields
             var availableFields = await GetAvailableComparisonFieldsAsync();
@@ -396,7 +396,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         /// <summary>
         /// Detects differences between wells for each field
         /// </summary>
-        private void DetectDifferences(WellComparison comparison)
+        private void DetectDifferences(WellComparisonData comparison)
         {
             if (comparison.Wells.Count < 2)
                 return;

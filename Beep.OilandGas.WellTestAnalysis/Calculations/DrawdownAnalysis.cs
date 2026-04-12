@@ -39,7 +39,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             var pressure = data.Pressure.Take(time.Count).ToList(); // Ensure matching length
 
             if (time.Count < 5)
-                throw new AnalysisConvergnceException("Insufficient data points for drawdown analysis.");
+                throw new AnalysisConvergenceException("Insufficient data points for drawdown analysis.");
 
             var logTime = time.Select(t => Math.Log10(t)).ToArray();
             var pressures = pressure.ToArray();
@@ -50,7 +50,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             
             int startIndex = FindStraightLineRegion(logTime, pressures);
              if (startIndex < 0 || startIndex >= logTime.Length - 2)
-                throw new AnalysisConvergnceException("Could not identify straight line region for drawdown analysis.");
+                throw new AnalysisConvergenceException("Could not identify straight line region for drawdown analysis.");
 
             int endIndex = logTime.Length - 1;
             int analysisPoints = Math.Min(15, endIndex - startIndex + 1); // Use more points if available
@@ -67,7 +67,7 @@ namespace Beep.OilandGas.WellTestAnalysis.Calculations
             double m = Math.Abs(slope);
 
             if (m < WellTestConstants.Epsilon)
-                 throw new AnalysisConvergnceException("Invalid slope (zero) from drawdown analysis.");
+                 throw new AnalysisConvergenceException("Invalid slope (zero) from drawdown analysis.");
 
             // Calculate Permeability k
             // k = 162.6 * q * B * mu / (m * h)
