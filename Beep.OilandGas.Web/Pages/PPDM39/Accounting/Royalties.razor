@@ -1,65 +1,131 @@
 @page "/ppdm39/accounting/royalties"
-@using Beep.OilandGas.PPDM39.Models
+@using Beep.OilandGas.Models.Data.ProductionAccounting
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
-<PageTitle>Royalty Calculations - Accounting</PageTitle>
+<PageTitle>Calculate Field Royalties</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Royalty Calculations</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
-    <MudPaper Class="pa-4">
-        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
-            <MudText Typo="Typo.h6">Royalty Calculation Records</MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCalculateDialog">
-                Calculate Royalties
-            </MudButton>
+    @* ─── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Calculate Field Royalties</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Production royalty obligations</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning"
+                         Icon="@Icons.Material.Filled.AccountBalance">Accounting</MudChip>
+            </MudStack>
         </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                   StartIcon="@Icons.Material.Filled.Calculate"
+                   OnClick="OpenCalculateDialog">Calculate Royalties</MudButton>
+    </MudStack>
 
-        <MudStack Spacing="3" Class="mb-4">
-            <MudDatePicker @bind-Date="@_filterStartDate" Label="Filter Start Date" Variant="Variant.Outlined" />
-            <MudDatePicker @bind-Date="@_filterEndDate" Label="Filter End Date" Variant="Variant.Outlined" />
-            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Search" OnClick="LoadRoyalties">
-                Filter
-            </MudButton>
-        </MudStack>
+    @* ─── Date Filter *@
+    <MudCard Elevation="1" Class="mb-4">
+        <MudCardContent>
+            <MudGrid Spacing="2" AlignItems="AlignItems.Center">
+                <MudItem xs="12" sm="5">
+                    <MudDatePicker @bind-Date="@_filterStartDate" Label="From Date" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" sm="5">
+                    <MudDatePicker @bind-Date="@_filterEndDate" Label="To Date" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" sm="2">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Search"
+                               OnClick="LoadRoyalties" FullWidth="true">Filter</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
 
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-        }
-        else if (_royalties != null && _royalties.Any())
-        {
-            <MudTable Items="@_royalties" Hover="true" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh>Calculation Date</MudTh>
-                    <MudTh>Pool ID</MudTh>
-                    <MudTh>Gross Oil Volume</MudTh>
-                    <MudTh>Gross Gas Volume</MudTh>
-                    <MudTh>Royalty Oil Volume</MudTh>
-                    <MudTh>Royalty Gas Volume</MudTh>
-                    <MudTh>Total Royalty Value</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Calculation Date">@FormatDate(GetPropertyValue(context, "CALCULATION_DATE"))</MudTd>
-                    <MudTd DataLabel="Pool ID">@GetPropertyValue(context, "POOL_ID")</MudTd>
-                    <MudTd DataLabel="Gross Oil Volume">@FormatDecimal(GetPropertyValue(context, "GROSS_OIL_VOLUME"))</MudTd>
-                    <MudTd DataLabel="Gross Gas Volume">@FormatDecimal(GetPropertyValue(context, "GROSS_GAS_VOLUME"))</MudTd>
-                    <MudTd DataLabel="Royalty Oil Volume">@FormatDecimal(GetPropertyValue(context, "ROYALTY_OIL_VOLUME"))</MudTd>
-                    <MudTd DataLabel="Royalty Gas Volume">@FormatDecimal(GetPropertyValue(context, "ROYALTY_GAS_VOLUME"))</MudTd>
-                    <MudTd DataLabel="Total Royalty Value">@FormatCurrency(GetPropertyValue(context, "TOTAL_ROYALTY_VALUE"))</MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-        else if (!_isLoading)
-        {
-            <MudAlert Severity="Severity.Info">No royalty calculation records found.</MudAlert>
-        }
-    </MudPaper>
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ─── KPI Row *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Total Records" Value="@((_royalties?.Count ?? 0).ToString())"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.AccountBalance"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="All royalty calculations" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Total Royalty"
+                     Value="@((_royalties?.Sum(r => r.ROYALTY_AMOUNT ?? 0m) ?? 0m).ToString("C0"))"
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.MonetizationOn"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="Sum of royalty amounts" />
+        </MudItem>
+    </MudGrid>
+
+    @* ─── Royalties Grid *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_royalties != null && _royalties.Any())
+            {
+                <MudDataGrid T="ROYALTY_CALCULATION" Items="@_royalties" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <TemplateColumn Title="Calculation Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(context.Item.CALCULATION_DATE?.ToString("dd MMM yyyy") ?? "\u2014")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="r => r.PROPERTY_OR_LEASE_ID" Title="Property / Lease" />
+                        <PropertyColumn Property="r => r.ROYALTY_OWNER_ID" Title="Royalty Owner" />
+                        <TemplateColumn Title="Gross Revenue">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(context.Item.GROSS_REVENUE?.ToString("C2") ?? "\u2014")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Net Revenue">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(context.Item.NET_REVENUE?.ToString("C2") ?? "\u2014")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Royalty Amount">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2" Color="Color.Warning">@(context.Item.ROYALTY_AMOUNT?.ToString("C2") ?? "\u2014")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <StatusBadge Status="@(context.Item.ROYALTY_STATUS ?? "\u2014")" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No records match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No royalty records found</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Adjust the date filter or run a new royalty calculation.</MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                               StartIcon="@Icons.Material.Filled.Calculate"
+                               OnClick="OpenCalculateDialog" Class="mt-2">Calculate Royalties</MudButton>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private List<ROYALTY_CALCULATION>? _royalties;
     private bool _isLoading = false;
     private DateTime? _filterStartDate;
@@ -101,7 +167,7 @@
         var dialog = await DialogService.ShowAsync<RoyaltyCalculationDialog>("Calculate Royalties", options);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result?.Canceled == false)
         {
             await LoadRoyalties();
         }

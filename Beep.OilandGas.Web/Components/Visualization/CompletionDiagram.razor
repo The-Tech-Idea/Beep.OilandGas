@@ -1,0 +1,25 @@
+@using MudBlazor
+
+<MudStack Spacing="2">
+    <MudText Typo="Typo.subtitle2" Color="Color.Secondary" Align="Align.Center">
+        <MudIcon Icon="@Icons.Material.Filled.Layers" Size="Size.Small" Class="mr-1" />
+        Completion Diagram
+    </MudText>
+    <MudPaper Outlined="true" Class="pa-4 d-flex align-center justify-center og-diagram-placeholder">
+        @if (WellData is not null)
+        {
+            <MudStack Spacing="1" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Completion schematic rendering</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Tubing, perforations, packer depths</MudText>
+            </MudStack>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No well selected</MudText>
+        }
+    </MudPaper>
+</MudStack>
+
+@code {
+    [Parameter] public object? WellData { get; set; }
+}

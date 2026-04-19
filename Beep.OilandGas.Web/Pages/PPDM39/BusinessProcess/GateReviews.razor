@@ -1,0 +1,119 @@
+@page "/ppdm39/process/gates"
+@attribute [Authorize(Roles = "GateApprover,Manager,Admin")]
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Gate Reviews</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Approve Gate Reviews</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Gates pending your approval or submitted for review</MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/process")'>
+            Dashboard
+        </MudButton>
+    </MudStack>
+
+    @* ── Status chip filter ──────────────────────────────────────────── *@
+    <MudChipSet T="string" @bind-SelectedValue="_filter"
+                SelectionMode="SelectionMode.SingleSelection"
+                Color="Color.Primary"
+                Class="mb-4">
+        <MudChip T="string" Value="@("ALL")">All</MudChip>
+        <MudChip T="string" Value="@("SUBMITTED")">Submitted</MudChip>
+        <MudChip T="string" Value="@("AWAITING APPROVAL")">Awaiting Approval</MudChip>
+        <MudChip T="string" Value="@("DEFERRED")">Deferred</MudChip>
+        <MudChip T="string" Value="@("APPROVED")">Approved</MudChip>
+        <MudChip T="string" Value="@("REJECTED")">Rejected</MudChip>
+    </MudChipSet>
+
+    @* ── Grid ────────────────────────────────────────────────────────── *@
+    <MudDataGrid T="GateRow"
+                 Items="@FilteredGates"
+                 Dense="true"
+                 Hover="true"
+                 Striped="true"
+                 Sortable="true"
+                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/gates/{e.Item.GateId}"))">
+        <ToolBarContent>
+            <MudText Typo="Typo.subtitle2">@FilteredGates.Count() gate reviews</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="_search" Placeholder="Search…"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true" Style="max-width:220px" />
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="g => g.GateName"   Title="Gate" />
+            <PropertyColumn Property="g => g.EntityId"   Title="Entity" />
+            <PropertyColumn Property="g => g.ProcessType" Title="Phase" />
+            <PropertyColumn Property="g => g.SubmittedBy" Title="Submitted By" />
+            <PropertyColumn Property="g => g.SubmittedAt" Title="Submitted"    Format="dd-MMM-yy" />
+            <TemplateColumn Title="Status" Sortable="false">
+                <CellTemplate>
+                    <StatusBadge Status="@context.Item.Status" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Overdue" Sortable="false">
+                <CellTemplate>
+                    @if (context.Item.DaysOverdue > 0)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Error">@context.Item.DaysOverdue d overdue</MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate>
+                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary"
+                               OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/process/gates/{context.Item.GateId}"))'>
+                        Review
+                    </MudButton>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="GateRow" />
+        </PagerContent>
+    </MudDataGrid>
+
+</MudContainer>
+
+@using Microsoft.AspNetCore.Authorization
+
+@code {
+    private string _fieldName = "Current Field";
+    private string _filter    = "ALL";
+    private string _search    = string.Empty;
+
+    private List<GateRow> _gates = new();
+
+    private IEnumerable<GateRow> FilteredGates => _gates.Where(g =>
+        (_filter == "ALL" || g.Status.Equals(_filter, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrWhiteSpace(_search) ||
+            g.GateName.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            g.EntityId.Contains(_search, StringComparison.OrdinalIgnoreCase)));
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/field/current/gates
+        _gates = new List<GateRow>
+        {
+            new("G-001", "Eagle Ford S-1 — Gate 2: AFE Approval",       "W-001",   "EXPLORATION",    "john.doe",    DateTime.Today.AddDays(-3),  "AWAITING APPROVAL", 3),
+            new("G-002", "FDP Approval Gate — Field Development",        "FIELD-1", "DEVELOPMENT",    "jane.smith",  DateTime.Today.AddDays(-1),  "SUBMITTED",         0),
+            new("G-003", "Well P&A Gate 1 Review",                       "W-045",   "DECOMMISSIONING","ops.manager", DateTime.Today.AddDays(-10), "AWAITING APPROVAL", 10),
+            new("G-004", "Reservoir Characterization Gate",               "RES-012", "DEVELOPMENT",    "geo.team",    DateTime.Today.AddDays(-20), "DEFERRED",          0),
+            new("G-005", "Exploratory Well Spud Authorization",           "W-002",   "EXPLORATION",    "john.doe",    DateTime.Today.AddDays(-7),  "APPROVED",          0),
+        };
+    }
+
+    private record GateRow(
+        string GateId, string GateName, string EntityId, string ProcessType,
+        string SubmittedBy, DateTime SubmittedAt, string Status, int DaysOverdue);
+}

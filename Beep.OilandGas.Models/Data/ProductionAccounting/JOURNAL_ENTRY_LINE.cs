@@ -67,5 +67,40 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             get { return this.ROW_IDValue; }
             set { SetProperty(ref ROW_IDValue, value); }
         }
+
+        private System.String COST_CENTER_IDValue;
+        public System.String COST_CENTER_ID
+        {
+            get { return this.COST_CENTER_IDValue; }
+            set { SetProperty(ref COST_CENTER_IDValue, value); }
+        }
+
+        private System.String CURRENCY_CODEValue;
+        public System.String CURRENCY_CODE
+        {
+            get { return this.CURRENCY_CODEValue; }
+            set { SetProperty(ref CURRENCY_CODEValue, value); }
+        }
+
+        private System.Decimal? EXCHANGE_RATEValue;
+        public System.Decimal? EXCHANGE_RATE
+        {
+            get { return this.EXCHANGE_RATEValue; }
+            set { SetProperty(ref EXCHANGE_RATEValue, value); }
+        }
+
+        private System.Decimal? SHADOW_DEBIT_AMOUNTValue;
+        public System.Decimal? SHADOW_DEBIT_AMOUNT
+        {
+            get { return this.SHADOW_DEBIT_AMOUNTValue; }
+            set { SetProperty(ref SHADOW_DEBIT_AMOUNTValue, value); }
+        }
+
+        private System.Decimal? SHADOW_CREDIT_AMOUNTValue;
+        public System.Decimal? SHADOW_CREDIT_AMOUNT
+        {
+            get { return this.SHADOW_CREDIT_AMOUNTValue; }
+            set { SetProperty(ref SHADOW_CREDIT_AMOUNTValue, value); }
+        }
     }
 }

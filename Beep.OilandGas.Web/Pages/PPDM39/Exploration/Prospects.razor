@@ -1,5 +1,5 @@
 @page "/ppdm39/exploration/prospects"
-@using Beep.OilandGas.PPDM39.Models
+@using Beep.OilandGas.Models.Data.ProspectIdentification
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
@@ -7,59 +7,136 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
+@inject IOperationsServiceClient OperationsService
 
-<PageTitle>Prospects - Exploration</PageTitle>
+<PageTitle>Evaluate Exploration Prospects</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Exploration Prospects</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
-    <MudPaper Class="pa-4">
-        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
-            <MudText Typo="Typo.h6">Prospects for Current Field</MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
-                Add Prospect
-            </MudButton>
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Evaluate Exploration Prospects</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Prospect pipeline</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info"
+                         Icon="@Icons.Material.Filled.Explore">Exploration</MudChip>
+            </MudStack>
         </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+            Add Prospect
+        </MudButton>
+    </MudStack>
 
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-        }
-        else if (_prospects != null && _prospects.Any())
-        {
-            <MudTable Items="@_prospects" Hover="true" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh>Prospect ID</MudTh>
-                    <MudTh>Prospect Name</MudTh>
-                    <MudTh>Status</MudTh>
-                    <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Prospect ID">@GetPropertyValue(context, "PROSPECT_ID")</MudTd>
-                    <MudTd DataLabel="Prospect Name">@GetPropertyValue(context, "PROSPECT_NAME")</MudTd>
-                    <MudTd DataLabel="Status">@GetPropertyValue(context, "PROSPECT_STATUS")</MudTd>
-                    <MudTd DataLabel="Actions">
-                        <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
-                            <MudButton StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditDialog(context))">
-                                Evaluate
-                            </MudButton>
-                            <MudButton StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteProspect(context))">
-                                Delete
-                            </MudButton>
-                        </MudButtonGroup>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Info">No prospects found for the current field.</MudAlert>
-        }
-    </MudPaper>
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ── KPI Row ─────────────────────────────────────────────────────── *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Total Prospects" Value="@((_prospects?.Count ?? 0).ToString())"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Layers"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="All statuses" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Pending Evaluation"
+                     Value="@((_prospects?.Count(p => p.Status == null || p.Status == "PENDING" || p.Status == "NEW") ?? 0).ToString())"
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.HourglassEmpty"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Warning"
+                     TrendText="Awaiting review" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Approved"
+                     Value="@((_prospects?.Count(p => p.Status == "APPROVED") ?? 0).ToString())"
+                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.CheckCircle"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success"
+                     TrendText="Ready to drill" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Abandoned"
+                     Value="@((_prospects?.Count(p => p.Status == "ABANDONED") ?? 0).ToString())"
+                     ValueColor="Color.Error" Icon="@Icons.Material.Filled.Cancel"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="Not pursued" />
+        </MudItem>
+    </MudGrid>
+
+    @* ── Prospect Grid ───────────────────────────────────────────────── *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_prospects != null && _prospects.Any())
+            {
+                <MudDataGrid T="Prospect" Items="@_prospects" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <PropertyColumn Property="p => p.ProspectName" Title="Prospect Name" Sortable="true" />
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <StatusBadge Status="@(context.Item.Status ?? "PENDING")" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Evaluation Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">
+                                    @(context.Item.EvaluationDate?.ToString("dd MMM yyyy") ?? "—")
+                                </MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="p => p.Description" Title="Description" />
+                        <TemplateColumn Title="Actions" Sortable="false">
+                            <CellTemplate>
+                                <MudStack Row="true" Spacing="1">
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                                               StartIcon="@Icons.Material.Filled.Science"
+                                               OnClick="@(() => OpenEditDialog(context.Item))">
+                                        Evaluate
+                                    </MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error"
+                                               StartIcon="@Icons.Material.Filled.Delete"
+                                               OnClick="@(() => DeleteProspect(context.Item))">
+                                        Remove
+                                    </MudButton>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Layers" Color="Color.Secondary"
+                                     Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No prospects match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.Explore" Color="Color.Secondary"
+                             Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No prospects yet</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Start by adding the first exploration prospect for this field.
+                    </MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="OpenCreateDialog" Class="mt-2">
+                        Add First Prospect
+                    </MudButton>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
-    private List<ProspectDto>? _prospects;
+    private string _fieldName = "Current Field";
+    private List<Prospect>? _prospects;
     private bool _isLoading = false;
     private string? _currentUserId = "system"; // TODO: Get from authentication context
 
@@ -78,7 +155,7 @@
         catch (Exception ex)
         {
             Snackbar.Add($"Error loading prospects: {ex.Message}", Severity.Error);
-            _prospects = new List<ProspectDto>();
+            _prospects = new List<Prospect>();
         }
         finally
         {
@@ -92,17 +169,17 @@
         var dialog = await DialogService.ShowAsync<ProspectEditDialog>("Create Prospect", options);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is Dictionary<string, object> prospectData)
+        if (result?.Canceled == false && result.Data is Dictionary<string, object> prospectData)
         {
             try
             {
-                // Convert dictionary to ProspectDto
-                var prospect = new ProspectDto
+                // Convert dictionary to Prospect
+                var prospect = new Prospect
                 {
                     ProspectName = prospectData.ContainsKey("PROSPECT_NAME") ? prospectData["PROSPECT_NAME"]?.ToString() ?? string.Empty : string.Empty,
-                    FieldId = prospectData.ContainsKey("FIELD_ID") ? prospectData["FIELD_ID"]?.ToString() : null,
+                    FieldId = prospectData.ContainsKey("FIELD_ID") ? prospectData["FIELD_ID"]?.ToString() ?? string.Empty : string.Empty,
                     Description = prospectData.ContainsKey("DESCRIPTION") ? prospectData["DESCRIPTION"]?.ToString() : null,
-                    Status = prospectData.ContainsKey("PROSPECT_STATUS") ? prospectData["PROSPECT_STATUS"]?.ToString() : null,
+                    Status = prospectData.ContainsKey("PROSPECT_STATUS") ? prospectData["PROSPECT_STATUS"]?.ToString() ?? string.Empty : string.Empty,
                     EvaluationDate = prospectData.ContainsKey("EVALUATION_DATE") && DateTime.TryParse(prospectData["EVALUATION_DATE"]?.ToString(), out var evalDate) ? evalDate : DateTime.UtcNow
                 };
 
@@ -117,14 +194,14 @@
         }
     }
 
-    private async Task OpenEditDialog(ProspectDto prospect)
+    private async Task OpenEditDialog(Prospect prospect)
     {
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
         var parameters = new DialogParameters { ["Prospect"] = prospect };
         var dialog = await DialogService.ShowAsync<ProspectEditDialog>("Edit Prospect", parameters, options);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is Dictionary<string, object> prospectData)
+        if (result?.Canceled == false && result.Data is Dictionary<string, object> prospectData)
         {
             try
             {
@@ -140,9 +217,9 @@
         }
     }
 
-    private async Task DeleteProspect(ProspectDto prospect)
+    private async Task DeleteProspect(Prospect prospect)
     {
-        var result = await DialogService.ShowMessageBox(
+        var result = await DialogService.ShowMessageBoxAsync(
             "Delete Prospect",
             $"Are you sure you want to delete prospect {prospect.ProspectName}?",
             yesText: "Delete", cancelText: "Cancel");
@@ -163,7 +240,7 @@
         }
     }
 
-    private string GetPropertyValue(ProspectDto prospect, string propertyName)
+    private string GetPropertyValue(Prospect prospect, string propertyName)
     {
         return propertyName switch
         {
@@ -174,3 +251,4 @@
         };
     }
 }
+

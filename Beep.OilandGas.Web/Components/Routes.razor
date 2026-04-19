@@ -1,5 +1,5 @@
 <ConnectionCheck />
-<Router AppAssembly="@typeof(Program).Assembly">
+<Router AppAssembly="@typeof(Routes).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
@@ -10,7 +10,7 @@
             <MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
                 <MudPaper Elevation="2" Class="pa-6">
                     <MudStack AlignItems="AlignItems.Center" Spacing="3">
-                        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Large" Color="Color.Error" Style="font-size: 4rem;" />
+                        <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Size="Size.Large" Color="Color.Error" Class="og-icon-xl" />
                         <MudText Typo="Typo.h5">Page Not Found</MudText>
                         <MudText Typo="Typo.body1" Class="text-center">
                             Sorry, there's nothing at this address.

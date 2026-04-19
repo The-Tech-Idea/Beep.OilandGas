@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Pumps;
+using Beep.OilandGas.Models.Data.SuckerRodPumping;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using TheTechIdea.Beep.Editor;
@@ -141,6 +142,12 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
         #endregion
 
         #region Performance Analysis Methods
+
+        /// <summary>
+        /// Explicit interface implementation: delegates to the full overload with a default empty request.
+        /// </summary>
+        async Task<SuckerRodPumpPerformance> ISuckerRodPumpingService.AnalyzePerformanceAsync(string pumpId)
+            => await AnalyzePerformanceAsync(pumpId, new SuckerRodAnalyzeRequest());
 
         /// <summary>
         /// Analyzes pump performance with diagnosis of issues

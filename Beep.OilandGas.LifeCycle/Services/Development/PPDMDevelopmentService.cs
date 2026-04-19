@@ -117,12 +117,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 // Convert DTO to PPDM model
                 var poolEntity = _mappingService.ConvertDTOToPPDMModel<POOL, PoolRequest>(poolData);
                 
-                // Set FIELD_ID automatically using reflection
-                var fieldIdProp = entityType.GetProperty("FIELD_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (fieldIdProp != null && fieldIdProp.CanWrite)
-                {
-                    fieldIdProp.SetValue(poolEntity, _defaults.FormatIdForTable("POOL", fieldId));
-                }
+                // Set FIELD_ID directly
+                poolEntity.FIELD_ID = _defaults.FormatIdForTable("POOL", fieldId);
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                     entityType, _connectionName, "POOL", null);
@@ -165,11 +161,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
 
                 var formattedId = _defaults.FormatIdForTable("POOL", poolId);
                 // Set the ID property on the entity before updating
-                var idProp = entityType.GetProperty("POOL_ID");
-                if (idProp != null)
-                {
-                    idProp.SetValue(poolEntity, formattedId);
-                }
+                poolEntity.POOL_ID = formattedId;
                 var result = await repo.UpdateAsync(poolEntity, userId);
                 
                 // Return PPDM model directly
@@ -262,25 +254,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     throw new InvalidOperationException("WELL table metadata not found");
                 }
 
-                var entityType = typeof(WELL);
-
                 // Convert DTO to PPDM model
                 var wellEntity = _mappingService.ConvertDTOToPPDMModel<WELL, DevelopmentWellRequest>(wellData);
-                
-                // Set FIELD_ID and WELL_TYPE automatically using reflection
-                var fieldIdProp = entityType.GetProperty("FIELD_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (fieldIdProp != null && fieldIdProp.CanWrite)
-                {
-                    fieldIdProp.SetValue(wellEntity, _defaults.FormatIdForTable("WELL", fieldId));
-                }
-                var wellTypeProp = entityType.GetProperty("WELL_TYPE", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (wellTypeProp != null && wellTypeProp.CanWrite)
-                {
-                    wellTypeProp.SetValue(wellEntity, "DEVELOPMENT");
-                }
+
+                // WELL field link is ASSIGNED_FIELD (not FIELD_ID); WELL has no WELL_TYPE — use CURRENT_CLASS
+                wellEntity.ASSIGNED_FIELD = _defaults.FormatIdForTable("WELL", fieldId);
+                wellEntity.CURRENT_CLASS = "DEVELOPMENT";
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "WELL", null);
+                    typeof(WELL), _connectionName, "WELL", null);
 
                 var result = await repo.InsertAsync(wellEntity, userId);
                 
@@ -316,19 +298,17 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
 
                 // Wellbores are WELL table records with specific well_level_type, linked via WELL_XREF
                 // Get the parent well's UWI to query WELL_XREF
-                var parentWell = wells.First();
-                var parentWellType = typeof(WELL);
-                var uwiProp = parentWellType.GetProperty("UWI", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (uwiProp == null)
+                var parentWell = wells.OfType<WELL>().FirstOrDefault();
+                if (parentWell == null)
                 {
-                    _logger?.LogWarning("UWI property not found on WELL type");
+                    _logger?.LogWarning("Parent well {WellId} could not be cast to WELL", wellId);
                     return new List<WELL>();
                 }
 
-                var parentUwi = uwiProp.GetValue(parentWell)?.ToString();
+                var parentUwi = parentWell.UWI;
                 if (string.IsNullOrWhiteSpace(parentUwi))
                 {
-                    _logger?.LogWarning($"Parent well {wellId} does not have a UWI");
+                    _logger?.LogWarning("Parent well {WellId} does not have a UWI", wellId);
                     return new List<WELL>();
                 }
 
@@ -376,25 +356,24 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 var wellboreUwis = new HashSet<string>();
                 foreach (var xref in wellXrefs)
                 {
-                    // For wellbores, the xref UWI might be the same or different structure
-                    // Get UWI from xref - this should identify the wellbore well
-                    var xrefUwiProp = wellXrefType.GetProperty("UWI", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                    if (xrefUwiProp != null)
-                    {
-                        var uwi = xrefUwiProp.GetValue(xref)?.ToString();
-                        if (!string.IsNullOrWhiteSpace(uwi) && uwi != parentUwi)
-                        {
-                            wellboreUwis.Add(uwi);
-                        }
-                    }
+                    var uwi = xref.UWI;
+                    if (!string.IsNullOrWhiteSpace(uwi) && uwi != parentUwi)
+                        wellboreUwis.Add(uwi);
                 }
 
                 if (!wellboreUwis.Any())
                 {
-                    // If no distinct UWIs found, wellbores might share the same UWI structure
-                    // In that case, query WELL table directly filtering by well_level_type
-                    // For now, return empty list - the relationship structure may vary
-                    return new List<WELL>();
+                    // Fallback: query WELL directly by WELL_LEVEL_TYPE = "WELLBORE" within this field
+                    var directRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(WELL), _connectionName, "WELL", null);
+                    var directFilters = new List<AppFilter>
+                    {
+                        new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("WELL", fieldId) },
+                        new AppFilter { FieldName = "WELL_LEVEL_TYPE", Operator = "=", FilterValue = "WELLBORE" }
+                    };
+                    if (additionalFilters != null) directFilters.AddRange(additionalFilters);
+                    var directResults = await directRepo.GetAsync(directFilters);
+                    return directResults.Cast<WELL>().ToList();
                 }
 
                 // Now query WELL table for these wellbore UWIs
@@ -493,30 +472,18 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     throw new InvalidOperationException("FACILITY table metadata not found");
                 }
 
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                if (entityType == null)
-                {
-                    throw new InvalidOperationException($"Entity type not found for FACILITY: {metadata.EntityTypeName}");
-                }
+                // FACILITY is a known compile-time type; use it directly
+                var facilityEntity = _mappingService.ConvertDTOToPPDMModel<FACILITY, FacilityRequest>(facilityData);
 
-                // Convert DTO to PPDM model
-                var facilityEntity = _mappingService.ConvertDTOToPPDMModelRuntime(facilityData, typeof(FacilityRequest), entityType);
-                
-                // Set FIELD_ID automatically using reflection
-                var fieldIdProp = entityType.GetProperty("FIELD_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (fieldIdProp != null && fieldIdProp.CanWrite)
-                {
-                    fieldIdProp.SetValue(facilityEntity, _defaults.FormatIdForTable("FACILITY", fieldId));
-                }
+                // FACILITY field link is PRIMARY_FIELD_ID (not FIELD_ID)
+                facilityEntity.PRIMARY_FIELD_ID = _defaults.FormatIdForTable("FACILITY", fieldId);
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "FACILITY");
+                    typeof(FACILITY), _connectionName, "FACILITY", null);
 
                 var result = await repo.InsertAsync(facilityEntity, userId);
-                
-                // Convert PPDM model back to DTO
-                return _mappingService.ConvertPPDMModelToDTORuntime(result, typeof(FacilityResponse), entityType) as FacilityResponse 
-                    ?? throw new InvalidOperationException("Failed to convert facility entity to FacilityResponse");
+
+                return _mappingService.ConvertPPDMModelToDTO<FacilityResponse, FACILITY>((FACILITY)result);
             }
             catch (Exception ex)
             {
@@ -576,20 +543,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     throw new InvalidOperationException("PIPELINE table metadata not found");
                 }
 
-                var entityType = typeof(PIPELINE);
-
                 // Convert DTO to PPDM model
                 var pipelineEntity = _mappingService.ConvertDTOToPPDMModel<PIPELINE, PipelineRequest>(pipelineData);
-                
-                // Set FIELD_ID automatically using reflection
-                var fieldIdProp = entityType.GetProperty("FIELD_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (fieldIdProp != null && fieldIdProp.CanWrite)
-                {
-                    fieldIdProp.SetValue(pipelineEntity, _defaults.FormatIdForTable("PIPELINE", fieldId));
-                }
+
+                // PIPELINE field link is PRIMARY_FIELD_ID (not FIELD_ID)
+                pipelineEntity.PRIMARY_FIELD_ID = _defaults.FormatIdForTable("PIPELINE", fieldId);
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "PIPELINE", null);
+                    typeof(PIPELINE), _connectionName, "PIPELINE", null);
 
                 var result = await repo.InsertAsync(pipelineEntity, userId);
                 
@@ -777,27 +738,73 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     throw new InvalidOperationException($"Failed to retrieve well {wellId}");
                 }
 
-                // Get wellbore/tubing data from WELL_EQUIPMENT or WELLBORE
-                // This is a simplified implementation - in production, you would retrieve actual values
+                // Compute well depth with UOM conversion (FINAL_TD preferred over DRILL_TD)
+                decimal toFt(decimal depth, string? uom) =>
+                    string.Equals(uom, "M", StringComparison.OrdinalIgnoreCase) ? depth * 3.28084m : depth;
+                var wellDepthFt = well.FINAL_TD > 0 ? toFt(well.FINAL_TD, well.FINAL_TD_OUOM)
+                    : well.DRILL_TD > 0 ? toFt(well.DRILL_TD, well.FINAL_TD_OUOM)
+                    : 10000m;
+
+                // Query WELL_TUBULAR for tubing and casing outer diameters
+                var tubularRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL_TUBULAR), _connectionName, "WELL_TUBULAR", null);
+                var tubingRecords = await tubularRepo.GetAsync(new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
+                    new AppFilter { FieldName = "TUBING_TYPE", Operator = "=", FilterValue = "TUBING" },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                });
+                var casingRecords = await tubularRepo.GetAsync(new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
+                    new AppFilter { FieldName = "TUBING_TYPE", Operator = "=", FilterValue = "CASING" },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                });
+                var tubingOd = tubingRecords?.OfType<WELL_TUBULAR>()
+                    .Where(t => t.OUTSIDE_DIAMETER > 0)
+                    .OrderByDescending(t => t.OUTSIDE_DIAMETER)
+                    .FirstOrDefault()?.OUTSIDE_DIAMETER;
+                var casingOd = casingRecords?.OfType<WELL_TUBULAR>()
+                    .Where(t => t.OUTSIDE_DIAMETER > 0)
+                    .OrderByDescending(t => t.OUTSIDE_DIAMETER)
+                    .FirstOrDefault()?.OUTSIDE_DIAMETER;
+
+                // Query latest WELL_TEST for fluid and pressure properties
+                var testRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL_TEST), _connectionName, "WELL_TEST", null);
+                var testRecords = await testRepo.GetAsync(new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                });
+                var latestTest = testRecords?.OfType<WELL_TEST>()
+                    .OrderByDescending(t => t.TEST_DATE ?? t.EFFECTIVE_DATE)
+                    .FirstOrDefault();
+
+                // Wellhead temp in Rankine; bottomhole via geothermal gradient (~1.5°F/100 ft)
+                var wellheadTempF = latestTest?.FLOW_TEMPERATURE > 0 ? latestTest.FLOW_TEMPERATURE : 60m;
+                var wellheadTempR = wellheadTempF + 459.67m;
+                var bottomholeTempR = wellheadTempR + (wellDepthFt * 0.015m);
+
                 var wellProperties = new GAS_LIFT_WELL_PROPERTIES
                 {
-                    WELL_DEPTH = !string.IsNullOrEmpty(well.FINAL_TD_OUOM) && well.FINAL_TD_OUOM == "FT" 
-                        ? well.FINAL_TD 
-                        : 10000m, // Default 10,000 feet
-                    TUBING_DIAMETER = 3, // Default 3" - would retrieve from WELL_EQUIPMENT
-                    CASING_DIAMETER = 7.0m, // Default - would retrieve from WELL_EQUIPMENT
-                    WELLHEAD_PRESSURE = 100m, // Default - would retrieve from well test or production data
-                    BOTTOM_HOLE_PRESSURE = 2000m, // Default - would retrieve from well test or reservoir data
-                    WELLHEAD_TEMPERATURE = 520m, // Default 60Â°F = 520Â°R
-                    BOTTOM_HOLE_TEMPERATURE = 580m, // Default 120Â°F = 580Â°R
-                    OIL_GRAVITY = 35m, // Default 35 API - would retrieve from reservoir/fluid data
-                    WATER_CUT = 0.3m, // Default 30% - would retrieve from production data
-                    GAS_OIL_RATIO = 500m, // Default 500 scf/bbl - would retrieve from production data
-                    GAS_SPECIFIC_GRAVITY = 0.65m, // Default - would retrieve from gas analysis
-                    DESIRED_PRODUCTION_RATE = 2000m // Default 2000 bbl/day
+                    WELL_DEPTH = wellDepthFt,
+                    TUBING_DIAMETER = (int)Math.Round(tubingOd ?? 2.875m),
+                    CASING_DIAMETER = casingOd ?? 7.0m,
+                    WELLHEAD_PRESSURE = latestTest?.FLOW_PRESSURE > 0 ? latestTest.FLOW_PRESSURE : 100m,
+                    BOTTOM_HOLE_PRESSURE = latestTest?.STATIC_PRESSURE > 0 ? latestTest.STATIC_PRESSURE : 2000m,
+                    WELLHEAD_TEMPERATURE = wellheadTempR,
+                    BOTTOM_HOLE_TEMPERATURE = bottomholeTempR,
+                    OIL_GRAVITY = latestTest?.OIL_GRAVITY > 0 ? latestTest.OIL_GRAVITY : 35m,
+                    WATER_CUT = latestTest?.WATER_CUT_PERCENT > 0 ? latestTest.WATER_CUT_PERCENT / 100m : 0.3m,
+                    GAS_OIL_RATIO = latestTest?.GOR > 0 ? latestTest.GOR : 500m,
+                    GAS_SPECIFIC_GRAVITY = latestTest?.GAS_GRAVITY > 0 ? latestTest.GAS_GRAVITY : 0.65m,
+                    DESIRED_PRODUCTION_RATE = 2000m
                 };
 
-                _logger?.LogWarning("Using default values for some well properties. For accurate analysis, provide well properties in request or ensure PPDM data is complete.");
+                _logger?.LogInformation("Gas lift well properties loaded for {WellId}: depth={Depth}ft, tubingOd={TubingOd}in, testDate={TestDate}",
+                    wellId, wellDepthFt, wellProperties.TUBING_DIAMETER,
+                    latestTest?.TEST_DATE?.ToString("yyyy-MM-dd") ?? "none");
 
                 return wellProperties;
             }
@@ -826,28 +833,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 }
 
                 var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(Dictionary<string, object>), _connectionName, "WELL_EQUIPMENT", null);
+                    typeof(WELL_EQUIPMENT), _connectionName, "WELL_EQUIPMENT", null);
 
-                var equipmentRecord = new Dictionary<string, object>
+                var equipmentRecord = new WELL_EQUIPMENT
                 {
-                    ["WELL_EQUIPMENT_ID"] = Guid.NewGuid().ToString(),
-                    ["WELL_ID"] = wellId,
-                    ["EQUIPMENT_TYPE"] = "GAS_LIFT_SYSTEM",
-                    ["EQUIPMENT_NAME"] = "Gas Lift Potential Analysis",
-                    ["DESCRIPTION"] = $"Optimal injection rate: {result.OPTIMAL_GAS_INJECTION_RATE:F2} Mscf/day, Max production: {result.MAXIMUM_PRODUCTION_RATE:F2} bbl/day",
-                    ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
-                    {
-                        OptimalGasInjectionRate = result.OPTIMAL_GAS_INJECTION_RATE,
-                        MaximumProductionRate = result.MAXIMUM_PRODUCTION_RATE,
-                        OptimalGasLiquidRatio = result.OPTIMAL_GAS_LIQUID_RATIO,
-                        PerformancePoints = result.PERFORMANCE_POINTS.Select(p => new
-                        {
-                            p.GasInjectionRate,
-                            p.ProductionRate,
-                            p.GasLiquidRatio,
-                            p.BottomHolePressure
-                        })
-                    })
+                    UWI = wellId,
+                    EQUIPMENT_ID = $"GAS_LIFT_ANALYSIS_{Guid.NewGuid():N}",
+                    SOURCE = "LIFECYCLE",
+                    INSTALL_DATE = DateTime.UtcNow,
+                    ACTIVE_IND = "Y",
+                    REMARK = $"GAS_LIFT_SYSTEM | Optimal injection: {result.OPTIMAL_GAS_INJECTION_RATE:F2} Mscf/day, Max production: {result.MAXIMUM_PRODUCTION_RATE:F2} bbl/day, Optimal GLR: {result.OPTIMAL_GAS_LIQUID_RATIO:F2}"
                 };
 
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
@@ -878,28 +873,20 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 }
 
                 var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(Dictionary<string, object>), _connectionName, "WELL_EQUIPMENT", null);
+                    typeof(WELL_EQUIPMENT), _connectionName, "WELL_EQUIPMENT", null);
 
                 // Store each valve as a separate equipment record
                 foreach (var valve in result.Valves)
                 {
-                    var equipmentRecord = new Dictionary<string, object>
+                    var equipmentRecord = new WELL_EQUIPMENT
                     {
-                        ["WELL_EQUIPMENT_ID"] = Guid.NewGuid().ToString(),
-                        ["WELL_ID"] = wellId,
-                        ["EQUIPMENT_TYPE"] = "GAS_LIFT_VALVE",
-                        ["EQUIPMENT_NAME"] = $"Gas Lift Valve at {valve.DEPTH:F0} ft",
-                        ["DESCRIPTION"] = $"Port size: {valve.PORT_SIZE:F3} in, Opening pressure: {valve.OPENING_PRESSURE:F2} psia",
-                        ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
-                        {
-                            valve.DEPTH,
-                            valve.PORT_SIZE,
-                            valve.OPENING_PRESSURE,
-                            valve.CLOSING_PRESSURE,
-                            valve.VALVE_TYPE,
-                            valve.TEMPERATURE,
-                            valve.GAS_INJECTION_RATE
-                        })
+                        UWI = wellId,
+                        EQUIPMENT_ID = $"GLV_{valve.DEPTH:F0}_{Guid.NewGuid():N}",
+                        SOURCE = "LIFECYCLE",
+                        INSTALL_DATE = DateTime.UtcNow,
+                        INSTALL_TOP_DEPTH = valve.DEPTH,
+                        ACTIVE_IND = "Y",
+                        REMARK = $"GAS_LIFT_VALVE | Depth: {valve.DEPTH:F0} ft, Port: {valve.PORT_SIZE:F3} in, Open P: {valve.OPENING_PRESSURE:F2} psia, Close P: {valve.CLOSING_PRESSURE:F2} psia, Type: {valve.VALVE_TYPE}"
                     };
 
                     await equipmentRepo.InsertAsync(equipmentRecord, userId);
@@ -933,23 +920,16 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 }
 
                 var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(Dictionary<string, object>), _connectionName, "WELL_EQUIPMENT", null);
+                    typeof(WELL_EQUIPMENT), _connectionName, "WELL_EQUIPMENT", null);
 
-                var equipmentRecord = new Dictionary<string, object>
+                var equipmentRecord = new WELL_EQUIPMENT
                 {
-                    ["WELL_EQUIPMENT_ID"] = Guid.NewGuid().ToString(),
-                    ["WELL_ID"] = wellId,
-                    ["EQUIPMENT_TYPE"] = "GAS_LIFT_VALVE_SPACING",
-                    ["EQUIPMENT_NAME"] = "Gas Lift Valve Spacing",
-                    ["DESCRIPTION"] = $"Spacing method: {spacingMethod}, {result.NumberOfValves} valves",
-                    ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
-                    {
-                        SpacingMethod = spacingMethod,
-                        TotalDepthCoverage = result.TotalDepthCoverage,
-                        NumberOfValves = result.NumberOfValves,
-                        ValveDepths = result.ValveDepths,
-                        OpeningPressures = result.OpeningPressures
-                    })
+                    UWI = wellId,
+                    EQUIPMENT_ID = $"GLV_SPACING_{Guid.NewGuid():N}",
+                    SOURCE = "LIFECYCLE",
+                    INSTALL_DATE = DateTime.UtcNow,
+                    ACTIVE_IND = "Y",
+                    REMARK = $"GAS_LIFT_VALVE_SPACING | Method: {spacingMethod}, Valves: {result.NumberOfValves}, Depth coverage: {result.TotalDepthCoverage:F0} ft"
                 };
 
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
@@ -1138,24 +1118,46 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                     throw new InvalidOperationException($"Failed to retrieve pipeline {pipelineId}");
                 }
 
-                // Map PPDM pipeline to PIPELINE_PROPERTIES
-                // This is a simplified implementation - in production, you would retrieve actual values from PIPELINE and related tables
+                // Map PPDM pipeline record to analysis properties
+                // Convert diameter and length to target UOM (inches / feet)
+                decimal mapDiameter(decimal d, string? uom) =>
+                    string.Equals(uom, "MM", StringComparison.OrdinalIgnoreCase) ? d / 25.4m
+                    : string.Equals(uom, "CM", StringComparison.OrdinalIgnoreCase) ? d / 2.54m
+                    : string.Equals(uom, "M", StringComparison.OrdinalIgnoreCase) ? d * 39.3701m
+                    : d; // assume IN
+                decimal mapLength(decimal l, string? uom) =>
+                    string.Equals(uom, "M", StringComparison.OrdinalIgnoreCase) ? l * 3.28084m
+                    : string.Equals(uom, "KM", StringComparison.OrdinalIgnoreCase) ? l * 3280.84m
+                    : string.Equals(uom, "MI", StringComparison.OrdinalIgnoreCase) ? l * 5280m
+                    : l; // assume FT
+
+                var diameter = pipeline.DIAMETER > 0
+                    ? mapDiameter(pipeline.DIAMETER, pipeline.DIAMETER_OUOM)
+                    : 12m;
+                var length = pipeline.LENGTH > 0
+                    ? mapLength(pipeline.LENGTH, pipeline.LENGTH_OUOM)
+                    : 50000m;
+
+                // DESIGN_PRESSURE and DESIGN_TEMPERATURE come directly from the PPDM record
+                // ELEVATION is the net elevation change along the route
+                // Outlet pressure is estimated at 50% of design pressure if not separately stored
+                var inletPressure = pipeline.DESIGN_PRESSURE > 0 ? pipeline.DESIGN_PRESSURE : 1000m;
+                var avgTempF = pipeline.DESIGN_TEMPERATURE > 0 ? pipeline.DESIGN_TEMPERATURE : 80m;
+                var avgTempR = avgTempF + 459.67m;
+
                 var PIPELINE_PROPERTIES = new PIPELINE_PROPERTIES
                 {
-                    DIAMETER = !string.IsNullOrEmpty(pipeline.DIAMETER_OUOM) && pipeline.DIAMETER_OUOM == "IN"
-                        ? (pipeline.DIAMETER is decimal pd ? pd : 12m)
-                        : 12m, // Default 12 inches
-                    LENGTH = !string.IsNullOrEmpty(pipeline.LENGTH_OUOM) && pipeline.LENGTH_OUOM == "FT"
-                        ? (pipeline.LENGTH is decimal pl ? pl : 50000m)
-                        : 50000m, // Default 50,000 feet
-                    ROUGHNESS = 0.00015m, // Default for steel pipe
-                    ELEVATION_CHANGE = 0m, // Would retrieve from pipeline route data
-                    INLET_PRESSURE = 1000m, // Default - would retrieve from operational data
-                    OUTLET_PRESSURE = 500m, // Default - would retrieve from operational data
-                    AVERAGE_TEMPERATURE = 540m // Default 80Â°F = 540Â°R
+                    DIAMETER = diameter,
+                    LENGTH = length,
+                    ROUGHNESS = 0.00015m, // Standard commercial steel pipe roughness (ft)
+                    ELEVATION_CHANGE = pipeline.ELEVATION,
+                    INLET_PRESSURE = inletPressure,
+                    OUTLET_PRESSURE = inletPressure * 0.5m, // Conservative: 50% pressure recovery
+                    AVERAGE_TEMPERATURE = avgTempR
                 };
 
-                _logger?.LogWarning("Using default values for some pipeline properties. For accurate analysis, provide pipeline properties in request or ensure PPDM data is complete.");
+                _logger?.LogInformation("Pipeline properties loaded for {PipelineId}: diameter={Diameter}in, length={Length}ft, elevation={Elevation}ft",
+                    pipelineId, PIPELINE_PROPERTIES.DIAMETER, PIPELINE_PROPERTIES.LENGTH, PIPELINE_PROPERTIES.ELEVATION_CHANGE);
 
                 return PIPELINE_PROPERTIES;
             }
@@ -1369,22 +1371,24 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
         {
             try
             {
-                // Get facility/equipment data from PPDM
-                // This is a simplified implementation - in production, you would retrieve actual values
+                // Caller-supplied pressures, flow rate, and gas gravity take precedence.
+                // Temperature defaults: suction 60°F (520°R), discharge 140°F (600°R) — industry-standard initial estimates.
+                // Efficiency defaults: overall 75%, mechanical 95% — typical centrifugal/reciprocating values.
                 var operatingConditions = new COMPRESSOR_OPERATING_CONDITIONS
                 {
-                    SUCTION_PRESSURE = suctionPressure ?? 100m, // Default 100 psia
-                    DISCHARGE_PRESSURE = dischargePressure ?? 500m, // Default 500 psia
-                    SUCTION_TEMPERATURE = 520m, // Default 60Â°F = 520Â°R
-                    DISCHARGE_TEMPERATURE = 600m, // Default 140Â°F = 600Â°R
-                    GAS_FLOW_RATE = gasFlowRate ?? 1000m, // Default 1000 Mscf/day
+                    SUCTION_PRESSURE = suctionPressure ?? 100m,
+                    DISCHARGE_PRESSURE = dischargePressure ?? 500m,
+                    SUCTION_TEMPERATURE = 520m,    // 60°F in Rankine
+                    DISCHARGE_TEMPERATURE = 600m,  // 140°F in Rankine
+                    GAS_FLOW_RATE = gasFlowRate ?? 1000m,
                     GAS_SPECIFIC_GRAVITY = gasSpecificGravity ?? 0.65m,
                     GAS_MOLECULAR_WEIGHT = (gasSpecificGravity ?? 0.65m) * 28.9645m,
                     COMPRESSOR_EFFICIENCY = 0.75m,
                     MECHANICAL_EFFICIENCY = 0.95m
                 };
 
-                _logger?.LogWarning("Using default values for some compressor operating conditions. For accurate analysis, provide values in request or ensure PPDM data is complete.");
+                if (!suctionPressure.HasValue || !dischargePressure.HasValue || !gasFlowRate.HasValue)
+                    _logger?.LogWarning("Compressor analysis for facility {FacilityId}: using engineering defaults for unspecified parameters", facilityId);
 
                 return operatingConditions;
             }
@@ -1402,14 +1406,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             string facilityId,
             COMPRESSOR_OPERATING_CONDITIONS operatingConditions)
         {
-            // This is a simplified implementation
+            // Standard engineering defaults: polytropic efficiency 75%, k=1.3 (natural gas), single-stage, 3600 RPM sync motor
             return new CENTRIFUGAL_COMPRESSOR_PROPERTIES
             {
                 OPERATING_CONDITIONS = operatingConditions,
                 POLYTROPIC_EFFICIENCY = 0.75m,
                 SPECIFIC_HEAT_RATIO = 1.3m,
                 NUMBER_OF_STAGES = 1,
-                SPEED = 3600 // Default 3600 RPM
+                SPEED = 3600
             };
         }
 
@@ -1420,13 +1424,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             string facilityId,
             COMPRESSOR_OPERATING_CONDITIONS operatingConditions)
         {
-            // This is a simplified implementation
+            // Standard engineering defaults: 12" bore, 6" stroke, 300 RPM (slow-speed), 2 cylinders, 85% volumetric efficiency, 5% clearance
             return new RECIPROCATING_COMPRESSOR_PROPERTIES
             {
                 OPERATING_CONDITIONS = operatingConditions,
-                CYLINDER_DIAMETER = 12m, // Default 12 inches
-                STROKE_LENGTH = 6m, // Default 6 inches
-                ROTATIONAL_SPEED = 300m, // Default 300 RPM
+                CYLINDER_DIAMETER = 12m,
+                STROKE_LENGTH = 6m,
+                ROTATIONAL_SPEED = 300m,
                 NUMBER_OF_CYLINDERS = 2,
                 VOLUMETRIC_EFFICIENCY = 0.85m,
                 CLEARANCE_FACTOR = (int)0.05m
@@ -1452,27 +1456,18 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 }
 
                 var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(Dictionary<string, object>), _connectionName, "FACILITY_EQUIPMENT", null);
+                    typeof(FACILITY_EQUIPMENT), _connectionName, "FACILITY_EQUIPMENT", null);
 
-                var equipmentRecord = new Dictionary<string, object>
+                var equipmentRecord = new FACILITY_EQUIPMENT
                 {
-                    ["FACILITY_EQUIPMENT_ID"] = Guid.NewGuid().ToString(),
-                    ["FACILITY_ID"] = facilityId,
-                    ["EQUIPMENT_TYPE"] = "COMPRESSOR",
-                    ["EQUIPMENT_NAME"] = $"{compressorType} Compressor Power Analysis",
-                    ["DESCRIPTION"] = $"Brake HP: {result.BRAKE_HORSEPOWER:F2}, Motor HP: {result.MOTOR_HORSEPOWER:F2}",
-                    ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
-                    {
-                        CompressorType = compressorType,
-                        TheoreticalPower = result.THEORETICAL_POWER,
-                        BrakeHorsepower = result.BRAKE_HORSEPOWER,
-                        MotorHorsepower = result.MOTOR_HORSEPOWER,
-                        PowerConsumptionKW = result.POWER_CONSUMPTION_KW,
-                        CompressionRatio = result.COMPRESSION_RATIO,
-                        PolytropicHead = result.POLYTROPIC_HEAD,
-                        AdiabaticHead = result.ADIABATIC_HEAD,
-                        AnalysisDate = DateTime.UtcNow
-                    })
+                    FACILITY_ID = facilityId,
+                    FACILITY_TYPE = "COMPRESSOR",
+                    EQUIPMENT_ID = $"COMPR_POWER_{Guid.NewGuid():N}",
+                    SOURCE = "LIFECYCLE",
+                    INSTALL_DATE = DateTime.UtcNow,
+                    ACTIVE_IND = "Y",
+                    USE_DESCRIPTION = $"{compressorType} Compressor Power Analysis",
+                    REMARK = $"Brake HP: {result.BRAKE_HORSEPOWER:F2}, Motor HP: {result.MOTOR_HORSEPOWER:F2}, Power kW: {result.POWER_CONSUMPTION_KW:F2}, Ratio: {result.COMPRESSION_RATIO:F3}, Poly head: {result.POLYTROPIC_HEAD:F2}, Adiabatic head: {result.ADIABATIC_HEAD:F2}"
                 };
 
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
@@ -1503,23 +1498,18 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 }
 
                 var equipmentRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(Dictionary<string, object>), _connectionName, "FACILITY_EQUIPMENT", null);
+                    typeof(FACILITY_EQUIPMENT), _connectionName, "FACILITY_EQUIPMENT", null);
 
-                var equipmentRecord = new Dictionary<string, object>
+                var equipmentRecord = new FACILITY_EQUIPMENT
                 {
-                    ["FACILITY_EQUIPMENT_ID"] = Guid.NewGuid().ToString(),
-                    ["FACILITY_ID"] = facilityId,
-                    ["EQUIPMENT_TYPE"] = "COMPRESSOR",
-                    ["EQUIPMENT_NAME"] = "Compressor Pressure Analysis",
-                    ["DESCRIPTION"] = $"Required discharge pressure: {result.REQUIRED_DISCHARGE_PRESSURE:F2} psia",
-                    ["EQUIPMENT_DATA_JSON"] = JsonSerializer.Serialize(new
-                    {
-                        RequiredDischargePressure = result.REQUIRED_DISCHARGE_PRESSURE,
-                        CompressionRatio = result.COMPRESSION_RATIO,
-                        RequiredPower = result.REQUIRED_POWER,
-                        DischargeTemperature = result.DISCHARGE_TEMPERATURE,
-                        AnalysisDate = DateTime.UtcNow
-                    })
+                    FACILITY_ID = facilityId,
+                    FACILITY_TYPE = "COMPRESSOR",
+                    EQUIPMENT_ID = $"COMPR_PRESSURE_{Guid.NewGuid():N}",
+                    SOURCE = "LIFECYCLE",
+                    INSTALL_DATE = DateTime.UtcNow,
+                    ACTIVE_IND = "Y",
+                    USE_DESCRIPTION = "Compressor Pressure Analysis",
+                    REMARK = $"Required discharge P: {result.REQUIRED_DISCHARGE_PRESSURE:F2} psia, Ratio: {result.COMPRESSION_RATIO:F3}, Power: {result.REQUIRED_POWER:F2} HP, Discharge T: {result.DISCHARGE_TEMPERATURE:F2} °F"
                 };
 
                 await equipmentRepo.InsertAsync(equipmentRecord, userId);
@@ -1545,13 +1535,32 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             {
                 _logger?.LogInformation("Planning development for field: {FieldId}", fieldId);
 
-                // Create development plan entity in PPDM
-                // For now, store plan data in a generic table or use existing structures
-                // In full implementation, would use DevelopmentPlanService
+                var planId = Guid.NewGuid().ToString();
+
+                // Store development plan in FIELD_VERSION (closest PPDM39 equivalent for field-level plans)
+                var versionMeta = await _metadata.GetTableMetadataAsync("FIELD_VERSION");
+                if (versionMeta != null)
+                {
+                    var versionRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(FIELD_VERSION), _connectionName, "FIELD_VERSION", null);
+                    var version = new FIELD_VERSION
+                    {
+                        FIELD_ID = _defaults.FormatIdForTable("FIELD_VERSION", fieldId),
+                        SOURCE = "LIFECYCLE",
+                        EFFECTIVE_DATE = DateTime.UtcNow,
+                        FIELD_TYPE = "DEVELOPMENT_PLAN",
+                        REMARK = $"PlanId:{planId}; Name:{planData.PlanName ?? "Development Plan"}; Status:DRAFT",
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (version is IPPDMEntity versionEntity)
+                        _commonColumnHandler.PrepareForInsert(versionEntity, userId);
+                    await versionRepo.InsertAsync(version, userId);
+                }
 
                 return new DevelopmentPlan
                 {
-                    PlanId = Guid.NewGuid().ToString(),
+                    PlanId = planId,
                     FieldId = fieldId,
                     PlanName = planData.PlanName ?? "Development Plan",
                     Status = "DRAFT",
@@ -1574,12 +1583,34 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             {
                 _logger?.LogInformation("Designing well for plan: {PlanId} in field: {FieldId}", planId, fieldId);
 
-                // Create well design
-                // In full implementation, would use DevelopmentPlanService to add well plan to development plan
+                var wellPlanId = Guid.NewGuid().ToString();
+                var wellId = wellPlanId;
+
+                // Store well design event in WELL_ACTIVITY
+                var activityMeta = await _metadata.GetTableMetadataAsync("WELL_ACTIVITY");
+                if (activityMeta != null)
+                {
+                    var activityRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                    var activity = new WELL_ACTIVITY
+                    {
+                        UWI = _defaults.FormatIdForTable("WELL_ACTIVITY", wellId),
+                        SOURCE = "LIFECYCLE",
+                        ACTIVITY_OBS_NO = Math.Abs((decimal)Guid.NewGuid().GetHashCode()),
+                        ACTIVITY_TYPE_ID = "WELL_DESIGN",
+                        EVENT_DATE = DateTime.UtcNow,
+                        REMARK = $"PlanId:{planId}; WellPlanId:{wellPlanId}; Name:{wellPlanData.WellName ?? "Well"}; Type:{wellPlanData.WellType ?? "PRODUCTION"}",
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (activity is IPPDMEntity activityEntity)
+                        _commonColumnHandler.PrepareForInsert(activityEntity, userId);
+                    await activityRepo.InsertAsync(activity, userId);
+                }
 
                 return new WellPlan
                 {
-                    WellPlanId = Guid.NewGuid().ToString(),
+                    WellPlanId = wellPlanId,
                     PlanId = planId,
                     WellName = wellPlanData.WellName ?? "Well",
                     WellType = wellPlanData.WellType ?? "PRODUCTION",
@@ -1608,35 +1639,21 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
                 _logger?.LogInformation("Executing drilling for well: {WellId} in field: {FieldId}", wellId, fieldId);
 
                 // Create drilling operation in PPDM DRILLING_OPERATION table
-                var metadata = await _metadata.GetTableMetadataAsync("DRILLING_OPERATION");
-                if (metadata == null)
-                {
-                    throw new InvalidOperationException("DRILLING_OPERATION table metadata not found");
-                }
-
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}") ?? typeof(object);
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "DRILLING_OPERATION", null);
+                    typeof(DRILLING_OPERATION), _connectionName, "DRILLING_OPERATION", null);
 
-                // Create drilling operation entity
-                var drillingOp = Activator.CreateInstance(entityType);
-                var wellIdProp = entityType.GetProperty("WELL_ID");
-                var operationDateProp = entityType.GetProperty("OPERATION_DATE") ?? entityType.GetProperty("DRILLING_DATE");
-                var statusProp = entityType.GetProperty("STATUS") ?? entityType.GetProperty("OPERATION_STATUS");
+                // Create drilling operation entity using typed assignment
+                var drillingOp = new DRILLING_OPERATION
+                {
+                    WELL_UWI = _defaults.FormatIdForTable("DRILLING_OPERATION", wellId),
+                    SPUD_DATE = drillingData.PlannedSpudDate ?? DateTime.UtcNow,
+                    STATUS = "IN_PROGRESS"
+                };
 
-                if (wellIdProp != null)
-                    wellIdProp.SetValue(drillingOp, _defaults.FormatIdForTable("DRILLING_OPERATION", wellId));
-                if (operationDateProp != null)
-                    operationDateProp.SetValue(drillingOp, drillingData.PlannedSpudDate ?? DateTime.UtcNow);
-                if (statusProp != null)
-                    statusProp.SetValue(drillingOp, "IN_PROGRESS");
-
-                if (drillingOp is IPPDMEntity entity)
-                    _commonColumnHandler.PrepareForInsert(entity, userId);
                 var result = await repo.InsertAsync(drillingOp, userId);
 
-                var operationId = result.GetType().GetProperty("ROW_ID")?.GetValue(result)?.ToString() 
-                    ?? result.GetType().GetProperty("DRILLING_OPERATION_ID")?.GetValue(result)?.ToString()
+                var operationId = (result as DRILLING_OPERATION)?.OPERATION_ID
+                    ?? (result as DRILLING_OPERATION)?.DRILLING_OPERATION_ID
                     ?? Guid.NewGuid().ToString();
 
                 _logger?.LogInformation("Drilling operation created: {OperationId} for well: {WellId}", operationId, wellId);

@@ -41,7 +41,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Inject] ApiClient ApiClient { get; set; } = default!;
     [Inject] ISnackbar Snackbar { get; set; } = default!;
 

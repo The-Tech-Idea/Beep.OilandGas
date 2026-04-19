@@ -1,0 +1,67 @@
+@* StateTransitionPanel — shows available transitions and fires confirm dialog *@
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject ApiClient ApiClient
+
+@if (Transitions.Count == 0)
+{
+    <MudText Typo="Typo.body2" Color="Color.Secondary">No transitions available from current state.</MudText>
+}
+else
+{
+    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+        @foreach (var t in Transitions)
+        {
+            var transitionId = t.TransitionId;
+            var label = t.Trigger;
+            var needsApproval = t.RequiresApproval;
+            <MudButton Variant="Variant.Filled"
+                       Color="@(needsApproval ? Color.Warning : Color.Primary)"
+                       StartIcon="@(needsApproval ? Icons.Material.Filled.HowToReg : Icons.Material.Filled.ArrowForward)"
+                       OnClick="@(() => ConfirmTransitionAsync(transitionId, label))">
+                @label
+            </MudButton>
+        }
+    </MudStack>
+}
+
+@using Beep.OilandGas.LifeCycle.Models.Processes
+@using Beep.OilandGas.Models.Data
+@using MudBlazor
+
+@code {
+    [Parameter] public string InstanceId { get; set; } = string.Empty;
+    [Parameter] public List<ProcessTransition> Transitions { get; set; } = new();
+    [Parameter] public EventCallback OnTransitioned { get; set; }
+
+    private string _reason = string.Empty;
+
+    private async Task ConfirmTransitionAsync(string transitionId, string label)
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync(
+            title: $"Execute: {label}",
+            message: "Provide a reason (optional) and confirm this transition.",
+            yesText: "Execute",
+            noText: "Cancel",
+            options: new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+
+        if (confirmed != true) return;
+
+        try
+        {
+            var request = new ProcessTransitionRequest
+            {
+                FromStateId = string.Empty,
+                ToStateId = transitionId
+            };
+            await ApiClient.PostAsync<ProcessTransitionRequest, object>(
+                $"/api/field/current/process/instances/{InstanceId}/transitions", request);
+            Snackbar.Add($"Transition '{label}' executed.", Severity.Success);
+            await OnTransitioned.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Transition failed: {ex.Message}", Severity.Error);
+        }
+    }
+}

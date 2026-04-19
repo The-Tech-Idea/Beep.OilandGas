@@ -3,6 +3,7 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IConnectionService ConnectionService
 
 <MudDialog>
     <DialogContent>
@@ -31,10 +32,10 @@
                     else if (_connections.Any())
                     {
                         <MudText Typo="Typo.h6" Class="mb-4">Available Database Connections</MudText>
-                        <MudRadioGroup @bind-SelectedOption="@_selectedConnectionName">
+                        <MudRadioGroup T="string" @bind-SelectedOption="@_selectedConnectionName">
                             @foreach (var connection in _connections)
                             {
-                                <MudRadio Option="@connection.ConnectionName" Color="Color.Primary">
+                                <MudRadio T="string" Option="@connection.ConnectionName" Color="Color.Primary">
                                     <div class="d-flex align-center">
                                         <MudIcon Icon="@Icons.Material.Filled.Storage" Class="mr-2" />
                                         <div>
@@ -49,7 +50,7 @@
                                         </div>
                                         @if (connection.IsActive)
                                         {
-                                            <MudChip Size="Size.Small" Color="Color.Success" Class="ml-auto">Active</MudChip>
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Success" Class="ml-auto">Active</MudChip>
                                         }
                                     </div>
                                 </MudRadio>
@@ -188,7 +189,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance? MudDialog { get; set; }
+    [CascadingParameter] IMudDialogInstance? MudDialog { get; set; }
     [Parameter] public EventCallback OnComplete { get; set; }
 
     private int _activeStep = 0;
@@ -376,7 +377,7 @@
     private void ShowCreateDatabase()
     {
         // Navigate to database creation wizard
-        NavigationManager.NavigateTo("/ppdm39/create-database-wizard");
+        NavigationManager.NavigateTo("/ppdm39/create-database");
         MudDialog?.Close();
     }
 
@@ -385,4 +386,5 @@
         MudDialog?.Cancel();
     }
 }
+
 

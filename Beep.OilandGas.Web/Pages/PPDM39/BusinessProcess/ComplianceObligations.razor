@@ -1,0 +1,147 @@
+@page "/ppdm39/compliance"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Compliance Obligations</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Track Compliance Obligations</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Regulatory obligations calendar and overdue alerts</MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PostAdd"
+                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/compliance/report")'>
+            Submit Report
+        </MudButton>
+    </MudStack>
+
+    @* ── Alert: overdue count ────────────────────────────────────────── *@
+    @if (_overdueCount > 0)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4" Icon="@Icons.Material.Filled.Error">
+            <MudText Typo="Typo.body2"><strong>@_overdueCount obligation(s) are overdue.</strong> Immediate action required.</MudText>
+        </MudAlert>
+    }
+
+    <MudGrid Spacing="3">
+
+        @* ── Due within 30 days ───────────────────────────────────────── *@
+        <MudItem xs="12" md="5">
+            <MudCard Elevation="2" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudIcon Icon="@Icons.Material.Filled.Schedule" Color="Color.Warning" />
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Due Within 30 Days</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <ObligationCalendar Items="@_dueSoon" />
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* ── All obligations table ────────────────────────────────────── *@
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">All Obligations</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <JurisdictionFilterChips @bind-SelectedJurisdiction="_jurisdiction" />
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="ObligationRow"
+                                 Items="@FilteredObligations"
+                                 Dense="true"
+                                 Hover="true"
+                                 Striped="true"
+                                 Sortable="true">
+                        <Columns>
+                            <PropertyColumn Property="o => o.ObligationType"  Title="Type" />
+                            <PropertyColumn Property="o => o.JurisdictionTag" Title="Jurisdiction" />
+                            <PropertyColumn Property="o => o.DueDate"         Title="Due"    Format="dd-MMM-yy" />
+                            <TemplateColumn Title="Days Left" Sortable="false">
+                                <CellTemplate>
+                                    @{
+                                        var days = context.Item.DaysUntilDue;
+                                        var color = days < 0 ? Color.Error : days <= 14 ? Color.Warning : Color.Success;
+                                    }
+                                    <MudChip T="string" Size="Size.Small" Color="@color">
+                                        @(days < 0 ? $"{Math.Abs(days)}d OD" : $"{days}d")
+                                    </MudChip>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Status" Sortable="false">
+                                <CellTemplate>
+                                    <StatusBadge Status="@context.Item.Status" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <PropertyColumn Property="o => o.AssignedTo"      Title="Assigned To" />
+                        </Columns>
+                        <PagerContent>
+                            <MudDataGridPager T="ObligationRow" />
+                        </PagerContent>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+    </MudGrid>
+
+</MudContainer>
+
+@using Beep.OilandGas.Models.Data
+
+@code {
+    private string _fieldName    = "Current Field";
+    private string _jurisdiction = "ALL";
+    private int    _overdueCount = 1;
+
+    private List<ObligationRow>            _obligations = new();
+    private List<ComplianceObligationSummary> _dueSoon  = new();
+
+    private IEnumerable<ObligationRow> FilteredObligations => _obligations.Where(o =>
+        _jurisdiction == "ALL" || o.JurisdictionTag == _jurisdiction);
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/field/current/compliance/obligations
+        _obligations = new List<ObligationRow>
+        {
+            new("OBL-001", "Monthly Production Report",       "USA", DateTime.Today.AddDays(-2),  "OPEN",     "compl.manager",  -2),
+            new("OBL-002", "Flaring Volume Declaration",      "USA", DateTime.Today.AddDays(5),   "IN PROGRESS","compl.manager",  5),
+            new("OBL-003", "Royalty Return Filing",           "USA", DateTime.Today.AddDays(12),  "OPEN",     "acct.manager",   12),
+            new("OBL-004", "Environmental Compliance Report", "CAN", DateTime.Today.AddDays(18),  "OPEN",     "env.officer",    18),
+            new("OBL-005", "Annual Well Integrity Report",    "INTL",DateTime.Today.AddDays(45),  "OPEN",     "wng.engineer",   45),
+            new("OBL-006", "Quarterly Production Return",     "CAN", DateTime.Today.AddDays(25),  "IN PROGRESS","compl.manager", 25),
+        };
+
+        // Due within 30 days for calendar
+        _dueSoon = _obligations
+            .Where(o => o.DaysUntilDue <= 30)
+            .Select(o => new ComplianceObligationSummary
+            {
+                ObligationId     = o.ObligationId,
+                ObligationType   = o.ObligationType,
+                JurisdictionTag  = o.JurisdictionTag,
+                DueDate          = o.DueDate,
+                Status           = o.Status,
+                AssignedTo       = o.AssignedTo,
+                DaysUntilDue     = o.DaysUntilDue
+            }).ToList();
+    }
+
+    private record ObligationRow(
+        string ObligationId, string ObligationType, string JurisdictionTag,
+        DateTime DueDate, string Status, string AssignedTo, int DaysUntilDue);
+}

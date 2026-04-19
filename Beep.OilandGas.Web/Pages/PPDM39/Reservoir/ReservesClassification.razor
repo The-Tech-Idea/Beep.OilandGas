@@ -1,0 +1,247 @@
+@page "/reservoir/reserves"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Classify Field Reserves</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Classify Field Reserves</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — SPE-PRMS compliant reserves audit</MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudChip T="string" Color="Color.Default" Size="Size.Small">Effective: @_effectiveDate</MudChip>
+            <StatusBadge Status="@_auditStatus" Size="Size.Small" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Approval"
+                       OnClick="SubmitForCertification">
+                Submit for Certification
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @* Reserves summary cards *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="1P Reserves" Value="@_r1P.ToString("N1")" Unit="MMBbl"
+                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.Inventory"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="Proved" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="2P Reserves" Value="@_r2P.ToString("N1")" Unit="MMBbl"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Inventory2"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Primary" TrendText="Proved + Probable" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="3P Reserves" Value="@_r3P.ToString("N1")" Unit="MMBbl"
+                     ValueColor="Color.Info" Icon="@Icons.Material.Filled.Inventory2"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Info" TrendText="+Possible" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Contingent Resources" Value="@_contingent.ToString("N1")" Unit="MMBbl"
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.HelpOutline"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="2C best estimate" />
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+
+        @* Reserves waterfall / by zone *@
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Reserves by Zone &amp; Category</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudChart T="double" ChartType="ChartType.Bar"
+                              Series="@_reservesSeries"
+                              XAxisLabels="@_reservesZones"
+                              Width="100%" Height="220px" />
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Uncertainty tornado *@
+        <MudItem xs="12" md="5">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Uncertainty Range</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudStack Spacing="2">
+                        @foreach (var u in _uncertainties)
+                        {
+                            <MudStack Spacing="0">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2">@u.Driver</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">±@u.RangeMmbbl.ToString("N0") MMBbl</MudText>
+                                </MudStack>
+                                <MudProgressLinear Color="@u.Color" Value="@u.Percent" />
+                            </MudStack>
+                        }
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Detailed reserves table *@
+        <MudItem xs="12">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Detailed Reserves Schedule (MMBbl Oil Equivalent)</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                   StartIcon="@Icons.Material.Filled.TableChart"
+                                   OnClick="ExportSchedule">
+                            Export
+                        </MudButton>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="ReservesRow" Items="@_reservesRows" Dense="true" Hover="true" Striped="true">
+                        <Columns>
+                            <PropertyColumn Property="r => r.Zone"       Title="Zone" />
+                            <PropertyColumn Property="r => r.Field"      Title="Field" />
+                            <PropertyColumn Property="r => r.Proved1P"   Title="1P (Proved)" Format="N1" />
+                            <PropertyColumn Property="r => r.Probable2P" Title="2P (P+Prob)" Format="N1" />
+                            <PropertyColumn Property="r => r.Possible3P" Title="3P (P+Pr+Ps)" Format="N1" />
+                            <PropertyColumn Property="r => r.Produced"   Title="Cumulative" Format="N1" />
+                            <TemplateColumn Title="Category">
+                                <CellTemplate>
+                                    <StatusBadge Status="@context.Item.Category" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Certifier">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2">@context.Item.Certifier</MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Reconciliation notes *@
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Reserves Reconciliation Notes</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTextField T="string" @bind-Value="_reconciliationNote"
+                                  Lines="5" Variant="Variant.Outlined"
+                                  Label="Reconciliation commentary (required for certification)" />
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" OnClick="SaveNotes">Save Notes</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        @* Audit trail *@
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Audit Trail</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudList T="AuditEntry" Dense="true">
+                        @foreach (var a in _auditTrail)
+                        {
+                            <MudListItem T="AuditEntry" Value="a">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Small" Color="Color.Secondary" />
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.body2">@a.Action</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@a.Date · @a.User</MudText>
+                                    </MudStack>
+                                </MudStack>
+                            </MudListItem>
+                            <MudDivider />
+                        }
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private string _effectiveDate = "01 Jan 2026";
+    private string _auditStatus = "REVIEW";
+    private string _reconciliationNote = "";
+
+    private double _r1P = 148.2;
+    private double _r2P = 207.7;
+    private double _r3P = 252.4;
+    private double _contingent = 38.5;
+
+    private record ReservesRow(string Zone, string Field, double Proved1P, double Probable2P,
+        double Possible3P, double Produced, string Category, string Certifier);
+
+    private List<ReservesRow> _reservesRows = new()
+    {
+        new("ZONE-A", "Main Field", 82.4, 118.6, 140.2, 105.8, "ACTIVE",  "J. Petroleum (SPE)"),
+        new("ZONE-B", "Main Field", 48.8,  68.5,  84.0,  42.2, "ACTIVE",  "J. Petroleum (SPE)"),
+        new("ZONE-C", "Main Field", 17.0,  20.6,  28.2,   4.5, "REVIEW",  "TBD"),
+    };
+
+    private List<ChartSeries<double>> _reservesSeries = new()
+    {
+        new ChartSeries<double> { Name = "1P (Proved)", Data = new double[] { 82.4, 48.8, 17.0 } },
+        new ChartSeries<double> { Name = "Probable",    Data = new double[] { 36.2, 19.7,  3.6 } },
+        new ChartSeries<double> { Name = "Possible",    Data = new double[] { 21.6, 15.5,  7.6 } },
+    };
+    private string[] _reservesZones = { "Zone A", "Zone B", "Zone C" };
+
+    private record UncertaintyDriver(string Driver, double RangeMmbbl, double Percent, Color Color);
+    private List<UncertaintyDriver> _uncertainties = new()
+    {
+        new("Recovery Factor",    18.5, 75, Color.Error),
+        new("OOIP Estimate",      14.2, 58, Color.Warning),
+        new("Permeability",        9.8, 40, Color.Warning),
+        new("Fluid Contacts",      7.4, 30, Color.Info),
+        new("Well Performance",    5.2, 21, Color.Success),
+    };
+
+    private record AuditEntry(string Action, string Date, string User);
+    private List<AuditEntry> _auditTrail = new()
+    {
+        new("Reserves submitted for external review", "20 Mar 2026", "R. Sheikh"),
+        new("Zone C reserves revised downward (seismic reinterpretation)", "12 Mar 2026", "P. Analyst"),
+        new("Annual reserves estimation completed", "28 Feb 2026", "R. Sheikh"),
+        new("Mid-year review — no material change", "15 Jul 2025", "R. Sheikh"),
+    };
+
+    private void SubmitForCertification()
+    {
+        if (string.IsNullOrWhiteSpace(_reconciliationNote))
+        {
+            Snackbar.Add("Reconciliation notes are required before certification", Severity.Warning);
+            return;
+        }
+        _auditStatus = "REVIEW";
+        Snackbar.Add("Reserves submitted for external certification", Severity.Success);
+    }
+
+    private void SaveNotes() =>
+        Snackbar.Add("Reconciliation notes saved", Severity.Success);
+
+    private void ExportSchedule() =>
+        Snackbar.Add("Reserves schedule export queued", Severity.Success);
+}

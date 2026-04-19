@@ -24,7 +24,7 @@ namespace Beep.OilandGas.ProductionForecasting.Services
     /// Service for production forecasting operations.
     /// Uses PPDMGenericRepository for data persistence following LifeCycle patterns.
     /// </summary>
-    public partial class ProductionForecastingService : IProductionForecastingService
+    public partial class ProductionForecastingService : IProductionForecastingService, Beep.OilandGas.Models.Core.Interfaces.IProductionForecastingService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;

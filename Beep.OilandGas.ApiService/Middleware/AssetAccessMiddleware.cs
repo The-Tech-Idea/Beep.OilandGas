@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Core.Interfaces;
 using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ApiService.Middleware

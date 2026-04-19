@@ -6,13 +6,74 @@
 @using MudBlazor
 @using Beep.OilandGas.Web.Components.Shared
 
-@if (TableNode == null)
+@* ───── Category-Browse Mode ───── *@
+@if (_categoryMode)
+{
+    <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.LibraryBooks" Color="Color.Primary" />
+            <MudText Typo="Typo.h5">@CategoryName</MudText>
+            <MudSpacer />
+            <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Outlined">
+                @_filteredCategoryTables.Count tables
+            </MudChip>
+        </MudStack>
+
+        <MudTextField @bind-Value="_tableSearch"
+                      Label="Filter tables"
+                      Placeholder="Type to search..."
+                      Variant="Variant.Outlined"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true"
+                      Clearable="true"
+                      Class="mb-4 og-search-md" />
+
+        @if (_filteredCategoryTables.Count == 0)
+        {
+            <MudText Typo="Typo.body1" Class="pa-4 mud-text-secondary">No tables match your filter.</MudText>
+        }
+        else
+        {
+            <MudGrid Spacing="2">
+                @foreach (var tbl in _filteredCategoryTables)
+                {
+                    <MudItem xs="12" sm="6" md="4" lg="3">
+                        <MudCard Elevation="1" Class="cursor-pointer og-card-fill"
+                                 @onclick="@(() => OpenTableFromCategory(tbl))">
+                            <MudCardContent Class="pa-3">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@GetTableIcon(tbl)" Color="@GetTableIconColor(tbl)" Size="Size.Small" />
+                                    <MudText Typo="Typo.body2" Class="og-mono-text">@tbl</MudText>
+                                </MudStack>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </MudContainer>
+}
+@* ───── Table CRUD Mode ───── *@
+else if (TableNode == null)
 {
     <MudAlert Severity="Severity.Warning">No table selected. Please select a table from the tree.</MudAlert>
 }
 else
 {
 <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+    @if (_fromCategory)
+    {
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2" Spacing="1">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                           Size="Size.Small"
+                           OnClick="ReturnToCategory"
+                           Title="@($"Back to {CategoryName}")" />
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">@CategoryName</MudText>
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
+            <MudText Typo="Typo.caption">@(TableNode?.Text ?? "")</MudText>
+        </MudStack>
+    }
     <MudText Typo="Typo.h5" Class="mb-4">@GetTableDisplayName()</MudText>
     
     <MudButtonGroup Class="mb-4">
@@ -105,6 +166,60 @@ else
 @code {
     [Parameter] public PPDMTreeNode? TableNode { get; set; }
 
+    // ── Category-browse mode parameters ──
+    [Parameter] public int CategoryId { get; set; }
+    [Parameter] public string? CategoryName { get; set; }
+    [Parameter] public List<string>? CategoryTables { get; set; }
+
+    private bool _categoryMode => CategoryTables != null && CategoryTables.Count > 0 && TableNode == null;
+    private bool _fromCategory => CategoryTables != null && CategoryTables.Count > 0 && TableNode != null;
+
+    // Category table search/filter
+    private string _tableSearch = string.Empty;
+    private List<string> _filteredCategoryTables =>
+        CategoryTables == null ? new() :
+        string.IsNullOrWhiteSpace(_tableSearch)
+            ? CategoryTables
+            : CategoryTables.Where(t => t.Contains(_tableSearch, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private async Task OpenTableFromCategory(string tableName)
+    {
+        // Switch to table-crud mode while keeping category context for back button
+        var node = new PPDMTreeNode
+        {
+            Id = tableName,
+            Text = tableName,
+            NodeType = PPDMTreeNodeType.Table,
+            IsSelected = true
+        };
+        TableNode = node;
+        await OnParametersSetAsync();
+        StateHasChanged();
+    }
+
+    private void ReturnToCategory()
+    {
+        TableNode = null;
+        _data = null;
+        _editingRecord = null;
+        _showEditForm = false;
+        _tableMetadata = null;
+        _tableSearch = string.Empty;
+        StateHasChanged();
+    }
+
+    private static string GetTableIcon(string tableName) =>
+        tableName.StartsWith("R_", StringComparison.OrdinalIgnoreCase) ||
+        tableName.StartsWith("RA_", StringComparison.OrdinalIgnoreCase)
+            ? Icons.Material.Filled.BookmarkBorder
+            : Icons.Material.Filled.TableChart;
+
+    private static Color GetTableIconColor(string tableName) =>
+        tableName.StartsWith("R_", StringComparison.OrdinalIgnoreCase) ||
+        tableName.StartsWith("RA_", StringComparison.OrdinalIgnoreCase)
+            ? Color.Warning
+            : Color.Primary;
+
     private List<object>? _data;
     private object? _editingRecord;
     private bool _isLoading = false;
@@ -120,32 +235,22 @@ else
         {
             if (TableNode != null)
             {
-                Console.WriteLine($"GenericCrudPage: OnParametersSetAsync - Table: {TableNode?.Text ?? "Unknown"}, Type: {TableNode?.NodeType}");
-                
-                // Reset state when table changes
                 _data = null;
                 _editingRecord = null;
                 _showEditForm = false;
                 _tableMetadata = null;
-                
+
                 await LoadTableMetadata();
-                
+
                 if (_tableMetadata != null)
-                {
-                    Console.WriteLine($"GenericCrudPage: Metadata loaded - Table: {_tableMetadata.TableName}");
                     await LoadData();
-                }
                 else
-                {
-                    Console.WriteLine($"GenericCrudPage: WARNING - No metadata found for table node: {TableNode?.Text ?? "Unknown"}");
                     Snackbar?.Add($"Could not load metadata for table: {TableNode?.Text ?? "Unknown"}", Severity.Warning);
-                }
-                
+
                 StateHasChanged();
             }
             else
             {
-                Console.WriteLine($"GenericCrudPage: OnParametersSetAsync - TableNode is null");
                 _data = null;
                 _tableMetadata = null;
                 StateHasChanged();
@@ -153,8 +258,6 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"GenericCrudPage: Exception in OnParametersSetAsync: {ex.Message}");
-            Console.WriteLine($"GenericCrudPage: Stack trace: {ex.StackTrace}");
             Snackbar?.Add($"Error loading table: {ex.Message}", Severity.Error);
             _data = null;
             _tableMetadata = null;
@@ -164,81 +267,44 @@ else
 
     private async Task LoadTableMetadata()
     {
+        if (TableNode == null) return;
         try
         {
-            if (TableNode?.Data != null && TableNode.Data.TryGetValue("TableMetadata", out var metadata))
+            // 1. Check if metadata is already embedded in the node
+            if (TableNode.Data != null && TableNode.Data.TryGetValue("TableMetadata", out var cached))
             {
-                _tableMetadata = metadata as PPDMTableMetadata;
-                Console.WriteLine($"LoadTableMetadata: Found metadata in node data - {_tableMetadata?.TableName}");
+                _tableMetadata = cached as PPDMTableMetadata;
+                if (_tableMetadata != null) return;
             }
-            
-            // Fallback: Try to get table name from node
-            if (_tableMetadata == null && TableNode != null)
-            {
-                var tableName = TableNode.Text ?? string.Empty;
-                if (TableNode.Data != null && TableNode.Data.TryGetValue("TableName", out var tableNameObj))
-                {
-                    tableName = tableNameObj?.ToString() ?? tableName;
-                }
-                
-                Console.WriteLine($"LoadTableMetadata: Fallback - trying to get metadata for table: {tableName}");
-                
-                if (!string.IsNullOrWhiteSpace(tableName))
-                {
-                    // The metadata should be in the node, but if it's not, we can't easily get it here
-                    // The tree builder should have set it. Let's log what we have in the node.
-                    if (TableNode.Data != null)
-                    {
-                        Console.WriteLine($"LoadTableMetadata: Node data keys: {string.Join(", ", TableNode.Data.Keys)}");
-                    }
-                }
-            }
+
+            // 2. Fetch from API by table name
+            var tableName = TableNode.Text ?? TableNode.Id ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(tableName)) return;
+
+            _tableMetadata = await ApiClient.GetAsync<PPDMTableMetadata>(
+                $"/api/datamanagement/metadata/{Uri.EscapeDataString(tableName)}");
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"LoadTableMetadata: Exception - {ex.Message}");
+            Snackbar?.Add($"Could not load metadata for {TableNode?.Text}: {ex.Message}", Severity.Warning);
             _tableMetadata = null;
         }
     }
 
     private async Task LoadData()
     {
-        if (TableNode == null || _tableMetadata == null) return;
+        if (_tableMetadata == null) return;
 
         _isLoading = true;
         try
         {
-            var tableName = _tableMetadata?.TableName;
-            if (string.IsNullOrWhiteSpace(tableName))
-            {
-                Console.WriteLine("LoadData: Table name is null or empty");
-                _data = new List<object>();
-                return;
-            }
-            
-            var apiEndpoint = GetApiEndpoint(tableName);
-            
-            if (ApiClient != null)
-            {
-                _data = await ApiClient.GetAsync<List<object>>($"/api/{apiEndpoint}");
-            }
-            else
-            {
-                Console.WriteLine("LoadData: ApiClient is null");
-                _data = new List<object>();
-            }
-            
-            if (_data == null)
-            {
-                _data = new List<object>();
-                Snackbar?.Add($"No data returned for table: {tableName}", Severity.Info);
-            }
+            var tableName = _tableMetadata.TableName;
+            _data = await ApiClient.GetAsync<List<object>>($"/api/{GetApiEndpoint(tableName)}");
+            _data ??= new List<object>();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"LoadData: Exception - {ex.Message}");
-            Console.WriteLine($"LoadData: Stack trace: {ex.StackTrace}");
-            Snackbar?.Add($"Error loading data for {_tableMetadata?.TableName ?? "table"}: {ex.Message}", Severity.Error);
+            Snackbar?.Add($"Error loading data for {_tableMetadata.TableName}: {ex.Message}", Severity.Error);
             _data = new List<object>();
         }
         finally
@@ -361,7 +427,7 @@ else
         var recordId = GetRecordId(record);
         if (string.IsNullOrEmpty(recordId)) return;
 
-        var result = await DialogService.ShowMessageBox(
+        var result = await DialogService.ShowMessageBoxAsync(
             "Confirm Delete",
             $"Are you sure you want to delete this record?",
             yesText: "Delete", cancelText: "Cancel");
@@ -407,12 +473,8 @@ else
         return TableNode?.Text ?? "Select a Table";
     }
 
-    private string GetApiEndpoint(string tableName)
-    {
-        // Use generic PPDM39 data management endpoint for all tables
-        // This allows any table to be accessed dynamically
-        return $"ppdm39/tables/{tableName.ToLowerInvariant()}";
-    }
+    private static string GetApiEndpoint(string tableName) =>
+        $"datamanagement/{Uri.EscapeDataString(tableName)}";
 
     private string? GetRecordId(object record)
     {

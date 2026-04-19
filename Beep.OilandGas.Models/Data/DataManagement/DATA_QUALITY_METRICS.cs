@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Beep.OilandGas.PPDM.Models;
@@ -115,5 +116,29 @@ namespace Beep.OilandGas.Models.Data.DataManagement
         }
 
         public Dictionary<string, FieldQualityMetrics> FIELD_METRICS { get; set; }
+
+        public double OverallQualityScore
+        {
+            get { return this.OVERALL_QUALITY_SCORE ?? 0d; }
+            set { this.OVERALL_QUALITY_SCORE = value; }
+        }
+
+        public int TotalRecords
+        {
+            get { return this.TOTAL_RECORDS ?? 0; }
+            set { this.TOTAL_RECORDS = value; }
+        }
+
+        public int CompleteRecords
+        {
+            get { return this.COMPLETE_RECORDS ?? 0; }
+            set { this.COMPLETE_RECORDS = value; }
+        }
+
+        public Dictionary<string, FieldQualityMetrics> FieldMetrics
+        {
+            get { return this.FIELD_METRICS ??= new Dictionary<string, FieldQualityMetrics>(); }
+            set { this.FIELD_METRICS = value; }
+        }
     }
 }

@@ -8,6 +8,8 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PPDM.Models;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
@@ -51,57 +53,28 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
             try
             {
                 var metadata = await _metadata.GetTableMetadataAsync("WELL_ABANDONMENT");
-                if (metadata == null)
-                {
-                    _logger?.LogWarning("WELL_ABANDONMENT table metadata not found");
-                    return new List<WellAbandonmentResponse>();
-                }
-
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                if (entityType == null)
-                {
-                    _logger?.LogWarning($"Entity type not found for WELL_ABANDONMENT: {metadata.EntityTypeName}");
-                    return new List<WellAbandonmentResponse>();
-                }
-
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "WELL_ABANDONMENT");
+                    typeof(WELL_ABANDONMENT), _connectionName, "WELL_ABANDONMENT");
 
                 // WELL_ABANDONMENT is linked to WELL, which is linked to FIELD
                 // Get wells for field first, then get abandonments for those wells
-                var wellMetadata = await _metadata.GetTableMetadataAsync("WELL");
-                if (wellMetadata == null)
-                    return new List<WellAbandonmentResponse>();
-
-                var wellEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{wellMetadata.EntityTypeName}");
-                if (wellEntityType == null)
-                    return new List<WellAbandonmentResponse>();
-
                 var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    wellEntityType, _connectionName, "WELL");
+                    typeof(WELL), _connectionName, "WELL", null);
 
                 var wells = await wellRepo.GetAsync(new List<AppFilter>
                 {
                     new AppFilter
                     {
-                        FieldName = "FIELD_ID",
+                        FieldName = "ASSIGNED_FIELD",
                         FilterValue = _defaults.FormatIdForTable("WELL", fieldId),
                         Operator = "="
                     }
                 });
 
-                // Extract well IDs using reflection
-                var wellIds = new List<string>();
-                foreach (var well in wells)
-                {
-                    var wellIdProp = wellEntityType.GetProperty("WELL_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                    if (wellIdProp != null)
-                    {
-                        var wellIdValue = wellIdProp.GetValue(well)?.ToString();
-                        if (!string.IsNullOrEmpty(wellIdValue))
-                            wellIds.Add(wellIdValue);
-                    }
-                }
+                var wellIds = wells.OfType<WELL>()
+                    .Select(w => w.UWI)
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .ToList();
 
                 if (!wellIds.Any())
                     return new List<WellAbandonmentResponse>();
@@ -123,7 +96,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 var results = await repo.GetAsync(filters);
                 
                 // Convert PPDM models to DTOs
-                var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(WellAbandonmentResponse), entityType);
+                var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(WellAbandonmentResponse), typeof(WELL_ABANDONMENT));
                 return dtoList.Cast<WellAbandonmentResponse>().ToList();
             }
             catch (Exception ex)
@@ -138,16 +111,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
             try
             {
                 // Validate well belongs to field
-                var wellMetadata = await _metadata.GetTableMetadataAsync("WELL");
-                if (wellMetadata == null)
-                    throw new InvalidOperationException("WELL table metadata not found");
-
-                var wellEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{wellMetadata.EntityTypeName}");
-                if (wellEntityType == null)
-                    throw new InvalidOperationException($"Entity type not found for WELL: {wellMetadata.EntityTypeName}");
-
                 var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    wellEntityType, _connectionName, "WELL");
+                    typeof(WELL), _connectionName, "WELL", null);
 
                 var formattedWellId = _defaults.FormatIdForTable("WELL", wellId);
                 var well = await wellRepo.GetByIdAsync(formattedWellId);
@@ -155,13 +120,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 if (well == null)
                     throw new InvalidOperationException($"Well {wellId} not found");
 
-                // Validate well belongs to field using reflection
-                var fieldIdProp = wellEntityType.GetProperty("FIELD_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (fieldIdProp != null)
+                // Validate well belongs to field using strongly-typed access
+                var wellObj = well as WELL;
+                if (wellObj != null)
                 {
-                    var wellFieldId = fieldIdProp.GetValue(well)?.ToString();
                     var formattedFieldId = _defaults.FormatIdForTable("WELL", fieldId);
-                    if (wellFieldId != formattedFieldId)
+                    if (!string.Equals(wellObj.ASSIGNED_FIELD, formattedFieldId, StringComparison.OrdinalIgnoreCase))
                         throw new InvalidOperationException($"Well {wellId} does not belong to field {fieldId}");
                 }
 
@@ -169,32 +133,23 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 if (metadata == null)
                     throw new InvalidOperationException("WELL_ABANDONMENT table metadata not found");
 
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                if (entityType == null)
-                    throw new InvalidOperationException($"Entity type not found for WELL_ABANDONMENT: {metadata.EntityTypeName}");
-
                 // Convert DTO to PPDM model
-                var abandonmentEntity = _mappingService.ConvertDTOToPPDMModelRuntime(abandonmentData, typeof(WellAbandonmentRequest), entityType);
+                var abandonmentEntity = _mappingService.ConvertDTOToPPDMModelRuntime(abandonmentData, typeof(WellAbandonmentRequest), typeof(WELL_ABANDONMENT));
                 
-                // Set WELL_ID and FIELD_ID automatically using reflection
-                var wellIdProp = entityType.GetProperty("WELL_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (wellIdProp != null && wellIdProp.CanWrite)
+                // Set UWI and FIELD_ID using typed assignment
+                if (abandonmentEntity is WELL_ABANDONMENT typedAbandonment)
                 {
-                    wellIdProp.SetValue(abandonmentEntity, formattedWellId);
-                }
-                var fieldIdProp2 = entityType.GetProperty("FIELD_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (fieldIdProp2 != null && fieldIdProp2.CanWrite)
-                {
-                    fieldIdProp2.SetValue(abandonmentEntity, _defaults.FormatIdForTable("WELL_ABANDONMENT", fieldId));
+                    typedAbandonment.UWI = formattedWellId;
+                    typedAbandonment.FIELD_ID = _defaults.FormatIdForTable("WELL_ABANDONMENT", fieldId);
                 }
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "WELL_ABANDONMENT");
+                    typeof(WELL_ABANDONMENT), _connectionName, "WELL_ABANDONMENT");
 
                 var result = await repo.InsertAsync(abandonmentEntity, userId);
                 
                 // Convert PPDM model back to DTO
-                return (WellAbandonmentResponse)_mappingService.ConvertPPDMModelToDTORuntime(result, typeof(WellAbandonmentResponse), entityType);
+                return (WellAbandonmentResponse)_mappingService.ConvertPPDMModelToDTORuntime(result, typeof(WellAbandonmentResponse), typeof(WELL_ABANDONMENT));
             }
             catch (Exception ex)
             {
@@ -231,56 +186,34 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
             try
             {
                 var metadata = await _metadata.GetTableMetadataAsync("FACILITY_DECOMMISSIONING");
+                var entityType = metadata == null ? null : typeof(FACILITY_DECOMMISSIONING);
                 if (metadata == null)
                 {
-                    _logger?.LogWarning("FACILITY_DECOMMISSIONING table metadata not found");
-                    return new List<FacilityDecommissioningResponse>();
-                }
-
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                if (entityType == null)
-                {
-                    _logger?.LogWarning($"Entity type not found for FACILITY_DECOMMISSIONING: {metadata.EntityTypeName}");
-                    return new List<FacilityDecommissioningResponse>();
+                    _logger?.LogWarning("FACILITY_DECOMMISSIONING table/entity not found — falling back to FACILITY_STATUS decommission events");
+                    return await GetDecommissionedFacilitiesFromStatusAsync(fieldId, additionalFilters);
                 }
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "FACILITY_DECOMMISSIONING");
+                    typeof(FACILITY_DECOMMISSIONING), _connectionName, "FACILITY_DECOMMISSIONING");
 
                 // FACILITY_DECOMMISSIONING is linked to FACILITY, which is linked to FIELD
-                var facilityMetadata = await _metadata.GetTableMetadataAsync("FACILITY");
-                if (facilityMetadata == null)
-                    return new List<FacilityDecommissioningResponse>();
-
-                var facilityEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{facilityMetadata.EntityTypeName}");
-                if (facilityEntityType == null)
-                    return new List<FacilityDecommissioningResponse>();
-
                 var facilityRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    facilityEntityType, _connectionName, "FACILITY");
+                    typeof(FACILITY), _connectionName, "FACILITY", null);
 
                 var facilities = await facilityRepo.GetAsync(new List<AppFilter>
                 {
                     new AppFilter
                     {
-                        FieldName = "FIELD_ID",
+                        FieldName = "PRIMARY_FIELD_ID",
                         FilterValue = _defaults.FormatIdForTable("FACILITY", fieldId),
                         Operator = "="
                     }
                 });
 
-                // Extract facility IDs using reflection
-                var facilityIds = new List<string>();
-                foreach (var facility in facilities)
-                {
-                    var facilityIdProp = facilityEntityType.GetProperty("FACILITY_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                    if (facilityIdProp != null)
-                    {
-                        var facilityIdValue = facilityIdProp.GetValue(facility)?.ToString();
-                        if (!string.IsNullOrEmpty(facilityIdValue))
-                            facilityIds.Add(facilityIdValue);
-                    }
-                }
+                var facilityIds = facilities.OfType<FACILITY>()
+                    .Select(f => f.FACILITY_ID)
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .ToList();
 
                 if (!facilityIds.Any())
                     return new List<FacilityDecommissioningResponse>();
@@ -302,7 +235,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 var results = await repo.GetAsync(filters);
                 
                 // Convert PPDM models to DTOs
-                var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(FacilityDecommissioningResponse), entityType);
+                var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(FacilityDecommissioningResponse), typeof(FACILITY_DECOMMISSIONING));
                 return dtoList.Cast<FacilityDecommissioningResponse>().ToList();
             }
             catch (Exception ex)
@@ -317,16 +250,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
             try
             {
                 // Validate facility belongs to field
-                var facilityMetadata = await _metadata.GetTableMetadataAsync("FACILITY");
-                if (facilityMetadata == null)
-                    throw new InvalidOperationException("FACILITY table metadata not found");
-
-                var facilityEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{facilityMetadata.EntityTypeName}");
-                if (facilityEntityType == null)
-                    throw new InvalidOperationException($"Entity type not found for FACILITY: {facilityMetadata.EntityTypeName}");
-
                 var facilityRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    facilityEntityType, _connectionName, "FACILITY");
+                    typeof(FACILITY), _connectionName, "FACILITY", null);
 
                 var formattedFacilityId = _defaults.FormatIdForTable("FACILITY", facilityId);
                 var facility = await facilityRepo.GetByIdAsync(formattedFacilityId);
@@ -334,13 +259,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 if (facility == null)
                     throw new InvalidOperationException($"Facility {facilityId} not found");
 
-                // Validate facility belongs to field using reflection
-                var fieldIdProp = facilityEntityType.GetProperty("FIELD_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (fieldIdProp != null)
+                // Validate facility belongs to field using strongly-typed access
+                var facilityObj = facility as FACILITY;
+                if (facilityObj != null)
                 {
-                    var facilityFieldId = fieldIdProp.GetValue(facility)?.ToString();
                     var formattedFieldId = _defaults.FormatIdForTable("FACILITY", fieldId);
-                    if (facilityFieldId != formattedFieldId)
+                    if (!string.Equals(facilityObj.PRIMARY_FIELD_ID, formattedFieldId, StringComparison.OrdinalIgnoreCase))
                         throw new InvalidOperationException($"Facility {facilityId} does not belong to field {fieldId}");
                 }
 
@@ -348,32 +272,23 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 if (metadata == null)
                     throw new InvalidOperationException("FACILITY_DECOMMISSIONING table metadata not found");
 
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                if (entityType == null)
-                    throw new InvalidOperationException($"Entity type not found for FACILITY_DECOMMISSIONING: {metadata.EntityTypeName}");
-
                 // Convert DTO to PPDM model
-                var decommissionEntity = _mappingService.ConvertDTOToPPDMModelRuntime(decommissionData, typeof(FacilityDecommissioningRequest), entityType);
+                var decommissionEntity = _mappingService.ConvertDTOToPPDMModelRuntime(decommissionData, typeof(FacilityDecommissioningRequest), typeof(FACILITY_DECOMMISSIONING));
                 
-                // Set FACILITY_ID and FIELD_ID automatically using reflection
-                var facilityIdProp = entityType.GetProperty("FACILITY_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (facilityIdProp != null && facilityIdProp.CanWrite)
+                // Set FACILITY_ID and FIELD_ID using typed assignment
+                if (decommissionEntity is FACILITY_DECOMMISSIONING typedDecommission)
                 {
-                    facilityIdProp.SetValue(decommissionEntity, formattedFacilityId);
-                }
-                var fieldIdProp2 = entityType.GetProperty("FIELD_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (fieldIdProp2 != null && fieldIdProp2.CanWrite)
-                {
-                    fieldIdProp2.SetValue(decommissionEntity, _defaults.FormatIdForTable("FACILITY_DECOMMISSIONING", fieldId));
+                    typedDecommission.FACILITY_ID = formattedFacilityId;
+                    typedDecommission.FIELD_ID = _defaults.FormatIdForTable("FACILITY_DECOMMISSIONING", fieldId);
                 }
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "FACILITY_DECOMMISSIONING");
+                    typeof(FACILITY_DECOMMISSIONING), _connectionName, "FACILITY_DECOMMISSIONING");
 
                 var result = await repo.InsertAsync(decommissionEntity, userId);
                 
                 // Convert PPDM model back to DTO
-                return (FacilityDecommissioningResponse)_mappingService.ConvertPPDMModelToDTORuntime(result, typeof(FacilityDecommissioningResponse), entityType);
+                return (FacilityDecommissioningResponse)_mappingService.ConvertPPDMModelToDTORuntime(result, typeof(FacilityDecommissioningResponse), typeof(FACILITY_DECOMMISSIONING));
             }
             catch (Exception ex)
             {
@@ -416,15 +331,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     return new List<EnvironmentalRestorationResponse>();
                 }
 
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                if (entityType == null)
-                {
-                    _logger?.LogWarning($"Entity type not found for ENVIRONMENTAL_RESTORATION: {metadata.EntityTypeName}");
-                    return new List<EnvironmentalRestorationResponse>();
-                }
-
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "ENVIRONMENTAL_RESTORATION");
+                    typeof(ENVIRONMENTAL_RESTORATION), _connectionName, "ENVIRONMENTAL_RESTORATION");
 
                 var filters = new List<AppFilter>
                 {
@@ -442,7 +350,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 var results = await repo.GetAsync(filters);
                 
                 // Convert PPDM models to DTOs
-                var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(EnvironmentalRestorationResponse), entityType);
+                var dtoList = _mappingService.ConvertPPDMModelListToDTOListRuntime(results, typeof(EnvironmentalRestorationResponse), typeof(ENVIRONMENTAL_RESTORATION));
                 return dtoList.Cast<EnvironmentalRestorationResponse>().ToList();
             }
             catch (Exception ex)
@@ -460,27 +368,22 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 if (metadata == null)
                     throw new InvalidOperationException("ENVIRONMENTAL_RESTORATION table metadata not found");
 
-                var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}");
-                if (entityType == null)
-                    throw new InvalidOperationException($"Entity type not found for ENVIRONMENTAL_RESTORATION: {metadata.EntityTypeName}");
-
                 // Convert DTO to PPDM model
-                var restorationEntity = _mappingService.ConvertDTOToPPDMModelRuntime(restorationData, typeof(EnvironmentalRestorationRequest), entityType);
+                var restorationEntity = _mappingService.ConvertDTOToPPDMModelRuntime(restorationData, typeof(EnvironmentalRestorationRequest), typeof(ENVIRONMENTAL_RESTORATION));
                 
-                // Set FIELD_ID automatically using reflection
-                var fieldIdProp = entityType.GetProperty("FIELD_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (fieldIdProp != null && fieldIdProp.CanWrite)
+                // Set FIELD_ID using typed assignment
+                if (restorationEntity is ENVIRONMENTAL_RESTORATION typedRestoration)
                 {
-                    fieldIdProp.SetValue(restorationEntity, _defaults.FormatIdForTable("ENVIRONMENTAL_RESTORATION", fieldId));
+                    typedRestoration.FIELD_ID = _defaults.FormatIdForTable("ENVIRONMENTAL_RESTORATION", fieldId);
                 }
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "ENVIRONMENTAL_RESTORATION");
+                    typeof(ENVIRONMENTAL_RESTORATION), _connectionName, "ENVIRONMENTAL_RESTORATION");
 
                 var result = await repo.InsertAsync(restorationEntity, userId);
                 
                 // Convert PPDM model back to DTO
-                return (EnvironmentalRestorationResponse)_mappingService.ConvertPPDMModelToDTORuntime(result, typeof(EnvironmentalRestorationResponse), entityType);
+                return (EnvironmentalRestorationResponse)_mappingService.ConvertPPDMModelToDTORuntime(result, typeof(EnvironmentalRestorationResponse), typeof(ENVIRONMENTAL_RESTORATION));
             }
             catch (Exception ex)
             {
@@ -575,23 +478,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
 
                     if (well != null)
                     {
-                        if (well is Beep.OilandGas.PPDM39.Models.WELL w)
+                        if (well is WELL w)
                         {
-                            var depthProp = w.GetType().GetProperty("TOTAL_DEPTH") ?? w.GetType().GetProperty("WELL_DEPTH");
-                            if (depthProp?.GetValue(w) is decimal depth) wellDepth = depth;
-                        }
-                        else if (well is IDictionary<string, object> wDict)
-                        {
-                            if (wDict.TryGetValue("TOTAL_DEPTH", out var depthVal))
-                            {
-                                if (depthVal is decimal d) wellDepth = d;
-                                else if (decimal.TryParse(depthVal?.ToString(), out var parsed)) wellDepth = parsed;
-                            }
-                            else if (wDict.TryGetValue("WELL_DEPTH", out var depthVal2))
-                            {
-                                if (depthVal2 is decimal d2) wellDepth = d2;
-                                else if (decimal.TryParse(depthVal2?.ToString(), out var parsed2)) wellDepth = parsed2;
-                            }
+                            var rawDepth = w.FINAL_TD > 0 ? w.FINAL_TD : w.DRILL_TD;
+                            if (rawDepth > 0)
+                                wellDepth = string.Equals(w.FINAL_TD_OUOM, "M", StringComparison.OrdinalIgnoreCase)
+                                    ? rawDepth * 3.28084m
+                                    : rawDepth;
                         }
                     }
 
@@ -628,18 +521,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
 
                     if (facility != null)
                     {
-                        if (facility is Beep.OilandGas.PPDM39.Models.FACILITY f)
+                        if (facility is FACILITY f)
                         {
-                            var typeProp = f.GetType().GetProperty("FACILITY_TYPE");
-                            var type = typeProp?.GetValue(f)?.ToString()?.ToUpper();
+                            var type = f.FACILITY_TYPE?.ToUpper();
                             // Adjust size factor based on facility type
-                            if (type?.Contains("PLATFORM") == true) sizeFactor = 2.0m;
-                            else if (type?.Contains("PROCESSING") == true) sizeFactor = 1.5m;
-                            else if (type?.Contains("STORAGE") == true) sizeFactor = 1.2m;
-                        }
-                        else if (facility is IDictionary<string, object> fDict)
-                        {
-                            var type = fDict.TryGetValue("FACILITY_TYPE", out var typeVal) ? typeVal?.ToString()?.ToUpper() : null;
                             if (type?.Contains("PLATFORM") == true) sizeFactor = 2.0m;
                             else if (type?.Contains("PROCESSING") == true) sizeFactor = 1.5m;
                             else if (type?.Contains("STORAGE") == true) sizeFactor = 1.2m;
@@ -732,8 +617,27 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     throw new InvalidOperationException($"Abandonment {abandonmentId} not found for well {wellId}");
                 }
 
-                // Update status to EXECUTING
-                // In full implementation, would use WellPluggingService
+                // Record execution event in WELL_ACTIVITY
+                var activityMeta = await _metadata.GetTableMetadataAsync("WELL_ACTIVITY");
+                if (activityMeta != null)
+                {
+                    var activityRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                    var activity = new WELL_ACTIVITY
+                    {
+                        UWI = _defaults.FormatIdForTable("WELL_ACTIVITY", wellId),
+                        SOURCE = "LIFECYCLE",
+                        ACTIVITY_OBS_NO = Math.Abs((decimal)Guid.NewGuid().GetHashCode()),
+                        ACTIVITY_TYPE_ID = "DECOMMISSION_EXEC",
+                        EVENT_DATE = DateTime.UtcNow,
+                        REMARK = $"AbandonmentId: {abandonmentId}, ExecutedBy: {userId}",
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (activity is IPPDMEntity activityEntity)
+                        _commonColumnHandler.PrepareForInsert(activityEntity, userId);
+                    await activityRepo.InsertAsync(activity, userId);
+                }
 
                 return new WellAbandonmentResponse
                 {
@@ -767,8 +671,27 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                     throw new InvalidOperationException($"Abandonment {abandonmentId} not found for well {wellId}");
                 }
 
-                // Update verification status
-                // In full implementation, would use WellPluggingService.VerifyWellPluggingAsync
+                // Record verification event in WELL_ACTIVITY
+                var activityMeta = await _metadata.GetTableMetadataAsync("WELL_ACTIVITY");
+                if (activityMeta != null)
+                {
+                    var activityRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                    var activity = new WELL_ACTIVITY
+                    {
+                        UWI = _defaults.FormatIdForTable("WELL_ACTIVITY", wellId),
+                        SOURCE = "LIFECYCLE",
+                        ACTIVITY_OBS_NO = Math.Abs((decimal)Guid.NewGuid().GetHashCode()),
+                        ACTIVITY_TYPE_ID = passed ? "DECOMMISSION_VERIFIED" : "DECOMMISSION_FAILED",
+                        EVENT_DATE = DateTime.UtcNow,
+                        REMARK = $"AbandonmentId: {abandonmentId}, VerifiedBy: {verifiedBy}, Passed: {passed}",
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (activity is IPPDMEntity activityEntity)
+                        _commonColumnHandler.PrepareForInsert(activityEntity, userId);
+                    await activityRepo.InsertAsync(activity, userId);
+                }
 
                 return new WellAbandonmentResponse
                 {
@@ -784,6 +707,105 @@ namespace Beep.OilandGas.LifeCycle.Services.Decommissioning
                 _logger?.LogError(ex, "Error verifying decommissioning for well: {WellId}", wellId);
                 throw;
             }
+        }
+
+        #endregion
+
+        #region Private Fallback Helpers
+
+        private async Task<List<WellAbandonmentResponse>> GetAbandonedWellsFromActivityAsync(string fieldId, List<AppFilter>? additionalFilters)
+        {
+            // Get well IDs for this field
+            var wellMeta = await _metadata.GetTableMetadataAsync("WELL");
+            if (wellMeta == null) return new List<WellAbandonmentResponse>();
+
+            var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(WELL), _connectionName, "WELL", null);
+            var wellFilters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("WELL", fieldId) }
+            };
+            var wells = await wellRepo.GetAsync(wellFilters);
+            var wellList = wells?.OfType<WELL>().Where(w => !string.IsNullOrEmpty(w.UWI)).ToList()
+                          ?? new List<WELL>();
+            if (!wellList.Any()) return new List<WellAbandonmentResponse>();
+
+            // Query WELL_ACTIVITY for decommission events
+            var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+            var responses = new List<WellAbandonmentResponse>();
+            foreach (var well in wellList)
+            {
+                var actFilters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = _defaults.FormatIdForTable("WELL_ACTIVITY", well.UWI!) },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+                var acts = await actRepo.GetAsync(actFilters);
+                foreach (var act in acts?.OfType<WELL_ACTIVITY>()
+                    .Where(a => (a.ACTIVITY_TYPE_ID ?? string.Empty).StartsWith("DECOMMISSION_", StringComparison.OrdinalIgnoreCase))
+                    ?? Enumerable.Empty<WELL_ACTIVITY>())
+                {
+                    responses.Add(new WellAbandonmentResponse
+                    {
+                        AbandonmentId = act.PPDM_GUID ?? Guid.NewGuid().ToString(),
+                        WellId = well.UWI,
+                        FieldId = fieldId,
+                        AbandonmentType = act.ACTIVITY_TYPE_ID?.Length > 13 ? act.ACTIVITY_TYPE_ID.Substring(13) : act.ACTIVITY_TYPE_ID,
+                        Status = "COMPLETED",
+                        AbandonmentStartDate = act.EVENT_DATE
+                    });
+                }
+            }
+            return responses;
+        }
+
+        private async Task<List<FacilityDecommissioningResponse>> GetDecommissionedFacilitiesFromStatusAsync(string fieldId, List<AppFilter>? additionalFilters)
+        {
+            // Get facility IDs for this field
+            var facMeta = await _metadata.GetTableMetadataAsync("FACILITY");
+            if (facMeta == null) return new List<FacilityDecommissioningResponse>();
+
+            var facRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(FACILITY), _connectionName, "FACILITY", null);
+            var facFilters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("FACILITY", fieldId) }
+            };
+            var facilities = await facRepo.GetAsync(facFilters);
+            var facilityList = facilities?.OfType<FACILITY>()
+                .Where(f => !string.IsNullOrEmpty(f.FACILITY_ID)).ToList()
+                ?? new List<FACILITY>();
+            if (!facilityList.Any()) return new List<FacilityDecommissioningResponse>();
+
+            // Query FACILITY_STATUS for decommission events
+            var fsRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(FACILITY_STATUS), _connectionName, "FACILITY_STATUS", null);
+            var responses = new List<FacilityDecommissioningResponse>();
+            foreach (var facility in facilityList)
+            {
+                var fsFilters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("FACILITY_STATUS", facility.FACILITY_ID!) },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+                var statuses = await fsRepo.GetAsync(fsFilters);
+                foreach (var fs in statuses?.OfType<FACILITY_STATUS>()
+                    .Where(s => (s.STATUS_TYPE ?? string.Empty).StartsWith("DECOMMISSION_", StringComparison.OrdinalIgnoreCase))
+                    ?? Enumerable.Empty<FACILITY_STATUS>())
+                {
+                    responses.Add(new FacilityDecommissioningResponse
+                    {
+                        DecommissioningId = fs.PPDM_GUID ?? Guid.NewGuid().ToString(),
+                        FacilityId = facility.FACILITY_ID,
+                        FieldId = fieldId,
+                        DecommissioningType = fs.STATUS_TYPE?.Length > 13 ? fs.STATUS_TYPE.Substring(13) : fs.STATUS_TYPE,
+                        Status = fs.STATUS ?? "COMPLETED",
+                        DecommissioningStartDate = fs.START_TIME
+                    });
+                }
+            }
+            return responses;
         }
 
         #endregion

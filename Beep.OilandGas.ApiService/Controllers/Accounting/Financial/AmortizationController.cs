@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.ProductionAccounting.Models;
+using Beep.OilandGas.Models.Data.Calculations;
+using Beep.OilandGas.Models.Data.ProductionOperations;
+using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
 

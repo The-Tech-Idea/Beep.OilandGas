@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
-using Beep.OilandGas.ProductionAccounting.Financial.SuccessfulEfforts;
-using Beep.OilandGas.ProductionAccounting.Models;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Accounting.Financial;
+using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
-using Beep.OilandGas.Models.Data.Accounting.Financial;
 using Microsoft.Extensions.Logging;
+using ProductionCosts = Beep.OilandGas.Models.Data.ProductionAccounting.ProductionCosts;
+using ImpairmentRequest = Beep.OilandGas.Models.Data.Accounting.Financial.ImpairmentRequest;
+
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
 {

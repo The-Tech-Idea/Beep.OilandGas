@@ -16,6 +16,7 @@ using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data.ProspectIdentification;
 using Beep.OilandGas.PPDM.Models;
+using PROSPECT = Beep.OilandGas.PPDM39.Models.PROSPECT;
 
 namespace Beep.OilandGas.LifeCycle.Services.Exploration
 {
@@ -107,15 +108,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
                 // Convert DTO to PPDM model
                 var prospectEntity = _mappingService.ConvertDTOToPPDMModel<PROSPECT, ProspectRequest>(prospectData);
                 
-                // Set FIELD_ID automatically using reflection
-                var fieldIdProp = entityType.GetProperty("FIELD_ID", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
-                if (fieldIdProp != null && fieldIdProp.CanWrite)
-                {
-                    fieldIdProp.SetValue(prospectEntity, _defaults.FormatIdForTable("PROSPECT", fieldId));
-                }
+                // Set FIELD_ID directly
+                prospectEntity.FIELD_ID = _defaults.FormatIdForTable("PROSPECT", fieldId);
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "PROSPECT", null);
+                    typeof(PROSPECT), _connectionName, "PROSPECT", null);
 
                 var result = await repo.InsertAsync(prospectEntity, userId);
                 
@@ -152,15 +149,11 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
                 var prospectEntity = _mappingService.ConvertDTOToPPDMModel<PROSPECT, ProspectRequest>(prospectData);
 
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                    entityType, _connectionName, "PROSPECT", null);
+                    typeof(PROSPECT), _connectionName, "PROSPECT", null);
 
                 var formattedId = _defaults.FormatIdForTable("PROSPECT", prospectId);
-                // Set the ID property on the entity before updating
-                var idProp = entityType.GetProperty("PROSPECT_ID");
-                if (idProp != null)
-                {
-                    idProp.SetValue(prospectEntity, formattedId);
-                }
+                // Set the ID property directly
+                prospectEntity.PROSPECT_ID = formattedId;
                 var result = await repo.UpdateAsync(prospectEntity, userId);
                 
                 // Return PPDM model directly
@@ -244,14 +237,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
                 var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                     entityType, _connectionName, "SEIS_ACQTN_SURVEY", null);
 
-                // Filter by field ID - check if SEIS_ACQTN_SURVEY has FIELD_ID or if we need to join through another table
-                // For now, assuming SEIS_ACQTN_SURVEY has FIELD_ID directly
+                // SEIS_ACQTN_SURVEY links to fields via AREA_ID + AREA_TYPE (PPDM spatial pattern)
                 var filters = new List<AppFilter>
                 {
                     new AppFilter
                     {
-                        FieldName = "FIELD_ID",
+                        FieldName = "AREA_ID",
                         FilterValue = _defaults.FormatIdForTable("SEIS_ACQTN_SURVEY", fieldId),
+                        Operator = "="
+                    },
+                    new AppFilter
+                    {
+                        FieldName = "AREA_TYPE",
+                        FilterValue = "FIELD",
                         Operator = "="
                     }
                 };
@@ -409,20 +407,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
             {
                 _logger?.LogInformation("Identifying prospect for field: {FieldId}", fieldId);
 
-                // Create prospect first
+                // Create prospect first, then evaluate it using real data
                 var prospect = await CreateProspectForFieldAsync(fieldId, prospectData, userId);
-
-                // If ProspectEvaluationService is available, evaluate it
-                // For now, return basic evaluation
-                return new ProspectEvaluation
-                {
-                    ProspectId = prospect.PROSPECT_ID ?? string.Empty,
-                    FieldId = fieldId,
-                    EvaluationDate = DateTime.UtcNow,
-                    RiskLevel = "MEDIUM",
-                    Potential = "MODERATE",
-                    Recommendation = "FURTHER_EVALUATION"
-                };
+                return await EvaluateProspectAsync(fieldId, prospect.PROSPECT_ID ?? string.Empty);
             }
             catch (Exception ex)
             {
@@ -446,15 +433,57 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
                     throw new InvalidOperationException($"Prospect {prospectId} not found for field {fieldId}");
                 }
 
-                // Basic evaluation - in full implementation, would use ProspectEvaluationService
+                // Derive risk level from stored fields (RISK_LEVEL/RISK_FACTOR not in PPDM39 PROSPECT — default to MEDIUM)
+                var riskLevel = "MEDIUM";
+                decimal? riskFactor = null;
+                decimal? probabilityOfSuccess = null;
+                string recommendation;
+
+                if (riskFactor.HasValue)
+                {
+                    // RISK_FACTOR stored 0-1 scale: convert to HIGH/MEDIUM/LOW
+                    if (riskFactor.Value >= 0.7m)
+                    {
+                        riskLevel = "HIGH";
+                        probabilityOfSuccess = (1m - riskFactor.Value) * 100m;
+                        recommendation = "DETAILED_STUDY_REQUIRED";
+                    }
+                    else if (riskFactor.Value >= 0.4m)
+                    {
+                        riskLevel = "MEDIUM";
+                        probabilityOfSuccess = (1m - riskFactor.Value) * 100m;
+                        recommendation = "FURTHER_EVALUATION";
+                    }
+                    else
+                    {
+                        riskLevel = "LOW";
+                        probabilityOfSuccess = (1m - riskFactor.Value) * 100m;
+                        recommendation = "RECOMMEND_DRILL";
+                    }
+                }
+                else
+                {
+                    // No numeric factor; use status-based logic
+                    recommendation = (prospect.PROSPECT_STATUS ?? string.Empty).ToUpperInvariant() switch
+                    {
+                        "ACTIVE" or "VIABLE" => "FURTHER_EVALUATION",
+                        "COMMITTED" or "APPROVED" => "RECOMMEND_DRILL",
+                        "ABANDONED" or "REJECTED" => "DO_NOT_DRILL",
+                        _ => "FURTHER_EVALUATION"
+                    };
+                }
+
                 return new ProspectEvaluation
                 {
+                    EvaluationId = Guid.NewGuid().ToString(),
                     ProspectId = prospectId,
                     FieldId = fieldId,
                     EvaluationDate = DateTime.UtcNow,
-                    RiskLevel = "MEDIUM",
-                    Potential = "MODERATE",
-                    Recommendation = "FURTHER_EVALUATION"
+                    RiskLevel = riskLevel,
+                    RiskScore = riskFactor,
+                    ProbabilityOfSuccess = probabilityOfSuccess,
+                    Recommendation = recommendation,
+                    Remarks = $"Evaluated from PPDM PROSPECT status: {prospect.PROSPECT_STATUS ?? "N/A"}"
                 };
             }
             catch (Exception ex)

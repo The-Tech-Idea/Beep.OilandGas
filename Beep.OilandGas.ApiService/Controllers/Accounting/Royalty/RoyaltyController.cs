@@ -3,15 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.ProductionAccounting.Royalty;
-using Beep.OilandGas.ProductionAccounting.Accounting;
-using Beep.OilandGas.ProductionAccounting.Models;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Accounting.Royalty;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
-using Beep.OilandGas.Models.Data.Accounting.Royalty;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
@@ -171,7 +170,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
         /// Get royalty calculation records.
         /// </summary>
         [HttpGet("calculations")]
-        public async Task<ActionResult<List<Beep.OilandGas.Models.Data.ROYALTY_CALCULATION>>> GetRoyaltyCalculations(
+        public async Task<ActionResult<List<ROYALTY_CALCULATION>>> GetRoyaltyCalculations(
             [FromQuery] string? fieldId = null,
             [FromQuery] string? poolId = null,
             [FromQuery] DateTime? startDate = null,

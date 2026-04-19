@@ -1,19 +1,96 @@
 @page "/data/versioning"
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
 
-<PageTitle>Data Versioning - Data Management</PageTitle>
+<PageTitle>Manage Data Versions</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudText Typo="Typo.h4" Class="mb-4">Data Versioning</MudText>
-    
-    <MudPaper Class="pa-4">
-        <MudText Typo="Typo.body1">Data Versioning interface coming soon...</MudText>
-    </MudPaper>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Manage Data Versions</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Create and compare snapshots of PPDM39 data — track who changed what</MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.Security"
+                       OnClick='() => NavigationManager.NavigateTo("/data/audit")'>
+                View Access Audit
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.AddCircle"
+                       OnClick="CreateSnapshot">
+                New Snapshot
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @* Table selector + snapshot trigger *@
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" md="4">
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">Snapshot Settings</MudText>
+                <MudSelect T="string" @bind-Value="_selectedTable" Label="Table" Variant="Variant.Outlined" Class="mb-3">
+                    @foreach (var t in _tables)
+                    {
+                        <MudSelectItem Value="@t">@t</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudTextField @bind-Value="_snapshotLabel" Label="Label" Variant="Variant.Outlined"
+                              Placeholder="e.g. Pre-migration baseline" />
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="8">
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">Snapshot History</MudText>
+                <MudDataGrid T="SnapshotRow" Items="@_snapshots" Dense="true" Hover="true" Striped="true">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Label" Title="Label" />
+                        <PropertyColumn Property="x => x.Table" Title="Table" />
+                        <PropertyColumn Property="x => x.CreatedBy" Title="Created by" />
+                        <PropertyColumn Property="x => x.CreatedAt" Title="Date" Format="dd MMM yyyy HH:mm" />
+                        <PropertyColumn Property="x => x.RowCount" Title="Rows" />
+                        <TemplateColumn Title="">
+                            <CellTemplate>
+                                <MudIconButton Icon="@Icons.Material.Filled.Compare"
+                                               Size="Size.Small"
+                                               Title="Compare with current"
+                                               OnClick="@(() => CompareSnapshot(context.Item))" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
 </MudContainer>
 
 @code {
+    private List<string> _tables = new() { "WELL", "WELL_STATUS", "FACILITY", "POOL", "PDEN", "PROSPECT" };
+    private string _selectedTable = "WELL";
+    private string _snapshotLabel = string.Empty;
+    private List<SnapshotRow> _snapshots = new()
+    {
+        new("Pre-migration baseline", "WELL", "admin", new DateTime(2026, 4, 1, 09, 30, 0), 1240),
+        new("Q1 2026 close", "PDEN", "prod.engineer", new DateTime(2026, 3, 31, 17, 0, 0), 8800),
+        new("Before EOR screen", "POOL", "res.engineer", new DateTime(2026, 3, 15, 11, 0, 0), 45)
+    };
+
+    private void CreateSnapshot()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedTable)) return;
+        var label = string.IsNullOrWhiteSpace(_snapshotLabel)
+            ? $"{_selectedTable} — {DateTime.Now:dd MMM yyyy HH:mm}"
+            : _snapshotLabel;
+        _snapshots.Insert(0, new(label, _selectedTable, "current.user", DateTime.Now, Random.Shared.Next(100, 5000)));
+        _snapshotLabel = string.Empty;
+        Snackbar.Add($"Snapshot '{label}' created.", Severity.Success);
+    }
+
+    private void CompareSnapshot(SnapshotRow row) =>
+        Snackbar.Add($"Comparing '{row.Label}' with current {row.Table} data…", Severity.Info);
+
+    internal record SnapshotRow(string Label, string Table, string CreatedBy, DateTime CreatedAt, int RowCount);
 }
-
-
-

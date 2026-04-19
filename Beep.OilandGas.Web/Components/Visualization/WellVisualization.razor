@@ -12,20 +12,23 @@
                                   @bind-Value="@_viewMode" 
                                   Variant="Variant.Outlined"
                                   Dense="true"
-                                  Style="min-width: 150px;">
-                            <MudSelectItem Value="diagram">Wellbore Diagram</MudSelectItem>
-                            <MudSelectItem Value="completion">Completion Diagram</MudSelectItem>
-                            <MudSelectItem Value="details">Details View</MudSelectItem>
+                                  Class="og-select-narrow">
+                            <MudSelectItem Value="@("diagram")">Wellbore Diagram</MudSelectItem>
+                            <MudSelectItem Value="@("completion")">Completion Diagram</MudSelectItem>
+                            <MudSelectItem Value="@("details")">Details View</MudSelectItem>
                         </MudSelect>
                         <MudIconButton Icon="@Icons.Material.Filled.ZoomIn" 
                                       Size="Size.Small"
-                                      OnClick="@ZoomIn" />
+                                      OnClick="@ZoomIn"
+                                      Title="Zoom in" />
                         <MudIconButton Icon="@Icons.Material.Filled.ZoomOut" 
                                       Size="Size.Small"
-                                      OnClick="@ZoomOut" />
+                                      OnClick="@ZoomOut"
+                                      Title="Zoom out" />
                         <MudIconButton Icon="@Icons.Material.Filled.Fullscreen" 
                                       Size="Size.Small"
-                                      OnClick="@ToggleFullscreen" />
+                                      OnClick="@ToggleFullscreen"
+                                      Title="Toggle fullscreen" />
                     </MudStack>
                 }
             </MudStack>
@@ -39,7 +42,7 @@
             }
             else if (WellData != null)
             {
-                <MudPaper Elevation="1" Class="pa-4" Style="min-height: 400px; background: var(--mud-palette-background);">
+                <MudPaper Elevation="1" Class="pa-4 og-visualization-panel">
                     @if (_viewMode == "diagram")
                     {
                         <WellboreDiagram WellData="@WellData" />

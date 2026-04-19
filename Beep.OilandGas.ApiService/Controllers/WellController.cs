@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.WellComparison;
 using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ApiService.Controllers

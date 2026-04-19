@@ -1,0 +1,201 @@
+@page "/data/quality-dashboard"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Assess Data Quality</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Assess Data Quality</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">PPDM39 data quality scores &amp; issue register</MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh" OnClick="RecalculateScores">
+                Recalculate
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Download" OnClick="ExportReport">
+                Export Report
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @* KPIs *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Overall Quality Score" Value="@_overallScore.ToString("N1")" Unit="%"
+                     ValueColor="@ScoreColor(_overallScore)"
+                     Icon="@Icons.Material.Filled.Grade"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="vs last month" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Tables Assessed" Value="@_tables.Count.ToString()"
+                     ValueColor="Color.Info" Icon="@Icons.Material.Filled.TableChart"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="PPDM39 core tables" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Open Issues" Value="@_issues.Count(i => !i.Resolved).ToString()"
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.BugReport"
+                     TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Success" TrendText="Down from last run" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Critical Issues" Value="@_issues.Count(i => i.Severity == "CRITICAL" && !i.Resolved).ToString()"
+                     ValueColor="Color.Error" Icon="@Icons.Material.Filled.ErrorOutline"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Require immediate action" />
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+
+        @* Table quality scores *@
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent><MudText Typo="Typo.subtitle1">Quality by Table</MudText></CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="TableQuality" Items="@_tables" Dense="true" Hover="true" Striped="true"
+                                 SortMode="SortMode.Single">
+                        <Columns>
+                            <PropertyColumn Property="t => t.TableName"   Title="Table" />
+                            <PropertyColumn Property="t => t.RecordCount" Title="Records" Format="N0" />
+                            <TemplateColumn Title="Completeness">
+                                <CellTemplate>
+                                    <MudStack Spacing="0">
+                                        <MudProgressLinear Value="@context.Item.Completeness"
+                                                           Color="@ScoreColor(context.Item.Completeness)" />
+                                        <MudText Typo="Typo.caption">@context.Item.Completeness.ToString("N0")%</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Overall">
+                                <CellTemplate>
+                                    <MudChip T="string" Size="Size.Small"
+                                             Color="@ScoreColor(context.Item.OverallScore)">
+                                        @context.Item.OverallScore.ToString("N0")%
+                                    </MudChip>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Quality trend chart + right column *@
+        <MudItem xs="12" md="6">
+            <MudStack Spacing="3">
+
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent><MudText Typo="Typo.subtitle1">Quality Score Trend</MudText></CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudChart T="double" ChartType="ChartType.Line"
+                                  Series="@_trendSeries"
+                                  XAxisLabels="@_trendMonths"
+                                  Width="100%" Height="180px" />
+                    </MudCardContent>
+                </MudCard>
+
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent><MudText Typo="Typo.subtitle1">Issue Register</MudText></CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MudDataGrid T="DataIssue" Items="@_issues.Where(i => !i.Resolved)" Dense="true" Hover="true">
+                            <Columns>
+                                <PropertyColumn Property="i => i.TableName"   Title="Table" />
+                                <PropertyColumn Property="i => i.Description" Title="Issue" />
+                                <TemplateColumn Title="Severity">
+                                    <CellTemplate>
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@IssueSeverityColor(context.Item.Severity)">
+                                            @context.Item.Severity
+                                        </MudChip>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <PropertyColumn Property="i => i.RecordsAffected" Title="# Records" />
+                                <TemplateColumn Title="" Sortable="false">
+                                    <CellTemplate>
+                                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                                       Title="Resolve issue"
+                                                       Size="Size.Small" Color="Color.Success"
+                                                       OnClick="@(() => ResolveIssue(context.Item))" />
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    </MudCardContent>
+                </MudCard>
+
+            </MudStack>
+        </MudItem>
+
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private double _overallScore = 87.4;
+
+    private record TableQuality(string TableName, int RecordCount, double Completeness, double OverallScore);
+    private List<TableQuality> _tables = new()
+    {
+        new("WELL",                  2_847, 96.2, 94.1),
+        new("WELL_TEST",             8_401, 88.5, 86.3),
+        new("WELL_TUBULAR",          5_233, 79.4, 77.0),
+        new("FACILITY",                 42, 98.1, 97.6),
+        new("PDEN_VOL_SUMMARY",     12_500, 91.3, 89.8),
+        new("POOL",                     28, 95.7, 95.7),
+        new("BUSINESS_ASSOCIATE",      315, 72.0, 68.4),
+        new("CONTRACT",                 87, 83.6, 80.2),
+        new("PROSPECT",                 64, 88.0, 85.5),
+    };
+
+    private record DataIssue(string TableName, string Description, string Severity, int RecordsAffected, bool Resolved);
+    private List<DataIssue> _issues = new()
+    {
+        new("WELL",               "Missing FINAL_TD value",          "HIGH",     312, false),
+        new("BUSINESS_ASSOCIATE", "Duplicate BA records",            "CRITICAL",  18, false),
+        new("WELL_TEST",          "Invalid FLOW_RATE_OIL values",    "HIGH",      84, false),
+        new("CONTRACT",           "Missing EXPIRY_DATE",             "MEDIUM",    23, false),
+        new("PDEN_VOL_SUMMARY",   "Null REPORT_PERIOD values",       "MEDIUM",   156, false),
+        new("WELL_TUBULAR",       "CASING_OD out of range",          "LOW",       11, false),
+        new("WELL",               "Missing COUNTRY_NAME",            "LOW",       44, true),
+    };
+
+    private List<ChartSeries<double>> _trendSeries = new()
+    {
+        new ChartSeries<double> { Name = "Overall Score %", Data = new double[] { 81, 83, 84, 85, 86, 87.4 } },
+        new ChartSeries<double> { Name = "Completeness %", Data = new double[] { 85, 86, 87, 88, 88, 89   } },
+    };
+    private string[] _trendMonths = { "Nov", "Dec", "Jan", "Feb", "Mar", "Apr" };
+
+    private void ResolveIssue(DataIssue issue)
+    {
+        var idx = _issues.IndexOf(issue);
+        if (idx >= 0)
+            _issues[idx] = issue with { Resolved = true };
+        Snackbar.Add($"Issue in {issue.TableName} marked resolved", Severity.Success);
+    }
+
+    private void RecalculateScores() => Snackbar.Add("Quality recalculation started", Severity.Info);
+    private void ExportReport() => Snackbar.Add("Quality report export queued", Severity.Success);
+
+    private Color ScoreColor(double score) => score switch
+    {
+        >= 90 => Color.Success,
+        >= 75 => Color.Warning,
+        _     => Color.Error,
+    };
+
+    private Color IssueSeverityColor(string sev) => sev switch
+    {
+        "CRITICAL" => Color.Error,
+        "HIGH"     => Color.Warning,
+        "MEDIUM"   => Color.Info,
+        _          => Color.Default,
+    };
+}

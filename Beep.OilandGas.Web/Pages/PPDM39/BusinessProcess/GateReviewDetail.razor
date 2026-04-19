@@ -1,0 +1,184 @@
+@page "/ppdm39/process/gates/{Id}"
+@attribute [Authorize(Roles = "GateApprover,Manager,Admin")]
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Gate Review — @Id</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       OnClick='() => NavigationManager.NavigateTo("/ppdm39/process/gates")' />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">@_gateName</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <StatusBadge Status="@_status" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Entity: @_entityId · Submitted by @_submittedBy on @_submittedAt.ToString("dd-MMM-yyyy")</MudText>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    <MudDivider Class="mb-4" />
+
+    <MudGrid Spacing="3">
+
+        @* ── Checklist ────────────────────────────────────────────────── *@
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Required Documents Checklist</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <GateChecklistTable Items="@_checklist" />
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* ── Decision panel ───────────────────────────────────────────── *@
+        <MudItem xs="12" md="5">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudIcon Icon="@Icons.Material.Filled.Gavel" Color="Color.Primary" />
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Gate Decision</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudTextField @bind-Value="_comments" Label="Comments / Conditions"
+                                  Lines="3" Variant="Variant.Outlined" Class="mb-3" />
+                    <MudDatePicker @bind-Date="_deferDate" Label="Defer To (if deferring)"
+                                   Variant="Variant.Outlined" Class="mb-4" />
+                    <MudStack Row="true" Spacing="2" Wrap="Wrap.Wrap">
+                        <MudButton Variant="Variant.Filled" Color="Color.Success"
+                                   StartIcon="@Icons.Material.Filled.ThumbUp"
+                                   Disabled="@(!AllDocumentsSubmitted)"
+                                   OnClick="ApproveAsync">
+                            Approve
+                        </MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Error"
+                                   StartIcon="@Icons.Material.Filled.ThumbDown"
+                                   OnClick="RejectAsync">
+                            Reject
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Warning"
+                                   StartIcon="@Icons.Material.Filled.Schedule"
+                                   OnClick="DeferAsync">
+                            Defer
+                        </MudButton>
+                    </MudStack>
+                    @if (!AllDocumentsSubmitted)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Error" Class="mt-2">
+                            All required documents must be submitted before approval.
+                        </MudText>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+    </MudGrid>
+
+</MudContainer>
+
+@using Microsoft.AspNetCore.Authorization
+@using Beep.OilandGas.Models.Data
+
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+
+    private string   _gateName    = string.Empty;
+    private string   _entityId    = string.Empty;
+    private string   _status      = "AWAITING APPROVAL";
+    private string   _submittedBy = string.Empty;
+    private DateTime _submittedAt = DateTime.Today;
+    private string   _comments    = string.Empty;
+    private DateTime? _deferDate  = null;
+
+    private List<GateChecklistTable.GateChecklistItem> _checklist = new();
+
+    private bool AllDocumentsSubmitted => _checklist.All(c => c.IsSubmitted);
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/field/current/gates/{Id}/checklist + gate detail
+        _gateName    = "Eagle Ford S-1 — Gate 2: AFE Approval";
+        _entityId    = "W-001";
+        _submittedBy = "john.doe";
+        _submittedAt = DateTime.Today.AddDays(-3);
+
+        _checklist = new List<GateChecklistTable.GateChecklistItem>
+        {
+            new("Geological Evaluation Report",    "RM_INFORMATION_ITEM", true),
+            new("AFE Estimate Document",           "RM_INFORMATION_ITEM", true),
+            new("Regulatory Approval Letter",      "RM_INFORMATION_ITEM", false),
+            new("Environmental Impact Assessment", "RM_INFORMATION_ITEM", false),
+            new("Signed Well Commitment",          "PROJECT_STEP_BA",     true),
+        };
+    }
+
+    private async Task ApproveAsync()
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync("Confirm Approval",
+            $"Approve gate '{_gateName}'?", yesText: "Approve", noText: "Cancel",
+            options: new DialogOptions { MaxWidth = MaxWidth.ExtraSmall });
+        if (confirmed != true) return;
+
+        try
+        {
+            var req = new GateReviewDecisionRequest
+            {
+                Decision = GateDecision.Approve, Comments = _comments
+            };
+            await ApiClient.PostAsync<GateReviewDecisionRequest, object>($"/api/field/current/gates/{Id}/approve", req);
+            Snackbar.Add("Gate approved.", Severity.Success);
+            NavigationManager.NavigateTo("/ppdm39/process/gates");
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task RejectAsync()
+    {
+        var confirmed = await DialogService.ShowMessageBoxAsync("Confirm Rejection",
+            $"Reject gate '{_gateName}'? This will require resubmission.",
+            yesText: "Reject", noText: "Cancel",
+            options: new DialogOptions { MaxWidth = MaxWidth.ExtraSmall });
+        if (confirmed != true) return;
+
+        try
+        {
+            var req = new GateReviewDecisionRequest
+            {
+                Decision = GateDecision.Reject, Comments = _comments
+            };
+            await ApiClient.PostAsync<GateReviewDecisionRequest, object>($"/api/field/current/gates/{Id}/reject", req);
+            Snackbar.Add("Gate rejected.", Severity.Warning);
+            NavigationManager.NavigateTo("/ppdm39/process/gates");
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task DeferAsync()
+    {
+        try
+        {
+            var req = new GateReviewDecisionRequest
+            {
+                Decision        = GateDecision.Defer,
+                Comments        = _comments,
+                DeferTargetDate = _deferDate
+            };
+            await ApiClient.PostAsync<GateReviewDecisionRequest, object>($"/api/field/current/gates/{Id}/defer", req);
+            Snackbar.Add("Gate deferred.", Severity.Info);
+            NavigationManager.NavigateTo("/ppdm39/process/gates");
+        }
+        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+    }
+}

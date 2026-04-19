@@ -14,7 +14,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
     /// <summary>
     /// Helper class to initialize default process definitions
     /// </summary>
-    public class ProcessDefinitionInitializer
+    public partial class ProcessDefinitionInitializer
     {
         private readonly IProcessService _processService;
         private readonly ILogger<ProcessDefinitionInitializer>? _logger;
@@ -56,6 +56,30 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 // Decommissioning processes
                 await InitializeWellAbandonmentProcessAsync(userId);
                 await InitializeFacilityDecommissioningProcessAsync(userId);
+
+                // Work order workflows
+                await InitializeWorkOrderWorkflowsAsync(userId);
+
+                // Approval & gate reviews
+                await InitializeGateReviewWorkflowsAsync(userId);
+
+                // HSE & safety workflows
+                await InitializeHSEWorkflowsAsync(userId);
+
+                // Compliance & regulatory workflows
+                await InitializeComplianceWorkflowsAsync(userId);
+
+                // Well lifecycle workflows
+                await InitializeWellLifecycleWorkflowsAsync(userId);
+
+                // Facility lifecycle workflows
+                await InitializeFacilityLifecycleWorkflowsAsync(userId);
+
+                // Reservoir management workflows
+                await InitializeReservoirManagementWorkflowsAsync(userId);
+
+                // Pipeline & infrastructure workflows
+                await InitializePipelineInfrastructureWorkflowsAsync(userId);
 
                 _logger?.LogInformation("Default process definitions initialized successfully");
             }

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Rendering;
-using Beep.OilandGas.Models.Data.Rendering;
 using SkiaSharp;
 
 namespace Beep.OilandGas.Models.Core.Interfaces

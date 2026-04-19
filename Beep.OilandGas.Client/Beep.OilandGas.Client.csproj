@@ -32,15 +32,22 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
-		<PackageReference Include="Microsoft.Extensions.Options" Version="10.0.2" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.2" />
-		<PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.63" />
-		<PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.120" />
+		<PackageReference Include="Microsoft.Extensions.Options" Version="10.0.6" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.6" />
+		<PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.87" />
+		<PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.140" />
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\Beep.OilandGas.Accounting\Beep.OilandGas.Accounting.csproj" />
+		<ProjectReference Include="..\Beep.OilandGas.Decommissioning\Beep.OilandGas.Decommissioning.csproj" />
+		<ProjectReference Include="..\Beep.OilandGas.DevelopmentPlanning\Beep.OilandGas.DevelopmentPlanning.csproj" />
+		<ProjectReference Include="..\Beep.OilandGas.LeaseAcquisition\Beep.OilandGas.LeaseAcquisition.csproj" />
 		<ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
+		<ProjectReference Include="..\Beep.OilandGas.PermitsAndApplications\Beep.OilandGas.PermitsAndApplications.csproj" />
 		<ProjectReference Include="..\Beep.OilandGas.PPDM.Models\Beep.OilandGas.PPDM.Models.csproj" />
+		<ProjectReference Include="..\Beep.OilandGas.ProductionAccounting\Beep.OilandGas.ProductionAccounting.csproj" />
+		<ProjectReference Include="..\Beep.OilandGas.ProspectIdentification\Beep.OilandGas.ProspectIdentification.csproj" />
 	</ItemGroup>
 
 </Project>

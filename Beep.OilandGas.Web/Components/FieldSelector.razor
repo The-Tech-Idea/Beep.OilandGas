@@ -1,5 +1,6 @@
 @using Beep.OilandGas.Models.Data
-@inject DataManagementService DataManagementService
+@implements IDisposable
+@inject IDataManagementService DataManagementService
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
@@ -8,7 +9,7 @@
            Label="Active Field" 
            Variant="Variant.Outlined"
            @bind-Value="_selectedFieldId"
-           ValueChanged="OnFieldChanged"
+           @bind-Value:after="OnFieldChanged"
            Required="false"
            Margin="Margin.Dense">
     @if (_fields.Any())
@@ -20,7 +21,7 @@
     }
     else if (!_loading)
     {
-        <MudSelectItem Value="" Disabled="true">No fields available</MudSelectItem>
+        <MudSelectItem Value="@string.Empty" Disabled="true">No fields available</MudSelectItem>
     }
 </MudSelect>
 
@@ -43,10 +44,9 @@
         DataManagementService.CurrentFieldChanged += OnCurrentFieldChanged;
     }
 
-    protected override void Dispose()
+    void IDisposable.Dispose()
     {
         DataManagementService.CurrentFieldChanged -= OnCurrentFieldChanged;
-        base.Dispose();
     }
 
     private async Task LoadFields()
@@ -81,8 +81,9 @@
         }
     }
 
-    private async Task OnFieldChanged(string? fieldId)
+    private async Task OnFieldChanged()
     {
+        var fieldId = _selectedFieldId;
         if (string.IsNullOrWhiteSpace(fieldId))
             return;
 
@@ -109,7 +110,7 @@
         }
     }
 
-    private void OnCurrentFieldChanged(object? sender, string? fieldId)
+    private void OnCurrentFieldChanged(string? fieldId)
     {
         _selectedFieldId = fieldId;
         InvokeAsync(StateHasChanged);

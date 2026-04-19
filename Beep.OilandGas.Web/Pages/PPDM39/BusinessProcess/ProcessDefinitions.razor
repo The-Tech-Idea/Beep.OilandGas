@@ -1,0 +1,121 @@
+@page "/ppdm39/process/definitions"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Browse Process Definitions</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Browse Process Definitions</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — @_definitions.Count definitions across all lifecycle phases</MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/process")'>
+            Dashboard
+        </MudButton>
+    </MudStack>
+
+    @* ── Filters ─────────────────────────────────────────────────────── *@
+    <MudPaper Elevation="1" Class="pa-3 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
+            <MudTextField @bind-Value="_search"
+                          Placeholder="Search definitions…"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true"
+                          Style="min-width:220px" />
+            <MudSelect T="string" @bind-Value="_categoryFilter" Label="Category" Style="min-width:160px">
+                <MudSelectItem Value='""'>All Categories</MudSelectItem>
+                <MudSelectItem Value='"EXPLORATION"'>Exploration</MudSelectItem>
+                <MudSelectItem Value='"DEVELOPMENT"'>Development</MudSelectItem>
+                <MudSelectItem Value='"PRODUCTION"'>Production</MudSelectItem>
+                <MudSelectItem Value='"DECOMMISSIONING"'>Decommissioning</MudSelectItem>
+                <MudSelectItem Value='"HSE"'>HSE</MudSelectItem>
+                <MudSelectItem Value='"COMPLIANCE"'>Compliance</MudSelectItem>
+            </MudSelect>
+            <JurisdictionFilterChips @bind-SelectedJurisdiction="_jurisdiction" />
+        </MudStack>
+    </MudPaper>
+
+    @* ── Grid ────────────────────────────────────────────────────────── *@
+    <MudDataGrid T="DefinitionRow"
+                 Items="@FilteredDefinitions"
+                 Dense="true"
+                 Hover="true"
+                 Striped="true"
+                 Sortable="true"
+                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/definitions/{e.Item.ProcessId}"))">
+        <ToolBarContent>
+            <MudText Typo="Typo.subtitle2">@FilteredDefinitions.Count() definitions</MudText>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="r => r.ProcessName"  Title="Process Name" />
+            <PropertyColumn Property="r => r.ProcessType"  Title="Type" />
+            <PropertyColumn Property="r => r.EntityType"   Title="Entity" />
+            <PropertyColumn Property="r => r.StepCount"    Title="Steps" />
+            <TemplateColumn Title="Status" Sortable="false">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small"
+                             Color="@(context.Item.IsActive ? Color.Success : Color.Default)">
+                        @(context.Item.IsActive ? "Active" : "Inactive")
+                    </MudChip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate>
+                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary"
+                               OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/process/definitions/{context.Item.ProcessId}"))'>
+                        View
+                    </MudButton>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="DefinitionRow" />
+        </PagerContent>
+    </MudDataGrid>
+
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private string _search = string.Empty;
+    private string _categoryFilter = string.Empty;
+    private string _jurisdiction = "ALL";
+
+    private List<DefinitionRow> _definitions = new();
+
+    private IEnumerable<DefinitionRow> FilteredDefinitions => _definitions.Where(d =>
+        (string.IsNullOrWhiteSpace(_search) || d.ProcessName.Contains(_search, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrWhiteSpace(_categoryFilter) || d.ProcessType.Equals(_categoryFilter, StringComparison.OrdinalIgnoreCase)) &&
+        (_jurisdiction == "ALL" || d.Jurisdiction == _jurisdiction));
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/field/current/process/definitions
+        _definitions = new List<DefinitionRow>
+        {
+            new("EXPL-001",  "Exploratory Well Drilling Approval",         "EXPLORATION",    "WELL",       12, "ALL",  true),
+            new("EXPL-002",  "Seismic Survey Authorization",               "EXPLORATION",    "SURVEY",     8,  "ALL",  true),
+            new("EXPL-003",  "Prospect Ranking & Gate Review",             "EXPLORATION",    "PROSPECT",   6,  "ALL",  true),
+            new("DEV-001",   "Field Development Plan Approval",            "DEVELOPMENT",    "FIELD",      15, "ALL",  true),
+            new("DEV-002",   "Development Well Drilling Authorization",    "DEVELOPMENT",    "WELL",       14, "ALL",  true),
+            new("PROD-001",  "Production Optimization Workflow",           "PRODUCTION",     "WELL",       7,  "ALL",  true),
+            new("PROD-002",  "Well Intervention Authorization",            "PRODUCTION",     "WELL",       9,  "ALL",  true),
+            new("DECO-001",  "Well P&A Authorization",                     "DECOMMISSIONING","WELL",       18, "ALL",  true),
+            new("DECO-002",  "Facility Decommissioning Authorization",     "DECOMMISSIONING","FACILITY",   22, "ALL",  true),
+            new("HSE-001",   "HSE Incident Investigation",                 "HSE",            "INCIDENT",   10, "ALL",  true),
+            new("COMPL-001", "Regulatory Compliance Reporting (USA)",      "COMPLIANCE",     "OBLIGATION", 5,  "USA",  true),
+            new("COMPL-002", "Regulatory Compliance Reporting (Canada)",   "COMPLIANCE",     "OBLIGATION", 5,  "CAN",  true),
+        };
+    }
+
+    private record DefinitionRow(
+        string ProcessId, string ProcessName, string ProcessType,
+        string EntityType, int StepCount, string Jurisdiction, bool IsActive);
+}

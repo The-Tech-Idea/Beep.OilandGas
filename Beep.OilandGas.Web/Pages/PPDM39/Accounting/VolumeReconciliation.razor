@@ -1,12 +1,22 @@
 @page "/ppdm39/accounting/volume-reconciliation"
+@using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<PageTitle>Volume Reconciliation - Accounting</PageTitle>
+<PageTitle>Reconcile Production Volumes</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Volume Reconciliation</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Reconcile Production Volumes</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Cross-check metered vs allocated volumes</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.AccountBalance">Accounting</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
 
     <MudPaper Class="pa-4">
         <MudStack Spacing="3" Class="mb-4">
@@ -32,34 +42,30 @@
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <MudSimpleTable Dense="true" Hover="true">
-                                <tbody>
-                                    <tr>
-                                        <td><strong>Status:</strong></td>
-                                        <td>
-                                            <MudChip Size="Size.Small" Color="@GetStatusColor(_reconciliationResult.Status)">
-                                                @_reconciliationResult.Status
-                                            </MudChip>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Field Production Volume:</strong></td>
-                                        <td>@FormatDecimal(_reconciliationResult.FieldProductionVolume?.ToString())</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Allocated Volume:</strong></td>
-                                        <td>@FormatDecimal(_reconciliationResult.AllocatedVolume?.ToString())</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Discrepancy:</strong></td>
-                                        <td>@FormatDecimal(_reconciliationResult.Discrepancy?.ToString())</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Discrepancy %:</strong></td>
-                                        <td>@FormatDecimal(_reconciliationResult.DiscrepancyPercentage?.ToString())%</td>
-                                    </tr>
-                                </tbody>
-                            </MudSimpleTable>
+                            <MudStack Spacing="2">
+                                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-2xl">Status</MudText>
+                                    <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(_reconciliationResult.Status)">
+                                        @_reconciliationResult.Status
+                                    </MudChip>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-2xl">Field Production Volume</MudText>
+                                    <MudText Typo="Typo.body2">@FormatDecimal(_reconciliationResult.FieldProductionVolume.ToString())</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-2xl">Allocated Volume</MudText>
+                                    <MudText Typo="Typo.body2">@FormatDecimal(_reconciliationResult.ALLOCATED_VOLUME.ToString())</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-2xl">Discrepancy</MudText>
+                                    <MudText Typo="Typo.body2">@FormatDecimal(_reconciliationResult.Discrepancy.ToString())</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-2xl">Discrepancy %</MudText>
+                                    <MudText Typo="Typo.body2">@FormatDecimal(_reconciliationResult.DiscrepancyPercentage.ToString())%</MudText>
+                                </MudStack>
+                            </MudStack>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -74,22 +80,20 @@
                                 </CardHeaderContent>
                             </MudCardHeader>
                             <MudCardContent>
-                                <MudSimpleTable Dense="true" Hover="true">
-                                    <tbody>
-                                        <tr>
-                                            <td><strong>Field Volume:</strong></td>
-                                            <td>@FormatDecimal(_reconciliationResult.OilVolume.FieldVolume?.ToString())</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Allocated Volume:</strong></td>
-                                            <td>@FormatDecimal(_reconciliationResult.OilVolume.AllocatedVolume?.ToString())</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Discrepancy:</strong></td>
-                                            <td>@FormatDecimal(_reconciliationResult.OilVolume.Discrepancy?.ToString())</td>
-                                        </tr>
-                                    </tbody>
-                                </MudSimpleTable>
+                                <MudStack Spacing="2">
+                                    <MudStack Row="true" Spacing="2">
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Field Volume</MudText>
+                                        <MudText Typo="Typo.body2">@FormatDecimal(_reconciliationResult.OilVolume.FieldVolume.ToString())</MudText>
+                                    </MudStack>
+                                    <MudStack Row="true" Spacing="2">
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Allocated Volume</MudText>
+                                        <MudText Typo="Typo.body2">@FormatDecimal(_reconciliationResult.OilVolume.ALLOCATED_VOLUME.ToString())</MudText>
+                                    </MudStack>
+                                    <MudStack Row="true" Spacing="2">
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">Discrepancy</MudText>
+                                        <MudText Typo="Typo.body2">@FormatDecimal(_reconciliationResult.OilVolume.Discrepancy.ToString())</MudText>
+                                    </MudStack>
+                                </MudStack>
                             </MudCardContent>
                         </MudCard>
                     </MudItem>
@@ -105,10 +109,10 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudList>
+                        <MudList T="string">
                             @foreach (var issue in _reconciliationResult.Issues)
                             {
-                                <MudListItem>
+                                <MudListItem T="string">
                                     <MudAlert Severity="@GetSeverity(issue.Severity)" Dense="true">
                                         <strong>@issue.IssueType:</strong> @issue.Description
                                     </MudAlert>
@@ -127,6 +131,7 @@
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private DateTime? _startDate = DateTime.Today.AddMonths(-1);
     private DateTime? _endDate = DateTime.Today;
     private bool _isLoading = false;
@@ -149,7 +154,7 @@
                 EndDate = _endDate.Value
             };
 
-            _reconciliationResult = await ApiClient.PostAsync<VolumeReconciliationResult, object>(
+            _reconciliationResult = await ApiClient.PostAsync<object, VolumeReconciliationResult>(
                 "/api/accounting/allocation/reconcile",
                 request);
 
@@ -169,9 +174,9 @@
     {
         return status switch
         {
-            ReconciliationStatus.Reconciled => Color.Success,
-            ReconciliationStatus.Discrepancies => Color.Warning,
-            ReconciliationStatus.Failed => Color.Error,
+            ReconciliationStatus.Matched => Color.Success,
+            ReconciliationStatus.VarianceDetected => Color.Warning,
+            ReconciliationStatus.Error => Color.Error,
             _ => Color.Default
         };
     }
@@ -197,3 +202,5 @@
         return valueStr;
     }
 }
+
+

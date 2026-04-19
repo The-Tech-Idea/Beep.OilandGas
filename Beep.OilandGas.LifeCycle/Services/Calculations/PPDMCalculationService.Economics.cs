@@ -342,63 +342,50 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
                 var filters = new List<AppFilter>();
 
-                if (!string.IsNullOrEmpty(request.WellId))
+                // PDEN_VOL_SUMMARY uses PDEN_ID as the production entity key (well, pool, or field-level PDEN)
+                var pdenId = !string.IsNullOrEmpty(request.WellId) ? request.WellId
+                    : !string.IsNullOrEmpty(request.PoolId) ? request.PoolId
+                    : request.FieldId;
+
+                if (!string.IsNullOrEmpty(pdenId))
                 {
-                    filters.Add(new AppFilter 
-                    { 
-                        FieldName = "WELL_ID", 
-                        Operator = "=", 
-                        FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", request.WellId) 
-                    });
-                }
-                else if (!string.IsNullOrEmpty(request.PoolId))
-                {
-                    filters.Add(new AppFilter 
-                    { 
-                        FieldName = "POOL_ID", 
-                        Operator = "=", 
-                        FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", request.PoolId) 
-                    });
-                }
-                else if (!string.IsNullOrEmpty(request.FieldId))
-                {
-                    filters.Add(new AppFilter 
-                    { 
-                        FieldName = "FIELD_ID", 
-                        Operator = "=", 
-                        FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", request.FieldId) 
+                    filters.Add(new AppFilter
+                    {
+                        FieldName = "PDEN_ID",
+                        Operator = "=",
+                        FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", pdenId)
                     });
                 }
 
-                // Add date filters if provided
+                // Date filters use EFFECTIVE_DATE (primary) — PDEN_VOL_SUMMARY has no PRODUCTION_DATE column
                 if (request.AnalysisStartDate.HasValue)
                 {
-                    filters.Add(new AppFilter 
-                    { 
-                        FieldName = "PRODUCTION_DATE", 
-                        Operator = ">=", 
-                        FilterValue = request.AnalysisStartDate.Value.ToString("yyyy-MM-dd") 
+                    filters.Add(new AppFilter
+                    {
+                        FieldName = "EFFECTIVE_DATE",
+                        Operator = ">=",
+                        FilterValue = request.AnalysisStartDate.Value.ToString("yyyy-MM-dd")
                     });
                 }
 
                 if (request.AnalysisEndDate.HasValue)
                 {
-                    filters.Add(new AppFilter 
-                    { 
-                        FieldName = "PRODUCTION_DATE", 
-                        Operator = "<=", 
-                        FilterValue = request.AnalysisEndDate.Value.ToString("yyyy-MM-dd") 
+                    filters.Add(new AppFilter
+                    {
+                        FieldName = "EFFECTIVE_DATE",
+                        Operator = "<=",
+                        FilterValue = request.AnalysisEndDate.Value.ToString("yyyy-MM-dd")
                     });
                 }
 
                 var entities = await repo.GetAsync(filters);
                 
-                foreach (var entity in entities.OrderBy(e => GetDateValue(e, "PRODUCTION_DATE")))
+                foreach (var entity in entities.Cast<PDEN_VOL_SUMMARY>().OrderBy(e => e.EFFECTIVE_DATE ?? e.VOLUME_DATE ?? DateTime.MinValue))
                 {
-                    var date = GetDateValue(entity, "PRODUCTION_DATE") ?? DateTime.UtcNow;
-                    var oilVol = GetPropertyValueMultiple(entity, "OIL_VOLUME", "OIL_PROD", "OIL_VOL");
-                    var gasVol = GetPropertyValueMultiple(entity, "GAS_VOLUME", "GAS_PROD", "GAS_VOL");
-                    var waterVol = GetPropertyValueMultiple(entity, "WATER_VOLUME", "WATER_PROD", "WATER_VOL");
+                    var date = entity.EFFECTIVE_DATE ?? entity.VOLUME_DATE ?? DateTime.UtcNow;
+                    var oilVol = entity.OIL_VOLUME == 0 ? (decimal?)null : (decimal?)entity.OIL_VOLUME;
+                    var gasVol = entity.GAS_VOLUME == 0 ? (decimal?)null : (decimal?)entity.GAS_VOLUME;
+                    var waterVol = entity.WATER_VOLUME == 0 ? (decimal?)null : (decimal?)entity.WATER_VOLUME;
 
                     productionPoints.Add(new EconomicProductionPoint
                     {

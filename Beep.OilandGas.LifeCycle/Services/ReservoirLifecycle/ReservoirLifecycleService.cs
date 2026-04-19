@@ -10,6 +10,7 @@ using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.Models.Data;
 using TheTechIdea.Beep.Editor;
+using ValidationResult = Beep.OilandGas.Models.Data.ValidationResult;
 
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;

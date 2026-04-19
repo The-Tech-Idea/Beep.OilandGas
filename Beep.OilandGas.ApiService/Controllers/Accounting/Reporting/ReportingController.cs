@@ -2,16 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.ProductionAccounting.Reporting;
-using Beep.OilandGas.ProductionAccounting.Production;
-using Beep.OilandGas.ProductionAccounting.Allocation;
-using Beep.OilandGas.ProductionAccounting.Measurement;
-using Beep.OilandGas.ProductionAccounting.Accounting;
-using Beep.OilandGas.ProductionAccounting.Inventory;
-using Beep.OilandGas.ProductionAccounting.Models;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.ProductionAccounting.Services;
+using Beep.OilandGas.Models.Data.Reporting;
 using Beep.OilandGas.Models.Data.Accounting.Reporting;
+using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
@@ -48,7 +43,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Reporting
                     return BadRequest(ModelState);
 
                 var runTickets = _service.ProductionManager.GetRunTicketsByDateRange(request.StartDate, request.EndDate).ToList();
-                var inventories = new List<Inventory.CrudeOilInventory>();
+                var inventories = new List<object>();
                 var allocations = new List<ALLOCATION_RESULT>();
                 var measurements = new List<MEASUREMENT_RECORD>();
                 var salesTransactions = new List<SalesTransaction>();

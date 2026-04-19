@@ -4,20 +4,20 @@
 <PageTitle>Access Denied - Beep Oil & Gas</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="py-12">
-    <MudPaper Elevation="0" Class="pa-8" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+    <MudPaper Elevation="0" Class="og-terminal-card pa-8">
         <MudStack Spacing="4" AlignItems="AlignItems.Center">
-            <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Large" Color="Color.Error" Style="font-size: 4rem;" />
-            <MudText Typo="Typo.h4" Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-text-primary);">
-                <span style="color: var(--mud-palette-error);">//</span> Access Denied
+            <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Large" Color="Color.Error" Class="og-icon-xl" />
+            <MudText Typo="Typo.h4" Class="og-terminal-heading">
+                <span class="og-text-error">//</span> Access Denied
             </MudText>
-            <MudText Typo="Typo.body1" Align="Align.Center" Style="color: var(--mud-palette-text-secondary); font-family: 'JetBrains Mono', monospace;">
+            <MudText Typo="Typo.body1" Align="Align.Center" Class="og-terminal-code" Color="Color.Secondary">
                 You do not have permission to access this resource.
             </MudText>
             <MudButton Variant="Variant.Filled" 
                        Color="Color.Primary"
                        Href="/"
                        StartIcon="@Icons.Material.Filled.Home"
-                       Style="font-family: 'JetBrains Mono', monospace; margin-top: 16px;">
+                       Class="og-terminal-code mt-4">
                 return_home()
             </MudButton>
         </MudStack>

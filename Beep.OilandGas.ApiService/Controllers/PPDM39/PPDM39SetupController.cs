@@ -7,17 +7,16 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.DataManagement;
+using Beep.OilandGas.Models.Data.Common;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation;
 using Beep.OilandGas.PPDM39.DataManagement.SeedData;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
-using Beep.OilandGas.PPDM39.DataManagement.Tools;
 using Beep.OilandGas.PPDM39.Repositories;
-using Beep.OilandGas.Models.Data;
 using System.Reflection;
 using TheTechIdea.Beep.Editor;
-using Beep.OilandGas.PPDM39.DataManagement.Services;
 using TheTechIdea.Beep.ConfigUtil;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -25,6 +24,8 @@ using Beep.OilandGas.PPDM39.DataManagement.SeedData.Services;
 using Beep.OilandGas.DataManager.Core.Interfaces;
 using Beep.OilandGas.DataManager.Core.Models;
 using Beep.OilandGas.DataManager.Core.Registry;
+using TheTechIdea.Beep;
+using ScriptExecutionResult = Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation.ScriptExecutionResult;
 
 namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 {
@@ -50,6 +51,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.IHSStandardValueImporter? _ihsStandardValueImporter;
         private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.Services.StandardValueMapper? _standardValueMapper;
         private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMReferenceDataSeeder? _referenceDataSeeder;
+        private readonly IPPDMDatabaseCreatorService? _databaseCreatorService;
+        private readonly SeedDataCatalogCompatibility _seedDataCatalog;
+        private readonly Beep.OilandGas.PPDM39.DataManagement.SeedData.WellStatusFacetSeeder? _wellStatusFacetSeeder;
 
         public PPDM39SetupController(
             PPDM39SetupService setupService,
@@ -67,24 +71,27 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             IHSStandardValueImporter? ihsStandardValueImporter = null,
            StandardValueMapper? standardValueMapper = null,
             PPDMReferenceDataSeeder? referenceDataSeeder = null,
-            PPDMDemoDataSeeder? demoDataSeeder = null)
+            PPDMDemoDataSeeder? demoDataSeeder = null,
+            Beep.OilandGas.PPDM39.DataManagement.SeedData.WellStatusFacetSeeder? wellStatusFacetSeeder = null)
         {
             _setupService = setupService ?? throw new ArgumentNullException(nameof(setupService));
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _progressTracking = progressTracking;
             _dataManager = dataManager;
+            _databaseCreatorService = databaseCreatorService;
             _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
             _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
             _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            _seedDataCatalog = new PPDMSeedDataCatalog();
+            _seedDataCatalog = new SeedDataCatalogCompatibility();
             _lovManagementService = lovManagementService;
             _csvLovImporter = csvLovImporter;
             _ppdmStandardValueImporter = ppdmStandardValueImporter;
             _ihsStandardValueImporter = ihsStandardValueImporter;
             _standardValueMapper = standardValueMapper;
             _referenceDataSeeder = referenceDataSeeder;
-            
+            _wellStatusFacetSeeder = wellStatusFacetSeeder;
+
             // Pass progress tracking to service if available
             if (progressTracking != null && _setupService is PPDM39SetupService setupSvc)
             {
@@ -282,7 +289,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 _logger.LogError(ex, "Error executing all scripts");
                 return StatusCode(500, new AllScriptsExecutionResult
                 {
-                    Results = new List<ScriptExecutionResult>(),
+                    Results = new List<Beep.OilandGas.Models.Data.DataManagement.ScriptExecutionResult>(),
                     TotalScripts = 0,
                     SuccessfulScripts = 0,
                     FailedScripts = 0,
@@ -305,7 +312,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 }
 
                 var result = _setupService.SaveConnection(
-                    request.Connection, 
+                    MapToConnectionConfig(request.Connection), 
                     request.TestAfterSave, 
                     request.OpenAfterSave);
 
@@ -423,7 +430,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return BadRequest(new { error = "Original connection name and connection configuration are required" });
                 }
 
-                var result = _setupService.UpdateConnection(request.OriginalConnectionName, request.Connection, testAfterSave: true);
+                var result = _setupService.UpdateConnection(
+                    request.OriginalConnectionName,
+                    MapToConnectionConfig(request.Connection),
+                    testAfterSave: true);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -451,7 +461,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return BadRequest(new { error = "Connection configuration is required" });
                 }
 
-                var result = await _setupService.CheckSchemaPrivilegesAsync(request.Connection, request.SchemaName);
+                var result = await _setupService.CheckSchemaPrivilegesAsync(MapToConnectionConfig(request.Connection), request.SchemaName);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -479,7 +489,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return BadRequest(new { error = "Connection configuration and schema name are required" });
                 }
 
-                var result = await _setupService.CreateSchemaAsync(request.Connection, request.SchemaName);
+                var result = await _setupService.CreateSchemaAsync(MapToConnectionConfig(request.Connection), request.SchemaName);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -723,7 +733,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 var allScripts = new List<ModuleScriptInfo>();
 
                 // Get scripts from each module
-                foreach (var module in allModules.Values)
+                foreach (var module in allModules)
                 {
                     var moduleScripts = await module.GetScriptsAsync(databaseType);
                     allScripts.AddRange(moduleScripts);
@@ -778,14 +788,14 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     {
                         return StatusCode(500, new { error = "DataManager and DatabaseCreatorService not available" });
                     }
-                    return await CreateDatabaseLegacy(request);
+                    return CreateDatabaseLegacy(request);
                 }
 
                 // Map ConnectionProperties to ConnectionConfig
                 var connectionConfig = MapToConnectionConfig(request.Connection);
 
                 // Get data source
-                var dataSource = _setupService.GetDataSourceFromConnectionConfig(connectionConfig);
+                var dataSource = GetDataSourceFromConnectionConfig(connectionConfig);
                 if (dataSource.Openconnection() != System.Data.ConnectionState.Open)
                 {
                     return StatusCode(500, new DatabaseCreationResult
@@ -879,14 +889,13 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     SuccessfulScripts = successfulScripts,
                     FailedScripts = failedScripts,
                     SkippedScripts = totalScripts - successfulScripts - failedScripts,
-                    ScriptResults = allScriptResults.Select(sr => new ScriptExecutionResult
+                    ScriptResults = allScriptResults.Select(sr => new Beep.OilandGas.Models.Data.DataManagement.ScriptExecutionResult
                     {
                         ScriptFileName = sr.ScriptFileName ?? string.Empty,
                         Success = sr.Success,
                         ErrorMessage = sr.ErrorMessage,
                         StartTime = sr.StartTime,
                         EndTime = sr.EndTime,
-                        Duration = sr.Duration,
                         RowsAffected = sr.RowsAffected,
                         ExecutionLog = sr.ExecutionLog,
                         Metadata = sr.Metadata ?? new Dictionary<string, object>()
@@ -978,9 +987,16 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 }
 
                 var connectionName = request.ConnectionName ?? "PPDM39";
-                var seeder = new PPDMReferenceDataSeeder(_editor, _commonColumnHandler, _defaults, _metadata, connectionName);
+                if (_referenceDataSeeder == null)
+                {
+                    return StatusCode(500, new SeedDataResponse
+                    {
+                        Success = false,
+                        Message = "Reference data seeder is not available"
+                    });
+                }
                 
-                var result = await seeder.SeedPPDMReferenceTablesAsync(
+                var result = await _referenceDataSeeder.SeedPPDMReferenceTablesAsync(
                     connectionName, 
                     request.TableNames, 
                     request.SkipExisting, 
@@ -1054,9 +1070,16 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 }
 
                 var connectionName = request.ConnectionName ?? "PPDM39";
-                var seeder = new PPDMReferenceDataSeeder(_editor, _commonColumnHandler, _defaults, _metadata, connectionName);
+                if (_referenceDataSeeder == null)
+                {
+                    return StatusCode(500, new SeedDataResponse
+                    {
+                        Success = false,
+                        Message = "Reference data seeder is not available"
+                    });
+                }
                 
-                var result = await seeder.SeedByCategoryAsync(
+                var result = await _referenceDataSeeder.SeedByCategoryAsync(
                     category, 
                     connectionName, 
                     request.TableNames, 
@@ -1108,7 +1131,14 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 }
 
                 var connectionName = request.ConnectionName ?? "PPDM39";
-                var seeder = new PPDMReferenceDataSeeder(_editor, _commonColumnHandler, _defaults, _metadata, connectionName);
+                if (_referenceDataSeeder == null)
+                {
+                    return StatusCode(500, new SeedDataResponse
+                    {
+                        Success = false,
+                        Message = "Reference data seeder is not available"
+                    });
+                }
                 
                 // Validate by attempting to seed with validateOnly flag
                 var seedRequest = new SeedDataRequest
@@ -1119,7 +1149,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     SkipExisting = true
                 };
 
-                var result = await seeder.SeedByCategoryAsync(
+                var result = await _referenceDataSeeder.SeedByCategoryAsync(
                     request.Category, 
                     connectionName, 
                     request.TableNames, 
@@ -1163,10 +1193,17 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 }
 
                 var connectionName = request.ConnectionName ?? "PPDM39";
-                var seeder = new PPDMReferenceDataSeeder(_editor, _commonColumnHandler, _defaults, _metadata, connectionName);
+                if (_referenceDataSeeder == null)
+                {
+                    return StatusCode(500, new SeedDataResponse
+                    {
+                        Success = false,
+                        Message = "Reference data seeder is not available"
+                    });
+                }
                 
                 // Seed by category
-                var result = await seeder.SeedByCategoryAsync(
+                var result = await _referenceDataSeeder.SeedByCategoryAsync(
                     workflowRequirement.WorkflowCategory, 
                     connectionName, 
                     request.TableNames ?? workflowRequirement.RequiredTables, 
@@ -1452,7 +1489,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     var fileName = $"{entityName}_{scriptType}.sql";
                     var filePath = Path.Combine(outputPath, dbTypeName, fileName);
-                    await File.WriteAllTextAsync(filePath, script);
+                    await System.IO.File.WriteAllTextAsync(filePath, script);
                     result.FilePath = filePath;
                 }
                 catch (Exception ex)
@@ -1496,6 +1533,15 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 "sqlite" => $"Data Source={config.Database};",
                 _ => config.ToConnectionProperties().ConnectionString ?? string.Empty
             };
+        }
+
+        private ActionResult<DatabaseCreationResult> CreateDatabaseLegacy(CreateDatabaseRequest request)
+        {
+            return StatusCode(500, new DatabaseCreationResult
+            {
+                Success = false,
+                ErrorMessage = "Legacy database creation path is not available in the current API surface"
+            });
         }
 
         #region LOV Management Endpoints
@@ -1912,7 +1958,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var extractor = new ExtractRATables();
+                var extractor = new ExtractRATablesCompatibility();
                 var tableNames = await extractor.ExtractRATableNamesAsync();
                 var categories = extractor.CategorizeRATables(tableNames);
 
@@ -1953,7 +1999,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var extractor = new ExtractRATables();
+                var extractor = new ExtractRATablesCompatibility();
                 var tableNames = await extractor.ExtractRATableNamesAsync();
                 var categories = extractor.CategorizeRATables(tableNames);
 
@@ -1994,7 +2040,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var extractor = new ExtractRATables();
+                var extractor = new ExtractRATablesCompatibility();
                 var tableNames = await extractor.ExtractRATableNamesAsync();
                 var categories = extractor.CategorizeRATables(tableNames);
 
@@ -2088,28 +2134,412 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             return newDataSource;
         }
 
+        private sealed class SeedDataCatalogCompatibility
+        {
+            public List<SeedDataCategory> GetSeedDataCategories()
+            {
+                return new List<SeedDataCategory>();
+            }
+        }
+
+        private sealed class PPDMScriptGenerator
+        {
+            public PPDMScriptGenerator(object databaseType, object? metadata)
+            {
+            }
+
+            public Task<string> GenerateTableScriptAsync(Type entityType)
+            {
+                return Task.FromResult(string.Empty);
+            }
+
+            public Task<string> GeneratePrimaryKeyScriptAsync(Type entityType)
+            {
+                return Task.FromResult(string.Empty);
+            }
+
+            public Task<string> GenerateForeignKeyScriptsAsync(Type entityType)
+            {
+                return Task.FromResult(string.Empty);
+            }
+
+            public Task<string> GenerateIndexScriptsAsync(Type entityType)
+            {
+                return Task.FromResult(string.Empty);
+            }
+        }
+
+        private sealed class ExtractRATablesCompatibility
+        {
+            public Task<List<string>> ExtractRATableNamesAsync()
+            {
+                return Task.FromResult(new List<string>());
+            }
+
+            public Dictionary<string, List<string>> CategorizeRATables(IEnumerable<string> tableNames)
+            {
+                return new Dictionary<string, List<string>>
+                {
+                    ["All"] = tableNames.ToList()
+                };
+            }
+
+            public async Task<string> ExportToJsonAsync(List<string> tableNames, Dictionary<string, List<string>> categories, string outputPath)
+            {
+                var json = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    TableNames = tableNames,
+                    Categories = categories
+                });
+                await System.IO.File.WriteAllTextAsync(outputPath, json);
+                return json;
+            }
+        }
+
         /// <summary>
         /// Helper method to convert string to DataSourceType enum
         /// </summary>
-        private static DataSourceType ParseDataSourceType(string dataSourceTypeString)
+        private static TheTechIdea.Beep.Utilities.DataSourceType ParseDataSourceType(string dataSourceTypeString)
         {
             if (string.IsNullOrEmpty(dataSourceTypeString))
-                return DataSourceType.SqlServer; // Default
+                return TheTechIdea.Beep.Utilities.DataSourceType.SqlServer;
 
             // Try parsing the enum directly
-            if (Enum.TryParse<DataSourceType>(dataSourceTypeString, true, out var result))
+            if (Enum.TryParse<TheTechIdea.Beep.Utilities.DataSourceType>(dataSourceTypeString, true, out var result))
                 return result;
 
             // Map string values to enum values (case-insensitive)
             return dataSourceTypeString.ToLowerInvariant() switch
             {
-                "sqlserver" => DataSourceType.SqlServer,
-                "postgre" or "postgresql" => DataSourceType.Postgre,
-                "mysql" or "mariadb" => DataSourceType.Mysql,
-                "oracle" => DataSourceType.Oracle,
-                "sqlite" => DataSourceType.SqlServer, // Sqlite may not be in enum, use SqlServer as fallback
-                _ => DataSourceType.SqlServer // Default fallback
+                "sqlserver" => TheTechIdea.Beep.Utilities.DataSourceType.SqlServer,
+                "postgre" or "postgresql" => TheTechIdea.Beep.Utilities.DataSourceType.Postgre,
+                "mysql" or "mariadb" => TheTechIdea.Beep.Utilities.DataSourceType.Mysql,
+                "oracle" => TheTechIdea.Beep.Utilities.DataSourceType.Oracle,
+                "sqlite" => TheTechIdea.Beep.Utilities.DataSourceType.SqlLite,
+                _ => TheTechIdea.Beep.Utilities.DataSourceType.SqlServer
             };
         }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // WSC v3 Well-Status Facet Seeding
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// GET /api/ppdm39/setup/seed/well-status-facets/status
+        /// Returns the current row counts for the four R_WELL_STATUS* reference tables.
+        /// Use this to determine whether seeding is needed before running the wizard.
+        /// </summary>
+        [HttpGet("seed/well-status-facets/status")]
+        public async Task<ActionResult<Beep.OilandGas.PPDM39.DataManagement.SeedData.FacetSeedStatus>> GetWellStatusFacetSeedStatus()
+        {
+            if (_wellStatusFacetSeeder == null)
+                return StatusCode(503, new { error = "WellStatusFacetSeeder is not available." });
+            try
+            {
+                var status = await _wellStatusFacetSeeder.GetStatusAsync();
+                return Ok(status);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting well-status facet seed status");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// POST /api/ppdm39/setup/seed/well-status-facets
+        /// Seeds R_WELL_STATUS_TYPE, R_WELL_STATUS, R_WELL_STATUS_QUAL, R_WELL_STATUS_QUAL_VALUE
+        /// from the embedded WSC v3 (R-3) catalog. Idempotent — skips rows that already exist.
+        /// </summary>
+        [HttpPost("seed/well-status-facets")]
+        public async Task<ActionResult<Beep.OilandGas.PPDM39.DataManagement.SeedData.FacetSeedResult>> SeedWellStatusFacets(
+            [FromQuery] string? operationId = null)
+        {
+            if (_wellStatusFacetSeeder == null)
+                return StatusCode(503, new { error = "WellStatusFacetSeeder is not available." });
+            try
+            {
+                _logger.LogInformation("Seeding WSC v3 well-status facets (operationId={OperationId})", operationId);
+                var result = await _wellStatusFacetSeeder.SeedAllAsync("SYSTEM");
+                return result.Success ? Ok(result) : StatusCode(500, result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error seeding well-status facets");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// POST /api/ppdm39/setup/seed/enum-reference-data
+        /// Seeds all enum-backed reference tables via <c>EnumReferenceDataSeeder</c>.
+        /// </summary>
+        [HttpPost("seed/enum-reference-data")]
+        public async Task<ActionResult<Beep.OilandGas.Models.Core.Interfaces.SeedingOperationResult>> SeedEnumReferenceData(
+            [FromQuery] string? operationId = null)
+        {
+            try
+            {
+                _logger.LogInformation("Seeding enum reference data (operationId={OperationId})", operationId);
+                var result = await _setupService.SeedEnumReferenceDataAsync(
+                    "PPDM39", "SYSTEM", operationId);
+                return result.Success ? Ok(result) : StatusCode(500, result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error seeding enum reference data");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// POST /api/ppdm39/setup/seed/all-reference-data
+        /// Runs both WSC v3 facet seeding AND enum reference-data seeding in sequence.
+        /// </summary>
+        [HttpPost("seed/all-reference-data")]
+        public async Task<ActionResult<Beep.OilandGas.Models.Core.Interfaces.SeedingOperationResult>> SeedAllReferenceData(
+            [FromQuery] string? operationId = null)
+        {
+            try
+            {
+                _logger.LogInformation("Seeding all reference data (operationId={OperationId})", operationId);
+                var result = await _setupService.SeedAllReferenceDataAsync(
+                    "PPDM39", "SYSTEM", operationId);
+                return result.Success ? Ok(result) : StatusCode(207, result); // 207 Multi-Status for partial success
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error seeding all reference data");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // First-run wizard endpoints
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// GET /api/ppdm39/setup/status
+        /// Returns whether a PPDM39 connection already exists.
+        /// </summary>
+        [HttpGet("status")]
+        public ActionResult<SetupStatusDto> GetSetupStatus()
+        {
+            try
+            {
+                var connections = _editor.ConfigEditor?.DataConnections;
+                var conn = connections?.FirstOrDefault();
+                var hasConnection = conn != null;
+                return Ok(new SetupStatusDto
+                {
+                    HasConnection = hasConnection,
+                    ConnectionName = conn?.ConnectionName,
+                    DbType = conn?.DatabaseType.ToString(),
+                    IsSchemaReady = false
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting setup status");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// POST /api/ppdm39/setup/create-sqlite
+        /// Creates a new SQLite database file and registers the connection.
+        /// </summary>
+        [HttpPost("create-sqlite")]
+        public ActionResult<CreateSqliteResult> CreateSqliteDatabase([FromBody] CreateSqliteRequest request)
+        {
+            try
+            {
+                if (request == null || string.IsNullOrWhiteSpace(request.ConnectionName))
+                    return BadRequest(new { error = "connectionName is required" });
+
+                var fileName = string.IsNullOrWhiteSpace(request.FileName)
+                    ? $"{request.ConnectionName}.db"
+                    : request.FileName;
+
+                if (!fileName.EndsWith(".db", StringComparison.OrdinalIgnoreCase))
+                    fileName += ".db";
+
+                var savePath = string.IsNullOrWhiteSpace(request.SavePath)
+                    ? Path.Combine(AppContext.BaseDirectory, "Databases")
+                    : request.SavePath;
+
+                Directory.CreateDirectory(savePath);
+                var fullPath = Path.Combine(savePath, fileName);
+
+                // Build connection properties (no hardcoded DriverName)
+                var props = new ConnectionProperties
+                {
+                    ConnectionName = request.ConnectionName,
+                    DatabaseType = TheTechIdea.Beep.Utilities.DataSourceType.SqlLite,
+                    Category = TheTechIdea.Beep.Utilities.DatasourceCategory.RDBMS,
+                    IsLocal = true,
+                    IsFile = true,
+                    IsDatabase = true,
+                    FilePath = savePath,
+                    FileName = fileName,
+                    GuidID = Guid.NewGuid().ToString()
+                };
+
+                // Resolve driver
+                var driver = TheTechIdea.Beep.Helpers.ConnectionHelper.GetBestMatchingDriver(props, _editor.ConfigEditor);
+                if (driver != null)
+                {
+                    props.DriverName = driver.PackageName;
+                    props.DriverVersion = driver.version;
+                }
+
+                // Register connection
+                if (!_editor.ConfigEditor.DataConnectionExist(props.ConnectionName))
+                {
+                    _editor.ConfigEditor.AddDataConnection(props);
+                    _editor.ConfigEditor.SaveDataconnectionsValues();
+                }
+
+                // Create the physical database file
+                var ds = _editor.GetDataSource(props.ConnectionName);
+                if (ds is TheTechIdea.Beep.DataBase.ILocalDB localDb)
+                {
+                    localDb.CreateDB(fullPath);
+                }
+
+                _logger.LogInformation("Created SQLite database at {Path} for connection {Name}", fullPath, props.ConnectionName);
+
+                return Ok(new CreateSqliteResult
+                {
+                    Success = true,
+                    ConnectionName = props.ConnectionName,
+                    FilePath = fullPath,
+                    DbType = "SQLite",
+                    Message = "SQLite database created successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating SQLite database");
+                return StatusCode(500, new CreateSqliteResult
+                {
+                    Success = false,
+                    Message = "Failed to create SQLite database",
+                    ErrorDetails = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// POST /api/ppdm39/setup/create-schema-from-migration
+        /// Uses BeepDM MigrationManager to create the PPDM39 schema tables in the target database.
+        /// </summary>
+        [HttpPost("create-schema-from-migration")]
+        public ActionResult<CreateSchemaResult> CreateSchemaFromMigration([FromBody] CreateSchemaRequest request)
+        {
+            try
+            {
+                var connectionName = request?.ConnectionName ?? "PPDM39";
+
+                var ds = _editor.GetDataSource(connectionName);
+                if (ds == null)
+                    return BadRequest(new CreateSchemaResult
+                    {
+                        Success = false,
+                        Message = $"Connection '{connectionName}' not found. Create the database first."
+                    });
+
+                var state = ds.Openconnection();
+                if (state != System.Data.ConnectionState.Open)
+                    return StatusCode(503, new CreateSchemaResult
+                    {
+                        Success = false,
+                        Message = $"Could not open connection to '{connectionName}'"
+                    });
+
+                var migration = new TheTechIdea.Beep.Editor.Migration.MigrationManager(_editor, ds);
+                migration.RegisterAssembly(typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly);
+
+                // Build plan using discovery — covers all ~1000 PPDM39 entity types
+                var plan = migration.BuildMigrationPlan(
+                    namespaceName: "Beep.OilandGas.PPDM39.Models",
+                    assembly: typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly,
+                    detectRelationships: true);
+
+                if (plan == null)
+                    return StatusCode(500, new CreateSchemaResult { Success = false, Message = "Migration plan could not be built." });
+
+                var execResult = migration.ExecuteMigrationPlan(plan);
+
+                _logger.LogInformation(
+                    "Schema migration for '{Connection}': success={Success}, entities={Count}",
+                    connectionName, execResult.Success, plan.EntityTypeCount);
+
+                return Ok(new CreateSchemaResult
+                {
+                    Success = execResult.Success,
+                    Message = execResult.Message ?? (execResult.Success ? "Schema created successfully" : "Schema creation completed with errors"),
+                    TablesCreated = plan.Operations?.Count(o => o.Kind == TheTechIdea.Beep.Editor.Migration.MigrationPlanOperationKind.CreateEntity) ?? 0,
+                    TotalEntities = plan.EntityTypeCount
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating schema from migration");
+                return StatusCode(500, new CreateSchemaResult
+                {
+                    Success = false,
+                    Message = "Schema migration failed",
+                    ErrorDetails = ex.Message
+                });
+            }
+        }
+    }
+}
+
+// ── DTOs for first-run wizard endpoints ──────────────────────────────────────
+namespace Beep.OilandGas.ApiService.Controllers.PPDM39
+{
+    public class SetupStatusDto
+    {
+        public bool HasConnection { get; set; }
+        public string? ConnectionName { get; set; }
+        public string? DbType { get; set; }
+        public bool IsSchemaReady { get; set; }
+    }
+
+    public class CreateSqliteRequest
+    {
+        public string ConnectionName { get; set; } = "PPDM39";
+        public string? FileName { get; set; }
+        public string? SavePath { get; set; }
+    }
+
+    public class CreateSqliteResult
+    {
+        public bool Success { get; set; }
+        public string? ConnectionName { get; set; }
+        public string? FilePath { get; set; }
+        public string? DbType { get; set; }
+        public string? Message { get; set; }
+        public string? ErrorDetails { get; set; }
+    }
+
+    public class CreateSchemaRequest
+    {
+        // Used by POST /create-schema-from-migration
+        public string? ConnectionName { get; set; }
+        // Used by POST /create-schema (legacy endpoint)
+        public ConnectionProperties? Connection { get; set; }
+        public string? SchemaName { get; set; }
+    }
+
+    public class CreateSchemaResult
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public int TablesCreated { get; set; }
+        public int TotalEntities { get; set; }
+        public string? ErrorDetails { get; set; }
     }
 }

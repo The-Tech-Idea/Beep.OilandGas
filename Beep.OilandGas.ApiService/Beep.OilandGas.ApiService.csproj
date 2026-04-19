@@ -7,17 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.17" />
+    <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.18" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.2" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
     <PackageReference Include="Microsoft.OpenApi" Version="3.3.1" />
     <PackageReference Include="Serilog" Version="4.3.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.63" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.120" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.87" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.140" />
     <PackageReference Include="TheTechIdea.Beep.DuckDBDataSourceCore" Version="1.0.45" />
     <PackageReference Include="TheTechIdea.Beep.JsonLoader" Version="2.0.4" />
     <PackageReference Include="TheTechIdea.Beep.MongoDBDataSourceCore" Version="1.0.56" />

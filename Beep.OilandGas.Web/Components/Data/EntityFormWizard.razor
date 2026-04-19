@@ -52,7 +52,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance? MudDialog { get; set; }
+    [CascadingParameter] IMudDialogInstance? MudDialog { get; set; }
     [Parameter] public string Title { get; set; } = "Entity Form";
     [Parameter] public List<WizardStep> Steps { get; set; } = new();
     [Parameter] public EventCallback<Dictionary<string, object>> OnSave { get; set; }
@@ -99,7 +99,7 @@
             await OnSave.InvokeAsync(_formData);
             MudDialog?.Close(DialogResult.Ok(true));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Error handling would be done by parent component
         }

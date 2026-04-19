@@ -1,0 +1,24 @@
+.kpi-card {
+    transition: box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+    box-shadow: var(--mud-elevation-4);
+}
+
+.kpi-label {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.7rem;
+}
+
+.kpi-value {
+    line-height: 1.2;
+    font-weight: 600;
+}
+
+.kpi-bg-icon {
+    font-size: 3rem !important;
+    opacity: 0.15;
+    flex-shrink: 0;
+}

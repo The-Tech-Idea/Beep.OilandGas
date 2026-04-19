@@ -1,4 +1,4 @@
-﻿using Beep.OilandGas.Models.HeatMap;
+using Beep.OilandGas.Models.Data.HeatMap;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,11 +1,13 @@
+@using Beep.OilandGas.Branchs
 @using Beep.OilandGas.PPDM39.Core.Tree
 @using MudBlazor
+@inject NavigationManager NavigationManager
 
 <div Class="pa-2">
     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
-        <MudTextField Value="@_searchText" 
+        <MudTextField Value="@_searchText"
                       ValueChanged="EventCallback.Factory.Create<string>(this, OnSearchTextChanged)"
-                      Label="Search Tables"
+                      Label="Search"
                       Variant="Variant.Outlined"
                       Adornment="Adornment.End"
                       AdornmentIcon="@Icons.Material.Filled.Search"
@@ -13,39 +15,21 @@
                       Class="flex-grow-1" />
         @if (!string.IsNullOrWhiteSpace(_searchText))
         {
-            <MudIconButton Icon="@Icons.Material.Filled.Clear" 
+            <MudIconButton Icon="@Icons.Material.Filled.Clear"
                           OnClick="ClearSearch"
                           Size="Size.Small"
                           Color="Color.Default" />
         }
     </MudStack>
-    
-    @if (_isLoading)
+
+    @if (_treeItemData.Count == 0)
     {
-        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-2" />
-    }
-    else if (!string.IsNullOrWhiteSpace(_errorMessage))
-    {
-        <MudAlert Severity="Severity.Error" Class="my-2">
-            @_errorMessage
-        </MudAlert>
-    }
-    else if (_treeItemData.Count == 0 && !string.IsNullOrWhiteSpace(_searchText))
-    {
-        <MudAlert Severity="Severity.Info" Class="my-2">
-            No tables found matching "@_searchText"
-        </MudAlert>
-    }
-    else if (_treeItemData.Count == 0)
-    {
-        <MudAlert Severity="Severity.Warning" Class="my-2">
-            No data available. Check that PPDM39Metadata.json and PPDM39SubjectAreasAndModules.json are accessible.
-        </MudAlert>
+        <MudAlert Severity="Severity.Warning" Class="my-2">No items available.</MudAlert>
     }
     else
     {
-        <MudTreeView Items="@_treeItemData" 
-                     SelectedValue="_selectedTableId"
+        <MudTreeView Items="@_treeItemData"
+                     SelectedValue="_selectedNodeId"
                      SelectedValueChanged="EventCallback.Factory.Create<string?>(this, OnSelectionChanged)"
                      SelectionMode="SelectionMode.SingleSelection"
                      Hover="true"
@@ -53,270 +37,386 @@
                      @ref="_treeView"
                      FilterFunc="@MatchesSearch">
             <ItemTemplate>
-                <MudTreeViewItem @bind-Expanded="@context.Expanded" 
-                                 Items="@context.Children" 
-                                 Value="@context.Value"
-                                 Icon="@context.Icon" 
-                                 IconExpanded="@GetExpandedIcon(context)"
-                                 Text="@GetDisplayText(context)"
-                                 Visible="@context.Visible" />
+                @{
+                    var nodeKind = context.Value != null && _nodeMap.TryGetValue(context.Value, out var nm)
+                        ? nm.Kind : NodeKind.Phase;
+                    var isCategory = nodeKind == NodeKind.Category;
+                    var isPage = nodeKind == NodeKind.Page;
+                    var isBrowseOnly = context.Value != null && _browseOnlyCategories.Contains(context.Value);
+                }
+                <MudStack Row="true" AlignItems="AlignItems.Center" Style="width:100%; min-width:0;">
+                    <MudTreeViewItem @bind-Expanded="@context.Expanded"
+                                     Items="@context.Children"
+                                     Value="@context.Value"
+                                     Icon="@context.Icon"
+                                     IconExpanded="@GetExpandedIcon(context)"
+                                     Text="@context.Text"
+                                     Visible="@context.Visible"
+                                     Style="@(isPage ? "flex:1; min-width:0; color:var(--mud-palette-primary);" : "flex:1; min-width:0;")" />
+                    @if (isPage)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.OpenInNew"
+                                 Size="Size.Small"
+                                 Color="Color.Primary"
+                                 Style="flex-shrink:0; opacity:0.6;" />
+                    }
+                    else if (isCategory)
+                    {
+                        <MudTooltip Text="@(isBrowseOnly ? "Browse all tables in this category" : "Browse tables")" Placement="Placement.Right">
+                            <MudIconButton Icon="@Icons.Material.Filled.GridView"
+                                           Size="Size.Small"
+                                           Color="@(isBrowseOnly ? Color.Warning : Color.Default)"
+                                           OnClick="@(() => BrowseCategory(context.Value))"
+                                           Style="flex-shrink:0;" />
+                        </MudTooltip>
+                    }
+                </MudStack>
             </ItemTemplate>
         </MudTreeView>
     }
 </div>
 
 @code {
-    private PPDMTreeNode? _rootNode;
+    // ─── Node kinds ────────────────────────────────────────────────────────────
+    private enum NodeKind { Phase, Page, DataFolder, Category, Table }
+
+    private record NodeMeta(string Name, NodeKind Kind, int CategoryId = 0, string? Href = null);
+
+    // ─── Business-process phase definitions ────────────────────────────────────
+    private record BizPage(string Label, string Href, string Icon = "");
+
+    private record BizPhase(string Key, string Label, string Icon, List<BizPage> Pages, List<int> CategoryIds);
+
+    private static readonly List<BizPhase> BusinessPhases = new()
+    {
+        new("exploration", "Exploration", Icons.Material.Filled.Explore,
+            Pages: new()
+            {
+                new("Prospects",       "/ppdm39/exploration/prospects",       Icons.Material.Filled.Map),
+                new("Seismic Surveys", "/ppdm39/exploration/seismic-surveys", Icons.Material.Filled.Waves),
+            },
+            CategoryIds: new() { 39, 20, 44, 25, 37, 38 }),
+
+        new("development", "Development", Icons.Material.Filled.Construction,
+            Pages: new()
+            {
+                new("Facilities", "/ppdm39/development/facilities", Icons.Material.Filled.Factory),
+                new("Pools",      "/ppdm39/development/pools",      Icons.Material.Filled.WaterDrop),
+            },
+            CategoryIds: new() { 13, 26, 14 }),
+
+        new("operations", "Operations", Icons.Material.Filled.Engineering,
+            Pages: new()
+            {
+                new("Drilling Operations", "/ppdm39/operations/drillingoperations",  Icons.Material.Filled.Construction),
+                new("Lease Acquisition",   "/ppdm39/operations/leaseacquisition",    Icons.Material.Filled.Description),
+                new("Enhanced Recovery",   "/ppdm39/operations/enhancedrecovery",    Icons.Material.Filled.Autorenew),
+            },
+            CategoryIds: new() { 12, 17, 8, 6 }),
+
+        new("production", "Production", Icons.Material.Filled.OilBarrel,
+            Pages: new()
+            {
+                new("Fields",    "/ppdm39/production/fields",     Icons.Material.Filled.Map),
+                new("Pools",     "/ppdm39/production/pools",      Icons.Material.Filled.WaterDrop),
+                new("Well Tests","/ppdm39/production/well-tests", Icons.Material.Filled.Science),
+                new("Forecasts", "/ppdm39/production/forecasts",  Icons.Material.Filled.Timeline),
+                new("Reserves",  "/ppdm39/production/reserves",   Icons.Material.Filled.Inventory),
+                new("Reporting", "/ppdm39/production/reporting",  Icons.Material.Filled.Assessment),
+            },
+            CategoryIds: new() { 27, 28, 29, 35 }),
+
+        new("decommissioning", "Decommissioning", Icons.Material.Filled.DeleteForever,
+            Pages: new()
+            {
+                new("Well Abandonment", "/ppdm39/decommissioning/well-abandonment", Icons.Material.Filled.Cancel),
+                new("Cost Estimation",  "/ppdm39/decommissioning/cost-estimation",  Icons.Material.Filled.Calculate),
+            },
+            CategoryIds: new()),
+
+        new("accounting", "Accounting", Icons.Material.Filled.AccountBalance,
+            Pages: new()
+            {
+                new("Dashboard",             "/ppdm39/accounting/dashboard",              Icons.Material.Filled.Dashboard),
+                new("Royalties",             "/ppdm39/accounting/royalties",              Icons.Material.Filled.AttachMoney),
+                new("Cost Allocation",       "/ppdm39/accounting/cost-allocation",        Icons.Material.Filled.PieChart),
+                new("Volume Reconciliation", "/ppdm39/accounting/volume-reconciliation",  Icons.Material.Filled.Balance),
+            },
+            CategoryIds: new() { 15, 19, 31 }),
+
+        new("wells", "Wells", Icons.Material.Filled.PrecisionManufacturing,
+            Pages: new()
+            {
+                new("Wells Index",   "/ppdm39/wells",              Icons.Material.Filled.FormatListBulleted),
+                new("Wellbores",     "/ppdm39/wells/wellbores",    Icons.Material.Filled.LinearScale),
+                new("Well Search",   "/ppdm39/wells/search",       Icons.Material.Filled.Search),
+                new("Well Logs",     "/ppdm39/wells/logs",         Icons.Material.Filled.Description),
+                new("Compare Wells", "/ppdm39/wells/compare",      Icons.Material.Filled.Compare),
+            },
+            CategoryIds: new() { 50, 49 }),
+
+        new("seismic", "Seismic", Icons.Material.Filled.Waves,
+            Pages: new()
+            {
+                new("Surveys",     "/ppdm39/seismic/surveys",     Icons.Material.Filled.Map),
+                new("Acquisition", "/ppdm39/seismic/acquisition", Icons.Material.Filled.SensorsOff),
+                new("Processing",  "/ppdm39/seismic/processing",  Icons.Material.Filled.Tune),
+            },
+            CategoryIds: new() { 39 }),
+
+        new("stratigraphy", "Stratigraphy", Icons.Material.Filled.Layers,
+            Pages: new()
+            {
+                new("Units",     "/ppdm39/stratigraphy/units",     Icons.Material.Filled.Straighten),
+                new("Sections",  "/ppdm39/stratigraphy/sections",  Icons.Material.Filled.ViewColumn),
+                new("Hierarchy", "/ppdm39/stratigraphy/hierarchy", Icons.Material.Filled.AccountTree),
+                new("Columns",   "/ppdm39/stratigraphy/columns",   Icons.Material.Filled.TableRows),
+            },
+            CategoryIds: new() { 44 }),
+
+        new("pumps", "Pumps & Calculations", Icons.Material.Filled.Compress,
+            Pages: new()
+            {
+                new("Sucker Rod Pumping", "/ppdm39/pumps/suckerrodpumping",          Icons.Material.Filled.Compress),
+                new("Plunger Lift",       "/ppdm39/pumps/plungerlift",               Icons.Material.Filled.ArrowUpward),
+                new("Hydraulic Pump",     "/ppdm39/pumps/hydraulicpump",             Icons.Material.Filled.Speed),
+                new("Nodal Analysis",     "/ppdm39/calculations/nodalanalysis",      Icons.Material.Filled.Polyline),
+                new("Gas Lift",           "/ppdm39/calculations/gaslift",            Icons.Material.Filled.Air),
+                new("Economic Analysis",  "/ppdm39/calculations/economicanalysis",   Icons.Material.Filled.TrendingUp),
+                new("Pipeline Analysis",  "/ppdm39/calculations/pipelineanalysis",   Icons.Material.Filled.DeviceHub),
+            },
+            CategoryIds: new()),
+
+        new("datamanagement", "Data Management", Icons.Material.Filled.Storage,
+            Pages: new()
+            {
+                new("Table Browser",       "/ppdm39/data-management",  Icons.Material.Filled.TableChart),
+                new("Database Management", "/ppdm39/database-management", Icons.Material.Filled.ManageAccounts),
+                new("Data Quality",        "/ppdm39/data-quality",     Icons.Material.Filled.FactCheck),
+            },
+            CategoryIds: new() { 24, 33, 40 }),
+    };
+
+    // ─── Component state ───────────────────────────────────────────────────────
     private List<TreeItemData<string?>> _treeItemData = new();
     private string _searchText = string.Empty;
-    private bool _isLoading = false;
-    private string? _selectedTableId;
+    private string? _selectedNodeId;
     private MudTreeView<string?>? _treeView;
-    private Dictionary<string, PPDMTreeNode> _nodeMap = new();
+    private Dictionary<string, NodeMeta> _nodeMap = new();
+    private HashSet<string> _browseOnlyCategories = new();
 
     [Parameter] public EventCallback<PPDMTreeNode> OnTableSelected { get; set; }
-    [Inject] IPPDMTreeBuilder TreeBuilder { get; set; } = null!;
+    [Parameter] public EventCallback<(int CategoryId, string CategoryName, List<string> Tables)> OnCategorySelected { get; set; }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized() => BuildTree();
+
+    // ─── Reference-table filter (R_ / RA_ prefix) ──────────────────────────────
+    private static bool IsReferenceTable(string tableName) =>
+        tableName.StartsWith("R_", StringComparison.OrdinalIgnoreCase) ||
+        tableName.StartsWith("RA_", StringComparison.OrdinalIgnoreCase);
+
+    // ─── Tree construction ─────────────────────────────────────────────────────
+    private void BuildTree()
     {
-        await LoadTree();
-    }
+        _nodeMap.Clear();
+        _treeItemData.Clear();
+        _browseOnlyCategories.Clear();
 
+        var allCategories = PPDM39Categories.GetAll().ToDictionary(c => c.Id);
 
-    private string? _errorMessage;
-
-    private async Task LoadTree()
-    {
-        _isLoading = true;
-        _errorMessage = null;
-        try
+        foreach (var phase in BusinessPhases)
         {
-            _rootNode = await TreeBuilder.BuildTreeAsync(includeRelationships: false, includeColumns: false);
-            if (_rootNode != null)
+            var phaseKey = $"PHASE_{phase.Key}";
+            _nodeMap[phaseKey] = new NodeMeta(phase.Label, NodeKind.Phase);
+
+            var children = new List<TreeItemData<string?>>();
+
+            // ── page-link children ──
+            foreach (var page in phase.Pages)
             {
-                SetAllNodesVisible(_rootNode);
-                _treeItemData = ConvertToTreeItemData(_rootNode.Children);
-                
-                if (_treeItemData.Count == 0)
+                var pageKey = $"PAGE_{page.Href}";
+                _nodeMap[pageKey] = new NodeMeta(page.Label, NodeKind.Page, Href: page.Href);
+                children.Add(new TreeItemData<string?>
                 {
-                    _errorMessage = "Tree built successfully but no subject areas found. Check metadata configuration.";
+                    Value = pageKey,
+                    Text  = page.Label,
+                    Icon  = string.IsNullOrEmpty(page.Icon) ? Icons.Material.Filled.Article : page.Icon
+                });
+            }
+
+            // ── data-tables sub-folder ──
+            if (phase.CategoryIds.Count > 0)
+            {
+                var dataFolderKey = $"DATATABLES_{phase.Key}";
+                _nodeMap[dataFolderKey] = new NodeMeta("Data Tables", NodeKind.DataFolder);
+
+                var catChildren = new List<TreeItemData<string?>>();
+
+                foreach (var catId in phase.CategoryIds)
+                {
+                    if (!allCategories.TryGetValue(catId, out var cat)) continue;
+
+                    var allTables  = PPDM39TableMapping.GetTablesForCategory(catId);
+                    if (allTables.Count == 0) continue;
+
+                    var catKey     = $"CAT_{catId}";
+                    _nodeMap[catKey] = new NodeMeta(cat.Name, NodeKind.Category, CategoryId: catId);
+
+                    var treeTables   = allTables.Where(t => !IsReferenceTable(t)).OrderBy(t => t).ToList();
+                    var hasRefTables = allTables.Any(IsReferenceTable);
+                    bool browseOnly  = treeTables.Count == 0 || allTables.Count > 30;
+
+                    if (browseOnly)
+                    {
+                        _browseOnlyCategories.Add(catKey);
+                        catChildren.Add(new TreeItemData<string?>
+                        {
+                            Value = catKey,
+                            Text  = $"{cat.Name} ({allTables.Count})",
+                            Icon  = hasRefTables ? Icons.Material.Filled.LibraryBooks : Icons.Material.Filled.Folder
+                        });
+                    }
+                    else
+                    {
+                        var tableChildren = treeTables
+                            .Select(tableName =>
+                            {
+                                _nodeMap[tableName] = new NodeMeta(tableName, NodeKind.Table);
+                                return new TreeItemData<string?>
+                                {
+                                    Value = tableName,
+                                    Text  = tableName,
+                                    Icon  = Icons.Material.Filled.TableChart
+                                };
+                            })
+                            .ToList<TreeItemData<string?>>();
+
+                        var label = hasRefTables
+                            ? $"{cat.Name} ({treeTables.Count} + ref)"
+                            : $"{cat.Name} ({treeTables.Count})";
+
+                        catChildren.Add(new TreeItemData<string?>
+                        {
+                            Value    = catKey,
+                            Text     = label,
+                            Icon     = Icons.Material.Filled.Folder,
+                            Children = tableChildren
+                        });
+                    }
+                }
+
+                if (catChildren.Count > 0)
+                {
+                    children.Add(new TreeItemData<string?>
+                    {
+                        Value    = dataFolderKey,
+                        Text     = "Data Tables",
+                        Icon     = Icons.Material.Filled.Storage,
+                        Children = catChildren
+                    });
                 }
             }
-            else
+
+            _treeItemData.Add(new TreeItemData<string?>
             {
-                _errorMessage = "Failed to build tree: TreeBuilder returned null.";
-            }
-        }
-        catch (Exception ex)
-        {
-            _errorMessage = $"Error loading tree: {ex.Message}";
-            if (ex.InnerException != null)
-            {
-                _errorMessage += $" Inner: {ex.InnerException.Message}";
-            }
-            Console.WriteLine($"Error loading tree: {ex}");
-        }
-        finally
-        {
-            _isLoading = false;
-            StateHasChanged();
+                Value    = phaseKey,
+                Text     = phase.Label,
+                Icon     = phase.Icon,
+                Children = children
+            });
         }
     }
 
-    private void SetAllNodesVisible(PPDMTreeNode node)
+    // ─── Category browse ───────────────────────────────────────────────────────
+    private async Task BrowseCategory(string? catKey)
     {
-        node.IsVisible = true;
-        foreach (var child in node.Children)
-        {
-            SetAllNodesVisible(child);
-        }
+        if (catKey == null) return;
+        if (!_nodeMap.TryGetValue(catKey, out var meta) || meta.Kind != NodeKind.Category) return;
+
+        var tables = PPDM39TableMapping.GetTablesForCategory(meta.CategoryId);
+        if (OnCategorySelected.HasDelegate)
+            await OnCategorySelected.InvokeAsync((meta.CategoryId, meta.Name, tables));
     }
 
-    private List<TreeItemData<string?>> ConvertToTreeItemData(List<PPDMTreeNode> nodes)
-    {
-        var result = new List<TreeItemData<string?>>();
-        foreach (var node in nodes.Where(n => n.IsVisible))
-        {
-            var treeItem = ConvertNodeToTreeItem(node);
-            if (treeItem != null)
-            {
-                result.Add(treeItem);
-            }
-        }
-        return result;
-    }
-
-    private TreeItemData<string?>? ConvertNodeToTreeItem(PPDMTreeNode node)
-    {
-        // Only include Subject Areas, Modules, Subcategories, and Tables
-        if (node.NodeType == PPDMTreeNodeType.Root || 
-            node.NodeType == PPDMTreeNodeType.Relationship ||
-            node.NodeType == PPDMTreeNodeType.PrimaryKey ||
-            node.NodeType == PPDMTreeNodeType.Column)
-        {
-            return null;
-        }
-
-        var nodeId = node.Id ?? Guid.NewGuid().ToString();
-        _nodeMap[nodeId] = node;
-
-        var treeItem = new TreeItemData<string?>
-        {
-            Value = nodeId,
-            Text = node.Text,
-            Icon = GetIcon(node.NodeType),
-            Expanded = node.IsExpanded,
-            Visible = node.IsVisible,
-            Children = ConvertToTreeItemData(node.Children)
-        };
-
-        return treeItem;
-    }
-
+    // ─── Search ────────────────────────────────────────────────────────────────
     private async Task OnSearchTextChanged(string searchText)
     {
         _searchText = searchText;
         if (_treeView != null)
-        {
             await _treeView.FilterAsync();
-        }
     }
 
     private async Task ClearSearch()
     {
         _searchText = string.Empty;
         if (_treeView != null)
-        {
             await _treeView.FilterAsync();
-        }
     }
 
-    private Task<bool> MatchesSearch(TreeItemData<string?> item)
+    private Task<bool> MatchesSearch(ITreeItemData<string?> item)
     {
         if (string.IsNullOrWhiteSpace(_searchText))
-        {
             return Task.FromResult(true);
-        }
 
         if (string.IsNullOrEmpty(item.Text))
-        {
             return Task.FromResult(false);
-        }
 
-        // Check if the item itself matches
         if (item.Text.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
-        {
             return Task.FromResult(true);
-        }
 
-        // Check if any child matches (if so, show parent)
         if (item.Children != null && item.Children.Any())
-        {
-            foreach (var child in item.Children)
-            {
-                if (MatchesSearch(child).Result)
-                {
-                    return Task.FromResult(true);
-                }
-            }
-        }
+            return Task.FromResult(item.Children.Any(c =>
+                c.Text?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) == true));
 
         return Task.FromResult(false);
     }
 
-    private string GetDisplayText(TreeItemData<string?> item)
+    // ─── Icons for expanded state ──────────────────────────────────────────────
+    private string GetExpandedIcon(ITreeItemData<string?> item)
     {
-        if (item.Value == null || !_nodeMap.TryGetValue(item.Value, out var node))
+        if (item.Value == null || !_nodeMap.TryGetValue(item.Value, out var meta))
+            return item.Icon ?? Icons.Material.Filled.TableChart;
+
+        return meta.Kind switch
         {
-            return item.Text ?? string.Empty;
-        }
-
-        // Add count for modules and subject areas
-        if (node.NodeType == PPDMTreeNodeType.Module || node.NodeType == PPDMTreeNodeType.SubjectArea)
-        {
-            if (node.Data != null && node.Data.TryGetValue("TableCount", out var tableCount))
-            {
-                var count = tableCount?.ToString() ?? "0";
-                return $"{node.Text} ({count})";
-            }
-        }
-
-        return node.Text;
-    }
-
-    private string GetExpandedIcon(TreeItemData<string?> item)
-    {
-        if (item.Value == null || !_nodeMap.TryGetValue(item.Value, out var node))
-        {
-            return GetIcon(PPDMTreeNodeType.Module);
-        }
-
-        // Use folder open icon when expanded for folders
-        if (node.NodeType == PPDMTreeNodeType.SubjectArea || node.NodeType == PPDMTreeNodeType.Module)
-        {
-            return Icons.Material.Filled.FolderOpen;
-        }
-
-        return GetIcon(node.NodeType);
-    }
-
-    private string GetIcon(PPDMTreeNodeType nodeType)
-    {
-        return nodeType switch
-        {
-            PPDMTreeNodeType.Root => Icons.Material.Filled.Storage,
-            PPDMTreeNodeType.SubjectArea => Icons.Material.Filled.Folder,
-            PPDMTreeNodeType.Module => Icons.Material.Filled.FolderOpen,
-            PPDMTreeNodeType.Subcategory => Icons.Material.Filled.Category,
-            PPDMTreeNodeType.Table => Icons.Material.Filled.TableChart,
-            PPDMTreeNodeType.Relationship => Icons.Material.Filled.Link,
-            PPDMTreeNodeType.PrimaryKey => Icons.Material.Filled.VpnKey,
-            PPDMTreeNodeType.Column => Icons.Material.Filled.ViewColumn,
-            _ => Icons.Material.Filled.Circle
+            NodeKind.Phase      => Icons.Material.Filled.ExpandMore,
+            NodeKind.DataFolder => Icons.Material.Filled.FolderOpen,
+            NodeKind.Category   => Icons.Material.Filled.FolderOpen,
+            _                   => item.Icon ?? Icons.Material.Filled.TableChart
         };
     }
 
+    // ─── Selection dispatch ────────────────────────────────────────────────────
     private async Task OnSelectionChanged(string? selectedId)
     {
-        _selectedTableId = selectedId;
-        await HandleSelection(selectedId);
-    }
+        _selectedNodeId = selectedId;
 
-    private async Task HandleSelection(string? selectedId)
-    {
-        if (string.IsNullOrWhiteSpace(selectedId))
-        {
-            Console.WriteLine("PPDMTreeView: HandleSelection - selectedId is null or empty");
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(selectedId)) return;
+        if (!_nodeMap.TryGetValue(selectedId, out var meta)) return;
 
-        if (!_nodeMap.TryGetValue(selectedId, out var node))
+        switch (meta.Kind)
         {
-            Console.WriteLine($"PPDMTreeView: HandleSelection - Node not found in map for ID: {selectedId}");
-            return;
-        }
+            case NodeKind.Page:
+                NavigationManager.NavigateTo(meta.Href!);
+                break;
 
-        Console.WriteLine($"PPDMTreeView: HandleSelection - Node found: {node.Text}, Type: {node.NodeType}");
-        
-        if (node.NodeType == PPDMTreeNodeType.Table)
-        {
-            Console.WriteLine($"PPDMTreeView: Invoking OnTableSelected for table: {node.Text}");
-            Console.WriteLine($"PPDMTreeView: OnTableSelected.HasDelegate = {OnTableSelected.HasDelegate}");
-            
-            if (OnTableSelected.HasDelegate)
-            {
-                await OnTableSelected.InvokeAsync(node);
-                Console.WriteLine($"PPDMTreeView: OnTableSelected.InvokeAsync completed");
-            }
-            else
-            {
-                Console.WriteLine($"PPDMTreeView: ERROR - OnTableSelected has no delegate!");
-            }
-        }
-        else
-        {
-            Console.WriteLine($"PPDMTreeView: Node is not a table, it's: {node.NodeType}");
+            case NodeKind.Category when _browseOnlyCategories.Contains(selectedId):
+                await BrowseCategory(selectedId);
+                break;
+
+            case NodeKind.Table:
+                if (OnTableSelected.HasDelegate)
+                {
+                    var node = new PPDMTreeNode
+                    {
+                        Id       = selectedId,
+                        Text     = selectedId,
+                        NodeType = PPDMTreeNodeType.Table,
+                        IsSelected = true
+                    };
+                    await OnTableSelected.InvokeAsync(node);
+                }
+                break;
         }
     }
-
 }

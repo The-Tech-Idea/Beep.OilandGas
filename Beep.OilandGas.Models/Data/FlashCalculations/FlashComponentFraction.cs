@@ -6,5 +6,8 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
     {
         public string ComponentName { get; set; } = string.Empty;
         public decimal Fraction { get; set; }
+
+        // Alias for thermodynamic calculator compatibility
+        public decimal MoleFraction { get => Fraction; set => Fraction = value; }
     }
 }

@@ -1,82 +1,134 @@
 @page "/ppdm39/accounting/dashboard"
-@using Beep.OilandGas.PPDM39.Models
+@using Beep.OilandGas.Models.Data.Accounting
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<PageTitle>Accounting Dashboard - Accounting</PageTitle>
+<PageTitle>Monitor Accounting Activity</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Accounting Dashboard</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
-    <MudGrid Class="mb-4">
+    @* ─── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Monitor Accounting Activity</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Production accounting overview</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning"
+                         Icon="@Icons.Material.Filled.AccountBalance">Accounting</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    @* ─── Navigation Cards *@
+    <MudGrid Class="mb-4" Spacing="3">
         <MudItem xs="12" md="4">
-            <MudCard Elevation="2" Class="ma-2">
+            <MudCard Elevation="2">
                 <MudCardContent>
-                    <MudText Typo="Typo.h6" Class="mb-2">Volume Reconciliation</MudText>
-                    <MudText Typo="Typo.body1">Reconcile production volumes between sources</MudText>
-                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/ppdm39/accounting/volume-reconciliation" Class="mt-2">
-                        Go to Reconciliation
-                    </MudButton>
+                    <MudStack Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.CompareArrows" Color="Color.Primary" Class="og-icon-lg" />
+                        <MudText Typo="Typo.h6">Volume Reconciliation</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Reconcile production volumes between sources</MudText>
+                    </MudStack>
                 </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary"
+                               Href="/ppdm39/accounting/volume-reconciliation"
+                               EndIcon="@Icons.Material.Filled.ArrowForward">Go to Reconciliation</MudButton>
+                </MudCardActions>
             </MudCard>
         </MudItem>
-
         <MudItem xs="12" md="4">
-            <MudCard Elevation="2" Class="ma-2">
+            <MudCard Elevation="2">
                 <MudCardContent>
-                    <MudText Typo="Typo.h6" Class="mb-2">Royalty Calculations</MudText>
-                    <MudText Typo="Typo.body1">View and calculate production royalties</MudText>
-                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/ppdm39/accounting/royalties" Class="mt-2">
-                        Go to Royalties
-                    </MudButton>
+                    <MudStack Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Warning" Class="og-icon-lg" />
+                        <MudText Typo="Typo.h6">Royalty Calculations</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">View and calculate production royalties</MudText>
+                    </MudStack>
                 </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Color="Color.Warning"
+                               Href="/ppdm39/accounting/royalties"
+                               EndIcon="@Icons.Material.Filled.ArrowForward">Go to Royalties</MudButton>
+                </MudCardActions>
             </MudCard>
         </MudItem>
-
         <MudItem xs="12" md="4">
-            <MudCard Elevation="2" Class="ma-2">
+            <MudCard Elevation="2">
                 <MudCardContent>
-                    <MudText Typo="Typo.h6" Class="mb-2">Cost Allocation</MudText>
-                    <MudText Typo="Typo.body1">Allocate costs to production entities</MudText>
-                    <MudButton Variant="Variant.Text" Color="Color.Primary" Href="/ppdm39/accounting/cost-allocation" Class="mt-2">
-                        Go to Cost Allocation
-                    </MudButton>
+                    <MudStack Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.PieChart" Color="Color.Secondary" Class="og-icon-lg" />
+                        <MudText Typo="Typo.h6">Cost Allocation</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Allocate costs to production entities</MudText>
+                    </MudStack>
                 </MudCardContent>
+                <MudCardActions>
+                    <MudButton Variant="Variant.Text" Color="Color.Secondary"
+                               Href="/ppdm39/accounting/cost-allocation"
+                               EndIcon="@Icons.Material.Filled.ArrowForward">Go to Cost Allocation</MudButton>
+                </MudCardActions>
             </MudCard>
         </MudItem>
     </MudGrid>
 
-    <MudPaper Class="pa-4">
-        <MudText Typo="Typo.h6" Class="mb-4">Recent Accounting Activities</MudText>
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
 
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-        }
-        else if (_recentActivities != null && _recentActivities.Any())
-        {
-            <MudTable Items="@_recentActivities" Hover="true" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh>Activity Type</MudTh>
-                    <MudTh>Date</MudTh>
-                    <MudTh>Description</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Activity Type">@GetPropertyValue(context, "ActivityType")</MudTd>
-                    <MudTd DataLabel="Date">@FormatDate(GetPropertyValue(context, "Date"))</MudTd>
-                    <MudTd DataLabel="Description">@GetPropertyValue(context, "Description")</MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-        else if (!_isLoading)
-        {
-            <MudAlert Severity="Severity.Info">No recent accounting activities found.</MudAlert>
-        }
-    </MudPaper>
+    @* ─── Recent Activities Grid *@
+    <MudCard Elevation="2">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h6">Recent Accounting Activities</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent Class="pa-0">
+            @if (_recentActivities != null && _recentActivities.Any())
+            {
+                <MudDataGrid T="AllocationEntry" Items="@_recentActivities" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <TemplateColumn Title="Activity Type">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "ActivityType")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatDate(GetPropertyValue(context.Item, "Date"))</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Description">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "Description")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No activities match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No recent activities</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Accounting activity will appear here as it is recorded.</MudText>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
-    private List<ACCOUNTING_ALLOCATION>? _recentActivities;
+    private string _fieldName = "Current Field";
+    private List<AllocationEntry>? _recentActivities;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
@@ -91,12 +143,12 @@
         {
             // TODO: Implement endpoint to get recent accounting activities
             // For now, return empty list
-            _recentActivities = new List<ACCOUNTING_ALLOCATION>();
+            _recentActivities = new List<AllocationEntry>();
         }
         catch (Exception ex)
         {
             Snackbar.Add($"Error loading recent activities: {ex.Message}", Severity.Error);
-            _recentActivities = new List<ACCOUNTING_ALLOCATION>();
+            _recentActivities = new List<AllocationEntry>();
         }
         finally
         {

@@ -1,0 +1,28 @@
+@using MudBlazor
+
+<MudStack Spacing="3">
+    <MudText Typo="Typo.subtitle2" Color="Color.Secondary">
+        <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-1" />
+        Well Details
+    </MudText>
+    @if (WellData is not null)
+    {
+        <MudStack Spacing="1">
+            @foreach (var prop in WellData.GetType().GetProperties().Take(12))
+            {
+                <MudStack Row="true" Spacing="2">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="og-label-fixed">@prop.Name</MudText>
+                    <MudText Typo="Typo.body2">@(prop.GetValue(WellData)?.ToString() ?? "—")</MudText>
+                </MudStack>
+            }
+        </MudStack>
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Color="Color.Secondary">No well selected</MudText>
+    }
+</MudStack>
+
+@code {
+    [Parameter] public object? WellData { get; set; }
+}

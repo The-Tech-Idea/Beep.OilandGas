@@ -1,5 +1,4 @@
 using System;
-using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.ProductionOperations;
@@ -39,6 +38,17 @@ namespace Beep.OilandGas.Models.Data.Accounting.Financial
             get { return this.ProductionValue; }
 
             set { SetProperty(ref ProductionValue, value); }
+
+        }
+        private decimal? DiscountRateValue = 0.10m;
+
+        public decimal? DiscountRate
+
+        {
+
+            get { return this.DiscountRateValue; }
+
+            set { SetProperty(ref DiscountRateValue, value); }
 
         }
     }

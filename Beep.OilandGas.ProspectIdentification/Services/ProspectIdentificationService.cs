@@ -21,7 +21,7 @@ namespace Beep.OilandGas.ProspectIdentification.Services
     /// Service for prospect identification operations.
     /// Uses PPDMGenericRepository for data persistence following LifeCycle patterns.
     /// </summary>
-    public class ProspectIdentificationService
+    public partial class ProspectIdentificationService : Beep.OilandGas.Models.Core.Interfaces.IProspectIdentificationService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;

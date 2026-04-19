@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Core.Interfaces;
 
 namespace Beep.OilandGas.ApiService.Attributes
 {
@@ -33,8 +34,8 @@ namespace Beep.OilandGas.ApiService.Attributes
 
             // Get access control service from DI
             var accessControlService = context.HttpContext.RequestServices
-                .GetService(typeof(Beep.OilandGas.Models.Data.IAccessControlService)) 
-                as Beep.OilandGas.Models.Data.IAccessControlService;
+                .GetService(typeof(IAccessControlService)) 
+                as IAccessControlService;
 
             if (accessControlService == null)
             {

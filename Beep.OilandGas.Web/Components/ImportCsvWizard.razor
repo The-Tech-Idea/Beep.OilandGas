@@ -22,14 +22,14 @@
                                   Files="@_selectedFile"
                                   FilesChanged="@EventCallback.Factory.Create(this, HandleFileChanged)"
                                   MaximumFileCount="1">
-                        <ActivatorContent>
+                        <CustomContent>
                             <MudButton HtmlTag="label" 
                                       Variant="Variant.Filled" 
                                       Color="Color.Primary" 
                                       StartIcon="@Icons.Material.Filled.Upload">
                                 Select CSV File
                             </MudButton>
-                        </ActivatorContent>
+                        </CustomContent>
                         <SelectedTemplate>
                             <MudChip T="string" Icon="@Icons.Material.Filled.InsertDriveFile" 
                                     Color="Color.Primary" 
@@ -66,39 +66,38 @@
 
                     @if (_columnMappings.Any())
                     {
-                        <MudTable Items="@_columnMappings" Hover="true" Dense="true" Class="mb-4">
-                            <HeaderContent>
-                                <MudTh>CSV Column</MudTh>
-                                <MudTh>Table Field</MudTh>
-                                <MudTh>Actions</MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                <MudTd>@context.CsvColumn</MudTd>
-                                <MudTd>
-                                    <MudSelect T="string" 
-                                             Value="@context.EntityProperty" 
-                                             ValueChanged="@((string value) => UpdateMapping(context.CsvColumn, value))"
-                                             Variant="Variant.Outlined"
-                                             Dense="true">
-                                        <MudSelectItem T="string" Value="@((string?)null)">-- Not Mapped --</MudSelectItem>
-                                        @foreach (var prop in _entityProperties)
+                        <MudDataGrid T="ColumnMapping" Items="@_columnMappings" Dense="true" Hover="true" Striped="true" Class="mb-4">
+                            <Columns>
+                                <PropertyColumn Property="m => m.CsvColumn" Title="CSV Column" />
+                                <TemplateColumn Title="Table Field">
+                                    <CellTemplate>
+                                        <MudSelect T="string"
+                                                 Value="@context.Item.EntityProperty"
+                                                 ValueChanged="@((string value) => UpdateMapping(context.Item.CsvColumn, value))"
+                                                 Variant="Variant.Outlined"
+                                                 Dense="true">
+                                            <MudSelectItem T="string" Value="@((string?)null)">-- Not Mapped --</MudSelectItem>
+                                            @foreach (var prop in _entityProperties)
+                                            {
+                                                <MudSelectItem T="string" Value="@prop">@prop</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Status">
+                                    <CellTemplate>
+                                        @if (!string.IsNullOrEmpty(context.Item.EntityProperty))
                                         {
-                                            <MudSelectItem T="string" Value="@prop">@prop</MudSelectItem>
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Success">Mapped</MudChip>
                                         }
-                                    </MudSelect>
-                                </MudTd>
-                                <MudTd>
-                                    @if (!string.IsNullOrEmpty(context.EntityProperty))
-                                    {
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Success">Mapped</MudChip>
-                                    }
-                                    else
-                                    {
-                                        <MudChip T="string" Size="Size.Small" Color="Color.Warning">Unmapped</MudChip>
-                                    }
-                                </MudTd>
-                            </RowTemplate>
-                        </MudTable>
+                                        else
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Warning">Unmapped</MudChip>
+                                        }
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
 
                         <MudAlert Severity="Severity.Info" Class="mb-4">
                             @_columnMappings.Count(m => !string.IsNullOrEmpty(m.EntityProperty)) of @_columnMappings.Count columns mapped.
@@ -132,20 +131,29 @@
                     @if (_previewData != null && _previewData.Any())
                     {
                         <MudText Typo="Typo.subtitle1" Class="mb-2">Data Preview (First 5 rows)</MudText>
-                        <MudTable Items="@_previewData.Take(5)" Hover="true" Dense="true" Class="mb-4" Style="max-height: 300px; overflow-y: auto;">
-                            <HeaderContent>
-                                @foreach (var mapping in _columnMappings.Where(m => !string.IsNullOrEmpty(m.EntityProperty)))
-                                {
-                                    <MudTh>@mapping.EntityProperty</MudTh>
-                                }
-                            </HeaderContent>
-                            <RowTemplate>
-                                @foreach (var mapping in _columnMappings.Where(m => !string.IsNullOrEmpty(m.EntityProperty)))
-                                {
-                                    <MudTd>@(context.ContainsKey(mapping.CsvColumn) ? context[mapping.CsvColumn] : string.Empty)</MudTd>
-                                }
-                            </RowTemplate>
-                        </MudTable>
+                        <div class="og-scrollable-preview">
+                            <table class="mud-table-root">
+                                <thead>
+                                    <tr>
+                                        @foreach (var mapping in _columnMappings.Where(m => !string.IsNullOrEmpty(m.EntityProperty)))
+                                        {
+                                            <th class="mud-table-cell">@mapping.EntityProperty</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in _previewData.Take(5))
+                                    {
+                                        <tr>
+                                            @foreach (var mapping in _columnMappings.Where(m => !string.IsNullOrEmpty(m.EntityProperty)))
+                                            {
+                                                <td class="mud-table-cell">@(row.ContainsKey(mapping.CsvColumn) ? row[mapping.CsvColumn] : string.Empty)</td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
 
                         <MudAlert Severity="@(_hasErrors ? Severity.Warning : Severity.Success)" Class="mb-4">
                             <MudText Typo="Typo.body1">
@@ -278,7 +286,7 @@
                                 <MudExpansionPanel Text="@($"Import Errors ({_importResult.Errors.Count})")" 
                                                  Icon="@Icons.Material.Filled.Error"
                                                  IsExpanded="true">
-                                    <MudList T="FileImportError" Dense="true" Style="max-height: 200px; overflow-y: auto;">
+                                    <MudList T="FileImportError" Dense="true" Class="og-scrollable-list">
                                         @foreach (var error in _importResult.Errors.OrderBy(e => e.RowNumber))
                                         {
                                             <MudListItem T="FileImportError">
@@ -850,7 +858,7 @@
         public string Message { get; set; } = string.Empty;
     }
 
-    private class ColumnMapping
+    internal class ColumnMapping
     {
         public string CsvColumn { get; set; } = string.Empty;
         public string EntityProperty { get; set; } = string.Empty;

@@ -1,0 +1,333 @@
+@page "/exploration/well-program"
+@page "/exploration/well-program/new"
+@page "/exploration/well-program/{Id}"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Approve Well Programme</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-6">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       OnClick='() => NavigationManager.NavigateTo("/exploration")'
+                       Title="Back to Exploration" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Approve Well Programme</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Complete all steps to submit for sign-off</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Explore">Exploration</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    @* ── 5-Step Wizard ───────────────────────────────────────────────────── *@
+    <MudStepper @bind-ActiveIndex="_step"
+                Linear="true"
+                Color="Color.Primary"
+                Class="mb-4">
+
+        @* Step 1: Well Objectives *@
+        <MudStep Title="Well Objectives"
+                 Icon="@Icons.Material.Filled.Flag"
+                 CompletedIcon="@Icons.Material.Filled.CheckCircle">
+            <MudGrid Spacing="3" Class="pt-4">
+                <MudItem xs="12" md="6">
+                    <MudSelect T="string" @bind-Value="_form.ProspectId" Label="Linked Prospect" Variant="Variant.Outlined" Required="true">
+                        <MudSelectItem T="string" Value="@("1")">Eagle Ford South</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("7")">Permian Wolfcamp Deep</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_form.WellName" Label="Proposed Well Name" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField @bind-Value="_form.TargetZone" Label="Primary Target Zone" Variant="Variant.Outlined" Required="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="string" @bind-Value="_form.WellType" Label="Well Type" Variant="Variant.Outlined">
+                        <MudSelectItem T="string" Value="@("Wildcat")">Wildcat</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Appraisal")">Appraisal</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Step-out")">Step-out</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_form.Objectives"
+                                  Label="Well Objectives"
+                                  Lines="4"
+                                  Variant="Variant.Outlined"
+                                  Required="true"
+                                  Placeholder="Define the primary objectives: test trap integrity, confirm reservoir quality, appraise resource…" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_form.ExpectedOutcome"
+                                  Label="Expected Outcome (success case)"
+                                  Lines="2"
+                                  Variant="Variant.Outlined"
+                                  Placeholder="e.g. Discovery of 50–200 MMBO recoverable in Lower Eagle Ford Shale" />
+                </MudItem>
+            </MudGrid>
+            <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-4">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep"
+                           Disabled="@(!Step1Valid)">
+                    Continue →
+                </MudButton>
+            </MudStack>
+        </MudStep>
+
+        @* Step 2: Technical Summary *@
+        <MudStep Title="Technical Summary"
+                 Icon="@Icons.Material.Filled.Engineering"
+                 CompletedIcon="@Icons.Material.Filled.CheckCircle">
+            <MudGrid Spacing="3" Class="pt-4">
+                <MudItem xs="12" md="4">
+                    <MudNumericField @bind-Value="_form.PlannedTdM" Label="Planned TD (m)" Variant="Variant.Outlined" Min="0" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudSelect T="string" @bind-Value="_form.Trajectory" Label="Well Trajectory" Variant="Variant.Outlined">
+                        <MudSelectItem T="string" Value="@("Vertical")">Vertical</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Directional")">Directional</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("Horizontal")">Horizontal</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudNumericField @bind-Value="_form.PlannedDurationDays" Label="Planned Duration (days)" Variant="Variant.Outlined" Min="1" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_form.FormationsToEncounter"
+                                  Label="Formations to Encounter"
+                                  Lines="2"
+                                  Variant="Variant.Outlined"
+                                  Placeholder="List formations in order from surface to TD" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_form.DrillingProgram"
+                                  Label="Drilling Program Overview"
+                                  Lines="4"
+                                  Variant="Variant.Outlined"
+                                  Placeholder="Describe casing program, BHA, drilling fluids, testing program…" />
+                </MudItem>
+            </MudGrid>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                <MudButton Variant="Variant.Text" OnClick="PrevStep">← Back</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep">Continue →</MudButton>
+            </MudStack>
+        </MudStep>
+
+        @* Step 3: Risk Assessment *@
+        <MudStep Title="Risk Assessment"
+                 Icon="@Icons.Material.Filled.Shield"
+                 CompletedIcon="@Icons.Material.Filled.CheckCircle">
+            <MudPaper Elevation="0" Class="pt-4">
+                <MudText Typo="Typo.subtitle2" Class="mb-3">Technical &amp; Operational Risks</MudText>
+                <MudDataGrid T="RiskItem" Items="@_form.Risks" Dense="true" Hover="true" Striped="true" Class="mb-4">
+                    <Columns>
+                        <PropertyColumn Property="r => r.Description" Title="Risk" />
+                        <TemplateColumn Title="Likelihood">
+                            <CellTemplate>
+                                <MudChip T="string" Size="Size.Small" Color="@GetRiskColor(context.Item.Likelihood)">
+                                    @context.Item.Likelihood
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Impact">
+                            <CellTemplate>
+                                <MudChip T="string" Size="Size.Small" Color="@GetRiskColor(context.Item.Impact)">
+                                    @context.Item.Impact
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Mitigation">
+                            <CellTemplate>
+                                <MudText Typo="Typo.caption">@context.Item.Mitigation</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+                <MudTextField @bind-Value="_form.HseConsiderations"
+                              Label="HSE Considerations"
+                              Lines="3"
+                              Variant="Variant.Outlined"
+                              Placeholder="Identify key HSE hazards and planned controls" />
+            </MudPaper>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                <MudButton Variant="Variant.Text" OnClick="PrevStep">← Back</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep">Continue →</MudButton>
+            </MudStack>
+        </MudStep>
+
+        @* Step 4: Cost Estimate (AFE) *@
+        <MudStep Title="Cost Estimate (AFE)"
+                 Icon="@Icons.Material.Filled.AttachMoney"
+                 CompletedIcon="@Icons.Material.Filled.CheckCircle">
+            <MudPaper Elevation="0" Class="pt-4">
+                <MudText Typo="Typo.subtitle2" Class="mb-3">AFE Line Items</MudText>
+                <MudDataGrid T="AfeLine" Items="@_form.AfeLines" Dense="true" Hover="true" Striped="true">
+                    <Columns>
+                        <PropertyColumn Property="l => l.Category" Title="Category" />
+                        <PropertyColumn Property="l => l.Description" Title="Description" />
+                        <TemplateColumn Title="Cost (USD)">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.CostUsd.ToString("N0")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+                <MudStack Class="mt-2 pa-2" Spacing="1">
+                    <MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Contingency (15%)</MudText>
+                        <MudText Typo="Typo.body2"><strong>@(_form.AfeLines.Sum(l => l.CostUsd) * 0.15m).ToString("N0")</strong></MudText>
+                    </MudStack>
+                    <MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.body2"><strong>Total AFE</strong></MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Warning"><strong>@(_form.AfeLines.Sum(l => l.CostUsd) * 1.15m).ToString("N0")</strong></MudText>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-4">
+                <MudButton Variant="Variant.Text" OnClick="PrevStep">← Back</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="NextStep">Continue →</MudButton>
+            </MudStack>
+        </MudStep>
+
+        @* Step 5: Approval Sign-off *@
+        <MudStep Title="Approval Sign-off"
+                 Icon="@Icons.Material.Filled.Gavel"
+                 CompletedIcon="@Icons.Material.Filled.CheckCircle">
+            <MudGrid Spacing="3" Class="pt-4">
+                @* Summary card *@
+                <MudItem xs="12">
+                    <MudPaper Elevation="1" Class="pa-4">
+                        <MudText Typo="Typo.h6" Class="mb-3">Program Summary</MudText>
+                        <MudGrid Spacing="2">
+                            <MudItem xs="6" md="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Well Name</MudText><MudText>@_form.WellName</MudText></MudItem>
+                            <MudItem xs="6" md="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Target Zone</MudText><MudText>@_form.TargetZone</MudText></MudItem>
+                            <MudItem xs="6" md="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Planned TD</MudText><MudText>@_form.PlannedTdM m</MudText></MudItem>
+                            <MudItem xs="6" md="3"><MudText Typo="Typo.caption" Color="Color.Secondary">Total AFE</MudText><MudText>USD @(_form.AfeLines.Sum(l => l.CostUsd) * 1.15m).ToString("N0")</MudText></MudItem>
+                        </MudGrid>
+                        <MudDivider Class="my-3" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Objectives</MudText>
+                        <MudText Typo="Typo.body2">@_form.Objectives</MudText>
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_form.ApproverComments"
+                                  Label="Approver Comments"
+                                  Lines="3"
+                                  Variant="Variant.Outlined"
+                                  Placeholder="Optional: add sign-off notes or conditions" />
+                </MudItem>
+
+                @* Decision buttons *@
+                <MudItem xs="12">
+                    <MudStack Row="true" Spacing="2" Justify="Justify.FlexStart">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Success"
+                                   StartIcon="@Icons.Material.Filled.CheckCircle"
+                                   OnClick="ApproveProgram">
+                            Approve Well Program
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Warning"
+                                   StartIcon="@Icons.Material.Filled.Schedule"
+                                   OnClick="DeferProgram">
+                            Defer to Next Cycle
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   StartIcon="@Icons.Material.Filled.Cancel"
+                                   OnClick="RejectProgram">
+                            Reject
+                        </MudButton>
+                    </MudStack>
+                </MudItem>
+            </MudGrid>
+            <MudStack Row="true" Justify="Justify.FlexStart" Class="mt-4">
+                <MudButton Variant="Variant.Text" OnClick="PrevStep">← Back</MudButton>
+            </MudStack>
+        </MudStep>
+
+    </MudStepper>
+
+</MudContainer>
+
+@code {
+    [Parameter] public string? Id { get; set; }
+
+    private string _fieldName = "Current Field";
+    private int _step;
+
+    private WellProgramForm _form = new();
+
+    private bool Step1Valid =>
+        !string.IsNullOrWhiteSpace(_form.ProspectId) &&
+        !string.IsNullOrWhiteSpace(_form.WellName) &&
+        !string.IsNullOrWhiteSpace(_form.Objectives);
+
+    protected override void OnInitialized()
+    {
+        // Pre-populate AFE lines and risks with defaults
+        _form.Risks = new()
+        {
+            new("Drilling hazards (abnormal pressure)", "Medium", "High",   "Mud weight programme reviewed by drilling engineer"),
+            new("Formation damage",                     "Low",    "Medium", "Use non-damaging fluid system in target interval"),
+            new("H₂S exposure",                        "Low",    "High",   "H₂S monitoring plan; SCSSSV installed"),
+        };
+
+        _form.AfeLines = new()
+        {
+            new("Drilling",    "Rig day rate (60 days @ $80k/day)",  4_800_000m),
+            new("Drilling",    "Mud, chemicals, bits",               850_000m),
+            new("Cementing",   "Casing programme",                   420_000m),
+            new("Evaluation",  "Wireline logging suite",             380_000m),
+            new("Evaluation",  "DST equipment and supervision",      290_000m),
+            new("Location",    "Site prep and access road",          120_000m),
+        };
+    }
+
+    private void NextStep() { if (_step < 4) _step++; }
+    private void PrevStep() { if (_step > 0) _step--; }
+
+    private void ApproveProgram() => SubmitDecision("Approved");
+    private void DeferProgram()   => SubmitDecision("Deferred");
+    private void RejectProgram()  => SubmitDecision("Rejected");
+
+    private void SubmitDecision(string decision)
+    {
+        // TODO: POST /api/exploration/well-programs/{id}/decision
+        Snackbar.Add($"Well program {decision.ToLower()}.", decision == "Approved" ? Severity.Success : decision == "Deferred" ? Severity.Warning : Severity.Error);
+        NavigationManager.NavigateTo("/exploration");
+    }
+
+    private class WellProgramForm
+    {
+        public string ProspectId { get; set; } = string.Empty;
+        public string WellName { get; set; } = string.Empty;
+        public string TargetZone { get; set; } = string.Empty;
+        public string WellType { get; set; } = "Wildcat";
+        public string Objectives { get; set; } = string.Empty;
+        public string ExpectedOutcome { get; set; } = string.Empty;
+        public int PlannedTdM { get; set; } = 3500;
+        public string Trajectory { get; set; } = "Vertical";
+        public int PlannedDurationDays { get; set; } = 60;
+        public string FormationsToEncounter { get; set; } = string.Empty;
+        public string DrillingProgram { get; set; } = string.Empty;
+        public string HseConsiderations { get; set; } = string.Empty;
+        public string ApproverComments { get; set; } = string.Empty;
+        public List<RiskItem> Risks { get; set; } = new();
+        public List<AfeLine> AfeLines { get; set; } = new();
+    }
+
+    private record RiskItem(string Description, string Likelihood, string Impact, string Mitigation);
+    private record AfeLine(string Category, string Description, decimal CostUsd);
+
+    private static Color GetRiskColor(string level) => level switch
+    {
+        "High"   => Color.Error,
+        "Medium" => Color.Warning,
+        _        => Color.Success
+    };
+}

@@ -1,0 +1,22 @@
+@* JurisdictionFilterChips — USA / Canada / International / All filter chips *@
+<MudChipSet T="string"
+            SelectedValue="@SelectedJurisdiction"
+            SelectedValueChanged="OnChanged"
+            SelectionMode="SelectionMode.SingleSelection"
+            Color="Color.Primary">
+    <MudChip T="string" Value="@("ALL")" Icon="@Icons.Material.Filled.Public">All</MudChip>
+    <MudChip T="string" Value="@("USA")" Icon="@Icons.Material.Filled.Flag">USA</MudChip>
+    <MudChip T="string" Value="@("CAN")" Icon="@Icons.Material.Filled.Flag">Canada</MudChip>
+    <MudChip T="string" Value="@("INTL")" Icon="@Icons.Material.Filled.Language">International</MudChip>
+</MudChipSet>
+
+@code {
+    [Parameter] public string SelectedJurisdiction { get; set; } = "ALL";
+    [Parameter] public EventCallback<string> SelectedJurisdictionChanged { get; set; }
+
+    private async Task OnChanged(string value)
+    {
+        SelectedJurisdiction = value ?? "ALL";
+        await SelectedJurisdictionChanged.InvokeAsync(SelectedJurisdiction);
+    }
+}

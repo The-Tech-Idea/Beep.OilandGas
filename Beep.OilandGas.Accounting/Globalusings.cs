@@ -9,6 +9,10 @@ global using TheTechIdea.Beep.Report;
 // Models - Accounting data entities
 global using Beep.OilandGas.Models.Data.Accounting;
 global using Beep.OilandGas.Models.Data.Common;
+global using Beep.OilandGas.Models.Data.ProductionAccounting;
+
+// Accounting internal models
+global using Beep.OilandGas.Accounting.Models;
 
 // Service interfaces
 global using Beep.OilandGas.Models.Core.Interfaces;

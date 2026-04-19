@@ -3,51 +3,91 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<PageTitle>Well Status - PPDM39</PageTitle>
+<PageTitle>Track Well Status History</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudText Typo="Typo.h4" Class="mb-4">Well Status</MudText>
-    
-    <MudPaper Class="pa-4">
-        <MudGrid>
-            <MudItem xs="12" md="6">
-                <MudTextField @bind-Value="_searchUwi" 
-                             Label="UWI" 
-                             Variant="Variant.Outlined"
-                             Adornment="Adornment.End"
-                             AdornmentIcon="@Icons.Material.Filled.Search"
-                             OnAdornmentClick="SearchStatus" />
-            </MudItem>
-        </MudGrid>
-        
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
-        }
-        
-        @if (_status != null && _status.Any())
-        {
-            <MudTable Items="@_status" Hover="true" Dense="true" Class="mt-4">
-                <HeaderContent>
-                    <MudTh>UWI</MudTh>
-                    <MudTh>Status Type</MudTh>
-                    <MudTh>Status</MudTh>
-                    <MudTh>Effective Date</MudTh>
-                    <MudTh>Expiry Date</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="UWI">@context.UWI</MudTd>
-                    <MudTd DataLabel="Status Type">@context.STATUS_TYPE</MudTd>
-                    <MudTd DataLabel="Status">@(!string.IsNullOrWhiteSpace(context.STATUS) ? context.STATUS : context.STATUS_ID ?? "N/A")</MudTd>
-                    <MudTd DataLabel="Effective Date">@context.EFFECTIVE_DATE</MudTd>
-                    <MudTd DataLabel="Expiry Date">@context.EXPIRY_DATE</MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-    </MudPaper>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Track Well Status History</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Well operational status timeline</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary"
+                         Icon="@Icons.Material.Filled.LocalGasStation">Well</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Edit">Record Status Change</MudButton>
+    </MudStack>
+
+    @* ── UWI Search *@
+    <MudCard Elevation="1" Class="mb-4">
+        <MudCardContent>
+            <MudTextField @bind-Value="_searchUwi"
+                          Label="Well UWI"
+                          Placeholder="Enter well identifier"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          OnAdornmentClick="SearchStatus" />
+        </MudCardContent>
+    </MudCard>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ── Status Grid *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_status != null && _status.Any())
+            {
+                <MudDataGrid T="WELL_STATUS" Items="@_status" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <PropertyColumn Property="s => s.UWI" Title="UWI" />
+                        <PropertyColumn Property="s => s.STATUS_TYPE" Title="Status Type" />
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <StatusBadge Status="@(!string.IsNullOrWhiteSpace(context.Item.STATUS) ? context.Item.STATUS : context.Item.STATUS_ID ?? "—")" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Effective Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(context.Item.EFFECTIVE_DATE?.ToString("dd MMM yyyy") ?? "—")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Expiry Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(context.Item.EXPIRY_DATE?.ToString("dd MMM yyyy") ?? "—")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.LocalGasStation" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No status records match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.LocalGasStation" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">Enter a UWI to view status history</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Use the search box above to look up a specific well.</MudText>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private string _searchUwi = string.Empty;
     private List<WELL_STATUS>? _status;
     private bool _isLoading = false;

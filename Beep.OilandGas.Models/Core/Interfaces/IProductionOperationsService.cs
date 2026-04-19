@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.ProductionOperations;
-
-using Beep.OilandGas.Models.Data.ProductionOperations;
 namespace Beep.OilandGas.Models.Core.Interfaces
 {
     /// <summary>

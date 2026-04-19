@@ -13,7 +13,7 @@ namespace Beep.OilandGas.LeaseAcquisition.Services
     /// Comprehensive lease acquisition service implementation - Main file
     /// Handles lease acquisition, negotiation, rights management, and lifecycle operations
     /// </summary>
-    public partial class LeaseAcquisitionService : ILeaseAcquisitionService
+    public partial class LeaseAcquisitionService : ILeaseAcquisitionService, Beep.OilandGas.Models.Core.Interfaces.ILeaseAcquisitionService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;

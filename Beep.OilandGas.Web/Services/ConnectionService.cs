@@ -2,51 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using ConnectionInfo = Beep.OilandGas.Models.Data.DataManagement.ConnectionInfo;
+using ConnectionTestResult = Beep.OilandGas.Models.Data.DataManagement.ConnectionTestResult;
+using SetCurrentConnectionResult = Beep.OilandGas.Models.Data.DataManagement.SetCurrentConnectionResult;
+using CurrentConnectionResponse = Beep.OilandGas.Models.Data.DataManagement.CurrentConnectionResponse;
 
 namespace Beep.OilandGas.Web.Services
 {
-    /// <summary>
-    /// Connection information model
-    /// </summary>
-    public class ConnectionInfo
-    {
-        public string ConnectionName { get; set; } = string.Empty;
-        public string DatabaseType { get; set; } = string.Empty;
-        public string Server { get; set; } = string.Empty;
-        public string? Database { get; set; }
-        public int? Port { get; set; }
-        public bool IsActive { get; set; }
-        public string? Description { get; set; }
-    }
-
-    /// <summary>
-    /// Connection test result
-    /// </summary>
-    public class ConnectionTestResult
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public string? ErrorDetails { get; set; }
-    }
-
-    /// <summary>
-    /// Set current connection result
-    /// </summary>
-    public class SetCurrentConnectionResult
-    {
-        public bool Success { get; set; }
-        public string Message { get; set; } = string.Empty;
-        public string? ErrorDetails { get; set; }
-    }
-
-    /// <summary>
-    /// Current connection response
-    /// </summary>
-    public class CurrentConnectionResponse
-    {
-        public string? ConnectionName { get; set; }
-    }
-
     /// <summary>
     /// Service interface for connection operations
     /// </summary>

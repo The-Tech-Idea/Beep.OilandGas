@@ -1,0 +1,54 @@
+@* GateChecklistTable — lists required documents for a gate review *@
+<MudSimpleTable Dense="true" Hover="true" Striped="true">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Required Document</th>
+            <th>Type</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (int i = 0; i < Items.Count; i++)
+        {
+            var item = Items[i];
+            <tr>
+                <td>@(i + 1)</td>
+                <td>
+                    <MudText Typo="Typo.body2"
+                             Color="@(item.IsSubmitted ? Color.Default : Color.Error)">
+                        @item.DocumentName
+                    </MudText>
+                </td>
+                <td>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@item.DocumentType</MudText>
+                </td>
+                <td>
+                    @if (item.IsSubmitted)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Success"
+                                 Icon="@Icons.Material.Filled.CheckCircle">Submitted</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Error"
+                                 Icon="@Icons.Material.Filled.Warning">Missing</MudChip>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</MudSimpleTable>
+
+@if (Items.Any(i => !i.IsSubmitted))
+{
+    <MudAlert Severity="Severity.Warning" Class="mt-2">
+        @Items.Count(i => !i.IsSubmitted) document(s) are missing. Gate cannot be approved until all documents are submitted.
+    </MudAlert>
+}
+
+@code {
+    [Parameter] public List<GateChecklistItem> Items { get; set; } = new();
+
+    public record GateChecklistItem(string DocumentName, string DocumentType, bool IsSubmitted);
+}

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data.Allocation;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
@@ -12,6 +13,7 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.ProductionAccounting.Constants;
 using Beep.OilandGas.ProductionAccounting.Exceptions;
+using ProductionAllocationMethod = Beep.OilandGas.Models.Data.ProductionAccounting.AllocationMethod;
 
 namespace Beep.OilandGas.ProductionAccounting.Services
 {
@@ -280,6 +282,82 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             }
 
             return details;
+        }
+
+        public static ALLOCATION_RESULT AllocateToWells(decimal totalVolume, List<WellAllocationData> wells, ProductionAllocationMethod method)
+        {
+            wells ??= new List<WellAllocationData>();
+
+            if (wells.Count == 0)
+                return new ALLOCATION_RESULT
+                {
+                    TOTAL_VOLUME = totalVolume,
+                    ALLOCATED_VOLUME = 0m,
+                    ALLOCATION_VARIANCE = totalVolume,
+                    METHOD = method,
+                    Details = new List<ALLOCATION_DETAIL>()
+                };
+
+            var basisTotal = method switch
+            {
+                ProductionAllocationMethod.ProRataWorkingInterest => wells.Sum(well => well.WorkingInterest ?? 0m),
+                ProductionAllocationMethod.ProRataNetRevenueInterest => wells.Sum(well => well.NetRevenueInterest ?? 0m),
+                ProductionAllocationMethod.Measured => wells.Sum(well => well.MeasuredProduction ?? 0m),
+                ProductionAllocationMethod.Estimated => wells.Sum(well => well.EstimatedProduction ?? 0m),
+                ProductionAllocationMethod.Equal => wells.Count,
+                _ => wells.Sum(well => well.WorkingInterest ?? 0m)
+            };
+
+            if (basisTotal <= 0m)
+                basisTotal = wells.Count;
+
+            var details = new List<ALLOCATION_DETAIL>();
+            decimal allocatedTotal = 0m;
+
+            for (var index = 0; index < wells.Count; index++)
+            {
+                var well = wells[index];
+                var basis = method switch
+                {
+                    ProductionAllocationMethod.ProRataWorkingInterest => well.WorkingInterest ?? 0m,
+                    ProductionAllocationMethod.ProRataNetRevenueInterest => well.NetRevenueInterest ?? 0m,
+                    ProductionAllocationMethod.Measured => well.MeasuredProduction ?? 0m,
+                    ProductionAllocationMethod.Estimated => well.EstimatedProduction ?? 0m,
+                    ProductionAllocationMethod.Equal => 1m,
+                    _ => well.WorkingInterest ?? 0m
+                };
+
+                if (basisTotal == wells.Count && basis <= 0m)
+                    basis = 1m;
+
+                var allocationPercentage = basisTotal == 0m ? 0m : (basis / basisTotal) * 100m;
+                var allocatedVolume = index == wells.Count - 1
+                    ? totalVolume - allocatedTotal
+                    : Math.Round(totalVolume * (allocationPercentage / 100m), 6);
+
+                allocatedTotal += allocatedVolume;
+
+                details.Add(new ALLOCATION_DETAIL
+                {
+                    ENTITY_ID = well.WellId,
+                    ENTITY_NAME = well.WellName,
+                    ALLOCATED_VOLUME = allocatedVolume,
+                    ALLOCATION_PERCENTAGE = allocationPercentage,
+                    WorkingInterest = well.WorkingInterest,
+                    NetRevenueInterest = well.NetRevenueInterest
+                });
+            }
+
+            return new ALLOCATION_RESULT
+            {
+                ALLOCATION_ID = Guid.NewGuid().ToString(),
+                ALLOCATION_DATE = DateTime.UtcNow,
+                TOTAL_VOLUME = totalVolume,
+                ALLOCATED_VOLUME = allocatedTotal,
+                ALLOCATION_VARIANCE = totalVolume - allocatedTotal,
+                METHOD = method,
+                Details = details
+            };
         }
 
         private async Task<List<OWNERSHIP_INTEREST>> GetOwnershipInterestsAsync(

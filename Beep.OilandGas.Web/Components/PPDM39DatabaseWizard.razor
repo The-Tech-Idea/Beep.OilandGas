@@ -3,7 +3,7 @@
 @inject IProgressTrackingClient ProgressClient
 @using Beep.OilandGas.Web.Components
 @using Beep.OilandGas.Web.Components.Demo
-@using Beep.OilandGas.ApiService.Models
+@using Beep.OilandGas.Models.Data.DataManagement
 
 <MudDialog MaxWidth="MaxWidth.Large" FullWidth="true">
     <DialogContent>
@@ -271,32 +271,33 @@
                         @if (!_executeAllScripts)
                         {
                             <MudText Typo="Typo.subtitle2" Class="mb-2">Select Scripts to Execute:</MudText>
-                            <MudTable Items="@_availableScripts" Hover="true" Dense="true" Class="mb-4">
-                                <HeaderContent>
-                                    <MudTh>Execute</MudTh>
-                                    <MudTh>Script Name</MudTh>
-                                    <MudTh>Description</MudTh>
-                                    <MudTh>Required</MudTh>
-                                </HeaderContent>
-                                <RowTemplate>
-                                    <MudTd>
-                                        <MudCheckBox T="bool" @bind-Checked="@context.IsSelected" 
-                                                    Disabled="@context.IsMandatory" />
-                                    </MudTd>
-                                    <MudTd>@context.Name</MudTd>
-                                    <MudTd>@context.Description</MudTd>
-                                    <MudTd>
-                                        @if (context.IsMandatory)
-                                        {
-                                            <MudChip T="string" Size="Size.Small" Color="Color.Error">Required</MudChip>
-                                        }
-                                        else
-                                        {
-                                            <MudChip T="string" Size="Size.Small" Color="Color.Default">Optional</MudChip>
-                                        }
-                                    </MudTd>
-                                </RowTemplate>
-                            </MudTable>
+                            <MudDataGrid T="ScriptInfo" Items="@_availableScripts" Dense="true" Hover="true" Striped="true" Class="mb-4">
+                                <Columns>
+                                    <TemplateColumn Title="Execute" SortBy="s => s.FileName">
+                                        <CellTemplate>
+                                            <MudCheckBox T="bool" Checked="@_selectedScriptFileNames.Contains(context.Item.FileName)"
+                                                        CheckedChanged="@((bool v) => ToggleScriptSelection(context.Item.FileName, v))"
+                                                        Disabled="@context.Item.IsMandatory" />
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="s => s.Name" Title="Script Name" />
+                                    <TemplateColumn Title="Description">
+                                        <CellTemplate><MudText Typo="Typo.body2">@(context.Item.Category ?? context.Item.ScriptType ?? context.Item.FileName)</MudText></CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Required">
+                                        <CellTemplate>
+                                            @if (context.Item.IsMandatory)
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Error">Required</MudChip>
+                                            }
+                                            else
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Default">Optional</MudChip>
+                                            }
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                            </MudDataGrid>
                         }
 
                         @if (!string.IsNullOrEmpty(_scriptExecutionOperationId) && _scriptExecutionProgress != null)
@@ -327,37 +328,34 @@
                         @if (_scriptExecutionResults != null && _scriptExecutionResults.Any())
                         {
                             <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Execution Results:</MudText>
-                            <MudTable Items="@_scriptExecutionResults" Hover="true" Dense="true" Class="mb-4">
-                                <HeaderContent>
-                                    <MudTh>Script</MudTh>
-                                    <MudTh>Status</MudTh>
-                                    <MudTh>Message</MudTh>
-                                    <MudTh>Time</MudTh>
-                                </HeaderContent>
-                                <RowTemplate>
-                                    <MudTd>@context.ScriptName</MudTd>
-                                    <MudTd>
-                                        @if (context.Success)
-                                        {
-                                            <MudChip T="string" Size="Size.Small" Color="Color.Success">Success</MudChip>
-                                        }
-                                        else
-                                        {
-                                            <MudChip T="string" Size="Size.Small" Color="Color.Error">Failed</MudChip>
-                                        }
-                                    </MudTd>
-                                    <MudTd>
-                                        <MudText Typo="Typo.caption">@context.Message</MudText>
-                                        @if (!string.IsNullOrEmpty(context.ErrorDetails))
-                                        {
-                                            <MudText Typo="Typo.caption" Class="text-error">@context.ErrorDetails</MudText>
-                                        }
-                                    </MudTd>
-                                    <MudTd>
-                                        <MudText Typo="Typo.caption">@($"{context.ExecutionTime.TotalSeconds:F2}s")</MudText>
-                                    </MudTd>
-                                </RowTemplate>
-                            </MudTable>
+                            <MudDataGrid T="ScriptExecutionResult" Items="@_scriptExecutionResults" Dense="true" Hover="true" Striped="true" Class="mb-4">
+                                <Columns>
+                                    <PropertyColumn Property="r => r.ScriptFileName" Title="Script" />
+                                    <TemplateColumn Title="Status">
+                                        <CellTemplate>
+                                            @if (context.Item.Success)
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Success">Success</MudChip>
+                                            }
+                                            else
+                                            {
+                                                <MudChip T="string" Size="Size.Small" Color="Color.Error">Failed</MudChip>
+                                            }
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Message">
+                                        <CellTemplate>
+                                            @if (!string.IsNullOrEmpty(context.Item.ErrorMessage))
+                                            {
+                                                <MudText Typo="Typo.caption" Color="Color.Error">@context.Item.ErrorMessage</MudText>
+                                            }
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                    <TemplateColumn Title="Time" SortBy="r => r.Duration.TotalSeconds">
+                                        <CellTemplate><MudText Typo="Typo.caption">@($"{context.Item.Duration.TotalSeconds:F2}s")</MudText></CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                            </MudDataGrid>
 
                             @if (_allScriptsResult != null)
                             {
@@ -411,9 +409,9 @@
                             {
                                 <MudAlert Severity="@(_seedDataResult.Success ? Severity.Success : Severity.Error)" Class="mt-4">
                                     <MudText Typo="Typo.body1">@_seedDataResult.Message</MudText>
-                                    @if (!string.IsNullOrEmpty(_seedDataResult.ErrorDetails))
+                                    @if (_seedDataResult.Errors?.Count > 0)
                                     {
-                                        <MudText Typo="Typo.body2" Class="mt-2">@_seedDataResult.ErrorDetails</MudText>
+                                        <MudText Typo="Typo.body2" Class="mt-2">@string.Join("; ", _seedDataResult.Errors)</MudText>
                                     }
                                 </MudAlert>
                             }
@@ -444,38 +442,15 @@
                     <MudCard Class="mb-4">
                         <MudCardContent>
                             <MudText Typo="Typo.subtitle1" Class="mb-3">Connection Summary</MudText>
-                            <MudSimpleTable>
-                                <tbody>
-                                    <tr>
-                                        <td><strong>Connection Name:</strong></td>
-                                        <td>@_connectionName</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Database Type:</strong></td>
-                                        <td>@_selectedDatabaseType</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Host:</strong></td>
-                                        <td>@_host</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Port:</strong></td>
-                                        <td>@(_port > 0 ? _port.ToString() : _defaultPort.ToString())</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Database:</strong></td>
-                                        <td>@_database</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Username:</strong></td>
-                                        <td>@(!string.IsNullOrEmpty(_username) ? _username : "(not set)")</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Scripts Executed:</strong></td>
-                                        <td>@(_allScriptsResult?.SuccessfulScripts ?? 0) of @(_allScriptsResult?.TotalScripts ?? 0)</td>
-                                    </tr>
-                                </tbody>
-                            </MudSimpleTable>
+                            <MudStack Spacing="1" Class="mb-4">
+                                <MudStack Row="true" Spacing="2"><MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg"><strong>Connection Name:</strong></MudText><MudText Typo="Typo.body2">@_connectionName</MudText></MudStack>
+                                <MudStack Row="true" Spacing="2"><MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg"><strong>Database Type:</strong></MudText><MudText Typo="Typo.body2">@_selectedDatabaseType</MudText></MudStack>
+                                <MudStack Row="true" Spacing="2"><MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg"><strong>Host:</strong></MudText><MudText Typo="Typo.body2">@_host</MudText></MudStack>
+                                <MudStack Row="true" Spacing="2"><MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg"><strong>Port:</strong></MudText><MudText Typo="Typo.body2">@(_port > 0 ? _port.ToString() : _defaultPort.ToString())</MudText></MudStack>
+                                <MudStack Row="true" Spacing="2"><MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg"><strong>Database:</strong></MudText><MudText Typo="Typo.body2">@_database</MudText></MudStack>
+                                <MudStack Row="true" Spacing="2"><MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg"><strong>Username:</strong></MudText><MudText Typo="Typo.body2">@(!string.IsNullOrEmpty(_username) ? _username : "(not set)")</MudText></MudStack>
+                                <MudStack Row="true" Spacing="2"><MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg"><strong>Scripts Executed:</strong></MudText><MudText Typo="Typo.body2">@(_allScriptsResult?.SuccessfulScripts ?? 0) of @(_allScriptsResult?.TotalScripts ?? 0)</MudText></MudStack>
+                            </MudStack>
                         </MudCardContent>
                     </MudCard>
 
@@ -504,15 +479,9 @@
                     {
                         <MudAlert Severity="@(_saveResult.Success ? Severity.Success : Severity.Error)" Class="mt-4">
                             @_saveResult.Message
-                            @if (_saveResult.TestResult != null)
+                            @if (!string.IsNullOrEmpty(_saveResult.ErrorDetails))
                             {
-                                <MudText Typo="Typo.body2" Class="mt-2">
-                                    Connection Test: @(_saveResult.TestResult.Success ? "Success" : "Failed")
-                                    @if (!string.IsNullOrEmpty(_saveResult.TestResult.ErrorDetails))
-                                    {
-                                        <MudText Typo="Typo.caption">@_saveResult.TestResult.ErrorDetails</MudText>
-                                    }
-                                </MudText>
+                                <MudText Typo="Typo.body2" Class="mt-2">@_saveResult.ErrorDetails</MudText>
                             }
                         </MudAlert>
                     }
@@ -564,6 +533,7 @@
     private List<ScriptInfo>? _availableScripts;
     private bool _executeAllScripts = true;
     private bool _isExecutingScripts = false;
+    private HashSet<string> _selectedScriptFileNames = new();
     private List<ScriptExecutionResult>? _scriptExecutionResults;
     private AllScriptsExecutionResult? _allScriptsResult;
     private string? _scriptExecutionOperationId;
@@ -651,7 +621,7 @@
             {
                 var createRequest = new CreateSchemaRequest
                 {
-                    Connection = config,
+                    Connection = config.ToConnectionProperties(),
                     SchemaName = config.Schema
                 };
 
@@ -669,8 +639,8 @@
                 }
             }
             
-            _connectionTestResult = await ApiClient.PostAsync<ConnectionConfig, ConnectionTestResult>(
-                "/api/ppdm39/setup/test-connection", config);
+            _connectionTestResult = await ApiClient.PostAsync<object, ConnectionTestResult>(
+                "/api/ppdm39/setup/test-connection", config.ToConnectionProperties());
 
             if (_connectionTestResult?.Success == true)
             {
@@ -732,12 +702,12 @@
         {
             var config = BuildConnectionConfig();
             var selectedScripts = _executeAllScripts 
-                ? _availableScripts.Select(s => s.Name).ToList()
-                : _availableScripts.Where(s => s.IsSelected).Select(s => s.Name).ToList();
+                ? _availableScripts.Select(s => s.FileName).ToList()
+                : _availableScripts.Where(s => _selectedScriptFileNames.Contains(s.FileName)).Select(s => s.FileName).ToList();
 
             var request = new ScriptExecutionRequest
             {
-                Connection = config,
+                Connection = config.ToConnectionProperties(),
                 ScriptNames = selectedScripts,
                 ExecuteAll = false
             };
@@ -753,6 +723,7 @@
             {
                 // Store result
                 _allScriptsResult = response;
+                _scriptExecutionResults = response.Results ?? new List<ScriptExecutionResult>();
                 Snackbar.Add($"Script execution completed. {response.SuccessfulScripts}/{response.TotalScripts} scripts succeeded.", 
                     response.AllSucceeded ? Severity.Success : Severity.Warning);
             }
@@ -760,6 +731,9 @@
         catch (Exception ex)
         {
             Snackbar.Add($"Error starting script execution: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
             _isExecutingScripts = false;
             _scriptExecutionOperationId = null;
         }
@@ -819,7 +793,7 @@
                 var updateRequest = new UpdateConnectionRequest
                 {
                     OriginalConnectionName = _originalConnectionName,
-                    Connection = config
+                    Connection = config.ToConnectionProperties()
                 };
 
                 _saveResult = await ApiClient.PutAsync<UpdateConnectionRequest, SaveConnectionResult>(
@@ -830,7 +804,7 @@
                 // Create new connection
                 var request = new SaveConnectionRequest
                 {
-                    Connection = config,
+                    Connection = config.ToConnectionProperties(),
                     TestAfterSave = _testAfterSave,
                     OpenAfterSave = false
                 };
@@ -873,8 +847,8 @@
             var config = BuildConnectionConfig();
             var request = new SchemaPrivilegeCheckRequest
             {
-                Connection = config,
-                SchemaName = _selectedSchema == "__CREATE_NEW__" ? _newSchemaName : _selectedSchema
+                Connection = config.ToConnectionProperties(),
+                SchemaName = _selectedSchema == "__CREATE_NEW__" ? _newSchemaName ?? string.Empty : _selectedSchema ?? string.Empty
             };
 
             _privilegeCheckResult = await ApiClient.PostAsync<SchemaPrivilegeCheckRequest, SchemaPrivilegeCheckResult>(
@@ -882,7 +856,7 @@
 
             if (_privilegeCheckResult != null)
             {
-                _availableSchemas = _privilegeCheckResult.ExistingSchemas;
+                _availableSchemas = _privilegeCheckResult.ExistingSchemas ?? new List<string>();
                 
                 if (_privilegeCheckResult.HasCreatePrivilege)
                 {
@@ -1031,7 +1005,7 @@
             {
                 Success = false,
                 Message = "Error seeding database",
-                ErrorDetails = ex.Message
+                Errors = new List<string> { ex.Message }
             };
             Snackbar.Add($"Error seeding database: {ex.Message}", Severity.Error);
         }
@@ -1113,7 +1087,7 @@
         if (_executeAllScripts)
             return _availableScripts != null && _availableScripts.Any();
         
-        return _availableScripts != null && _availableScripts.Any(s => s.IsSelected);
+        return _availableScripts != null && _availableScripts.Any(s => _selectedScriptFileNames.Contains(s.FileName));
     }
 
     private int GetSelectedScriptCount()
@@ -1121,7 +1095,15 @@
         if (_executeAllScripts)
             return _availableScripts?.Count ?? 0;
         
-        return _availableScripts?.Count(s => s.IsSelected) ?? 0;
+        return _availableScripts?.Count(s => _selectedScriptFileNames.Contains(s.FileName)) ?? 0;
+    }
+
+    private void ToggleScriptSelection(string fileName, bool selected)
+    {
+        if (selected)
+            _selectedScriptFileNames.Add(fileName);
+        else
+            _selectedScriptFileNames.Remove(fileName);
     }
 
     private void Cancel()

@@ -35,7 +35,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
 
     private string _wellId = string.Empty;
     private string _abandonmentType = string.Empty;

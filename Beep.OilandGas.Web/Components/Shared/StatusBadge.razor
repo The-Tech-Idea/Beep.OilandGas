@@ -1,0 +1,39 @@
+@* StatusBadge — centralised status chip for wells, facilities, processes *@
+<MudChip T="string"
+         Color="@_color"
+         Variant="Variant.Filled"
+         Size="@Size"
+         Icon="@_icon"
+         Class="status-badge">
+    @Status
+</MudChip>
+
+@code {
+    [Parameter] public string Status { get; set; } = string.Empty;
+    [Parameter] public Size Size { get; set; } = Size.Small;
+
+    private Color _color = Color.Default;
+    private string _icon = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        (_color, _icon) = Status?.ToUpperInvariant() switch
+        {
+            "ONLINE" or "PRODUCING" or "ACTIVE" or "APPROVED" or "COMPLETE" or "COMPLETED"
+                => (Color.Success, Icons.Material.Filled.CheckCircle),
+            "SHUT-IN" or "SHUT IN" or "SUSPENDED" or "DEFERRED"
+                => (Color.Warning, Icons.Material.Filled.PauseCircle),
+            "ALARM" or "CRITICAL" or "FAILED" or "REJECTED" or "ABANDONED"
+                => (Color.Error, Icons.Material.Filled.Error),
+            "TESTING" or "WORKOVER" or "INTERVENTION" or "IN PROGRESS" or "REVIEW"
+                => (Color.Info, Icons.Material.Filled.BuildCircle),
+            "DRILLING" or "UNDER CONSTRUCTION" or "PLANNED"
+                => (Color.Primary, Icons.Material.Filled.Construction),
+            "P&A" or "DECOMMISSIONED" or "PLUGGED"
+                => (Color.Dark, Icons.Material.Filled.Block),
+            "IDLE" or "INACTIVE" or "STAND-BY"
+                => (Color.Default, Icons.Material.Filled.RemoveCircle),
+            _ => (Color.Default, Icons.Material.Filled.Circle)
+        };
+    }
+}

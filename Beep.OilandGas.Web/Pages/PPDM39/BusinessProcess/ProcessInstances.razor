@@ -1,0 +1,120 @@
+@page "/ppdm39/process/instances"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Process Instances</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Monitor Process Instances</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — All active and completed instances</MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/process")'>
+            Dashboard
+        </MudButton>
+    </MudStack>
+
+    @* ── Filters ─────────────────────────────────────────────────────── *@
+    <MudPaper Elevation="1" Class="pa-3 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
+            <MudTextField @bind-Value="_search"
+                          Placeholder="Search by process name or entity…"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true"
+                          Style="min-width:260px" />
+            <MudSelect T="string" @bind-Value="_statusFilter" Label="Status" Style="min-width:160px">
+                <MudSelectItem Value='""'>All Statuses</MudSelectItem>
+                <MudSelectItem Value='"NOT_STARTED"'>Not Started</MudSelectItem>
+                <MudSelectItem Value='"IN_PROGRESS"'>In Progress</MudSelectItem>
+                <MudSelectItem Value='"COMPLETED"'>Completed</MudSelectItem>
+                <MudSelectItem Value='"SUSPENDED"'>Suspended</MudSelectItem>
+                <MudSelectItem Value='"FAILED"'>Failed</MudSelectItem>
+                <MudSelectItem Value='"CANCELLED"'>Cancelled</MudSelectItem>
+            </MudSelect>
+            <MudSelect T="string" @bind-Value="_typeFilter" Label="Type" Style="min-width:160px">
+                <MudSelectItem Value='""'>All Types</MudSelectItem>
+                <MudSelectItem Value='"EXPLORATION"'>Exploration</MudSelectItem>
+                <MudSelectItem Value='"DEVELOPMENT"'>Development</MudSelectItem>
+                <MudSelectItem Value='"PRODUCTION"'>Production</MudSelectItem>
+                <MudSelectItem Value='"DECOMMISSIONING"'>Decommissioning</MudSelectItem>
+            </MudSelect>
+        </MudStack>
+    </MudPaper>
+
+    @* ── Grid ────────────────────────────────────────────────────────── *@
+    <MudDataGrid T="InstanceRow"
+                 Items="@FilteredInstances"
+                 Dense="true"
+                 Hover="true"
+                 Striped="true"
+                 Sortable="true"
+                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/instances/{e.Item.InstanceId}"))">
+        <Columns>
+            <PropertyColumn Property="r => r.ProcessName"    Title="Process" />
+            <PropertyColumn Property="r => r.ProcessType"    Title="Type" />
+            <PropertyColumn Property="r => r.EntityId"       Title="Entity" />
+            <PropertyColumn Property="r => r.CurrentStepName" Title="Current Step" />
+            <TemplateColumn Title="Status" Sortable="false">
+                <CellTemplate>
+                    <ProcessStatusBadge Status="@context.Item.Status" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="r => r.StartedAt"   Title="Started"   Format="dd-MMM-yy" />
+            <PropertyColumn Property="r => r.StartedBy"   Title="Started By" />
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                   Size="Size.Small"
+                                   Color="Color.Primary"
+                                   OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/process/instances/{context.Item.InstanceId}"))' />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="InstanceRow" />
+        </PagerContent>
+    </MudDataGrid>
+
+</MudContainer>
+
+@code {
+    private string _fieldName     = "Current Field";
+    private string _search        = string.Empty;
+    private string _statusFilter  = string.Empty;
+    private string _typeFilter    = string.Empty;
+
+    private List<InstanceRow> _instances = new();
+
+    private IEnumerable<InstanceRow> FilteredInstances => _instances.Where(i =>
+        (string.IsNullOrWhiteSpace(_search) ||
+            i.ProcessName.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            i.EntityId.Contains(_search, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrWhiteSpace(_statusFilter) || i.Status == _statusFilter) &&
+        (string.IsNullOrWhiteSpace(_typeFilter)   || i.ProcessType == _typeFilter));
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/field/current/process/instances
+        _instances = new List<InstanceRow>
+        {
+            new("PI-001", "Exploratory Well Drilling Approval",      "EXPLORATION",    "W-001",   "S3 Gate 1 Review",    "IN_PROGRESS", DateTime.Today.AddDays(-5),  "john.doe"),
+            new("PI-002", "Reservoir Development Planning",           "DEVELOPMENT",    "RES-012", "S2 Geo Review",       "IN_PROGRESS", DateTime.Today.AddDays(-12), "jane.smith"),
+            new("PI-003", "Facility Decommissioning Authorization",   "DECOMMISSIONING","FAC-003", "S1 Screening",        "SUSPENDED",   DateTime.Today.AddDays(-30), "ops.manager"),
+            new("PI-004", "Well P&A Authorization",                   "DECOMMISSIONING","W-045",   "S5 Permit",           "IN_PROGRESS", DateTime.Today.AddDays(-2),  "john.doe"),
+            new("PI-005", "Production Allocation Approval",           "PRODUCTION",     "FIELD-1", "S1 Setup",            "NOT_STARTED", DateTime.Today,              "auto"),
+            new("PI-006", "Seismic Survey Authorization",             "EXPLORATION",    "SRV-009", "S8 Approval",         "COMPLETED",   DateTime.Today.AddDays(-45), "jane.smith"),
+        };
+    }
+
+    private record InstanceRow(
+        string InstanceId, string ProcessName, string ProcessType,
+        string EntityId, string CurrentStepName, string Status,
+        DateTime StartedAt, string StartedBy);
+}

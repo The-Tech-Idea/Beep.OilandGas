@@ -67,5 +67,12 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             get { return this.ROW_IDValue; }
             set { SetProperty(ref ROW_IDValue, value); }
         }
+
+        private System.String REMARKSValue;
+        public System.String REMARKS
+        {
+            get { return this.REMARKSValue; }
+            set { SetProperty(ref REMARKSValue, value); }
+        }
     }
 }

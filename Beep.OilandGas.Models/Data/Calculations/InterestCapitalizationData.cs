@@ -5,6 +5,18 @@ namespace Beep.OilandGas.Models.Data.Calculations
 {
     public class InterestCapitalizationData : ModelEntityBase
     {
+        private string? PropertyIdValue;
+
+        public string? PropertyId
+
+        {
+
+            get { return this.PropertyIdValue; }
+
+            set { SetProperty(ref PropertyIdValue, value); }
+
+        }
+
         /// <summary>
         /// Total construction in progress cost
         /// </summary>

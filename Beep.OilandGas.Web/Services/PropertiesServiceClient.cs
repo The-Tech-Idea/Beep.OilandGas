@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beep.OilandGas.HeatMap;
-using Beep.OilandGas.HeatMap.Configuration;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.HeatMap;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.Web.Services

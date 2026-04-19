@@ -122,73 +122,22 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
 
         public async Task<bool> UpdateUserPreferencesAsync(string userId, string preferencesJson)
         {
-            try
-            {
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(object), _connectionName, "USER_PROFILE");
-
-                // Update USER_PREFERENCES field
-                // await repo.UpdateAsync(...);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await UpsertUserProfileFieldAsync(userId, "USER_PREFERENCES", preferencesJson);
         }
 
         public async Task<bool> UpdateUserPrimaryRoleAsync(string userId, string primaryRole)
         {
-            try
-            {
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(object), _connectionName, "USER_PROFILE");
-
-                // Update PRIMARY_ROLE field
-                // await repo.UpdateAsync(...);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await UpsertUserProfileFieldAsync(userId, "PRIMARY_ROLE", primaryRole);
         }
 
         public async Task<bool> UpdateUserPreferredLayoutAsync(string userId, string preferredLayout)
         {
-            try
-            {
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(object), _connectionName, "USER_PROFILE");
-
-                // Update PREFERRED_LAYOUT field
-                // await repo.UpdateAsync(...);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await UpsertUserProfileFieldAsync(userId, "PREFERRED_LAYOUT", preferredLayout);
         }
 
         public async Task RecordUserLoginAsync(string userId)
         {
-            try
-            {
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(object), _connectionName, "USER_PROFILE");
-
-                // Update LAST_LOGIN_DATE to current date
-                // await repo.UpdateAsync(...);
-            }
-            catch
-            {
-                // Log error
-            }
+            await UpsertUserProfileFieldAsync(userId, "LAST_LOGIN_DATE", DateTime.UtcNow);
         }
 
         private async Task<UserProfile> CreateDefaultProfileAsync(string userId)
@@ -203,6 +152,64 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                 Active = true,
                 Roles = new List<string>()
             };
+        }
+
+        private async Task<bool> UpsertUserProfileFieldAsync(string userId, string fieldName, object? fieldValue)
+        {
+            try
+            {
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(object), _connectionName, "USER_PROFILE");
+
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "USER_ID", Operator = "=", FilterValue = userId },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var results = await repo.GetAsync(filters);
+                var existing = results?.FirstOrDefault();
+
+                if (existing != null)
+                {
+                    SetPropertyValue(existing, fieldName, fieldValue);
+                    SetPropertyValue(existing, "ROW_CHANGED_BY", userId);
+                    SetPropertyValue(existing, "ROW_CHANGED_DATE", DateTime.UtcNow);
+                    await repo.UpdateAsync(existing, userId);
+                }
+                else
+                {
+                    var insertObj = new Dictionary<string, object?>
+                    {
+                        ["USER_ID"] = userId,
+                        [fieldName] = fieldValue,
+                        ["ACTIVE_IND"] = "Y",
+                        ["ROW_CREATED_BY"] = userId,
+                        ["ROW_CREATED_DATE"] = DateTime.UtcNow,
+                        ["ROW_CHANGED_BY"] = userId,
+                        ["ROW_CHANGED_DATE"] = DateTime.UtcNow
+                    };
+                    await repo.InsertAsync(insertObj, userId);
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static void SetPropertyValue(object obj, string key, object? value)
+        {
+            if (obj is IDictionary<string, object> dict)
+            {
+                dict[key] = value!;
+                return;
+            }
+            var prop = obj.GetType().GetProperty(key,
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+            prop?.SetValue(obj, value);
         }
 
         private object? GetPropertyValue(object obj, string propertyName)

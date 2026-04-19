@@ -14,7 +14,7 @@
 <MudLayout>
     @if (!_isLandingPage)
     {
-        <MudAppBar Elevation="1" Style="background: var(--mud-palette-primary);">
+        <MudAppBar Elevation="1" Color="Color.Primary">
             <MudNavLink Href="/" Match="NavLinkMatch.All" Class="app-logo-link">
                 <img src="@(_branding.LogoUrl ?? "/imgs/BeepOGDM.png")" 
                      alt="@(_branding.AppName ?? "Beep Oil & Gas")" 
@@ -24,39 +24,39 @@
             <MudSpacer />
             
             <!-- Horizontal Navigation Menu -->
-            <div style="display: flex; align-items: center; height: 100%;">
+            <div class="og-nav-wrapper">
                 <NavMenu />
             </div>
             <MudSpacer />
             
             <!-- User Actions - Single Icon with Menu -->
-            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Style="margin-right: 8px;">
+            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Class="mr-2">
                 <ActivatorContent>
                     <MudIconButton Icon="@(_isAuthenticated ? Icons.Material.Filled.AccountCircle : Icons.Material.Filled.Login)"
                                    Color="Color.Inherit"
-                                   Style="color: white;"
+
                                    Title="@(_isAuthenticated ? "User Account" : "Login")" />
                 </ActivatorContent>
                 <ChildContent>
                     @if (_isAuthenticated)
                     {
                         <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/profile"); })">
-                            <MudIcon Icon="@Icons.Material.Filled.Person" Style="margin-right: 8px;" />
+                            <MudIcon Icon="@Icons.Material.Filled.Person" Class="mr-2" />
                             Profile
                         </MudMenuItem>
                         <MudMenuItem OnClick="@Logout">
-                            <MudIcon Icon="@Icons.Material.Filled.Logout" Style="margin-right: 8px;" />
+                            <MudIcon Icon="@Icons.Material.Filled.Logout" Class="mr-2" />
                             Logout
                         </MudMenuItem>
                     }
                     else
                     {
                         <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/login"); })">
-                            <MudIcon Icon="@Icons.Material.Filled.Login" Style="margin-right: 8px;" />
+                            <MudIcon Icon="@Icons.Material.Filled.Login" Class="mr-2" />
                             Login
                         </MudMenuItem>
                         <MudMenuItem OnClick="@(() => { NavigationManager.NavigateTo("/register"); })">
-                            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Style="margin-right: 8px;" />
+                            <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Class="mr-2" />
                             Register
                         </MudMenuItem>
                     }
@@ -66,7 +66,7 @@
             <!-- Theme Toggle -->
             <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
                            Color="Color.Inherit"
-                           Style="color: white; margin-right: 16px;"
+                           Class="mr-4"
                            OnClick="@ToggleDarkMode"
                            Title="@(_isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode")" />
         </MudAppBar>
@@ -74,22 +74,22 @@
     
     <MudMainContent>
         <ConnectionCheck />
-        <div style="min-height: calc(100vh - 140px);">
+        <div class="og-main-content">
             <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
                 @Body
             </MudContainer>
         </div>
         
         <!-- Footer -->
-        <MudPaper Elevation="0" Style="background: var(--mud-palette-surface); border-top: 1px solid var(--mud-palette-divider); margin-top: auto;">
+        <MudPaper Elevation="0" Class="og-footer">
             <MudContainer MaxWidth="MaxWidth.False" Class="py-3">
                 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
                         @(_branding.Copyright ?? $"© {DateTime.Now.Year} {(_branding.AppName ?? "Beep Oil & Gas")}. All rights reserved.")
                     </MudText>
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                        <img src="/imgs/companylogo.svg" alt="The Tech Idea" style="height: 20px; width: auto;" onerror="this.style.display='none';" />
-                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); display: flex; align-items: center; gap: 4px;">
+                        <img src="/imgs/companylogo.svg" alt="The Tech Idea" class="og-footer-logo" onerror="this.style.display='none';" />
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
                             Powered by <strong>The Tech Idea</strong>™
                         </MudText>
                     </MudStack>

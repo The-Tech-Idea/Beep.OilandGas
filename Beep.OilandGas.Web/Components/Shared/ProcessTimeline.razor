@@ -1,0 +1,39 @@
+@* ProcessTimeline — renders an ordered process timeline from a list of steps *@
+<MudTimeline TimelineOrientation="TimelineOrientation.Vertical"
+             TimelinePosition="TimelinePosition.Left"
+             Class="pt-2">
+    @for (int i = 0; i < Steps.Count; i++)
+    {
+        var step = Steps[i];
+        var color = step.IsCompleted ? Color.Success
+                  : step.IsActive    ? Color.Primary
+                                     : Color.Default;
+        var icon = step.IsCompleted ? Icons.Material.Filled.CheckCircle
+                 : step.IsActive    ? Icons.Material.Filled.PlayCircle
+                                    : Icons.Material.Outlined.Circle;
+        var overrideIcon = !string.IsNullOrWhiteSpace(step.Icon) ? step.Icon : icon;
+
+        <MudTimelineItem Color="@color"
+                         Icon="@overrideIcon"
+                         Size="Size.Small">
+            <ItemOpposite>
+                @if (!string.IsNullOrWhiteSpace(step.Date))
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">@step.Date</MudText>
+                }
+            </ItemOpposite>
+            <ItemContent>
+                <MudText Typo="Typo.body2" Color="@(step.IsActive ? Color.Primary : Color.Default)">
+                    @step.Name
+                </MudText>
+            </ItemContent>
+        </MudTimelineItem>
+    }
+</MudTimeline>
+
+@code {
+    [Parameter] public List<ProcessStep> Steps { get; set; } = new();
+    [Parameter] public int CurrentStepIndex { get; set; }
+}
+
+

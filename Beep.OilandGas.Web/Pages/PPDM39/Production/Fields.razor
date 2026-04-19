@@ -3,34 +3,92 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<PageTitle>Fields - PPDM39</PageTitle>
+<PageTitle>Monitor Production Field Register</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudText Typo="Typo.h4" Class="mb-4">Fields</MudText>
-    
-    <MudPaper Class="pa-4">
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
-        }
-        
-        @if (_fields != null && _fields.Any())
-        {
-            <MudTable Items="@_fields" Hover="true" Dense="true">
-                <HeaderContent>
-                    <MudTh>Field ID</MudTh>
-                    <MudTh>Field Name</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Field ID">@GetPropertyValue(context, "FIELD_ID")</MudTd>
-                    <MudTd DataLabel="Field Name">@GetPropertyValue(context, "FIELD_NAME")</MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-    </MudPaper>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Monitor Production Field Register</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Active producing fields</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Success"
+                         Icon="@Icons.Material.Filled.OilBarrel">Production</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Add">Register Field</MudButton>
+    </MudStack>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ── KPI Row ─────────────────────────────────────────────────────── *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Total Fields" Value="@((_fields?.Count ?? 0).ToString())"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.OilBarrel"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="All registered fields" />
+        </MudItem>
+    </MudGrid>
+
+    @* ── Fields Grid ─────────────────────────────────────────────────── *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_fields != null && _fields.Any())
+            {
+                <MudDataGrid T="FIELD" Items="@_fields" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <TemplateColumn Title="Field ID">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "FIELD_ID")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Field Name">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2" Color="Color.Primary">
+                                    @GetPropertyValue(context.Item, "FIELD_NAME")
+                                </MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Type">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "FIELD_TYPE")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Color="Color.Secondary"
+                                     Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No fields match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Color="Color.Secondary"
+                             Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No fields registered</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        No production fields have been loaded for this session.
+                    </MudText>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private List<FIELD>? _fields;
     private bool _isLoading = false;
 

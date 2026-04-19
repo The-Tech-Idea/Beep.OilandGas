@@ -1,0 +1,42 @@
+@* KpiCard — reusable KPI display for all engineer dashboards *@
+<MudCard Elevation="2" Class="kpi-card h-100">
+    <MudCardContent Class="pa-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="kpi-label">@Label</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="1">
+                    <MudText Typo="Typo.h4" Color="@ValueColor" Class="kpi-value">@Value</MudText>
+                    @if (!string.IsNullOrWhiteSpace(Unit))
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@Unit</MudText>
+                    }
+                </MudStack>
+                @if (!string.IsNullOrWhiteSpace(TrendText))
+                {
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="0">
+                        @if (!string.IsNullOrWhiteSpace(TrendIcon))
+                        {
+                            <MudIcon Icon="@TrendIcon" Color="@TrendColor" Size="Size.Small" />
+                        }
+                        <MudText Typo="Typo.caption" Color="@TrendColor">@TrendText</MudText>
+                    </MudStack>
+                }
+            </MudStack>
+            @if (!string.IsNullOrWhiteSpace(Icon))
+            {
+                <MudIcon Icon="@Icon" Color="@ValueColor" Class="kpi-bg-icon" />
+            }
+        </MudStack>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public string Unit { get; set; } = string.Empty;
+    [Parameter] public Color ValueColor { get; set; } = Color.Primary;
+    [Parameter] public string TrendIcon { get; set; } = string.Empty;
+    [Parameter] public Color TrendColor { get; set; } = Color.Success;
+    [Parameter] public string TrendText { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = string.Empty;
+}

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,7 +23,7 @@ namespace Beep.OilandGas.FlashCalculations.Services
     /// Service for flash calculation operations.
     /// Uses PPDMGenericRepository for data persistence following LifeCycle patterns.
     /// </summary>
-    public class FlashCalculationService : IFlashCalculationService
+    public partial class FlashCalculationService : IFlashCalculationService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;

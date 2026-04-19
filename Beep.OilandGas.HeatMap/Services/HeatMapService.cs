@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Beep.OilandGas.HeatMap.Configuration;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.HeatMap;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -15,8 +14,8 @@ using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 using SkiaSharp;
-using Beep.OilandGas.Models.Data.HeatMap;
 using Beep.OilandGas.PPDM.Models;
+using HeatMapConfigModel = Beep.OilandGas.Models.Data.HeatMap.HEAT_MAP_CONFIGURATION;
 
 namespace Beep.OilandGas.HeatMap.Services
 {
@@ -100,9 +99,9 @@ namespace Beep.OilandGas.HeatMap.Services
 
             // Create repository for HEAT_MAP_CONFIGURATION
             var configRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(HEAT_MAP_CONFIGURATION), _connectionName, "HEAT_MAP_CONFIGURATION", null);
+                typeof(HeatMapConfigModel), _connectionName, "HEAT_MAP_CONFIGURATION", null);
 
-            var newEntity = new HEAT_MAP_CONFIGURATION
+            var newEntity = new HeatMapConfigModel
             {
                 HEAT_MAP_ID = configuration.ConfigurationId,
                 CONFIGURATION_NAME = configuration.ConfigurationName ?? string.Empty,
@@ -132,7 +131,7 @@ namespace Beep.OilandGas.HeatMap.Services
 
             // Create repository for HEAT_MAP_CONFIGURATION
             var configRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
-                typeof(HEAT_MAP_CONFIGURATION), _connectionName, "HEAT_MAP_CONFIGURATION", null);
+                typeof(HeatMapConfigModel), _connectionName, "HEAT_MAP_CONFIGURATION", null);
 
             var filters = new List<AppFilter>
             {
@@ -140,7 +139,7 @@ namespace Beep.OilandGas.HeatMap.Services
                 new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
             var entities = await configRepo.GetAsync(filters);
-            var entity = entities.Cast<HEAT_MAP_CONFIGURATION>().FirstOrDefault();
+            var entity = entities.Cast<HeatMapConfigModel>().FirstOrDefault();
 
             if (entity == null)
             {
@@ -150,9 +149,9 @@ namespace Beep.OilandGas.HeatMap.Services
 
             var config = new HeatMapConfigurationRecord
             {
-                ConfigurationId = entity.map_id ?? string.Empty,
-                ConfigurationName = entity.config_name ?? string.Empty,
-                CreatedDate = entity.row_created_date ?? DateTime.UtcNow
+                ConfigurationId = entity.HEAT_MAP_ID ?? string.Empty,
+                ConfigurationName = entity.CONFIGURATION_NAME ?? string.Empty,
+                CreatedDate = DateTime.UtcNow
             };
 
             _logger?.LogInformation("Successfully retrieved heat map configuration {HeatMapId}", heatMapId);

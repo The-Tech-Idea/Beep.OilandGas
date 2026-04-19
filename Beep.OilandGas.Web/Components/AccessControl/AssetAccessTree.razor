@@ -13,7 +13,7 @@
     }
     else if (_hierarchy != null)
     {
-        <MudList>
+        <MudList T="string">
             @RenderTreeNode(_hierarchy, 0)
         </MudList>
     }
@@ -97,7 +97,7 @@
             
             if (node.UserHasAccess)
             {
-                builder.OpenComponent<MudListItem>(2);
+                builder.OpenComponent<MudListItem<string>>(2);
                 builder.AddAttribute(3, "OnClick", EventCallback.Factory.Create(this, () => HandleNodeClick(node)));
                 builder.AddAttribute(4, "Style", "cursor: pointer;");
                 builder.AddAttribute(5, "ChildContent", (RenderFragment)((b) =>
@@ -118,7 +118,7 @@
                         c.AddContent(16, node.AssetName ?? node.AssetId);
                         c.CloseComponent();
                         
-                        c.OpenComponent<MudChip>(17);
+                        c.OpenComponent<MudChip<string>>(17);
                         c.AddAttribute(18, "Size", Size.Small);
                         c.AddAttribute(19, "Color", Color.Success);
                         c.AddContent(20, "Access");
@@ -130,7 +130,7 @@
             }
             else
             {
-                builder.OpenComponent<MudListItem>(21);
+                builder.OpenComponent<MudListItem<string>>(21);
                 builder.AddAttribute(22, "Style", "opacity: 0.5;");
                 builder.AddAttribute(23, "ChildContent", (RenderFragment)((b) =>
                 {
@@ -151,7 +151,7 @@
                         c.AddContent(35, node.AssetName ?? node.AssetId);
                         c.CloseComponent();
                         
-                        c.OpenComponent<MudChip>(36);
+                        c.OpenComponent<MudChip<string>>(36);
                         c.AddAttribute(37, "Size", Size.Small);
                         c.AddAttribute(38, "Color", Color.Default);
                         c.AddContent(39, "No Access");
@@ -196,3 +196,4 @@
         };
     }
 }
+

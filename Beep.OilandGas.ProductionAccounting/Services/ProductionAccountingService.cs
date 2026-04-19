@@ -33,7 +33,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly IFullCostService _fcService;
         private readonly IAmortizationService _amortizationService;
         private readonly IJournalEntryService _glService;
-        private readonly IAccountingService _accountingServices;
+        private readonly IAccountingServices? _accountingServices;
         private readonly IRevenueService _revenueService;
         private readonly IMeasurementService _measurementService;
         private readonly IPricingService _pricingService;
@@ -67,7 +67,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             ICommonColumnHandler commonColumnHandler,
             IPPDM39DefaultsRepository defaults,
             ILogger<ProductionAccountingService> logger = null,
-            IAccountingService accountingServices = null,
+            IAccountingServices? accountingServices = null,
             ITakeOrPayService takeOrPayService = null,
             IProductionTaxService productionTaxService = null)
         {

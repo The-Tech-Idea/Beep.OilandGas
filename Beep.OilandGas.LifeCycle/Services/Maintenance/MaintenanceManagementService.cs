@@ -7,6 +7,8 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.LifeCycle.Services.WorkOrder;
 using TheTechIdea.Beep.Editor;
@@ -110,6 +112,26 @@ namespace Beep.OilandGas.LifeCycle.Services.Maintenance
             {
                 _logger?.LogInformation("Maintenance executed: {MaintenanceId}, Date: {ExecutionDate}, By: {ExecutedBy}", 
                     request.MaintenanceId, request.ExecutionDate, request.ExecutedBy);
+                var meta = await _metadata.GetTableMetadataAsync("FACILITY_MAINTAIN");
+                if (meta != null)
+                {
+                    var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(FACILITY_MAINTAIN), _connectionName, "FACILITY_MAINTAIN", null);
+                    var rec = new FACILITY_MAINTAIN
+                    {
+                        FACILITY_ID = _defaults.FormatIdForTable("FACILITY_MAINTAIN", request.MaintenanceId),
+                        FACILITY_TYPE = "GENERIC",
+                        MAINTAIN_ID = Guid.NewGuid().ToString("N").Substring(0, 16),
+                        MAINTAIN_TYPE = "EXECUTION",
+                        ACTUAL_END_DATE = request.ExecutionDate,
+                        MAINTAIN_BA_ID = request.ExecutedBy,
+                        REMARK = request.WorkPerformed ?? request.Status,
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (rec is IPPDMEntity e) _commonColumnHandler.PrepareForInsert(e, userId);
+                    await repo.InsertAsync(rec, userId);
+                }
                 return true;
             }
             catch (Exception ex)
@@ -177,10 +199,77 @@ namespace Beep.OilandGas.LifeCycle.Services.Maintenance
         {
             try
             {
-                _logger?.LogInformation("Retrieving maintenance history for {EntityType}: {EntityId}", 
+                _logger?.LogInformation("Retrieving maintenance history for {EntityType}: {EntityId}",
                     request.EntityType, request.EntityId);
-                
-                return new List<MaintenanceResponse>();
+
+                var isWell = string.Equals(request.EntityType, "WELL", StringComparison.OrdinalIgnoreCase);
+                var results = new List<MaintenanceResponse>();
+
+                if (isWell)
+                {
+                    // Query WELL_ACTIVITY for maintenance events on a well
+                    var actMeta = await _metadata.GetTableMetadataAsync("WELL_ACTIVITY");
+                    if (actMeta != null)
+                    {
+                        var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                            typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                        var filters = new List<AppFilter>
+                        {
+                            new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = _defaults.FormatIdForTable("WELL_ACTIVITY", request.EntityId) },
+                            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                        };
+                        var rows = await actRepo.GetAsync(filters);
+                        foreach (var r in rows ?? Enumerable.Empty<object>())
+                        {
+                            var act = r as WELL_ACTIVITY;
+                            if (act == null) continue;
+                            var actType = act.ACTIVITY_TYPE_ID ?? string.Empty;
+                            if (!actType.StartsWith("MAINT_", StringComparison.OrdinalIgnoreCase)) continue;
+                            results.Add(new MaintenanceResponse
+                            {
+                                MaintenanceId = act.PPDM_GUID ?? Guid.NewGuid().ToString(),
+                                EntityId = request.EntityId,
+                                EntityType = "WELL",
+                                MaintenanceType = actType.Substring(6), // strip "MAINT_"
+                                ScheduledDate = act.EVENT_DATE,
+                                Status = "COMPLETED"
+                            });
+                        }
+                    }
+                }
+                else
+                {
+                    // Query FACILITY_MAINTAIN for facility/pipeline maintenance records
+                    var maintMeta = await _metadata.GetTableMetadataAsync("FACILITY_MAINTAIN");
+                    if (maintMeta != null)
+                    {
+                        var maintRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                            typeof(FACILITY_MAINTAIN), _connectionName, "FACILITY_MAINTAIN", null);
+                        var filters = new List<AppFilter>
+                        {
+                            new AppFilter { FieldName = "FACILITY_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("FACILITY_MAINTAIN", request.EntityId) },
+                            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                        };
+                        var rows = await maintRepo.GetAsync(filters);
+                        foreach (var r in rows ?? Enumerable.Empty<object>())
+                        {
+                            var maint = r as FACILITY_MAINTAIN;
+                            if (maint == null) continue;
+                            results.Add(new MaintenanceResponse
+                            {
+                                MaintenanceId = maint.MAINTAIN_ID ?? Guid.NewGuid().ToString(),
+                                EntityId = request.EntityId,
+                                EntityType = request.EntityType,
+                                MaintenanceType = maint.MAINTAIN_TYPE ?? string.Empty,
+                                ScheduledDate = maint.SCHEDULE_START_DATE,
+                                CompletedDate = maint.ACTUAL_END_DATE,
+                                Status = maint.ACTUAL_END_DATE != null ? "COMPLETED" : "SCHEDULED"
+                            });
+                        }
+                    }
+                }
+
+                return results;
             }
             catch (Exception ex)
             {

@@ -3,71 +3,161 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<PageTitle>Well Tests - Production</PageTitle>
+<PageTitle>Analyse Well Test Results</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Well Tests</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
-    <MudPaper Class="pa-4">
-        <MudStack Spacing="3" Class="mb-4">
-            <MudTextField @bind-Value="@_wellIdFilter" 
-                         Label="Well ID Filter" 
-                         Variant="Variant.Outlined" 
-                         Adornment="Adornment.End"
-                         AdornmentIcon="@Icons.Material.Filled.Search"
-                         OnAdornmentClick="LoadWellTests"
-                         Immediate="true" />
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Analyse Well Test Results</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Flow-rate test history per well</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Success"
+                         Icon="@Icons.Material.Filled.Science">Production</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
 
+    @* ── Well Search ───────────────────────────────────────────────── *@
+    <MudCard Elevation="1" Class="mb-4">
+        <MudCardContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudTextField @bind-Value="@_wellIdFilter"
+                              Label="Well UWI / ID"
+                              Placeholder="Enter well identifier"
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              OnAdornmentClick="LoadWellTests"
+                              Immediate="true"
+                              Class="og-grow" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Search"
+                           OnClick="LoadWellTests" Disabled="@_isLoading">
+                    Load Tests
+                </MudButton>
+            </MudStack>
             @if (!string.IsNullOrWhiteSpace(_selectedWellId))
             {
-                <MudText Typo="Typo.body1">Showing tests for Well: <strong>@_selectedWellId</strong></MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+                    Showing tests for well <strong>@_selectedWellId</strong>
+                </MudText>
             }
-        </MudStack>
+        </MudCardContent>
+    </MudCard>
 
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-        }
-        else if (_wellTests != null && _wellTests.Any())
-        {
-            <MudTable Items="@_wellTests" Hover="true" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh>Test ID</MudTh>
-                    <MudTh>Well ID</MudTh>
-                    <MudTh>Test Date</MudTh>
-                    <MudTh>Test Type</MudTh>
-                    <MudTh>Oil Rate (bbl/d)</MudTh>
-                    <MudTh>Gas Rate (Mscf/d)</MudTh>
-                    <MudTh>Water Rate (bbl/d)</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Test ID">@GetPropertyValue(context, "WELL_TEST_ID")</MudTd>
-                    <MudTd DataLabel="Well ID">@GetPropertyValue(context, "WELL_ID")</MudTd>
-                    <MudTd DataLabel="Test Date">@FormatDate(GetPropertyValue(context, "TEST_DATE"))</MudTd>
-                    <MudTd DataLabel="Test Type">@GetPropertyValue(context, "TEST_TYPE")</MudTd>
-                    <MudTd DataLabel="Oil Rate">@FormatDecimal(GetPropertyValue(context, "OIL_RATE"))</MudTd>
-                    <MudTd DataLabel="Gas Rate">@FormatDecimal(GetPropertyValue(context, "GAS_RATE"))</MudTd>
-                    <MudTd DataLabel="Water Rate">@FormatDecimal(GetPropertyValue(context, "WATER_RATE"))</MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-        else if (!_isLoading)
-        {
-            <MudAlert Severity="Severity.Info">
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ── KPI Row (only when tests are loaded) ──────────────────────────── *@
+    @if (_wellTests != null && _wellTests.Any())
+    {
+        <MudGrid Class="mb-4" Spacing="3">
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="Total Tests" Value="@((_wellTests?.Count ?? 0).ToString())"
+                         ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Science"
+                         TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                         TrendText="All test records" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="Avg Oil (bbl/d)"
+                         Value="@((_wellTests?.Average(t => (double)t.OIL_FLOW_AMOUNT)).GetValueOrDefault().ToString("F0"))"
+                         ValueColor="Color.Success" Icon="@Icons.Material.Filled.OilBarrel"
+                         TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                         TrendText="Mean oil rate" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="Avg Gas (Mscf/d)"
+                         Value="@((_wellTests?.Average(t => (double)t.GAS_FLOW_AMOUNT)).GetValueOrDefault().ToString("F0"))"
+                         ValueColor="Color.Info" Icon="@Icons.Material.Filled.LocalGasStation"
+                         TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                         TrendText="Mean gas rate" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="Avg Water Cut (%)"
+                         Value="@((_wellTests?.Average(t => (double)t.BSW_PERCENT)).GetValueOrDefault().ToString("F1"))"
+                         ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Water"
+                         TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                         TrendText="Mean BSW" />
+            </MudItem>
+        </MudGrid>
+
+        @* ── Tests Grid ────────────────────────────────────────────────── *@
+        <MudCard Elevation="2">
+            <MudCardContent Class="pa-0">
+                <MudDataGrid T="WELL_TEST" Items="@_wellTests" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <PropertyColumn Property="t => t.UWI" Title="Well UWI" />
+                        <PropertyColumn Property="t => t.TEST_TYPE" Title="Test Type" />
+                        <TemplateColumn Title="Test Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">
+                                    @(context.Item.TEST_DATE?.ToString("dd MMM yyyy") ?? "—")
+                                </MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="t => t.RUN_NUM" Title="Run No." />
+                        <TemplateColumn Title="Oil (bbl/d)">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.OIL_FLOW_AMOUNT.ToString("F1")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Gas (Mscf/d)">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.GAS_FLOW_AMOUNT.ToString("F1")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Water (bbl/d)">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.WATER_FLOW_AMOUNT.ToString("F1")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="BSW (%)">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.BSW_PERCENT.ToString("F1")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Science" Color="Color.Secondary"
+                                     Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No tests match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            </MudCardContent>
+        </MudCard>
+    }
+    else if (!_isLoading)
+    {
+        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+            <MudIcon Icon="@Icons.Material.Filled.Science" Color="Color.Secondary"
+                     Class="og-icon-xl" />
+            <MudText Typo="Typo.h6">
                 @if (string.IsNullOrWhiteSpace(_selectedWellId))
                 {
-                    <MudText>Enter a Well ID to view well tests for the current field.</MudText>
+                    <span>Enter a well UWI to load test history</span>
                 }
                 else
                 {
-                    <MudText>No well tests found for well @_selectedWellId.</MudText>
+                    <span>No tests found for well @_selectedWellId</span>
                 }
-            </MudAlert>
-        }
-    </MudPaper>
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Use the search box above to look up a specific well.
+            </MudText>
+        </MudStack>
+    }
+
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private List<WELL_TEST>? _wellTests;
     private bool _isLoading = false;
     private string? _wellIdFilter;

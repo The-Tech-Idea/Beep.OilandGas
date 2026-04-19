@@ -29,7 +29,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             try
             {
-                var result = _service.CalculateNPV(request.CashFlows, request.DISCOUNT_RATE);
+                var result = _service.CalculateNPV(ToCashFlows(request.CashFlows), request.DISCOUNT_RATE);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -44,7 +44,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             try
             {
-                var result = _service.CalculateIRR(request.CashFlows, request.InitialGuess);
+                var result = _service.CalculateIRR(ToCashFlows(request.CashFlows), request.InitialGuess);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -60,7 +60,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             try
             {
                 var result = _service.Analyze(
-                    request.CashFlows,
+                    ToCashFlows(request.CashFlows),
                     request.DISCOUNT_RATE,
                     request.FinanceRate,
                     request.ReinvestRate);
@@ -79,7 +79,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             try
             {
                 var result = _service.GenerateNPVProfile(
-                    request.CashFlows,
+                    ToCashFlows(request.CashFlows),
                     request.MinRate,
                     request.MaxRate,
                     request.Points);
@@ -125,6 +125,13 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         }
 
         private string GetUserId() => User.FindFirst("sub")?.Value ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
+
+        private static CashFlow[] ToCashFlows(List<double>? values)
+        {
+            return values?
+                .Select((amount, index) => new CashFlow(index, amount))
+                .ToArray() ?? Array.Empty<CashFlow>();
+        }
     }
 }
 

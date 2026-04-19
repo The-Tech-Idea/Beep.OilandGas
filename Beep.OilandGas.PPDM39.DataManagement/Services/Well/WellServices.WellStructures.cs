@@ -215,6 +215,60 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
             return result as WELL_XREF;
         }
 
+        /// <summary>
+        /// Soft-deletes a WELL_XREF entry (sets ACTIVE_IND = 'N').
+        /// </summary>
+        /// <param name="uwi">Parent well UWI.</param>
+        /// <param name="xrefType">XREF_TYPE value (e.g., "WELLBORE").</param>
+        /// <param name="xrefId">XREF_ID of the entry to remove.</param>
+        /// <param name="userId">User performing the deletion.</param>
+        public async Task<bool> DeleteWellStructureAsync(string uwi, string xrefType, string xrefId, string userId)
+        {
+            if (string.IsNullOrWhiteSpace(uwi))
+                throw new ArgumentException("UWI cannot be null or empty", nameof(uwi));
+            if (string.IsNullOrWhiteSpace(xrefId))
+                throw new ArgumentException("XREF_ID cannot be null or empty", nameof(xrefId));
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "UWI",       FilterValue = uwi,      Operator = "=" },
+                new AppFilter { FieldName = "XREF_ID",   FilterValue = xrefId,   Operator = "=" },
+                new AppFilter { FieldName = "ACTIVE_IND", FilterValue = _defaults.GetActiveIndicatorYes(), Operator = "=" }
+            };
+
+            if (!string.IsNullOrWhiteSpace(xrefType))
+                filters.Add(new AppFilter { FieldName = "XREF_TYPE", FilterValue = xrefType, Operator = "=" });
+
+            var result = await _wellXrefRepository.GetAsync(filters);
+            var target = result.OfType<WELL_XREF>().FirstOrDefault();
+            if (target == null)
+                return false;
+
+            return await _wellXrefRepository.SoftDeleteAsync(target.XREF_ID, userId);
+        }
+
+        /// <summary>
+        /// Returns all WELL_XREF entries of type WELLBORE for the given UWI.
+        /// Shortcut for <c>GetWellStructuresByUwiAsync</c> scoped to the wellbore XREF_TYPE.
+        /// </summary>
+        public async Task<List<WELL_XREF>> GetWellboresAsync(string uwi)
+        {
+            if (string.IsNullOrWhiteSpace(uwi))
+                throw new ArgumentException("UWI cannot be null or empty", nameof(uwi));
+
+            var xrefType = _defaults.GetWellboreXrefType();
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "UWI",       FilterValue = uwi,      Operator = "=" },
+                new AppFilter { FieldName = "XREF_TYPE", FilterValue = xrefType, Operator = "=" },
+                new AppFilter { FieldName = "ACTIVE_IND", FilterValue = _defaults.GetActiveIndicatorYes(), Operator = "=" }
+            };
+
+            var result = await _wellXrefRepository.GetAsync(filters);
+            return result.OfType<WELL_XREF>().ToList();
+        }
+
         #endregion
     }
 }

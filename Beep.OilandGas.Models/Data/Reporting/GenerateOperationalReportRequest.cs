@@ -50,5 +50,25 @@ namespace Beep.OilandGas.Models.Data.Reporting
             set { SetProperty(ref LeaseIdsValue, value); }
 
         }
+
+        public DateTime StartDate
+
+        {
+
+            get { return this.PeriodStartValue; }
+
+            set { SetProperty(ref PeriodStartValue, value); }
+
+        }
+
+        public DateTime EndDate
+
+        {
+
+            get { return this.PeriodEndValue; }
+
+            set { SetProperty(ref PeriodEndValue, value); }
+
+        }
     }
 }

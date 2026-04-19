@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.Models.Data.Accounting.Trading;
+using Beep.OilandGas.Models.Data.Trading;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
@@ -67,17 +67,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Trading
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                // Convert DTO to request for TradingService
-                var tradingRequest = new Beep.OilandGas.Models.Data.ProductionAccounting.CreateExchangeContractRequest
-                {
-                    ContractId = request.CONTRACT_ID,
-                    ContractName = request.CONTRACT_NAME,
-                    ContractType = request.CONTRACT_TYPE,
-                    EffectiveDate = request.EFFECTIVE_DATE,
-                    ExpirationDate = request.EXPIRATION_DATE
-                };
-
-                var contract = await _service.TradingService.RegisterContractAsync(tradingRequest, userId ?? "system", connectionName);
+                var contract = await _service.TradingService.RegisterContractAsync(request, userId ?? "system", connectionName);
                 return Ok(MapToExchangeContractDto(contract));
             }
             catch (Exception ex)

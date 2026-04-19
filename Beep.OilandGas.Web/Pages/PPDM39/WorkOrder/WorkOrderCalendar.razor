@@ -1,0 +1,183 @@
+@page "/ppdm39/workorder/calendar"
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+
+<PageTitle>Work Order Calendar</PageTitle>
+
+<MudStack Spacing="3">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack"
+                           Href="/ppdm39/workorder" Size="Size.Small" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h5">Schedule Work Orders</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @(_fieldName ?? "No active field") — 4-week calendar
+                </MudText>
+            </MudStack>
+        </MudStack>
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudIconButton Icon="@Icons.Material.Outlined.ChevronLeft"
+                           OnClick="PreviousWeek" />
+            <MudText Typo="Typo.subtitle2">
+                @_weekStart.ToString("dd MMM") – @_weekStart.AddDays(27).ToString("dd MMM yyyy")
+            </MudText>
+            <MudIconButton Icon="@Icons.Material.Outlined.ChevronRight"
+                           OnClick="NextWeek" />
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small"
+                       OnClick="GoToToday">Today</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                       StartIcon="@Icons.Material.Outlined.Refresh"
+                       OnClick="LoadCalendarAsync">Refresh</MudButton>
+        </MudStack>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else
+    {
+        @* ── 4-week grid ─────────────────────────────────────────────────── *@
+        <MudPaper Elevation="1" Class="pa-0" Style="overflow-x:auto">
+            <MudGrid Spacing="0">
+
+                @* Day-header row *@
+                @for (int d = 0; d < 28; d++)
+                {
+                    var day = _weekStart.AddDays(d);
+                    var isToday = day.Date == DateTime.Today;
+                    <MudItem xs="0" Style="@($"width:{100.0/28:F2}%;min-width:60px")">
+                        <MudPaper Elevation="0" Class="pa-1 text-center"
+                                  Style="@(isToday ? "background:var(--mud-palette-primary-lighten)" : string.Empty)">
+                            <MudText Typo="Typo.caption" Color="@(isToday ? Color.Primary : Color.Default)">
+                                @day.ToString("ddd")
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="@(isToday ? Color.Primary : Color.Secondary)">
+                                @day.ToString("d")
+                            </MudText>
+                        </MudPaper>
+                    </MudItem>
+                }
+
+                @* Calendar slots *@
+                @foreach (var slot in _slots)
+                {
+                    var startOffset = Math.Max(0, (slot.Start - _weekStart).TotalDays);
+                    var endOffset   = Math.Min(28, (slot.End - _weekStart).TotalDays);
+                    if (endOffset <= 0 || startOffset >= 28) continue;
+                    var left  = startOffset / 28.0 * 100;
+                    var width = (endOffset - startOffset) / 28.0 * 100;
+
+                    <MudItem xs="12" Style="position:relative;height:36px;overflow:visible">
+                        <MudTooltip Text="@($"{slot.InstanceId}: {slot.InstanceName} ({slot.State})")">
+                            <MudPaper Elevation="2"
+                                      Style="@($"position:absolute;left:{left:F1}%;width:{width:F1}%;top:4px;height:28px;background:{SlotColor(slot.State)};cursor:pointer;border-radius:4px")"
+                                      @onclick="() => NavigateToDetail(slot.InstanceId)">
+                                <MudText Typo="Typo.caption" Class="px-1"
+                                         Style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:28px">
+                                    @slot.InstanceName
+                                </MudText>
+                            </MudPaper>
+                        </MudTooltip>
+                    </MudItem>
+                }
+
+            </MudGrid>
+        </MudPaper>
+
+        @* ── Legend ──────────────────────────────────────────────────────── *@
+        <MudStack Row="true" Spacing="2" Class="mt-1" Wrap="Wrap.Wrap">
+            @foreach (var (label, color) in _legend)
+            {
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                    <div style="@($"width:14px;height:14px;background:{color};border-radius:3px")"></div>
+                    <MudText Typo="Typo.caption">@label</MudText>
+                </MudStack>
+            }
+        </MudStack>
+    }
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <MudAlert Severity="Severity.Error" ShowCloseIcon="true"
+                  CloseIconClicked="@(() => _error = null)">@_error</MudAlert>
+    }
+
+</MudStack>
+
+@code {
+    private List<CalendarSlot> _slots     = new();
+    private string?            _fieldName;
+    private DateTime           _weekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+    private bool               _loading;
+    private string?            _error;
+
+    private static readonly List<(string Label, string Color)> _legend = new()
+    {
+        ("Draft",       "#9e9e9e"),
+        ("Planned",     "#2196f3"),
+        ("In Progress", "#ff9800"),
+        ("Under Review","#9c27b0"),
+        ("Completed",   "#4caf50"),
+        ("Cancelled",   "#f44336"),
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _fieldName = (await ApiClient.GetAsync<dynamic>("/api/field/fields/active"))?.FieldName; }
+        catch { }
+        await LoadCalendarAsync();
+    }
+
+    private async Task LoadCalendarAsync()
+    {
+        _loading = true;
+        _error   = null;
+        try
+        {
+            var from  = _weekStart.ToString("o");
+            var to    = _weekStart.AddDays(28).ToString("o");
+            _slots = await ApiClient.GetAsync<List<CalendarSlot>>(
+                $"/api/field/current/workorder/calendar?from={Uri.EscapeDataString(from)}&to={Uri.EscapeDataString(to)}") ?? new();
+        }
+        catch (Exception ex) { _error = $"Failed to load calendar: {ex.Message}"; }
+        finally { _loading = false; }
+    }
+
+    private async Task PreviousWeek()
+    {
+        _weekStart = _weekStart.AddDays(-7);
+        await LoadCalendarAsync();
+    }
+
+    private async Task NextWeek()
+    {
+        _weekStart = _weekStart.AddDays(7);
+        await LoadCalendarAsync();
+    }
+
+    private async Task GoToToday()
+    {
+        _weekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek);
+        await LoadCalendarAsync();
+    }
+
+    private void NavigateToDetail(string instanceId) =>
+        NavigationManager.NavigateTo($"/ppdm39/workorder/{instanceId}");
+
+    private static string SlotColor(string state) => state switch
+    {
+        WorkOrderState.Draft       => "#9e9e9e",
+        WorkOrderState.Planned     => "#2196f3",
+        WorkOrderState.InProgress  => "#ff9800",
+        WorkOrderState.UnderReview => "#9c27b0",
+        WorkOrderState.Completed   => "#4caf50",
+        WorkOrderState.Cancelled   => "#f44336",
+        _                          => "#9e9e9e"
+    };
+}

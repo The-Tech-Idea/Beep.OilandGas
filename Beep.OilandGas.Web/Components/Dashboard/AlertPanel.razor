@@ -9,7 +9,8 @@
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
                                   Size="Size.Small"
-                                  OnClick="@RefreshAlerts" />
+                                  OnClick="@RefreshAlerts"
+                                  Title="Refresh alerts" />
                 }
             </MudStack>
             
@@ -19,17 +20,17 @@
             }
             else if (_alerts.Any())
             {
-                <MudList Dense="true">
+                <MudList T="string" Dense="true">
                     @foreach (var alert in _alerts)
                     {
-                        <MudListItem>
+                        <MudListItem T="string">
                             <MudAlert Severity="@alert.Severity" 
                                      Dense="true"
                                      Class="mb-2">
                                 <MudStack Spacing="1">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                                        <MudText Typo="Typo.body2" Style="font-weight: 600;">@alert.Title</MudText>
-                                        <MudChip Size="Size.Small" Color="@GetChipColor(alert.Severity)">
+                                        <MudText Typo="Typo.body2" Class="og-text-semibold">@alert.Title</MudText>
+                                        <MudChip T="string" Size="Size.Small" Color="@GetChipColor(alert.Severity)">
                                             @alert.Severity.ToString()
                                         </MudChip>
                                     </MudStack>
@@ -120,4 +121,6 @@
         height: 100%;
     }
 </style>
+
+
 

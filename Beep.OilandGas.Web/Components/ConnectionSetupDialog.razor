@@ -1,13 +1,16 @@
-@using Beep.OilandGas.ApiService.Models
+@using Beep.OilandGas.Models.Data.DataManagement
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Client.App
 @using System.Net.Http.Json
 @using TheTechIdea.Beep.ConfigUtil
+
+@inject IDataManagementService DataManagementService
 
 <MudDialog>
     <DialogContent>
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
             <MudText Typo="Typo.h5" Class="mb-4">
-                <MudIcon Icon="@Icons.Material.Filled.Database" Class="mr-2" />
+                <MudIcon Icon="@Icons.Material.Filled.Storage" Class="mr-2" />
                 Database Connection Setup
             </MudText>
             <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
@@ -196,12 +199,12 @@
                         <MudText Typo="Typo.body1" Class="mb-4">
                             The full database creation wizard will open in a new page. This process includes:
                         </MudText>
-                        <MudList>
-                            <MudListItem Icon="@Icons.Material.Filled.CheckCircle">Database type selection</MudListItem>
-                            <MudListItem Icon="@Icons.Material.Filled.CheckCircle">Connection configuration</MudListItem>
-                            <MudListItem Icon="@Icons.Material.Filled.CheckCircle">Script selection and execution</MudListItem>
-                            <MudListItem Icon="@Icons.Material.Filled.CheckCircle">Database creation</MudListItem>
-                            <MudListItem Icon="@Icons.Material.Filled.CheckCircle">Connection saving</MudListItem>
+                        <MudList T="string">
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle">Database type selection</MudListItem>
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle">Connection configuration</MudListItem>
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle">Script selection and execution</MudListItem>
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle">Database creation</MudListItem>
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle">Connection saving</MudListItem>
                         </MudList>
                         <MudButton Variant="Variant.Filled" 
                                   Color="Color.Primary" 
@@ -228,7 +231,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public bool IsBlocking { get; set; } = false;
     [Parameter] public EventCallback OnConnectionCreated { get; set; }
 
@@ -377,7 +380,7 @@
             var config = BuildConnectionConfig();
             var saveRequest = new SaveConnectionRequest
             {
-                Connection = config,
+                Connection = config.ToConnectionProperties(),
                 TestAfterSave = false,
                 OpenAfterSave = _setAsCurrent
             };
@@ -438,4 +441,7 @@
         MudDialog.Close(DialogResult.Ok(true));
     }
 }
+
+
+
 

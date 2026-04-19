@@ -1,0 +1,344 @@
+@page "/production/well-performance"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Optimise Well Performance</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Optimise Well Performance</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Analyse performance, identify deviation, and recommend action</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.OilBarrel">Production</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Download">Export Analysis</MudButton>
+    </MudStack>
+
+    @* ── Well selector bar ───────────────────────────────────────────────── *@
+    <MudPaper Elevation="1" Class="pa-3 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
+            <MudSelect T="string" Label="Select Well"
+                       Value="@_selectedWellId"
+                       ValueChanged="OnWellChanged"
+                       Variant="Variant.Outlined" Class="og-select-xl">
+                @foreach (var w in _wellOptions)
+                {
+                    <MudSelectItem Value="@w.Id">@w.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect T="string" Label="Period" @bind-Value="_period" Variant="Variant.Outlined" Class="og-select-md">
+                <MudSelectItem Value="@("30d")">Last 30 days</MudSelectItem>
+                <MudSelectItem Value="@("90d")">Last 90 days</MudSelectItem>
+                <MudSelectItem Value="@("180d")">Last 180 days</MudSelectItem>
+                <MudSelectItem Value="@("1y")">Last 12 months</MudSelectItem>
+            </MudSelect>
+            <StatusBadge Status="@_selectedWell.Status" />
+        </MudStack>
+    </MudPaper>
+
+    @* ── Well KPIs ────────────────────────────────────────────────────────── *@
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Actual Rate" Value="@_selectedWell.OilRate.ToString("N0")" Unit="BOPD"
+                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.OilBarrel"
+                     TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Warning" TrendText="-4% vs potential" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Potential Rate" Value="@_selectedWell.PotentialRate.ToString("N0")" Unit="BOPD"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Speed"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Stable" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Efficiency" Value="@EfficiencyPct" Unit="%"
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Percent"
+                     TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Warning" TrendText="Target: 95%" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Cumulative Oil" Value="@_selectedWell.CumOil.ToString("N0")" Unit="MBBL"
+                     ValueColor="Color.Default" Icon="@Icons.Material.Filled.Storage"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Since first oil" />
+        </MudItem>
+    </MudGrid>
+
+    @* ── Main Content ─────────────────────────────────────────────────────── *@
+    <MudGrid Spacing="3">
+
+        @* LEFT — Charts + DCA (8 cols) *@
+        <MudItem xs="12" lg="8">
+            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
+
+                <MudTabPanel Text="Rate vs Potential">
+                    <MudPaper Elevation="0" Class="pa-3">
+                        <MudChart ChartType="ChartType.Line"
+                                  ChartSeries="@_rateSeries"
+                                  XAxisLabels="@_rateLabels"
+                                  Width="100%"
+                                  Height="280px" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                            BOPD — Actual (blue) vs Potential (dashed) vs Target (green)
+                        </MudText>
+                    </MudPaper>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Pressure & GOR">
+                    <MudPaper Elevation="0" Class="pa-3">
+                        <MudChart ChartType="ChartType.Line"
+                                  ChartSeries="@_pressureSeries"
+                                  XAxisLabels="@_rateLabels"
+                                  Width="100%"
+                                  Height="280px" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                            Wellhead pressure (psi) and GOR (scf/bbl)
+                        </MudText>
+                    </MudPaper>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Decline Analysis">
+                    <MudPaper Elevation="0" Class="pa-3">
+                        <MudChart ChartType="ChartType.Line"
+                                  ChartSeries="@_dcaSeries"
+                                  XAxisLabels="@_dcaLabels"
+                                  Width="100%"
+                                  Height="280px" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                            DCA fit: Di=@_dcaDi%/yr, b=@_dcaB — @_dcaEur MBBL EUR
+                        </MudText>
+                    </MudPaper>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Water Cut Trend">
+                    <MudPaper Elevation="0" Class="pa-3">
+                        <MudChart ChartType="ChartType.Line"
+                                  ChartSeries="@_wcSeries"
+                                  XAxisLabels="@_rateLabels"
+                                  Width="100%"
+                                  Height="280px" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                            Water cut % — rising trend indicates aquifer breakthrough
+                        </MudText>
+                    </MudPaper>
+                </MudTabPanel>
+
+            </MudTabs>
+        </MudItem>
+
+        @* RIGHT — Performance diagnosis + actions (4 cols) *@
+        <MudItem xs="12" lg="4">
+            <MudStack Spacing="3">
+
+                @* Performance diagnosis *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                <MudIcon Icon="@Icons.Material.Filled.Psychology" Color="Color.Info" Size="Size.Small" />
+                                <MudText Typo="Typo.subtitle1">Performance Diagnosis</MudText>
+                            </MudStack>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack Spacing="2">
+                            @foreach (var finding in _findings)
+                            {
+                                <MudPaper Elevation="0" Class="@FindingFullClass(finding.Severity)">
+                                    <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
+                                        <MudIcon Icon="@FindingIcon(finding.Severity)"
+                                                 Color="@FindingColor(finding.Severity)"
+                                                 Size="Size.Small"
+                                                 Class="mt-1" />
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.body2"><strong>@finding.Title</strong></MudText>
+                                            <MudText Typo="Typo.caption">@finding.Detail</MudText>
+                                        </MudStack>
+                                    </MudStack>
+                                </MudPaper>
+                            }
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+
+                @* Recommended action *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Recommended Action</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudAlert Severity="Severity.Warning" Class="mb-3">
+                            <strong>@_recommendation.Action</strong><br/>
+                            @_recommendation.Rationale
+                        </MudAlert>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
+                            Estimated uplift: <strong>@_recommendation.UpliftBopd BOPD</strong>
+                        </MudText>
+                        <MudStack Spacing="2">
+                            <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Build"
+                                       OnClick="CreateInterventionFromRecommendation">
+                                Create Intervention
+                            </MudButton>
+                            <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Default"
+                                       StartIcon="@Icons.Material.Filled.AssignmentLate"
+                                       OnClick="LogDeviation">
+                                Log Deviation Only
+                            </MudButton>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+
+                @* Recent activities *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Well History (Recent)</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MudList T="WellHistoryItem" Dense="true">
+                            @foreach (var item in _history)
+                            {
+                                <MudListItem T="WellHistoryItem" Value="item">
+                                    <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="2">
+                                        <MudIcon Icon="@Icons.Material.Filled.History" Size="Size.Small" Color="Color.Secondary" Class="mt-1" />
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.body2">@item.Event</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@item.Date · @item.User</MudText>
+                                        </MudStack>
+                                    </MudStack>
+                                </MudListItem>
+                                <MudDivider />
+                            }
+                        </MudList>
+                    </MudCardContent>
+                </MudCard>
+
+            </MudStack>
+        </MudItem>
+
+    </MudGrid>
+
+</MudContainer>
+
+@code {
+    [SupplyParameterFromQuery(Name = "wellId")]
+    public string? WellId { get; set; }
+
+    private string _fieldName = "Current Field";
+    private string _selectedWellId = "W-B2";
+    private string _period = "30d";
+    private string _dcaDi = "18";
+    private string _dcaB = "0.5";
+    private string _dcaEur = "2,140";
+
+    private record WellOption(string Id, string Name);
+    private List<WellOption> _wellOptions = new()
+    {
+        new("W-A1", "DEV-A1"), new("W-A2", "DEV-A2"), new("W-A3", "DEV-A3"),
+        new("W-B1", "DEV-B1"), new("W-B2", "DEV-B2"), new("W-C1", "DEV-C1"),
+    };
+
+    private record WellDetail(string WellId, string Status, double OilRate, double PotentialRate, double CumOil);
+    private WellDetail _selectedWell = new("W-B2", "TESTING", 1_200, 2_500, 145);
+
+    private List<PerformanceFinding> _findings = new()
+    {
+        new("Rate 52% below potential",    "Current rate 1,200 BOPD vs 2,500 BOPD potential. Likely ESP issue.", "HIGH"),
+        new("Rising ESP amp draw",         "Amp draw increased 12% over past 7 days — possible gas ingestion.", "HIGH"),
+        new("GOR trending up",             "GOR increased from 400 to 580 scf/bbl over 30 days.",              "MEDIUM"),
+        new("Water cut stable",            "No significant water cut change. Not a water channelling issue.",   "LOW"),
+    };
+
+    private record Recommendation(string Action, string Rationale, int UpliftBopd);
+    private Recommendation _recommendation = new(
+        "ESP Pull & Replacement",
+        "High amp draw and rising GOR suggest impeller wear or gas lock. Pull ESP, inspect, and replace with upsized unit.",
+        1_300);
+
+    private List<WellHistoryItem> _history = new()
+    {
+        new("Well test performed — potential confirmed at 2,500 BOPD", "10 Mar 2026", "S. Lee"),
+        new("Choke adjusted from 48/64\" to 56/64\"",                  "15 Feb 2026", "J. Smith"),
+        new("ESP installed — Unit Model Y-4500",                       "20 Jan 2026", "M. Torres"),
+        new("Well brought on production",                              "05 Jan 2026", "J. Smith"),
+    };
+
+    private List<ChartSeries<double>> _rateSeries = new()
+    {
+        new ChartSeries<double> { Name = "Actual",    Data = new double[] { 2200, 2150, 2100, 2050, 1950, 1900, 1800, 1700, 1600, 1500, 1400, 1300, 1200 } },
+        new ChartSeries<double> { Name = "Potential", Data = new double[] { 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500 } },
+    };
+    private string[] _rateLabels = { "W1", "", "", "", "W5", "", "", "", "W9", "", "", "", "W13" };
+
+    private List<ChartSeries<double>> _pressureSeries = new()
+    {
+        new ChartSeries<double> { Name = "WHP (psi/10)", Data = new double[] { 180, 178, 175, 172, 168, 163, 159, 155, 150, 145, 141, 138, 135 } },
+        new ChartSeries<double> { Name = "GOR (scf/10)", Data = new double[] { 40,  41,  43,  44,  46,  48,  50,  53,  55,  56,  57,  57,  58  } },
+    };
+
+    private List<ChartSeries<double>> _dcaSeries = new()
+    {
+        new ChartSeries<double> { Name = "Actual",   Data = new double[] { 2200, 2100, 1950, 1800, 1600, 1400, 1200 } },
+        new ChartSeries<double> { Name = "DCA Fit",  Data = new double[] { 2200, 2070, 1940, 1820, 1710, 1610, 1520 } },
+        new ChartSeries<double> { Name = "Forecast", Data = new double[] {    0,    0,    0,    0,    0,    0, 1520, 1440, 1360, 1290, 1220, 1160 } },
+    };
+    private string[] _dcaLabels = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+
+    private List<ChartSeries<double>> _wcSeries = new()
+    {
+        new ChartSeries<double> { Name = "Water Cut %", Data = new double[] { 20, 21, 22, 21, 22, 23, 24, 25, 25, 26, 27, 27, 28 } },
+    };
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(WellId))
+            _selectedWellId = WellId;
+    }
+
+    private void OnWellChanged(string wellId)
+    {
+        _selectedWellId = wellId;
+        // TODO: GET /api/production/wells/{wellId}/performance
+    }
+
+    private void CreateInterventionFromRecommendation() =>
+        NavigationManager.NavigateTo($"/production/intervention?wellId={_selectedWellId}&type=ESP");
+
+    private void LogDeviation() =>
+        Snackbar.Add("Deviation logged for review", Severity.Success);
+
+    private string EfficiencyPct => _selectedWell.PotentialRate > 0
+        ? (_selectedWell.OilRate / _selectedWell.PotentialRate * 100).ToString("N0")
+        : "0";
+
+    private string FindingFullClass(string sev) => $"pa-2 {FindingClass(sev)}";
+
+    private string FindingIcon(string sev) => sev switch
+    {
+        "HIGH"   => Icons.Material.Filled.Error,
+        "MEDIUM" => Icons.Material.Filled.Warning,
+        _        => Icons.Material.Filled.CheckCircle,
+    };
+
+    private Color FindingColor(string sev) => sev switch
+    {
+        "HIGH"   => Color.Error,
+        "MEDIUM" => Color.Warning,
+        _        => Color.Success,
+    };
+
+    private string FindingClass(string sev) => sev switch
+    {
+        "HIGH"   => "finding-high",
+        "MEDIUM" => "finding-medium",
+        _        => "finding-low",
+    };
+
+    private record PerformanceFinding(string Title, string Detail, string Severity);
+    private record WellHistoryItem(string Event, string Date, string User);
+}

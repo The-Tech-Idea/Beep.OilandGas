@@ -1,0 +1,225 @@
+@page "/exploration/prospect-board"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Advance Prospect Maturation</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Advance Prospect Maturation</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Move prospects through the maturation funnel</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Explore">Exploration</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="AddLead">
+            Add Lead
+        </MudButton>
+    </MudStack>
+
+    @* ── Filter Bar ───────────────────────────────────────────────────────── *@
+    <MudPaper Elevation="1" Class="pa-3 mb-4">
+        <MudGrid Spacing="2" AlignItems="AlignItems.Center">
+            <MudItem xs="12" sm="4" md="3">
+                <MudSelect T="string" @bind-Value="_filterPlay" Label="Play Type" Dense="true" Margin="Margin.Dense" Clearable="true">
+                    <MudSelectItem T="string" Value="@("Clastic")">Clastic</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Carbonate")">Carbonate</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Unconventional")">Unconventional</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4" md="3">
+                <MudSelect T="string" @bind-Value="_filterBasin" Label="Basin" Dense="true" Margin="Margin.Dense" Clearable="true">
+                    @foreach (var basin in _basins)
+                    {
+                        <MudSelectItem T="string" Value="@basin">@basin</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4" md="3">
+                <MudSwitch @bind-Value="_showArchived" Color="Color.Primary" Label="Show dropped prospects" />
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @* ── Kanban Board ─────────────────────────────────────────────────────── *@
+    <div class="kanban-board">
+        @foreach (var stage in _stages)
+        {
+            var stageProspects = FilteredProspects(stage.Key);
+            <div class="kanban-column">
+                @* Column header *@
+                <MudPaper Elevation="0" Class="kanban-col-header pa-2 mb-2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                            <MudIcon Icon="@stage.Value.Icon" Color="@stage.Value.Color" Size="Size.Small" />
+                            <MudText Typo="Typo.subtitle2">@stage.Value.Name</MudText>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Default">@stageProspects.Count</MudChip>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+
+                @* Prospect cards *@
+                @foreach (var prospect in stageProspects)
+                {
+                    <MudCard Elevation="1" Class="kanban-card mb-2"
+                             @onclick="() => OpenProspect(prospect.Id)">
+                        <MudCardContent Class="pa-3">
+                            <MudStack Spacing="1">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2"><strong>@prospect.Name</strong></MudText>
+                                    <StatusBadge Status="@prospect.Status" Size="Size.Small" />
+                                </MudStack>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@prospect.Basin · @prospect.PlayType</MudText>
+                                <MudDivider Class="my-1" />
+                                <MudGrid Spacing="0">
+                                    <MudItem xs="6">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Resource (P50)</MudText>
+                                        <MudText Typo="Typo.body2">@prospect.ResourceP50 @prospect.ResourceUnit</MudText>
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">Chance (Pg)</MudText>
+                                        <MudText Typo="Typo.body2" Color="@RiskColor(prospect.ChanceOfSuccess)">@prospect.ChanceOfSuccess.ToString("F0")%</MudText>
+                                    </MudItem>
+                                </MudGrid>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">In stage @prospect.DaysInStage days</MudText>
+                            </MudStack>
+                        </MudCardContent>
+                        <MudCardActions Class="pa-2 pt-0">
+                            @if (stage.Key != "drilled")
+                            {
+                                <div @onclick:stopPropagation="true">
+                                    <MudButton Size="Size.Small"
+                                               Variant="Variant.Text"
+                                               Color="Color.Primary"
+                                               OnClick="@(() => AdvanceStage(prospect))">
+                                        Advance →
+                                    </MudButton>
+                                </div>
+                            }
+                        </MudCardActions>
+                    </MudCard>
+                }
+
+                @* Empty column placeholder *@
+                @if (stageProspects.Count == 0)
+                {
+                    <MudPaper Elevation="0" Class="kanban-empty pa-4">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Align="Align.Center">No prospects</MudText>
+                    </MudPaper>
+                }
+            </div>
+        }
+    </div>
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private string? _filterPlay;
+    private string? _filterBasin;
+    private bool _showArchived;
+
+    private List<string> _basins = new() { "Permian", "Eagle Ford", "North Sea", "Gulf of Mexico" };
+
+    private Dictionary<string, StageInfo> _stages = new()
+    {
+        { "lead",      new("Leads",          Icons.Material.Filled.Search,           Color.Default) },
+        { "screening", new("Screening",      Icons.Material.Filled.FilterAlt,        Color.Info)    },
+        { "prospect",  new("Prospect",       Icons.Material.Filled.TravelExplore,    Color.Primary) },
+        { "ranking",   new("Ranking",        Icons.Material.Filled.Leaderboard,      Color.Warning) },
+        { "candidate", new("Drill Candidate",Icons.Material.Filled.OilBarrel,        Color.Success) },
+        { "drilled",   new("Drilled",        Icons.Material.Filled.Done,             Color.Secondary) },
+    };
+
+    private List<ProspectItem> _allProspects = new();
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/exploration/prospects?fieldId=
+        _allProspects = new List<ProspectItem>
+        {
+            new("1",  "Eagle Ford South",      "lead",      "Clastic",       "Eagle Ford",    120, "MMBO", 18, "ACTIVE",  45),
+            new("2",  "Permian Deep Play",      "lead",      "Clastic",       "Permian",        85, "MMBO", 12, "ACTIVE",  22),
+            new("3",  "North Sea Block 15",     "screening", "Carbonate",     "North Sea",     200, "MMBO", 32, "IN PROGRESS", 14),
+            new("4",  "GOM Deepwater Alpha",    "prospect",  "Clastic",       "Gulf of Mexico",450, "MMBO", 25, "ACTIVE",  60),
+            new("5",  "Unconventional Play A",  "prospect",  "Unconventional","Permian",        60, "BCF",  40, "ON-HOLD", 90),
+            new("6",  "Eagle Ford West",        "ranking",   "Clastic",       "Eagle Ford",    175, "MMBO", 30, "REVIEW",  21),
+            new("7",  "Permian Wolfcamp Deep",  "candidate", "Clastic",       "Permian",       320, "MMBO", 35, "APPROVED", 10),
+            new("8",  "Miocene Shelf Play",     "drilled",   "Clastic",       "Gulf of Mexico",280, "MMBO", 0,  "COMPLETE", 0),
+        };
+    }
+
+    private List<ProspectItem> FilteredProspects(string stage)
+    {
+        return _allProspects
+            .Where(p => p.Stage == stage)
+            .Where(p => string.IsNullOrEmpty(_filterPlay) || p.PlayType == _filterPlay)
+            .Where(p => string.IsNullOrEmpty(_filterBasin) || p.Basin == _filterBasin)
+            .Where(p => _showArchived || p.Status != "ARCHIVED")
+            .ToList();
+    }
+
+    private Color RiskColor(double pg) =>
+        pg >= 30 ? Color.Success : pg >= 15 ? Color.Warning : Color.Error;
+
+    private void OpenProspect(string id) =>
+        NavigationManager.NavigateTo($"/exploration/prospect/{id}");
+
+    private void AddLead() =>
+        NavigationManager.NavigateTo("/exploration/prospect/new");
+
+    private async Task AdvanceStage(ProspectItem prospect)
+    {
+        var stageKeys = _stages.Keys.ToList();
+        var currentIdx = stageKeys.IndexOf(prospect.Stage);
+        if (currentIdx < 0 || currentIdx >= stageKeys.Count - 1) return;
+
+        var nextStage = _stages[stageKeys[currentIdx + 1]];
+
+        var parameters = new DialogParameters<StageAdvanceDialog>
+        {
+            { x => x.ProspectName, prospect.Name },
+            { x => x.ToStageName, nextStage.Name }
+        };
+        var dialog = await DialogService.ShowAsync<StageAdvanceDialog>("Advance Prospect", parameters);
+        var result = await dialog.Result;
+
+        if (result is { Canceled: false })
+        {
+            prospect.Stage = stageKeys[currentIdx + 1];
+            prospect.DaysInStage = 0;
+            Snackbar.Add($"{prospect.Name} advanced to {nextStage.Name}", Severity.Success);
+            StateHasChanged();
+        }
+    }
+
+    private record StageInfo(string Name, string Icon, Color Color);
+    private class ProspectItem
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Stage { get; set; }
+        public string PlayType { get; set; }
+        public string Basin { get; set; }
+        public double ResourceP50 { get; set; }
+        public string ResourceUnit { get; set; }
+        public double ChanceOfSuccess { get; set; }
+        public string Status { get; set; }
+        public int DaysInStage { get; set; }
+
+        public ProspectItem(string id, string name, string stage, string playType, string basin,
+            double resource, string unit, double cos, string status, int daysInStage)
+        {
+            Id = id; Name = name; Stage = stage; PlayType = playType; Basin = basin;
+            ResourceP50 = resource; ResourceUnit = unit; ChanceOfSuccess = cos;
+            Status = status; DaysInStage = daysInStage;
+        }
+    }
+}

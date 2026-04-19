@@ -107,6 +107,13 @@ namespace Beep.OilandGas.Models.Data.DataManagement
 
         }
 
+        private bool _createSchemaIfNotExists = false;
+        public bool CreateSchemaIfNotExists
+        {
+            get { return _createSchemaIfNotExists; }
+            set { SetProperty(ref _createSchemaIfNotExists, value); }
+        }
+
         /// <summary>
         /// Converts to ConnectionProperties for internal use
         /// </summary>

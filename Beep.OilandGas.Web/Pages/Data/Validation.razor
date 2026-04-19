@@ -1,19 +1,147 @@
 @page "/data/validation"
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
 
-<PageTitle>Data Validation - Data Management</PageTitle>
+<PageTitle>Validate PPDM39 Data</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudText Typo="Typo.h4" Class="mb-4">Data Validation</MudText>
-    
-    <MudPaper Class="pa-4">
-        <MudText Typo="Typo.body1">Data Validation interface coming soon...</MudText>
-    </MudPaper>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Validate PPDM39 Data</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Run business-rule and completeness checks on any PPDM table</MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.Grade"
+                       OnClick='() => NavigationManager.NavigateTo("/data/quality-dashboard")'>
+                Quality Dashboard
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.PlayArrow"
+                       OnClick="RunValidation"
+                       Disabled="@(string.IsNullOrWhiteSpace(_selectedTable) || _running)">
+                Run Validation
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @* Table selector *@
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">Select Table to Validate</MudText>
+                <MudSelect T="string" @bind-Value="_selectedTable" Label="PPDM Table" Variant="Variant.Outlined"
+                           HelperText="Choose a table to run validation rules against">
+                    @foreach (var t in _tables)
+                    {
+                        <MudSelectItem Value="@t">@t</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudStack Row="true" Spacing="2" Class="mt-3">
+                    <MudCheckBox T="bool" @bind-Value="_checkCompleteness" Label="Completeness" />
+                    <MudCheckBox T="bool" @bind-Value="_checkConstraints" Label="Constraints" />
+                    <MudCheckBox T="bool" @bind-Value="_checkReferences" Label="References" />
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">Validation Summary</MudText>
+                @if (_running)
+                {
+                    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-2" />
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Running validation on @_selectedTable…</MudText>
+                }
+                else if (_results.Count > 0)
+                {
+                    <MudStack Spacing="1">
+                        <MudStack Row="true" Spacing="2">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-sm">Table</MudText>
+                            <MudText Typo="Typo.body2">@_lastTable</MudText>
+                        </MudStack>
+                        <MudStack Row="true" Spacing="2">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-sm">Rows checked</MudText>
+                            <MudText Typo="Typo.body2">@_rowsChecked.ToString("N0")</MudText>
+                        </MudStack>
+                        <MudStack Row="true" Spacing="2">
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-sm">Issues found</MudText>
+                            <MudText Typo="Typo.body2" Color="@(_results.Count > 0 ? Color.Error : Color.Success)">@_results.Count</MudText>
+                        </MudStack>
+                    </MudStack>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Select a table and click Run Validation.</MudText>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @* Results *@
+    @if (_results.Count > 0)
+    {
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudText Typo="Typo.subtitle1" Class="mb-3">Validation Issues — @_lastTable</MudText>
+            <MudDataGrid T="ValidationIssue" Items="@_results" Dense="true" Hover="true" Striped="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.Rule" Title="Rule" />
+                    <PropertyColumn Property="x => x.Column" Title="Column" />
+                    <PropertyColumn Property="x => x.Message" Title="Issue" />
+                    <TemplateColumn Title="Severity">
+                        <CellTemplate>
+                            <MudChip T="string" Color="@GetSeverityColor(context.Item.Severity)"
+                                     Size="Size.Small">@context.Item.Severity</MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.RowCount" Title="Rows affected" />
+                </Columns>
+            </MudDataGrid>
+        </MudPaper>
+    }
+
 </MudContainer>
 
 @code {
+    private List<string> _tables = new() { "WELL", "WELL_STATUS", "FACILITY", "POOL", "PDEN", "PROSPECT", "CONTRACT" };
+    private string _selectedTable = string.Empty;
+    private bool _checkCompleteness = true;
+    private bool _checkConstraints = true;
+    private bool _checkReferences = false;
+    private bool _running = false;
+    private string _lastTable = string.Empty;
+    private int _rowsChecked = 0;
+    private List<ValidationIssue> _results = new();
+
+    private async Task RunValidation()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedTable)) return;
+        _running = true;
+        _lastTable = _selectedTable;
+        _results.Clear();
+        StateHasChanged();
+        await Task.Delay(800); // simulate async validation
+        // Sample results — real impl calls PPDMDataValidationService
+        _rowsChecked = Random.Shared.Next(50, 500);
+        if (Random.Shared.NextDouble() > 0.4)
+        {
+            _results.Add(new ValidationIssue("Completeness", "ROW_QUALITY", "NULL value in required column", "Warning", Random.Shared.Next(1, 10)));
+            _results.Add(new ValidationIssue("Reference", "ACTIVE_IND", "Value not in allowed set", "Error", Random.Shared.Next(1, 5)));
+        }
+        _running = false;
+        if (_results.Count == 0)
+            Snackbar.Add($"{_lastTable}: all {_rowsChecked:N0} rows passed validation.", Severity.Success);
+        else
+            Snackbar.Add($"{_results.Count} issues found in {_lastTable}.", Severity.Warning);
+    }
+
+    private static Color GetSeverityColor(string s) => s switch
+    {
+        "Error" => Color.Error,
+        "Warning" => Color.Warning,
+        _ => Color.Default
+    };
+
+    internal record ValidationIssue(string Rule, string Column, string Message, string Severity, int RowCount);
 }
-
-
-

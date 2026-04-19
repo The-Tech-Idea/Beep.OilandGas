@@ -81,5 +81,35 @@ namespace Beep.OilandGas.Models.Data.Pricing
 
         }
 
+        public DateTime? IndexDate
+
+        {
+
+            get { return this.PriceDateValue; }
+
+            set { SetProperty(ref PriceDateValue, value); }
+
+        }
+
+        public decimal? Price
+
+        {
+
+            get { return this.CurrentPriceValue; }
+
+            set { SetProperty(ref CurrentPriceValue, value); }
+
+        }
+
+        public string? Currency
+
+        {
+
+            get { return this.UnitValue; }
+
+            set { SetProperty(ref UnitValue, value); }
+
+        }
+
     }
 }

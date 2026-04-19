@@ -1,0 +1,216 @@
+@page "/reservoir/eor"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Screen EOR Candidates</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Screen EOR Candidates</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Evaluate enhanced recovery potential</MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ArrowBack"
+                       OnClick='@(() => NavigationManager.NavigateTo("/reservoir"))'>
+                Back to Reservoir
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.SaveAlt"
+                       OnClick="SaveScreening">
+                Save Screening
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @* Reservoir input summary *@
+    <MudAlert Severity="Severity.Info" Class="mb-4">
+        Screening is based on current reservoir data: OOIP @_ooip.ToString("N0") MMBbl, API @_api°, Current RF @_currentRF.ToString("N1")%,
+        Reservoir Pressure @_resPressure.ToString("N0") psi, Temperature @_resTemp°F.
+    </MudAlert>
+
+    <MudGrid Spacing="3">
+
+        @* EOR Method Scoring *@
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">EOR Method Screening Score</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudTooltip Text="Score based on Nelson (2009) screening criteria">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Secondary" Size="Size.Small" />
+                        </MudTooltip>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="EorMethod" Items="@_methods" Dense="true" Hover="true" Striped="true"
+                                 RowClick="@OnMethodSelected" SortMode="SortMode.Single">
+                        <Columns>
+                            <PropertyColumn Property="m => m.Name"          Title="EOR Method" />
+                            <PropertyColumn Property="m => m.Category"      Title="Category" />
+                            <TemplateColumn Title="Score" SortBy="m => m.Score">
+                                <CellTemplate>
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudProgressLinear Color="@ScoreColor(context.Item.Score)"
+                                                           Value="@context.Item.Score" Class="flex-1" />
+                                        <MudText Typo="Typo.caption">@context.Item.Score.ToString("N0")</MudText>
+                                    </MudStack>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <PropertyColumn Property="m => m.IncrementalRF" Title="Incr. RF%" Format="N1" />
+                            <TemplateColumn Title="Feasibility">
+                                <CellTemplate>
+                                    <StatusBadge Status="@context.Item.Feasibility" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Selected method detail *@
+        <MudItem xs="12" md="5">
+            @if (_selectedMethod is not null)
+            {
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">@_selectedMethod.Name</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">@_selectedMethod.Category</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <StatusBadge Status="@_selectedMethod.Feasibility" />
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack Spacing="3">
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">TECHNICAL BASIS</MudText>
+                                <MudText Typo="Typo.body2">@_selectedMethod.TechnicalBasis</MudText>
+                            </MudStack>
+                            <MudDivider />
+                            <MudGrid Spacing="2">
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Incremental RF</MudText>
+                                    <MudText Typo="Typo.h6" Color="Color.Success">@_selectedMethod.IncrementalRF.ToString("N1")%</MudText>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Incremental Recovery</MudText>
+                                    <MudText Typo="Typo.h6">@(_ooip * _selectedMethod.IncrementalRF / 100).ToString("N0") MMBbl</MudText>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">CAPEX Est.</MudText>
+                                    <MudText Typo="Typo.body1">$@_selectedMethod.CapexMM.ToString("N0")MM</MudText>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Lead Time</MudText>
+                                    <MudText Typo="Typo.body1">@_selectedMethod.LeadTimeYears yrs</MudText>
+                                </MudItem>
+                            </MudGrid>
+                            <MudDivider />
+                            <MudStack Spacing="1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">KEY RISKS</MudText>
+                                @foreach (var risk in _selectedMethod.Risks)
+                                {
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
+                                        <MudText Typo="Typo.body2">@risk</MudText>
+                                    </MudStack>
+                                }
+                            </MudStack>
+                            <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.PlayArrow"
+                                       OnClick="PromoteToFeasibility">
+                                Promote to Feasibility Study
+                            </MudButton>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            }
+            else
+            {
+                <MudPaper Elevation="2" Class="pa-8 d-flex align-center justify-center og-placeholder-panel">
+                    <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                        <MudIcon Icon="@Icons.Material.Filled.TouchApp" Size="Size.Large" Color="Color.Secondary" />
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Select an EOR method to view details</MudText>
+                    </MudStack>
+                </MudPaper>
+            }
+        </MudItem>
+
+        @* Screening criteria comparison *@
+        <MudItem xs="12">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Screening Criteria vs. Reservoir Properties</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudChart T="double" ChartType="ChartType.Bar"
+                              Series="@_screeningSeries"
+                              XAxisLabels="@_screeningLabels"
+                              Width="100%" Height="200px" />
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private double _ooip = 485.0;
+    private double _api = 38.0;
+    private double _currentRF = 42.8;
+    private double _resPressure = 3140;
+    private double _resTemp = 195;
+
+    private record EorMethod(string Name, string Category, double Score, double IncrementalRF,
+        string Feasibility, string TechnicalBasis, double CapexMM, double LeadTimeYears, List<string> Risks);
+
+    private List<EorMethod> _methods = new()
+    {
+        new("Waterflooding",       "Secondary",     88, 12.5, "ACTIVE",   "Good reservoir connectivity and permeability support voidage replacement. Current WC 28% indicates injection efficiency.",  45, 1.5, new() { "Water handling capacity", "Scale deposition" }),
+        new("CO₂ Miscible Flood",  "Tertiary",      74, 9.8,  "REVIEW",   "API gravity 38° is favorable for CO₂ miscibility. MMP estimate 2,100 psi well below reservoir pressure.",                125, 4.0, new() { "CO₂ supply logistics", "Corrosion management", "High CAPEX" }),
+        new("Polymer Flooding",    "Chemical EOR",  62, 7.2,  "PLANNED",  "Moderate viscosity improvement expected. High salinity (48,000 ppm TDS) may reduce polymer performance.",                  85, 3.5, new() { "Salinity sensitivity", "Injectivity reduction" }),
+        new("Surfactant-Polymer",  "Chemical EOR",  55, 8.4,  "PLANNED",  "IFT reduction could unlock trapped oil. Requires detailed core-flood testing to confirm formulation.",                     180, 5.0, new() { "Chemical cost", "Scale-up uncertainty", "Surface handling" }),
+        new("Low-Salinity Water",  "Secondary EOR", 70, 5.6,  "REVIEW",   "Wettability alteration confirmed in lab. Suitable injection water source available from nearby aquifer.",                   22, 2.0, new() { "Water source quality", "Monitoring requirement" }),
+        new("Thermal (SAGD)",      "Thermal",       18, 3.1,  "REJECTED", "Oil API 38° too light for thermal methods. Reservoir depth (9,000 ft+) makes heat injection uneconomical.",                350, 6.0, new() { "API too high", "Depth uneconomic", "Heat loss" }),
+    };
+
+    private EorMethod? _selectedMethod;
+
+    private List<ChartSeries<double>> _screeningSeries = new()
+    {
+        new ChartSeries<double> { Name = "Reservoir Value", Data = new double[] { 38, 42.8, 3140, 9200, 22.4 } },
+        new ChartSeries<double> { Name = "CO₂ Min",         Data = new double[] { 22,  5,   1500, 2000, 10  } },
+        new ChartSeries<double> { Name = "CO₂ Max",         Data = new double[] { 48, 50,   5000, 12000, 40  } },
+    };
+    private string[] _screeningLabels = { "API (°)", "RF (%)", "P/1000 (psi)", "Depth/1000 (ft)", "Por (%)" };
+
+    private void OnMethodSelected(DataGridRowClickEventArgs<EorMethod> args)
+    {
+        _selectedMethod = args.Item;
+    }
+
+    private Color ScoreColor(double score) => score switch
+    {
+        >= 80 => Color.Success,
+        >= 60 => Color.Warning,
+        _     => Color.Error,
+    };
+
+    private void PromoteToFeasibility()
+    {
+        if (_selectedMethod is null) return;
+        Snackbar.Add($"{_selectedMethod.Name} promoted to feasibility study queue", Severity.Success);
+    }
+
+    private void SaveScreening() =>
+        Snackbar.Add("EOR screening results saved", Severity.Success);
+}

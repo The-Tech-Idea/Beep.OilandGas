@@ -3,34 +3,81 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<PageTitle>Seismic Acquisition - PPDM39</PageTitle>
+<PageTitle>Manage Seismic Acquisition Programmes</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudText Typo="Typo.h4" Class="mb-4">Seismic Acquisition</MudText>
-    
-    <MudPaper Class="pa-4">
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
-        }
-        
-        @if (_acquisition != null && _acquisition.Any())
-        {
-            <MudTable Items="@_acquisition" Hover="true" Dense="true">
-                <HeaderContent>
-                    <MudTh>Acquisition ID</MudTh>
-                    <MudTh>Acquisition Date</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Acquisition ID">@GetPropertyValue(context, "ACQUISITION_ID")</MudTd>
-                    <MudTd DataLabel="Acquisition Date">@GetPropertyValue(context, "ACQUISITION_DATE")</MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-    </MudPaper>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Manage Seismic Acquisition Programmes</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Seismic acquisition surveys register</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info"
+                         Icon="@Icons.Material.Filled.Sensors">Exploration</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Add">Add Acquisition</MudButton>
+    </MudStack>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ── KPI Row *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Total Acquisitions" Value="@((_acquisition?.Count ?? 0).ToString())"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Sensors"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="All acquisition records" />
+        </MudItem>
+    </MudGrid>
+
+    @* ── Acquisition Grid *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_acquisition != null && _acquisition.Any())
+            {
+                <MudDataGrid T="SEIS_ACQTN_SURVEY" Items="@_acquisition" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <TemplateColumn Title="Acquisition ID">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "ACQUISITION_ID")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Acquisition Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "ACQUISITION_DATE")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Sensors" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No records match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.Sensors" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No acquisition records found</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">No seismic acquisition surveys loaded for this session.</MudText>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private List<SEIS_ACQTN_SURVEY>? _acquisition;
     private bool _isLoading = false;
 

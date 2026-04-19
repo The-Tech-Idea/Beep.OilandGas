@@ -18,8 +18,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <returns>WellComparison with side-by-side comparison</returns>
         Task<WellComparisonData> CompareWellsAsync(
             List<string> wellIdentifiers,
-            List<string> fieldNames = null,
-            string connectionName = null);
+            List<string>? fieldNames = null,
+            string? connectionName = null);
 
         /// <summary>
         /// Compares wells from different data sources
@@ -29,7 +29,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <returns>WellComparisonData with side-by-side comparison across data sources</returns>
         Task<WellComparisonData> CompareWellsFromMultipleSourcesAsync(
             List<WellSourceMapping> wellComparisons,
-            List<string> fieldNames = null);
+            List<string>? fieldNames = null);
 
         /// <summary>
         /// Gets available comparison fields for wells

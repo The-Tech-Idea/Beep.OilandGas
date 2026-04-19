@@ -25,7 +25,7 @@ using Beep.OilandGas.HeatMap.Aggregation;
 using Beep.OilandGas.HeatMap.Density;
 using Beep.OilandGas.HeatMap.Visualization;
 using Beep.OilandGas.HeatMap.Contour;
-using Beep.OilandGas.Models.HeatMap;
+using Beep.OilandGas.Models.Data.HeatMap;
 
 namespace Beep.OilandGas.HeatMap.Rendering
 {

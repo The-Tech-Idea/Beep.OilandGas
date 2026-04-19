@@ -13,6 +13,7 @@ using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using TheTechIdea.Beep.Report;
+using ValidationResult = Beep.OilandGas.Models.Data.ValidationResult;
 using Beep.OilandGas.Models.Data.Process;
 
 namespace Beep.OilandGas.LifeCycle.Services.Processes

@@ -1,70 +1,125 @@
 @page "/ppdm39/operations/drillingoperations"
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.Drilling
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IOperationsServiceClient OperationsService
 
-<PageTitle>Drilling Operations</PageTitle>
+<PageTitle>Monitor Drilling Operations</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Drilling Operations</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
-    <MudPaper Class="pa-4">
-        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
-            <MudText Typo="Typo.h6">Drilling Operations</MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
-                Create Drilling Operation
-            </MudButton>
+    @* ─── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Monitor Drilling Operations</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Active and completed drilling programmes</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning"
+                         Icon="@Icons.Material.Filled.Construction">Operations</MudChip>
+            </MudStack>
         </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="OpenCreateDialog">Create Drilling Operation</MudButton>
+    </MudStack>
 
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-        }
-        else if (_operations != null && _operations.Any())
-        {
-            <MudTable Items="@_operations" Hover="true" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh>Operation ID</MudTh>
-                    <MudTh>Well UWI</MudTh>
-                    <MudTh>Well Name</MudTh>
-                    <MudTh>Spud Date</MudTh>
-                    <MudTh>Status</MudTh>
-                    <MudTh>Current Depth</MudTh>
-                    <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>@context.OperationId</MudTd>
-                    <MudTd>@context.WellUWI</MudTd>
-                    <MudTd>@context.WellName</MudTd>
-                    <MudTd>@(context.SpudDate?.ToString("yyyy-MM-dd") ?? "N/A")</MudTd>
-                    <MudTd>@(context.Status ?? "Unknown")</MudTd>
-                    <MudTd>@(context.CurrentDepth?.ToString("F2") ?? "N/A") ft</MudTd>
-                    <MudTd>
-                        <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
-                            <MudButton StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditDialog(context))">
-                                Edit
-                            </MudButton>
-                            <MudButton StartIcon="@Icons.Material.Filled.Description" OnClick="@(() => ViewReports(context.OperationId))">
-                                Reports
-                            </MudButton>
-                        </MudButtonGroup>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Info">No drilling operations found.</MudAlert>
-        }
-    </MudPaper>
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ─── KPI Row *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Total Operations" Value="@((_operations?.Count ?? 0).ToString())"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Construction"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="All operations" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Active"
+                     Value="@((_operations?.Count(o => o.STATUS == "Active" || o.STATUS == "ACTIVE" || o.STATUS == "IN_PROGRESS") ?? 0).ToString())"
+                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.PlayArrow"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="Currently drilling" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Completed"
+                     Value="@((_operations?.Count(o => o.STATUS == "Completed" || o.STATUS == "COMPLETED") ?? 0).ToString())"
+                     ValueColor="Color.Default" Icon="@Icons.Material.Filled.CheckCircle"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="Completed" />
+        </MudItem>
+    </MudGrid>
+
+    @* ─── Operations Grid *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_operations != null && _operations.Any())
+            {
+                <MudDataGrid T="DRILLING_OPERATION" Items="@_operations" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <PropertyColumn Property="o => o.OPERATION_ID" Title="Operation ID" />
+                        <PropertyColumn Property="o => o.WELL_UWI" Title="Well UWI" />
+                        <PropertyColumn Property="o => o.WELL_NAME" Title="Well Name" />
+                        <TemplateColumn Title="Spud Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(context.Item.SPUD_DATE?.ToString("dd MMM yyyy") ?? "\u2014")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <StatusBadge Status="@(context.Item.STATUS ?? "Unknown")" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Current Depth">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@(context.Item.CURRENT_DEPTH?.ToString("F0") ?? "\u2014") ft</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="" Sortable="false">
+                            <CellTemplate>
+                                <MudStack Row="true" Spacing="1">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Title="Edit operation" Size="Size.Small" Color="Color.Primary"
+                                                   OnClick="@(() => OpenEditDialog(context.Item))" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Description" Title="View reports" Size="Size.Small" Color="Color.Default"
+                                                   OnClick="@(() => ViewReports(context.Item.OPERATION_ID))" />
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Construction" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No operations match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.Construction" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No drilling operations found</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Create the first drilling operation for this field.</MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="OpenCreateDialog" Class="mt-2">Create Drilling Operation</MudButton>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
-    private List<DrillingOperationDto>? _operations;
+    private string _fieldName = "Current Field";
+    private List<DRILLING_OPERATION>? _operations;
     private bool _isLoading = false;
-    private string? _currentUserId = "system";
 
     protected override async Task OnInitializedAsync()
     {
@@ -81,7 +136,7 @@
         catch (Exception ex)
         {
             Snackbar.Add($"Error loading drilling operations: {ex.Message}", Severity.Error);
-            _operations = new List<DrillingOperationDto>();
+            _operations = new List<DRILLING_OPERATION>();
         }
         finally
         {
@@ -91,61 +146,47 @@
 
     private async Task OpenCreateDialog()
     {
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<MudDialog>("Create Drilling Operation", options);
-        var result = await dialog.Result;
-
-        if (!result.Canceled)
+        try
         {
-            try
+            var createDto = new CREATE_DRILLING_OPERATION
             {
-                var createDto = new CreateDrillingOperationDto
-                {
-                    WellUWI = Guid.NewGuid().ToString(), // Would come from dialog
-                    PlannedSpudDate = DateTime.Now.AddDays(30),
-                    TargetDepth = 10000,
-                    DrillingContractor = "Contractor Name",
-                    RigName = "Rig-001",
-                    EstimatedDailyCost = 50000
-                };
+                WellUWI = Guid.NewGuid().ToString(), // Would come from dialog
+                PlannedSpudDate = DateTime.Now.AddDays(30),
+                TargetDepth = 10000,
+                DrillingContractor = "Contractor Name",
+                RigName = "Rig-001",
+                EstimatedDailyCost = 50000
+            };
 
-                var operation = await OperationsService.CreateDrillingOperationAsync(createDto);
-                Snackbar.Add("Drilling operation created successfully", Severity.Success);
-                await LoadOperations();
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add($"Error creating drilling operation: {ex.Message}", Severity.Error);
-            }
+            var operation = await OperationsService.CreateDrillingOperationAsync(createDto);
+            Snackbar.Add("Drilling operation created successfully", Severity.Success);
+            await LoadOperations();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating drilling operation: {ex.Message}", Severity.Error);
         }
     }
 
-    private async Task OpenEditDialog(DrillingOperationDto operation)
+    private async Task OpenEditDialog(DRILLING_OPERATION operation)
     {
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<MudDialog>("Edit Drilling Operation", options);
-        var result = await dialog.Result;
-
-        if (!result.Canceled)
+        try
         {
-            try
+            var updateDto = new UpdateDrillingOperation
             {
-                var updateDto = new UpdateDrillingOperationDto
-                {
-                    Status = operation.Status,
-                    CurrentDepth = operation.CurrentDepth,
-                    DailyCost = operation.DailyCost,
-                    CompletionDate = operation.CompletionDate
-                };
+                Status = operation.STATUS,
+                CurrentDepth = operation.CURRENT_DEPTH,
+                DailyCost = operation.DAILY_COST,
+                CompletionDate = operation.COMPLETION_DATE
+            };
 
-                var updated = await OperationsService.UpdateDrillingOperationAsync(operation.OperationId, updateDto);
-                Snackbar.Add("Drilling operation updated successfully", Severity.Success);
-                await LoadOperations();
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add($"Error updating drilling operation: {ex.Message}", Severity.Error);
-            }
+            var updated = await OperationsService.UpdateDrillingOperationAsync(operation.OPERATION_ID, updateDto);
+            Snackbar.Add("Drilling operation updated successfully", Severity.Success);
+            await LoadOperations();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error updating drilling operation: {ex.Message}", Severity.Error);
         }
     }
 
@@ -162,4 +203,5 @@
         }
     }
 }
+
 

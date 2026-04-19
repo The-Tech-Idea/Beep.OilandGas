@@ -305,22 +305,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             try
             {
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY", null);
-
+                // PDEN_VOL_SUMMARY uses PDEN_ID (well PDEN identifier); date column is EFFECTIVE_DATE
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", wellId) }
+                    new AppFilter { FieldName = "PDEN_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", wellId) }
                 };
 
-                var entities = await GetEntitiesAsync("PDEN_VOL_SUMMARY", filters, "PRODUCTION_DATE", DataRetrievalMode.Latest);
-                var latest = entities.FirstOrDefault();
+                var entities = await GetEntitiesAsync("PDEN_VOL_SUMMARY", filters, "EFFECTIVE_DATE", DataRetrievalMode.Latest);
+                var latest = entities.FirstOrDefault() as PDEN_VOL_SUMMARY;
 
                 if (latest != null)
                 {
-                    var oilVol = GetPropertyValueMultiple(latest, "OIL_VOLUME", "OIL_PROD", "OIL_VOL") ?? 0;
-                    var waterVol = GetPropertyValueMultiple(latest, "WATER_VOLUME", "WATER_PROD", "WATER_VOL") ?? 0;
+                    var oilVol = latest.OIL_VOLUME;
+                    var waterVol = latest.WATER_VOLUME;
                     var totalVol = oilVol + waterVol;
 
                     if (totalVol > 0)
@@ -344,22 +341,19 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         {
             try
             {
-                var repo = new PPDMGenericRepository(
-                    _editor, _commonColumnHandler, _defaults, _metadata,
-                    typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY", null);
-
+                // PDEN_VOL_SUMMARY uses PDEN_ID (well PDEN identifier); date column is EFFECTIVE_DATE
                 var filters = new List<AppFilter>
                 {
-                    new AppFilter { FieldName = "WELL_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", wellId) }
+                    new AppFilter { FieldName = "PDEN_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", wellId) }
                 };
 
-                var entities = await GetEntitiesAsync("PDEN_VOL_SUMMARY", filters, "PRODUCTION_DATE", DataRetrievalMode.Latest);
-                var latest = entities.FirstOrDefault();
+                var entities = await GetEntitiesAsync("PDEN_VOL_SUMMARY", filters, "EFFECTIVE_DATE", DataRetrievalMode.Latest);
+                var latest = entities.FirstOrDefault() as PDEN_VOL_SUMMARY;
 
                 if (latest != null)
                 {
-                    var oilVol = GetPropertyValueMultiple(latest, "OIL_VOLUME", "OIL_PROD", "OIL_VOL") ?? 0;
-                    var gasVol = GetPropertyValueMultiple(latest, "GAS_VOLUME", "GAS_PROD", "GAS_VOL") ?? 0;
+                    var oilVol = latest.OIL_VOLUME;
+                    var gasVol = latest.GAS_VOLUME;
 
                     if (oilVol > 0)
                     {

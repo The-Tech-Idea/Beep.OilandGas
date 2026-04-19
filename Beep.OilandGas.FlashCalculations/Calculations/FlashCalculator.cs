@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using Beep.OilandGas.Models.Data.FlashCalculations;
+using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.FlashCalculations.Calculations
 {
     /// <summary>
     /// Provides rigorous thermodynamic flash calculations.
     /// Methods: Wilson's K-values, Rachford-Rice Equation (Newton-Raphson).
+    /// Also provides the convenience method PerformIsothermalFlash.
     /// </summary>
     public static class FlashCalculator
     {
@@ -135,6 +137,91 @@ namespace Beep.OilandGas.FlashCalculations.Calculations
 
                 results.Add((c.COMPONENT_NAME, (decimal)xi, (decimal)yi, (decimal)k));
             }
+        }
+
+        /// <summary>
+        /// Convenience wrapper: performs a full isothermal flash on a FLASH_CONDITIONS object and returns a FlashResult.
+        /// </summary>
+        public static FlashResult PerformIsothermalFlash(FLASH_CONDITIONS conditions)
+        {
+            if (conditions == null) throw new ArgumentNullException(nameof(conditions));
+
+            var result = new FlashResult();
+            try
+            {
+                var components = conditions.FEED_COMPOSITION ?? new List<FLASH_COMPONENT>();
+
+                int iterations;
+                bool converged;
+                decimal vaporFraction = SolveRachfordRice(components, conditions.PRESSURE, conditions.TEMPERATURE, out iterations, out converged);
+
+                result.VaporFraction = vaporFraction;
+                result.LiquidFraction = 1.0m - vaporFraction;
+                result.Iterations = iterations;
+                result.Converged = converged;
+
+                CalculatePhaseCompositions(vaporFraction, components, conditions.PRESSURE, conditions.TEMPERATURE, out var phaseResults);
+
+                result.VaporComposition = new List<FlashComponentFraction>();
+                result.LiquidComposition = new List<FlashComponentFraction>();
+                result.KValues = new List<FlashComponentKValue>();
+
+                foreach (var phaseRes in phaseResults)
+                {
+                    result.VaporComposition.Add(new FlashComponentFraction { ComponentName = phaseRes.Name, MoleFraction = phaseRes.yi });
+                    result.LiquidComposition.Add(new FlashComponentFraction { ComponentName = phaseRes.Name, MoleFraction = phaseRes.xi });
+                    result.KValues.Add(new FlashComponentKValue { ComponentName = phaseRes.Name, KValue = phaseRes.K });
+                }
+
+                result.Status = converged ? "SUCCESS" : "CONVERGENCE_FAILED";
+            }
+            catch (Exception ex)
+            {
+                result.Converged = false;
+                result.Status = $"FAILED: {ex.Message}";
+            }
+
+            return result;
+        }
+
+        public static PhasePropertiesData CalculateVaporProperties(FlashResult flashResult, FLASH_CONDITIONS conditions)
+        {
+            var props = new PhasePropertiesData();
+            if (flashResult.VaporComposition == null || !flashResult.VaporComposition.Any())
+                return props;
+
+            var components = conditions.FEED_COMPOSITION ?? new List<FLASH_COMPONENT>();
+            decimal mw = 0m;
+            foreach (var comp in components)
+            {
+                var fraction = flashResult.VaporComposition
+                    .FirstOrDefault(f => f.ComponentName == comp.COMPONENT_NAME);
+                var yi = fraction?.Fraction ?? 0m;
+                mw += yi * comp.MOLECULAR_WEIGHT;
+            }
+            props.MolecularWeight = mw;
+            props.Density = mw > 0 ? (decimal)(conditions.PRESSURE / (10.73m * (conditions.TEMPERATURE + 459.67m))) * mw : 0m;
+            return props;
+        }
+
+        public static PhasePropertiesData CalculateLiquidProperties(FlashResult flashResult, FLASH_CONDITIONS conditions)
+        {
+            var props = new PhasePropertiesData();
+            if (flashResult.LiquidComposition == null || !flashResult.LiquidComposition.Any())
+                return props;
+
+            var components = conditions.FEED_COMPOSITION ?? new List<FLASH_COMPONENT>();
+            decimal mw = 0m;
+            foreach (var comp in components)
+            {
+                var fraction = flashResult.LiquidComposition
+                    .FirstOrDefault(f => f.ComponentName == comp.COMPONENT_NAME);
+                var xi = fraction?.Fraction ?? 0m;
+                mw += xi * comp.MOLECULAR_WEIGHT;
+            }
+            props.MolecularWeight = mw;
+            props.Density = mw > 0 ? mw / 6.29m : 0m; // rough liquid density estimate
+            return props;
         }
     }
 }

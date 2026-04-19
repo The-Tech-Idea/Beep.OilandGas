@@ -31,7 +31,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
                 var result = await _service.GenerateForecastAsync(
                     request.WellUWI,
                     request.FieldId,
-                    request.ForecastMethod,
+                    request.ForecastMethod.ToString(),
                     request.ForecastPeriod);
                 return Ok(result);
             }

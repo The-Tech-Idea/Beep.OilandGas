@@ -5,10 +5,10 @@
 
 <PageTitle>Profile - Beep Oil & Gas</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-2" Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-text-primary);">
-    <span style="color: var(--mud-palette-success);">$</span> user.profile()
+<MudText Typo="Typo.h4" Class="og-terminal-heading mb-2">
+    <span class="og-terminal-success">$</span> user.profile()
 </MudText>
-<MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+<MudText Typo="Typo.body2" Class="mb-6" Color="Color.Secondary">
     Manage your account profile and preferences
 </MudText>
 
@@ -16,43 +16,41 @@
 {
     <MudStack AlignItems="AlignItems.Center" Class="pa-8">
         <MudProgressCircular Color="Color.Success" Indeterminate="true" />
-        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); font-family: 'JetBrains Mono', monospace;" Class="mt-4">
+        <MudText Typo="Typo.body2" Class="og-terminal-code mt-4" Color="Color.Secondary">
             Loading profile...
         </MudText>
     </MudStack>
 }
 else if (authProfile == null)
 {
-    <MudPaper Elevation="0" Class="pa-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-error); border-radius: 8px;">
+    <MudPaper Elevation="0" Class="og-terminal-card-error pa-6">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
             <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
             <div>
-                <MudText Typo="Typo.h6" Style="color: var(--mud-palette-error); font-family: 'JetBrains Mono', monospace;">
+                <MudText Typo="Typo.h6" Class="og-terminal-code" Color="Color.Error">
                     // Error: PROFILE_LOAD_FAILED
                 </MudText>
-                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
                     Failed to load profile. Please try again.
                 </MudText>
             </div>
         </MudStack>
-        <MudButton Variant="Variant.Outlined" Color="Color.Error" Class="mt-4" OnClick="LoadProfileAsync"
-                   Style="font-family: 'JetBrains Mono', monospace;">
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" Class="mt-4 og-terminal-code" OnClick="LoadProfileAsync">
             retry()
         </MudButton>
     </MudPaper>
 }
 else
 {
-    <MudTabs Elevation="0" ApplyEffectsToContainer="true" Rounded="true" PanelClass="pa-4"
-             Style="background: transparent;">
+    <MudTabs Elevation="0" ApplyEffectsToContainer="true" Rounded="true" PanelClass="pa-4">
         <!-- Personal Information Tab -->
         <MudTabPanel Text="Personal Info" Icon="@Icons.Material.Filled.Person">
             <MudGrid>
                 <!-- Account Credentials Card (from IdentityServer) -->
                 <MudItem xs="12">
-                    <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
-                        <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
-                            <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Class="mr-2" Style="vertical-align: middle;" />
+                    <MudPaper Elevation="0" Class="og-terminal-card pa-4 mb-4">
+                        <MudText Typo="Typo.subtitle1" Class="mb-4 og-terminal-code">
+                            <MudIcon Icon="@Icons.Material.Filled.AccountCircle" Class="mr-2 og-vertical-middle" />
                             Account Credentials
                         </MudText>
                         
@@ -62,8 +60,7 @@ else
                                               Label="Username" 
                                               Variant="Variant.Outlined"
                                               Disabled="true"
-                                              Style="background: var(--mud-palette-dark);"
-                                              Class="mb-4"
+                                              Class="og-terminal-dark mb-4"
                                               Adornment="Adornment.Start"
                                               AdornmentIcon="@Icons.Material.Filled.AlternateEmail" />
                             </MudItem>
@@ -73,26 +70,25 @@ else
                                               Label="Email" 
                                               Variant="Variant.Outlined"
                                               Disabled="true"
-                                              Style="background: var(--mud-palette-dark);"
-                                              Class="mb-4"
+                                              Class="og-terminal-dark mb-4"
                                               Adornment="Adornment.End"
                                               AdornmentIcon="@(authProfile.EmailConfirmed ? Icons.Material.Filled.Verified : Icons.Material.Filled.Warning)"
                                               AdornmentColor="@(authProfile.EmailConfirmed ? Color.Success : Color.Warning)" />
                             </MudItem>
                         </MudGrid>
                         
-                        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-text-secondary);">
-                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-1" Style="vertical-align: middle;" />
-                            Email and password are managed in <MudLink Href="/Account/Manage/Email" Style="color: var(--mud-palette-primary);">Email Settings</MudLink>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-1 og-vertical-middle" />
+                            Email and password are managed in <MudLink Href="/Account/Manage/Email" Color="Color.Primary">Email Settings</MudLink>
                         </MudText>
                     </MudPaper>
                 </MudItem>
                 
                 <!-- Personal Info Card -->
                 <MudItem xs="12">
-                    <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
-                        <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
-                            <MudIcon Icon="@Icons.Material.Filled.Badge" Class="mr-2" Style="vertical-align: middle;" />
+                    <MudPaper Elevation="0" Class="og-terminal-card pa-4 mb-4">
+                        <MudText Typo="Typo.subtitle1" Class="mb-4 og-terminal-code">
+                            <MudIcon Icon="@Icons.Material.Filled.Badge" Class="mr-2 og-vertical-middle" />
                             Personal Information
                         </MudText>
                         
@@ -101,8 +97,7 @@ else
                                 <MudTextField @bind-Value="phoneNumber"
                                               Label="Phone Number" 
                                               Variant="Variant.Outlined"
-                                              Style="background: var(--mud-palette-dark);"
-                                              Class="mb-4"
+                                              Class="og-terminal-dark mb-4"
                                               Adornment="Adornment.End"
                                               AdornmentIcon="@(authProfile.PhoneNumberConfirmed ? Icons.Material.Filled.Verified : Icons.Material.Filled.Phone)"
                                               AdornmentColor="@(authProfile.PhoneNumberConfirmed ? Color.Success : Color.Default)" />
@@ -113,9 +108,9 @@ else
                 
                 <!-- Security Status Cards -->
                 <MudItem xs="12" md="6">
-                    <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px; height: 100%;">
-                        <MudText Typo="Typo.subtitle1" Class="mb-3" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
-                            <MudIcon Icon="@Icons.Material.Filled.Security" Class="mr-2" Style="vertical-align: middle;" />
+                    <MudPaper Elevation="0" Class="og-terminal-card pa-4 og-h-full">
+                        <MudText Typo="Typo.subtitle1" Class="mb-3 og-terminal-code">
+                            <MudIcon Icon="@Icons.Material.Filled.Security" Class="mr-2 og-vertical-middle" />
                             Two-Factor Authentication
                         </MudText>
                         
@@ -123,20 +118,20 @@ else
                             @if (authProfile.TwoFactorEnabled)
                             {
                                 <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" />
-                                <MudText Style="color: var(--mud-palette-success); font-family: 'JetBrains Mono', monospace;">
+                                <MudText Class="og-terminal-success og-terminal-code">
                                     Enabled
                                 </MudText>
                             }
                             else
                             {
                                 <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" />
-                                <MudText Style="color: var(--mud-palette-warning); font-family: 'JetBrains Mono', monospace;">
+                                <MudText Class="og-terminal-warning og-terminal-code">
                                     Not Enabled
                                 </MudText>
                             }
                             <MudSpacer />
                             <MudButton Variant="Variant.Text" Color="Color.Info" Href="/Account/Manage/TwoFactorAuthentication"
-                                       Style="font-family: 'JetBrains Mono', monospace;">
+                                       Class="og-terminal-code">
                                 manage()
                             </MudButton>
                         </MudStack>
@@ -144,18 +139,18 @@ else
                 </MudItem>
                 
                 <MudItem xs="12" md="6">
-                    <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px; height: 100%;">
-                        <MudText Typo="Typo.subtitle1" Class="mb-3" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
-                            <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Class="mr-2" Style="vertical-align: middle;" />
+                    <MudPaper Elevation="0" Class="og-terminal-card pa-4 og-h-full">
+                        <MudText Typo="Typo.subtitle1" Class="mb-3 og-terminal-code">
+                            <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Class="mr-2 og-vertical-middle" />
                             Account Status
                         </MudText>
                         
                         <MudStack Spacing="1" Class="mt-2">
-                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
-                                Email: <span style="color: var(--mud-palette-text-primary);">@(authProfile.EmailConfirmed ? "Verified" : "Unverified")</span>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Email: <span>@(authProfile.EmailConfirmed ? "Verified" : "Unverified")</span>
                             </MudText>
-                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
-                                Phone: <span style="color: var(--mud-palette-text-primary);">@(authProfile.PhoneNumberConfirmed ? "Verified" : "Unverified")</span>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Phone: <span>@(authProfile.PhoneNumberConfirmed ? "Verified" : "Unverified")</span>
                             </MudText>
                         </MudStack>
                     </MudPaper>
@@ -168,7 +163,7 @@ else
                                OnClick="SaveProfileAsync"
                                Disabled="@isSaving"
                                StartIcon="@Icons.Material.Filled.Save"
-                               Style="font-family: 'JetBrains Mono', monospace;">
+                           Class="og-terminal-code">
                         @if (isSaving)
                         {
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -183,7 +178,7 @@ else
 
 @code {
     // Auth profile from IdentityServer
-    private UserProfile? authProfile;
+    private Beep.Foundation.IdentityServer.Shared.Services.UserProfile? authProfile;
     
     // Form fields
     private string? phoneNumber;
@@ -250,4 +245,5 @@ else
         isSaving = false;
     }
 }
+
 

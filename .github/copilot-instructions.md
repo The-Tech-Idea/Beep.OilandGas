@@ -30,6 +30,8 @@ tail -f logs/beep-oilgas-api-*.txt
 | `Beep.OilandGas.Web/Services/DataManagementService.cs` | Connection state management; cache patterns | 1–50 |
 | `Beep.OilandGas.PPDM39.DataManagement/Services/Exploration/PPDMExplorationService.cs` | Service implementation example using PPDMGenericRepository | Entire file |
 | `Beep.OilandGas.ApiService/Controllers/Field/FieldOrchestratorController.cs` | Field-scoped API pattern | 1–50 |
+| `Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.cs` | Central well service — CRUD, PPDM 3.9 facets, status init | Entire file |
+| `Beep.OilandGas.PPDM39.DataManagement/Services/Well/WellServices.WellStatus.cs` | Well status queries and facet management | Entire file |
 
 ## Data Access Pattern (Canonical)
 
@@ -157,6 +159,68 @@ if (fieldExists == null)
     throw new OperationCanceledException($"Field {fieldId} not found");
 ```
 
+## WellServices — Central Well Operations Service
+
+**Rule**: Any feature that touches a well (CRUD, status, structure, child entities) MUST go through `WellServices`. Do NOT create raw `PPDMGenericRepository` instances for `WELL`, `WELL_STATUS`, or `WELL_XREF` outside this service.
+
+### Namespace & Files
+```
+Beep.OilandGas.PPDM39.DataManagement/Services/Well/
+├── WellServices.cs              — core CRUD + constructor (5 repositories wired)
+├── WellServices.WellStatus.cs   — status queries, facet management, initializeDefaultStatuses
+├── WellServices.WellStructures.cs — WELL_XREF queries, child entity lookup
+├── WellServices.Models.cs       — WellStatusInfo DTO
+└── WellServices.Helpers.cs      — private helpers (status desc lookup, defaults)
+```
+Namespace: `Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL`
+
+### PPDM 3.9 Well Facets (STATUS_TYPE System)
+Well status in PPDM 3.9 is **multi-faceted** — each STATUS_TYPE is an independent dimension:
+
+| Scope | STATUS_TYPEs |
+|-------|-------------|
+| **Well** | Business Interest, Business Life Cycle Phase, Business Intention, Operatorship, Outcome, Lahee Class, Play Type, Well Structure, Well Reporting Class, Fluid Type, Well Status |
+| **Wellbore** | Business Interest, Role, Trajectory Type, Fluid Type, Wellbore Status |
+| **Wellhead Stream** | Fluid Direction |
+
+- Always pass `initializeDefaultStatuses: true` when creating a well — this seeds all 15 standard facets from `R_WELL_STATUS`.
+- `GetCurrentWellStatusByUwiAsync(uwi)` → `Dictionary<string, WELL_STATUS>` — one entry per STATUS_TYPE, most recent effective date wins.
+- `WellStatusInfo` DTO holds `WELL_STATUS` + `R_WELL_STATUS` description + `Facets` dictionary + typed `StatusType`/`StatusName`.
+
+### Key Methods
+```csharp
+// Get well by UWI
+var well = await _wellServices.GetByUwiAsync(uwi);
+
+// Create well and seed default status facets
+await _wellServices.CreateAsync(well, userId, initializeDefaultStatuses: true);
+
+// Get all status records for a well (full history, all facets)
+List<WELL_STATUS> history = await _wellServices.GetWellStatusByUwiAsync(uwi);
+
+// Get current status — one per STATUS_TYPE (most recent wins)
+Dictionary<string, WELL_STATUS> current = await _wellServices.GetCurrentWellStatusByUwiAsync(uwi);
+
+// Get well structures (WELL_XREF grouped by XREF_TYPE)
+Dictionary<string, List<WELL_XREF>> structures = await _wellServices.GetWellStructuresByUwiAsync(uwi);
+
+// Get child entities via XREF
+List<WELL_TUBULAR> tubulars = await _wellServices.GetChildEntitiesByWellStructureAsync<WELL_TUBULAR>(
+    uwi, xrefType, "WELL_TUBULAR");
+```
+
+### Registration Pattern
+```csharp
+builder.Services.AddScoped<WellServices>(sp =>
+{
+    var editor = sp.GetRequiredService<IDMEEditor>();
+    var commonColumnHandler = sp.GetRequiredService<ICommonColumnHandler>();
+    var defaults = sp.GetRequiredService<IPPDM39DefaultsRepository>();
+    var metadata = sp.GetRequiredService<IPPDMMetadataRepository>();
+    return new WellServices(editor, commonColumnHandler, defaults, metadata, connectionName);
+});
+```
+
 ## Common Anti-Patterns (Avoid)
 
 ❌ **Wrong**: Registering service before `IDMEEditor` → Startup crash.  
@@ -173,6 +237,32 @@ if (fieldExists == null)
 
 ❌ **Wrong**: Separate databases per feature → Data fragmentation.  
 ✅ **Right**: Single PPDM39 schema for all lifecycle data.
+
+❌ **Wrong**: `GetType().GetProperty("WELL_ID")` on results from a `typeof(WELL)` repository → brittle, wrong column names (`UWI` not `WELL_ID`), silently returns null.  
+✅ **Right**: Use `typeof(WELL)` in `PPDMGenericRepository`; cast results with `OfType<WELL>()`; access `w.UWI`, `w.ASSIGNED_FIELD`, `w.FINAL_TD` directly.
+
+**Rule**: When the PPDM39 entity type is known at compile time, NEVER use `GetType().GetProperty(...)` on the result objects. Use the typed class directly.
+
+❌ **Wrong**: Creating `PPDMGenericRepository` for `WELL`, `WELL_STATUS`, or `WELL_XREF` directly in a controller or feature service.  
+✅ **Right**: Inject `WellServices` and call its typed methods.
+
+❌ **Wrong**: Setting a single `WELL_STATUS` row for a new well without initializing all 15 PPDM 3.9 STATUS_TYPE facets.  
+✅ **Right**: Call `CreateAsync(well, userId, initializeDefaultStatuses: true)`.
+
+❌ **Wrong**: Querying `WELL_STATUS` for "current" status without grouping by STATUS_TYPE (returns stale/duplicate rows).  
+✅ **Right**: Use `GetCurrentWellStatusByUwiAsync` which returns one entry per STATUS_TYPE using the most recent EFFECTIVE_DATE.
+
+Known compile-time types (always use `typeof(X)` + `OfType<X>()`):
+- `WELL` — PK: `UWI` (not `WELL_ID`); field link: `ASSIGNED_FIELD` (not `FIELD_ID`); depth: `FINAL_TD`, `DRILL_TD`
+- `WELL_STATUS` — PK: `UWI` + `STATUS_TYPE` + `STATUS_ID` + `EFFECTIVE_DATE`; never query without STATUS_TYPE context
+- `WELL_XREF` — links well structures; key column: `XREF_TYPE` (values from `_defaults.GetWellboreXrefType()` etc.)
+- `R_WELL_STATUS` — reference table for status descriptions; columns: `STATUS_TYPE`, `STATUS`, `LONG_NAME`
+- `FACILITY` — PK: `FACILITY_ID`; field link: `PRIMARY_FIELD_ID`
+- `WELL_TEST`, `WELL_TUBULAR`, `WELL_ACTIVITY`, `WELL_EQUIPMENT`, `PDEN_VOL_SUMMARY`, `POOL`, `PDEN`
+
+Dynamic types (reflection acceptable — type not known at compile time):
+- `WELL_ABANDONMENT`, `FACILITY_DECOMMISSIONING`, `ENVIRONMENTAL_RESTORATION`, `DRILLING_OPERATION` — loaded via `Type.GetType($"Beep.OilandGas.PPDM39.Models.{metadata.EntityTypeName}")`
+- Generic helpers with `string propertyName` parameter — e.g., `GetStringValue(object entity, string fieldName)`
 
 ## Reference Docs (Canonical Truth)
 
@@ -436,3 +526,57 @@ var explorationTables = await _metadata.GetTablesBySubjectAreaAsync("EXPLORATION
 - Follow pattern: Load → Display → Handle interactions
 - Use `@page "/ppdm39/phase/operation"` for routing
 - Inject `DataManagementService`, `ApiClient`, `ProgressTrackingClient`
+
+## UI/UX Design Rules (Oil & Gas)
+
+> Full guidelines: `Plans/UI-UX-OilAndGas-Guidelines.md`  
+> Business process reference: `Plans/BusinessProcessesPlan/PetroleumEngineerBusinessProcesses.md`
+
+### Core Rules
+
+1. **Business process pages simulate engineer workflows — NOT CRUD operations.**
+   - Page titles must be verb phrases ("Optimize Well Performance"), not nouns ("Wells").
+   - Every page must have at least one visible "next action" button.
+   - If a page title contains "and", split it into two pages.
+
+2. **SVG only for new images — no PNG/JPG icons.**
+   - All new icon/image assets go in `wwwroot/imgs/icons/` as `.svg` files.
+   - Existing PNGs are legacy; replace when touched.
+   - SVGs must use `currentColor` (not hardcoded fill colors).
+
+3. **Active field context always visible.**
+   - Every business process page shows the active field name in its header.
+   - Use `IFieldOrchestrator.CurrentFieldId` + field name display in page header.
+
+4. **MudBlazor colors only — never hardcode.**
+   - Use `Color.*` enum for all component colors.
+   - Use MudBlazor CSS utilities (`pa-4`, `mb-2`, etc.) — no inline `style=""`.
+   - Dark mode support is automatic when using `Color.*` and theme CSS variables.
+
+5. **PPDMTreeView stays in Data Management — separate from engineer UX.**
+   - Data management (PPDM TreeView, raw CRUD) lives at `/ppdm39/data-management`.
+   - Engineer workflow pages do NOT link back to raw CRUD as a primary action.
+
+6. **Navigation follows the petroleum engineer's work sequence:**
+   ```
+   Dashboard → Exploration → Development → Production → Reservoir → Economics → HSE & Compliance → Data Management
+   ```
+
+### Shared Component Rules
+
+- Use `KpiCard` component (in `Components/Shared/`) for all KPI displays on dashboards.
+- Use `StatusBadge` component for all status chips (well status, process status, etc.).
+- Use `ProcessTimeline` component for showing process step history.
+- Multi-step processes use `MudStepper` — maximum 5 steps per wizard.
+- Kanban boards: maximum 6 columns; drag triggers a transition dialog (not silent).
+
+### Page Patterns Reference
+
+| Pattern | When to Use | MudBlazor Components |
+|---------|-------------|----------------------|
+| Dashboard | Section entry point | `MudGrid`, `KpiCard`, `MudChart` |
+| Wizard | Multi-step approval or data entry | `MudStepper`, `MudForm` |
+| Kanban Board | Item lifecycle (prospect, work order) | `MudGrid` columns, custom cards |
+| Decision Page | Gate reviews, intervention decisions | Two-column layout, `MudPaper` |
+| Monitoring Page | Live status, well performance | Status grid, `MudChart` line |
+| Workbench | Complex analytical tools | Split panel, `MudTabs` |

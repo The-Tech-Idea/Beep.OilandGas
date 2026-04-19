@@ -1,17 +1,31 @@
 @page "/ppdm39/well-details/wellbores"
-@inject ApiClient ApiClient
-@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
 
-<PageTitle>Wellbores - PPDM39</PageTitle>
+<PageTitle>Wellbores</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudText Typo="Typo.h4" Class="mb-4">Wellbores</MudText>
-    
-    <MudPaper Class="pa-4">
-        <MudText Typo="Typo.body1">Wellbores management interface coming soon...</MudText>
+<MudContainer MaxWidth="MaxWidth.Small" Class="pa-8">
+    <MudPaper Elevation="2" Class="pa-6">
+        <MudStack Spacing="3" AlignItems="AlignItems.Center">
+            <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Color="Color.Primary" Size="Size.Large" />
+            <MudText Typo="Typo.h5" Align="Align.Center">Wellbore data has moved</MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary" Align="Align.Center">
+                Wellbore details are now in the Well Performance Optimizer and Well Design pages.
+            </MudText>
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Speed"
+                           OnClick='() => NavigationManager.NavigateTo("/production/well-performance")'>
+                    Well Performance
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Draw"
+                           OnClick='() => NavigationManager.NavigateTo("/development/well-design")'>
+                    Well Design
+                </MudButton>
+            </MudStack>
+        </MudStack>
     </MudPaper>
 </MudContainer>
 
-@code {
-}
+@code { }
 

@@ -31,56 +31,39 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
             };
 
             var result = await _wellStatusRepository.GetAsync(filters);
-            return result.Cast<WELL_STATUS>().OrderByDescending(s => s.EFFECTIVE_DATE).ToList();
+            return result.Cast<WELL_STATUS>().OrderByDescending(s => s.EFFECTIVE_DATE ?? DateTime.MinValue).ToList();
         }
 
         /// <summary>
-        /// Gets current well status for a given UWI (most recent status for each STATUS_TYPE)
+        /// Gets current well status for a given UWI (most recent status for each STATUS_TYPE).
         /// Answers: "What are my wells doing today?"
-        /// Returns one status per STATUS_TYPE, using the most recent EFFECTIVE_DATE
+        /// Returns one <see cref="WELL_STATUS"/> per STATUS_TYPE, using the most recent EFFECTIVE_DATE.
+        /// <para>
+        /// PPDM 3.9: WELL_STATUS carries STATUS_TYPE directly, so no R_WELL_STATUS join is needed.
+        /// The 15 standard facets are populated by <see cref="InitializeDefaultWellStatusesAsync"/>.
+        /// </para>
         /// </summary>
         public async Task<Dictionary<string, WELL_STATUS>> GetCurrentWellStatusByUwiAsync(string uwi)
         {
             if (string.IsNullOrWhiteSpace(uwi))
                 throw new ArgumentException("UWI cannot be null or empty", nameof(uwi));
 
-            // Get all status records for this well
             var allStatuses = await GetWellStatusByUwiAsync(uwi);
 
-            // Group by STATUS_TYPE and get the most recent one for each type
-            var currentStatuses = new Dictionary<string, WELL_STATUS>(StringComparer.OrdinalIgnoreCase);
-            
-            // Group by STATUS_ID first, then get most recent
-            var groupedByStatusId = allStatuses
-                .GroupBy(s => s.STATUS_ID)
-                .ToList();
-
-            foreach (var group in groupedByStatusId)
-            {
-                // Get the most recent status for this STATUS_ID
-                var mostRecent = group.OrderByDescending(s => s.EFFECTIVE_DATE).First();
-
-                // Get STATUS_TYPE from R_WELL_STATUS
-                var statusDesc = await GetWellStatusDescriptionByStatusIdAsync(mostRecent.STATUS_ID);
-                if (statusDesc != null && !string.IsNullOrWhiteSpace(statusDesc.STATUS_TYPE))
-                {
-                    var statusType = statusDesc.STATUS_TYPE;
-                    
-                    // Only keep if this is the most recent for this STATUS_TYPE
-                    if (!currentStatuses.ContainsKey(statusType) || 
-                        currentStatuses[statusType].EFFECTIVE_DATE < mostRecent.EFFECTIVE_DATE)
-                    {
-                        currentStatuses[statusType] = mostRecent;
-                    }
-                }
-            }
-
-            return currentStatuses;
+            // WELL_STATUS.STATUS_TYPE is a direct column — group by it and pick most recent per type.
+            // No R_WELL_STATUS round-trips required.
+            return allStatuses
+                .Where(s => !string.IsNullOrWhiteSpace(s.STATUS_TYPE))
+                .GroupBy(s => s.STATUS_TYPE, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderByDescending(s => s.EFFECTIVE_DATE ?? DateTime.MinValue).First(),
+                    StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
-        /// Gets current well status for a specific STATUS_TYPE (e.g., "ROLE")
-        /// Returns the most recent status record for the given STATUS_TYPE
+        /// Gets current well status for a specific STATUS_TYPE (e.g., <c>"Business Life Cycle Phase"</c>).
+        /// Returns the most recent <see cref="WELL_STATUS"/> record for the given STATUS_TYPE.
         /// </summary>
         public async Task<WELL_STATUS> GetCurrentWellStatusByTypeAsync(string uwi, string statusType)
         {
@@ -89,37 +72,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
             if (string.IsNullOrWhiteSpace(statusType))
                 throw new ArgumentException("Status Type cannot be null or empty", nameof(statusType));
 
-            // Get all status descriptions for this STATUS_TYPE
-            var statusDescriptions = await GetWellStatusDescriptionsByTypeAsync(statusType);
-            
-            // STATUS_ID in WELL_STATUS might be "STATUS_TYPE,STATUS" or just "STATUS"
-            // Create a set of possible STATUS_ID values to match
-            var possibleStatusIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var desc in statusDescriptions)
-            {
-                // Try composite key format
-                possibleStatusIds.Add($"{desc.STATUS_TYPE},{desc.STATUS}");
-                // Try just STATUS
-                possibleStatusIds.Add(desc.STATUS);
-            }
-
-            // Get all well status records for this UWI
+            // WELL_STATUS.STATUS_TYPE is a direct column — filter by it, no extra lookups needed.
             var allStatuses = await GetWellStatusByUwiAsync(uwi);
-            
-            // Filter by STATUS_IDs that match this STATUS_TYPE
-            var matchingStatuses = allStatuses
-                .Where(s => !string.IsNullOrWhiteSpace(s.STATUS_ID) && 
-                           possibleStatusIds.Contains(s.STATUS_ID))
-                .OrderByDescending(s => s.EFFECTIVE_DATE)
-                .ToList();
-
-            return matchingStatuses.FirstOrDefault();
+            return allStatuses
+                .Where(s => string.Equals(s.STATUS_TYPE, statusType, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(s => s.EFFECTIVE_DATE ?? DateTime.MinValue)
+                .FirstOrDefault();
         }
 
         /// <summary>
-        /// Gets well status history for a specific STATUS_TYPE
-        /// Returns all status records for the given STATUS_TYPE, ordered by date
-        /// Example: Get all "ROLE" status changes over time for a well
+        /// Gets the full history for a specific STATUS_TYPE, most-recent-first.
+        /// Example: Get all "Business Life Cycle Phase" changes over time for a well.
         /// </summary>
         public async Task<List<WELL_STATUS>> GetWellStatusHistoryByTypeAsync(string uwi, string statusType)
         {
@@ -128,28 +91,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
             if (string.IsNullOrWhiteSpace(statusType))
                 throw new ArgumentException("Status Type cannot be null or empty", nameof(statusType));
 
-            // Get all status descriptions for this STATUS_TYPE
-            var statusDescriptions = await GetWellStatusDescriptionsByTypeAsync(statusType);
-            
-            // STATUS_ID in WELL_STATUS might be "STATUS_TYPE,STATUS" or just "STATUS"
-            // Create a set of possible STATUS_ID values to match
-            var possibleStatusIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var desc in statusDescriptions)
-            {
-                // Try composite key format
-                possibleStatusIds.Add($"{desc.STATUS_TYPE},{desc.STATUS}");
-                // Try just STATUS
-                possibleStatusIds.Add(desc.STATUS);
-            }
-
-            // Get all well status records for this UWI
+            // WELL_STATUS.STATUS_TYPE is a direct column — filter and sort in one pass.
             var allStatuses = await GetWellStatusByUwiAsync(uwi);
-            
-            // Filter by STATUS_IDs that match this STATUS_TYPE and order by date
             return allStatuses
-                .Where(s => !string.IsNullOrWhiteSpace(s.STATUS_ID) && 
-                           possibleStatusIds.Contains(s.STATUS_ID))
-                .OrderByDescending(s => s.EFFECTIVE_DATE)
+                .Where(s => string.Equals(s.STATUS_TYPE, statusType, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(s => s.EFFECTIVE_DATE ?? DateTime.MinValue)
                 .ToList();
         }
 
@@ -165,40 +111,17 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
             // Get all status records for this well
             var allStatuses = await GetWellStatusByUwiAsync(uwi);
 
-            // Filter to statuses that were effective on or before the asOfDate
-            // and not expired before the asOfDate
-            var effectiveStatuses = allStatuses
-                .Where(s => s.EFFECTIVE_DATE <= asOfDate && 
-                           (s.EXPIRY_DATE == DateTime.MinValue || s.EXPIRY_DATE >= asOfDate))
-                .OrderByDescending(s => s.EFFECTIVE_DATE)
-                .ToList();
-
-            // Group by STATUS_TYPE and get the most recent one for each type at that date
-            var statusesAtDate = new Dictionary<string, WELL_STATUS>(StringComparer.OrdinalIgnoreCase);
-
-            // Similar to GetCurrentWellStatusByUwiAsync, but filter by date
-            var groupedByStatusId = effectiveStatuses
-                .GroupBy(s => s.STATUS_ID)
-                .ToList();
-
-            foreach (var group in groupedByStatusId)
-            {
-                var mostRecent = group.First(); // Already ordered by EFFECTIVE_DATE desc
-
-                var statusDesc = await GetWellStatusDescriptionByStatusIdAsync(mostRecent.STATUS_ID);
-                if (statusDesc != null && !string.IsNullOrWhiteSpace(statusDesc.STATUS_TYPE))
-                {
-                    var statusType = statusDesc.STATUS_TYPE;
-                    
-                    if (!statusesAtDate.ContainsKey(statusType) || 
-                        statusesAtDate[statusType].EFFECTIVE_DATE < mostRecent.EFFECTIVE_DATE)
-                    {
-                        statusesAtDate[statusType] = mostRecent;
-                    }
-                }
-            }
-
-            return statusesAtDate;
+            // Filter to statuses effective on/before asOfDate and not yet expired.
+            // EXPIRY_DATE == null means "currently active with no set end date".
+            return allStatuses
+                .Where(s => !string.IsNullOrWhiteSpace(s.STATUS_TYPE) &&
+                            (s.EFFECTIVE_DATE == null || s.EFFECTIVE_DATE <= asOfDate) &&
+                            (s.EXPIRY_DATE == null || s.EXPIRY_DATE >= asOfDate))
+                .GroupBy(s => s.STATUS_TYPE, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderByDescending(s => s.EFFECTIVE_DATE ?? DateTime.MinValue).First(),
+                    StringComparer.OrdinalIgnoreCase);
         }
 
         #endregion
@@ -580,10 +503,11 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
             // A well can have multiple status records for the same STATUS_TYPE over time
             var currentStatuses = await GetWellStatusHistoryByTypeAsync(uwi, statusType);
             
-            // Find any active status (no expiry or expiry in future) that overlaps with the new effective date
+            // Find any active status (no expiry or expiry in future) that overlaps with the new effective date.
+            // EXPIRY_DATE == null means "currently active with no set end date".
             var overlappingStatus = currentStatuses
-                .Where(s => s.EXPIRY_DATE == DateTime.MinValue || s.EXPIRY_DATE >= newEffectiveDate)
-                .OrderByDescending(s => s.EFFECTIVE_DATE)
+                .Where(s => s.EXPIRY_DATE == null || s.EXPIRY_DATE >= newEffectiveDate)
+                .OrderByDescending(s => s.EFFECTIVE_DATE ?? DateTime.MinValue)
                 .FirstOrDefault();
 
             if (overlappingStatus != null)
@@ -627,10 +551,12 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
             {
                 UWI = uwi,
                 SOURCE = defaultSource,
-                STATUS_ID = statusId, // Format: "STATUS_TYPE,STATUS"
+                STATUS_ID = statusId,          // Format: "STATUS_TYPE,STATUS"
+                STATUS_TYPE = statusType,       // Stored directly on WELL_STATUS for fast queries
+                STATUS = status,               // Stored directly on WELL_STATUS for fast queries
                 EFFECTIVE_DATE = newEffectiveDate,
-                EXPIRY_DATE = expiryDate ?? DateTime.MinValue, // DateTime.MinValue = no expiry (current status)
-                END_TIME = expiryDate ?? DateTime.MinValue,
+                EXPIRY_DATE = expiryDate,      // null = currently active with no set end date
+                END_TIME = expiryDate,
                 PERCENT_CAPABILITY = percentCapability ?? 100,
                 ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
                 ROW_CREATED_BY = userId,
@@ -847,6 +773,434 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
             }
 
             return createdStatuses;
+        }
+
+        #endregion
+
+        #region Convenience Facet Accessors
+
+        // ── PPDM Well Status & Classification v3 convenience accessors ───────────────────────────────
+        // Facet names match the R_WELL_STATUS.STATUS_TYPE values in the database.
+        // Reference: PPDM Well Status & Classification v3 (R-3, June 2020).
+
+        /// <summary>
+        /// Returns the current <c>Life Cycle</c> phase (WSC v3).
+        /// Values: Planning | Constructing | Operating | Closing | Closed.
+        /// The Life Cycle of the well is derived from the current Life Cycle of each component.
+        /// </summary>
+        public Task<WELL_STATUS> GetWellLifecyclePhaseAsync(string uwi)
+            => GetCurrentWellStatusByTypeAsync(uwi, "Life Cycle");
+
+        /// <summary>
+        /// Returns the current <c>Condition</c> facet (WSC v3).
+        /// Values: Active | Inactive (Shut In, Idle, Abandoned).
+        /// Condition is the operational state relative to the Role.
+        /// </summary>
+        public Task<WELL_STATUS> GetWellConditionAsync(string uwi)
+            => GetCurrentWellStatusByTypeAsync(uwi, "Condition");
+
+        /// <summary>
+        /// Returns the current <c>Role</c> facet (WSC v3).
+        /// Values: Produce | Inject | Produce/Inject | Service | Research | No Role.
+        /// Role may change over the Life Cycle; if multiple Roles exist, use the highest significance.
+        /// </summary>
+        public Task<WELL_STATUS> GetWellRoleAsync(string uwi)
+            => GetCurrentWellStatusByTypeAsync(uwi, "Role");
+
+        /// <summary>
+        /// Returns the current <c>Business Intention</c> facet (WSC v3).
+        /// Values: Explore | Appraise | Extend | Develop.
+        /// Set at drilling start; generally does not change unless Life Cycle reverts to Planning.
+        /// </summary>
+        public Task<WELL_STATUS> GetWellBusinessIntentionAsync(string uwi)
+            => GetCurrentWellStatusByTypeAsync(uwi, "Business Intention");
+
+        /// <summary>
+        /// Returns the current <c>Business Interest</c> facet (WSC v3).
+        /// Values: Yes (Financial-Operated / Financial-Non-operated / Obligatory / Technical) | No.
+        /// Most important qualifier in the hierarchy should be stored. Can change over time.
+        /// </summary>
+        public Task<WELL_STATUS> GetWellBusinessInterestAsync(string uwi)
+            => GetCurrentWellStatusByTypeAsync(uwi, "Business Interest");
+
+        /// <summary>
+        /// Returns the current <c>Product Type</c> facet (WSC v3, replaces v2 "Fluid Type").
+        /// Values: Oil | Gas | Geothermal | Mineral | Non-hydrocarbon Gas | Steam | Water.
+        /// Always interpret alongside Product Significance (Primary/Secondary/Tertiary/Show).
+        /// </summary>
+        public Task<WELL_STATUS> GetWellProductTypeAsync(string uwi)
+            => GetCurrentWellStatusByTypeAsync(uwi, "Product Type");
+
+        /// <summary>
+        /// Returns the current <c>Product Significance</c> facet (WSC v3, new in v3).
+        /// Values: Primary | Secondary | Tertiary | Show.
+        /// Always paired with Product Type; significance may vary over the life of the well.
+        /// </summary>
+        public Task<WELL_STATUS> GetWellProductSignificanceAsync(string uwi)
+            => GetCurrentWellStatusByTypeAsync(uwi, "Product Significance");
+
+        /// <summary>
+        /// Returns the current <c>Well Structure</c> facet (WSC v3).
+        /// Values: Simple | Simplex | Compound | Complex | Network.
+        /// May change as new wellbores are added to the well.
+        /// </summary>
+        public Task<WELL_STATUS> GetWellStructureFacetAsync(string uwi)
+            => GetCurrentWellStatusByTypeAsync(uwi, "Well Structure");
+
+        /// <summary>
+        /// Returns the current <c>Profile Type</c> facet (WSC v3, replaces v2 "Trajectory Type").
+        /// Values: Vertical | Inclined (Slant Hole, S-type, Deep Inclined) | Horizontal (Toe-up, Toe-down, Level, Undulating).
+        /// Confirmed when Construction is finished; may change if drilling deviates from plan.
+        /// </summary>
+        public Task<WELL_STATUS> GetWellProfileTypeAsync(string uwi)
+            => GetCurrentWellStatusByTypeAsync(uwi, "Profile Type");
+
+        /// <summary>
+        /// Returns the current <c>Fluid Direction</c> facet (WSC v3 — Wellhead Stream scope).
+        /// Values: Inflow | Outflow | Static | Dual Flow.
+        /// </summary>
+        public Task<WELL_STATUS> GetWellFluidDirectionAsync(string uwi)
+            => GetCurrentWellStatusByTypeAsync(uwi, "Fluid Direction");
+
+        /// <summary>
+        /// Returns true if the well currently has a status record for the given STATUS_TYPE.
+        /// </summary>
+        public async Task<bool> HasStatusTypeAsync(string uwi, string statusType)
+        {
+            var status = await GetCurrentWellStatusByTypeAsync(uwi, statusType);
+            return status != null;
+        }
+
+        /// <summary>
+        /// Builds a <see cref="WellSummaryDto"/> for the given UWI, including all current status facets.
+        /// </summary>
+        public async Task<WellSummaryDto> GetWellStatusSummaryAsync(string uwi)
+        {
+            if (string.IsNullOrWhiteSpace(uwi))
+                throw new ArgumentException("UWI cannot be null or empty", nameof(uwi));
+
+            var currentStatuses = await GetCurrentWellStatusByUwiAsync(uwi);
+            var allStatusDescs = await GetAllWellStatusDescriptionsAsync();
+            var descLookup = allStatusDescs.ToDictionary(
+                d => $"{d.STATUS_TYPE}|{d.STATUS}",
+                d => d,
+                StringComparer.OrdinalIgnoreCase);
+
+            var statusInfos = new Dictionary<string, WellStatusInfo>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kvp in currentStatuses)
+            {
+                var ws = kvp.Value;
+                descLookup.TryGetValue($"{ws.STATUS_TYPE}|{ws.STATUS}", out var desc);
+
+                statusInfos[kvp.Key] = new WellStatusInfo
+                {
+                    WellStatus = ws,
+                    StatusDescription = desc,
+                    StatusType = ws.STATUS_TYPE,
+                    StatusName = desc?.LONG_NAME ?? desc?.STATUS ?? ws.STATUS,
+                    StatusAbbreviation = desc?.ABBREVIATION,
+                    StatusGroup = desc?.STATUS_GROUP,
+                    EffectiveDate = ws.EFFECTIVE_DATE,
+                    ExpiryDate = ws.EXPIRY_DATE
+                };
+            }
+
+            return new WellSummaryDto
+            {
+                UWI = uwi,
+                CurrentStatuses = statusInfos
+            };
+        }
+
+        #endregion
+
+        #region Facet Reference Data (R_WELL_STATUS / R_WELL_STATUS_QUAL / R_WELL_STATUS_QUAL_VALUE)
+
+        // ── Methods that load validated reference data from the database and fall back to  ──────────
+        // ── the embedded FACET_CATALOG when the R_* tables have not been seeded.           ──────────
+
+        /// <summary>
+        /// Returns all <see cref="FacetValueDto"/> records for the given STATUS_TYPE from
+        /// <c>R_WELL_STATUS</c>.  Falls back to <see cref="FACET_CATALOG"/> when the table is empty.
+        /// </summary>
+        public async Task<List<FacetValueDto>> GetFacetValuesAsync(string statusType)
+        {
+            if (string.IsNullOrWhiteSpace(statusType))
+                throw new ArgumentException("STATUS_TYPE is required", nameof(statusType));
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "STATUS_TYPE", FilterValue = statusType, Operator = "=" },
+                new AppFilter { FieldName = "ACTIVE_IND",  FilterValue = _defaults.GetActiveIndicatorYes(), Operator = "=" }
+            };
+
+            var rows = await _wellStatusReferenceRepository.GetAsync(filters);
+            var typed = rows.OfType<R_WELL_STATUS>().ToList();
+
+            // If the database has data use it; otherwise fall back to the embedded catalog.
+            if (typed.Any())
+            {
+                return typed.Select(r => new FacetValueDto
+                {
+                    StatusType   = r.STATUS_TYPE,
+                    Status       = r.STATUS,
+                    Abbreviation = r.ABBREVIATION,
+                    LongName     = r.LONG_NAME
+                }).ToList();
+            }
+
+            if (FACET_CATALOG.TryGetValue(statusType, out var def))
+                return def.Values.Select(v => new FacetValueDto
+                {
+                    StatusType   = statusType,
+                    Status       = v.Status,
+                    Abbreviation = v.Abbreviation,
+                    LongName     = v.LongName
+                }).ToList();
+
+            return new List<FacetValueDto>();
+        }
+
+        /// <summary>
+        /// Returns all <see cref="FacetQualifierDto"/> records for the given STATUS_TYPE from
+        /// <c>R_WELL_STATUS_QUAL</c>.  Falls back to <see cref="FACET_CATALOG"/> when the table is empty.
+        /// Optionally filter to only those qualifiers applicable to a specific STATUS value.
+        /// </summary>
+        public async Task<List<FacetQualifierDto>> GetFacetQualifiersAsync(string statusType, string status = null)
+        {
+            if (string.IsNullOrWhiteSpace(statusType))
+                throw new ArgumentException("STATUS_TYPE is required", nameof(statusType));
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "STATUS_TYPE", FilterValue = statusType, Operator = "=" },
+                new AppFilter { FieldName = "ACTIVE_IND",  FilterValue = _defaults.GetActiveIndicatorYes(), Operator = "=" }
+            };
+
+            var rows = await _wellStatusQualRepository.GetAsync(filters);
+            var typed = rows.OfType<R_WELL_STATUS_QUAL>().ToList();
+
+            if (typed.Any())
+            {
+                return typed.Select(r => new FacetQualifierDto
+                {
+                    StatusType = r.STATUS_TYPE,
+                    Status     = null,   // R_WELL_STATUS_QUAL doesn't store a per-status scope in this model
+                    Qualifier  = r.STATUS_QUALIFIER,
+                    LongName   = r.LONG_NAME
+                }).ToList();
+            }
+
+            if (FACET_CATALOG.TryGetValue(statusType, out var def))
+            {
+                // Collect qualifiers from the catalog: apply "*" (all) plus the specific status key
+                var result = new List<FacetQualifierDto>();
+                foreach (var key in new[] { "*", status })
+                {
+                    if (key != null && def.Qualifiers.TryGetValue(key, out var list))
+                        result.AddRange(list.Select(q => new FacetQualifierDto
+                        {
+                            StatusType = statusType,
+                            Status     = key == "*" ? null : key,
+                            Qualifier  = q.Qualifier,
+                            LongName   = q.LongName
+                        }));
+                }
+                return result;
+            }
+
+            return new List<FacetQualifierDto>();
+        }
+
+        /// <summary>
+        /// Returns all <see cref="FacetQualifierValueDto"/> records for a given
+        /// STATUS_TYPE + STATUS + QUALIFIER combination from <c>R_WELL_STATUS_QUAL_VALUE</c>.
+        /// Falls back to <see cref="FACET_CATALOG"/>.
+        /// </summary>
+        public async Task<List<FacetQualifierValueDto>> GetFacetQualifierValuesAsync(
+            string statusType, string status, string qualifier)
+        {
+            if (string.IsNullOrWhiteSpace(statusType) || string.IsNullOrWhiteSpace(status) || string.IsNullOrWhiteSpace(qualifier))
+                throw new ArgumentException("statusType, status, and qualifier are all required");
+
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "STATUS_TYPE",     FilterValue = statusType, Operator = "=" },
+                new AppFilter { FieldName = "STATUS",          FilterValue = status,     Operator = "=" },
+                new AppFilter { FieldName = "STATUS_QUALIFIER",FilterValue = qualifier,  Operator = "=" },
+                new AppFilter { FieldName = "ACTIVE_IND",      FilterValue = _defaults.GetActiveIndicatorYes(), Operator = "=" }
+            };
+
+            var rows = await _wellStatusQualValueRepository.GetAsync(filters);
+            var typed = rows.OfType<R_WELL_STATUS_QUAL_VALUE>().ToList();
+
+            if (typed.Any())
+            {
+                return typed.Select(r => new FacetQualifierValueDto
+                {
+                    StatusType     = r.STATUS_TYPE,
+                    Status         = r.STATUS,
+                    Qualifier      = r.STATUS_QUALIFIER,
+                    QualifierValue = r.STATUS_QUALIFIER_VALUE,
+                    LongName       = r.LONG_NAME
+                }).ToList();
+            }
+
+            // Catalog fallback
+            if (FACET_CATALOG.TryGetValue(statusType, out var def))
+            {
+                var key = (status, qualifier);
+                if (def.QualifierValues.TryGetValue(key, out var list))
+                    return list.Select(v => new FacetQualifierValueDto
+                    {
+                        StatusType     = statusType,
+                        Status         = status,
+                        Qualifier      = qualifier,
+                        QualifierValue = v.QualifierValue,
+                        LongName       = v.LongName
+                    }).ToList();
+            }
+
+            return new List<FacetQualifierValueDto>();
+        }
+
+        /// <summary>
+        /// Returns a fully-populated <see cref="FacetTypeDto"/> for each of the 13 WSC v3 facets,
+        /// enriched with the current WELL_STATUS value for the specified <paramref name="uwi"/>.
+        /// This is the single call made by the classification page on load.
+        /// </summary>
+        public async Task<List<FacetTypeDto>> GetWellFacetPageDataAsync(string uwi)
+        {
+            if (string.IsNullOrWhiteSpace(uwi))
+                throw new ArgumentException("UWI is required", nameof(uwi));
+
+            // Load current status facets for the well (one per STATUS_TYPE, most recent wins).
+            Dictionary<string, WELL_STATUS> currentStatus;
+            try { currentStatus = await GetCurrentWellStatusByUwiAsync(uwi); }
+            catch { currentStatus = new Dictionary<string, WELL_STATUS>(System.StringComparer.OrdinalIgnoreCase); }
+
+            var result = new List<FacetTypeDto>();
+
+            foreach (var facetType in DEFAULT_WELL_STATUS_TYPES)
+            {
+                if (!FACET_CATALOG.TryGetValue(facetType, out var catalogDef))
+                    continue;
+
+                // Reference values
+                var values     = await GetFacetValuesAsync(facetType);
+                var qualifiers = await GetFacetQualifiersAsync(facetType);
+
+                // Build qualifier groups keyed by STATUS
+                var qualifiersByStatus = new Dictionary<string, List<FacetQualifierDto>>(System.StringComparer.OrdinalIgnoreCase);
+                foreach (var q in qualifiers)
+                {
+                    var key = q.Status ?? "*";
+                    if (!qualifiersByStatus.ContainsKey(key))
+                        qualifiersByStatus[key] = new List<FacetQualifierDto>();
+                    qualifiersByStatus[key].Add(q);
+                }
+
+                // Current value for this well
+                WellStatusInfo currentInfo = null;
+                if (currentStatus.TryGetValue(facetType, out var ws))
+                {
+                    R_WELL_STATUS refRow = null;
+                    if (!string.IsNullOrWhiteSpace(ws.STATUS))
+                    {
+                        var match = values.FirstOrDefault(v =>
+                            string.Equals(v.Status, ws.STATUS, System.StringComparison.OrdinalIgnoreCase));
+                        if (match != null)
+                        {
+                            refRow = new R_WELL_STATUS
+                            {
+                                STATUS_TYPE  = match.StatusType,
+                                STATUS       = match.Status,
+                                ABBREVIATION = match.Abbreviation,
+                                LONG_NAME    = match.LongName
+                            };
+                        }
+                    }
+                    currentInfo = new WellStatusInfo
+                    {
+                        WellStatus         = ws,
+                        StatusDescription  = refRow,
+                        StatusType         = ws.STATUS_TYPE,
+                        StatusName         = refRow?.LONG_NAME ?? ws.STATUS,
+                        StatusAbbreviation = refRow?.ABBREVIATION,
+                        EffectiveDate      = ws.EFFECTIVE_DATE,
+                        ExpiryDate         = ws.EXPIRY_DATE
+                    };
+                }
+
+                result.Add(new FacetTypeDto
+                {
+                    StatusType   = catalogDef.StatusType,
+                    LongName     = catalogDef.LongName,
+                    Scope        = catalogDef.Scope,
+                    Values       = values,
+                    Qualifiers   = qualifiersByStatus,
+                    CurrentValue = currentInfo
+                });
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Inserts or updates the WELL_STATUS record for a single facet on the given well.
+        /// <list type="bullet">
+        ///   <item>If an active record already exists for (UWI, STATUS_TYPE) it is expired first.</item>
+        ///   <item>A new WELL_STATUS row is then inserted with the supplied values.</item>
+        /// </list>
+        /// </summary>
+        /// <param name="request">Facet assignment details. <see cref="SetFacetRequest"/> must supply UWI, StatusType, and Status.</param>
+        /// <param name="userId">Audit user ID (ROW_CREATED_BY / ROW_CHANGED_BY).</param>
+        /// <returns>The newly created WELL_STATUS row.</returns>
+        public async Task<WELL_STATUS> SetFacetAsync(SetFacetRequest request, string userId)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.UWI))
+                throw new ArgumentException("UWI is required", nameof(request));
+            if (string.IsNullOrWhiteSpace(request.StatusType))
+                throw new ArgumentException("StatusType is required", nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Status))
+                throw new ArgumentException("Status is required", nameof(request));
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("userId is required", nameof(userId));
+
+            var effectiveDate = request.EffectiveDate ?? System.DateTime.UtcNow.Date;
+
+            // Expire any currently-active record for this STATUS_TYPE before inserting the new one.
+            try
+            {
+                await ExpireWellStatusAsync(request.UWI, request.StatusType, effectiveDate.AddDays(-1), userId);
+            }
+            catch (InvalidOperationException)
+            {
+                // No current status to expire — this is the first assignment; continue.
+            }
+
+            // Build the new WELL_STATUS row with full column control (includes QUALIFIER and REMARK).
+            var statusId = $"{request.StatusType},{request.Status}";
+            var newRecord = new WELL_STATUS
+            {
+                UWI                    = request.UWI,
+                SOURCE                 = request.Source ?? "USER",
+                STATUS_ID              = statusId,
+                STATUS_TYPE            = request.StatusType,
+                STATUS                 = request.Status,
+                STATUS_QUALIFIER       = request.StatusQualifier,
+                STATUS_QUALIFIER_VALUE = request.StatusQualifierValue,
+                EFFECTIVE_DATE         = effectiveDate,
+                EXPIRY_DATE            = request.ExpiryDate,
+                REMARK                 = request.Remark,
+                PERCENT_CAPABILITY     = request.PercentCapability ?? 0,
+                ACTIVE_IND             = _defaults.GetActiveIndicatorYes()
+            };
+
+            var inserted = await _wellStatusRepository.InsertAsync(newRecord, userId);
+            return inserted as WELL_STATUS ?? newRecord;
         }
 
         #endregion

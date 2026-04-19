@@ -120,10 +120,10 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
                     FieldId = createdWell.FIELD_ID ?? string.Empty,
                     CurrentState = "PLANNED",
                     Status = "ACTIVE",
-                    Properties = new Dictionary<string, object>
+                    Properties = new List<WellProperty>
                     {
-                        { "WellType", createdWell.WELL_TYPE ?? string.Empty },
-                        { "WellPurpose", createdWell.WELL_PURPOSE ?? string.Empty }
+                        new WellProperty { Name = "WellType", Value = createdWell.WELL_TYPE ?? string.Empty },
+                        new WellProperty { Name = "WellPurpose", Value = createdWell.WELL_PURPOSE ?? string.Empty }
                     }
                 };
             }
@@ -167,10 +167,10 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
                     FieldId = wellEntity.FIELD_ID ?? string.Empty,
                     CurrentState = currentState,
                     Status = wellEntity.ACTIVE_IND == "Y" ? "ACTIVE" : "INACTIVE",
-                    Properties = new Dictionary<string, object>
+                    Properties = new List<WellProperty>
                     {
-                        { "WellType", wellEntity.WELL_TYPE ?? string.Empty },
-                        { "WellPurpose", wellEntity.WELL_PURPOSE ?? string.Empty }
+                        new WellProperty { Name = "WellType", Value = wellEntity.WELL_TYPE ?? string.Empty },
+                        new WellProperty { Name = "WellPurpose", Value = wellEntity.WELL_PURPOSE ?? string.Empty }
                     }
                 };
             }
@@ -230,10 +230,27 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
                     throw new InvalidOperationException($"Well not found: {request.WellId}");
                 }
 
-                // Store operations data (could be in OPERATIONS_LOG table)
-                _logger?.LogInformation("Well operations recorded for well: {WellId}, Type: {OperationType}", 
+                var actMeta = await _metadata.GetTableMetadataAsync("WELL_ACTIVITY");
+                if (actMeta != null)
+                {
+                    var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
+                    var activity = new WELL_ACTIVITY
+                    {
+                        UWI = _defaults.FormatIdForTable("WELL_ACTIVITY", request.WellId),
+                        SOURCE = "LIFECYCLE",
+                        ACTIVITY_OBS_NO = Math.Abs((decimal)(Guid.NewGuid().GetHashCode())),
+                        ACTIVITY_TYPE_ID = request.OperationType,
+                        START_DATE = request.OperationDate,
+                        EVENT_DATE = request.OperationDate,
+                        REMARK = request.Description,
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (activity is IPPDMEntity ae) _commonColumnHandler.PrepareForInsert(ae, userId);
+                    await actRepo.InsertAsync(activity, userId);
+                }
+                _logger?.LogInformation("Well operations recorded for well: {WellId}, Type: {OperationType}",
                     request.WellId, request.OperationType);
-
                 return true;
             }
             catch (Exception ex)
@@ -261,10 +278,27 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
                     throw new InvalidOperationException($"Well not found: {request.WellId}");
                 }
 
-                // Store maintenance data (could be in MAINTENANCE_SCHEDULE or MAINTENANCE_HISTORY table)
-                _logger?.LogInformation("Well maintenance created for well: {WellId}, Type: {MaintenanceType}", 
+                var maintMeta = await _metadata.GetTableMetadataAsync("WELL_ACTIVITY");
+                if (maintMeta != null)
+                {
+                    var maintRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
+                    var activity = new WELL_ACTIVITY
+                    {
+                        UWI = _defaults.FormatIdForTable("WELL_ACTIVITY", request.WellId),
+                        SOURCE = "LIFECYCLE",
+                        ACTIVITY_OBS_NO = Math.Abs((decimal)(Guid.NewGuid().GetHashCode())),
+                        ACTIVITY_TYPE_ID = "MAINT_" + request.MaintenanceType,
+                        START_DATE = request.ScheduledDate,
+                        END_DATE = request.CompletedDate,
+                        REMARK = request.Description,
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (activity is IPPDMEntity ae) _commonColumnHandler.PrepareForInsert(ae, userId);
+                    await maintRepo.InsertAsync(activity, userId);
+                }
+                _logger?.LogInformation("Well maintenance created for well: {WellId}, Type: {MaintenanceType}",
                     request.WellId, request.MaintenanceType);
-
                 return true;
             }
             catch (Exception ex)
@@ -292,10 +326,28 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
                     throw new InvalidOperationException($"Well not found: {request.WellId}");
                 }
 
-                // Store inspection data (could be in INSPECTION_SCHEDULE or INSPECTION_RESULT table)
-                _logger?.LogInformation("Well inspection created for well: {WellId}, Type: {InspectionType}", 
+                var inspMeta = await _metadata.GetTableMetadataAsync("WELL_ACTIVITY");
+                if (inspMeta != null)
+                {
+                    var inspRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
+                    var activity = new WELL_ACTIVITY
+                    {
+                        UWI = _defaults.FormatIdForTable("WELL_ACTIVITY", request.WellId),
+                        SOURCE = "LIFECYCLE",
+                        ACTIVITY_OBS_NO = Math.Abs((decimal)(Guid.NewGuid().GetHashCode())),
+                        ACTIVITY_TYPE_ID = "INSP_" + request.InspectionType,
+                        EVENT_DATE = request.InspectionDate,
+                        START_DATE = request.InspectionDate,
+                        REPORTED_CODE = request.Inspector,
+                        REMARK = string.IsNullOrEmpty(request.Findings) ? request.Inspector : $"{request.Inspector}: {request.Findings}",
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (activity is IPPDMEntity ae) _commonColumnHandler.PrepareForInsert(ae, userId);
+                    await inspRepo.InsertAsync(activity, userId);
+                }
+                _logger?.LogInformation("Well inspection created for well: {WellId}, Type: {InspectionType}",
                     request.WellId, request.InspectionType);
-
                 return true;
             }
             catch (Exception ex)
@@ -610,18 +662,50 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
                     throw new InvalidOperationException($"Well not found: {wellId}");
                 }
 
-                // Calculate performance metrics
                 var metrics = new Dictionary<string, decimal>();
-                
-                // This would query production data, costs, etc.
-                // For now, return empty metrics structure
-                
+                var additionalData = new Dictionary<string, object>();
+
+                // Query WELL_ACTIVITY for activity count
+                var activityMeta = await _metadata.GetTableMetadataAsync("WELL_ACTIVITY");
+                if (activityMeta != null)
+                {
+                    var activityRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                    var activityFilters = new List<AppFilter>
+                    {
+                        new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = _defaults.FormatIdForTable("WELL_ACTIVITY", wellId) },
+                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    };
+                    var activities = await activityRepo.GetAsync(activityFilters);
+                    var aList = activities?.ToList() ?? new List<object>();
+                    metrics["TotalActivityCount"] = aList.Count;
+                    metrics["MaintenanceCount"] = aList.OfType<WELL_ACTIVITY>().Count(a =>
+                        a.ACTIVITY_TYPE_ID != null && a.ACTIVITY_TYPE_ID.StartsWith("MAINT_", StringComparison.OrdinalIgnoreCase));
+                    metrics["InspectionCount"] = aList.OfType<WELL_ACTIVITY>().Count(a =>
+                        a.ACTIVITY_TYPE_ID != null && a.ACTIVITY_TYPE_ID.StartsWith("INSP_", StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Query PDEN_VOL_SUMMARY for production data
+                var prodMeta = await _metadata.GetTableMetadataAsync("PDEN_VOL_SUMMARY");
+                if (prodMeta != null)
+                {
+                    var prodRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(PDEN_VOL_SUMMARY), _connectionName, "PDEN_VOL_SUMMARY", null);
+                        // PDEN_VOL_SUMMARY links by PDEN_ID (the well's production entity ID, same as UWI in single-well PDENs)
+                        var prodFilters = new List<AppFilter>
+                        {
+                            new AppFilter { FieldName = "PDEN_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", wellId) }
+                        };
+                        var prodResults = await prodRepo.GetAsync(prodFilters);
+                        metrics["ProductionRecordCount"] = prodResults?.Count() ?? 0;
+                }
+
                 return new WellPerformanceResponse
                 {
                     WellId = wellId,
                     ReportDate = DateTime.UtcNow,
                     Metrics = metrics,
-                    AdditionalData = new Dictionary<string, object>()
+                    AdditionalData = additionalData
                 };
             }
             catch (Exception ex)

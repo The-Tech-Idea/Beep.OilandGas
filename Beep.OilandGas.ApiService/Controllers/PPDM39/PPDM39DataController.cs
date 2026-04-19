@@ -94,11 +94,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var entityType = _dataService.GetEntityTypeByTableName(tableName);
-                if (entityType == null)
-                    return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = $"Entity type not found for table: {tableName}" });
-
-                var entity = JsonSerializer.Deserialize(body.GetRawText(), entityType);
+                var entity = JsonSerializer.Deserialize<Dictionary<string, object>>(body.GetRawText());
                 if (entity == null)
                     return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "Failed to deserialize entity" });
 
@@ -136,11 +132,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var entityType = _dataService.GetEntityTypeByTableName(tableName);
-                if (entityType == null)
-                    return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = $"Entity type not found for table: {tableName}" });
-
-                var entity = JsonSerializer.Deserialize(body.GetRawText(), entityType);
+                var entity = JsonSerializer.Deserialize<Dictionary<string, object>>(body.GetRawText());
                 if (entity == null)
                     return BadRequest(new EntityResult<object> { Success = false, ErrorMessage = "Failed to deserialize entity" });
 

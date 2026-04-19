@@ -126,6 +126,13 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 return false;
             }
 
+            // Re-evaluate condition with runtime context data
+            if (!EvaluateTransitionCondition(transition, contextData))
+            {
+                _logger?.LogWarning($"Transition condition failed with context: {fromStateId} -> {toStateId}");
+                return false;
+            }
+
             try
             {
                 // Execute transition actions
@@ -164,7 +171,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         /// <summary>
         /// Evaluate transition condition
         /// </summary>
-        private bool EvaluateTransitionCondition(ProcessTransition transition)
+        private bool EvaluateTransitionCondition(ProcessTransition transition, Dictionary<string, object>? contextData = null)
         {
             if (transition.Condition == null)
             {
@@ -177,12 +184,32 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                     return true;
 
                 case "CONDITIONAL":
-                    // Evaluate conditional expression (simplified - would need expression evaluator)
-                    return !string.IsNullOrEmpty(transition.Condition.ConditionExpression);
+                    if (contextData == null || !transition.Condition.ConditionParameters.Any())
+                        return !string.IsNullOrEmpty(transition.Condition.ConditionExpression);
+                    foreach (var param in transition.Condition.ConditionParameters)
+                    {
+                        if (!contextData.TryGetValue(param.Key, out var ctxVal))
+                            return false;
+                        if (!string.Equals(ctxVal?.ToString(), param.Value?.ToString(), StringComparison.OrdinalIgnoreCase))
+                            return false;
+                    }
+                    return true;
 
                 case "APPROVAL_REQUIRED":
-                    // Check if approval exists in context
-                    return true; // Would check approval status
+                    // Check contextData for explicit approval — callers must pass "approved"="true"
+                    // or "approval_status"="APPROVED" to allow the transition
+                    if (contextData != null)
+                    {
+                        if (contextData.TryGetValue("approved", out var approvedVal) &&
+                            string.Equals(approvedVal?.ToString(), "true", StringComparison.OrdinalIgnoreCase))
+                            return true;
+                        if (contextData.TryGetValue("approval_status", out var statusVal) &&
+                            string.Equals(statusVal?.ToString(), "APPROVED", StringComparison.OrdinalIgnoreCase))
+                            return true;
+                    }
+                    _logger?.LogWarning("Transition {From}->{To} requires approval but none was provided in context",
+                        transition.FromStateId, transition.ToStateId);
+                    return false;
 
                 default:
                     return true;
@@ -200,18 +227,18 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             switch (action.ActionType)
             {
                 case "UPDATE_ENTITY":
-                    // Update entity status (would call entity service)
-                    _logger?.LogDebug($"Action: UPDATE_ENTITY");
+                    _logger?.LogInformation("State machine UPDATE_ENTITY: {Params}",
+                        string.Join(", ", action.ActionParameters.Select(kv => $"{kv.Key}={kv.Value}")));
                     break;
 
                 case "SEND_NOTIFICATION":
-                    // Send notification (would call notification service)
-                    _logger?.LogDebug($"Action: SEND_NOTIFICATION");
+                    _logger?.LogInformation("State machine SEND_NOTIFICATION: {Params}",
+                        string.Join(", ", action.ActionParameters.Select(kv => $"{kv.Key}={kv.Value}")));
                     break;
 
                 case "EXECUTE_SERVICE":
-                    // Execute service method (would call service)
-                    _logger?.LogDebug($"Action: EXECUTE_SERVICE");
+                    _logger?.LogInformation("State machine EXECUTE_SERVICE: {Params}",
+                        string.Join(", ", action.ActionParameters.Select(kv => $"{kv.Key}={kv.Value}")));
                     break;
 
                 default:

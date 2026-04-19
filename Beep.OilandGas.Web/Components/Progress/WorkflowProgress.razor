@@ -1,4 +1,4 @@
-@using Beep.OilandGas.ApiService.Models
+@using Beep.OilandGas.Models.Data.DataManagement
 @using Beep.OilandGas.Web.Services
 @using MudBlazor
 @implements IAsyncDisposable
@@ -126,9 +126,9 @@
 @code {
     [Parameter] public string WorkflowId { get; set; } = string.Empty;
     [Parameter] public string Title { get; set; } = "Workflow Progress";
-    [Parameter] public EventCallback<Beep.OilandGas.ApiService.Models.WorkflowProgress> OnComplete { get; set; }
+    [Parameter] public EventCallback<Beep.OilandGas.Models.Data.DataManagement.WorkflowProgress> OnComplete { get; set; }
 
-    private Beep.OilandGas.ApiService.Models.WorkflowProgress? _workflowProgress;
+    private Beep.OilandGas.Models.Data.DataManagement.WorkflowProgress? _workflowProgress = null;
     private bool _isDisposed = false;
 
     protected override async Task OnInitializedAsync()

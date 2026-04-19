@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,7 +24,7 @@ namespace Beep.OilandGas.GasLift.Services
     /// Implements industry-standard gas lift design, optimization, and monitoring.
     /// Uses PPDMGenericRepository for PPDM39 data persistence.
     /// </summary>
-    public class GasLiftService : IGasLiftService
+    public partial class GasLiftService : IGasLiftService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;

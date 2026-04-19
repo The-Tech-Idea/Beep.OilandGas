@@ -53,8 +53,12 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 if (result == null)
                     return null;
 
-                // Convert Entity or Dictionary to DTO
-                return result; // For now return as is, implementation of conversion will be added if needed
+                // Return the entity cast to the expected result type if possible
+                if (resultType.IsInstanceOfType(result))
+                    return result;
+
+                // Fallback: return raw entity (caller is responsible for casting via object?)
+                return result;
             }
             catch (Exception ex)
             {

@@ -1,0 +1,316 @@
+@page "/production/allocation"
+@inject ISnackbar Snackbar
+
+<PageTitle>Allocate Production Volumes</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Allocate Production Volumes</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Allocate measured production to wells and facilities</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.CallSplit">Production</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudChip T="string" Color="@(_allocationStatus == "LOCKED" ? Color.Success : Color.Warning)"
+                 Icon="@(_allocationStatus == "LOCKED" ? Icons.Material.Filled.Lock : Icons.Material.Filled.LockOpen)"
+                 Size="Size.Small">
+            @_allocationStatus
+        </MudChip>
+    </MudStack>
+
+    @* ── Period selector ─────────────────────────────────────────────────── *@
+    <MudPaper Elevation="1" Class="pa-3 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
+            <MudSelect T="string" Label="Allocation Period" @bind-Value="_selectedPeriod"
+                       Variant="Variant.Outlined" Class="og-select-lg">
+                <MudSelectItem Value="@("Mar 2026")">March 2026</MudSelectItem>
+                <MudSelectItem Value="@("Feb 2026")">February 2026</MudSelectItem>
+                <MudSelectItem Value="@("Jan 2026")">January 2026</MudSelectItem>
+            </MudSelect>
+            <MudSelect T="string" Label="Method" @bind-Value="_allocationMethod"
+                       Variant="Variant.Outlined" Class="og-select-xl">
+                <MudSelectItem Value="@("Well Test")">Well Test Ratio</MudSelectItem>
+                <MudSelectItem Value="@("Metered")">Metered (Individual)</MudSelectItem>
+                <MudSelectItem Value="@("Model")">Reservoir Model</MudSelectItem>
+            </MudSelect>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Field total: <strong>@_fieldTotal.ToString("N0") BOPD</strong> measured
+            </MudText>
+        </MudStack>
+    </MudPaper>
+
+    @* ── Allocation balance banner ────────────────────────────────────────── *@
+    <MudPaper Elevation="2" Class="@AllocationBannerClass">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+            <MudIcon Icon="@(_isBalanced ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Warning)"
+                     Color="@(_isBalanced ? Color.Success : Color.Warning)" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.body1">
+                    <strong>@(_isBalanced ? "Allocation Balanced" : "Allocation Imbalanced")</strong>
+                    — Allocated: @_allocatedTotal.ToString("N0") BOPD vs Measured: @_fieldTotal.ToString("N0") BOPD
+                </MudText>
+                @if (!_isBalanced)
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Warning">
+                        Difference: @((_fieldTotal - _allocatedTotal).ToString("+N0;-N0")) BOPD —
+                        adjust well ratios or check meter data before submitting.
+                    </MudText>
+                }
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+
+    @* ── Main Content ─────────────────────────────────────────────────────── *@
+    <MudGrid Spacing="3">
+
+        @* LEFT — Allocation table (8 cols) *@
+        <MudItem xs="12" lg="8">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Well Allocation — @_selectedPeriod</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Autorenew"
+                                   OnClick="RecalculateAllocation">
+                            Recalculate
+                        </MudButton>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="WellAllocation" Items="@_allocations" Dense="true"
+                                 EditMode="DataGridEditMode.Cell"
+                                 ReadOnly="@(_allocationStatus == "LOCKED")">
+                        <Columns>
+                            <PropertyColumn Property="a => a.WellName" Title="Well" IsEditable="false" />
+                            <PropertyColumn Property="a => a.TestRateBopd" Title="Test Rate (BOPD)" Format="N0" IsEditable="false" />
+                            <PropertyColumn Property="a => a.UptimeFraction" Title="Uptime" Format="P1" IsEditable="false" />
+                            <PropertyColumn Property="a => a.AllocationFactor" Title="Factor %" Format="P1" IsEditable="false" />
+                            <PropertyColumn Property="a => a.AllocatedOilBopd" Title="Allocated Oil (BOPD)" Format="N0" IsEditable="true" />
+                            <PropertyColumn Property="a => a.AllocatedGasMmscfd" Title="Gas (MMSCFD)" Format="N2" IsEditable="true" />
+                            <PropertyColumn Property="a => a.AllocatedWaterBopd" Title="Water (BWPD)" Format="N0" IsEditable="true" />
+                            <TemplateColumn Title="">
+                                <CellTemplate>
+                                    @{
+                                        var variance = context.Item.AllocatedOilBopd - context.Item.TestRateBopd * context.Item.UptimeFraction;
+                                        var pctVar = context.Item.TestRateBopd > 0 ? variance / (context.Item.TestRateBopd * context.Item.UptimeFraction) : 0;
+                                    }
+                                    <MudChip T="string" Size="Size.Small"
+                                             Color="@(Math.Abs(pctVar) < 0.05 ? Color.Success : Math.Abs(pctVar) < 0.10 ? Color.Warning : Color.Error)">
+                                        @pctVar.ToString("+0%;-0%")
+                                    </MudChip>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+                <MudCardContent Class="pa-2">
+                    <MudStack Row="true" Spacing="4">
+                        <MudText Typo="Typo.body2"><strong>TOTAL:</strong> Oil @_allocatedTotal.ToString("N0") BOPD &nbsp;|&nbsp; Gas @_allocations.Sum(a => a.AllocatedGasMmscfd).ToString("N2") MMSCFD &nbsp;|&nbsp; Water @_allocations.Sum(a => a.AllocatedWaterBopd).ToString("N0") BWPD</MudText>
+                    </MudStack>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudStack Row="true" Spacing="2" Class="pa-2">
+                        @if (_allocationStatus != "LOCKED")
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                       Disabled="@(!_isBalanced)"
+                                       StartIcon="@Icons.Material.Filled.Save"
+                                       OnClick="SubmitAllocation">
+                                Submit for Approval
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                                       StartIcon="@Icons.Material.Filled.Autorenew"
+                                       OnClick="RecalculateAllocation">
+                                Reset to Calculated
+                            </MudButton>
+                        }
+                        else
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                                       StartIcon="@Icons.Material.Filled.Download">
+                                Export to Excel
+                            </MudButton>
+                        }
+                    </MudStack>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+
+        @* RIGHT — Charts (4 cols) *@
+        <MudItem xs="12" lg="4">
+            <MudStack Spacing="3">
+
+                @* Oil contribution donut *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Oil Contribution</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudChart ChartType="ChartType.Donut"
+                                  ChartSeries="@_contributionSeries"
+                                  ChartLabels="@_contributionLabels"
+                                  Width="100%"
+                                  Height="200px" />
+                    </MudCardContent>
+                </MudCard>
+
+                @* Monthly summary *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Monthly Totals</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudList T="string" Dense="true">
+                            <MudListItem T="string" Value="@("oil")">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2">Oil (MBBl)</MudText>
+                                    <MudText Typo="Typo.body2"><strong>@((_allocatedTotal * 31 / 1000).ToString("N0"))</strong></MudText>
+                                </MudStack>
+                            </MudListItem>
+                            <MudDivider />
+                            <MudListItem T="string" Value="@("gas")">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2">Gas (BSCF)</MudText>
+                                    <MudText Typo="Typo.body2"><strong>@(_allocations.Sum(a => a.AllocatedGasMmscfd * 31 / 1000).ToString("N3"))</strong></MudText>
+                                </MudStack>
+                            </MudListItem>
+                            <MudDivider />
+                            <MudListItem T="string" Value="@("water")">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2">Water (MBWl)</MudText>
+                                    <MudText Typo="Typo.body2"><strong>@((_allocations.Sum(a => a.AllocatedWaterBopd) * 31 / 1000).ToString("N0"))</strong></MudText>
+                                </MudStack>
+                            </MudListItem>
+                            <MudDivider />
+                            <MudListItem T="string" Value="@("wc")">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2">Avg Water Cut</MudText>
+                                    <MudText Typo="Typo.body2"><strong>@WaterCutPct.ToString("N1")%</strong></MudText>
+                                </MudStack>
+                            </MudListItem>
+                        </MudList>
+                    </MudCardContent>
+                </MudCard>
+
+                @* Allocation history *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Recent Allocation History</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MudList T="AllocationRecord" Dense="true">
+                            @foreach (var rec in _history)
+                            {
+                                <MudListItem T="AllocationRecord" Value="rec">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.body2">@rec.Period</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">Submitted @rec.SubmittedBy</MudText>
+                                        </MudStack>
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@(rec.Status == "APPROVED" ? Color.Success : Color.Default)">
+                                            @rec.Status
+                                        </MudChip>
+                                    </MudStack>
+                                </MudListItem>
+                                <MudDivider />
+                            }
+                        </MudList>
+                    </MudCardContent>
+                </MudCard>
+
+            </MudStack>
+        </MudItem>
+
+    </MudGrid>
+
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private string _selectedPeriod = "Mar 2026";
+    private string _allocationMethod = "Well Test";
+    private string _allocationStatus = "DRAFT";
+    private double _fieldTotal = 14_280;
+
+    private List<WellAllocation> _allocations = new()
+    {
+        new("DEV-A1", 3_600, 0.95, 0.253, 3_420, 5.21, 2_120),
+        new("DEV-A2", 3_200, 0.93, 0.221, 2_980, 4.54, 2_050),
+        new("DEV-B1", 4_300, 0.97, 0.309, 4_150, 6.33, 1_890),
+        new("DEV-B2", 2_600, 0.46, 0.089, 1_200, 1.83,   490),
+        new("DEV-C1", 2_800, 0.90, 0.187, 2_530, 3.86, 2_240),
+    };
+
+    private List<AllocationRecord> _history = new()
+    {
+        new("February 2026", "S. Lee",    "APPROVED"),
+        new("January 2026",  "J. Smith",  "APPROVED"),
+        new("December 2025", "M. Torres", "APPROVED"),
+    };
+
+    private double _allocatedTotal => _allocations.Sum(a => a.AllocatedOilBopd);
+    private bool _isBalanced => Math.Abs(_allocatedTotal - _fieldTotal) < 50;
+    private double WaterCutPct =>
+        (_allocations.Sum(a => a.AllocatedWaterBopd) /
+         (_allocatedTotal + _allocations.Sum(a => a.AllocatedWaterBopd))) * 100;
+
+    private List<ChartSeries<double>> _contributionSeries =>
+        new() { new ChartSeries<double> { Data = _allocations.Select(a => a.AllocatedOilBopd).ToArray() } };
+
+    private string[] _contributionLabels =>
+        _allocations.Select(a => a.WellName).ToArray();
+
+    private string AllocationBannerClass => $"pa-3 mb-4 {(_isBalanced ? "allocation-balanced" : "allocation-unbalanced")}";
+
+    private Task OnAllocationChanged(WellAllocation item)
+    {
+        // TODO: PATCH /api/production/allocation/{period}/wells/{wellId}
+        return Task.CompletedTask;
+    }
+
+    private void RecalculateAllocation()
+    {
+        foreach (var a in _allocations)
+            a.AllocatedOilBopd = Math.Round(a.TestRateBopd * a.UptimeFraction * (_fieldTotal / _allocations.Sum(x => x.TestRateBopd * x.UptimeFraction)));
+        Snackbar.Add("Allocation recalculated from well test ratios", Severity.Info);
+    }
+
+    private void SubmitAllocation()
+    {
+        _allocationStatus = "SUBMITTED";
+        Snackbar.Add($"Allocation for {_selectedPeriod} submitted for approval", Severity.Success);
+    }
+
+    private class WellAllocation
+    {
+        public string WellName { get; set; }
+        public double TestRateBopd { get; set; }
+        public double UptimeFraction { get; set; }
+        public double AllocationFactor { get; set; }
+        public double AllocatedOilBopd { get; set; }
+        public double AllocatedGasMmscfd { get; set; }
+        public double AllocatedWaterBopd { get; set; }
+
+        public WellAllocation(string well, double test, double uptime, double factor,
+            double oil, double gas, double water)
+        {
+            WellName = well; TestRateBopd = test; UptimeFraction = uptime;
+            AllocationFactor = factor; AllocatedOilBopd = oil;
+            AllocatedGasMmscfd = gas; AllocatedWaterBopd = water;
+        }
+    }
+
+    private record AllocationRecord(string Period, string SubmittedBy, string Status);
+}

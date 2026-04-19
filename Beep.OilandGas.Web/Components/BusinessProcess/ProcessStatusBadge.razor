@@ -1,0 +1,39 @@
+@* ProcessStatusBadge — color-coded chip for ProcessStatus values *@
+<MudChip T="string"
+         Color="@_color"
+         Variant="Variant.Filled"
+         Size="@Size"
+         Icon="@_icon"
+         Class="process-status-badge">
+    @_label
+</MudChip>
+
+@code {
+    [Parameter] public string Status { get; set; } = string.Empty;
+    [Parameter] public Size Size { get; set; } = Size.Small;
+
+    private Color _color = Color.Default;
+    private string _icon = string.Empty;
+    private string _label = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        _label = Status?.Replace("_", " ") ?? string.Empty;
+        (_color, _icon) = Status?.ToUpperInvariant() switch
+        {
+            "COMPLETED" or "COMPLETE"
+                => (Color.Success, Icons.Material.Filled.CheckCircle),
+            "IN_PROGRESS" or "IN PROGRESS" or "ACTIVE"
+                => (Color.Primary, Icons.Material.Filled.PlayCircle),
+            "NOT_STARTED" or "NOT STARTED" or "PLANNED"
+                => (Color.Default, Icons.Material.Outlined.Circle),
+            "SUSPENDED" or "DEFERRED" or "ON_HOLD"
+                => (Color.Warning, Icons.Material.Filled.PauseCircle),
+            "FAILED" or "REJECTED" or "ERROR"
+                => (Color.Error, Icons.Material.Filled.ErrorOutline),
+            "CANCELLED" or "CANCELED"
+                => (Color.Dark, Icons.Material.Filled.Cancel),
+            _ => (Color.Default, Icons.Material.Filled.Circle)
+        };
+    }
+}

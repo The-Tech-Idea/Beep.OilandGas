@@ -1,9 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.LifeCycle.Services.Accounting;
 using Beep.OilandGas.Models.Data.LifeCycle;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.PPDM.Models;
+using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -74,16 +78,16 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
                     WorkOrderId = workOrder.WORK_ORDER_ID ?? string.Empty,
                     WorkOrderNumber = workOrder.WORK_ORDER_NUMBER ?? string.Empty,
                     WorkOrderType = workOrder.WORK_ORDER_TYPE ?? string.Empty,
-                    EntityType = workOrder.ENTITY_TYPE ?? string.Empty,
-                    EntityId = workOrder.ENTITY_ID ?? string.Empty,
-                    FieldId = workOrder.FIELD_ID,
-                    PropertyId = workOrder.PROPERTY_ID,
-                    Status = workOrder.STATUS,
+                    EntityType = nameof(WORK_ORDER),
+                    EntityId = workOrder.WORK_ORDER_ID ?? string.Empty,
+                    FieldId = null,
+                    PropertyId = null,
+                    Status = GetWorkOrderStatus(workOrder),
                     RequestDate = workOrder.REQUEST_DATE,
                     DueDate = workOrder.DUE_DATE,
                     CompleteDate = workOrder.COMPLETE_DATE,
-                    EstimatedCost = workOrder.ESTIMATED_COST,
-                    ActualCost = workOrder.ACTUAL_COST
+                    EstimatedCost = null,
+                    ActualCost = null
                 };
 
                 var afe = await _workOrderAccountingService.CreateOrLinkAFEAsync(
@@ -223,6 +227,21 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
                 _logger.LogError(ex, "Error getting AFE for work order {WorkOrderId}", workOrderId);
                 return StatusCode(500, new { error = ex.Message });
             }
+        }
+
+        private static string GetWorkOrderStatus(WORK_ORDER workOrder)
+        {
+            if (workOrder.COMPLETE_DATE.HasValue)
+            {
+                return "Completed";
+            }
+
+            if (string.Equals(workOrder.ACTIVE_IND, "N", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Inactive";
+            }
+
+            return "Open";
         }
     }
 }

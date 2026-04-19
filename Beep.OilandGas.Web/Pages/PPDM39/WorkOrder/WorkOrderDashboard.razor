@@ -1,0 +1,239 @@
+@page "/ppdm39/workorder"
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+
+<PageTitle>Work Order Dashboard</PageTitle>
+
+<MudStack Spacing="3">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Manage Work Orders</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                @(_fieldName ?? "No active field") — ISO 55001 / BSEE SEMS
+            </MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudIconButton Icon="@Icons.Material.Outlined.CalendarMonth"
+                           Href="/ppdm39/workorder/calendar"
+                           Title="Calendar view" Color="Color.Default" />
+            <MudButton StartIcon="@Icons.Material.Outlined.AddCircleOutline"
+                       Variant="Variant.Filled" Color="Color.Primary"
+                       OnClick="OpenCreateDialog">
+                New Work Order
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @* ── Filter row ───────────────────────────────────────────────────────── *@
+    <MudPaper Elevation="0" Class="pa-3" Style="background:transparent">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
+            <MudSelect T="string?" Label="Sub-type" @bind-Value="_filterSubType"
+                       Clearable="true" Style="min-width:200px" Dense="true" Margin="Margin.Dense">
+                <MudSelectItem Value="@((string?)null)">All types</MudSelectItem>
+                <MudSelectItem Value="@WorkOrderSubType.Preventive">Preventive</MudSelectItem>
+                <MudSelectItem Value="@WorkOrderSubType.Corrective">Corrective</MudSelectItem>
+                <MudSelectItem Value="@WorkOrderSubType.Safety">Safety Critical</MudSelectItem>
+                <MudSelectItem Value="@WorkOrderSubType.Environmental">Environmental</MudSelectItem>
+                <MudSelectItem Value="@WorkOrderSubType.RegulatoryInspect">Regulatory Inspect</MudSelectItem>
+                <MudSelectItem Value="@WorkOrderSubType.Turnaround">Turnaround</MudSelectItem>
+            </MudSelect>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Outlined.FilterList"
+                       OnClick="LoadWorkOrders">Apply</MudButton>
+        </MudStack>
+    </MudPaper>
+
+    @* ── Kanban board ─────────────────────────────────────────────────────── *@
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else
+    {
+        <MudGrid Spacing="2">
+            @foreach (var col in _columns)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="2">
+                    <MudPaper Elevation="1" Class="pa-2" Style="min-height:400px">
+                        <MudStack Spacing="1">
+                            <MudStack Row="true" AlignItems="AlignItems.Center"
+                                      Justify="Justify.SpaceBetween" Class="mb-1">
+                                <MudText Typo="Typo.subtitle2">@col.Label</MudText>
+                                <MudChip T="int" Size="Size.Small" Color="Color.Default"
+                                         Value="@CardsFor(col.State).Count">
+                                    @CardsFor(col.State).Count
+                                </MudChip>
+                            </MudStack>
+                            @foreach (var wo in CardsFor(col.State))
+                            {
+                                <MudCard Elevation="2" Class="mb-1" Style="cursor:pointer"
+                                         @onclick="() => OpenDetail(wo.InstanceId)">
+                                    <MudCardHeader Class="pa-2">
+                                        <CardHeaderContent>
+                                            <MudText Typo="Typo.caption" Color="Color.Primary">
+                                                @wo.InstanceId
+                                            </MudText>
+                                            <MudText Typo="Typo.body2">@wo.InstanceName</MudText>
+                                        </CardHeaderContent>
+                                    </MudCardHeader>
+                                    <MudCardContent Class="pa-2 pt-0">
+                                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                            <MudChip T="string" Size="Size.Small"
+                                                     Color="@SubTypeColor(wo.WoSubType)"
+                                                     Value="@wo.WoSubType">
+                                                @SubTypeLabel(wo.WoSubType)
+                                            </MudChip>
+                                            @if (wo.PlannedStart.HasValue)
+                                            {
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                    @wo.PlannedStart.Value.ToString("dd-MMM")
+                                                </MudText>
+                                            }
+                                        </MudStack>
+                                    </MudCardContent>
+                                </MudCard>
+                            }
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+    @* ── Error snackbar ───────────────────────────────────────────────────── *@
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <MudAlert Severity="Severity.Error" ShowCloseIcon="true"
+                  CloseIconClicked="@(() => _error = null)">@_error</MudAlert>
+    }
+
+</MudStack>
+
+@* ── Create dialog ─────────────────────────────────────────────────────────── *@
+<MudDialog @bind-IsVisible="_showCreate" Options="_dialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Create Work Order</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_createForm" @bind-IsValid="_createValid">
+            <MudStack Spacing="2">
+                <MudTextField @bind-Value="_create.InstanceName" Label="Title"
+                              Required="true" RequiredError="Title is required" />
+                <MudTextField @bind-Value="_create.Description" Label="Description"
+                              Lines="3" />
+                <MudSelect T="string" Label="Sub-type" @bind-Value="_create.WoSubType" Required="true">
+                    <MudSelectItem Value="@WorkOrderSubType.Preventive">Preventive</MudSelectItem>
+                    <MudSelectItem Value="@WorkOrderSubType.Corrective">Corrective</MudSelectItem>
+                    <MudSelectItem Value="@WorkOrderSubType.Safety">Safety Critical</MudSelectItem>
+                    <MudSelectItem Value="@WorkOrderSubType.Environmental">Environmental</MudSelectItem>
+                    <MudSelectItem Value="@WorkOrderSubType.RegulatoryInspect">Regulatory Inspect</MudSelectItem>
+                    <MudSelectItem Value="@WorkOrderSubType.Turnaround">Turnaround</MudSelectItem>
+                </MudSelect>
+                <MudTextField @bind-Value="_create.EquipmentId" Label="Equipment / Facility ID" />
+                <MudDatePicker @bind-Date="_create.ProposedStart" Label="Planned start" />
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showCreate = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled"
+                   Disabled="!_createValid" OnClick="SubmitCreateAsync">Create</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<WorkOrderSummary> _workOrders = new();
+    private string?                _fieldName;
+    private string?                _filterSubType;
+    private bool                   _loading;
+    private string?                _error;
+
+    // Create dialog
+    private bool                   _showCreate;
+    private bool                   _createValid;
+    private MudForm?               _createForm;
+    private CreateWorkOrderRequest _create = new();
+    private DialogOptions          _dialogOptions = new() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    private record KanbanColumn(string State, string Label);
+    private readonly List<KanbanColumn> _columns = new()
+    {
+        new(WorkOrderState.Draft,       "Draft"),
+        new(WorkOrderState.Scoped,      "Scoped"),
+        new(WorkOrderState.Planned,     "Planned"),
+        new(WorkOrderState.InProgress,  "In Progress"),
+        new(WorkOrderState.UnderReview, "Under Review"),
+        new(WorkOrderState.Completed,   "Completed"),
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try { _fieldName = (await ApiClient.GetAsync<dynamic>("/api/field/fields/active"))?.FieldName; }
+        catch { }
+        await LoadWorkOrders();
+    }
+
+    private async Task LoadWorkOrders()
+    {
+        _loading = true;
+        _error   = null;
+        try
+        {
+            var qs = _filterSubType is not null ? $"?woSubType={_filterSubType}" : string.Empty;
+            _workOrders = await ApiClient.GetAsync<List<WorkOrderSummary>>(
+                $"/api/field/current/workorder{qs}") ?? new();
+        }
+        catch (Exception ex) { _error = $"Failed to load work orders: {ex.Message}"; }
+        finally { _loading = false; }
+    }
+
+    private List<WorkOrderSummary> CardsFor(string state) =>
+        _workOrders.Where(w => string.Equals(w.State, state, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private void OpenDetail(string instanceId) =>
+        NavigationManager.NavigateTo($"/ppdm39/workorder/{instanceId}");
+
+    private void OpenCreateDialog()
+    {
+        _create     = new CreateWorkOrderRequest { WoSubType = WorkOrderSubType.Preventive };
+        _showCreate = true;
+    }
+
+    private async Task SubmitCreateAsync()
+    {
+        if (_createForm is not null) await _createForm.Validate();
+        if (!_createValid) return;
+        try
+        {
+            await ApiClient.PostAsync<CreateWorkOrderRequest, WorkOrderSummary>(
+                "/api/field/current/workorder", _create);
+            _showCreate = false;
+            await LoadWorkOrders();
+        }
+        catch (Exception ex) { _error = $"Failed to create work order: {ex.Message}"; }
+    }
+
+    private static Color SubTypeColor(string subType) => subType switch
+    {
+        WorkOrderSubType.Safety            => Color.Error,
+        WorkOrderSubType.Environmental     => Color.Success,
+        WorkOrderSubType.RegulatoryInspect => Color.Warning,
+        WorkOrderSubType.Turnaround        => Color.Info,
+        _                                  => Color.Default
+    };
+
+    private static string SubTypeLabel(string subType) => subType switch
+    {
+        WorkOrderSubType.Preventive        => "PM",
+        WorkOrderSubType.Corrective        => "CM",
+        WorkOrderSubType.Safety            => "SCE",
+        WorkOrderSubType.Environmental     => "ENV",
+        WorkOrderSubType.RegulatoryInspect => "REG",
+        WorkOrderSubType.Turnaround        => "TAR",
+        _                                  => subType
+    };
+}

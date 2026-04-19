@@ -24,6 +24,42 @@ This guide helps agents make safe, well-scoped edits that align with Beep.Oiland
 - Use `ModelEntityBase` for any shared model; it implements `IPPDMEntity` and includes PPDM audit columns.
 - Do not create or reintroduce DTO namespaces.
 
+## WellServices — Mandatory for All Well Operations
+
+Any feature touching a well MUST use `WellServices` from `Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL`. Never create raw `PPDMGenericRepository` instances for `WELL`, `WELL_STATUS`, or `WELL_XREF` outside it.
+
+**File layout** (partial class):
+```
+Beep.OilandGas.PPDM39.DataManagement/Services/Well/
+├── WellServices.cs               — core CRUD; wires 4 PPDMGenericRepositories
+├── WellServices.WellStatus.cs    — status queries, facet management
+├── WellServices.WellStructures.cs — WELL_XREF / child entity lookup
+├── WellServices.Models.cs        — WellStatusInfo DTO
+└── WellServices.Helpers.cs       — private helpers
+```
+
+**PPDM 3.9 Well Facets** — well status is multi-dimensional. 15 standard `STATUS_TYPE` facets must be seeded on creation:
+- Well-level: Business Interest, Business Life Cycle Phase, Business Intention, Operatorship, Outcome, Lahee Class, Play Type, Well Structure, Well Reporting Class, Fluid Type, Well Status
+- Wellbore-level: Business Interest, Role, Trajectory Type, Fluid Type, Wellbore Status
+- Wellhead Stream: Fluid Direction
+
+**Rules**:
+1. Always pass `initializeDefaultStatuses: true` when calling `CreateAsync` for a new well.
+2. Use `GetCurrentWellStatusByUwiAsync(uwi)` → `Dictionary<string, WELL_STATUS>` for current facet values (groups by STATUS_TYPE, most recent EFFECTIVE_DATE wins).
+3. Use `GetWellStructuresByUwiAsync(uwi)` → `Dictionary<string, List<WELL_XREF>>` for wellbore/completion tree.
+4. `WellStatusInfo` DTO carries `WELL_STATUS` + `R_WELL_STATUS` description + `Facets` dictionary — always prefer this over raw `WELL_STATUS` in API responses.
+
+**Registration**:
+```csharp
+builder.Services.AddScoped<WellServices>(sp =>
+    new WellServices(
+        sp.GetRequiredService<IDMEEditor>(),
+        sp.GetRequiredService<ICommonColumnHandler>(),
+        sp.GetRequiredService<IPPDM39DefaultsRepository>(),
+        sp.GetRequiredService<IPPDMMetadataRepository>(),
+        connectionName));
+```
+
 ## Mandatory Pre-Edit Checklist
 
 Before making any code change:
@@ -32,6 +68,9 @@ Before making any code change:
 - [ ] Confirm all new interfaces live in `Beep.OilandGas.Models.Core.Interfaces`.
 - [ ] Verify service registration uses factory pattern: `AddScoped<IFoo>(sp => new Foo(sp.GetRequiredService<...>(), ...))`.
 - [ ] If touching data access, use the PPDMGenericRepository pattern shown in `.cursor/commands/beep-dataaccess-generic-repository.md`.
+- [ ] If touching any well entity (`WELL`, `WELL_STATUS`, `WELL_XREF`), use `WellServices` — never create raw repositories for these tables outside it.
+- [ ] If creating a new well, pass `initializeDefaultStatuses: true` to seed all 15 PPDM 3.9 STATUS_TYPE facets.
+- [ ] If querying current well status, use `GetCurrentWellStatusByUwiAsync` — not a raw `WELL_STATUS` query without STATUS_TYPE grouping.
 
 ## Data Access Pattern (Copy-Paste Template)
 
@@ -90,6 +129,9 @@ builder.Services.AddScoped<IMyService>(sp =>
 3. Using `ExecuteSql` for SELECT queries -> only use for DDL; use `GetEntityAsync` or `RunQuery` instead.
 4. Hardcoding SQL parameter delimiters -> use `dataSource.ParameterDelimiter` or `AppFilter`.
 5. Creating separate databases per feature -> always use the single PPDM39 schema.
+6. Creating raw `PPDMGenericRepository` for `WELL`/`WELL_STATUS`/`WELL_XREF` outside `WellServices` -> duplicate logic, missed facet init.
+7. Querying `WELL_STATUS` without grouping by `STATUS_TYPE` -> stale/duplicate current-status results. Use `GetCurrentWellStatusByUwiAsync`.
+8. Creating a new well without `initializeDefaultStatuses: true` -> well missing its 15 PPDM 3.9 status facets.
 
 ## Quick Verification Steps
 
@@ -97,6 +139,17 @@ builder.Services.AddScoped<IMyService>(sp =>
 dotnet build Beep.OilandGas.sln
 dotnet run --project Beep.OilandGas.ApiService
 ```
+
+## Known Compile-Time Types
+
+Always use `typeof(X)` + `.OfType<X>()` for these — never use `GetType().GetProperty(...)` on their results:
+
+- `WELL` — PK: `UWI` (not `WELL_ID`); field link: `ASSIGNED_FIELD`; depth: `FINAL_TD`, `DRILL_TD`
+- `WELL_STATUS` — PK: `UWI` + `STATUS_TYPE` + `STATUS_ID` + `EFFECTIVE_DATE`; always group by STATUS_TYPE
+- `WELL_XREF` — key column: `XREF_TYPE` (values from `_defaults.GetWellboreXrefType()` etc.)
+- `R_WELL_STATUS` — columns: `STATUS_TYPE`, `STATUS`, `LONG_NAME`
+- `FACILITY` — PK: `FACILITY_ID`; field link: `PRIMARY_FIELD_ID`
+- `WELL_TEST`, `WELL_TUBULAR`, `WELL_ACTIVITY`, `WELL_EQUIPMENT`, `PDEN_VOL_SUMMARY`, `POOL`, `PDEN`
 
 ## Reference Documentation (Treat as Source-of-Truth)
 

@@ -1,15 +1,26 @@
 @page "/ppdm39/calculations/pipelineanalysis"
+@using Beep.OilandGas.Models.Data.Calculations
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject ICalculationServiceClient CalculationService
 
-<PageTitle>Pipeline Analysis</PageTitle>
+<PageTitle>Analyse Pipeline Flow</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Pipeline Analysis</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Analyse Pipeline Flow</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Pressure drop, flow capacity and integrity</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.LinearScale">Pipeline</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
 
     <MudPaper Class="pa-4">
         <MudStack Spacing="3">
@@ -38,11 +49,11 @@
                 <MudText Typo="Typo.h6" Class="mb-4">Analysis Results</MudText>
                 <MudStack Spacing="2">
                     <MudText>Pipeline ID: @_analysisResult.PipelineId</MudText>
-                    <MudText>Flow Rate: @_analysisResult.FlowRate.ToString("F2") BBL/D</MudText>
-                    <MudText>Inlet Pressure: @_analysisResult.InletPressure.ToString("F2") PSI</MudText>
-                    <MudText>Outlet Pressure: @_analysisResult.OutletPressure.ToString("F2") PSI</MudText>
-                    <MudText>Pressure Drop: @_analysisResult.PressureDrop.ToString("F2") PSI</MudText>
-                    <MudText>Velocity: @_analysisResult.Velocity.ToString("F2") ft/s</MudText>
+                    <MudText>Flow Rate: @($"{_analysisResult.FlowRate:F2}") BBL/D</MudText>
+                    <MudText>Inlet Pressure: @($"{_analysisResult.InletPressure:F2}") PSI</MudText>
+                    <MudText>Outlet Pressure: @($"{_analysisResult.OutletPressure:F2}") PSI</MudText>
+                    <MudText>Pressure Drop: @($"{_analysisResult.PressureDrop:F2}") PSI</MudText>
+                    <MudText>Velocity: @($"{_analysisResult.Velocity:F2}") ft/s</MudText>
                 </MudStack>
             </MudPaper>
         }
@@ -50,13 +61,14 @@
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private string _pipelineId = string.Empty;
     private decimal _flowRate = 1000;
     private decimal _inletPressure = 500;
     private bool _isAnalyzing = false;
     private bool _isCalculating = false;
     private bool _isLoading = false;
-    private PipelineAnalysisResultDto? _analysisResult;
+    private PipelineAnalysisResult? _analysisResult;
     private string? _currentUserId = "system";
 
     private async Task AnalyzeFlow()

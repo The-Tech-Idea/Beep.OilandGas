@@ -6,6 +6,8 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data.LifeCycle;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
@@ -73,6 +75,26 @@ namespace Beep.OilandGas.LifeCycle.Services.Inspection
             {
                 _logger?.LogInformation("Inspection executed: {InspectionId}, Date: {ExecutionDate}, Inspector: {Inspector}", 
                     request.InspectionId, request.ExecutionDate, request.Inspector);
+                var meta = await _metadata.GetTableMetadataAsync("FACILITY_STATUS");
+                if (meta != null)
+                {
+                    var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(FACILITY_STATUS), _connectionName, "FACILITY_STATUS", null);
+                    var rec = new FACILITY_STATUS
+                    {
+                        FACILITY_ID = _defaults.FormatIdForTable("FACILITY_STATUS", request.InspectionId),
+                        FACILITY_TYPE = "INSPECTION",
+                        STATUS_ID = Guid.NewGuid().ToString("N").Substring(0, 16),
+                        STATUS = request.Status ?? "COMPLETED",
+                        STATUS_TYPE = "INSPECTION_RESULT",
+                        START_TIME = request.ExecutionDate,
+                        REMARK = string.IsNullOrEmpty(request.Findings) ? request.Inspector : $"{request.Inspector}: {request.Findings}",
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (rec is IPPDMEntity e) _commonColumnHandler.PrepareForInsert(e, userId);
+                    await repo.InsertAsync(rec, userId);
+                }
                 return true;
             }
             catch (Exception ex)
@@ -88,6 +110,27 @@ namespace Beep.OilandGas.LifeCycle.Services.Inspection
             {
                 _logger?.LogInformation("Inspection finding recorded: {InspectionId}, Type: {FindingType}, Severity: {Severity}", 
                     request.InspectionId, request.FindingType, request.Severity);
+                var meta = await _metadata.GetTableMetadataAsync("FACILITY_STATUS");
+                if (meta != null)
+                {
+                    var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(FACILITY_STATUS), _connectionName, "FACILITY_STATUS", null);
+                    var rec = new FACILITY_STATUS
+                    {
+                        FACILITY_ID = _defaults.FormatIdForTable("FACILITY_STATUS", request.InspectionId),
+                        FACILITY_TYPE = "INSPECTION",
+                        STATUS_ID = Guid.NewGuid().ToString("N").Substring(0, 16),
+                        STATUS = request.Severity ?? "INFO",
+                        STATUS_TYPE = "FINDING_" + request.FindingType,
+                        REMARK = string.IsNullOrEmpty(request.RecommendedAction)
+                            ? request.Description
+                            : $"{request.Description} | Action: {request.RecommendedAction}",
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (rec is IPPDMEntity e) _commonColumnHandler.PrepareForInsert(e, userId);
+                    await repo.InsertAsync(rec, userId);
+                }
                 return true;
             }
             catch (Exception ex)

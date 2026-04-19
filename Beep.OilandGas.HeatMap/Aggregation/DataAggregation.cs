@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.Models.HeatMap;
+using Beep.OilandGas.Models.Data.HeatMap;
 using SkiaSharp;
 
 namespace Beep.OilandGas.HeatMap.Aggregation

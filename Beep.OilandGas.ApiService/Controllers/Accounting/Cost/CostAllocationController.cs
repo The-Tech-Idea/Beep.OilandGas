@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.Accounting.Cost;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
@@ -97,7 +98,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
                         AllocatedCapitalCost = d.AllocatedCapitalCost,
                         TotalAllocatedCost = d.TotalAllocatedCost,
                         AllocationPercentage = d.AllocationPercentage
-                    }) ?? new List<object>()
+                    }).Cast<object>().ToList() ?? new List<object>()
                 });
             }
             catch (Exception ex)

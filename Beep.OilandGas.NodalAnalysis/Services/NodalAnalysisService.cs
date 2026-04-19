@@ -24,7 +24,7 @@ namespace Beep.OilandGas.NodalAnalysis.Services
     /// Service for nodal analysis operations.
     /// Uses PPDMGenericRepository for data persistence following LifeCycle patterns.
     /// </summary>
-    public class NodalAnalysisService : INodalAnalysisService
+    public partial class NodalAnalysisService : INodalAnalysisService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;

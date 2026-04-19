@@ -25,6 +25,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />
+		<ProjectReference Include="..\Beep.OilandGas.PPDM39.DataManagement\Beep.OilandGas.PPDM39.DataManagement.csproj" />
 	</ItemGroup>
 
 	<Target Name="CopyPackage" AfterTargets="Pack">
@@ -42,7 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="10.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="10.0.6" />
   </ItemGroup>
 
 </Project>

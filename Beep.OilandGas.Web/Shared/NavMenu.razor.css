@@ -2,6 +2,29 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Process-centric nav menu button */
+.nav-menu-btn {
+    color: white !important;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    text-transform: none;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+.nav-menu-btn:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.nav-menu-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+}
+
 .top-row {
     height: 3.5rem;
     background-color: rgba(0,0,0,0.4);

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Beep.OilandGas.Models.Data.HeatMap;
 
 namespace Beep.OilandGas.HeatMap.Interaction
 {

@@ -18,6 +18,16 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref TableNameValue, value); }
 
         }
+
+        public string TABLE_NAME
+
+        {
+
+            get { return this.TableNameValue; }
+
+            set { SetProperty(ref TableNameValue, value); }
+
+        }
         private DateTime LastUpdatedValue;
 
         public DateTime LastUpdated

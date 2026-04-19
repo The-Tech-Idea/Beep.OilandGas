@@ -88,5 +88,11 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             get { return this.ROW_IDValue; }
             set { SetProperty(ref ROW_IDValue, value); }
         }
+
+        // PPDM39 column name aliases for service compatibility
+        public System.DateTime? JOURNAL_DATE { get => ENTRY_DATE; set => ENTRY_DATE = value; }
+        public System.String JOURNAL_TYPE { get => ENTRY_TYPE; set => ENTRY_TYPE = value; }
+        public System.String JOURNAL_DESCRIPTION { get => DESCRIPTION; set => DESCRIPTION = value; }
+        public System.String SOURCE_SYSTEM { get => SOURCE_MODULE; set => SOURCE_MODULE = value; }
     }
 }

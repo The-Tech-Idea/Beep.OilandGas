@@ -5,10 +5,10 @@
 
 <PageTitle>Email Settings - Beep Oil & Gas</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-2" Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-text-primary);">
-    <span style="color: var(--mud-palette-success);">$</span> email --config
+<MudText Typo="Typo.h4" Class="og-terminal-heading mb-2">
+    <span class="og-terminal-success">$</span> email --config
 </MudText>
-<MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+<MudText Typo="Typo.body2" Class="mb-6" Color="Color.Secondary">
     Manage your email address and verification
 </MudText>
 
@@ -16,27 +16,26 @@
 {
     <MudStack AlignItems="AlignItems.Center" Class="pa-8">
         <MudProgressCircular Color="Color.Success" Indeterminate="true" />
-        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); font-family: 'JetBrains Mono', monospace;" Class="mt-4">
+        <MudText Typo="Typo.body2" Class="og-terminal-code mt-4" Color="Color.Secondary">
             Loading email settings...
         </MudText>
     </MudStack>
 }
 else if (profile == null)
 {
-    <MudPaper Elevation="0" Class="pa-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-error); border-radius: 8px;">
+    <MudPaper Elevation="0" Class="og-terminal-card-error pa-6">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
             <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
             <div>
-                <MudText Typo="Typo.h6" Style="color: var(--mud-palette-error); font-family: 'JetBrains Mono', monospace;">
+                <MudText Typo="Typo.h6" Class="og-terminal-code" Color="Color.Error">
                     // Error: EMAIL_LOAD_FAILED
                 </MudText>
-                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
                     Failed to load email settings. Please try again.
                 </MudText>
             </div>
         </MudStack>
-        <MudButton Variant="Variant.Outlined" Color="Color.Error" Class="mt-4" OnClick="LoadProfileAsync"
-                   Style="font-family: 'JetBrains Mono', monospace;">
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" Class="mt-4 og-terminal-code" OnClick="LoadProfileAsync">
             retry()
         </MudButton>
     </MudPaper>
@@ -46,21 +45,21 @@ else
     <MudGrid>
         <!-- Current Email Card -->
         <MudItem xs="12" md="8">
-            <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
-                <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
-                    <MudIcon Icon="@Icons.Material.Filled.Email" Class="mr-2" Style="vertical-align: middle;" />
+            <MudPaper Elevation="0" Class="og-terminal-card pa-4 mb-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-4 og-terminal-code">
+                    <MudIcon Icon="@Icons.Material.Filled.Email" Class="mr-2 og-vertical-middle" />
                     Current Email
                 </MudText>
                 
                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
-                    <MudText Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;">
+                    <MudText Class="og-terminal-text-lg">
                         @profile.Email
                     </MudText>
                     
                     @if (profile.EmailConfirmed)
                     {
                         <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Filled"
-                                 Style="font-family: 'JetBrains Mono', monospace;">
+                                 Class="og-terminal-code">
                             <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Small" Class="mr-1" />
                             verified
                         </MudChip>
@@ -68,7 +67,7 @@ else
                     else
                     {
                         <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Filled"
-                                 Style="font-family: 'JetBrains Mono', monospace;">
+                                 Class="og-terminal-code">
                             <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-1" />
                             unverified
                         </MudChip>
@@ -77,9 +76,9 @@ else
                 
                 @if (!profile.EmailConfirmed)
                 {
-                    <MudPaper Elevation="0" Class="pa-3" Style="background: var(--mud-palette-dark); border-left: 3px solid var(--mud-palette-warning); border-radius: 4px;">
-                        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-warning);">
-                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-2" Style="vertical-align: middle;" />
+                    <MudPaper Elevation="0" Class="og-terminal-warning-section pa-3">
+                        <MudText Typo="Typo.body2" Color="Color.Warning">
+                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-2 og-vertical-middle" />
                             Your email is not verified. Some features may be limited.
                         </MudText>
                     </MudPaper>
@@ -89,8 +88,7 @@ else
                                OnClick="SendVerificationEmailAsync"
                                Disabled="@isSendingVerification"
                                StartIcon="@Icons.Material.Filled.Send"
-                               Class="mt-4"
-                               Style="font-family: 'JetBrains Mono', monospace;">
+                               Class="mt-4 og-terminal-code">
                         @if (isSendingVerification)
                         {
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -103,9 +101,9 @@ else
         
         <!-- Change Email Card -->
         <MudItem xs="12" md="8">
-            <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
-                <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
-                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2" Style="vertical-align: middle;" />
+            <MudPaper Elevation="0" Class="og-terminal-card pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-4 og-terminal-code">
+                    <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-2 og-vertical-middle" />
                     Change Email
                 </MudText>
                 
@@ -117,8 +115,7 @@ else
                                   Required="true"
                                   RequiredError="Email is required"
                                   Validation="@(new Func<string, string?>(ValidateEmail))"
-                                  Style="background: var(--mud-palette-dark);"
-                                  Class="mb-4"
+                                  Class="og-terminal-dark mb-4"
                                   Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Filled.AlternateEmail" />
                     
@@ -127,7 +124,7 @@ else
                                OnClick="ChangeEmailAsync"
                                Disabled="@(!isValid || isSaving || string.IsNullOrWhiteSpace(newEmail))"
                                StartIcon="@Icons.Material.Filled.Save"
-                               Style="font-family: 'JetBrains Mono', monospace;">
+                               Class="og-terminal-code">
                         @if (isSaving)
                         {
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -141,7 +138,7 @@ else
 }
 
 @code {
-    private UserProfile? profile;
+    private Beep.Foundation.IdentityServer.Shared.Services.UserProfile? profile;
     private MudForm? form;
     private bool isLoading = true;
     private bool isSaving = false;
@@ -210,4 +207,5 @@ else
         Snackbar.Add("Verification email sent! Please check your inbox.", Severity.Info);
     }
 }
+
 

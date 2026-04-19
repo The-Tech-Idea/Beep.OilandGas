@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
-using Beep.OilandGas.ProductionAccounting.Financial.FullCost;
-using Beep.OilandGas.ProductionAccounting.Models;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
+using Beep.OilandGas.Models.Data.Accounting.Financial;
+using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
-using Beep.OilandGas.Models.Data.Accounting.Financial;
 using Microsoft.Extensions.Logging;
+using CeilingTestRequest = Beep.OilandGas.Models.Data.Accounting.Financial.CeilingTestRequest;
+
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
 {
@@ -126,7 +128,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
                     return BadRequest(ModelState);
 
                 var accounting = _service.CreateFullCostAccounting(connectionName);
-                accounting.RecordAcquisitionCosts(request.CostCenterId, request.Property, connectionName);
+                var property = new UnprovedProperty
+                {
+                    PropertyId = request.Property.PropertyId,
+                    AcquisitionCost = request.Property.AcquisitionCost,
+                    ProvedDate = request.Property.ProvedDate,
+                    IsProved = true
+                };
+
+                accounting.RecordAcquisitionCosts(request.CostCenterId, property, connectionName);
 
                 // Post to GL: Debit Capitalized Cost, Credit AP/Cash
                 var journalEntryId = await _glIntegration.PostCostToGL(

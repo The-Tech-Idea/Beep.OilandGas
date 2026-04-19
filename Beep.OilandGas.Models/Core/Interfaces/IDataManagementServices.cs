@@ -49,7 +49,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Finds data quality issues in a table
         /// </summary>
-        Task<List<DATA_QUALITY_ISSUE>> FindQualityIssuesAsync(string tableName, List<string> fieldNames = null);
+        Task<List<DATA_QUALITY_ISSUE>> FindQualityIssuesAsync(string tableName, List<string>? fieldNames = null);
     }
 
     /// <summary>
@@ -66,7 +66,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
             string sourceConnection1,
             string sourceConnection2,
             List<string> keyFields,
-            List<string> compareFields = null);
+            List<string>? compareFields = null);
 
         /// <summary>
         /// Finds differences between two entities
@@ -163,16 +163,16 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// </summary>
         Task<string> ExportToCsvAsync(
             string tableName,
-            List<AppFilter> filters = null,
-            string outputPath = null);
+            List<AppFilter>? filters = null,
+            string? outputPath = null);
 
         /// <summary>
         /// Exports data to JSON
         /// </summary>
         Task<string> ExportToJsonAsync(
             string tableName,
-            List<AppFilter> filters = null,
-            string outputPath = null);
+            List<AppFilter>? filters = null,
+            string? outputPath = null);
 
         /// <summary>
         /// Imports data from CSV
@@ -232,7 +232,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Creates a version snapshot of an entity
         /// </summary>
-        Task<VersionSnapshot> CreateVersionAsync(string tableName, object entity, string userId, string versionLabel = null);
+        Task<VersionSnapshot> CreateVersionAsync(string tableName, object entity, string userId, string? versionLabel = null);
 
         /// <summary>
         /// Gets all versions of an entity
@@ -279,7 +279,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Gets access statistics for compliance reporting
         /// </summary>
-        Task<AccessStatistics> GetAccessStatisticsAsync(string tableName = null, DateTime? fromDate = null, DateTime? toDate = null);
+        Task<AccessStatistics> GetAccessStatisticsAsync(string? tableName = null, DateTime? fromDate = null, DateTime? toDate = null);
     }
 
     /// <summary>
@@ -374,7 +374,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Gets quality alerts (issues that need attention)
         /// </summary>
-        Task<List<QualityAlert>> GetQualityAlertsAsync(string tableName = null, QualityAlertSeverity? severity = null);
+        Task<List<QualityAlert>> GetQualityAlertsAsync(string? tableName = null, QualityAlertSeverity? severity = null);
     }
 }
 

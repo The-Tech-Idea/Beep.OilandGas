@@ -7,23 +7,23 @@
 
 <PageTitle>Personal Data - Beep Oil & Gas</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-2" Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-text-primary);">
-    <span style="color: var(--mud-palette-success);">$</span> data --personal
+<MudText Typo="Typo.h4" Class="og-terminal-heading mb-2">
+    <span class="og-terminal-success">$</span> data --personal
 </MudText>
-<MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+<MudText Typo="Typo.body2" Class="mb-6" Color="Color.Secondary">
     Download or delete your personal data (GDPR compliance)
 </MudText>
 
 <MudGrid>
     <!-- Download Data -->
     <MudItem xs="12" md="6">
-        <MudPaper Elevation="0" Class="pa-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px; height: 100%;">
+        <MudPaper Elevation="0" Class="og-terminal-card pa-6 og-h-full">
             <MudStack AlignItems="AlignItems.Center" Spacing="4">
                 <MudIcon Icon="@Icons.Material.Filled.Download" Size="Size.Large" Color="Color.Info" />
-                <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-primary);">
+                <MudText Typo="Typo.h6">
                     Download Your Data
                 </MudText>
-                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); text-align: center;">
+                <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">
                     Download a copy of all the personal data we have stored about your account.
                 </MudText>
                 <MudButton Variant="Variant.Filled" 
@@ -31,7 +31,7 @@
                            OnClick="DownloadDataAsync"
                            Disabled="@isDownloading"
                            StartIcon="@Icons.Material.Filled.FileDownload"
-                           Style="font-family: 'JetBrains Mono', monospace;">
+                           Class="og-terminal-code">
                     @if (isDownloading)
                     {
                         <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -44,20 +44,20 @@
     
     <!-- Delete Account -->
     <MudItem xs="12" md="6">
-        <MudPaper Elevation="0" Class="pa-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-error); border-radius: 8px; height: 100%;">
+        <MudPaper Elevation="0" Class="og-terminal-card-error pa-6 og-h-full">
             <MudStack AlignItems="AlignItems.Center" Spacing="4">
                 <MudIcon Icon="@Icons.Material.Filled.DeleteForever" Size="Size.Large" Color="Color.Error" />
-                <MudText Typo="Typo.h6" Style="color: var(--mud-palette-error);">
+                <MudText Typo="Typo.h6" Color="Color.Error">
                     Delete Your Account
                 </MudText>
-                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); text-align: center;">
+                <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">
                     Permanently delete your account and all associated data. This action cannot be undone.
                 </MudText>
                 <MudButton Variant="Variant.Outlined" 
                            Color="Color.Error" 
                            OnClick="@(() => showDeleteDialog = true)"
                            StartIcon="@Icons.Material.Filled.Warning"
-                           Style="font-family: 'JetBrains Mono', monospace;">
+                           Class="og-terminal-code">
                     delete_account()
                 </MudButton>
             </MudStack>
@@ -68,36 +68,27 @@
 <!-- Data Preview (after download) -->
 @if (personalData != null)
 {
-    <MudPaper Elevation="0" Class="pa-4 mt-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
-        <MudText Typo="Typo.h6" Class="mb-4" Style="color: var(--mud-palette-text-primary);">
+    <MudPaper Elevation="0" Class="og-terminal-card pa-4 mt-6">
+        <MudText Typo="Typo.h6" Class="mb-4">
             <MudIcon Icon="@Icons.Material.Filled.Description" Class="mr-2" />
             Your Personal Data
         </MudText>
         
-        <MudSimpleTable Dense="true" Hover="true" Style="background: transparent;">
-            <thead>
-                <tr>
-                    <th style="color: var(--mud-palette-text-secondary);">Field</th>
-                    <th style="color: var(--mud-palette-text-secondary);">Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in personalData)
-                {
-                    <tr>
-                        <td style="color: var(--mud-palette-primary); font-family: 'JetBrains Mono', monospace;">@item.Key</td>
-                        <td style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">@item.Value</td>
-                    </tr>
-                }
-            </tbody>
-        </MudSimpleTable>
+        <MudStack Spacing="1">
+            @foreach (var item in personalData)
+            {
+                <MudStack Row="true" Spacing="2">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-md">@item.Key</MudText>
+                    <MudText Typo="Typo.body2">@item.Value</MudText>
+                </MudStack>
+            }
+        </MudStack>
         
         <MudButton Variant="Variant.Outlined" 
                    Color="Color.Info" 
                    OnClick="SaveAsJsonAsync"
                    StartIcon="@Icons.Material.Filled.SaveAlt"
-                   Class="mt-4"
-                   Style="font-family: 'JetBrains Mono', monospace;">
+                   Class="mt-4 og-terminal-code">
             save_as_json()
         </MudButton>
     </MudPaper>
@@ -106,7 +97,7 @@
 <!-- Delete Confirmation Dialog -->
 <MudDialog @bind-Visible="showDeleteDialog">
     <TitleContent>
-        <MudText Typo="Typo.h6" Style="color: var(--mud-palette-error); font-family: 'JetBrains Mono', monospace;">
+        <MudText Typo="Typo.h6" Class="og-terminal-code" Color="Color.Error">
             <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
             Delete Account
         </MudText>
@@ -116,17 +107,17 @@
             <strong>Warning:</strong> This action is permanent and cannot be undone.
         </MudAlert>
         
-        <MudText Typo="Typo.body1" Class="mb-4" Style="color: var(--mud-palette-text-primary);">
+        <MudText Typo="Typo.body1" Class="mb-4">
             Deleting your account will:
         </MudText>
         <MudList T="string" Dense="true">
-            <MudListItem Icon="@Icons.Material.Filled.RemoveCircle" IconColor="Color.Error">
+            <MudListItem T="string" Icon="@Icons.Material.Filled.RemoveCircle" IconColor="Color.Error">
                 Remove all your personal information
             </MudListItem>
-            <MudListItem Icon="@Icons.Material.Filled.RemoveCircle" IconColor="Color.Error">
+            <MudListItem T="string" Icon="@Icons.Material.Filled.RemoveCircle" IconColor="Color.Error">
                 Delete your account data
             </MudListItem>
-            <MudListItem Icon="@Icons.Material.Filled.RemoveCircle" IconColor="Color.Error">
+            <MudListItem T="string" Icon="@Icons.Material.Filled.RemoveCircle" IconColor="Color.Error">
                 Remove access to all services
             </MudListItem>
         </MudList>
@@ -136,8 +127,7 @@
                       Variant="Variant.Outlined"
                       InputType="InputType.Password"
                       Required="true"
-                      Style="background: var(--mud-palette-dark);"
-                      Class="mt-4" />
+                      Class="og-terminal-dark mt-4" />
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Text" OnClick="@(() => showDeleteDialog = false)">
@@ -147,7 +137,7 @@
                    Color="Color.Error" 
                    OnClick="DeleteAccountAsync"
                    Disabled="@(isDeleting || string.IsNullOrWhiteSpace(deletePassword))"
-                   Style="font-family: 'JetBrains Mono', monospace;">
+                   Class="og-terminal-code">
             @if (isDeleting)
             {
                 <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -229,4 +219,5 @@
         }
     }
 }
+
 

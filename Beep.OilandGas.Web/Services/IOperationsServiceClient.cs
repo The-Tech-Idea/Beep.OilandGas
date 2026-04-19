@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.ProspectIdentification;
+using Beep.OilandGas.Models.Data.Lease;
+using Beep.OilandGas.Models.Data.Drilling;
 
 namespace Beep.OilandGas.Web.Services
 {

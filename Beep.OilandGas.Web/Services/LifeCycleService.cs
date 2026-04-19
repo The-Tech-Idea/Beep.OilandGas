@@ -1,21 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.Models.Data;
 
 namespace Beep.OilandGas.Web.Services
 {
-    /// <summary>
-    /// Field list item model
-    /// </summary>
-    public class FieldListItem
-    {
-        public string FieldId { get; set; } = string.Empty;
-        public string FieldName { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public DateTime? LastModifiedDate { get; set; }
-    }
-
     /// <summary>
     /// Field response model
     /// </summary>
@@ -306,7 +297,7 @@ namespace Beep.OilandGas.Web.Services
                 {
                     endpoint += $"?userId={Uri.EscapeDataString(userId)}";
                 }
-                var afe = await _apiClient.PostAsync<AFEResponse>(endpoint, null);
+                var afe = await _apiClient.PostAsync<AFEResponse>(endpoint, (HttpContent?)null);
                 return afe ?? new AFEResponse();
             }
             catch (Exception ex)

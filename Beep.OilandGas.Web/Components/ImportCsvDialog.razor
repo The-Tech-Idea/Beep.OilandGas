@@ -13,14 +13,14 @@
                       Files="@_selectedFile"
                       FilesChanged="@EventCallback.Factory.Create(this, HandleFileChanged)"
                       MaximumFileCount="1">
-            <ActivatorContent>
+            <CustomContent>
                 <MudButton HtmlTag="label" 
                           Variant="Variant.Filled" 
                           Color="Color.Primary" 
                           StartIcon="@Icons.Material.Filled.Upload">
                     Select CSV File
                 </MudButton>
-            </ActivatorContent>
+            </CustomContent>
             <SelectedTemplate>
                 <MudChip T="string" Icon="@Icons.Material.Filled.InsertDriveFile" 
                         Color="Color.Primary" 
@@ -43,20 +43,29 @@
         @if (_previewData != null && _previewData.Any())
         {
             <MudText Typo="Typo.h6" Class="mt-4 mb-2">Preview (First 5 rows)</MudText>
-            <MudTable Items="@_previewData.Take(5)" Hover="true" Dense="true" Class="mb-4">
-                <HeaderContent>
-                    @foreach (var header in _headers)
-                    {
-                        <MudTh>@header</MudTh>
-                    }
-                </HeaderContent>
-                <RowTemplate>
-                    @foreach (var header in _headers)
-                    {
-                        <MudTd>@(context.ContainsKey(header) ? context[header] : string.Empty)</MudTd>
-                    }
-                </RowTemplate>
-            </MudTable>
+            <div class="og-scrollable-preview mb-4">
+                <table class="mud-table-root">
+                    <thead>
+                        <tr>
+                            @foreach (var header in _headers)
+                            {
+                                <th class="mud-table-cell">@header</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _previewData.Take(5))
+                        {
+                            <tr>
+                                @foreach (var header in _headers)
+                                {
+                                    <td class="mud-table-cell">@(row.ContainsKey(header) ? row[header] : string.Empty)</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
 
             <MudAlert Severity="@(_hasErrors ? Severity.Warning : Severity.Info)" Class="mb-4">
                 Found @_previewData.Count rows to import. 

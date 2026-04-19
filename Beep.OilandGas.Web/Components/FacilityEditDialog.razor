@@ -31,7 +31,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public Dictionary<string, object>? Facility { get; set; }
 
     private string _facilityName = string.Empty;

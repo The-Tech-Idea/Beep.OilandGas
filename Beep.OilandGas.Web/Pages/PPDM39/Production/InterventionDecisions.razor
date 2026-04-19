@@ -1,0 +1,386 @@
+@page "/production/intervention"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Decide Well Interventions</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Decide Well Interventions</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Authorise workover and stimulation operations</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.Build">Production</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="OpenNewIntervention">
+            New Intervention
+        </MudButton>
+    </MudStack>
+
+    @* ── View: candidate list vs detail ─────────────────────────────────── *@
+    @if (_selectedIntervention == null)
+    {
+        @* ── Candidate list ────────────────────────────────────────────── *@
+        <MudGrid Spacing="3">
+            <MudItem xs="12">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Active Intervention Candidates</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MudDataGrid T="InterventionCandidate" Items="@_candidates" Dense="true"
+                                     Hover="true" RowClick="@OnCandidateClick" ReadOnly="true">
+                            <Columns>
+                                <PropertyColumn Property="c => c.WellName" Title="Well" />
+                                <TemplateColumn Title="Type">
+                                    <CellTemplate>
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@TypeColor(context.Item.InterventionType)">
+                                            @context.Item.InterventionType
+                                        </MudChip>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <PropertyColumn Property="c => c.Problem" Title="Problem" />
+                                <PropertyColumn Property="c => c.DeferredBopd" Title="Deferred (BOPD)" Format="N0" />
+                                <PropertyColumn Property="c => c.EstCostUsd" Title="Est. Cost ($K)" Format="N0" />
+                                <TemplateColumn Title="Priority">
+                                    <CellTemplate>
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@PriorityColor(context.Item.Priority)">
+                                            @context.Item.Priority
+                                        </MudChip>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Status">
+                                    <CellTemplate>
+                                        <StatusBadge Status="@context.Item.Status" />
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn>
+                                    <CellTemplate>
+                                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">
+                                            Review →
+                                        </MudButton>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    }
+    else
+    {
+        @* ── Decision Page for selected intervention ─────────────────────── *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3">
+            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack"
+                       OnClick="BackToList">
+                Back to List
+            </MudButton>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                / @_selectedIntervention.WellName / @_selectedIntervention.InterventionType
+            </MudText>
+        </MudStack>
+
+        <MudGrid Spacing="3">
+
+            @* LEFT — Supporting data (8 cols) *@
+            <MudItem xs="12" lg="8">
+                <MudStack Spacing="3">
+
+                    @* Context banner *@
+                    <MudPaper Elevation="2" Class="pa-4">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12">
+                                <MudText Typo="Typo.h6">
+                                    Decision: @_selectedIntervention.InterventionType — @_selectedIntervention.WellName
+                                </MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+                                    @_selectedIntervention.ProblemDescription
+                                </MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Deferred Production</MudText>
+                                <MudText Typo="Typo.h6" Color="Color.Error">@_selectedIntervention.DeferredBopd.ToString("N0") BOPD</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Days Deferred</MudText>
+                                <MudText Typo="Typo.h6" Color="Color.Warning">@_selectedIntervention.DaysDeferred days</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Lost Revenue</MudText>
+                                <MudText Typo="Typo.h6">$@((_selectedIntervention.DeferredBopd * _selectedIntervention.DaysDeferred * 70 / 1000).ToString("N0"))K</MudText>
+                            </MudItem>
+                            <MudItem xs="6" sm="3">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Est. Cost</MudText>
+                                <MudText Typo="Typo.h6">$@_selectedIntervention.EstCostUsd.ToString("N0")K</MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudPaper>
+
+                    @* Supporting data tabs *@
+                    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
+                        <MudTabPanel Text="Production History">
+                            <MudPaper Elevation="0" Class="pa-3">
+                                <MudChart ChartType="ChartType.Line"
+                                          ChartSeries="@_wellRateSeries"
+                                          XAxisLabels="@_wellRateLabels"
+                                          Width="100%" Height="220px" />
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                                    Rate drop started @_selectedIntervention.OnsetDate — @_selectedIntervention.RootCause
+                                </MudText>
+                            </MudPaper>
+                        </MudTabPanel>
+                        <MudTabPanel Text="Diagnostics">
+                            <MudPaper Elevation="0" Class="pa-3">
+                                <MudList T="DiagnosticItem" Dense="true">
+                                    @foreach (var d in _diagnostics)
+                                    {
+                                        <MudListItem T="DiagnosticItem" Value="d">
+                                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                                <MudText Typo="Typo.body2">@d.Parameter</MudText>
+                                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                                    <MudText Typo="Typo.body2">@d.Value</MudText>
+                                                    <MudChip T="string" Size="Size.Small"
+                                                             Color="@(d.IsAbnormal ? Color.Warning : Color.Success)">
+                                                        @(d.IsAbnormal ? "Abnormal" : "Normal")
+                                                    </MudChip>
+                                                </MudStack>
+                                            </MudStack>
+                                        </MudListItem>
+                                        <MudDivider />
+                                    }
+                                </MudList>
+                            </MudPaper>
+                        </MudTabPanel>
+                        <MudTabPanel Text="Similar Past Cases">
+                            <MudPaper Elevation="0" Class="pa-3">
+                                <MudList T="HistoricalCase" Dense="true">
+                                    @foreach (var c in _historicalCases)
+                                    {
+                                        <MudListItem T="HistoricalCase" Value="c">
+                                            <MudStack Spacing="0">
+                                                <MudText Typo="Typo.body2">@c.Well — @c.InterventionType (@c.Date)</MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                    Uplift: @c.UpliftBopd BOPD · Cost: $@c.CostUsdK K · Success: @c.Outcome
+                                                </MudText>
+                                            </MudStack>
+                                        </MudListItem>
+                                        <MudDivider />
+                                    }
+                                </MudList>
+                            </MudPaper>
+                        </MudTabPanel>
+                    </MudTabs>
+
+                </MudStack>
+            </MudItem>
+
+            @* RIGHT — Recommendation + Decision (4 cols) *@
+            <MudItem xs="12" lg="4">
+                <MudStack Spacing="3">
+
+                    @* Recommendation *@
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudIcon Icon="@Icons.Material.Filled.Lightbulb" Color="Color.Warning" Size="Size.Small" />
+                                    <MudText Typo="Typo.subtitle1">Recommendation</MudText>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudAlert Severity="Severity.Warning" Class="mb-3">
+                                <strong>@_selectedIntervention.RecommendedAction</strong>
+                            </MudAlert>
+                            <MudList T="string" Dense="true">
+                                <MudListItem T="string" Value="@("scope")">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Scope</MudText>
+                                    <MudText Typo="Typo.body2">@_selectedIntervention.Scope</MudText>
+                                </MudListItem>
+                                <MudListItem T="string" Value="@("duration")">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Est. Duration</MudText>
+                                    <MudText Typo="Typo.body2">@_selectedIntervention.EstDurationDays days</MudText>
+                                </MudListItem>
+                                <MudListItem T="string" Value="@("payout")">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Payout Period</MudText>
+                                    <MudText Typo="Typo.body2">@_selectedIntervention.PayoutMonths months</MudText>
+                                </MudListItem>
+                            </MudList>
+                        </MudCardContent>
+                    </MudCard>
+
+                    @* Decision panel *@
+                    <MudCard Elevation="3">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.subtitle1">Make Decision</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudTextField @bind-Value="_decisionNote" Label="Decision Note / Rationale"
+                                          Lines="3" Variant="Variant.Outlined" Class="mb-3"
+                                          Placeholder="Required before approving or deferring…" />
+                            <MudStack Spacing="2">
+                                <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Success"
+                                           StartIcon="@Icons.Material.Filled.CheckCircle"
+                                           Disabled="@string.IsNullOrWhiteSpace(_decisionNote)"
+                                           OnClick="ApproveIntervention">
+                                    Approve &amp; Schedule
+                                </MudButton>
+                                <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Warning"
+                                           StartIcon="@Icons.Material.Filled.PauseCircle"
+                                           Disabled="@string.IsNullOrWhiteSpace(_decisionNote)"
+                                           OnClick="DeferIntervention">
+                                    Defer — Monitor
+                                </MudButton>
+                                <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Error"
+                                           StartIcon="@Icons.Material.Filled.Cancel"
+                                           OnClick="RejectIntervention">
+                                    Reject / Close
+                                </MudButton>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+
+                </MudStack>
+            </MudItem>
+
+        </MudGrid>
+    }
+
+</MudContainer>
+
+@code {
+    [SupplyParameterFromQuery(Name = "wellId")]
+    public string? WellId { get; set; }
+
+    private string _fieldName = "Current Field";
+    private string _decisionNote = "";
+    private InterventionDetail? _selectedIntervention;
+
+    private List<InterventionCandidate> _candidates = new()
+    {
+        new("W-A3", "DEV-A3", "Unplanned Shut-in",   "Spontaneous shut-in — surface leak suspected",   0,    12,  "HIGH",   "REVIEW",   2_500),
+        new("W-B2", "DEV-B2", "ESP Replacement",      "ESP amp draw above threshold — gas lock/wear",   1_300, 8,  "HIGH",   "REVIEW",   1_800),
+        new("W-C1", "DEV-C1", "Acid Stimulation",     "Skin damage reducing productivity",              400,  15,  "MEDIUM", "PLANNED",  350),
+        new("W-A2", "DEV-A2", "Scale Inhibitor Squeeze","Scale build-up in tubing reducing flow area",  200,  5,   "LOW",    "PLANNED",  120),
+    };
+
+    private List<DiagnosticItem> _diagnostics = new()
+    {
+        new("ESP Current Draw (A)",  "62A (limit 55A)", true),
+        new("Wellhead Pressure (psi)", "135 psi",       false),
+        new("GOR (scf/bbl)",         "580",             true),
+        new("Choke Size",            "56/64\"",         false),
+        new("Fluid Level (m)",       "450m below BFP",  true),
+    };
+
+    private List<HistoricalCase> _historicalCases = new()
+    {
+        new("DEV-A2", "ESP Replacement",  "Mar 2025", 1_100, 1_750, "Success"),
+        new("DEV-C2", "ESP Replacement",  "Sep 2024", 900,   1_600, "Partial — wrong pump size"),
+        new("DEV-B3", "ESP Replacement",  "Jan 2024", 1_400, 2_100, "Success"),
+    };
+
+    private List<ChartSeries<double>> _wellRateSeries = new()
+    {
+        new ChartSeries<double> { Name = "Oil Rate (BOPD/100)", Data = new double[] { 22, 22, 21, 21, 20, 19, 17, 15, 13, 12 } },
+    };
+    private string[] _wellRateLabels = { "D-90", "", "", "", "D-60", "", "", "", "D-30", "Today" };
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(WellId))
+        {
+            var match = _candidates.FirstOrDefault(c => c.WellId == WellId);
+            if (match != null) SelectCandidate(match);
+        }
+    }
+
+    private void OnCandidateClick(DataGridRowClickEventArgs<InterventionCandidate> args) =>
+        SelectCandidate(args.Item);
+
+    private void SelectCandidate(InterventionCandidate c)
+    {
+        _selectedIntervention = new InterventionDetail(
+            WellId:             c.WellId,
+            WellName:           c.WellName,
+            InterventionType:   c.InterventionType,
+            Problem:            c.Problem,
+            ProblemDescription: $"{c.Problem}. Operator raised work request {c.EstDaysSinceOnset} days ago.",
+            DeferredBopd:       c.DeferredBopd,
+            DaysDeferred:       c.EstDaysSinceOnset,
+            EstCostUsd:         c.EstCostUsd,
+            OnsetDate:          "02 Apr 2026",
+            RootCause:          "Possible ESP motor fault or gas ingestion",
+            RecommendedAction:  $"Proceed with {c.InterventionType}",
+            Scope:              "Pull ESP, inspect motor and pump, replace with Y-4800 unit upsized by 15%",
+            EstDurationDays:    7,
+            PayoutMonths:       2
+        );
+        _decisionNote = "";
+    }
+
+    private void BackToList()
+    {
+        _selectedIntervention = null;
+        _decisionNote = "";
+    }
+
+    private void OpenNewIntervention() =>
+        Snackbar.Add("New intervention wizard coming soon", Severity.Info);
+
+    private void ApproveIntervention()
+    {
+        Snackbar.Add($"Intervention approved for {_selectedIntervention!.WellName} — work order created", Severity.Success);
+        _selectedIntervention = null;
+    }
+
+    private void DeferIntervention()
+    {
+        Snackbar.Add($"Intervention deferred — monitoring @{_selectedIntervention!.WellName}", Severity.Warning);
+        _selectedIntervention = null;
+    }
+
+    private void RejectIntervention()
+    {
+        Snackbar.Add($"Intervention closed for {_selectedIntervention!.WellName}", Severity.Info);
+        _selectedIntervention = null;
+    }
+
+    private Color TypeColor(string t) => t switch
+    {
+        "Unplanned Shut-in" => Color.Error,
+        "ESP Replacement"   => Color.Warning,
+        "Acid Stimulation"  => Color.Info,
+        _                   => Color.Default,
+    };
+
+    private Color PriorityColor(string p) => p switch
+    {
+        "HIGH"   => Color.Error,
+        "MEDIUM" => Color.Warning,
+        _        => Color.Default,
+    };
+
+    private record InterventionCandidate(string WellId, string WellName, string InterventionType, string Problem,
+        double DeferredBopd, int EstDaysSinceOnset, string Priority, string Status, double EstCostUsd);
+
+    private record InterventionDetail(string WellId, string WellName, string InterventionType, string Problem,
+        string ProblemDescription, double DeferredBopd, int DaysDeferred, double EstCostUsd, string OnsetDate,
+        string RootCause, string RecommendedAction, string Scope, int EstDurationDays, int PayoutMonths);
+
+    private record DiagnosticItem(string Parameter, string Value, bool IsAbnormal);
+    private record HistoricalCase(string Well, string InterventionType, string Date, int UpliftBopd, int CostUsdK, string Outcome);
+}

@@ -1,15 +1,26 @@
 @page "/ppdm39/pumps/plungerlift"
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.PlungerLift
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IPumpServiceClient PumpService
 
-<PageTitle>Plunger Lift</PageTitle>
+<PageTitle>Design Plunger Lift System</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Plunger Lift Design & Analysis</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Design Plunger Lift System</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Plunger cycle design and optimisation</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.SettingsInputComponent">Artificial Lift</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
 
     <MudPaper Class="pa-4">
         <MudText Typo="Typo.h6" Class="mb-4">Design Plunger Lift System</MudText>
@@ -71,6 +82,7 @@
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private string _wellUWI = string.Empty;
     private decimal _wellDepth = 5000;
     private decimal _tubingDiameter = 2.5m;
@@ -81,8 +93,8 @@
     private bool _isDesigning = false;
     private bool _isAnalyzing = false;
     private bool _isLoading = false;
-    private PlungerLiftDesignDto? _plungerDesign;
-    private PlungerLiftPerformanceDto? _performance;
+    private PlungerLiftDesign? _plungerDesign;
+    private PlungerLiftPerformance? _performance;
     private string? _currentUserId = "system";
 
     private async Task DesignPlungerLift()
@@ -96,13 +108,13 @@
         _isDesigning = true;
         try
         {
-            var wellProperties = new PlungerLiftWellPropertiesDto
+            var wellProperties = new PLUNGER_LIFT_WELL_PROPERTIES
             {
                 WellDepth = _wellDepth,
-                TubingDiameter = _tubingDiameter,
-                WellheadPressure = _wellheadPressure,
-                BottomHolePressure = _bottomHolePressure,
-                GasOilRatio = _gasOilRatio
+                TUBING_DIAMETER = _tubingDiameter,
+                WELLHEAD_PRESSURE = _wellheadPressure,
+                BOTTOM_HOLE_PRESSURE = _bottomHolePressure,
+                GAS_OIL_RATIO = _gasOilRatio
             };
 
             _plungerDesign = await PumpService.DesignPlungerLiftSystemAsync(_wellUWI, wellProperties);
@@ -164,4 +176,5 @@
         }
     }
 }
+
 

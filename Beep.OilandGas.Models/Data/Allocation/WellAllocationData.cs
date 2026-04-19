@@ -69,5 +69,53 @@ namespace Beep.OilandGas.Models.Data.Allocation
             set { SetProperty(ref AllocationDateValue, value); }
 
         }
+
+        private decimal? WorkingInterestValue;
+
+        public decimal? WorkingInterest
+
+        {
+
+            get { return this.WorkingInterestValue; }
+
+            set { SetProperty(ref WorkingInterestValue, value); }
+
+        }
+
+        private decimal? NetRevenueInterestValue;
+
+        public decimal? NetRevenueInterest
+
+        {
+
+            get { return this.NetRevenueInterestValue; }
+
+            set { SetProperty(ref NetRevenueInterestValue, value); }
+
+        }
+
+        private decimal? MeasuredProductionValue;
+
+        public decimal? MeasuredProduction
+
+        {
+
+            get { return this.MeasuredProductionValue; }
+
+            set { SetProperty(ref MeasuredProductionValue, value); }
+
+        }
+
+        private decimal? EstimatedProductionValue;
+
+        public decimal? EstimatedProduction
+
+        {
+
+            get { return this.EstimatedProductionValue; }
+
+            set { SetProperty(ref EstimatedProductionValue, value); }
+
+        }
     }
 }

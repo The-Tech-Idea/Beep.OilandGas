@@ -1,0 +1,198 @@
+@page "/hse/compliance"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Compliance Calendar</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Track Compliance Deadlines</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Regulatory &amp; permit compliance schedule</MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddObligation">
+                Add Obligation
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Download" OnClick="ExportCalendar">
+                Export
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @* KPIs *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Due This Month" Value="@_dueThisMonth.ToString()" Unit="items"
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.CalendarMonth"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="April 2026" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Overdue" Value="@_obligations.Count(o => o.Status == "OVERDUE").ToString()"
+                     ValueColor="Color.Error" Icon="@Icons.Material.Filled.ErrorOutline"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Error" TrendText="Immediate action" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Compliance Rate (YTD)" Value="@_complianceRate.ToString("N0")" Unit="%"
+                     ValueColor="@(_complianceRate >= 95 ? Color.Success : Color.Warning)"
+                     Icon="@Icons.Material.Filled.VerifiedUser"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="vs 95% target" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Open Permits" Value="@_obligations.Count(o => o.Type == "Permit" && o.Status != "COMPLETE").ToString()"
+                     ValueColor="Color.Info" Icon="@Icons.Material.Filled.Badge"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Active" />
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+
+        @* Upcoming obligations *@
+        <MudItem xs="12" md="8">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.subtitle1">Compliance Obligations</MudText>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Default">@_filter</MudChip>
+                        </MudStack>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudSelect T="string" @bind-Value="_filter" Label="Filter" Variant="Variant.Text" Dense="true" Class="og-select-sm">
+                            <MudSelectItem Value="@("All")">All</MudSelectItem>
+                            <MudSelectItem Value="@("Overdue")">Overdue</MudSelectItem>
+                            <MudSelectItem Value="@("Due Soon")">Due Soon</MudSelectItem>
+                            <MudSelectItem Value="@("Permit")">Permits</MudSelectItem>
+                            <MudSelectItem Value="@("Reporting")">Reporting</MudSelectItem>
+                        </MudSelect>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="ComplianceObligation" Items="@FilteredObligations" Dense="true" Hover="true"
+                                 SortMode="SortMode.Single">
+                        <Columns>
+                            <PropertyColumn Property="o => o.Title" Title="Obligation" />
+                            <PropertyColumn Property="o => o.Type" Title="Type" />
+                            <PropertyColumn Property="o => o.Regulator" Title="Regulator" />
+                            <PropertyColumn Property="o => o.DueDate" Title="Due Date" Sortable="true" />
+                            <TemplateColumn Title="Status">
+                                <CellTemplate>
+                                    <StatusBadge Status="@context.Item.Status" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <PropertyColumn Property="o => o.Owner" Title="Owner" />
+                            <TemplateColumn Title="" Sortable="false">
+                                <CellTemplate>
+                                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                                   Title="Mark as complete"
+                                                   Color="Color.Success" Size="Size.Small"
+                                                   Disabled="@(context.Item.Status == "COMPLETE")"
+                                                   OnClick="@(() => CompleteObligation(context.Item))" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Calendar timeline *@
+        <MudItem xs="12" md="4">
+            <MudStack Spacing="3">
+
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent><MudText Typo="Typo.subtitle1">April 2026 — Upcoming</MudText></CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MudTimeline TimelineAlign="TimelineAlign.Start" TimelinePosition="TimelinePosition.Start">
+                            @foreach (var ev in _calendarEvents)
+                            {
+                                <MudTimelineItem Color="@ev.Color" Variant="Variant.Filled" Size="Size.Small">
+                                    <ItemContent>
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.body2"><strong>@ev.Date</strong> — @ev.Title</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@ev.Category</MudText>
+                                        </MudStack>
+                                    </ItemContent>
+                                </MudTimelineItem>
+                            }
+                        </MudTimeline>
+                    </MudCardContent>
+                </MudCard>
+
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent><MudText Typo="Typo.subtitle1">Compliance by Category</MudText></CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudChart T="double" ChartType="ChartType.Donut"
+                                  Series="@_complianceSplit"
+                                  Width="100%" Height="180px" />
+                        <MudStack Row="true" Justify="Justify.SpaceEvenly" Class="mt-1">
+                            <MudText Typo="Typo.caption">Complete</MudText>
+                            <MudText Typo="Typo.caption">Due Soon</MudText>
+                            <MudText Typo="Typo.caption">Overdue</MudText>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+
+            </MudStack>
+        </MudItem>
+
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private string _filter = "All";
+    private int _dueThisMonth = 6;
+    private double _complianceRate = 96.8;
+
+    private record ComplianceObligation(string Title, string Type, string Regulator, string DueDate,
+        string Status, string Owner);
+
+    private List<ComplianceObligation> _obligations = new()
+    {
+        new("Monthly Production Report",         "Reporting", "NUPRC",      "30 Apr 2026", "IN PROGRESS", "R. Sheikh"),
+        new("Flaring Monitoring Report",          "Reporting", "DPR",        "15 Apr 2026", "IN PROGRESS", "P. Obi"),
+        new("Well Integrity Inspection (DEV-A1)", "Permit",    "NUPRC",      "22 Apr 2026", "IN PROGRESS", "S. Ahmed"),
+        new("Environmental Discharge Report",     "Reporting", "NESREA",     "30 Apr 2026", "IN PROGRESS", "T. Wu"),
+        new("Annual Safety Case Review",          "Audit",     "NUPRC",      "30 Jun 2026", "ACTIVE",      "D. Thompson"),
+        new("OSPAR Emission Report",              "Reporting", "OSPAR",      "31 Mar 2026", "OVERDUE",     "P. Obi"),
+        new("Permit to Operate Renewal (Compr.)", "Permit",    "State Env.", "05 May 2026", "ACTIVE",      "J. Smith"),
+        new("Q1 HSE Performance Report",          "Reporting", "NUPRC",      "15 Apr 2026", "COMPLETE",    "D. Thompson"),
+        new("Pipeline Pigging Record",            "Inspection","NUPRC",      "20 Apr 2026", "IN PROGRESS", "S. Ahmed"),
+    };
+
+    private IEnumerable<ComplianceObligation> FilteredObligations => _filter switch
+    {
+        "Overdue"   => _obligations.Where(o => o.Status == "OVERDUE"),
+        "Due Soon"  => _obligations.Where(o => o.Status == "IN PROGRESS"),
+        "Permit"    => _obligations.Where(o => o.Type == "Permit"),
+        "Reporting" => _obligations.Where(o => o.Type == "Reporting"),
+        _           => _obligations,
+    };
+
+    private record CalendarEvent(string Date, string Title, string Category, Color Color);
+    private List<CalendarEvent> _calendarEvents = new()
+    {
+        new("15 Apr", "Flaring Monitoring Report", "Reporting", Color.Warning),
+        new("15 Apr", "Q1 HSE Report",             "Reporting", Color.Success),
+        new("20 Apr", "Pipeline Pigging",          "Inspection",Color.Info),
+        new("22 Apr", "Well Integrity Insp.",       "Permit",    Color.Warning),
+        new("30 Apr", "Monthly Prod. Report",       "Reporting", Color.Warning),
+        new("30 Apr", "Environmental Discharge",    "Reporting", Color.Warning),
+        new("05 May", "Permit to Operate Renewal",  "Permit",    Color.Primary),
+    };
+
+    private double[] _complianceSplit = { 68, 24, 8 };
+
+    private void CompleteObligation(ComplianceObligation item) =>
+        Snackbar.Add($"'{item.Title}' marked complete", Severity.Success);
+
+    private void AddObligation() => Snackbar.Add("Add obligation form coming soon", Severity.Info);
+    private void ExportCalendar() => Snackbar.Add("Calendar export queued", Severity.Success);
+}

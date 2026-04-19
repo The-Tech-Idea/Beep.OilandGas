@@ -1,0 +1,21 @@
+@* PPDMTableLink — renders a PPDM39 table name as a nav link into Data Management *@
+@inject NavigationManager NavigationManager
+
+<MudLink Href="@_href" Typo="Typo.body2" Color="Color.Primary" Class="ppdm-table-link">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="0">
+        <MudIcon Icon="@Icons.Material.Filled.TableChart" Size="Size.Small" Class="mr-1" />
+        @TableName
+    </MudStack>
+</MudLink>
+
+@code {
+    [Parameter] public string TableName { get; set; } = string.Empty;
+
+    private string _href = "#";
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(TableName))
+            _href = $"/ppdm39/data-management?table={Uri.EscapeDataString(TableName)}";
+    }
+}

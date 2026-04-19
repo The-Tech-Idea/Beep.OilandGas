@@ -81,7 +81,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Gets the count of entities matching a predicate
         /// </summary>
-        Task<int> CountAsync(Expression<Func<T, bool>> predicate = null);
+        Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null);
 
         /// <summary>
         /// Gets entities with pagination
@@ -89,8 +89,8 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         Task<(IEnumerable<T> Items, int TotalCount)> GetPagedAsync(
             int pageNumber, 
             int pageSize, 
-            Expression<Func<T, bool>> predicate = null,
-            Expression<Func<T, object>> orderBy = null,
+            Expression<Func<T, bool>>? predicate = null,
+            Expression<Func<T, object>>? orderBy = null,
             bool ascending = true);
     }
 }

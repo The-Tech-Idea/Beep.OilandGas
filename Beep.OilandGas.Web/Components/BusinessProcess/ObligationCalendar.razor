@@ -1,0 +1,55 @@
+@* ObligationCalendar — compliance due-date view grouped by month *@
+@if (!Items.Any())
+{
+    <MudText Typo="Typo.body2" Color="Color.Secondary">No compliance obligations due in the selected period.</MudText>
+}
+else
+{
+    @foreach (var group in _grouped)
+    {
+        <MudText Typo="Typo.subtitle2" Class="mt-4 mb-1 pl-1">@group.Key</MudText>
+        <MudDivider Class="mb-2" />
+        @foreach (var obl in group.Value)
+        {
+            var overdue = obl.DaysUntilDue < 0;
+            var warning = !overdue && obl.DaysUntilDue <= 14;
+            var chipColor = overdue ? Color.Error : warning ? Color.Warning : Color.Success;
+
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+                <MudChip T="string" Size="Size.Small" Color="@chipColor" Variant="Variant.Outlined">
+                    @obl.DueDate.ToString("dd MMM")
+                </MudChip>
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body2">@obl.ObligationType</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        @obl.JurisdictionTag · @obl.AssignedTo
+                        @if (overdue)
+                        {
+                            <span> · <strong style="color:inherit">@Math.Abs(obl.DaysUntilDue)d overdue</strong></span>
+                        }
+                        else
+                        {
+                            <span> · @obl.DaysUntilDue days</span>
+                        }
+                    </MudText>
+                </MudStack>
+            </MudStack>
+        }
+    }
+}
+
+@using Beep.OilandGas.Models.Data
+
+@code {
+    [Parameter] public List<ComplianceObligationSummary> Items { get; set; } = new();
+
+    private Dictionary<string, List<ComplianceObligationSummary>> _grouped = new();
+
+    protected override void OnParametersSet()
+    {
+        _grouped = Items
+            .OrderBy(i => i.DueDate)
+            .GroupBy(i => i.DueDate.ToString("MMMM yyyy"))
+            .ToDictionary(g => g.Key, g => g.ToList());
+    }
+}

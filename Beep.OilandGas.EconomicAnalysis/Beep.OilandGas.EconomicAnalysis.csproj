@@ -20,11 +20,11 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
-	  <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.17" />
-	  <PackageReference Include="SkiaSharp" Version="3.119.1" />
+	  <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.18" />
+	  <PackageReference Include="SkiaSharp" Version="3.119.2" />
 	  <PackageReference Include="SkiaSharp.Extended" Version="3.0.0" />
 	  <PackageReference Include="SkiaSharp.Svg" Version="1.60.0" />
-	  <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
+	  <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.6" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />

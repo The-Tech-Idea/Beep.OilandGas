@@ -1,6 +1,11 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
+using TheTechIdea.Beep.Editor;
 using Beep.OilandGas.Accounting.Constants;
+using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM39.DataManagement.Core;
 
 namespace Beep.OilandGas.Accounting.Services
 {
@@ -12,9 +17,15 @@ namespace Beep.OilandGas.Accounting.Services
         private readonly AccountMappingService _baseMapping;
         private readonly Dictionary<string, string> _overrides;
 
-        public GaapAccountMappingService(IDictionary<string, string>? overrides = null)
+        public GaapAccountMappingService(
+            IDMEEditor editor,
+            ICommonColumnHandler commonColumnHandler,
+            IPPDM39DefaultsRepository defaults,
+            IPPDMMetadataRepository metadata,
+            ILogger<AccountMappingService> logger,
+            IDictionary<string, string>? overrides = null)
         {
-            _baseMapping = new AccountMappingService();
+            _baseMapping = new AccountMappingService(editor, commonColumnHandler, defaults, metadata, logger);
             _overrides = BuildOverrides();
 
             if (overrides == null)
@@ -28,6 +39,8 @@ namespace Beep.OilandGas.Accounting.Services
                 _overrides[kvp.Key] = kvp.Value;
             }
         }
+
+        public Task InitializeAsync(string userId) => Task.CompletedTask;
 
         public string GetAccountId(string key)
         {

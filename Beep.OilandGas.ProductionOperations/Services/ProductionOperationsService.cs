@@ -20,7 +20,7 @@ namespace Beep.OilandGas.ProductionOperations.Services
     /// Service for production operations management.
     /// Uses PPDMGenericRepository for data persistence following LifeCycle patterns.
     /// </summary>
-    public class ProductionOperationsService : IProductionOperationsService
+    public partial class ProductionOperationsService : IProductionOperationsService, Beep.OilandGas.Models.Core.Interfaces.IProductionOperationsService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;

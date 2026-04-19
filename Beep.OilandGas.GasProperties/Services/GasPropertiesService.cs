@@ -23,7 +23,7 @@ namespace Beep.OilandGas.GasProperties.Services
     /// Service for gas property calculations.
     /// Uses PPDMGenericRepository for data persistence following LifeCycle patterns.
     /// </summary>
-    public class GasPropertiesService : IGasPropertiesService
+    public partial class GasPropertiesService : IGasPropertiesService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;

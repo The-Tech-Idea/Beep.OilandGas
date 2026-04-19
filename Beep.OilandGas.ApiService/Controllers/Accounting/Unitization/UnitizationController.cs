@@ -2,10 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.ProductionAccounting.Unitization;
+using Beep.OilandGas.Models.Data.Unitization;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.ProductionAccounting.Services;
-using Beep.OilandGas.Models.Data.Accounting.Unitization;
 using Microsoft.Extensions.Logging;
+using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
 {
@@ -31,19 +32,19 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
         /// Get unit agreements.
         /// </summary>
         [HttpGet("units")]
-        public ActionResult<List<object>> GetUnits([FromQuery] string? connectionName = null)
+        public async Task<ActionResult<List<object>>> GetUnits([FromQuery] string? connectionName = null)
         {
             try
             {
-                var unitManager = new UnitManager();
-                var units = unitManager.GetAllUnitAgreements().ToList();
+                var repository = _service.GetRepository(typeof(UNIT_AGREEMENT), connectionName, "UNIT_AGREEMENT");
+                var units = (await repository.GetAsync(new List<AppFilter>())).OfType<UNIT_AGREEMENT>().ToList();
                 var dtos = units.Select(u => new 
                 { 
-                    UnitId = u.UnitId, 
-                    UnitName = u.UnitName, 
-                    EffectiveDate = u.EffectiveDate,
-                    ExpirationDate = u.ExpirationDate,
-                    UnitOperator = u.UnitOperator
+                    UnitId = u.UNIT_ID,
+                    UnitName = u.UNIT_NAME,
+                    EffectiveDate = u.EFFECTIVE_DATE,
+                    ExpirationDate = u.EXPIRATION_DATE,
+                    UnitOperator = u.UNIT_OPERATOR
                 }).ToList();
                 return Ok(dtos);
             }
@@ -58,7 +59,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
         /// Create unit agreement.
         /// </summary>
         [HttpPost("units")]
-        public ActionResult<object> CreateUnitAgreement(
+        public async Task<ActionResult<object>> CreateUnitAgreement(
             [FromBody] CreateUnitAgreementRequest request,
             [FromQuery] string? connectionName = null)
         {
@@ -67,13 +68,20 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var unitManager = new UnitManager();
-                var unit = unitManager.CreateUnitAgreement(
-                    request.UnitName,
-                    request.EffectiveDate,
-                    request.UnitOperator);
+                var repository = _service.GetRepository(typeof(UNIT_AGREEMENT), connectionName, "UNIT_AGREEMENT");
+                var unit = new UNIT_AGREEMENT
+                {
+                    UNIT_ID = Guid.NewGuid().ToString(),
+                    UNIT_NAME = request.UnitName,
+                    EFFECTIVE_DATE = request.EffectiveDate,
+                    EXPIRATION_DATE = request.ExpiryDate,
+                    UNIT_OPERATOR = request.UnitOperator,
+                    TERMS_AND_CONDITIONS = request.TermsAndConditions
+                };
 
-                return Ok(new { UnitId = unit.UnitId, UnitName = unit.UnitName });
+                await repository.InsertAsync(unit, "system");
+
+                return Ok(new { UnitId = unit.UNIT_ID, UnitName = unit.UNIT_NAME });
             }
             catch (Exception ex)
             {

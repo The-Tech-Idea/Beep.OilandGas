@@ -1,13 +1,11 @@
 using System.Data;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Data;
-using System.Text;
-using System.Text.RegularExpressions;
 using Beep.OilandGas.DataManager.Core.Interfaces;
 using Beep.OilandGas.DataManager.Core.Models;
 using Beep.OilandGas.DataManager.Core.State;
 using Beep.OilandGas.DataManager.Core.Exceptions;
+using ValidationResult = Beep.OilandGas.DataManager.Core.Models.ValidationResult;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Editor;

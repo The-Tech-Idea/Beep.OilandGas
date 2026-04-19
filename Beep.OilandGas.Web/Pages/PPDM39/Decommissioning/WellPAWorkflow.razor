@@ -1,0 +1,210 @@
+@page "/decommissioning/well-pa"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Execute Well P&amp;A Programme</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Execute Well P&amp;A Programme</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Plug &amp; Abandonment program management</MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add"
+                       OnClick='@(() => Snackbar.Add("New P&A campaign wizard coming soon", Severity.Info))'>
+                New Campaign
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Download"
+                       OnClick='@(() => Snackbar.Add("P&A report export queued", Severity.Success))'>
+                Export Report
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @* KPIs *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Wells P&A'd (YTD)" Value="@_paCompleted.ToString()" Unit="wells"
+                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.Close"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="On plan" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="In Progress" Value="@_wells.Count(w => w.Phase == "EXECUTION").ToString()" Unit="wells"
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Engineering"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Active campaigns" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="P&A Cost (YTD)" Value="@_paCostMm.ToString("N1")" Unit="$MM"
+                     ValueColor="Color.Info" Icon="@Icons.Material.Filled.AttachMoney"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="vs $28M budget" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Pending Approval" Value="@_wells.Count(w => w.Phase == "APPROVAL").ToString()" Unit="wells"
+                     ValueColor="Color.Error" Icon="@Icons.Material.Filled.Approval"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Awaiting sign-off" />
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+
+        @* Well list with P&A status *@
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent><MudText Typo="Typo.subtitle1">Well P&amp;A Programme</MudText></CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="PAWell" Items="@_wells" Dense="true" Hover="true" Striped="true"
+                                 RowClick="OnWellSelected">
+                        <Columns>
+                            <PropertyColumn Property="w => w.WellId"     Title="Well" />
+                            <PropertyColumn Property="w => w.WellType"   Title="Type" />
+                            <PropertyColumn Property="w => w.SpudDate"   Title="Spud" />
+                            <PropertyColumn Property="w => w.PlannedPA"  Title="Planned P&A" />
+                            <PropertyColumn Property="w => w.EstCostUsd" Title="Est. Cost ($)" Format="N0" />
+                            <TemplateColumn Title="Phase">
+                                <CellTemplate>
+                                    <StatusBadge Status="@context.Item.Phase" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Right panel — Selected well detail or programme info *@
+        <MudItem xs="12" md="5">
+            @if (_selectedWell is not null)
+            {
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                <MudText Typo="Typo.subtitle1">@_selectedWell.WellId — P&amp;A Plan</MudText>
+                                <StatusBadge Status="@_selectedWell.Phase" />
+                            </MudStack>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudTimeline TimelineAlign="TimelineAlign.Start" TimelinePosition="TimelinePosition.Start">
+                            @foreach (var step in _paSteps)
+                            {
+                                <MudTimelineItem Color="@StepColor(step.IsComplete, step.IsActive)"
+                                                 Variant="Variant.Filled" Size="Size.Small">
+                                    <ItemContent>
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.body2"
+                                                     Color="@(step.IsActive ? Color.Primary : Color.Default)">
+                                                <strong>@step.Name</strong>
+                                            </MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@step.Details</MudText>
+                                        </MudStack>
+                                    </ItemContent>
+                                </MudTimelineItem>
+                            }
+                        </MudTimeline>
+                    </MudCardContent>
+                    <MudCardActions>
+                        @if (_selectedWell.Phase == "APPROVAL")
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true"
+                                       OnClick="ApprovePA">
+                                Approve P&amp;A Programme
+                            </MudButton>
+                        }
+                        else if (_selectedWell.Phase == "EXECUTION")
+                        {
+                            <MudButton Variant="Variant.Outlined" FullWidth="true" OnClick="UpdateProgress">
+                                Update Progress
+                            </MudButton>
+                        }
+                    </MudCardActions>
+                </MudCard>
+            }
+            else
+            {
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent><MudText Typo="Typo.subtitle1">P&amp;A Cost Trend</MudText></CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudChart T="double" ChartType="ChartType.Bar"
+                                  Series="@_paCostSeries"
+                                  XAxisLabels="@_paYears"
+                                  Width="100%" Height="180px" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+                            Click a well to view its P&amp;A programme detail.
+                        </MudText>
+                    </MudCardContent>
+                </MudCard>
+            }
+        </MudItem>
+
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private PAWell? _selectedWell;
+    private int _paCompleted = 3;
+    private double _paCostMm = 19.4;
+
+    private record PAWell(string WellId, string WellType, string SpudDate, string PlannedPA,
+        double EstCostUsd, string Phase);
+
+    private List<PAWell> _wells = new()
+    {
+        new("EXP-01",  "Exploration",  "Mar 2008", "Q2 2026",  3_800_000, "APPROVAL"),
+        new("EXP-02",  "Exploration",  "Jun 2009", "Q3 2026",  4_200_000, "PLANNING"),
+        new("DEV-A3",  "Development",  "Nov 2012", "Q2 2026",  5_100_000, "EXECUTION"),
+        new("DEV-A4",  "Development",  "Feb 2013", "Q4 2026",  5_400_000, "PLANNING"),
+        new("INJTW-01","Water Injector","Aug 2014", "Q1 2027",  4_600_000, "PLANNED"),
+        new("OBS-01",  "Observation",  "Dec 2010", "Q3 2026",  2_900_000, "PLANNING"),
+    };
+
+    private record PAStep(string Name, string Details, bool IsComplete, bool IsActive);
+    private List<PAStep> _paSteps = new()
+    {
+        new("Preliminary Assessment",   "Well history review, hazard identification", true,  false),
+        new("Engineering Design",       "P&A programme & procedures written",         true,  false),
+        new("Regulatory Submission",    "NUPRC permit application submitted",          true,  false),
+        new("Regulatory Approval",      "Awaiting permit — ETA 30 Apr 2026",           false, true ),
+        new("Mobilise Rig",             "Jack-up secured for Q2 2026",                false, false),
+        new("Execute P&A Operations",   "Cement plugs, tubing retrieval, wellhead removal", false, false),
+        new("Site Restoration",         "Location clean-up and verification",          false, false),
+        new("Final Documentation",      "As-left well records submitted",              false, false),
+    };
+
+    private List<ChartSeries<double>> _paCostSeries = new()
+    {
+        new ChartSeries<double> { Name = "Budget ($MM)",  Data = new double[] { 6, 8, 10, 14, 28, 22 } },
+        new ChartSeries<double> { Name = "Actuals ($MM)", Data = new double[] { 5, 7, 9,  12, 0,  0  } },
+    };
+    private string[] _paYears = { "2021", "2022", "2023", "2024", "2025", "2026" };
+
+    private void OnWellSelected(DataGridRowClickEventArgs<PAWell> args)
+    {
+        _selectedWell = args.Item;
+        // Update timeline based on selected well phase
+    }
+
+    private void ApprovePA()
+    {
+        Snackbar.Add($"{_selectedWell?.WellId} P&A programme approved", Severity.Success);
+        _selectedWell = null;
+    }
+
+    private void UpdateProgress() =>
+        Snackbar.Add("Progress updated", Severity.Success);
+
+    private Color StepColor(bool complete, bool active) => (complete, active) switch
+    {
+        (true, _)    => Color.Success,
+        (_, true)    => Color.Primary,
+        _            => Color.Default,
+    };
+}

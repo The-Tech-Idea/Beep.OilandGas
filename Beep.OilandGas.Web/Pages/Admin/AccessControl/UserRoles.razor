@@ -1,13 +1,14 @@
 @page "/admin/access-control/user-roles"
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.AccessControl
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<PageTitle>User Role Assignment</PageTitle>
+<PageTitle>Assign User Roles</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
-    <MudText Typo="Typo.h4" Class="mb-4">User Role Assignment</MudText>
+    <MudText Typo="Typo.h5" Class="mb-4">Assign User Roles</MudText>
     
     <MudPaper Elevation="2" Class="pa-4">
         <MudText Typo="Typo.h6" Class="mb-4">Assign Roles to Users</MudText>
@@ -26,7 +27,7 @@
                           Variant="Variant.Outlined">
                     @foreach (var role in _availableRoles)
                     {
-                        <MudSelectItem Value="@role">@RoleDefinitions.GetRoleDisplayName(role)</MudSelectItem>
+                        <MudSelectItem Value="@role">@role</MudSelectItem>
                     }
                 </MudSelect>
             </MudItem>
@@ -44,25 +45,24 @@
         {
             <MudDivider Class="my-4" />
             <MudText Typo="Typo.h6" Class="mb-3">Current User Roles</MudText>
-            <MudTable Items="@_userRoles" Hover="true" Dense="true">
-                <HeaderContent>
-                    <MudTh>User ID</MudTh>
-                    <MudTh>Role</MudTh>
-                    <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>@context</MudTd>
-                    <MudTd>
-                        <MudChip Size="Size.Small" Color="Color.Primary">@RoleDefinitions.GetRoleDisplayName(context)</MudChip>
-                    </MudTd>
-                    <MudTd>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" 
-                                      Color="Color.Error" 
-                                      Size="Size.Small"
-                                      OnClick="@(() => RemoveRole(context))" />
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
+            <MudDataGrid T="string" Items="@_userRoles" Dense="true" Hover="true" Striped="true">
+                <Columns>
+                    <TemplateColumn Title="Role">
+                        <CellTemplate>
+                            <MudChip T="string" Size="Size.Small" Color="Color.Primary">@context.Item</MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="" Sortable="false">
+                        <CellTemplate>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                          Title="Remove role"
+                                          Color="Color.Error"
+                                          Size="Size.Small"
+                                          OnClick="@(() => RemoveRole(context.Item))" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
         }
     </MudPaper>
 </MudContainer>
@@ -75,7 +75,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _availableRoles = RoleDefinitions.GetAllRoles();
+        _availableRoles = RoleDefinitions.GetAllRoles().ToList();
         await LoadUserRoles();
     }
 
@@ -129,3 +129,5 @@
         }
     }
 }
+
+

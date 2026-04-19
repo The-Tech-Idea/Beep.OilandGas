@@ -339,7 +339,7 @@ builder.Services.AddBeepOilandGasAppAuto(builder.Configuration);
         
         // Legacy service clients kept for backward compatibility (deprecated)
         builder.Services.AddScoped<IDataManagementService, DataManagementService>();
-        builder.Services.AddScoped<IConnectionService, ConnectionService>();
+        builder.Services.AddScoped<Beep.OilandGas.Web.Services.IConnectionService, Beep.OilandGas.Web.Services.ConnectionService>();
         builder.Services.AddScoped<IAccountingServiceClient, AccountingServiceClient>();
         builder.Services.AddScoped<ICalculationServiceClient, CalculationServiceClient>();
         builder.Services.AddScoped<IOperationsServiceClient, OperationsServiceClient>();
@@ -353,7 +353,10 @@ builder.Services.AddBeepOilandGasAppAuto(builder.Configuration);
         builder.Services.AddScoped<ILifeCycleService, LifeCycleService>();
 
         // Demo Database Service - Client service for demo database operations
-        builder.Services.AddScoped<IDemoDatabaseService, DemoDatabaseService>();
+        builder.Services.AddScoped<Beep.OilandGas.Web.Services.IDemoDatabaseService, Beep.OilandGas.Web.Services.DemoDatabaseService>();
+
+        // First-run setup wizard service
+        builder.Services.AddScoped<Beep.OilandGas.Web.Services.IFirstRunService, Beep.OilandGas.Web.Services.FirstRunService>();
 
 // PPDM39 Data Management Services
 
@@ -363,7 +366,8 @@ builder.Services.AddSingleton<ICommonColumnHandler, CommonColumnHandler>();
 // Metadata Repository
 builder.Services.AddSingleton<IPPDMMetadataRepository>(sp =>
 {
-    return PPDMMetadataRepository.FromGeneratedClass();
+    var logger = sp.GetRequiredService<ILogger<PPDMMetadataService>>();
+    return new PPDMMetadataService(logger);
 });
 
 // Tree Builder (depends on metadata repository)

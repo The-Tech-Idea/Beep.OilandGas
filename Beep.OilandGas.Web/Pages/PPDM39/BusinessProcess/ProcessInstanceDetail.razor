@@ -1,0 +1,147 @@
+@page "/ppdm39/process/instances/{Id}"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Process Instance — @Id</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       OnClick='() => NavigationManager.NavigateTo("/ppdm39/process/instances")' />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">@_processName</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <ProcessStatusBadge Status="@_status" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Entity: @_entityId · Started: @_startedAt.ToString("dd-MMM-yyyy") by @_startedBy</MudText>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    <MudDivider Class="mb-4" />
+
+    <MudGrid Spacing="3">
+
+        @* ── Left: step timeline ─────────────────────────────────────── *@
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2" Class="h-100">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Process Steps</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <ProcessStepTimeline Steps="@_steps"
+                                         CurrentStepId="@_currentStepId"
+                                         CompletedStepIds="@_completedStepIds" />
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* ── Right: current step + transitions ───────────────────────── *@
+        <MudItem xs="12" md="8">
+
+            <MudCard Elevation="2" Class="mb-3">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudIcon Icon="@Icons.Material.Filled.PlayCircle" Color="Color.Primary" />
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Current Step: @_currentStepName</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">@_currentStepType</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudText Typo="Typo.body2" Class="mb-3">Available transitions:</MudText>
+                    <StateTransitionPanel InstanceId="@Id"
+                                          Transitions="@_transitions"
+                                          OnTransitioned="OnTransitionedAsync" />
+                </MudCardContent>
+            </MudCard>
+
+            @* History *@
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">History</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="HistoryRow" Items="@_history" Dense="true" Hover="true" Striped="true">
+                        <Columns>
+                            <PropertyColumn Property="h => h.Timestamp" Title="When"      Format="dd-MMM-yy HH:mm" />
+                            <PropertyColumn Property="h => h.Action"    Title="Action" />
+                            <PropertyColumn Property="h => h.Notes"     Title="Notes" />
+                            <PropertyColumn Property="h => h.By"        Title="By" />
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+    </MudGrid>
+
+</MudContainer>
+
+@using Beep.OilandGas.LifeCycle.Models.Processes
+
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+
+    private string _processName     = string.Empty;
+    private string _entityId        = string.Empty;
+    private string _status          = "IN_PROGRESS";
+    private string _currentStepId   = string.Empty;
+    private string _currentStepName = string.Empty;
+    private string _currentStepType = string.Empty;
+    private DateTime _startedAt     = DateTime.Today;
+    private string _startedBy       = string.Empty;
+
+    private List<ProcessStepDefinition>  _steps           = new();
+    private HashSet<string>              _completedStepIds = new();
+    private List<ProcessTransition>      _transitions      = new();
+    private List<HistoryRow>             _history          = new();
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/field/current/process/instances/{Id}
+        _processName     = "Exploratory Well Drilling Approval";
+        _entityId        = "W-001";
+        _status          = "IN_PROGRESS";
+        _currentStepId   = "S3";
+        _currentStepName = "Gate 1: Drill/No-Drill Decision";
+        _currentStepType = "APPROVAL";
+        _startedAt       = DateTime.Today.AddDays(-5);
+        _startedBy       = "john.doe";
+
+        _steps = new List<ProcessStepDefinition>
+        {
+            new() { StepId = "S1", StepName = "Prospect Selection & Ranking",      SequenceNumber = 1, StepType = "ACTION" },
+            new() { StepId = "S2", StepName = "Geological & Geophysical Review",   SequenceNumber = 2, StepType = "VALIDATION" },
+            new() { StepId = "S3", StepName = "Gate 1: Drill/No-Drill Decision",   SequenceNumber = 3, StepType = "APPROVAL", RequiresApproval = true },
+            new() { StepId = "S4", StepName = "AFE Preparation",                   SequenceNumber = 4, StepType = "ACTION" },
+            new() { StepId = "S5", StepName = "Gate 2: AFE Approval",              SequenceNumber = 5, StepType = "APPROVAL", RequiresApproval = true },
+        };
+
+        _completedStepIds = new HashSet<string> { "S1", "S2" };
+
+        // TODO: replace with GET /api/field/current/process/instances/{Id}/history
+        _history = new List<HistoryRow>
+        {
+            new(DateTime.Today.AddDays(-5), "STARTED",   "Instance created",          "john.doe"),
+            new(DateTime.Today.AddDays(-4), "STEP_DONE", "S1 completed",              "john.doe"),
+            new(DateTime.Today.AddDays(-2), "STEP_DONE", "S2 Geo review completed",   "geo.team"),
+        };
+    }
+
+    private Task OnTransitionedAsync()
+    {
+        Snackbar.Add("Instance updated.", Severity.Success);
+        // TODO: reload from API
+        return Task.CompletedTask;
+    }
+
+    private record HistoryRow(DateTime Timestamp, string Action, string Notes, string By);
+}

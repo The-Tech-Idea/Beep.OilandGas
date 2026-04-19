@@ -1,98 +1,90 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.PermitsAndApplications;
 using Beep.OilandGas.PermitsAndApplications.DataMapping;
+using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
+using Beep.OilandGas.PPDM39.DataManagement.Services;
+using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Beep.Editor.UOW;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Beep.ConfigUtil;
+using TheTechIdea.Beep;
+using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.DevelopmentPlanning.Services
 {
     /// <summary>
     /// Service for managing development plans.
-    /// Uses UnitOfWork directly for data access.
+    /// Uses PPDMGenericRepository with AppFilter pattern for all data access.
     /// </summary>
     public partial class DevelopmentPlanService : IDevelopmentPlanService
     {
         private readonly IDMEEditor _editor;
+        private readonly ICommonColumnHandler _commonColumnHandler;
+        private readonly IPPDM39DefaultsRepository _defaults;
+        private readonly IPPDMMetadataRepository _metadata;
         private readonly string _connectionName;
 
-        public DevelopmentPlanService(IDMEEditor editor, string connectionName = "PPDM39")
+        public DevelopmentPlanService(
+            IDMEEditor editor,
+            ICommonColumnHandler commonColumnHandler,
+            IPPDM39DefaultsRepository defaults,
+            IPPDMMetadataRepository metadata,
+            string connectionName = "PPDM39",
+            ILogger<DevelopmentPlanService>? logger = null)
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
+            _commonColumnHandler = commonColumnHandler ?? throw new ArgumentNullException(nameof(commonColumnHandler));
+            _defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
+            _metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
             _connectionName = connectionName;
+            _logger = logger;
         }
 
-        private List<T> ConvertToList<T>(object units) where T : class
+        private async Task<PPDMGenericRepository> GetApplicationRepositoryAsync()
         {
-            var result = new List<T>();
-            if (units == null) return result;
-            
-            if (units is System.Collections.IEnumerable enumerable)
-            {
-                foreach (var item in enumerable)
-                {
-                    if (item is T entity)
-                    {
-                        result.Add(entity);
-                    }
-                }
-            }
-            return result;
+            var meta = await _metadata.GetTableMetadataAsync("APPLICATION");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+            return new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, entityType, _connectionName, "APPLICATION");
         }
 
-        private IUnitOfWorkWrapper GetApplicationUnitOfWork()
+        private async Task<PPDMGenericRepository> GetWellRepositoryAsync()
         {
-            return UnitOfWorkFactory.CreateUnitOfWork(typeof(APPLICATION), _editor, _connectionName, "APPLICATION", "APPLICATION_ID");
+            var meta = await _metadata.GetTableMetadataAsync("WELL");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+            return new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, entityType, _connectionName, "WELL");
         }
 
-        private IUnitOfWorkWrapper GetFieldUnitOfWork()
+        private async Task<PPDMGenericRepository> GetFacilityRepositoryAsync()
         {
-            return UnitOfWorkFactory.CreateUnitOfWork(typeof(FIELD), _editor, _connectionName, "FIELD", "FIELD_ID");
-        }
-
-        private IUnitOfWorkWrapper GetWellUnitOfWork()
-        {
-            return UnitOfWorkFactory.CreateUnitOfWork(typeof(WELL), _editor, _connectionName, "WELL", "UWI");
-        }
-
-        private IUnitOfWorkWrapper GetFacilityUnitOfWork()
-        {
-            return UnitOfWorkFactory.CreateUnitOfWork(typeof(FACILITY), _editor, _connectionName, "FACILITY", "FACILITY_ID");
+            var meta = await _metadata.GetTableMetadataAsync("FACILITY");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+            return new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, entityType, _connectionName, "FACILITY");
         }
 
         public async Task<List<DevelopmentPlan>> GetDevelopmentPlansAsync(string? fieldId = null)
         {
-            var applicationUow = GetApplicationUnitOfWork();
-            List<APPLICATION> applications;
-
+            var repo = await GetApplicationRepositoryAsync();
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "APPLICATION_TYPE", FilterValue = "DEVELOPMENT_PLAN", Operator = "=" },
-                new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
+                new AppFilter { FieldName = "APPLICATION_TYPE", Operator = "=", FilterValue = "DEVELOPMENT_PLAN" },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
 
             if (!string.IsNullOrWhiteSpace(fieldId))
-            {
-                // Note: APPLICATION might not have direct FIELD_ID, may need to join through AREA_ID
-                filters.Add(new AppFilter { FieldName = "AREA_ID", FilterValue = fieldId, Operator = "=" });
-            }
+                filters.Add(new AppFilter { FieldName = "AREA_ID", Operator = "=", FilterValue = fieldId });
 
-            var units = await applicationUow.Get(filters);
-            applications = ConvertToList<APPLICATION>(units);
-
+            var entities = await repo.GetAsync(filters);
             var plans = new List<DevelopmentPlan>();
-            foreach (var app in applications)
-            {
-                var plan = await MapToDevelopmentPlanDtoAsync(app);
-                plans.Add(plan);
-            }
+            foreach (var app in entities.OfType<APPLICATION>())
+                plans.Add(await MapToDevelopmentPlanAsync(app));
 
             return plans;
         }
@@ -102,12 +94,12 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             if (string.IsNullOrWhiteSpace(planId))
                 return null;
 
-            var applicationUow = GetApplicationUnitOfWork();
-            var application = applicationUow.Read(planId) as APPLICATION;
-            if (application == null || application.ACTIVE_IND != "Y")
+            var repo = await GetApplicationRepositoryAsync();
+            var entity = await repo.GetByIdAsync(planId);
+            if (entity is not APPLICATION application || application.ACTIVE_IND != "Y")
                 return null;
 
-            return await MapToDevelopmentPlanDtoAsync(application);
+            return await MapToDevelopmentPlanAsync(application);
         }
 
         public async Task<DevelopmentPlan> CreateDevelopmentPlanAsync(CreateDevelopmentPlan createDto)
@@ -115,39 +107,32 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             if (createDto == null)
                 throw new ArgumentNullException(nameof(createDto));
 
-            var applicationUow = GetApplicationUnitOfWork();
+            var repo = await GetApplicationRepositoryAsync();
             var application = new APPLICATION
             {
                 APPLICATION_ID = Guid.NewGuid().ToString(),
                 APPLICATION_TYPE = "DEVELOPMENT_PLAN",
                 ACTIVE_IND = "Y",
                 EFFECTIVE_DATE = createDto.TargetStartDate ?? DateTime.UtcNow,
-                EXPIRY_DATE = (DateTime)createDto.TargetCompletionDate,
-                CURRENT_STATUS = "Draft",
-                ROW_CREATED_DATE = DateTime.UtcNow,
-                ROW_CHANGED_DATE = DateTime.UtcNow
+                EXPIRY_DATE = createDto.TargetCompletionDate ?? DateTime.UtcNow.AddYears(5),
+                CURRENT_STATUS = "Draft"
             };
 
-            var result = await applicationUow.InsertDoc(application);
-            if (result.Flag != Errors.Ok)
-                throw new InvalidOperationException($"Failed to create development plan: {result.Message}");
+            await repo.InsertAsync(application, "system");
 
-            await applicationUow.Commit();
-
-            return await MapToDevelopmentPlanDtoAsync(application);
+            return await MapToDevelopmentPlanAsync(application);
         }
 
         public async Task<DevelopmentPlan> UpdateDevelopmentPlanAsync(string planId, UpdateDevelopmentPlan updateDto)
         {
             if (string.IsNullOrWhiteSpace(planId))
                 throw new ArgumentException("Plan ID cannot be null or empty.", nameof(planId));
-
             if (updateDto == null)
                 throw new ArgumentNullException(nameof(updateDto));
 
-            var applicationUow = GetApplicationUnitOfWork();
-            var application = applicationUow.Read(planId) as APPLICATION;
-            if (application == null)
+            var repo = await GetApplicationRepositoryAsync();
+            var entity = await repo.GetByIdAsync(planId);
+            if (entity is not APPLICATION application)
                 throw new KeyNotFoundException($"Development plan with ID {planId} not found.");
 
             if (!string.IsNullOrWhiteSpace(updateDto.Status))
@@ -159,15 +144,9 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             if (updateDto.TargetCompletionDate.HasValue)
                 application.EXPIRY_DATE = updateDto.TargetCompletionDate.Value;
 
-            application.ROW_CHANGED_DATE = DateTime.UtcNow;
+            await repo.UpdateAsync(application, "system");
 
-            var result = await applicationUow.UpdateDoc(application);
-            if (result.Flag != Errors.Ok)
-                throw new InvalidOperationException($"Failed to update development plan: {result.Message}");
-
-            await applicationUow.Commit();
-
-            return await MapToDevelopmentPlanDtoAsync(application);
+            return await MapToDevelopmentPlanAsync(application);
         }
 
         public async Task<DevelopmentPlan> ApproveDevelopmentPlanAsync(string planId, string approvedBy)
@@ -175,18 +154,7 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             if (string.IsNullOrWhiteSpace(planId))
                 throw new ArgumentException("Plan ID cannot be null or empty.", nameof(planId));
 
-            var plan = await GetDevelopmentPlanAsync(planId);
-            if (plan == null)
-                throw new KeyNotFoundException($"Development plan with ID {planId} not found.");
-
-            plan.Status = "Approved";
-            plan.ApprovedBy = approvedBy;
-            plan.ApprovalDate = DateTime.UtcNow;
-
-            return await UpdateDevelopmentPlanAsync(planId, new UpdateDevelopmentPlan
-            {
-                Status = "Approved"
-            });
+            return await UpdateDevelopmentPlanAsync(planId, new UpdateDevelopmentPlan { Status = "Approved" });
         }
 
         public async Task<List<WellPlan>> GetWellPlansAsync(string planId)
@@ -194,14 +162,14 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             if (string.IsNullOrWhiteSpace(planId))
                 return new List<WellPlan>();
 
-            var wellUow = GetWellUnitOfWork();
-            // Note: WELL might be linked to plan through AREA_ID or APPLICATION_ID
-            // For now, querying all active wells - in production, would need proper relationship
-            var units = await wellUow.Get();
-            List<WELL> allWells = ConvertToList<WELL>(units);
-            var wells = allWells.Where(w => w.ACTIVE_IND == "Y").ToList();
+            var repo = await GetWellRepositoryAsync();
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+            var entities = await repo.GetAsync(filters);
 
-            return wells.Select(w => new WellPlan
+            return entities.OfType<WELL>().Select(w => new WellPlan
             {
                 WellPlanId = w.UWI ?? string.Empty,
                 PlanId = planId,
@@ -218,14 +186,15 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             if (string.IsNullOrWhiteSpace(planId))
                 return new List<FacilityPlan>();
 
-            var facilityUow = GetFacilityUnitOfWork();
-            // Note: FACILITY might be linked to plan through AREA_ID or APPLICATION_ID
-            var units = await facilityUow.Get();
-            List<FACILITY> allFacilities = ConvertToList<FACILITY>(units);
-            var facilities = allFacilities.Where(f => f.ACTIVE_IND == "Y").ToList();
+            var repo = await GetFacilityRepositoryAsync();
+            var filters = new List<AppFilter>
+            {
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+            };
+            var entities = await repo.GetAsync(filters);
 
-            return facilities.Select(f => new FacilityPlan
-            {   
+            return entities.OfType<FACILITY>().Select(f => new FacilityPlan
+            {
                 FacilityPlanId = f.FACILITY_ID ?? string.Empty,
                 PlanId = planId,
                 FacilityName = f.FACILITY_SHORT_NAME ?? string.Empty,
@@ -239,20 +208,18 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
             if (string.IsNullOrWhiteSpace(planId))
                 return new List<PERMIT_APPLICATION>();
 
-            var applicationUow = GetApplicationUnitOfWork();
+            var repo = await GetApplicationRepositoryAsync();
             var filters = new List<AppFilter>
             {
-                new AppFilter { FieldName = "APPLICATION_TYPE", FilterValue = "PERMIT", Operator = "=" },
-                new AppFilter { FieldName = "ACTIVE_IND", FilterValue = "Y", Operator = "=" }
+                new AppFilter { FieldName = "APPLICATION_TYPE", Operator = "=", FilterValue = "PERMIT" },
+                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
             };
-            var units = await applicationUow.Get(filters);
-            List<APPLICATION> allApplications = ConvertToList<APPLICATION>(units);
-
+            var entities = await repo.GetAsync(filters);
             var mapper = new ApplicationMapper();
-            return allApplications.Select(app => mapper.MapToDomain(app)).ToList();
+            return entities.OfType<APPLICATION>().Select(app => mapper.MapToDomain(app)).ToList();
         }
 
-        private async Task<DevelopmentPlan> MapToDevelopmentPlanDtoAsync(APPLICATION application)
+        private async Task<DevelopmentPlan> MapToDevelopmentPlanAsync(APPLICATION application)
         {
             var plan = new DevelopmentPlan
             {
@@ -264,13 +231,13 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
                 Status = application.CURRENT_STATUS ?? "Draft"
             };
 
-            // Load related entities
             plan.WellPlans = await GetWellPlansAsync(plan.PlanId);
             plan.FacilityPlans = await GetFacilityPlansAsync(plan.PlanId);
             plan.PermitApplications = await GetPermitApplicationsAsync(plan.PlanId);
 
             return plan;
         }
+
+
     }
 }
-

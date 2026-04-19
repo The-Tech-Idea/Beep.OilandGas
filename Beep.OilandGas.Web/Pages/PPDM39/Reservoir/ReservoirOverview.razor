@@ -1,0 +1,238 @@
+@page "/reservoir"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Review Reservoir Performance</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Review Reservoir Performance</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Active Field: @_fieldName</MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Science"
+                       OnClick='@(() => NavigationManager.NavigateTo("/reservoir/eor"))'>
+                EOR Screening
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.BarChart"
+                       OnClick='@(() => NavigationManager.NavigateTo("/reservoir/reserves"))'>
+                Classify Reserves
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @* KPI Row *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="OOIP" Value="@_ooip.ToString("N0")" Unit="MMBbl"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Layers"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Geological model" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Recovery Factor" Value="@_recoveryFactor.ToString("N1")" Unit="%"
+                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.Percent"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="+1.2% vs plan" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="2P Reserves" Value="@_reserves2P.ToString("N1")" Unit="MMBbl"
+                     ValueColor="Color.Info" Icon="@Icons.Material.Filled.Inventory"
+                     TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Warning" TrendText="Revision pending" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Reservoir Pressure" Value="@_resPressure.ToString("N0")" Unit="psi"
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Speed"
+                     TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Warning" TrendText="-85 psi YTD" />
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+
+        @* Reservoir zones *@
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Reservoir Zones</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudButton Size="Size.Small" Variant="Variant.Text"
+                                   OnClick='@(() => NavigationManager.NavigateTo("/reservoir/characterization"))'>
+                            Full Characterization
+                        </MudButton>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="ReservoirZone" Items="@_zones" Dense="true" Hover="true" Striped="true">
+                        <Columns>
+                            <PropertyColumn Property="z => z.ZoneId"    Title="Zone" />
+                            <PropertyColumn Property="z => z.Formation" Title="Formation" />
+                            <PropertyColumn Property="z => z.NetPay"    Title="Net Pay (ft)" Format="N0" />
+                            <PropertyColumn Property="z => z.Porosity"  Title="Por %" Format="N1" />
+                            <PropertyColumn Property="z => z.Sw"        Title="Sw %" Format="N1" />
+                            <PropertyColumn Property="z => z.Permeability" Title="Perm (mD)" Format="N1" />
+                            <TemplateColumn Title="Status">
+                                <CellTemplate>
+                                    <StatusBadge Status="@context.Item.Status" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Pressure support & depletion *@
+        <MudItem xs="12" md="5">
+            <MudStack Spacing="3">
+
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Pressure Depletion</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudChart T="double" ChartType="ChartType.Line"
+                                  Series="@_pressureSeries"
+                                  XAxisLabels="@_pressureLabels"
+                                  Width="100%" Height="180px" />
+                    </MudCardContent>
+                </MudCard>
+
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Drive Mechanism</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack Spacing="1">
+                            @foreach (var dm in _driveMechanisms)
+                            {
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudText Typo="Typo.body2" Class="og-label-fixed">@dm.Name</MudText>
+                                    <MudProgressLinear Color="@dm.Color" Value="@dm.Percentage" Class="flex-1" />
+                                    <MudText Typo="Typo.caption">@dm.Percentage.ToString("N0")%</MudText>
+                                </MudStack>
+                            }
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+
+            </MudStack>
+        </MudItem>
+
+        @* Fluid contacts & PVT summary *@
+        <MudItem xs="12" md="5">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Fluid Contacts &amp; PVT</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudDataGrid T="FluidContactRow" Items="@_fluidContacts" Dense="true" Hover="true">
+                        <Columns>
+                            <PropertyColumn Property="r => r.Parameter" Title="Parameter" />
+                            <PropertyColumn Property="r => r.ZoneA" Title="Zone A" />
+                            <PropertyColumn Property="r => r.ZoneB" Title="Zone B" />
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Simulation model status *@
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Model &amp; Study Status</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudList T="StudyItem" Dense="true">
+                        @foreach (var study in _studies)
+                        {
+                            <MudListItem T="StudyItem" Value="study">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="2">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudIcon Icon="@study.Icon" Color="@study.Color" Size="Size.Small" />
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.body2">@study.Name</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@study.LastUpdated</MudText>
+                                        </MudStack>
+                                    </MudStack>
+                                    <StatusBadge Status="@study.Status" />
+                                </MudStack>
+                            </MudListItem>
+                            <MudDivider />
+                        }
+                    </MudList>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private double _ooip = 485.0;
+    private double _recoveryFactor = 42.8;
+    private double _reserves2P = 207.7;
+    private double _resPressure = 3_140;
+
+    private record ReservoirZone(string ZoneId, string Formation, double NetPay, double Porosity,
+        double Sw, double Permeability, string Status);
+
+    private List<ReservoirZone> _zones = new()
+    {
+        new("ZONE-A", "Jurassic Sand",    68,  22.4, 18.2, 245.0, "ACTIVE"),
+        new("ZONE-B", "Jurassic Sand",    42,  20.1, 21.5, 168.0, "ACTIVE"),
+        new("ZONE-C", "Cretaceous Lime",  28,  14.5, 28.0,  45.0, "PLANNED"),
+        new("ZONE-D", "Cretaceous Shale", 15,   9.2, 35.0,   8.0, "TESTING"),
+    };
+
+    private List<ChartSeries<double>> _pressureSeries = new()
+    {
+        new ChartSeries<double> { Name = "Reservoir Psi", Data = new double[] { 3800, 3720, 3640, 3550, 3480, 3400, 3320, 3250, 3185, 3140 } },
+        new ChartSeries<double> { Name = "Bubble Pt", Data = new double[] { 2850, 2850, 2850, 2850, 2850, 2850, 2850, 2850, 2850, 2850 } },
+    };
+    private string[] _pressureLabels = { "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026" };
+
+    private record DriveMechanism(string Name, double Percentage, Color Color);
+    private List<DriveMechanism> _driveMechanisms = new()
+    {
+        new("Solution Gas Drive", 52, Color.Primary),
+        new("Water Influx",       28, Color.Info),
+        new("Gas Cap",            12, Color.Warning),
+        new("Compaction",          8, Color.Secondary),
+    };
+
+    private record StudyItem(string Name, string LastUpdated, string Status, string Icon, Color Color);
+    private record FluidContactRow(string Parameter, string ZoneA, string ZoneB);
+
+    private readonly List<FluidContactRow> _fluidContacts = new()
+    {
+        new("GOC (ft ss)",         "8,420",  "8,640"),
+        new("OWC (ft ss)",         "9,150",  "9,320"),
+        new("Bo (RB/STB)",         "1.38",   "1.35"),
+        new("GOR (scf/STB)",       "480",    "420"),
+        new("API Gravity",         "38°",    "36°"),
+        new("Bubble Point (psi)",  "2,850",  "2,720"),
+        new("Viscosity (cp)",      "1.8",    "2.1"),
+    };
+    private List<StudyItem> _studies = new()
+    {
+        new("Full-Field Simulation Model", "Jan 2026", "ACTIVE",   Icons.Material.Filled.Grid3x3,        Color.Success),
+        new("PVT Analysis",                "Mar 2026", "COMPLETE", Icons.Material.Filled.Science,         Color.Success),
+        new("Seismic Interpretation",      "Nov 2025", "COMPLETE", Icons.Material.Filled.GraphicEq,       Color.Success),
+        new("SCAL Study",                  "Jul 2026", "IN PROGRESS", Icons.Material.Filled.BubbleChart, Color.Info),
+        new("EOR Feasibility Study",       "Sep 2026", "PLANNED",  Icons.Material.Filled.Biotech,         Color.Default),
+    };
+}

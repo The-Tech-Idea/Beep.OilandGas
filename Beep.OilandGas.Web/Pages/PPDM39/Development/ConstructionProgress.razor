@@ -1,0 +1,316 @@
+@page "/development/construction"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+
+<PageTitle>Track Construction Progress</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Track Construction Progress</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Facility construction milestones</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Icon="@Icons.Material.Filled.Construction">Development</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.AddTask">Log Milestone</MudButton>
+    </MudStack>
+
+    @* ── Project Health Banner ────────────────────────────────────────────── *@
+    <MudPaper Elevation="2" Class="pa-3 mb-4">
+        <MudGrid Spacing="2" AlignItems="AlignItems.Center">
+            <MudItem xs="12" sm="6" md="3">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Circle" Color="Color.Success" Size="Size.Small" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Schedule</MudText>
+                        <MudText Typo="Typo.body2"><strong>On Track</strong></MudText>
+                    </MudStack>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning" Size="Size.Small" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Budget</MudText>
+                        <MudText Typo="Typo.body2"><strong>3% Over</strong></MudText>
+                    </MudStack>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Circle" Color="Color.Success" Size="Size.Small" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Safety</MudText>
+                        <MudText Typo="Typo.body2"><strong>Zero incidents</strong></MudText>
+                    </MudStack>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudIcon Icon="@Icons.Material.Filled.Circle" Color="Color.Success" Size="Size.Small" />
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Quality</MudText>
+                        <MudText Typo="Typo.body2"><strong>98% punch closed</strong></MudText>
+                    </MudStack>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @* ── Main Content ─────────────────────────────────────────────────────── *@
+    <MudGrid Spacing="3">
+
+        @* LEFT — Milestone tracker (8 cols) *@
+        <MudItem xs="12" lg="8">
+            <MudStack Spacing="3">
+
+                @foreach (var group in _workGroups)
+                {
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@group.Icon" Color="@group.HeaderColor" />
+                                    <MudText Typo="Typo.subtitle1">@group.Title</MudText>
+                                    <MudChip T="string" Size="Size.Small" Color="@OverallGroupColor(group)">
+                                        @GroupSummary(group)
+                                    </MudChip>
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent Class="pa-0">
+                            <MudList T="WorkPackage" Dense="true">
+                                @foreach (var pkg in group.Packages)
+                                {
+                                    <MudListItem T="WorkPackage" Value="pkg">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="pr-3">
+                                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                                <MudIcon Icon="@PkgIcon(pkg)"
+                                                         Color="@PkgColor(pkg)"
+                                                         Size="Size.Small" />
+                                                <MudStack Spacing="0">
+                                                    <MudText Typo="Typo.body2">@pkg.Name</MudText>
+                                                    @if (!string.IsNullOrEmpty(pkg.Note))
+                                                    {
+                                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@pkg.Note</MudText>
+                                                    }
+                                                    @if (pkg.IsActive && pkg.PercentComplete > 0)
+                                                    {
+                                                        <MudProgressLinear Value="@pkg.PercentComplete"
+                                                                           Color="Color.Primary"
+                                                                           Class="mt-1 og-progress-inline" />
+                                                    }
+                                                </MudStack>
+                                            </MudStack>
+                                            <MudStack AlignItems="AlignItems.End" Spacing="0">
+                                                <MudText Typo="Typo.caption" Color="@(pkg.IsCompleted ? Color.Success : Color.Secondary)">
+                                                    @(pkg.IsCompleted ? "✓ " : "Target: ")@pkg.TargetDate
+                                                </MudText>
+                                            </MudStack>
+                                        </MudStack>
+                                    </MudListItem>
+                                    <MudDivider />
+                                }
+                            </MudList>
+                        </MudCardContent>
+                    </MudCard>
+                }
+
+                @* First Oil target banner *@
+                <MudPaper Elevation="3" Class="pa-4">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="3">
+                        <MudIcon Icon="@Icons.Material.Filled.LocalGasStation" Color="Color.Warning" Size="Size.Large" />
+                        <MudStack AlignItems="AlignItems.Center" Spacing="0">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Target Date</MudText>
+                            <MudText Typo="Typo.h5" Color="Color.Warning"><strong>FIRST OIL — Dec 2026</strong></MudText>
+                        </MudStack>
+                        <MudIcon Icon="@Icons.Material.Filled.LocalGasStation" Color="Color.Warning" Size="Size.Large" />
+                    </MudStack>
+                </MudPaper>
+
+            </MudStack>
+        </MudItem>
+
+        @* RIGHT — Open actions + cost variance (4 cols) *@
+        <MudItem xs="12" lg="4">
+            <MudStack Spacing="3">
+
+                @* Punch items *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Open Punch Items</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudChip T="string" Color="Color.Warning" Size="Size.Small">@_punchItems.Count</MudChip>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MudList T="PunchItem" Dense="true">
+                            @foreach (var p in _punchItems)
+                            {
+                                <MudListItem T="PunchItem" Value="p">
+                                    <MudStack Spacing="0">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                            <MudText Typo="Typo.body2">@p.Description</MudText>
+                                            <MudChip T="string" Size="Size.Small"
+                                                     Color="@(p.Category == "A" ? Color.Error : p.Category == "B" ? Color.Warning : Color.Default)">
+                                                Cat @p.Category
+                                            </MudChip>
+                                        </MudStack>
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@p.Owner · Due @p.DueDate</MudText>
+                                    </MudStack>
+                                </MudListItem>
+                                <MudDivider />
+                            }
+                        </MudList>
+                    </MudCardContent>
+                </MudCard>
+
+                @* Cost variance *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Cost Variance</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudChart ChartType="ChartType.Bar"
+                                  ChartSeries="@_costSeries"
+                                  XAxisLabels="@_costLabels"
+                                  Width="100%"
+                                  Height="180px" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">USD MM · Q1 2024 to date</MudText>
+                    </MudCardContent>
+                </MudCard>
+
+                @* Safety observations *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Safety Observations (30-day)</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudGrid Spacing="2">
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Positive</MudText>
+                                <MudText Typo="Typo.h5" Color="Color.Success">142</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Near Misses</MudText>
+                                <MudText Typo="Typo.h5" Color="Color.Warning">3</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">LTIs</MudText>
+                                <MudText Typo="Typo.h5" Color="Color.Success">0</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">TRIR</MudText>
+                                <MudText Typo="Typo.h5" Color="Color.Success">0.0</MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+            </MudStack>
+        </MudItem>
+
+    </MudGrid>
+
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+
+    private List<WorkGroup> _workGroups = new()
+    {
+        new("Platform / Facility", Icons.Material.Filled.Factory, Color.Primary, new()
+        {
+            new("Engineering Complete",           "Jan 2025", true,  false,   0, "Delivered on schedule"),
+            new("Procurement Complete",           "Jun 2025", true,  false,   0, ""),
+            new("Fabrication",                    "Mar 2026", false, true,   68, "Hull 68% complete at yard"),
+            new("Installation",                   "Aug 2026", false, false,   0, ""),
+            new("Hook-up & Commissioning",        "Nov 2026", false, false,   0, ""),
+        }),
+        new("Wells", Icons.Material.Filled.OilBarrel, Color.Info, new()
+        {
+            new("Well 1 (Dev-A1) — Drilled & Completed", "Feb 2026", true,  false,  0, ""),
+            new("Well 2 (Dev-A2) — Drilling",             "Jun 2026", false, true,  81, "At 2,850m MD of 3,500m TD"),
+            new("Well 3 (Dev-B1) — Injector",             "Sep 2026", false, false,  0, ""),
+            new("Well 4 (Dev-A3) — Planned",              "Nov 2026", false, false,  0, ""),
+        }),
+        new("Pipeline & Subsea", Icons.Material.Filled.Timeline, Color.Secondary, new()
+        {
+            new("Flowline FEED Complete",   "Apr 2025", true,  false, 0, ""),
+            new("Pipeline Procurement",     "Sep 2025", true,  false, 0, ""),
+            new("Lay Campaign",             "Jun 2026", false, false, 0, ""),
+            new("Pre-commissioning",        "Oct 2026", false, false, 0, ""),
+        }),
+    };
+
+    private List<PunchItem> _punchItems = new()
+    {
+        new("Manifold piping spec — Rev C",      "J. Smith",  "May 2026", "A"),
+        new("Environmental permit update",        "S. Lee",    "Jun 2026", "A"),
+        new("Vendor inspection report #44",       "M. Torres", "May 2026", "B"),
+        new("P&ID Rev D issued to contractor",    "A. Webb",   "Jul 2026", "B"),
+        new("NCR #142 — weld repair closure",     "J. Smith",  "Apr 2026", "A"),
+    };
+
+    private List<ChartSeries<double>> _costSeries = new()
+    {
+        new ChartSeries<double> { Name = "Budget", Data = new double[] { 45, 80, 120, 180 } },
+        new ChartSeries<double> { Name = "Actual", Data = new double[] { 46, 82, 118, 187 } },
+    };
+    private string[] _costLabels = { "Q2'24", "Q3'24", "Q4'24", "Q1'25" };
+
+    private string PkgIcon(WorkPackage p) =>
+        p.IsCompleted ? Icons.Material.Filled.CheckCircle
+        : p.IsActive  ? Icons.Material.Filled.RadioButtonChecked
+        : Icons.Material.Outlined.RadioButtonUnchecked;
+
+    private Color PkgColor(WorkPackage p) =>
+        p.IsCompleted ? Color.Success : p.IsActive ? Color.Primary : Color.Default;
+
+    private Color OverallGroupColor(WorkGroup g)
+    {
+        if (g.Packages.All(p => p.IsCompleted)) return Color.Success;
+        if (g.Packages.Any(p => p.IsActive)) return Color.Primary;
+        return Color.Default;
+    }
+
+    private string GroupSummary(WorkGroup g)
+    {
+        var done = g.Packages.Count(p => p.IsCompleted);
+        return $"{done}/{g.Packages.Count}";
+    }
+
+    private class WorkGroup
+    {
+        public string Title { get; set; }
+        public string Icon { get; set; }
+        public Color HeaderColor { get; set; }
+        public List<WorkPackage> Packages { get; set; }
+        public WorkGroup(string title, string icon, Color color, List<WorkPackage> pkgs)
+        { Title = title; Icon = icon; HeaderColor = color; Packages = pkgs; }
+    }
+
+    private class WorkPackage
+    {
+        public string Name { get; set; }
+        public string TargetDate { get; set; }
+        public bool IsCompleted { get; set; }
+        public bool IsActive { get; set; }
+        public double PercentComplete { get; set; }
+        public string Note { get; set; }
+        public WorkPackage(string n, string d, bool done, bool active, double pct, string note)
+        { Name=n; TargetDate=d; IsCompleted=done; IsActive=active; PercentComplete=pct; Note=note; }
+    }
+
+    private record PunchItem(string Description, string Owner, string DueDate, string Category);
+}

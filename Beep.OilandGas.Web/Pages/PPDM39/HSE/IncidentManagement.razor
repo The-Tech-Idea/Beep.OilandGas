@@ -1,0 +1,242 @@
+@page "/hse/incidents"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Incident Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_selectedIncident is null && !_showNewForm)
+    {
+        @* List View *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h5">Manage HSE Incidents</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — HSE incident register &amp; investigation tracking</MudText>
+            </MudStack>
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Download" OnClick="ExportRegister">Export</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Error"
+                           StartIcon="@Icons.Material.Filled.ReportProblem"
+                           OnClick="@(() => _showNewForm = true)">
+                    Report Incident
+                </MudButton>
+            </MudStack>
+        </MudStack>
+
+        @* KPIs *@
+        <MudGrid Class="mb-4" Spacing="3">
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="TRIR (YTD)" Value="@_trir.ToString("N2")"
+                         ValueColor="@(_trir < 0.5 ? Color.Success : Color.Error)"
+                         Icon="@Icons.Material.Filled.HealthAndSafety"
+                         TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Success" TrendText="per 200k hrs" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="LTI-Free Days" Value="@_ltiFree.ToString()" Unit="days"
+                         ValueColor="Color.Success" Icon="@Icons.Material.Filled.CheckCircle"
+                         TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="Since last LTI" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="Open Investigations" Value="@_incidents.Count(i => i.Status == "INVESTIGATING").ToString()"
+                         ValueColor="Color.Warning" Icon="@Icons.Material.Filled.FindInPage"
+                         TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Pending close-out" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="Overdue Actions" Value="@_incidents.Sum(i => i.OverdueActions).ToString()"
+                         ValueColor="Color.Error" Icon="@Icons.Material.Filled.PriorityHigh"
+                         TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Warning" TrendText="vs last month" />
+            </MudItem>
+        </MudGrid>
+
+        @* Incident grid *@
+        <MudCard Elevation="2">
+            <MudCardContent Class="pa-0">
+                <MudDataGrid T="IncidentItem" Items="@_incidents" Dense="true" Hover="true" Striped="true"
+                             RowClick="OnIncidentSelected" SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <PropertyColumn Property="i => i.IncidentId" Title="Ref #" />
+                        <PropertyColumn Property="i => i.Date" Title="Date" />
+                        <PropertyColumn Property="i => i.Location" Title="Location" />
+                        <PropertyColumn Property="i => i.Description" Title="Description" />
+                        <TemplateColumn Title="Severity">
+                            <CellTemplate>
+                                <MudChip T="string" Color="@SeverityColor(context.Item.Severity)" Size="Size.Small">
+                                    @context.Item.Severity
+                                </MudChip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status">
+                            <CellTemplate><StatusBadge Status="@context.Item.Status" /></CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="i => i.OverdueActions" Title="Overdue Actions" />
+                        <PropertyColumn Property="i => i.Owner" Title="Investigator" />
+                    </Columns>
+                </MudDataGrid>
+            </MudCardContent>
+        </MudCard>
+    }
+    else if (_showNewForm)
+    {
+        @* Report Incident Form *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Title="Back to incidents" OnClick="@(() => _showNewForm = false)" />
+            <MudText Typo="Typo.h5">Report New Incident</MudText>
+        </MudStack>
+
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="8">
+                <MudCard Elevation="2">
+                    <MudCardContent>
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="_newDate" Label="Date/Time" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="_newLocation" Label="Location" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_newDescription" Label="Description" Lines="3"
+                                              Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudSelect T="string" @bind-Value="_newSeverity" Label="Severity" Variant="Variant.Outlined">
+                                    <MudSelectItem Value="@("FATALITY")">Fatality</MudSelectItem>
+                                    <MudSelectItem Value="@("LTI")">LTI</MudSelectItem>
+                                    <MudSelectItem Value="@("RWC")">Restricted Work Case</MudSelectItem>
+                                    <MudSelectItem Value="@("MTC")">Medical Treatment</MudSelectItem>
+                                    <MudSelectItem Value="@("FIRST AID")">First Aid</MudSelectItem>
+                                    <MudSelectItem Value="@("NEAR MISS")">Near Miss</MudSelectItem>
+                                    <MudSelectItem Value="@("UNSAFE ACT")">Unsafe Act/Condition</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTextField @bind-Value="_newOwner" Label="Initial Investigator" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_newImmediate" Label="Immediate Actions Taken" Lines="2"
+                                              Variant="Variant.Outlined" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton OnClick="@(() => _showNewForm = false)">Cancel</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="SubmitIncident">
+                            Submit Report
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudAlert Severity="Severity.Warning" Class="mb-3">
+                    <MudText Typo="Typo.body2"><strong>Immediate Actions:</strong> Secure area, render first aid, notify supervisor. Complete this form within 1 hour of incident.</MudText>
+                </MudAlert>
+                <MudAlert Severity="Severity.Info">
+                    <MudText Typo="Typo.body2">Investigation must commence within 24 hrs for LTI or higher severity.</MudText>
+                </MudAlert>
+            </MudItem>
+        </MudGrid>
+    }
+    else if (_selectedIncident is not null)
+    {
+        @* Investigation Detail *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Title="Back to incidents" OnClick="@(() => _selectedIncident = null)" />
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.h5">@_selectedIncident.IncidentId — @_selectedIncident.Description</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@_selectedIncident.Date · @_selectedIncident.Location</MudText>
+                </MudStack>
+            </MudStack>
+            <StatusBadge Status="@_selectedIncident.Status" />
+        </MudStack>
+
+        <MudGrid Spacing="3">
+            <MudItem xs="12" md="8">
+                <MudCard Elevation="2">
+                    <MudCardContent>
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" sm="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Severity</MudText>
+                                <MudChip T="string" Color="@SeverityColor(_selectedIncident.Severity)" Size="Size.Small">
+                                    @_selectedIncident.Severity
+                                </MudChip>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Investigator</MudText>
+                                <MudText Typo="Typo.body2">@_selectedIncident.Owner</MudText>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField T="string" Label="Root Cause Analysis" Lines="4"
+                                              Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField T="string" Label="Corrective Actions" Lines="3"
+                                              Variant="Variant.Outlined" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="CloseIncident">
+                            Close Investigation
+                        </MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    }
+
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private IncidentItem? _selectedIncident;
+    private bool _showNewForm;
+
+    private double _trir = 0.32;
+    private int _ltiFree = 218;
+
+    private string _newDate = "";
+    private string _newLocation = "";
+    private string _newDescription = "";
+    private string _newSeverity = "NEAR MISS";
+    private string _newOwner = "";
+    private string _newImmediate = "";
+
+    private record IncidentItem(string IncidentId, string Date, string Location, string Description,
+        string Severity, string Status, int OverdueActions, string Owner);
+
+    private List<IncidentItem> _incidents = new()
+    {
+        new("INC-2026-012", "15 Mar 2026", "DEV-A1 Well Pad", "Hand injury during pipe handling",      "MTC",       "COMPLETE",      0, "S. Ahmed"),
+        new("INC-2026-011", "02 Mar 2026", "Control Room",    "Near miss — gas detector alarm",         "NEAR MISS", "COMPLETE",      0, "P. Obi"),
+        new("INC-2026-010", "18 Feb 2026", "Pipeline Valve",  "Minor oil spill — contained",            "FIRST AID", "COMPLETE",      0, "R. Santos"),
+        new("INC-2026-009", "05 Jan 2026", "DEV-B2 Rig",      "Dropped object (no injury)",             "UNSAFE ACT","INVESTIGATING",  2, "T. Wu"),
+        new("INC-2026-008", "12 Dec 2025", "Compressor Stn",  "Hydrocarbon release — hot work permit",  "RWC",       "INVESTIGATING",  1, "D. Thompson"),
+    };
+
+    private void OnIncidentSelected(DataGridRowClickEventArgs<IncidentItem> args) =>
+        _selectedIncident = args.Item;
+
+    private void SubmitIncident()
+    {
+        Snackbar.Add("Incident reported. Investigation opened.", Severity.Success);
+        _showNewForm = false;
+    }
+
+    private void CloseIncident()
+    {
+        Snackbar.Add($"{_selectedIncident?.IncidentId} closed", Severity.Success);
+        _selectedIncident = null;
+    }
+
+    private void ExportRegister() => Snackbar.Add("Incident register export queued", Severity.Success);
+
+    private Color SeverityColor(string sev) => sev switch
+    {
+        "FATALITY" or "LTI" => Color.Error,
+        "RWC" or "MTC"      => Color.Warning,
+        "FIRST AID"         => Color.Info,
+        _                   => Color.Default,
+    };
+}

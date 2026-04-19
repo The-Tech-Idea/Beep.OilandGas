@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.ProductionAccounting.GeneralLedger;
+using Beep.OilandGas.Models.Data.Accounting;
+using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
 
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
 
                 var entry = _service.TraditionalAccounting.JournalEntry.CreateJournalEntry(
                     request.EntryNumber ?? GenerateEntryNumber(),
-                    request.EntryDate ?? DateTime.UtcNow,
+                    request.EntryDate,
                     request.EntryType ?? "Manual",
                     request.Description ?? "",
                     lines,

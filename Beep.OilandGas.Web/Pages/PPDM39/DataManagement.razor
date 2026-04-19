@@ -2,7 +2,6 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
-@inject IPPDMTreeBuilder TreeBuilder
 
 <PageTitle>PPDM39 Data Management</PageTitle>
 
@@ -11,25 +10,27 @@
         <MudItem xs="12" md="3">
             <MudPaper Class="ma-2" Elevation="2" Style="height: calc(100vh - 100px); overflow-y: auto;">
                 <MudText Typo="Typo.h6" Class="pa-3">PPDM39 Tables</MudText>
-                <PPDMTreeView OnTableSelected="OnTableSelected" />
+                <PPDMTreeView OnTableSelected="OnTableSelected"
+                              OnCategorySelected="OnCategorySelected" />
             </MudPaper>
         </MudItem>
         
         <MudItem xs="12" md="9">
             <MudPaper Class="ma-2" Elevation="2" Style="height: calc(100vh - 100px); overflow-y: auto;">
-                @if (_selectedTable == null)
+                @if (_selectedTable == null && _selectedCategoryTables == null)
                 {
-                    <MudText Typo="Typo.h6" Class="pa-4">Select a table from the tree to view and manage data</MudText>
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height:100%;" Class="pa-8">
+                        <MudIcon Icon="@Icons.Material.Filled.AccountTree" Style="font-size:4rem;" Color="Color.Default" />
+                        <MudText Typo="Typo.h6" Class="mud-text-secondary">Select a table or browse a category from the tree</MudText>
+                    </MudStack>
                 }
                 else
                 {
-                    <MudAlert Severity="Severity.Info" Class="mb-2">
-                        Selected Table: <strong>@(_selectedTable?.Text ?? "Unknown")</strong> (ID: @(_selectedTable?.Id ?? "N/A"))
-                    </MudAlert>
-                    @if (_selectedTable != null)
-                    {
-                        <GenericCrudPage @key="@(_selectedTable.Id ?? _selectedTable.Text)" TableNode="@_selectedTable" />
-                    }
+                    <GenericCrudPage @key="@_crudPageKey"
+                                     TableNode="@_selectedTable"
+                                     CategoryId="@_selectedCategoryId"
+                                     CategoryName="@_selectedCategoryName"
+                                     CategoryTables="@_selectedCategoryTables" />
                 }
             </MudPaper>
         </MudItem>
@@ -38,74 +39,46 @@
 
 @code {
     private PPDMTreeNode? _selectedTable;
-    private PPDMTreeNode? _rootNode;
+    private int _selectedCategoryId;
+    private string? _selectedCategoryName;
+    private List<string>? _selectedCategoryTables;
+    private string _crudPageKey = "default";
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        // Load the tree to enable finding tables by name
-        _rootNode = await TreeBuilder.BuildTreeAsync(includeRelationships: false, includeColumns: false);
-        
-        // Check if there's a table parameter in the URL
         var uri = new Uri(NavigationManager.Uri);
         var queryParams = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
         if (queryParams.TryGetValue("table", out var tableName) && !string.IsNullOrWhiteSpace(tableName))
         {
-            // Find the table node in the tree
-            var tableNode = FindTableNode(_rootNode, tableName!);
-            if (tableNode != null)
+            _selectedTable = new PPDMTreeNode
             {
-                _selectedTable = tableNode;
-                Console.WriteLine($"DataManagement: Auto-selected table from URL: {tableName}");
-            }
+                Id = tableName,
+                Text = tableName,
+                NodeType = PPDMTreeNodeType.Table,
+                IsSelected = true
+            };
+            _crudPageKey = tableName!;
         }
-    }
-
-    private PPDMTreeNode? FindTableNode(PPDMTreeNode? node, string tableName)
-    {
-        if (node == null) return null;
-        
-        if (node.NodeType == PPDMTreeNodeType.Table && 
-            node.Text.Equals(tableName, StringComparison.OrdinalIgnoreCase))
-        {
-            return node;
-        }
-        
-        foreach (var child in node.Children)
-        {
-            var found = FindTableNode(child, tableName);
-            if (found != null) return found;
-        }
-        
-        return null;
     }
 
     private async Task OnTableSelected(PPDMTreeNode tableNode)
     {
-        Console.WriteLine($"DataManagement: OnTableSelected called - {tableNode.Text}, Type: {tableNode.NodeType}");
-        
         if (tableNode.NodeType == PPDMTreeNodeType.Table)
         {
             _selectedTable = tableNode;
-            Console.WriteLine($"DataManagement: Setting _selectedTable to: {_selectedTable.Text}");
-            
-            // Check if metadata is in the node
-            if (_selectedTable.Data != null && _selectedTable.Data.TryGetValue("TableMetadata", out var metadata))
-            {
-                var tableMeta = metadata as PPDMTableMetadata;
-                Console.WriteLine($"DataManagement: Metadata found - Table: {tableMeta?.TableName}, EntityType: {tableMeta?.EntityTypeName}");
-            }
-            else
-            {
-                Console.WriteLine($"DataManagement: WARNING - No metadata in node data. Available keys: {(_selectedTable.Data != null ? string.Join(", ", _selectedTable.Data.Keys) : "null")}");
-            }
-            
-            Console.WriteLine($"DataManagement: Calling StateHasChanged");
+            _selectedCategoryTables = null; // leave category info cleared so breadcrumb works if set later
+            _crudPageKey = tableNode.Text ?? tableNode.Id ?? Guid.NewGuid().ToString();
             await InvokeAsync(StateHasChanged);
-            Console.WriteLine($"DataManagement: StateHasChanged completed");
         }
-        else
-        {
-            Console.WriteLine($"DataManagement: Node is not a table node, it's: {tableNode.NodeType}");
-        }
+    }
+
+    private async Task OnCategorySelected((int CategoryId, string CategoryName, List<string> Tables) info)
+    {
+        _selectedCategoryId = info.CategoryId;
+        _selectedCategoryName = info.CategoryName;
+        _selectedCategoryTables = info.Tables;
+        _selectedTable = null;
+        _crudPageKey = $"CAT_{info.CategoryId}";
+        await InvokeAsync(StateHasChanged);
     }
 }

@@ -2,11 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.ProductionAccounting.Pricing;
-using Beep.OilandGas.ProductionAccounting.Models;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.ProductionAccounting.Services;
+using Beep.OilandGas.Models.Data.Pricing;
 using Beep.OilandGas.Models.Data.Accounting.Pricing;
+using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing

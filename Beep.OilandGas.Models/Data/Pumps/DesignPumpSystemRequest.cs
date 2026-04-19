@@ -72,5 +72,61 @@ namespace Beep.OilandGas.Models.Data.Pumps
             set { SetProperty(ref DesiredFlowRateValue, value); }
 
         }
+
+        public SuckerRodPumpWellProperties WellProperties
+
+        {
+
+            get
+
+            {
+
+                return new SuckerRodPumpWellProperties
+
+                {
+
+                    WellDepth = WellDepth,
+
+                    DesiredProductionRate = DesiredFlowRate,
+
+                    TubingSize = 2.375m,
+
+                    CasingSize = 5.5m,
+
+                    StaticFluidLevel = WellDepth > 0m ? WellDepth * 0.50m : 0m,
+
+                    ProducingFluidLevel = WellDepth > 0m ? WellDepth * 0.65m : 0m,
+
+                    APIGravity = 35m,
+
+                    GasOilRatio = 0m,
+
+                    FluidDensity = 50m,
+
+                    PumpTypeDesignation = PumpType
+
+                };
+
+            }
+
+            set
+
+            {
+
+                if (value == null)
+
+                    return;
+
+                WellDepth = value.WellDepth;
+
+                DesiredFlowRate = value.DesiredProductionRate;
+
+                if (!string.IsNullOrWhiteSpace(value.PumpTypeDesignation))
+
+                    PumpType = value.PumpTypeDesignation;
+
+            }
+
+        }
     }
 }

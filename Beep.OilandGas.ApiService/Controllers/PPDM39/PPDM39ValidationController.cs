@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.DataManagement;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
+using ValidationResult = Beep.OilandGas.Models.Data.ValidationResult;
 
 namespace Beep.OilandGas.ApiService.Controllers.PPDM39
 {

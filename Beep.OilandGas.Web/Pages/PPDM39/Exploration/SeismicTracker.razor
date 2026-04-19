@@ -1,0 +1,190 @@
+@page "/exploration/seismic"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Track Seismic Survey Progress</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Track Seismic Survey Progress</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Acquisition, processing, and interpretation status</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Sensors">Exploration</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Add">Add Survey</MudButton>
+    </MudStack>
+
+    @* ── KPI Row ─────────────────────────────────────────────────────────── *@
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" sm="4">
+            <KpiCard Label="Surveys Active"
+                     Value="@_surveys.Count(s => s.Status is "ACTIVE" or "IN PROGRESS").ToString()"
+                     Unit="surveys"
+                     Icon="@Icons.Material.Filled.Sensors"
+                     ValueColor="Color.Primary" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <KpiCard Label="Coverage"
+                     Value="@_surveys.Sum(s => s.AreaKm2).ToString("N0")"
+                     Unit="km²"
+                     Icon="@Icons.Material.Filled.Map"
+                     ValueColor="Color.Info" />
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <KpiCard Label="Complete This Year"
+                     Value="@_surveys.Count(s => s.Status == "COMPLETE" && s.CompletionYear == DateTime.Now.Year).ToString()"
+                     Unit="surveys"
+                     Icon="@Icons.Material.Filled.CheckCircle"
+                     ValueColor="Color.Success" />
+        </MudItem>
+    </MudGrid>
+
+    @* ── Survey DataGrid ─────────────────────────────────────────────────── *@
+    <MudDataGrid T="SeismicSurveyRow"
+                 Items="@_surveys"
+                 Dense="true"
+                 Hover="true"
+                 Striped="true"
+                 Filterable="true"
+                 SortMode="SortMode.Multiple"
+                 ExpandSingleRow="false"
+                 Groupable="false">
+        <Columns>
+            <HierarchyColumn T="SeismicSurveyRow" />
+            <PropertyColumn Property="x => x.Name" Title="Survey Name" />
+            <PropertyColumn Property="x => x.SurveyType" Title="Type">
+                <CellTemplate>
+                    <MudChip T="string" Size="Size.Small"
+                             Color="@(context.Item.SurveyType == "3D" ? Color.Primary : Color.Default)">
+                        @context.Item.SurveyType
+                    </MudChip>
+                </CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Status" Title="Status">
+                <CellTemplate>
+                    <StatusBadge Status="@context.Item.Status" />
+                </CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.AreaKm2" Title="Area (km²)" Format="N0" />
+            <PropertyColumn Property="x => x.Vintage" Title="Vintage" />
+            <PropertyColumn Property="x => x.LinkedProspects" Title="Linked Prospects" />
+            <TemplateColumn Title="Actions" CellClass="d-flex justify-end">
+                <CellTemplate>
+                    <MudTooltip Text="View details">
+                        <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                       Title="View details"
+                                       Size="Size.Small"
+                                       Color="Color.Primary"
+                                       OnClick="@(() => Snackbar.Add($"Opening {context.Item.Name}…", Severity.Info))" />
+                    </MudTooltip>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+
+        @* Expandable row — processing/interpretation stage timeline *@
+        <ChildRowContent>
+            <MudPaper Elevation="0" Class="pa-4 ml-8">
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.subtitle2" Class="mb-2">Acquisition → Interpretation Pipeline</MudText>
+                        <ProcessTimeline Steps="@context.Item.Stages" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudText Typo="Typo.subtitle2" Class="mb-2">Linked Prospects</MudText>
+                        @foreach (var p in context.Item.LinkedProspectList)
+                        {
+                            <MudChip T="string"
+                                     Size="Size.Small"
+                                     Color="Color.Primary"
+                                     Class="ma-1"
+                                     OnClick="@(() => NavigationManager.NavigateTo($"/exploration/prospect/{p.Id}"))">
+                                @p.Name
+                            </MudChip>
+                        }
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </ChildRowContent>
+
+    </MudDataGrid>
+
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private List<SeismicSurveyRow> _surveys = new();
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/exploration/seismic-surveys?fieldId=
+        _surveys = new List<SeismicSurveyRow>
+        {
+            new("S001", "Eagle Ford 3D — Block 12", "3D", "ACTIVE",  250, 2023, 2, "Eagle Ford South; Permian Deep Play",
+                new() {
+                    new("Acquisition",    "Jan 2023", true,  false),
+                    new("Processing",     "Jun 2023", true,  false),
+                    new("Interpretation", "Feb 2024", false, true),
+                    new("Prospect Gen",   "",         false, false),
+                },
+                new() { new("1","Eagle Ford South"), new("2","Permian Deep Play") }),
+
+            new("S002", "Gulf of Mexico 2D — Lines 40–55", "2D", "COMPLETE", 620, 2021, 0, "GOM Deepwater Alpha",
+                new() {
+                    new("Acquisition",    "Mar 2021", true, false),
+                    new("Processing",     "Aug 2021", true, false),
+                    new("Interpretation", "Dec 2021", true, false),
+                    new("Prospect Gen",   "Feb 2022", true, false),
+                },
+                new() { new("4","GOM Deepwater Alpha") }),
+
+            new("S003", "North Sea Block 15 Reprocessing", "3D", "IN PROGRESS", 180, 2022, 0, "North Sea Block 15",
+                new() {
+                    new("Acquisition",    "May 2022", true,  false),
+                    new("Processing",     "Jan 2024", false, true),
+                    new("Interpretation", "",         false, false),
+                    new("Prospect Gen",   "",         false, false),
+                },
+                new() { new("3","North Sea Block 15") }),
+
+            new("S004", "Permian Basin 3D — Phase 2", "3D", "PLANNED", 340, 2024, 0, "Permian Wolfcamp Deep",
+                new() {
+                    new("Acquisition",    "Q3 2024",  false, true),
+                    new("Processing",     "",         false, false),
+                    new("Interpretation", "",         false, false),
+                    new("Prospect Gen",   "",         false, false),
+                },
+                new() { new("7","Permian Wolfcamp Deep") }),
+        };
+    }
+
+    private class SeismicSurveyRow
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string SurveyType { get; set; }
+        public string Status { get; set; }
+        public double AreaKm2 { get; set; }
+        public int Vintage { get; set; }
+        public int CompletionYear { get; set; }
+        public string LinkedProspects { get; set; }
+        public List<ProcessStep> Stages { get; set; }
+        public List<ProspectRef> LinkedProspectList { get; set; }
+
+        public SeismicSurveyRow(string id, string name, string type, string status, double area,
+            int vintage, int completionYear, string linkedProspects,
+            List<ProcessStep> stages, List<ProspectRef> prospectList)
+        {
+            Id = id; Name = name; SurveyType = type; Status = status; AreaKm2 = area;
+            Vintage = vintage; CompletionYear = completionYear;
+            LinkedProspects = linkedProspects; Stages = stages; LinkedProspectList = prospectList;
+        }
+    }
+
+    private record ProspectRef(string Id, string Name);
+}

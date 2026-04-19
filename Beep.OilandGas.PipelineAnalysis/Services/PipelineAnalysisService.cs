@@ -20,7 +20,7 @@ namespace Beep.OilandGas.PipelineAnalysis.Services
     /// Uses PPDMGenericRepository for data persistence following PPDM39 patterns.
     /// Main file with constructor and core hydraulics methods.
     /// </summary>
-    public partial class PipelineAnalysisService : IPipelineAnalysisService
+    public partial class PipelineAnalysisService : IPipelineAnalysisService, Beep.OilandGas.Models.Core.Interfaces.IPipelineAnalysisService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;

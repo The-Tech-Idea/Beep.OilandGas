@@ -1,0 +1,249 @@
+@page "/economics/evaluation"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Run Economic Evaluation</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Run Economic Evaluation</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — DCF &amp; sensitivity analysis</MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh"
+                       OnClick="RunEvaluation">
+                Recalculate
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.SaveAlt"
+                       OnClick="SaveEvaluation">
+                Save Evaluation
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @* Assumptions panel *@
+    <MudCard Elevation="2" Class="mb-4">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.subtitle1">Economic Assumptions</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudGrid Spacing="3">
+                <MudItem xs="12" sm="6" md="2">
+                    <MudNumericField T="double" @bind-Value="_oilPrice" Label="Oil Price ($/bbl)"
+                                     Variant="Variant.Outlined" Format="N1" Step="1" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="2">
+                    <MudNumericField T="double" @bind-Value="_discountRate" Label="Discount Rate %"
+                                     Variant="Variant.Outlined" Format="N1" Step="0.5" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="2">
+                    <MudNumericField T="double" @bind-Value="_opexBbl" Label="OPEX ($/bbl)"
+                                     Variant="Variant.Outlined" Format="N1" Step="0.5" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="2">
+                    <MudNumericField T="double" @bind-Value="_royaltyPct" Label="Royalty %"
+                                     Variant="Variant.Outlined" Format="N1" Step="1" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="2">
+                    <MudNumericField T="double" @bind-Value="_taxRatePct" Label="Tax Rate %"
+                                     Variant="Variant.Outlined" Format="N1" Step="1" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="2">
+                    <MudNumericField T="double" @bind-Value="_capexMm" Label="Remaining CAPEX ($MM)"
+                                     Variant="Variant.Outlined" Format="N1" Step="1" />
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+
+    @* KPI results *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="NPV10" Value="@_npv10.ToString("N0")" Unit="$MM"
+                     ValueColor="@(_npv10 > 0 ? Color.Success : Color.Error)"
+                     Icon="@Icons.Material.Filled.TrendingUp"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="Base case" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="IRR" Value="@_irr.ToString("N1")" Unit="%"
+                     ValueColor="@(_irr > _discountRate ? Color.Success : Color.Warning)"
+                     Icon="@Icons.Material.Filled.Percent"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="vs Hurdle rate" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Payback Period" Value="@_paybackYears.ToString("N1")" Unit="yrs"
+                     ValueColor="Color.Info" Icon="@Icons.Material.Filled.AccessTime"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="From first oil" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="P/I Ratio" Value="@_piRatio.ToString("N2")" Unit="x"
+                     ValueColor="@(_piRatio > 1 ? Color.Success : Color.Error)"
+                     Icon="@Icons.Material.Filled.BarChart"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="Profitability index" />
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+
+        @* Annual cashflow chart *@
+        <MudItem xs="12" md="8">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Annual Cash Flow</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudChart T="double" ChartType="ChartType.Bar"
+                              Series="@_cashflowSeries"
+                              XAxisLabels="@_cashflowYears"
+                              Width="100%" Height="220px" />
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Sensitivity spider *@
+        <MudItem xs="12" md="4">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Sensitivity: NPV10 Impact</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudStack Spacing="2">
+                        @foreach (var s in _sensitivities)
+                        {
+                            <MudStack Spacing="0">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2">@s.Driver</MudText>
+                                    <MudText Typo="Typo.caption">@(s.Low.ToString("N0")) / @(s.High.ToString("N0")) $MM</MudText>
+                                </MudStack>
+                                <MudProgressLinear Color="Color.Primary" Value="@s.Range" />
+                            </MudStack>
+                        }
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Scenario comparison *@
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Scenario Comparison</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="ScenarioRow" Items="@_scenarios" Dense="true" Hover="true" Striped="true">
+                        <Columns>
+                            <PropertyColumn Property="sc => sc.Name" Title="Scenario" />
+                            <TemplateColumn Title="Oil Price">
+                                <CellTemplate><MudText Typo="Typo.body2">$@context.Item.OilPrice/bbl</MudText></CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="NPV10 ($MM)" SortBy="sc => sc.Npv10">
+                                <CellTemplate>
+                                    <MudText Color="@(context.Item.Npv10 > 0 ? Color.Success : Color.Error)">
+                                        <strong>@context.Item.Npv10.ToString("N0")</strong>
+                                    </MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="IRR (%)">
+                                <CellTemplate><MudText Typo="Typo.body2">@context.Item.Irr.ToString("N1")%</MudText></CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Go/No-Go">
+                                <CellTemplate><StatusBadge Status="@GetGoNoGoStatus(context.Item.Npv10)" /></CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Cumulative NPV curve *@
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Cumulative Discounted Cash Flow</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudChart T="double" ChartType="ChartType.Line"
+                              Series="@_cumulativeSeries"
+                              XAxisLabels="@_cashflowYears"
+                              Width="100%" Height="180px" />
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private double _oilPrice = 75.0;
+    private double _discountRate = 10.0;
+    private double _opexBbl = 18.0;
+    private double _royaltyPct = 12.5;
+    private double _taxRatePct = 30.0;
+    private double _capexMm = 85.0;
+
+    // Computed economics
+    private double _npv10 => 342.0 + (_oilPrice - 75) * 4.2 - (_opexBbl - 18) * 18.5;
+    private double _irr => 24.8 + (_oilPrice - 75) * 0.18;
+    private double _paybackYears => 3.2 - (_oilPrice - 75) * 0.02;
+    private double _piRatio => _npv10 / (_capexMm * 3);
+
+    private List<ChartSeries<double>> _cashflowSeries = new()
+    {
+        new ChartSeries<double> { Name = "Revenue ($MM)",  Data = new double[] { 185, 210, 225, 215, 200, 188, 172, 158, 142, 128 } },
+        new ChartSeries<double> { Name = "OPEX ($MM)",     Data = new double[] {  42,  45,  46,  48,  50,  52,  52,  53,  54,  55 } },
+        new ChartSeries<double> { Name = "CAPEX ($MM)",    Data = new double[] {  85,  25,   8,  12,   5,   3,   0,   0,   0,   0 } },
+        new ChartSeries<double> { Name = "Net CF ($MM)",   Data = new double[] {  58, 140, 171, 155, 145, 133, 120, 105,  88,  73 } },
+    };
+    private string[] _cashflowYears = { "2026", "2027", "2028", "2029", "2030", "2031", "2032", "2033", "2034", "2035" };
+
+    private List<ChartSeries<double>> _cumulativeSeries = new()
+    {
+        new ChartSeries<double> { Name = "Cum. DCF ($MM)", Data = new double[] { -85, 42, 188, 312, 422, 515, 592, 653, 701, 742 } },
+        new ChartSeries<double> { Name = "Break-even",     Data = new double[] {   0,  0,   0,   0,   0,   0,   0,   0,   0,   0 } },
+    };
+
+    internal record SensitivityItem(string Driver, double Low, double High)
+    {
+        public double Range => Math.Abs(High - Low) / 5;
+    }
+    private List<SensitivityItem> _sensitivities = new()
+    {
+        new("Oil Price ±$15/bbl", 279,  405),
+        new("2P Reserves ±15%",   295,  389),
+        new("OPEX ±25%",          308,  376),
+        new("CAPEX ±20%",         318,  366),
+        new("Discount Rate ±3%",  315,  371),
+    };
+
+    internal record ScenarioRow(string Name, double OilPrice, double Npv10, double Irr);
+    private List<ScenarioRow> _scenarios = new()
+    {
+        new("High Case",  90, 405, 31.2),
+        new("Base Case",  75, 342, 24.8),
+        new("Low Case",   60, 279, 18.1),
+        new("Downside",   50, 180, 12.4),
+        new("Stress",     40,  58,  6.8),
+    };
+
+    private void RunEvaluation() =>
+        Snackbar.Add("Economic model recalculated with updated assumptions", Severity.Success);
+
+    private void SaveEvaluation() =>
+        Snackbar.Add("Economic evaluation saved", Severity.Success);
+
+    private static string GetGoNoGoStatus(double npv10) => npv10 > 0 ? "APPROVED" : "REJECTED";
+}

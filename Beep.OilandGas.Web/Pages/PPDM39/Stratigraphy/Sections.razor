@@ -3,51 +3,97 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<PageTitle>Well Sections - PPDM39</PageTitle>
+<PageTitle>Map Well Stratigraphic Sections</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudText Typo="Typo.h4" Class="mb-4">Well Sections</MudText>
-    
-    <MudPaper Class="pa-4">
-        <MudGrid>
-            <MudItem xs="12" md="6">
-                <MudTextField @bind-Value="_searchUwi" 
-                             Label="UWI" 
-                             Variant="Variant.Outlined"
-                             Adornment="Adornment.End"
-                             AdornmentIcon="@Icons.Material.Filled.Search"
-                             OnAdornmentClick="SearchSections" />
-            </MudItem>
-        </MudGrid>
-        
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
-        }
-        
-        @if (_sections != null && _sections.Any())
-        {
-            <MudTable Items="@_sections" Hover="true" Dense="true" Class="mt-4">
-                <HeaderContent>
-                    <MudTh>UWI</MudTh>
-                    <MudTh>Section ID</MudTh>
-                    <MudTh>Strat Unit</MudTh>
-                    <MudTh>Top Depth</MudTh>
-                    <MudTh>Base Depth</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="UWI">@context.UWI</MudTd>
-                    <MudTd DataLabel="Section ID">@GetPropertyValue(context, "STRAT_WELL_SECTION_ID")</MudTd>
-                    <MudTd DataLabel="Strat Unit">@GetStratUnitName(context.STRAT_UNIT_ID)</MudTd>
-                    <MudTd DataLabel="Top Depth">@GetPropertyValue(context, "TOP_DEPTH")</MudTd>
-                    <MudTd DataLabel="Base Depth">@GetPropertyValue(context, "BASE_DEPTH")</MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-    </MudPaper>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Map Well Stratigraphic Sections</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Formation tops and depths per well</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Secondary"
+                         Icon="@Icons.Material.Filled.TableRows">Geology</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.FileDownload">Export Sections</MudButton>
+    </MudStack>
+
+    @* ── UWI Search *@
+    <MudCard Elevation="1" Class="mb-4">
+        <MudCardContent>
+            <MudTextField @bind-Value="_searchUwi"
+                          Label="Well UWI"
+                          Placeholder="Enter well identifier"
+                          Variant="Variant.Outlined"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          OnAdornmentClick="SearchSections" />
+        </MudCardContent>
+    </MudCard>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ── Sections Grid *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_sections != null && _sections.Any())
+            {
+                <MudDataGrid T="STRAT_WELL_SECTION" Items="@_sections" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <PropertyColumn Property="s => s.UWI" Title="UWI" />
+                        <TemplateColumn Title="Section ID">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "STRAT_WELL_SECTION_ID")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Strat Unit">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2" Color="Color.Primary">
+                                    @GetStratUnitName(context.Item.STRAT_UNIT_ID)
+                                </MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Top Depth">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "TOP_DEPTH")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Base Depth">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "BASE_DEPTH")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.TableRows" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No sections match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.TableRows" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">Enter a UWI to view stratigraphic sections</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Use the search box above to look up a well.</MudText>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private string _searchUwi = string.Empty;
     private List<STRAT_WELL_SECTION>? _sections;
     private Dictionary<string, string> _stratUnitNames = new();

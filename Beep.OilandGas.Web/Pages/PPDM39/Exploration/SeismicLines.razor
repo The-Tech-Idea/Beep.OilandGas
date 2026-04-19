@@ -4,50 +4,100 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 
-<PageTitle>Seismic Lines - Exploration</PageTitle>
+<PageTitle>Inspect Seismic Line Coverage</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
-        <MudText Typo="Typo.h4">Seismic Lines - Survey @SurveyId</MudText>
-        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack">
-            Back to Surveys
-        </MudButton>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="GoBack"
+                       Title="Back to Surveys" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Inspect Seismic Line Coverage</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Survey @SurveyId</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info"
+                         Icon="@Icons.Material.Filled.Timeline">Lines</MudChip>
+            </MudStack>
+        </MudStack>
     </MudStack>
 
-    <MudPaper Class="pa-4">
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-        }
-        else if (_lines != null && _lines.Any())
-        {
-            <MudTable Items="@_lines" Hover="true" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh>Line ID</MudTh>
-                    <MudTh>Line Name</MudTh>
-                    <MudTh>Line Type</MudTh>
-                    <MudTh>Length (km)</MudTh>
-                    <MudTh>Status</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Line ID">@GetPropertyValue(context, "SEISMIC_LINE_ID")</MudTd>
-                    <MudTd DataLabel="Line Name">@GetPropertyValue(context, "LINE_NAME")</MudTd>
-                    <MudTd DataLabel="Line Type">@GetPropertyValue(context, "LINE_TYPE")</MudTd>
-                    <MudTd DataLabel="Length (km)">@FormatDecimal(GetPropertyValue(context, "LINE_LENGTH"))</MudTd>
-                    <MudTd DataLabel="Status">@GetPropertyValue(context, "LINE_STATUS")</MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Info">No seismic lines found for this survey.</MudAlert>
-        }
-    </MudPaper>
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ── Lines Grid ──────────────────────────────────────────────────── *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_lines != null && _lines.Any())
+            {
+                <MudDataGrid T="SEIS_ACQTN_SURVEY" Items="@_lines" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <TemplateColumn Title="Line ID">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "SEISMIC_LINE_ID")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Line Name">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2" Color="Color.Primary">
+                                    @GetPropertyValue(context.Item, "LINE_NAME")
+                                </MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Type">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "LINE_TYPE")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Length (km)">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">
+                                    @FormatDecimal(GetPropertyValue(context.Item, "LINE_LENGTH"))
+                                </MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <StatusBadge Status="@GetPropertyValue(context.Item, "LINE_STATUS")" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Timeline" Color="Color.Secondary"
+                                     Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No lines match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.Timeline" Color="Color.Secondary"
+                             Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No seismic lines found</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Survey @SurveyId has no lines registered.
+                    </MudText>
+                    <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack"
+                               OnClick="GoBack" Class="mt-2">
+                        Back to Surveys
+                    </MudButton>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
     [Parameter] public string SurveyId { get; set; } = string.Empty;
 
+    private string _fieldName = "Current Field";
     private List<SEIS_ACQTN_SURVEY>? _lines;
     private bool _isLoading = false;
 

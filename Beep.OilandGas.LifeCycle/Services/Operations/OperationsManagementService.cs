@@ -6,6 +6,8 @@ using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Models;
+using Beep.OilandGas.PPDM.Models;
 using Beep.OilandGas.Models.Data.LifeCycle;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
@@ -71,6 +73,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Operations
             {
                 _logger?.LogInformation("Shift handover recorded for {EntityType}: {EntityId}, From: {FromShift}, To: {ToShift}", 
                     request.EntityType, request.EntityId, request.FromShift, request.ToShift);
+                await PersistActivityAsync(request.EntityType, request.EntityId,
+                    "SHIFT_HANDOVER", request.HandoverDate,
+                    $"{request.FromShift} → {request.ToShift}: {request.HandoverNotes}", userId);
                 return true;
             }
             catch (Exception ex)
@@ -86,6 +91,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Operations
             {
                 _logger?.LogWarning("Incident reported for {EntityType}: {EntityId}, Type: {IncidentType}, Severity: {Severity}", 
                     request.EntityType, request.EntityId, request.IncidentType, request.Severity);
+                await PersistActivityAsync(request.EntityType, request.EntityId,
+                    "INCIDENT_" + request.IncidentType, request.IncidentDate,
+                    $"Severity={request.Severity}, ReportedBy={request.ReportedBy}: {request.Description}", userId);
                 return true;
             }
             catch (Exception ex)
@@ -101,6 +109,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Operations
             {
                 _logger?.LogInformation("Safety assessment conducted for {EntityType}: {EntityId}, Date: {AssessmentDate}", 
                     request.EntityType, request.EntityId, request.AssessmentDate);
+                await PersistActivityAsync(request.EntityType, request.EntityId,
+                    "SAFETY_ASSESSMENT", request.AssessmentDate,
+                    $"Assessor={request.Assessor}: {request.Findings}", userId);
                 return true;
             }
             catch (Exception ex)
@@ -116,12 +127,66 @@ namespace Beep.OilandGas.LifeCycle.Services.Operations
             {
                 _logger?.LogInformation("Compliance recorded for {EntityType}: {EntityId}, Type: {ComplianceType}, Status: {Status}", 
                     request.EntityType, request.EntityId, request.ComplianceType, request.Status);
+                await PersistActivityAsync(request.EntityType, request.EntityId,
+                    "COMPLIANCE_" + request.ComplianceType, request.ComplianceDate,
+                    $"Status={request.Status}", userId);
                 return true;
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error recording compliance: {EntityId}", request.EntityId);
                 throw;
+            }
+        }
+
+        private async Task PersistActivityAsync(string entityType, string entityId, string activityType, DateTime? eventDate, string remark, string userId)
+        {
+            var isWell = string.Equals(entityType, "WELL", StringComparison.OrdinalIgnoreCase);
+            if (isWell)
+            {
+                var meta = await _metadata.GetTableMetadataAsync("WELL_ACTIVITY");
+                if (meta != null)
+                {
+                    var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                    var rec = new WELL_ACTIVITY
+                    {
+                        UWI = _defaults.FormatIdForTable("WELL_ACTIVITY", entityId),
+                        SOURCE = "LIFECYCLE",
+                        ACTIVITY_OBS_NO = Math.Abs((decimal)Guid.NewGuid().GetHashCode()),
+                        ACTIVITY_TYPE_ID = activityType,
+                        EVENT_DATE = eventDate,
+                        START_DATE = eventDate,
+                        REMARK = remark,
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (rec is IPPDMEntity e) _commonColumnHandler.PrepareForInsert(e, userId);
+                    await repo.InsertAsync(rec, userId);
+                }
+            }
+            else
+            {
+                var meta = await _metadata.GetTableMetadataAsync("FACILITY_STATUS");
+                if (meta != null)
+                {
+                    var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(FACILITY_STATUS), _connectionName, "FACILITY_STATUS", null);
+                    var rec = new FACILITY_STATUS
+                    {
+                        FACILITY_ID = _defaults.FormatIdForTable("FACILITY_STATUS", entityId),
+                        FACILITY_TYPE = entityType?.ToUpperInvariant() ?? "FACILITY",
+                        STATUS_ID = Guid.NewGuid().ToString("N").Substring(0, 16),
+                        STATUS = activityType,
+                        STATUS_TYPE = activityType,
+                        START_TIME = eventDate,
+                        REMARK = remark,
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (rec is IPPDMEntity e) _commonColumnHandler.PrepareForInsert(e, userId);
+                    await repo.InsertAsync(rec, userId);
+                }
             }
         }
     }

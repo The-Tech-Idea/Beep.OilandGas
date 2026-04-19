@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -81,6 +82,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     return NotFound(new { error = "Dashboard data not found" });
                 }
 
+                var dashboardTableName = dashboard.TABLE_NAME ?? dashboard.TableName ?? "Unknown";
+
                 var result = new DataQualityDashboardResult
                 {
                     OverallQualityScore = dashboard.OverallQualityScore,
@@ -90,10 +93,10 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         ? new System.Collections.Generic.Dictionary<string, DataQualityResult>
                         {
                             {
-                                dashboard.TABLE_NAME ?? tableName ?? "Unknown",
+                                dashboardTableName,
                                 new DataQualityResult
                                 {
-                                    TableName = dashboard.TABLE_NAME ?? tableName ?? "Unknown",
+                                    TableName = dashboardTableName,
                                     OverallQualityScore = dashboard.CurrentMetrics.OverallQualityScore,
                                     TotalRows = dashboard.CurrentMetrics.TotalRecords,
                                     CompleteRows = dashboard.CurrentMetrics.CompleteRecords,

@@ -1,0 +1,489 @@
+@page "/development/well-design"
+@page "/development/well-design/{Id}"
+@page "/development/well-design/new"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>@(_showDetail ? $"{_well.WellName} — Well Design" : "Development Well Design")</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+        @if (_showDetail)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                           OnClick="BackToList"
+                           Title="Back to list" />
+        }
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">@(_showDetail ? _well.WellName : "Development Well Design")</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    @_fieldName — @(_showDetail ? $"{_well.Type} · {_well.TargetZone}" : "Design, plan, and track development wells")
+                </MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Icon="@Icons.Material.Filled.Construction">Development</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudSpacer />
+        @if (_showDetail)
+        {
+            <StatusBadge Status="@_well.Status" />
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="NewWell">
+                New Well Design
+            </MudButton>
+        }
+    </MudStack>
+
+    @* ══════════════════════════════════════════════════════════════════════ *@
+    @*  LIST VIEW                                                             *@
+    @* ══════════════════════════════════════════════════════════════════════ *@
+    @if (!_showDetail)
+    {
+        <MudDataGrid T="WellDesignRow"
+                     Items="@_wells"
+                     Dense="true"
+                     Hover="true"
+                     Striped="true"
+                     Filterable="true"
+                     SortMode="SortMode.Single"
+                     RowClick="@OnRowClick">
+            <Columns>
+                <PropertyColumn Property="x => x.WellName" Title="Well Name" />
+                <PropertyColumn Property="x => x.Type" Title="Type">
+                    <CellTemplate>
+                        <MudChip T="string" Size="Size.Small"
+                                 Color="@(context.Item.Type == "Producer" ? Color.Primary : context.Item.Type == "Injector" ? Color.Info : Color.Default)">
+                            @context.Item.Type
+                        </MudChip>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="x => x.TargetZone" Title="Target Zone" />
+                <PropertyColumn Property="x => x.Status" Title="Status">
+                    <CellTemplate><StatusBadge Status="@context.Item.Status" /></CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="x => x.AfeMm" Title="AFE (USD MM)" Format="N2" />
+                <PropertyColumn Property="x => x.RigAssigned" Title="Rig" />
+                <TemplateColumn CellClass="d-flex justify-end">
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Title="Open well design" Size="Size.Small" Color="Color.Primary"
+                                       OnClick="@(() => OpenDetail(context.Item.Id))" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
+
+    @* ══════════════════════════════════════════════════════════════════════ *@
+    @*  DETAIL VIEW (5 tabs + action panel)                                  *@
+    @* ══════════════════════════════════════════════════════════════════════ *@
+    else
+    {
+        <MudGrid Spacing="3">
+
+            @* MAIN — 5 tabs *@
+            <MudItem xs="12" md="8">
+                <MudTabs Elevation="1" Rounded="true" ApplyEffectsToContainer="true">
+
+                    @* Tab 1: Well Design *@
+                    <MudTabPanel Text="Well Design" Icon="@Icons.Material.Filled.Draw">
+                        <MudGrid Spacing="3" Class="pa-4">
+                            <MudItem xs="12" md="6">
+                                <MudTextField Value="@_well.WellName" Label="Well Name" Variant="Variant.Outlined" ReadOnly="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField Value="@_well.Type" Label="Well Type" Variant="Variant.Outlined" ReadOnly="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField Value="@_well.SurfaceLatLon" Label="Surface Location (Lat/Lon)" Variant="Variant.Outlined" ReadOnly="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField Value="@_well.TargetZone" Label="Target Zone" Variant="Variant.Outlined" ReadOnly="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField Value="@_well.TargetDepthM.ToString()" Label="Planned TD (m)" Variant="Variant.Outlined" ReadOnly="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField Value="@_well.TrajectoryType" Label="Trajectory" Variant="Variant.Outlined" ReadOnly="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField Value="@_well.PlannedInclination.ToString()" Label="Max Inclination (°)" Variant="Variant.Outlined" ReadOnly="true" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Casing Program</MudText>
+                                <MudDataGrid T="CasingString" Items="@_well.CasingProgram" Dense="true" Hover="true" Striped="true">
+                                    <Columns>
+                                        <PropertyColumn Property="c => c.StringName" Title="String" />
+                                        <PropertyColumn Property="c => c.SizeIn" Title="Size (in)" />
+                                        <PropertyColumn Property="c => c.SetDepthM" Title="Set Depth (m)" />
+                                        <PropertyColumn Property="c => c.Grade" Title="Grade" />
+                                    </Columns>
+                                </MudDataGrid>
+                            </MudItem>
+                        </MudGrid>
+                    </MudTabPanel>
+
+                    @* Tab 2: Drilling Program *@
+                    <MudTabPanel Text="Drilling Program" Icon="@Icons.Material.Filled.Engineering">
+                        <MudPaper Elevation="0" Class="pa-4">
+                            <MudGrid Spacing="3">
+                                <MudItem xs="12" md="6">
+                                    <MudTextField Value="@_well.MudProgram" Label="Mud Program" Variant="Variant.Outlined" ReadOnly="true" Lines="3" />
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField Value="@_well.BhaSummary" Label="BHA Design Summary" Variant="Variant.Outlined" ReadOnly="true" Lines="3" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudText Typo="Typo.subtitle2" Class="mb-2">Formation Tops (prognosis)</MudText>
+                                    <MudDataGrid T="FormationTop" Items="@_well.FormationTops" Dense="true" Hover="true" Striped="true">
+                                        <Columns>
+                                            <PropertyColumn Property="f => f.Name" Title="Formation" />
+                                            <PropertyColumn Property="f => f.DepthM" Title="Prognosed Depth (m)" />
+                                        </Columns>
+                                    </MudDataGrid>
+                                </MudItem>
+                                <MudItem xs="12" md="6">
+                                    <MudTextField Value="@_well.PlannedDays.ToString()" Label="Time Estimate (days)" Variant="Variant.Outlined" ReadOnly="true" />
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    </MudTabPanel>
+
+                    @* Tab 3: Completion Design *@
+                    <MudTabPanel Text="Completion Design" Icon="@Icons.Material.Filled.Plumbing">
+                        <MudPaper Elevation="0" Class="pa-4">
+                            <MudStack Spacing="2">
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-xl">Perforation Interval</MudText>
+                                    <MudText Typo="Typo.body2">@_well.PerfInterval</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-xl">Gravel Pack</MudText>
+                                    <MudText Typo="Typo.body2">@_well.GravelPack</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-xl">Artificial Lift</MudText>
+                                    <MudText Typo="Typo.body2">@_well.ArtificialLift</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-xl">Tubing Size</MudText>
+                                    <MudText Typo="Typo.body2">@_well.TubingSize</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-xl">Packer Type</MudText>
+                                    <MudText Typo="Typo.body2">@_well.PackerType</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-xl">Downhole Safety Valve</MudText>
+                                    <MudText Typo="Typo.body2">@_well.Dhsv</MudText>
+                                </MudStack>
+                            </MudStack>
+                        </MudPaper>
+                    </MudTabPanel>
+
+                    @* Tab 4: AFE *@
+                    <MudTabPanel Text="AFE" Icon="@Icons.Material.Filled.AttachMoney">
+                        <MudPaper Elevation="0" Class="pa-4">
+                            <MudDataGrid T="AfeLine" Items="@_well.AfeLines" Dense="true" Hover="true" Striped="true">
+                                <Columns>
+                                    <PropertyColumn Property="a => a.Category" Title="Category" />
+                                    <PropertyColumn Property="a => a.Description" Title="Description" />
+                                    <TemplateColumn Title="Cost (USD)">
+                                        <CellTemplate>
+                                            <MudText Typo="Typo.body2">@context.Item.CostUsd.ToString("N0")</MudText>
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                            </MudDataGrid>
+                            <MudStack Class="mt-2 pa-2" Spacing="1">
+                                <MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">Contingency (15%)</MudText>
+                                    <MudText Typo="Typo.body2"><strong>@(_well.AfeLines.Sum(a => a.CostUsd) * 0.15m).ToString("N0")</strong></MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2"><strong>Total AFE</strong></MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Warning"><strong>@(_well.AfeLines.Sum(a => a.CostUsd) * 1.15m).ToString("N0")</strong></MudText>
+                                </MudStack>
+                            </MudStack>
+                        </MudPaper>
+                    </MudTabPanel>
+
+                    @* Tab 5: Drilling Progress *@
+                    <MudTabPanel Text="Progress" Icon="@Icons.Material.Filled.Speed">
+                        @if (_well.Status is "PLANNED" or "APPROVED")
+                        {
+                            <MudPaper Elevation="0" Class="pa-4">
+                                <MudAlert Severity="Severity.Info">Drilling has not started. Spud date not yet recorded.</MudAlert>
+                            </MudPaper>
+                        }
+                        else
+                        {
+                            <MudGrid Spacing="3" Class="pa-4">
+                                <MudItem xs="12" md="4">
+                                    <KpiCard Label="Current Depth" Value="@_well.CurrentDepthM.ToString("N0")" Unit="m" ValueColor="Color.Primary" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <KpiCard Label="Days Drilling" Value="@_well.DaysDrilling.ToString()" Unit="@($"/ {_well.PlannedDays} planned")" ValueColor="@(_well.DaysDrilling <= _well.PlannedDays ? Color.Success : Color.Warning)" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <KpiCard Label="ROP" Value="@_well.RopMPerDay.ToString("N0")" Unit="m/day" ValueColor="Color.Info" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudText Typo="Typo.subtitle2" Class="mb-2">NPT Log</MudText>
+                                    <MudDataGrid T="NptEntry" Items="@_well.NptLog" Dense="true" Hover="true" Striped="true">
+                                        <Columns>
+                                            <PropertyColumn Property="n => n.Date" Title="Date" />
+                                            <PropertyColumn Property="n => n.Category" Title="Category" />
+                                            <PropertyColumn Property="n => n.DurationHrs" Title="Duration (hrs)" />
+                                            <PropertyColumn Property="n => n.Description" Title="Description" />
+                                        </Columns>
+                                    </MudDataGrid>
+                                </MudItem>
+                            </MudGrid>
+                        }
+                    </MudTabPanel>
+
+                </MudTabs>
+            </MudItem>
+
+            @* SIDEBAR — State-based actions *@
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Actions</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack Spacing="2">
+                            @if (_well.Status == "DRAFT")
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Send"
+                                           FullWidth="true" OnClick="SubmitForApproval">
+                                    Submit for Approval
+                                </MudButton>
+                            }
+                            @if (_well.Status is "DRAFT" or "APPROVED")
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Info"
+                                           StartIcon="@Icons.Material.Filled.DirectionsBoat"
+                                           FullWidth="true" OnClick="AssignRig">
+                                    Assign Rig
+                                </MudButton>
+                            }
+                            @if (_well.Status == "APPROVED")
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Success"
+                                           StartIcon="@Icons.Material.Filled.PlayArrow"
+                                           FullWidth="true" OnClick="RecordSpud">
+                                    Record Spud
+                                </MudButton>
+                            }
+                            @if (_well.Status == "DRILLING")
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.VerticalAlignBottom"
+                                           FullWidth="true" OnClick="RecordTD">
+                                    Record TD Reached
+                                </MudButton>
+                            }
+                            @if (_well.Status == "TD_REACHED")
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Success"
+                                           StartIcon="@Icons.Material.Filled.CheckCircle"
+                                           FullWidth="true" OnClick="CompleteWell">
+                                    Complete Well
+                                </MudButton>
+                            }
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+        </MudGrid>
+    }
+
+</MudContainer>
+
+@code {
+    [Parameter] public string? Id { get; set; }
+
+    private string _fieldName = "Current Field";
+    private bool _showDetail;
+    private WellDetail _well = new();
+    private List<WellDesignRow> _wells = new();
+
+    protected override void OnInitialized()
+    {
+        _wells = new()
+        {
+            new("1", "Dev-A1", "Producer", "Lower Eagle Ford", "DRILLING",    5.8m,  "Ensco 8503"),
+            new("2", "Dev-A2", "Producer", "Lower Eagle Ford", "APPROVED",    5.6m,  "TBD"),
+            new("3", "Dev-B1", "Injector", "Lower Eagle Ford", "COMPLETE",    4.2m,  "Ensco 8503"),
+            new("4", "Dev-A3", "Producer", "Upper Eagle Ford", "DRAFT",       5.5m,  "TBD"),
+            new("5", "Dev-B2", "Injector", "Lower Eagle Ford", "DRAFT",       4.0m,  "TBD"),
+        };
+
+        if (!string.IsNullOrEmpty(Id) && Id != "new")
+        {
+            _showDetail = true;
+            LoadWellDetail(Id);
+        }
+        else if (Id == "new")
+        {
+            _showDetail = true;
+            _well = new WellDetail { WellName = "New Well", Status = "DRAFT" };
+        }
+    }
+
+    private void LoadWellDetail(string id)
+    {
+        // TODO: GET /api/development/wells/{id}
+        _well = new WellDetail
+        {
+            Id = id,
+            WellName = "Dev-A1",
+            Type = "Producer",
+            Status = "DRILLING",
+            TargetZone = "Lower Eagle Ford",
+            SurfaceLatLon = "28.5° N, 97.8° W",
+            TargetDepthM = 3_500,
+            TrajectoryType = "Directional",
+            PlannedInclination = 72,
+            PlannedDays = 65,
+            DaysDrilling = 42,
+            CurrentDepthM = 2_850,
+            RopMPerDay = 68,
+            MudProgram = "Water-based mud to 2,000m; Synthetic oil-based mud below",
+            BhaSummary = "PDC bit 8½\", MWD/LWD, RSS, 6½\" DC, HWDP",
+            PerfInterval = "3,200–3,400m MD",
+            GravelPack = "None",
+            ArtificialLift = "Electric Submersible Pump (ESP)",
+            TubingSize = "3½\" 12.7 ppf L80",
+            PackerType = "Permanent production packer",
+            Dhsv = "SCSSV 3.5\" × 5,000 psi",
+            RigAssigned = "Ensco 8503",
+            CasingProgram = new()
+            {
+                new("Conductor",   30m, 60,    "X-52"),
+                new("Surface",     13.375m, 600, "K-55"),
+                new("Intermediate",9.625m, 2_100,"N-80"),
+                new("Production",  7m, 3_500, "P-110"),
+            },
+            FormationTops = new()
+            {
+                new("Midway Shale",       380),
+                new("Austin Chalk",     1_200),
+                new("Eagle Ford Shale", 3_150),
+                new("Buda Limestone",   3_520),
+            },
+            AfeLines = new()
+            {
+                new("Drilling",    "Rig day rate (65 days @ $75k)",  4_875_000m),
+                new("Drilling",    "Mud & chemicals",                  780_000m),
+                new("Casing",      "Casing programme",                 640_000m),
+                new("Completion",  "ESP system",                       320_000m),
+                new("Evaluation",  "Wireline",                         210_000m),
+            },
+            NptLog = new()
+            {
+                new("12 Mar 2026", "Stuck Pipe",  18, "Differentially stuck at 2,400m. Freed with spotting fluid."),
+                new("28 Mar 2026", "Wait on Crew", 6, "Crew change delay due to weather."),
+            }
+        };
+    }
+
+    private void OpenDetail(string id) =>
+        NavigationManager.NavigateTo($"/development/well-design/{id}");
+
+    private void BackToList() =>
+        NavigationManager.NavigateTo("/development/well-design");
+
+    private void NewWell() =>
+        NavigationManager.NavigateTo("/development/well-design/new");
+
+    private void OnRowClick(DataGridRowClickEventArgs<WellDesignRow> args) =>
+        OpenDetail(args.Item.Id);
+
+    private void SubmitForApproval()
+    {
+        _well.Status = "APPROVED";
+        Snackbar.Add("Well design submitted for approval.", Severity.Success);
+    }
+
+    private void AssignRig() =>
+        Snackbar.Add("Rig assignment dialog coming soon.", Severity.Info);
+
+    private void RecordSpud()
+    {
+        _well.Status = "DRILLING";
+        Snackbar.Add($"Spud recorded for {_well.WellName}.", Severity.Success);
+    }
+
+    private void RecordTD()
+    {
+        _well.Status = "TD_REACHED";
+        Snackbar.Add($"TD recorded at {_well.CurrentDepthM}m for {_well.WellName}.", Severity.Success);
+    }
+
+    private void CompleteWell()
+    {
+        _well.Status = "COMPLETE";
+        Snackbar.Add($"{_well.WellName} marked complete.", Severity.Success);
+    }
+
+    private class WellDesignRow
+    {
+        public string Id { get; set; }
+        public string WellName { get; set; }
+        public string Type { get; set; }
+        public string TargetZone { get; set; }
+        public string Status { get; set; }
+        public decimal AfeMm { get; set; }
+        public string RigAssigned { get; set; }
+        public WellDesignRow(string id, string n, string t, string z, string s, decimal afe, string rig)
+        { Id=id; WellName=n; Type=t; TargetZone=z; Status=s; AfeMm=afe; RigAssigned=rig; }
+    }
+
+    private class WellDetail
+    {
+        public string Id { get; set; } = string.Empty;
+        public string WellName { get; set; } = string.Empty;
+        public string Type { get; set; } = "Producer";
+        public string Status { get; set; } = "DRAFT";
+        public string TargetZone { get; set; } = string.Empty;
+        public string SurfaceLatLon { get; set; } = string.Empty;
+        public int TargetDepthM { get; set; }
+        public string TrajectoryType { get; set; } = "Vertical";
+        public double PlannedInclination { get; set; }
+        public int PlannedDays { get; set; }
+        public int DaysDrilling { get; set; }
+        public int CurrentDepthM { get; set; }
+        public double RopMPerDay { get; set; }
+        public string MudProgram { get; set; } = string.Empty;
+        public string BhaSummary { get; set; } = string.Empty;
+        public string PerfInterval { get; set; } = string.Empty;
+        public string GravelPack { get; set; } = string.Empty;
+        public string ArtificialLift { get; set; } = string.Empty;
+        public string TubingSize { get; set; } = string.Empty;
+        public string PackerType { get; set; } = string.Empty;
+        public string Dhsv { get; set; } = string.Empty;
+        public string RigAssigned { get; set; } = string.Empty;
+        public List<CasingString> CasingProgram { get; set; } = new();
+        public List<FormationTop> FormationTops { get; set; } = new();
+        public List<AfeLine> AfeLines { get; set; } = new();
+        public List<NptEntry> NptLog { get; set; } = new();
+    }
+
+    private record CasingString(string StringName, decimal SizeIn, int SetDepthM, string Grade);
+    private record FormationTop(string Name, int DepthM);
+    private record AfeLine(string Category, string Description, decimal CostUsd);
+    private record NptEntry(string Date, string Category, double DurationHrs, string Description);
+}

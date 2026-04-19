@@ -171,11 +171,26 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
                     throw new InvalidOperationException($"Field not found: {request.FieldId}");
                 }
 
-                // Store planning data (could be in a separate PLANNING table or as part of process)
-                // For now, this would be handled by the process service
-                _logger?.LogInformation("Field planning created for field: {FieldId}, Type: {PlanningType}", 
+                var versionMeta = await _metadata.GetTableMetadataAsync("FIELD_VERSION");
+                if (versionMeta != null)
+                {
+                    var versionRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(FIELD_VERSION), _connectionName, "FIELD_VERSION", null);
+                    var version = new FIELD_VERSION
+                    {
+                        FIELD_ID = _defaults.FormatIdForTable("FIELD_VERSION", request.FieldId),
+                        SOURCE = "LIFECYCLE",
+                        EFFECTIVE_DATE = request.TargetStartDate ?? DateTime.UtcNow,
+                        FIELD_TYPE = "PLANNING_" + request.PlanningType,
+                        REMARK = request.Description,
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (version is IPPDMEntity ve) _commonColumnHandler.PrepareForInsert(ve, userId);
+                    await versionRepo.InsertAsync(version, userId);
+                }
+                _logger?.LogInformation("Field planning created for field: {FieldId}, Type: {PlanningType}",
                     request.FieldId, request.PlanningType);
-
                 return true;
             }
             catch (Exception ex)
@@ -203,10 +218,26 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
                     throw new InvalidOperationException($"Field not found: {request.FieldId}");
                 }
 
-                // Store operations data (could be in OPERATIONS_LOG table)
-                _logger?.LogInformation("Field operations recorded for field: {FieldId}, Type: {OperationType}", 
+                var verMeta = await _metadata.GetTableMetadataAsync("FIELD_VERSION");
+                if (verMeta != null)
+                {
+                    var verRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(FIELD_VERSION), _connectionName, "FIELD_VERSION", null);
+                    var version = new FIELD_VERSION
+                    {
+                        FIELD_ID = _defaults.FormatIdForTable("FIELD_VERSION", request.FieldId),
+                        SOURCE = "LIFECYCLE",
+                        EFFECTIVE_DATE = request.OperationDate,
+                        FIELD_TYPE = request.OperationType,
+                        REMARK = request.Description,
+                        ACTIVE_IND = "Y",
+                        PPDM_GUID = Guid.NewGuid().ToString()
+                    };
+                    if (version is IPPDMEntity ve) _commonColumnHandler.PrepareForInsert(ve, userId);
+                    await verRepo.InsertAsync(version, userId);
+                }
+                _logger?.LogInformation("Field operations recorded for field: {FieldId}, Type: {OperationType}",
                     request.FieldId, request.OperationType);
-
                 return true;
             }
             catch (Exception ex)
@@ -289,18 +320,49 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
                     throw new InvalidOperationException($"Field not found: {request.FieldId}");
                 }
 
-                // Calculate performance metrics
                 var metrics = new Dictionary<string, decimal>();
-                
-                // This would query production data, reserves, costs, etc.
-                // For now, return empty metrics structure
-                
+                var additionalData = new Dictionary<string, object>();
+
+                // Query FIELD_VERSION for operations count
+                var versionMeta = await _metadata.GetTableMetadataAsync("FIELD_VERSION");
+                if (versionMeta != null)
+                {
+                    var versionRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(FIELD_VERSION), _connectionName, "FIELD_VERSION", null);
+                    var versionFilters = new List<AppFilter>
+                    {
+                        new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("FIELD_VERSION", request.FieldId) },
+                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    };
+                    var versions = await versionRepo.GetAsync(versionFilters);
+                    var vList = versions?.ToList() ?? new List<object>();
+                    metrics["TotalOperationsCount"] = vList.Count;
+                    metrics["PlanningOperationsCount"] = vList.OfType<FIELD_VERSION>()
+                        .Count(v => v.FIELD_TYPE != null &&
+                            v.FIELD_TYPE.StartsWith("PLANNING_", StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Query WELL table for well count
+                var wellMeta = await _metadata.GetTableMetadataAsync("WELL");
+                if (wellMeta != null)
+                {
+                    var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                        typeof(WELL), _connectionName, "WELL", null);
+                    var wellFilters = new List<AppFilter>
+                    {
+                        new AppFilter { FieldName = "FIELD_ID", Operator = "=", FilterValue = _defaults.FormatIdForTable("WELL", request.FieldId) },
+                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    };
+                    var wells = await wellRepo.GetAsync(wellFilters);
+                    metrics["ActiveWellCount"] = wells?.Count() ?? 0;
+                }
+
                 return new FieldPerformanceResponse
                 {
                     FieldId = request.FieldId,
                     ReportDate = DateTime.UtcNow,
                     Metrics = metrics,
-                    AdditionalData = new Dictionary<string, object>()
+                    AdditionalData = additionalData
                 };
             }
             catch (Exception ex)

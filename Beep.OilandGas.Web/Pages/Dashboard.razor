@@ -8,115 +8,107 @@
 <PageTitle>Dashboard - @(_branding.AppName ?? "Beep Oil & Gas")</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.False" Class="pa-4">
-    <MudText Typo="Typo.h4" Class="mb-6">Dashboard</MudText>
-    
-    <!-- Quick Stats -->
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-6">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Monitor Field Operations</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Asset performance at a glance</MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Explore"
+                       OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/production/fields"))">View Fields</MudButton>
+            <MudChip T="string" Color="Color.Primary" Icon="@Icons.Material.Filled.LocationOn" Size="Size.Small">
+                @(_branding.AppName ?? "Beep Oil &amp; Gas")
+            </MudChip>
+        </MudStack>
+    </MudStack>
+
+    @* ── KPI Row ─────────────────────────────────────────────────────────── *@
     <MudGrid Spacing="3" Class="mb-6">
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="2">
-                <MudCardContent>
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                        <MudStack Spacing="1">
-                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Total Wells</MudText>
-                            <MudText Typo="Typo.h4">@_totalWells</MudText>
-                        </MudStack>
-                        <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Size="Size.Large" Color="Color.Primary" Style="opacity: 0.7;" />
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <KpiCard Label="Total Wells"
+                     Value="@_totalWells.ToString("N0")"
+                     ValueColor="Color.Primary"
+                     Icon="@Icons.Material.Filled.OilBarrel"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat"
+                     TrendColor="Color.Default"
+                     TrendText="No change today" />
         </MudItem>
-        
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="2">
-                <MudCardContent>
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                        <MudStack Spacing="1">
-                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Active Fields</MudText>
-                            <MudText Typo="Typo.h4">@_activeFields</MudText>
-                        </MudStack>
-                        <MudIcon Icon="@Icons.Material.Filled.Explore" Size="Size.Large" Color="Color.Secondary" Style="opacity: 0.7;" />
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <KpiCard Label="Active Fields"
+                     Value="@_activeFields.ToString()"
+                     ValueColor="Color.Success"
+                     Icon="@Icons.Material.Filled.Explore"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp"
+                     TrendColor="Color.Success"
+                     TrendText="+2 this quarter" />
         </MudItem>
-        
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="2">
-                <MudCardContent>
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                        <MudStack Spacing="1">
-                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Production (bbl/day)</MudText>
-                            <MudText Typo="Typo.h4">@_dailyProduction.ToString("N0")</MudText>
-                        </MudStack>
-                        <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Large" Color="Color.Success" Style="opacity: 0.7;" />
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <KpiCard Label="Daily Production"
+                     Value="@_dailyProduction.ToString("N0")"
+                     Unit="bbl/d"
+                     ValueColor="Color.Info"
+                     Icon="@Icons.Material.Filled.TrendingUp"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp"
+                     TrendColor="Color.Success"
+                     TrendText="+3.2% vs yesterday" />
         </MudItem>
-        
         <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="2">
-                <MudCardContent>
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                        <MudStack Spacing="1">
-                            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">Facilities</MudText>
-                            <MudText Typo="Typo.h4">@_facilities</MudText>
-                        </MudStack>
-                        <MudIcon Icon="@Icons.Material.Filled.Factory" Size="Size.Large" Color="Color.Info" Style="opacity: 0.7;" />
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+            <KpiCard Label="Facilities"
+                     Value="@_facilities.ToString()"
+                     ValueColor="Color.Warning"
+                     Icon="@Icons.Material.Filled.Factory"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat"
+                     TrendColor="Color.Default"
+                     TrendText="No change" />
         </MudItem>
     </MudGrid>
-    
-    <!-- Quick Actions -->
-    <MudText Typo="Typo.h5" Class="mb-4">Quick Actions</MudText>
+
+    @* ── Workflow Entry Points ────────────────────────────────────────────── *@
+    <MudText Typo="Typo.h6" Class="mb-3">Start Work</MudText>
     <MudGrid Spacing="3" Class="mb-6">
-        <MudItem xs="12" sm="6" md="4">
-            <MudCard Elevation="2" Style="cursor: pointer;" OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/data-management"))">
-                <MudCardContent>
-                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
-                        <img src="/imgs/icons/data.png" alt="Data Management" style="width: 60px; height: 60px; object-fit: contain;" />
-                        <MudText Typo="Typo.h6">PPDM39 Data Management</MudText>
-                        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
-                            Manage and explore PPDM39 tables
-                        </MudText>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+        <MudItem xs="6" sm="4" md="2">
+            <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/exploration")'>
+                <img src="/imgs/icons/process/exploration.svg" class="og-icon og-icon-xl" alt="Exploration" />
+                <MudText Typo="Typo.caption" Align="Align.Center">Exploration</MudText>
+            </MudPaper>
         </MudItem>
-        
-        <MudItem xs="12" sm="6" md="4">
-            <MudCard Elevation="2" Style="cursor: pointer;" OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/wells"))">
-                <MudCardContent>
-                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
-                        <img src="/imgs/icons/drilling-rig.png" alt="Wells" style="width: 60px; height: 60px; object-fit: contain;" />
-                        <MudText Typo="Typo.h6">Wells Management</MudText>
-                        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
-                            Search and manage well data
-                        </MudText>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+        <MudItem xs="6" sm="4" md="2">
+            <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/development")'>
+                <img src="/imgs/icons/process/drilling-rig.svg" class="og-icon og-icon-xl" alt="Development" />
+                <MudText Typo="Typo.caption" Align="Align.Center">Development</MudText>
+            </MudPaper>
         </MudItem>
-        
-        <MudItem xs="12" sm="6" md="4">
-            <MudCard Elevation="2" Style="cursor: pointer;" OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/production/fields"))">
-                <MudCardContent>
-                    <MudStack Spacing="2" AlignItems="AlignItems.Center">
-                        <img src="/imgs/icons/refinery.png" alt="Production" style="width: 60px; height: 60px; object-fit: contain;" />
-                        <MudText Typo="Typo.h6">Production & Reserves</MudText>
-                        <MudText Typo="Typo.body2" Align="Align.Center" Style="color: var(--mud-palette-text-secondary);">
-                            Monitor production and reserves
-                        </MudText>
-                    </MudStack>
-                </MudCardContent>
-            </MudCard>
+        <MudItem xs="6" sm="4" md="2">
+            <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/production")'>
+                <img src="/imgs/icons/process/wellhead.svg" class="og-icon og-icon-xl" alt="Production" />
+                <MudText Typo="Typo.caption" Align="Align.Center">Production</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="4" md="2">
+            <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/reservoir")'>
+                <img src="/imgs/icons/process/reservoir.svg" class="og-icon og-icon-xl" alt="Reservoir" />
+                <MudText Typo="Typo.caption" Align="Align.Center">Reservoir</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="4" md="2">
+            <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/economics/afe")'>
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Large" Color="Color.Primary" Class="my-1" />
+                <MudText Typo="Typo.caption" Align="Align.Center">Economics</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" sm="4" md="2">
+            <MudPaper Elevation="1" Class="pa-3 d-flex flex-column align-center gap-2 workflow-card" @onclick='() => NavigationManager.NavigateTo("/ppdm39/data-management")'>
+                <MudIcon Icon="@Icons.Material.Filled.Storage" Size="Size.Large" Color="Color.Secondary" Class="my-1" />
+                <MudText Typo="Typo.caption" Align="Align.Center">Data Mgmt</MudText>
+            </MudPaper>
         </MudItem>
     </MudGrid>
-    
-    <!-- Recent Activity -->
-    <MudText Typo="Typo.h5" Class="mb-4">Recent Activity</MudText>
+
+    @* ── Recent Activity ─────────────────────────────────────────────────── *@
+    <MudText Typo="Typo.h6" Class="mb-3">Recent Activity</MudText>
     <MudPaper Elevation="2" Class="pa-4">
         <MudDataGrid Items="@_recentActivities" Hover="true" Dense="true" ReadOnly="true">
             <Columns>
@@ -130,8 +122,8 @@
             </Columns>
         </MudDataGrid>
     </MudPaper>
-</MudContainer>
 
+</MudContainer>
 @code {
     private BrandingConfig _branding = new();
     private int _totalWells = 0;

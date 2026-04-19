@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.WellComparison;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
@@ -286,11 +287,11 @@ namespace Beep.OilandGas.LifeCycle.Services
                     WellIdentifier = well.UWI ?? wellId?.ToString(),
                     WellName = well.WELL_NAME,
                     DataSource = connectionName,
-                    FieldValues = new Dictionary<string, object>(),
-                    Metadata = new Dictionary<string, object>
+                    FieldValues = new Dictionary<string, object?>(),
+                    Metadata = new List<ComparisonValue>
                     {
-                        { "WellId", wellId },
-                        { "UWI", well.UWI }
+                        new ComparisonValue { FieldName = "WellId", Value = wellId?.ToString() ?? string.Empty },
+                        new ComparisonValue { FieldName = "UWI", Value = well.UWI ?? string.Empty }
                     }
                 };
 
@@ -355,11 +356,11 @@ namespace Beep.OilandGas.LifeCycle.Services
                     WellIdentifier = well.UWI ?? wellId?.ToString(),
                     WellName = well.WELL_NAME,
                     DataSource = dataSource,
-                    FieldValues = new Dictionary<string, object>(),
-                    Metadata = new Dictionary<string, object>
+                    FieldValues = new Dictionary<string, object?>(),
+                    Metadata = new List<ComparisonValue>
                     {
-                        { "WellId", wellId },
-                        { "UWI", well.UWI }
+                        new ComparisonValue { FieldName = "WellId", Value = wellId?.ToString() ?? string.Empty },
+                        new ComparisonValue { FieldName = "UWI", Value = well.UWI ?? string.Empty }
                     }
                 };
 

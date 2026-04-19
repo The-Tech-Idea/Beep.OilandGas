@@ -9,7 +9,8 @@
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.Refresh" 
                                   Size="Size.Small"
-                                  OnClick="@RefreshData" />
+                                  OnClick="@RefreshData"
+                                  Title="Refresh chart" />
                 }
             </MudStack>
             
@@ -40,7 +41,7 @@
                     @foreach (var series in _chartSeries)
                     {
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                            <div style="width: 16px; height: 16px; background-color: @series.Color; border-radius: 2px;"></div>
+                            <div class="og-legend-swatch og-legend-swatch--primary"></div>
                             <MudText Typo="Typo.body2">@series.Name</MudText>
                         </MudStack>
                     }
@@ -52,7 +53,7 @@
 
 @code {
     [Parameter] public string Title { get; set; } = "Production Chart";
-    [Parameter] public ChartType ChartType { get; set; } = ChartType.LineChart;
+    [Parameter] public ChartType ChartType { get; set; } = ChartType.Line;
     [Parameter] public List<ChartDataPoint> ChartData { get; set; } = new();
     [Parameter] public bool ShowRefresh { get; set; } = true;
     [Parameter] public bool ShowLegend { get; set; } = true;
@@ -61,7 +62,7 @@
     [Parameter] public EventCallback OnRefresh { get; set; }
 
     private List<ChartDataPoint> _chartData = new();
-    private List<ChartSeries> _chartSeries = new();
+    private List<ChartSeries<double>> _chartSeries = new();
     private ChartOptions _chartOptions = new();
     private bool _isLoading = false;
 
@@ -75,10 +76,7 @@
     {
         _chartOptions = new ChartOptions
         {
-            ChartPalette = new[] { Colors.Blue.Default, Colors.Green.Default, Colors.Orange.Default, Colors.Red.Default },
-            DisableLegend = !ShowLegend,
-            LineStrokeWidth = 3,
-            YAxisTicks = 5
+            ChartPalette = new[] { Colors.Blue.Default, Colors.Green.Default, Colors.Orange.Default, Colors.Red.Default }
         };
         UpdateChart();
     }
@@ -87,25 +85,19 @@
     {
         if (!_chartData.Any())
         {
-            _chartSeries = new List<ChartSeries>();
+            _chartSeries = new List<ChartSeries<double>>();
             return;
         }
 
         // Group data by series name
         var seriesGroups = _chartData.GroupBy(d => d.SeriesName);
-        _chartSeries = seriesGroups.Select((group, index) => new ChartSeries
+        _chartSeries = seriesGroups.Select((group, index) => new ChartSeries<double>
         {
             Name = group.Key,
-            Data = group.Select(d => d.Value).ToArray(),
-            Index = index
+            Data = group.Select(d => d.Value).ToArray()
         }).ToList();
 
-        // Set colors for each series
-        var colors = new[] { Colors.Blue.Default, Colors.Green.Default, Colors.Orange.Default, Colors.Red.Default, Colors.Purple.Default };
-        for (int i = 0; i < _chartSeries.Count; i++)
-        {
-            _chartSeries[i].Color = colors[i % colors.Length];
-        }
+        // Colors are set via ChartOptions.ChartPalette
     }
 
     private async Task RefreshData()
@@ -133,4 +125,5 @@
         height: 100%;
     }
 </style>
+
 

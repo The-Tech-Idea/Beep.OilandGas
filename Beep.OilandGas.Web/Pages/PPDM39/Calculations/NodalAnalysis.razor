@@ -1,58 +1,102 @@
 @page "/ppdm39/calculations/nodalanalysis"
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.NodalAnalysis
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject ICalculationServiceClient CalculationService
 
-<PageTitle>Nodal Analysis</PageTitle>
+<PageTitle>Perform Nodal Analysis</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Nodal Analysis</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
-    <MudPaper Class="pa-4">
-        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
-            <MudText Typo="Typo.h6">Nodal Analysis for Wells</MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAnalysisDialog">
-                Perform Analysis
-            </MudButton>
+    @* ─── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Perform Nodal Analysis</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Inflow and outflow performance analysis</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary"
+                         Icon="@Icons.Material.Filled.Hub">Well</MudChip>
+            </MudStack>
         </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                   OnClick="OpenAnalysisDialog">Perform Analysis</MudButton>
+    </MudStack>
 
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-        }
-        else if (_analysisHistory != null && _analysisHistory.Any())
-        {
-            <MudTable Items="@_analysisHistory" Hover="true" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh>Analysis ID</MudTh>
-                    <MudTh>Well UWI</MudTh>
-                    <MudTh>Analysis Date</MudTh>
-                    <MudTh>Optimal Flow Rate</MudTh>
-                    <MudTh>Status</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>@context.AnalysisId</MudTd>
-                    <MudTd>@context.WellUWI</MudTd>
-                    <MudTd>@context.AnalysisDate.ToString("yyyy-MM-dd")</MudTd>
-                    <MudTd>@context.OptimalFlowRate.ToString("F2")</MudTd>
-                    <MudTd>@(context.Status ?? "Active")</MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Info">No nodal analysis results found. Perform an analysis to get started.</MudAlert>
-        }
-    </MudPaper>
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ─── KPI Row *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Analyses" Value="@((_analysisHistory?.Count ?? 0).ToString())"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Hub"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="All analysis runs" />
+        </MudItem>
+    </MudGrid>
+
+    @* ─── History Grid *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_analysisHistory != null && _analysisHistory.Any())
+            {
+                <MudDataGrid T="NodalAnalysisRunResult" Items="@_analysisHistory" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <PropertyColumn Property="a => a.AnalysisId" Title="Analysis ID" />
+                        <PropertyColumn Property="a => a.WellUWI" Title="Well UWI" />
+                        <TemplateColumn Title="Analysis Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.AnalysisDate.ToString("dd MMM yyyy")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Optimal Flow Rate">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.OptimalFlowRate.ToString("F2")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <StatusBadge Status="@(context.Item.Status ?? "Active")" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Hub" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No results match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.Hub" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No analysis results yet</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Perform an analysis to see inflow/outflow results here.</MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.PlayArrow"
+                               OnClick="OpenAnalysisDialog" Class="mt-2">Perform Analysis</MudButton>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private List<NodalAnalysisRunResult>? _analysisHistory;
     private bool _isLoading = false;
     private string? _currentUserId = "system";
-    private string? _selectedWellUWI;
+    private string? _selectedWellUWI = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -61,14 +105,7 @@
 
     private async Task OpenAnalysisDialog()
     {
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<MudDialog>("Nodal Analysis Parameters", options);
-        var result = await dialog.Result;
-
-        if (!result.Canceled)
-        {
-            await PerformAnalysis();
-        }
+        await PerformAnalysis();
     }
 
     private async Task PerformAnalysis()
@@ -82,12 +119,7 @@
         _isLoading = true;
         try
         {
-            var parameters = new NodalAnalysisParametersDto
-            {
-                MinFlowRate = 0,
-                MaxFlowRate = 1000,
-                NumberOfPoints = 50
-            };
+            var parameters = new NodalAnalysisParameters();
 
             var result = await CalculationService.PerformNodalAnalysisAsync(_selectedWellUWI, parameters);
             

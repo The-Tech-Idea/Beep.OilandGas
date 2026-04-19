@@ -4,54 +4,103 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
-<PageTitle>Well Abandonment - Decommissioning</PageTitle>
+<PageTitle>Record Well Abandonments</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Well Abandonment</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
-    <MudPaper Class="pa-4">
-        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
-            <MudText Typo="Typo.h6">Abandoned Wells for Current Field</MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenAbandonDialog">
-                Record Well Abandonment
-            </MudButton>
+    @* ─── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Record Well Abandonments</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Decommissioning records</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Error"
+                         Icon="@Icons.Material.Filled.RemoveCircle">Decommissioning</MudChip>
+            </MudStack>
         </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Error"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="OpenAbandonDialog">Record Well Abandonment</MudButton>
+    </MudStack>
 
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-        }
-        else if (_abandonedWells != null && _abandonedWells.Any())
-        {
-            <MudTable Items="@_abandonedWells" Hover="true" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh>Abandonment ID</MudTh>
-                    <MudTh>Well ID</MudTh>
-                    <MudTh>Abandonment Date</MudTh>
-                    <MudTh>Abandonment Type</MudTh>
-                    <MudTh>Status</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Abandonment ID">@GetPropertyValue(context, "WELL_ABANDONMENT_ID")</MudTd>
-                    <MudTd DataLabel="Well ID">@GetPropertyValue(context, "WELL_ID")</MudTd>
-                    <MudTd DataLabel="Abandonment Date">@FormatDate(GetPropertyValue(context, "ABANDONMENT_DATE"))</MudTd>
-                    <MudTd DataLabel="Abandonment Type">@GetPropertyValue(context, "ABANDONMENT_TYPE")</MudTd>
-                    <MudTd DataLabel="Status">@GetPropertyValue(context, "ABANDONMENT_STATUS")</MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Info">No abandoned wells found for the current field.</MudAlert>
-        }
-    </MudPaper>
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ─── KPI Row *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Total Abandonments" Value="@((_abandonedWells?.Count ?? 0).ToString())"
+                     ValueColor="Color.Error" Icon="@Icons.Material.Filled.RemoveCircle"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="All abandonment records" />
+        </MudItem>
+    </MudGrid>
+
+    @* ─── Grid *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_abandonedWells != null && _abandonedWells.Any())
+            {
+                <MudDataGrid T="WELL" Items="@_abandonedWells" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <TemplateColumn Title="Abandonment ID">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "WELL_ABANDONMENT_ID")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Well ID">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2" Color="Color.Primary">@GetPropertyValue(context.Item, "WELL_ID")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Abandonment Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@FormatDate(GetPropertyValue(context.Item, "ABANDONMENT_DATE"))</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Type">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "ABANDONMENT_TYPE")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <StatusBadge Status="@GetPropertyValue(context.Item, "ABANDONMENT_STATUS")" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.RemoveCircle" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No records match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.RemoveCircle" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No abandoned wells on record</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Use the button above to record a well abandonment.</MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Error"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="OpenAbandonDialog" Class="mt-2">Record Well Abandonment</MudButton>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private List<WELL>? _abandonedWells;
     private bool _isLoading = false;
     private string? _currentUserId = "system"; // TODO: Get from authentication context
-    private string? _selectedWellId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -82,7 +131,7 @@
         var dialog = await DialogService.ShowAsync<WellAbandonmentDialog>("Record Well Abandonment", options);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is Dictionary<string, object> resultData)
+        if (result?.Canceled == false && result.Data is Dictionary<string, object> resultData)
         {
             try
             {

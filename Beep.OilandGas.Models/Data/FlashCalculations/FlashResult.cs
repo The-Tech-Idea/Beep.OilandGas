@@ -94,5 +94,9 @@ namespace Beep.OilandGas.Models.Data.FlashCalculations
         /// Liquid phase composition (mole fractions)
         /// </summary>
         public List<FlashComponentFraction> LiquidComposition { get; set; } = new();
+
+        public string Status { get; set; } = string.Empty;
+        public bool IsSuccessful { get; set; } = true;
+        public string? ErrorMessage { get; set; }
     }
 }

@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Beep.OilandGas.ApiService.Models;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Components;

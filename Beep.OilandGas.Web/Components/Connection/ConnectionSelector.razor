@@ -1,6 +1,7 @@
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
+@inject IConnectionService ConnectionService
 
 <MudCard Elevation="2">
     <MudCardContent>
@@ -13,11 +14,11 @@
         }
         else if (_connections.Any())
         {
-            <MudRadioGroup @bind-SelectedOption="@SelectedConnection">
+            <MudRadioGroup T="string" @bind-SelectedOption="@SelectedConnection">
                 @foreach (var connection in _connections)
                 {
-                    <MudRadio Option="@connection.ConnectionName" Color="Color.Primary" Class="mb-2">
-                        <MudCard Elevation="1" Class="pa-3" Style="width: 100%;">
+                    <MudRadio T="string" Option="@connection.ConnectionName" Color="Color.Primary" Class="mb-2">
+                        <MudCard Elevation="1" Class="pa-3 og-full-width">
                             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                                 <MudStack>
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
@@ -25,7 +26,7 @@
                                         <MudText Typo="Typo.h6">@connection.ConnectionName</MudText>
                                         @if (connection.IsActive)
                                         {
-                                            <MudChip Size="Size.Small" Color="Color.Success">Active</MudChip>
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Success">Active</MudChip>
                                         }
                                     </MudStack>
                                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="ml-6">
@@ -33,7 +34,7 @@
                                         @connection.DatabaseType
                                     </MudText>
                                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="ml-6">
-                                        <MudIcon Icon="@Icons.Material.Filled.Server" Size="Size.Small" Class="mr-1" />
+                                        <MudIcon Icon="@Icons.Material.Filled.Dns" Size="Size.Small" Class="mr-1" />
                                         @connection.Server
                                         @if (!string.IsNullOrEmpty(connection.Database))
                                         {
@@ -188,4 +189,5 @@
         await OnConnectionSelected.InvokeAsync(SelectedConnection);
     }
 }
+
 

@@ -22,5 +22,15 @@ namespace Beep.OilandGas.Models.Data.Pumps
             set { SetProperty(ref PumpIdValue, value); }
 
         }
+
+        public string WellUWI
+
+        {
+
+            get { return this.PumpIdValue; }
+
+            set { SetProperty(ref PumpIdValue, value); }
+
+        }
     }
 }

@@ -1,0 +1,368 @@
+@page "/ppdm39/workorder/{Id}"
+@using Beep.OilandGas.Models.Data.WorkOrder
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+
+<PageTitle>Work Order @Id</PageTitle>
+
+<MudStack Spacing="3">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack"
+                           Href="/ppdm39/workorder" Size="Size.Small" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h6">@(_detail?.InstanceName ?? "Work Order Detail")</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @Id — @(_detail?.WoSubType)
+                </MudText>
+            </MudStack>
+        </MudStack>
+
+        @if (_detail is not null)
+        {
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudChip T="string" Color="StateColor(_detail.State)" Value="@_detail.State">
+                    @_detail.State
+                </MudChip>
+                @if (_transitions.Count > 0)
+                {
+                    <MudMenu Label="Transition" EndIcon="@Icons.Material.Outlined.ArrowDropDown"
+                             Variant="Variant.Filled" Color="Color.Primary">
+                        @foreach (var t in _transitions)
+                        {
+                            <MudMenuItem OnClick="() => OpenTransitionDialog(t)">@t</MudMenuItem>
+                        }
+                    </MudMenu>
+                }
+            </MudStack>
+        }
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (_detail is not null)
+    {
+        <MudTabs Elevation="1" Rounded="true" ApplyEffectsToContainer="true" Class="mt-1">
+
+            @* ── Overview tab ────────────────────────────────────────── *@
+            <MudTabPanel Text="Overview" Icon="@Icons.Material.Outlined.Info">
+                <MudGrid Spacing="2" Class="pa-2">
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="1" Class="pa-3">
+                            <MudText Typo="Typo.subtitle2" Class="mb-2">Details</MudText>
+                            <MudStack Spacing="1">
+                                <MudStack Row="true">
+                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Equipment</MudText>
+                                    <MudText Typo="Typo.caption">@_detail.EquipmentId</MudText>
+                                </MudStack>
+                                <MudStack Row="true">
+                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Planned Start</MudText>
+                                    <MudText Typo="Typo.caption">@_detail.PlannedStart?.ToString("dd-MMM-yyyy")</MudText>
+                                </MudStack>
+                                <MudStack Row="true">
+                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Actual Start</MudText>
+                                    <MudText Typo="Typo.caption">@_detail.ActualStart?.ToString("dd-MMM-yyyy")</MudText>
+                                </MudStack>
+                                <MudStack Row="true">
+                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Completed</MudText>
+                                    <MudText Typo="Typo.caption">@_detail.ActualEnd?.ToString("dd-MMM-yyyy")</MudText>
+                                </MudStack>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudPaper Elevation="1" Class="pa-3">
+                            <MudText Typo="Typo.subtitle2" Class="mb-2">Budget vs Actual</MudText>
+                            <MudStack Spacing="1">
+                                <MudStack Row="true">
+                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Budget</MudText>
+                                    <MudText Typo="Typo.caption">@_detail.BudgetAmt.ToString("N0")</MudText>
+                                </MudStack>
+                                <MudStack Row="true">
+                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Actual</MudText>
+                                    <MudText Typo="Typo.caption">@_detail.ActualAmt.ToString("N0")</MudText>
+                                </MudStack>
+                                <MudStack Row="true">
+                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Steps</MudText>
+                                    <MudText Typo="Typo.caption">@_detail.StepCount</MudText>
+                                </MudStack>
+                                <MudStack Row="true">
+                                    <MudText Typo="Typo.caption" Style="width:140px;font-weight:600">Checklist</MudText>
+                                    <MudText Typo="Typo.caption">@_detail.PassedConditions / @_detail.ConditionCount passed</MudText>
+                                </MudStack>
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+
+                    @* Steps *@
+                    @if (_detail.Steps.Count > 0)
+                    {
+                        <MudItem xs="12">
+                            <MudPaper Elevation="1" Class="pa-3">
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Steps</MudText>
+                                <MudTable Items="_detail.Steps" Dense="true" Hover="true" Elevation="0">
+                                    <HeaderContent>
+                                        <MudTh>Seq</MudTh><MudTh>Name</MudTh><MudTh>Status</MudTh>
+                                    </HeaderContent>
+                                    <RowTemplate>
+                                        <MudTd>@context.StepSeq</MudTd>
+                                        <MudTd>@context.StepName</MudTd>
+                                        <MudTd>
+                                            <MudChip T="string" Size="Size.Small"
+                                                     Color="@StepStatusColor(context.Status)"
+                                                     Value="@context.Status">
+                                                @context.Status
+                                            </MudChip>
+                                        </MudTd>
+                                    </RowTemplate>
+                                </MudTable>
+                            </MudPaper>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudTabPanel>
+
+            @* ── Checklist tab ───────────────────────────────────────── *@
+            <MudTabPanel Text="Checklist" Icon="@Icons.Material.Outlined.Checklist">
+                <MudPaper Elevation="0" Class="pa-3">
+                    @if (_checklist.Count == 0)
+                    {
+                        <MudText Color="Color.Secondary">No checklist items yet. Checklist is seeded when WO moves to Planned.</MudText>
+                    }
+                    else
+                    {
+                        <MudTable Items="_checklist" Dense="true" Hover="true" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>#</MudTh>
+                                <MudTh>Type</MudTh>
+                                <MudTh>Condition</MudTh>
+                                <MudTh>Status</MudTh>
+                                <MudTh>Regulatory Ref</MudTh>
+                                <MudTh>Action</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.CondSeq</MudTd>
+                                <MudTd>@context.CondType</MudTd>
+                                <MudTd>@context.RequiredText</MudTd>
+                                <MudTd>
+                                    <MudChip T="string" Size="Size.Small"
+                                             Color="@CondStatusColor(context.Status)"
+                                             Value="@context.Status">
+                                        @context.Status
+                                    </MudChip>
+                                </MudTd>
+                                <MudTd><MudText Typo="Typo.caption" Color="Color.Secondary">@context.RegulatoryRef</MudText></MudTd>
+                                <MudTd>
+                                    @if (!string.Equals(context.Status, "PASS", StringComparison.OrdinalIgnoreCase)
+                                         && !string.Equals(context.Status, "FAIL", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Outlined.CheckCircleOutline"
+                                                       Color="Color.Success" Size="Size.Small"
+                                                       Title="Record PASS"
+                                                       OnClick="@(async () => await RecordConditionAsync(context.CondSeq, "PASS"))" />
+                                        <MudIconButton Icon="@Icons.Material.Outlined.Cancel"
+                                                       Color="Color.Error" Size="Size.Small"
+                                                       Title="Record FAIL"
+                                                       OnClick="@(async () => await RecordConditionAsync(context.CondSeq, "FAIL"))" />
+                                    }
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                </MudPaper>
+            </MudTabPanel>
+
+            @* ── Costs tab ───────────────────────────────────────────── *@
+            <MudTabPanel Text="Costs" Icon="@Icons.Material.Outlined.AttachMoney">
+                <MudPaper Elevation="0" Class="pa-3">
+                    @if (_costs.Count == 0)
+                    {
+                        <MudText Color="Color.Secondary">No cost lines found.</MudText>
+                    }
+                    else
+                    {
+                        <MudTable Items="_costs" Dense="true" Hover="true" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>Code</MudTh>
+                                <MudTh>Description</MudTh>
+                                <MudTh Style="text-align:right">Budget</MudTh>
+                                <MudTh Style="text-align:right">Actual</MudTh>
+                                <MudTh Style="text-align:right">Variance %</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.CompCode</MudTd>
+                                <MudTd>@context.Description</MudTd>
+                                <MudTd Style="text-align:right">@context.BudgetAmt.ToString("N0")</MudTd>
+                                <MudTd Style="text-align:right">@context.ActualAmt.ToString("N0")</MudTd>
+                                <MudTd Style="text-align:right">
+                                    <MudText Color="@(context.VariancePct > 10 ? Color.Error : Color.Default)">
+                                        @context.VariancePct.ToString("F1")%
+                                    </MudText>
+                                </MudTd>
+                            </RowTemplate>
+                            <FooterContent>
+                                <MudTd colspan="2"><strong>Total</strong></MudTd>
+                                <MudTd Style="text-align:right"><strong>@_costs.Sum(c => c.BudgetAmt).ToString("N0")</strong></MudTd>
+                                <MudTd Style="text-align:right"><strong>@_costs.Sum(c => c.ActualAmt).ToString("N0")</strong></MudTd>
+                                <MudTd></MudTd>
+                            </FooterContent>
+                        </MudTable>
+                    }
+                </MudPaper>
+            </MudTabPanel>
+
+            @* ── Contractors tab ─────────────────────────────────────── *@
+            <MudTabPanel Text="Contractors" Icon="@Icons.Material.Outlined.Engineering">
+                <MudPaper Elevation="0" Class="pa-3">
+                    @if (_contractors.Count == 0)
+                    {
+                        <MudText Color="Color.Secondary">No contractors assigned.</MudText>
+                    }
+                    else
+                    {
+                        <MudTable Items="_contractors" Dense="true" Hover="true" Elevation="0">
+                            <HeaderContent>
+                                <MudTh>Step</MudTh>
+                                <MudTh>Contractor ID</MudTh>
+                                <MudTh>Role</MudTh>
+                                <MudTh>Assigned</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd>@context.StepId</MudTd>
+                                <MudTd>@context.BaId</MudTd>
+                                <MudTd>@context.RoleCode</MudTd>
+                                <MudTd>@context.AssignedDate.ToString("dd-MMM-yyyy")</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                </MudPaper>
+            </MudTabPanel>
+
+        </MudTabs>
+    }
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <MudAlert Severity="Severity.Error" ShowCloseIcon="true"
+                  CloseIconClicked="@(() => _error = null)">@_error</MudAlert>
+    }
+
+</MudStack>
+
+@* ── Transition dialog ─────────────────────────────────────────────────────── *@
+<MudDialog @bind-IsVisible="_showTransition" Options="@(new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Transition to @_pendingTransition</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_transitionNotes" Label="Notes (optional)" Lines="3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showTransition = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled"
+                   OnClick="ConfirmTransitionAsync">Confirm</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+
+    private WorkOrderDetailModel?         _detail;
+    private List<string>                _transitions  = new();
+    private List<InspectionCondition>   _checklist    = new();
+    private List<CostVarianceLine>      _costs        = new();
+    private List<ContractorAssignment>  _contractors  = new();
+    private bool                        _loading;
+    private string?                     _error;
+
+    // Transition
+    private bool    _showTransition;
+    private string  _pendingTransition = string.Empty;
+    private string? _transitionNotes;
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error   = null;
+        try
+        {
+            _detail      = await ApiClient.GetAsync<WorkOrderDetailModel>($"/api/field/current/workorder/{Id}");
+            _transitions = await ApiClient.GetAsync<List<string>>($"/api/field/current/workorder/{Id}/transitions") ?? new();
+            _checklist   = await ApiClient.GetAsync<List<InspectionCondition>>($"/api/field/current/workorder/{Id}/checklist") ?? new();
+            _costs       = await ApiClient.GetAsync<List<CostVarianceLine>>($"/api/field/current/workorder/{Id}/costs") ?? new();
+            _contractors = await ApiClient.GetAsync<List<ContractorAssignment>>($"/api/field/current/workorder/{Id}/contractors") ?? new();
+        }
+        catch (Exception ex) { _error = $"Failed to load work order: {ex.Message}"; }
+        finally { _loading = false; }
+    }
+
+    private void OpenTransitionDialog(string toState)
+    {
+        _pendingTransition = toState;
+        _transitionNotes   = null;
+        _showTransition    = true;
+    }
+
+    private async Task ConfirmTransitionAsync()
+    {
+        try
+        {
+            var request = new TransitionWorkOrderRequest
+            {
+                ToState = _pendingTransition,
+                Notes   = _transitionNotes
+            };
+            await ApiClient.PostAsync<TransitionWorkOrderRequest, WorkOrderSummary>(
+                $"/api/field/current/workorder/{Id}/transition", request);
+            _showTransition = false;
+            await LoadAsync();
+        }
+        catch (Exception ex) { _error = $"Transition failed: {ex.Message}"; }
+    }
+
+    private async Task RecordConditionAsync(int condSeq, string result)
+    {
+        try
+        {
+            await ApiClient.PostAsync<RecordInspectionResultRequest, object>(
+                $"/api/field/current/workorder/{Id}/checklist/{condSeq}",
+                new RecordInspectionResultRequest { Result = result });
+            _checklist = await ApiClient.GetAsync<List<InspectionCondition>>(
+                $"/api/field/current/workorder/{Id}/checklist") ?? new();
+        }
+        catch (Exception ex) { _error = $"Failed to record result: {ex.Message}"; }
+    }
+
+    private static Color StateColor(string state) => state switch
+    {
+        WorkOrderState.Draft       => Color.Default,
+        WorkOrderState.Planned     => Color.Info,
+        WorkOrderState.InProgress  => Color.Warning,
+        WorkOrderState.UnderReview => Color.Secondary,
+        WorkOrderState.Completed   => Color.Success,
+        WorkOrderState.Cancelled   => Color.Error,
+        _                          => Color.Default
+    };
+
+    private static Color StepStatusColor(string status) => status switch
+    {
+        "COMPLETED" => Color.Success,
+        "FAILED"    => Color.Error,
+        "IN_PROGRESS" => Color.Warning,
+        _           => Color.Default
+    };
+
+    private static Color CondStatusColor(string status) => status switch
+    {
+        "PASS"    => Color.Success,
+        "FAIL"    => Color.Error,
+        "PENDING" => Color.Default,
+        _         => Color.Default
+    };
+}

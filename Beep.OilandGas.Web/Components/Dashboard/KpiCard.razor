@@ -7,7 +7,7 @@
                 <MudText Typo="Typo.body2" Color="Color.Secondary">@Title</MudText>
                 @if (!string.IsNullOrEmpty(Icon))
                 {
-                    <MudIcon Icon="@Icon" Size="Size.Medium" Color="@IconColor" Style="opacity: 0.7;" />
+                    <MudIcon Icon="@Icon" Size="Size.Medium" Color="@IconColor" Class="og-icon-dim" />
                 }
             </MudStack>
             <MudText Typo="Typo.h4" Class="kpi-value">@Value</MudText>

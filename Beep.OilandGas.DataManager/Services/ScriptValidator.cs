@@ -6,6 +6,8 @@ using System.Data.Common;
 using System.Text.RegularExpressions;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.Editor;
+using ValidationResult = Beep.OilandGas.DataManager.Core.Models.ValidationResult;
+using ValidationError = Beep.OilandGas.DataManager.Core.Models.ValidationError;
 
 namespace Beep.OilandGas.DataManager.Services
 {

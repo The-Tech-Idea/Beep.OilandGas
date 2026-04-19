@@ -5,11 +5,21 @@
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject ICalculationServiceClient CalculationService
 
-<PageTitle>Gas Lift Analysis</PageTitle>
+<PageTitle>Analyse Gas Lift Performance</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Gas Lift Analysis</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Analyse Gas Lift Performance</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Gas lift potential and valve design</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.BubbleChart">Artificial Lift</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
 
     <MudGrid>
         <MudItem xs="12" md="6">
@@ -53,16 +63,17 @@
         <MudPaper Class="pa-4 mt-4">
             <MudText Typo="Typo.h6" Class="mb-4">Gas Lift Performance</MudText>
             <MudStack Spacing="2">
-                <MudText>Well UWI: @_performanceData.WellUWI</MudText>
-                <MudText>Production Rate: @_performanceData.ProductionRate.ToString("F2") BBL/D</MudText>
-                <MudText>Gas Injection Rate: @_performanceData.GasInjectionRate.ToString("F2") MCF/D</MudText>
-                <MudText>Efficiency: @_performanceData.Efficiency.ToString("F2")%</MudText>
+                <MudText>Well UWI: @_performanceData.WELL_UWI</MudText>
+                <MudText>Production Rate: @($"{_performanceData.PRODUCTION_RATE:F2}") BBL/D</MudText>
+                <MudText>Gas Injection Rate: @($"{_performanceData.GAS_INJECTION_RATE:F2}") MCF/D</MudText>
+                <MudText>Efficiency: @($"{_performanceData.EFFICIENCY:F2}")%</MudText>
             </MudStack>
         </MudPaper>
     }
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private string _wellUWI = string.Empty;
     private decimal _minGasInjectionRate = 100;
     private decimal _maxGasInjectionRate = 1000;
@@ -74,8 +85,7 @@
     private bool _isAnalyzing = false;
     private bool _isDesigning = false;
     private bool _isLoading = false;
-    private GasLiftPerformanceDto? _performanceData;
-    private string? _currentUserId = "system";
+    private GAS_LIFT_PERFORMANCE? _performanceData = null;
 
     private async Task AnalyzePotential()
     {
@@ -89,13 +99,13 @@
         try
         {
             // Create well properties (simplified - would need actual well data)
-            var wellProperties = new GasLiftWellProperties
+            var wellProperties = new GAS_LIFT_WELL_PROPERTIES
             {
-                WellDepth = 5000,
-                TubingDiameter = 2.5m,
-                WellheadPressure = 100,
-                BottomHolePressure = 2000,
-                GasOilRatio = 500
+                WELL_DEPTH = 5000,
+                TUBING_DIAMETER = 3,
+                WELLHEAD_PRESSURE = 100,
+                BOTTOM_HOLE_PRESSURE = 2000,
+                GAS_OIL_RATIO = 500
             };
 
             var result = await CalculationService.AnalyzeGasLiftPotentialAsync(
@@ -124,13 +134,13 @@
         _isDesigning = true;
         try
         {
-            var wellProperties = new GasLiftWellProperties
+            var wellProperties = new GAS_LIFT_WELL_PROPERTIES
             {
-                WellDepth = 5000,
-                TubingDiameter = 2.5m,
-                WellheadPressure = 100,
-                BottomHolePressure = 2000,
-                GasOilRatio = 500
+                WELL_DEPTH = 5000,
+                TUBING_DIAMETER = 3,
+                WELLHEAD_PRESSURE = 100,
+                BOTTOM_HOLE_PRESSURE = 2000,
+                GAS_OIL_RATIO = 500
             };
 
             var result = await CalculationService.DesignGasLiftValvesAsync(

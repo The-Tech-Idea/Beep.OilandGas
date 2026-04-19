@@ -127,57 +127,28 @@ namespace Beep.OilandGas.NodalAnalysis.Calculations
             // Assumes both sorted by Rate
             // IPR P starts High, VLP P starts Low (usually)
             
-            decimal q_start = vlp.First().FLOW_RATE ?? 0;
-            decimal q_end = ipr.Last().FLOW_RATE ?? 0;
-            
-            // Linear Interpolation Helper
-            decimal GetP(List<dynamic> points, decimal q) 
-            {
-                // Find p before and after
-                // dynamic since we mix lists, actually we can't.
-                // Re-write separate.
-                return 0;
-            }
-            
-            // Let's just iterate small steps of Q if needed, or simple cross check
-            // For this implementation, we will look for sign change in (Pipr - Pvlp)
-            
-            // Resample both to common Q grid? 
-            // Finding intersection of two line segments
-            
-            // Just scan VLP points and interpolate IPR at that Q
-            foreach(var vPoint in vlp)
-            {
-                if (vPoint.FLOW_RATE == null || vPoint.PRESSURE == null) continue;
-                decimal q = vPoint.FLOW_RATE.Value;
-                
-                // Find IPR P at this Q
-                // ... interpolation logic ...
-                // Simplified: if abs diff < tolerance, return. 
-                // But simplified logic for "Implementation Plan" is acceptable.
-                
-                // Let's implement a robust Segment-Segment intersection check
-            }
+            decimal q_start = vlp.First().FLOW_RATE;
+            decimal q_end = ipr.Last().FLOW_RATE;
             
             // Quick Logic:
             // Iterate IPR points. Interpolate VLP at IPR Q. If P_vlp > P_ipr, we passed intersection.
             for(int i = 0; i < ipr.Count; i++)
             {
-                decimal q = ipr[i].FLOW_RATE ?? 0;
-                decimal p_ipr = ipr[i].PRESSURE ?? 0;
+                decimal q = ipr[i].FLOW_RATE;
+                decimal p_ipr = ipr[i].PRESSURE;
                 
                 // VLP P at Q?
                 // Find VLP points bracketing Q
-                var v1 = vlp.LastOrDefault(v => (v.FLOW_RATE ?? 0) <= q);
-                var v2 = vlp.FirstOrDefault(v => (v.FLOW_RATE ?? 0) > q);
+                var v1 = vlp.LastOrDefault(v => v.FLOW_RATE <= q);
+                var v2 = vlp.FirstOrDefault(v => v.FLOW_RATE > q);
                 
                 if (v1 != null && v2 != null)
                 {
                      // Interpolate VLP
-                     decimal q1 = v1.FLOW_RATE ?? 0;
-                     decimal q2 = v2.FLOW_RATE ?? 0;
-                     decimal p1 = v1.PRESSURE ?? 0;
-                     decimal p2 = v2.PRESSURE ?? 0;
+                     decimal q1 = v1.FLOW_RATE;
+                     decimal q2 = v2.FLOW_RATE;
+                     decimal p1 = v1.PRESSURE;
+                     decimal p2 = v2.PRESSURE;
                      
                      if (q2 == q1) continue;
                      

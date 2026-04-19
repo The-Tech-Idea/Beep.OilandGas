@@ -78,24 +78,5 @@ namespace Beep.OilandGas.Models.Data.PlungerLift
             set => SetProperty(ref _statusValue, value);
         }
 
-        // PPDM Audit Fields
-        private string _rowCreatedByValue = "";
-
-        private DateTime? _rowCreatedDateValue = DateTime.UtcNow;
-
-        private string _rowChangedByValue = "";
-
-        private DateTime? _rowChangedDateValue = DateTime.UtcNow;
-
-        private DateTime? _rowEffectiveDateValue;
-
-        private DateTime? _rowExpiryDateValue;
-
-        private string _activeIndValue = "Y";
-
-        private string _ppdmGuidValue = "";
-
-        private string _rowQualityValue = "";
-
     }
 }

@@ -78,24 +78,51 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                         };
                     }
 
-                    // If permission is required, check user's role permissions
-                    // This would require integration with role permission service
-                    // For now, return based on access level (WRITE/DELETE implies higher permissions)
-                    bool hasPermission = accessLevel == "WRITE" || accessLevel == "DELETE";
+                    // Check specific permission via role-permission table
+                    bool hasPermission = await HasPermissionAsync(userId, requiredPermission);
+                    if (!hasPermission)
+                    {
+                        // Fallback: WRITE/DELETE access level implies full permissions
+                        hasPermission = accessLevel == "WRITE" || accessLevel == "DELETE";
+                    }
                     return new AccessCheckResponse
                     {
                         HasAccess = hasPermission,
                         AccessLevel = accessLevel,
-                        Reason = hasPermission ? "Permission granted via access level" : "Insufficient permission"
+                        Reason = hasPermission ? "Permission granted via role assignment" : "Insufficient permission for requested operation"
                     };
                 }
 
-                // Check for inherited access (parent assets)
-                // This would require hierarchy traversal - simplified for now
+                // Check for inherited access: look for wildcard or type-level grants with INHERIT_IND = Y
+                var inheritRepo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(object), _connectionName, "USER_ASSET_ACCESS");
+
+                var inheritFilters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "USER_ID", Operator = "=", FilterValue = userId },
+                    new AppFilter { FieldName = "ASSET_TYPE", Operator = "=", FilterValue = assetType },
+                    new AppFilter { FieldName = "INHERIT_IND", Operator = "=", FilterValue = "Y" },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                var inheritedResults = await inheritRepo.GetAsync(inheritFilters);
+                if (inheritedResults != null && inheritedResults.Any())
+                {
+                    var inherited = inheritedResults.First();
+                    var inheritedLevel = GetPropertyValue(inherited, "ACCESS_LEVEL")?.ToString() ?? "READ";
+                    return new AccessCheckResponse
+                    {
+                        HasAccess = true,
+                        AccessLevel = inheritedLevel,
+                        Reason = "Inherited access granted via type-level permission"
+                    };
+                }
+
                 return new AccessCheckResponse
                 {
                     HasAccess = false,
-                    Reason = "No access found"
+                    Reason = "No direct or inherited access found"
                 };
             }
             catch (Exception ex)
@@ -410,9 +437,22 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                     entity["ORGANIZATION_ID"] = organizationId;
                 }
 
-                // Use repository to insert/update
-                // Note: This is simplified - actual implementation would need proper entity creation
-                // await repo.CreateAsync(entity);
+                // Use dynamic insert via anonymous object
+                var insertObj = new
+                {
+                    USER_ID = (object)userId,
+                    ASSET_TYPE = (object)assetType,
+                    ASSET_ID = (object)assetId,
+                    ACCESS_LEVEL = (object)accessLevel,
+                    INHERIT_IND = (object)(inherit ? "Y" : "N"),
+                    ACTIVE_IND = (object)"Y",
+                    ORGANIZATION_ID = (object)(organizationId ?? string.Empty),
+                    ROW_CREATED_BY = (object)userId,
+                    ROW_CREATED_DATE = (object)DateTime.UtcNow,
+                    ROW_CHANGED_BY = (object)userId,
+                    ROW_CHANGED_DATE = (object)DateTime.UtcNow
+                };
+                await repo.InsertAsync(insertObj, userId);
                 return true;
             }
             catch
@@ -515,7 +555,18 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                     entity["ORGANIZATION_ID"] = organizationId;
                 }
 
-                // await repo.CreateAsync(entity);
+                var insertObj = new
+                {
+                    ROLE_ID = (object)roleId,
+                    PERMISSION_ID = (object)permissionId,
+                    ACTIVE_IND = (object)"Y",
+                    ORGANIZATION_ID = (object)(organizationId ?? string.Empty),
+                    ROW_CREATED_BY = (object)(organizationId ?? "SYSTEM"),
+                    ROW_CREATED_DATE = (object)DateTime.UtcNow,
+                    ROW_CHANGED_BY = (object)(organizationId ?? "SYSTEM"),
+                    ROW_CHANGED_DATE = (object)DateTime.UtcNow
+                };
+                await repo.InsertAsync(insertObj, organizationId ?? "SYSTEM");
                 return true;
             }
             catch
@@ -528,7 +579,40 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
         {
             try
             {
-                // Soft delete by setting ACTIVE_IND = 'N'
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "ROLE_ID", Operator = "=", FilterValue = roleId },
+                    new AppFilter { FieldName = "PERMISSION_ID", Operator = "=", FilterValue = permissionId },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+
+                if (!string.IsNullOrEmpty(organizationId))
+                    filters.Add(new AppFilter { FieldName = "ORGANIZATION_ID", Operator = "=", FilterValue = organizationId });
+
+                var repo = new PPDMGenericRepository(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(object), _connectionName, "ROLE_PERMISSION");
+
+                var results = await repo.GetAsync(filters);
+
+                foreach (var result in results ?? Enumerable.Empty<object>())
+                {
+                    if (result is IDictionary<string, object> entity)
+                    {
+                        entity["ACTIVE_IND"] = "N";
+                        entity["ROW_CHANGED_DATE"] = DateTime.UtcNow;
+                        await repo.UpdateAsync(entity, organizationId ?? "SYSTEM");
+                    }
+                    else
+                    {
+                        var activeIndProp = result.GetType().GetProperty("ACTIVE_IND");
+                        var changedDateProp = result.GetType().GetProperty("ROW_CHANGED_DATE");
+                        if (activeIndProp != null) activeIndProp.SetValue(result, "N");
+                        if (changedDateProp != null) changedDateProp.SetValue(result, DateTime.UtcNow);
+                        await repo.UpdateAsync(result, organizationId ?? "SYSTEM");
+                    }
+                }
+
                 return true;
             }
             catch

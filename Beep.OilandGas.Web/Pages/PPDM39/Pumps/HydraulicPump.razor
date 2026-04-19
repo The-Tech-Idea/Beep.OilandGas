@@ -1,23 +1,34 @@
 @page "/ppdm39/pumps/hydraulicpump"
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.HydraulicPumps
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IPumpServiceClient PumpService
 
-<PageTitle>Hydraulic Pump</PageTitle>
+<PageTitle>Design Hydraulic Pump System</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Hydraulic Pump Design & Analysis</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Design Hydraulic Pump System</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Jet and piston pump sizing and performance</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.SettingsInputComponent">Artificial Lift</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
 
     <MudPaper Class="pa-4">
         <MudText Typo="Typo.h6" Class="mb-4">Design Hydraulic Pump System</MudText>
         <MudStack Spacing="3">
             <MudTextField @bind-Value="@_wellUWI" Label="Well UWI" Variant="Variant.Outlined" Required="true" />
             <MudSelect @bind-Value="@_pumpType" Label="Pump Type" Variant="Variant.Outlined">
-                <MudSelectItem Value="JetPump">Jet Pump</MudSelectItem>
-                <MudSelectItem Value="PistonPump">Piston Pump</MudSelectItem>
-                <MudSelectItem Value="CentrifugalPump">Centrifugal Pump</MudSelectItem>
+                <MudSelectItem Value="@("JetPump")">Jet Pump</MudSelectItem>
+                <MudSelectItem Value="@("PistonPump")">Piston Pump</MudSelectItem>
+                <MudSelectItem Value="@("CentrifugalPump")">Centrifugal Pump</MudSelectItem>
             </MudSelect>
             <MudNumericField @bind-Value="@_wellDepth" Label="Well Depth (ft)" Variant="Variant.Outlined" />
             <MudNumericField @bind-Value="@_desiredFlowRate" Label="Desired Flow Rate (BBL/D)" Variant="Variant.Outlined" />
@@ -64,9 +75,8 @@
             <MudPaper Class="pa-4 mt-4" Elevation="2">
                 <MudText Typo="Typo.h6" Class="mb-4">Performance Analysis Results</MudText>
                 <MudStack Spacing="2">
-                    <MudText>Current Flow Rate: @_performanceAnalysis.CurrentFlowRate.ToString("F2") BBL/D</MudText>
-                    <MudText>Current Efficiency: @_performanceAnalysis.CurrentEfficiency.ToString("F2")%</MudText>
-                    <MudText>Recommended Flow Rate: @_performanceAnalysis.RecommendedFlowRate.ToString("F2") BBL/D</MudText>
+                    <MudText>Current Flow Rate: @($"{_performanceAnalysis.CurrentFlowRate:F2}") BBL/D</MudText>
+                    <MudText>Current Efficiency: @($"{_performanceAnalysis.CurrentEfficiency:F2}")%</MudText>
                 </MudStack>
             </MudPaper>
         }
@@ -74,6 +84,7 @@
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private string _wellUWI = string.Empty;
     private string _pumpType = "JetPump";
     private decimal _wellDepth = 5000;
@@ -82,8 +93,8 @@
     private bool _isDesigning = false;
     private bool _isAnalyzing = false;
     private bool _isLoading = false;
-    private HydraulicPumpDesignDto? _pumpDesign;
-    private PumpPerformanceAnalysisDto? _performanceAnalysis;
+    private HydraulicPumpDesign? _pumpDesign;
+    private PumpPerformanceAnalysis? _performanceAnalysis;
     private string? _currentUserId = "system";
 
     private async Task DesignPump()
@@ -156,4 +167,7 @@
         }
     }
 }
+
+
+
 

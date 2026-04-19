@@ -1,0 +1,251 @@
+@page "/economics/afe"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Manage Authorities for Expenditure</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_selectedAfe is null)
+    {
+        @* List View *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h5">Manage Authorities for Expenditure</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Authority for Expenditure tracking</MudText>
+            </MudStack>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="CreateAfe">
+                New AFE
+            </MudButton>
+        </MudStack>
+
+        @* Summary KPIs *@
+        <MudGrid Class="mb-4" Spacing="3">
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="Active AFEs" Value="@_afes.Count(a => a.Status == "ACTIVE").ToString()"
+                         ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Assignment"
+                         TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Open" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="Total Approved" Value="@_afes.Where(a => a.Status is "ACTIVE" or "COMPLETE").Sum(a => a.ApprovedUsd / 1e6).ToString("N1")" Unit="$M"
+                         ValueColor="Color.Success" Icon="@Icons.Material.Filled.AttachMoney"
+                         TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="YTD" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="Total Committed" Value="@_afes.Where(a => a.Status is "ACTIVE" or "COMPLETE").Sum(a => a.CommittedUsd / 1e6).ToString("N1")" Unit="$M"
+                         ValueColor="Color.Warning" Icon="@Icons.Material.Filled.AccountBalance"
+                         TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Warning" TrendText="Actuals" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <KpiCard Label="Pending Approval" Value="@_afes.Count(a => a.Status == "PENDING").ToString()"
+                         ValueColor="Color.Error" Icon="@Icons.Material.Filled.Pending"
+                         TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Awaiting sign-off" />
+            </MudItem>
+        </MudGrid>
+
+        @* AFE Grid *@
+        <MudCard Elevation="2">
+            <MudCardContent Class="pa-0">
+                <MudDataGrid T="AfeItem" Items="@_afes" Dense="true" Hover="true" Striped="true"
+                             RowClick="@OnAfeSelected" SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <PropertyColumn Property="a => a.AfeNumber" Title="AFE #" Sortable="true" />
+                        <PropertyColumn Property="a => a.Description" Title="Description" />
+                        <PropertyColumn Property="a => a.WellId" Title="Well" />
+                        <PropertyColumn Property="a => a.Category" Title="Category" />
+                        <PropertyColumn Property="a => a.ApprovedUsd" Title="Approved ($)" Format="N0" Sortable="true" />
+                        <PropertyColumn Property="a => a.CommittedUsd" Title="Committed ($)" Format="N0" />
+                        <TemplateColumn Title="% Spent" Sortable="false">
+                            <CellTemplate>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudProgressLinear Color="@SpentColor(context.Item)" Value="@SpentPercent(context.Item)" Class="flex-1" />
+                                    <MudText Typo="Typo.caption">@SpentPercent(context.Item).ToString("N0")%</MudText>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <StatusBadge Status="@context.Item.Status" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="a => a.Approver" Title="Approver" />
+                    </Columns>
+                </MudDataGrid>
+            </MudCardContent>
+        </MudCard>
+    }
+    else
+    {
+        @* Detail View *@
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="BackToList" Title="Back to AFE list" />
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.h5">@_selectedAfe.AfeNumber — @_selectedAfe.Description</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@_selectedAfe.WellId · @_selectedAfe.Category</MudText>
+                </MudStack>
+            </MudStack>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <StatusBadge Status="@_selectedAfe.Status" />
+                @if (_selectedAfe.Status == "PENDING")
+                {
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="RejectAfe">Reject</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="ApproveAfe">Approve AFE</MudButton>
+                }
+            </MudStack>
+        </MudStack>
+
+        <MudGrid Spacing="3">
+
+            @* Cost summary *@
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Cost Summary</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack Spacing="2">
+                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Approved</MudText>
+                                <MudText Typo="Typo.body1"><strong>$@_selectedAfe.ApprovedUsd.ToString("N0")</strong></MudText>
+                            </MudStack>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Committed</MudText>
+                                <MudText Typo="Typo.body1" Color="Color.Warning">$@_selectedAfe.CommittedUsd.ToString("N0")</MudText>
+                            </MudStack>
+                            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Remaining</MudText>
+                                <MudText Typo="Typo.body1" Color="Color.Success">$@((_selectedAfe.ApprovedUsd - _selectedAfe.CommittedUsd).ToString("N0"))</MudText>
+                            </MudStack>
+                            <MudDivider />
+                            <MudProgressLinear Color="@SpentColor(_selectedAfe)" Value="@SpentPercent(_selectedAfe)"
+                                               Rounded="true" Size="Size.Large" Class="mt-1">
+                                <MudText Typo="Typo.caption" Color="Color.Surface">@SpentPercent(_selectedAfe).ToString("N0")% spent</MudText>
+                            </MudProgressLinear>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            @* Cost by category bar chart *@
+            <MudItem xs="12" md="8">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Cost Breakdown</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudChart T="double" ChartType="ChartType.Bar"
+                                  Series="@_costBreakdownSeries"
+                                  XAxisLabels="@_costCategories"
+                                  Width="100%" Height="180px" />
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            @* Line items *@
+            <MudItem xs="12">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">AFE Line Items</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MudDataGrid T="AfeLineItem" Items="@_lineItems" Dense="true" Hover="true" Striped="true">
+                            <Columns>
+                                <PropertyColumn Property="l => l.Code"        Title="Cost Code" />
+                                <PropertyColumn Property="l => l.Description" Title="Description" />
+                                <PropertyColumn Property="l => l.Vendor"      Title="Vendor" />
+                                <PropertyColumn Property="l => l.EstimatedUsd" Title="Estimated ($)" Format="N0" />
+                                <PropertyColumn Property="l => l.ActualUsd"   Title="Actual ($)" Format="N0" />
+                                <TemplateColumn Title="Variance">
+                                    <CellTemplate>
+                                        @{
+                                            var v = context.Item.ActualUsd - context.Item.EstimatedUsd;
+                                        }
+                                        <MudText Typo="Typo.body2" Color="@(v > 0 ? Color.Error : Color.Success)">
+                                            @(v >= 0 ? "+" : "")@v.ToString("N0")
+                                        </MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+        </MudGrid>
+    }
+
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private AfeItem? _selectedAfe;
+
+    private record AfeItem(string AfeNumber, string Description, string WellId, string Category,
+        double ApprovedUsd, double CommittedUsd, string Status, string Approver);
+
+    private List<AfeItem> _afes = new()
+    {
+        new("AFE-2026-001", "DEV-A1 ESP Replacement",       "DEV-A1", "Workover",     850_000,  620_000, "ACTIVE",   "D. Thompson"),
+        new("AFE-2026-002", "DEV-B2 Perforation Additions", "DEV-B2", "Completion",   340_000,  280_000, "ACTIVE",   "D. Thompson"),
+        new("AFE-2026-003", "DEV-C1 Drill & Complete",      "DEV-C1", "Drilling",  12_400_000,  900_000, "ACTIVE",   "VP Operations"),
+        new("AFE-2026-004", "Pipeline Inspection Program",  "N/A",    "Facilities", 1_200_000,        0, "PENDING",  "D. Thompson"),
+        new("AFE-2026-005", "Seismic Reprocessing",         "N/A",    "G&G",          480_000,  480_000, "COMPLETE", "D. Thompson"),
+        new("AFE-2026-006", "EOR Feasibility Study",        "N/A",    "Studies",      220_000,   45_000, "PENDING",  "VP Reservoir"),
+    };
+
+    private record AfeLineItem(string Code, string Description, string Vendor, double EstimatedUsd, double ActualUsd);
+    private List<AfeLineItem> _lineItems = new()
+    {
+        new("WO-001", "ESP Unit Purchase",     "Baker Hughes",  420_000, 405_000),
+        new("WO-002", "Rig Mobilization",      "Nabors Drilling",180_000, 175_000),
+        new("WO-003", "Well Services",         "Halliburton",   130_000, 125_000),
+        new("WO-004", "Contingency (10%)",     "-",              85_000,  15_000),
+        new("WO-005", "Engineering & Supervision","In-house",    35_000,  32_000),
+    };
+
+    private List<ChartSeries<double>> _costBreakdownSeries = new()
+    {
+        new ChartSeries<double> { Name = "Approved", Data = new double[] { 420_000, 180_000, 130_000, 85_000, 35_000 } },
+        new ChartSeries<double> { Name = "Actual",   Data = new double[] { 405_000, 175_000, 125_000, 15_000, 32_000 } },
+    };
+    private string[] _costCategories = { "ESP", "Rig", "Well Svc", "Contingency", "Engineering" };
+
+    private void OnAfeSelected(DataGridRowClickEventArgs<AfeItem> args) =>
+        _selectedAfe = args.Item;
+
+    private void BackToList() => _selectedAfe = null;
+
+    private void CreateAfe() =>
+        Snackbar.Add("New AFE wizard coming soon", Severity.Info);
+
+    private void ApproveAfe()
+    {
+        Snackbar.Add($"{_selectedAfe?.AfeNumber} approved", Severity.Success);
+        _selectedAfe = null;
+    }
+
+    private void RejectAfe()
+    {
+        Snackbar.Add($"{_selectedAfe?.AfeNumber} returned for revision", Severity.Warning);
+        _selectedAfe = null;
+    }
+
+    private double SpentPercent(AfeItem a) =>
+        a.ApprovedUsd > 0 ? Math.Min(a.CommittedUsd / a.ApprovedUsd * 100, 100) : 0;
+
+    private Color SpentColor(AfeItem a) => SpentPercent(a) switch
+    {
+        >= 90 => Color.Error,
+        >= 75 => Color.Warning,
+        _     => Color.Success,
+    };
+}

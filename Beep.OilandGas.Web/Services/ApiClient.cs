@@ -166,7 +166,7 @@ namespace Beep.OilandGas.Web.Services
         /// </summary>
         public async Task<TResponse?> PostAsync<TResponse>(
             string endpoint,
-            HttpContent content,
+            HttpContent? content,
             CancellationToken cancellationToken = default)
         {
             try

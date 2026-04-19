@@ -1,6 +1,7 @@
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
+@inject IConnectionService ConnectionService
 
 <MudDialog>
     <DialogContent>
@@ -83,7 +84,7 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter] MudDialogInstance? MudDialog { get; set; }
+    [CascadingParameter] IMudDialogInstance? MudDialog { get; set; }
     [Parameter] public string? ConnectionName { get; set; }
 
     private bool _isTesting = false;

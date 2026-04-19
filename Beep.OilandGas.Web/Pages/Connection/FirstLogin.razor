@@ -9,6 +9,7 @@
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject Beep.OilandGas.Web.Services.IConnectionService ConnectionService
 
 <PageTitle>First Login - Connection Setup</PageTitle>
 
@@ -18,9 +19,9 @@
             <MudIcon Icon="@Icons.Material.Filled.Storage" 
                     Size="Size.Large" 
                     Color="Color.Primary" 
-                    Style="font-size: 64px;" />
+                    Class="og-icon-hero" />
             
-            <MudText Typo="Typo.h4" Align="Align.Center">
+            <MudText Typo="Typo.h5" Align="Align.Center">
                 Welcome to Beep Oil & Gas
             </MudText>
             
@@ -51,7 +52,7 @@
             }
             else
             {
-                <MudStack Spacing="3" Class="mt-4" Style="width: 100%;">
+                <MudStack Spacing="3" Class="mt-4 og-full-width">
                     <MudButton Variant="Variant.Filled" 
                               Color="Color.Primary" 
                               Size="Size.Large"
@@ -122,7 +123,7 @@
         var options = new DialogOptions
         {
             CloseOnEscapeKey = false,
-            DisableBackdropClick = true,
+            BackdropClick = false,
             MaxWidth = MaxWidth.Medium,
             FullWidth = true
         };
@@ -134,7 +135,7 @@
 
         var result = await dialog.Result;
         
-        if (!result.Canceled)
+        if (result?.Canceled == false)
         {
             // Demo database created, refresh and check again
             await CheckConnection();
@@ -147,7 +148,7 @@
         var options = new DialogOptions
         {
             CloseOnEscapeKey = false,
-            DisableBackdropClick = true,
+            BackdropClick = false,
             MaxWidth = MaxWidth.Large,
             FullWidth = true
         };
@@ -159,7 +160,7 @@
 
         var result = await dialog.Result;
         
-        if (!result.Canceled)
+        if (result?.Canceled == false)
         {
             // Connection setup completed, refresh and check again
             await CheckConnection();
@@ -168,7 +169,7 @@
 
     private void NavigateToCreateDatabase()
     {
-        NavigationManager.NavigateTo("/ppdm39/create-database-wizard");
+        NavigationManager.NavigateTo("/ppdm39/create-database");
     }
 
     private void NavigateToDashboard()
@@ -176,4 +177,5 @@
         NavigationManager.NavigateTo("/dashboard");
     }
 }
+
 

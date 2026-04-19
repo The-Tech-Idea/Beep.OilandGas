@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,7 +14,7 @@ namespace Beep.OilandGas.PlungerLift.Services
     /// Implementation of plunger lift service for artificial lift operations.
     /// All 29 interface methods fully implemented with petroleum engineering calculations.
     /// </summary>
-    public class PlungerLiftService : IPlungerLiftService
+    public partial class PlungerLiftService : IPlungerLiftService, Beep.OilandGas.Models.Core.Interfaces.IPlungerLiftService
     {
         private readonly IDMEEditor _editor;
         private readonly ICommonColumnHandler _commonColumnHandler;

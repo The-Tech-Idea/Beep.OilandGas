@@ -2,40 +2,35 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Beep.OilandGas.Accounting.Interfaces;
-using Beep.OilandGas.Accounting.Models; // Assuming models exist
-using Beep.PPDM39.Models;
-using TheTechIdea.Beep.Utilities;
-using TheTechIdea.Beep.Vis;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Beep.Addin;
-using TheTechIdea.Beep.ConfigUtil;
-using TheTechIdea.Beep.DataBase;
+using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM39.DataManagement.Core;
 
 namespace Beep.OilandGas.Accounting.Services
 {
     public class AuditService
     {
         private readonly IDMEEditor _editor;
-        private readonly IAppManager _appManager;
-        private readonly ILogger _logger;
-        private readonly IRuleDefaults _defaults;
+        private readonly ICommonColumnHandler _commonColumnHandler;
+        private readonly ILogger<AuditService> _logger;
+        private readonly IPPDM39DefaultsRepository _defaults;
         private readonly AnomalyDetectionService _anomalyService;
 
         public string ConnectionName { get; set; } = "OilandGasDB";
 
         public AuditService(
-            IDMEEditor editor, 
-            IAppManager appManager, 
-            ILogger logger, 
-            IRuleDefaults defaults,
-            AnomalyDetectionService anomalyService)
+            IDMEEditor editor,
+            ICommonColumnHandler commonColumnHandler,
+            IPPDM39DefaultsRepository defaults,
+            AnomalyDetectionService anomalyService,
+            ILogger<AuditService> logger)
         {
             _editor = editor;
-            _appManager = appManager;
-            _logger = logger;
+            _commonColumnHandler = commonColumnHandler;
             _defaults = defaults;
             _anomalyService = anomalyService;
+            _logger = logger;
         }
 
         private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName, string? connectionName)
@@ -44,12 +39,9 @@ namespace Beep.OilandGas.Accounting.Services
             var ds = _editor.GetDataSource(cn);
             if (ds == null) throw new InvalidOperationException($"Connection {cn} not found.");
             
-            var CommonColumnHandler = new PPDMCommonColumnHandler(_defaults);
-            var metadata = await ds.GetEntitesListAsync(); 
-            
             return new PPDMGenericRepository(
-                _editor, CommonColumnHandler, _defaults, ds,
-                 typeof(T), cn, tableName);
+                _editor, _commonColumnHandler, _defaults, null,
+                typeof(T), cn, tableName);
         }
 
         public async Task<List<AuditLogEntry>> GetUserActivityAsync(

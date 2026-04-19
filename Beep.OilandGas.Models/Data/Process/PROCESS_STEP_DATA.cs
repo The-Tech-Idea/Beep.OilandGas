@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Text.Json;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.Calculations;
 using Beep.OilandGas.Models.Data.LifeCycle;
-using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
 using Beep.OilandGas.Models.Data.Reporting;
 
@@ -45,5 +46,25 @@ namespace Beep.OilandGas.Models.Data.Process
         public FieldPlanningRequest FieldPlanning { get; set; }
         public GenerateOperationalReportRequest GenerateOperationalReport { get; set; }
         public string Status { get; set; }
+
+        public static implicit operator PROCESS_STEP_DATA(Dictionary<string, object>? values)
+        {
+            var stepData = new PROCESS_STEP_DATA
+            {
+                LastUpdated = DateTime.UtcNow,
+                DataJson = values != null ? JsonSerializer.Serialize(values) : string.Empty
+            };
+
+            if (values == null)
+                return stepData;
+
+            if (values.TryGetValue("StepType", out var stepType))
+                stepData.StepType = stepType?.ToString();
+
+            if (values.TryGetValue("Status", out var status))
+                stepData.Status = status?.ToString();
+
+            return stepData;
+        }
     }
 }

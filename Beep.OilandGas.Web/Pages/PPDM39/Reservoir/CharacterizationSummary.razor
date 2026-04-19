@@ -1,0 +1,258 @@
+@page "/reservoir/characterization"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Characterise Reservoir Properties</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Characterise Reservoir Properties</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Integrated geological &amp; petrophysical summary</MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudChip T="string" Color="Color.Info" Size="Size.Small">Last Update: @_lastUpdate</MudChip>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Download"
+                       OnClick="ExportReport">
+                Export Report
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mb-4">
+
+        @* Tab 1: Structural *@
+        <MudTabPanel Text="Structural" Icon="@Icons.Material.Filled.Layers">
+            <MudGrid Class="pa-4" Spacing="3">
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="1">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.subtitle1">Depth Structure Map</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudPaper Elevation="0" Class="pa-8 d-flex align-center justify-center og-placeholder-panel--dashed">
+                                <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Large" Color="Color.Secondary" />
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">Depth map renders from simulation model</MudText>
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                               OnClick='@(() => Snackbar.Add("Opening simulation viewer...", Severity.Info))'>
+                                        Open Sim Viewer
+                                    </MudButton>
+                                </MudStack>
+                            </MudPaper>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="1">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.subtitle1">Structural Parameters</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudDataGrid T="StructParam" Items="@_structuralParams" Dense="true" Hover="true">
+                                <Columns>
+                                    <PropertyColumn Property="p => p.Label" Title="Parameter" />
+                                    <PropertyColumn Property="p => p.Value" Title="Value" />
+                                    <PropertyColumn Property="p => p.Unit" Title="Unit" />
+                                </Columns>
+                            </MudDataGrid>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudTabPanel>
+
+        @* Tab 2: Petrophysics *@
+        <MudTabPanel Text="Petrophysics" Icon="@Icons.Material.Filled.StackedBarChart">
+            <MudGrid Class="pa-4" Spacing="3">
+                <MudItem xs="12" md="8">
+                    <MudCard Elevation="1">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.subtitle1">Porosity &amp; Permeability Cross-Plot</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudChart T="double" ChartType="ChartType.Bar"
+                                      Series="@_petrophySeries"
+                                      XAxisLabels="@_petrophyZones"
+                                      Width="100%" Height="220px" />
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudCard Elevation="1">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.subtitle1">Petrophysical Cutoffs</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="1">
+                                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary" Class="og-label-xs">Parameter</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Cutoff</MudText>
+                                </MudStack>
+                                <MudDivider />
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Class="og-label-xs">Porosity</MudText>
+                                    <MudText Typo="Typo.body2">&gt; 8%</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Class="og-label-xs">Vsh</MudText>
+                                    <MudText Typo="Typo.body2">&lt; 50%</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Class="og-label-xs">Sw</MudText>
+                                    <MudText Typo="Typo.body2">&lt; 65%</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Class="og-label-xs">Net/Gross</MudText>
+                                    <MudText Typo="Typo.body2">&gt; 0.35</MudText>
+                                </MudStack>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudTabPanel>
+
+        @* Tab 3: Fluid *@
+        <MudTabPanel Text="Fluid Properties" Icon="@Icons.Material.Filled.Water">
+            <MudGrid Class="pa-4" Spacing="3">
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="1">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.subtitle1">PVT Data Summary</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudDataGrid T="PvtEntry" Items="@_pvtData" Dense="true" Hover="true">
+                                <Columns>
+                                    <PropertyColumn Property="p => p.Pressure" Title="Pressure (psi)" Format="N0" />
+                                    <PropertyColumn Property="p => p.Bo"       Title="Bo (RB/STB)" Format="N3" />
+                                    <PropertyColumn Property="p => p.Rs"       Title="Rs (scf/STB)" Format="N0" />
+                                    <PropertyColumn Property="p => p.Uo"       Title="µo (cp)" Format="N2" />
+                                    <PropertyColumn Property="p => p.Bg"       Title="Bg (RCF/SCF)" Format="N4" />
+                                </Columns>
+                            </MudDataGrid>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCard Elevation="1">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.subtitle1">Formation Volume Factor (Bo)</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudChart T="double" ChartType="ChartType.Line"
+                                      Series="@_boSeries"
+                                      XAxisLabels="@_pvtPressureLabels"
+                                      Width="100%" Height="220px" />
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudTabPanel>
+
+        @* Tab 4: Well Correlation *@
+        <MudTabPanel Text="Well Correlation" Icon="@Icons.Material.Filled.LinearScale">
+            <MudGrid Class="pa-4" Spacing="3">
+                <MudItem xs="12">
+                    <MudCard Elevation="1">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.subtitle1">Stratigraphic Correlation Panel</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudDataGrid T="CorrelationEntry" Items="@_correlations" Dense="true" Hover="true" Striped="true">
+                                <Columns>
+                                    <PropertyColumn Property="c => c.WellId"    Title="Well" />
+                                    <PropertyColumn Property="c => c.TopDepth"  Title="Top (ft ss)" Format="N0" />
+                                    <PropertyColumn Property="c => c.BaseDepth" Title="Base (ft ss)" Format="N0" />
+                                    <PropertyColumn Property="c => c.NetPay"    Title="Net Pay (ft)" Format="N0" />
+                                    <PropertyColumn Property="c => c.Porosity"  Title="Avg Por %" Format="N1" />
+                                    <PropertyColumn Property="c => c.Fluid"     Title="Fluid" />
+                                    <TemplateColumn Title="Quality">
+                                        <CellTemplate>
+                                            <StatusBadge Status="@context.Item.Quality" />
+                                        </CellTemplate>
+                                    </TemplateColumn>
+                                </Columns>
+                            </MudDataGrid>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+        </MudTabPanel>
+
+    </MudTabs>
+
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private string _lastUpdate = "15 Mar 2026";
+
+    private record StructParam(string Label, string Value, string Unit);
+    private List<StructParam> _structuralParams = new()
+    {
+        new("Closure Area",     "18,400", "acres"),
+        new("Structural Relief","580",    "ft"),
+        new("Dip Angle",        "8.4",    "degrees"),
+        new("Fault System",     "Growth", "type"),
+        new("Trap Style",       "Anticlinal", ""),
+        new("GRV",              "4,850",  "MM cu ft"),
+    };
+
+    private List<ChartSeries<double>> _petrophySeries = new()
+    {
+        new ChartSeries<double> { Name = "Porosity (%)",    Data = new double[] { 22.4, 20.1, 14.5, 9.2 } },
+        new ChartSeries<double> { Name = "Sw (%)",          Data = new double[] { 18.2, 21.5, 28.0, 35.0 } },
+        new ChartSeries<double> { Name = "Net/Gross × 100", Data = new double[] { 82,   74,   55,   38  } },
+    };
+    private string[] _petrophyZones = { "Zone A", "Zone B", "Zone C", "Zone D" };
+
+    private record PvtEntry(double Pressure, double Bo, double Rs, double Uo, double Bg);
+    private List<PvtEntry> _pvtData = new()
+    {
+        new(4000, 1.410, 580, 1.42, 0.0006),
+        new(3500, 1.395, 540, 1.58, 0.0007),
+        new(3000, 1.375, 495, 1.74, 0.0008),
+        new(2850, 1.360, 480, 1.80, 0.0009),
+        new(2500, 1.310, 420, 1.95, 0.0010),
+        new(2000, 1.255, 355, 2.20, 0.0013),
+        new(1500, 1.195, 290, 2.55, 0.0017),
+    };
+
+    private List<ChartSeries<double>> _boSeries = new()
+    {
+        new ChartSeries<double> { Name = "Bo", Data = new double[] { 1.195, 1.255, 1.310, 1.360, 1.375, 1.395, 1.410 } },
+    };
+    private string[] _pvtPressureLabels = { "1500", "2000", "2500", "2850", "3000", "3500", "4000" };
+
+    private record CorrelationEntry(string WellId, double TopDepth, double BaseDepth, double NetPay,
+        double Porosity, string Fluid, string Quality);
+    private List<CorrelationEntry> _correlations = new()
+    {
+        new("DEV-A1", 8380, 9200, 68, 22.4, "Oil",      "COMPLETE"),
+        new("DEV-A2", 8415, 9185, 62, 21.8, "Oil",      "COMPLETE"),
+        new("DEV-B1", 8440, 9240, 58, 20.4, "Oil",      "COMPLETE"),
+        new("DEV-B2", 8460, 9255, 55, 20.1, "Oil/Water","COMPLETE"),
+        new("DEV-C1", 8510, 9280, 42, 18.6, "Oil",      "IN PROGRESS"),
+        new("EXP-1",  8520, 9300, 38, 17.9, "Oil",      "REVIEW"),
+    };
+
+    private void ExportReport() =>
+        Snackbar.Add("Characterization report export queued", Severity.Success);
+}

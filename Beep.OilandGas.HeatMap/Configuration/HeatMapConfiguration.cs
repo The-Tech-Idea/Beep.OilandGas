@@ -440,6 +440,12 @@ namespace Beep.OilandGas.HeatMap.Configuration
         public string CONFIGURATION_NAME { get; internal set; }
         public string ACTIVE_IND { get; internal set; }
 
+        // UPPERCASE aliases used by HeatMapRenderer and HeatMapInteraction
+        public bool USE_INTERPOLATION { get => UseInterpolation; set => UseInterpolation = value; }
+        public Interpolation.InterpolationMethodType INTERPOLATION_METHOD { get => InterpolationMethod; set => InterpolationMethod = value; }
+        public double INTERPOLATION_CELL_SIZE { get => InterpolationCellSize; set => InterpolationCellSize = value; }
+        public bool SHOW_LEGEND { get => ShowLegend; set => ShowLegend = value; }
+
         /// <summary>
         /// Gets the color scheme based on the configuration.
         /// </summary>

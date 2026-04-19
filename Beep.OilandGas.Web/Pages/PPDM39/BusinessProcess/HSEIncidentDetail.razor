@@ -1,0 +1,229 @@
+@page "/ppdm39/hse/incidents/{Id}"
+@attribute [Authorize(Roles = "SafetyOfficer,Manager,Admin,User")]
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>HSE Incident — @Id</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       OnClick='() => NavigationManager.NavigateTo("/ppdm39/hse/incidents")' />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">@_incidentType — @_description</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <HSEIncidentSeverityBadge Tier="@_tier" />
+                <StatusBadge Status="@_status" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@_incidentDate.ToString("dd-MMM-yyyy HH:mm") · @_location · @_reportedBy</MudText>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    <MudDivider Class="mb-4" />
+
+    <MudGrid Spacing="3">
+
+        @* ── Incident details ─────────────────────────────────────────── *@
+        <MudItem xs="12" md="5">
+            <MudCard Elevation="2" Class="mb-3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Incident Details</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudSimpleTable Dense="true">
+                        <tbody>
+                            <tr><td><MudText Typo="Typo.caption">Date/Time</MudText></td>
+                                <td><MudText Typo="Typo.body2">@_incidentDate.ToString("dd-MMM-yyyy HH:mm")</MudText></td></tr>
+                            <tr><td><MudText Typo="Typo.caption">Type</MudText></td>
+                                <td><MudText Typo="Typo.body2">@_incidentType</MudText></td></tr>
+                            <tr><td><MudText Typo="Typo.caption">Tier</MudText></td>
+                                <td><HSEIncidentSeverityBadge Tier="@_tier" /></td></tr>
+                            <tr><td><MudText Typo="Typo.caption">Location</MudText></td>
+                                <td><MudText Typo="Typo.body2">@_location</MudText></td></tr>
+                            <tr><td><MudText Typo="Typo.caption">Reported By</MudText></td>
+                                <td><MudText Typo="Typo.body2">@_reportedBy</MudText></td></tr>
+                        </tbody>
+                    </MudSimpleTable>
+                </MudCardContent>
+            </MudCard>
+
+            @* RCA section *@
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudIcon Icon="@Icons.Material.Filled.Search" Color="Color.Info" />
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Root Cause Analysis</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (string.IsNullOrWhiteSpace(_rcaSummary))
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">RCA not yet submitted.</MudText>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Class="mb-3">@_rcaSummary</MudText>
+                    }
+                    @if (_canEditRca)
+                    {
+                        <MudTextField @bind-Value="_rcaDraft" Label="RCA Summary"
+                                      Lines="4" Variant="Variant.Outlined" Class="mb-2" />
+                        <MudButton Variant="Variant.Filled" Color="Color.Info"
+                                   StartIcon="@Icons.Material.Filled.Save"
+                                   OnClick="SubmitRcaAsync">
+                            Submit RCA
+                        </MudButton>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* ── Corrective actions ───────────────────────────────────────── *@
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2" Class="mb-3">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Corrective Actions</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudButton Size="Size.Small" Variant="Variant.Text"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="AddActionAsync">
+                            Add
+                        </MudButton>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="ActionRow" Items="@_correctiveActions" Dense="true" Hover="true" Striped="true">
+                        <Columns>
+                            <PropertyColumn Property="a => a.Description" Title="Action" />
+                            <PropertyColumn Property="a => a.AssignedTo"  Title="Assigned To" />
+                            <PropertyColumn Property="a => a.DueDate"     Title="Due"    Format="dd-MMM-yy" />
+                            <TemplateColumn Title="Status" Sortable="false">
+                                <CellTemplate>
+                                    <StatusBadge Status="@context.Item.Status" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="" Sortable="false">
+                                <CellTemplate>
+                                    @if (context.Item.Status != "COMPLETED")
+                                    {
+                                        <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                                       Size="Size.Small" Color="Color.Success"
+                                                       OnClick='@(() => CloseActionAsync(context.Item.ActionId))' />
+                                    }
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+
+            @* Close-out *@
+            @if (_status != "CLOSED" && _canClose)
+            {
+                <MudCard Elevation="2">
+                    <MudCardContent>
+                        <MudTextField @bind-Value="_closeNotes" Label="Close-out Notes"
+                                      Lines="2" Variant="Variant.Outlined" Class="mb-2" />
+                        <MudButton Variant="Variant.Filled" Color="Color.Success"
+                                   StartIcon="@Icons.Material.Filled.CheckCircle"
+                                   Disabled="@(_correctiveActions.Any(a => a.Status != "COMPLETED"))"
+                                   OnClick="CloseIncidentAsync">
+                            Close Incident
+                        </MudButton>
+                    </MudCardContent>
+                </MudCard>
+            }
+        </MudItem>
+
+    </MudGrid>
+
+</MudContainer>
+
+@using Microsoft.AspNetCore.Authorization
+
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+
+    private string   _incidentType = string.Empty;
+    private string   _description  = string.Empty;
+    private string   _tier         = "3";
+    private string   _status       = "OPEN";
+    private string   _location     = string.Empty;
+    private string   _reportedBy   = string.Empty;
+    private DateTime _incidentDate = DateTime.Today;
+    private string   _rcaSummary   = string.Empty;
+    private string   _rcaDraft     = string.Empty;
+    private string   _closeNotes   = string.Empty;
+    private bool     _canEditRca   = true;
+    private bool     _canClose     = true;
+
+    private List<ActionRow> _correctiveActions = new();
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/field/current/hse/incidents/{Id}
+        _incidentType = "Personnel Injury";
+        _description  = "Slip/trip on rig floor";
+        _tier         = "2";
+        _status       = "RCA IN PROGRESS";
+        _location     = "Rig Floor Level 2";
+        _reportedBy   = "john.doe";
+        _incidentDate = DateTime.Today.AddDays(-3);
+
+        _correctiveActions = new List<ActionRow>
+        {
+            new("CA-001", "Install non-slip matting on rig floor",   "safety.officer", DateTime.Today.AddDays(7),  "IN PROGRESS"),
+            new("CA-002", "Conduct rig floor HSE awareness briefing", "ops.supervisor", DateTime.Today.AddDays(3),  "PLANNED"),
+            new("CA-003", "Review PPE requirements for rig operations","hse.manager",   DateTime.Today.AddDays(14), "PLANNED"),
+        };
+    }
+
+    private async Task SubmitRcaAsync()
+    {
+        // TODO: POST /api/field/current/hse/incidents/{Id}/rca
+        _rcaSummary = _rcaDraft;
+        Snackbar.Add("RCA submitted.", Severity.Success);
+        await Task.CompletedTask;
+    }
+
+    private async Task AddActionAsync()
+    {
+        // TODO: open AddCorrectiveActionDialog
+        Snackbar.Add("Add corrective action dialog not yet wired.", Severity.Info);
+        await Task.CompletedTask;
+    }
+
+    private async Task CloseActionAsync(string actionId)
+    {
+        // TODO: PATCH /api/field/current/hse/incidents/{Id}/actions/{actionId}
+        var action = _correctiveActions.FirstOrDefault(a => a.ActionId == actionId);
+        if (action != null)
+        {
+            _correctiveActions.Remove(action);
+            _correctiveActions.Add(action with { Status = "COMPLETED" });
+        }
+        Snackbar.Add("Action closed.", Severity.Success);
+        await Task.CompletedTask;
+    }
+
+    private async Task CloseIncidentAsync()
+    {
+        // TODO: POST /api/field/current/hse/incidents/{Id}/close
+        _status = "CLOSED";
+        Snackbar.Add("Incident closed.", Severity.Success);
+        NavigationManager.NavigateTo("/ppdm39/hse/incidents");
+        await Task.CompletedTask;
+    }
+
+    private record ActionRow(string ActionId, string Description, string AssignedTo, DateTime DueDate, string Status);
+}

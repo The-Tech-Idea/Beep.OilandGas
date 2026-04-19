@@ -1,0 +1,176 @@
+@page "/data/audit"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Review Data Access History</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Review Data Access History</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">PPDM39 access log — who accessed what, when</MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Refresh" OnClick="RefreshLog">
+                Refresh
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Download" OnClick="ExportLog">
+                Export
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @* KPIs *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Events Today" Value="@_eventsToday.ToString()"
+                     ValueColor="Color.Info" Icon="@Icons.Material.Filled.AccessTime"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Last 24 hrs" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Unique Users (30d)" Value="@_uniqueUsers.ToString()"
+                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.People"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Active accounts" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Write Operations (30d)" Value="@_writeOps.ToString()"
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Edit"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Insert + Update + Delete" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Failed Attempts (30d)" Value="@_failedAttempts.ToString()"
+                     ValueColor="@(_failedAttempts > 0 ? Color.Error : Color.Success)"
+                     Icon="@Icons.Material.Filled.Block"
+                     TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Success" TrendText="Unauthorized access" />
+        </MudItem>
+    </MudGrid>
+
+    @* Filters *@
+    <MudCard Elevation="1" Class="mb-4">
+        <MudCardContent>
+            <MudGrid Spacing="2">
+                <MudItem xs="12" sm="6" md="3">
+                    <MudTextField @bind-Value="_filterUser" Label="User" Placeholder="Filter by user..."
+                                  Variant="Variant.Outlined" Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search" />
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudSelect T="string" @bind-Value="_filterTable" Label="Table" Variant="Variant.Outlined">
+                        <MudSelectItem Value="@("All")">All Tables</MudSelectItem>
+                        <MudSelectItem Value="@("WELL")">WELL</MudSelectItem>
+                        <MudSelectItem Value="@("FACILITY")">FACILITY</MudSelectItem>
+                        <MudSelectItem Value="@("PDEN_VOL_SUMMARY")">PDEN_VOL_SUMMARY</MudSelectItem>
+                        <MudSelectItem Value="@("WELL_TEST")">WELL_TEST</MudSelectItem>
+                        <MudSelectItem Value="@("PROSPECT")">PROSPECT</MudSelectItem>
+                        <MudSelectItem Value="@("CONTRACT")">CONTRACT</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudSelect T="string" @bind-Value="_filterOp" Label="Operation" Variant="Variant.Outlined">
+                        <MudSelectItem Value="@("All")">All Operations</MudSelectItem>
+                        <MudSelectItem Value="@("READ")">Read</MudSelectItem>
+                        <MudSelectItem Value="@("WRITE")">Write</MudSelectItem>
+                        <MudSelectItem Value="@("DELETE")">Delete</MudSelectItem>
+                        <MudSelectItem Value="@("EXPORT")">Export</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" FullWidth="true"
+                               StartIcon="@Icons.Material.Filled.FilterAlt" OnClick="ApplyFilters">
+                        Apply Filters
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+
+    @* Audit log grid *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            <MudDataGrid T="AuditEntry" Items="@FilteredEntries" Dense="true" Hover="true" Striped="true"
+                         SortMode="SortMode.Multiple">
+                <Columns>
+                    <PropertyColumn Property="e => e.Timestamp"  Title="Timestamp" Sortable="true" />
+                    <PropertyColumn Property="e => e.UserId"      Title="User" />
+                    <PropertyColumn Property="e => e.TableName"   Title="Table" />
+                    <PropertyColumn Property="e => e.EntityId"    Title="Entity ID" />
+                    <TemplateColumn Title="Operation">
+                        <CellTemplate>
+                            <MudChip T="string" Size="Size.Small"
+                                     Color="@OperationColor(context.Item.Operation)">
+                                @context.Item.Operation
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="e => e.RecordsAffected" Title="Records" />
+                    <PropertyColumn Property="e => e.IpAddress"       Title="IP Address" />
+                    <TemplateColumn Title="Result" Sortable="false">
+                        <CellTemplate>
+                            <StatusBadge Status="@context.Item.Result" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="AuditEntry" PageSizeOptions="@(new int[]{ 25, 50, 100 })" />
+                </PagerContent>
+            </MudDataGrid>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private string _filterUser = "";
+    private string _filterTable = "All";
+    private string _filterOp = "All";
+
+    private int _eventsToday = 248;
+    private int _uniqueUsers = 14;
+    private int _writeOps = 1_032;
+    private int _failedAttempts = 3;
+
+    private record AuditEntry(string Timestamp, string UserId, string TableName, string EntityId,
+        string Operation, int RecordsAffected, string IpAddress, string Result);
+
+    private List<AuditEntry> _entries = new()
+    {
+        new("2026-04-15 14:32:01", "s.ahmed@field.com",    "WELL",            "DEV-A1",       "READ",   1,    "10.0.1.42",  "COMPLETE"),
+        new("2026-04-15 14:30:55", "p.obi@field.com",      "PDEN_VOL_SUMMARY","VOL-2026-03",  "WRITE",  1,    "10.0.1.55",  "COMPLETE"),
+        new("2026-04-15 14:28:12", "r.santos@field.com",   "WELL_TEST",       "WT-2026-041",  "WRITE",  1,    "10.0.2.10",  "COMPLETE"),
+        new("2026-04-15 14:15:00", "d.thompson@field.com", "CONTRACT",        "CONT-2021-04", "READ",   1,    "10.0.1.30",  "COMPLETE"),
+        new("2026-04-15 13:55:33", "t.wu@field.com",       "WELL",            "ALL",          "EXPORT", 2847, "10.0.1.66",  "COMPLETE"),
+        new("2026-04-15 13:40:18", "j.smith@field.com",    "FACILITY",        "FPSO-Apex",    "WRITE",  1,    "10.0.3.05",  "COMPLETE"),
+        new("2026-04-15 13:22:44", "unknown",               "WELL",           "DEV-A1",       "DELETE", 0,    "192.168.1.1","FAILED"),
+        new("2026-04-15 12:58:09", "s.ahmed@field.com",    "PROSPECT",        "ALL",          "READ",   64,   "10.0.1.42",  "COMPLETE"),
+        new("2026-04-15 12:45:00", "p.obi@field.com",      "BUSINESS_ASSOCIATE","ALL",        "EXPORT", 315,  "10.0.1.55",  "COMPLETE"),
+        new("2026-04-15 12:30:27", "r.santos@field.com",   "WELL_TUBULAR",    "DEV-B2",       "READ",   12,   "10.0.2.10",  "COMPLETE"),
+    };
+
+    private IEnumerable<AuditEntry> FilteredEntries
+    {
+        get
+        {
+            var q = _entries.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(_filterUser))
+                q = q.Where(e => e.UserId.Contains(_filterUser, StringComparison.OrdinalIgnoreCase));
+            if (_filterTable != "All")
+                q = q.Where(e => e.TableName == _filterTable);
+            if (_filterOp != "All")
+                q = q.Where(e => e.Operation == _filterOp);
+            return q;
+        }
+    }
+
+    private void ApplyFilters() => StateHasChanged();
+    private void RefreshLog() => Snackbar.Add("Audit log refreshed", Severity.Info);
+    private void ExportLog() => Snackbar.Add("Audit log export queued", Severity.Success);
+
+    private Color OperationColor(string op) => op switch
+    {
+        "WRITE"  => Color.Warning,
+        "DELETE" => Color.Error,
+        "EXPORT" => Color.Info,
+        _        => Color.Default,
+    };
+}

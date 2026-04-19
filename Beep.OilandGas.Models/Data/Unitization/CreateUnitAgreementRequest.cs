@@ -39,6 +39,15 @@ namespace Beep.OilandGas.Models.Data.Unitization
             set { SetProperty(ref UnitOperatorBaIdValue, value); }
 
         }
+        public string UnitOperator
+
+        {
+
+            get { return this.UnitOperatorBaIdValue; }
+
+            set { SetProperty(ref UnitOperatorBaIdValue, value); }
+
+        }
         private DateTime EffectiveDateValue;
 
         public DateTime EffectiveDate

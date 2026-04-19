@@ -1,0 +1,278 @@
+@page "/ppdm39/analytics"
+@using Beep.OilandGas.Models.Data.Analytics
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+
+<PageTitle>Analytics Dashboard</PageTitle>
+
+<MudStack Spacing="3">
+
+    @* ── Page header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Analytics Dashboard</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                @(_fieldName ?? "No active field") — Process Performance KPIs
+            </MudText>
+        </MudStack>
+        <MudText Typo="Typo.caption" Color="Color.Tertiary">
+            @if (_summary is not null)
+            { @($"Updated {_summary.GeneratedAt:yyyy-MM-dd HH:mm} UTC") }
+        </MudText>
+    </MudStack>
+
+    @* ── Filter row ───────────────────────────────────────────────────────── *@
+    <MudPaper Elevation="0" Class="pa-3 mb-1" Style="background:transparent">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
+            <MudSelect T="int" Label="Date range" Value="_range" ValueChanged="OnRangeChanged"
+                       Style="min-width:160px" Dense="true" Margin="Margin.Dense">
+                <MudSelectItem Value="30">Last 30 days</MudSelectItem>
+                <MudSelectItem Value="90">Last 90 days</MudSelectItem>
+                <MudSelectItem Value="365">Last 365 days</MudSelectItem>
+            </MudSelect>
+            <MudNumericField T="double" Label="Exposure hours (for HSE rates)"
+                             Value="_exposureHours" ValueChanged="OnExposureChanged"
+                             Min="1" Step="100000" Style="min-width:240px"
+                             Dense="true" Margin="Margin.Dense" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Refresh"
+                       OnClick="LoadAllAsync" Disabled="_loading">
+                @if (_loading) { <MudProgressCircular Size="Size.Small" Indeterminate="true" /> }
+                else { <MudText>Refresh</MudText> }
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (_summary is null)
+    {
+        <MudAlert Severity="Severity.Warning">No data available. Select an active field and click Refresh.</MudAlert>
+    }
+    else
+    {
+        @* ── Row 1: Work Orders + Gate Reviews ────────────────────────────── *@
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Work Orders</MudText>
+                <MudGrid>
+                    <MudItem xs="6">
+                        <KpiCard Label="Completion Rate"
+                                 Value="@($"{_summary.WorkOrder.CompletionRate:F1}")"
+                                 Unit="%"
+                                 Icon="@Icons.Material.Filled.CheckCircle"
+                                 ValueColor="@KpiColor(_summary.WorkOrder.CompletionRate, 80, 60)" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <KpiCard Label="On-Time Rate"
+                                 Value="@($"{_summary.WorkOrder.OnTimeCompletionRate:F1}")"
+                                 Unit="%"
+                                 Icon="@Icons.Material.Filled.Schedule"
+                                 ValueColor="@KpiColor(_summary.WorkOrder.OnTimeCompletionRate, 85, 70)" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <KpiCard Label="Overdue"
+                                 Value="@(_summary.WorkOrder.OverdueCount.ToString())"
+                                 Unit="WOs"
+                                 Icon="@Icons.Material.Filled.Warning"
+                                 ValueColor="@(_summary.WorkOrder.OverdueCount > 0 ? Color.Warning : Color.Success)" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <KpiCard Label="Mean Time to Close"
+                                 Value="@($"{_summary.WorkOrder.MeanTimeToCompleteHours:F0}")"
+                                 Unit="hrs"
+                                 Icon="@Icons.Material.Filled.HourglassBottom"
+                                 ValueColor="Color.Info" />
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Gate Reviews</MudText>
+                <MudGrid>
+                    <MudItem xs="6">
+                        <KpiCard Label="Pass Rate"
+                                 Value="@($"{_summary.GateReview.PassRate:F1}")"
+                                 Unit="%"
+                                 Icon="@Icons.Material.Filled.Gavel"
+                                 ValueColor="@KpiColor(_summary.GateReview.PassRate, 80, 60)" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <KpiCard Label="Avg Cycle Time"
+                                 Value="@($"{_summary.GateReview.AverageCycleTimeDays:F1}")"
+                                 Unit="days"
+                                 Icon="@Icons.Material.Filled.Timelapse"
+                                 ValueColor="Color.Info" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <KpiCard Label="Pending Gates"
+                                 Value="@(_summary.GateReview.PendingCount.ToString())"
+                                 Unit="gates"
+                                 Icon="@Icons.Material.Filled.PendingActions"
+                                 ValueColor="@(_summary.GateReview.PendingCount > 0 ? Color.Warning : Color.Success)" />
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+        </MudGrid>
+
+        @* ── Row 2: HSE + Compliance ─────────────────────────────────────── *@
+        <MudGrid>
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.subtitle1" Class="mb-2">HSE (API RP 754)</MudText>
+                <MudGrid>
+                    <MudItem xs="6">
+                        <KpiCard Label="PSE Tier 1 Rate"
+                                 Value="@($"{_summary.HSE.Tier1PSERate:F3}")"
+                                 Unit="per MM hrs"
+                                 Icon="@Icons.Material.Filled.LocalFireDepartment"
+                                 ValueColor="@(_summary.HSE.Tier1PSERate > 0.1 ? Color.Error : Color.Success)" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <KpiCard Label="PSE Tier 2 Rate"
+                                 Value="@($"{_summary.HSE.Tier2PSERate:F3}")"
+                                 Unit="per MM hrs"
+                                 Icon="@Icons.Material.Filled.ReportProblem"
+                                 ValueColor="@(_summary.HSE.Tier2PSERate > 0.5 ? Color.Warning : Color.Success)" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <KpiCard Label="TRIR"
+                                 Value="@($"{_summary.HSE.TRIR:F2}")"
+                                 Unit="per 200K hrs"
+                                 Icon="@Icons.Material.Filled.PersonOff"
+                                 ValueColor="@(_summary.HSE.TRIR > 1 ? Color.Error : Color.Success)" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <KpiCard Label="Near-Miss Rate"
+                                 Value="@($"{_summary.HSE.NearMissReportingRate:F1}")"
+                                 Unit="%"
+                                 Icon="@Icons.Material.Filled.NotificationsActive"
+                                 ValueColor="Color.Info" />
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudText Typo="Typo.subtitle1" Class="mb-2">Compliance</MudText>
+                <MudGrid>
+                    <MudItem xs="6">
+                        <KpiCard Label="On-Time Rate"
+                                 Value="@($"{_summary.Compliance.ObligationOnTimeRate:F1}")"
+                                 Unit="%"
+                                 Icon="@Icons.Material.Filled.FactCheck"
+                                 ValueColor="@KpiColor(_summary.Compliance.ObligationOnTimeRate, 90, 70)" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <KpiCard Label="Overdue Obligations"
+                                 Value="@(_summary.Compliance.OverdueObligations.ToString())"
+                                 Unit="items"
+                                 Icon="@Icons.Material.Filled.EventBusy"
+                                 ValueColor="@(_summary.Compliance.OverdueObligations > 0 ? Color.Error : Color.Success)" />
+                    </MudItem>
+                </MudGrid>
+            </MudItem>
+        </MudGrid>
+
+        @* ── Row 3: Production trend chart ──────────────────────────────── *@
+        <MudCard Elevation="2">
+            <MudCardContent Class="pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">Monthly Production (BOE)</MudText>
+                @if (_productionTrend.Count > 0)
+                {
+                    <MudChart ChartType="ChartType.Line"
+                              ChartSeries="@_chartSeries"
+                              XAxisLabels="@_chartLabels"
+                              Width="100%" Height="300px"
+                              ChartOptions="@_chartOptions" />
+                }
+                else
+                {
+                    <MudText Color="Color.Secondary">No production data in range.</MudText>
+                }
+            </MudCardContent>
+        </MudCard>
+    }
+</MudStack>
+
+@code {
+    private AnalyticsDashboardSummary? _summary;
+    private List<KPITrendPoint>        _productionTrend = new();
+    private bool   _loading       = false;
+    private int    _range         = 30;
+    private double _exposureHours = 1_000_000;
+    private string? _fieldName;
+
+    // Chart data
+    private List<ChartSeries<double>> _chartSeries = new();
+    private string[]                  _chartLabels = Array.Empty<string>();
+    private ChartOptions              _chartOptions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllAsync();
+    }
+
+    private async Task OnRangeChanged(int value)
+    {
+        _range = value;
+        await LoadAllAsync();
+    }
+
+    private async Task OnExposureChanged(double value)
+    {
+        _exposureHours = value;
+        await LoadAllAsync();
+    }
+
+    private async Task LoadAllAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            var summaryTask = ApiClient.GetAsync<AnalyticsDashboardSummary>(
+                $"/api/field/current/process/analytics/dashboard?days={_range}&exposureHours={_exposureHours}");
+            var trendTask = ApiClient.GetAsync<List<KPITrendPoint>>(
+                $"/api/field/current/process/analytics/production/trend?days={_range}");
+
+            await Task.WhenAll(summaryTask, trendTask);
+
+            _summary         = summaryTask.Result;
+            _productionTrend = trendTask.Result ?? new();
+            BuildChart();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Analytics load error: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void BuildChart()
+    {
+        if (_productionTrend.Count == 0)
+        {
+            _chartSeries = new();
+            _chartLabels = Array.Empty<string>();
+            return;
+        }
+
+        _chartLabels = _productionTrend.Select(p => p.PeriodLabel).ToArray();
+        _chartSeries = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double>
+            {
+                Name = "BOE",
+                Data = _productionTrend.Select(p => p.Value).ToArray()
+            }
+        };
+    }
+
+    private static Color KpiColor(double value, double good, double warn) =>
+        value >= good ? Color.Success : value >= warn ? Color.Warning : Color.Error;
+}

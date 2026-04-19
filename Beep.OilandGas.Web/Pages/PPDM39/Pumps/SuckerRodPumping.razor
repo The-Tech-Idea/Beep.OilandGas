@@ -1,15 +1,26 @@
 @page "/ppdm39/pumps/suckerrodpumping"
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.Pumps
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IPumpServiceClient PumpService
 
-<PageTitle>Sucker Rod Pumping</PageTitle>
+<PageTitle>Design Sucker Rod Pump System</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Sucker Rod Pumping Design & Analysis</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Design Sucker Rod Pump System</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — SRP sizing, stroke analysis and performance optimisation</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.SettingsInputComponent">Artificial Lift</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
 
     <MudPaper Class="pa-4">
         <MudText Typo="Typo.h6" Class="mb-4">Design Sucker Rod Pump System</MudText>
@@ -72,6 +83,7 @@
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private string _wellUWI = string.Empty;
     private decimal _wellDepth = 5000;
     private decimal _tubingDiameter = 2.5m;
@@ -82,8 +94,8 @@
     private bool _isDesigning = false;
     private bool _isAnalyzing = false;
     private bool _isLoading = false;
-    private SuckerRodPumpDesignDto? _pumpDesign;
-    private SuckerRodPumpPerformanceDto? _performance;
+    private SuckerRodPumpDesign? _pumpDesign;
+    private SuckerRodPumpPerformance? _performance;
     private string? _currentUserId = "system";
 
     private async Task DesignPump()
@@ -97,13 +109,11 @@
         _isDesigning = true;
         try
         {
-            var wellProperties = new SuckerRodPumpWellPropertiesDto
+            var wellProperties = new SuckerRodPumpWellProperties
             {
                 WellDepth = _wellDepth,
-                TubingDiameter = _tubingDiameter,
-                WellheadPressure = _wellheadPressure,
-                BottomHolePressure = _bottomHolePressure,
-                DesiredFlowRate = _desiredFlowRate
+                TubingSize = _tubingDiameter,
+                DesiredProductionRate = _desiredFlowRate
             };
 
             _pumpDesign = await PumpService.DesignSuckerRodPumpSystemAsync(_wellUWI, wellProperties);
@@ -165,4 +175,5 @@
         }
     }
 }
+
 

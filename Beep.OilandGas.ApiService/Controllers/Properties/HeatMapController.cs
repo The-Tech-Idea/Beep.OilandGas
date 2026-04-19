@@ -3,6 +3,7 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.HeatMap;
 using Beep.OilandGas.HeatMap.Configuration;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.HeatMap;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 
@@ -77,7 +78,9 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         {
             try
             {
-                var result = await _service.GenerateProductionHeatMapAsync(request.FieldId, request.StartDate, request.EndDate);
+                var startDate = request.StartDate ?? DateTime.UtcNow.AddDays(-30);
+                var endDate = request.EndDate ?? DateTime.UtcNow;
+                var result = await _service.GenerateProductionHeatMapAsync(request.FieldId, startDate, endDate);
                 return Ok(result);
             }
             catch (Exception ex)

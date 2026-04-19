@@ -1,0 +1,188 @@
+@page "/exploration"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Exploration — @_fieldName</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-6">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Monitor Exploration Activity</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Prospect portfolio &amp; well programmes</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Filled.Explore">Exploration</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick='() => NavigationManager.NavigateTo("/exploration/well-program/new")'>
+            New Well Program
+        </MudButton>
+    </MudStack>
+
+    @* ── Prospect Funnel KPIs ─────────────────────────────────────────────── *@
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="6" md="2">
+            <KpiCard Label="Active Leads"
+                     Value="@_leads.ToString()"
+                     ValueColor="Color.Default"
+                     Icon="@Icons.Material.Filled.Search" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <KpiCard Label="Prospects"
+                     Value="@_prospects.ToString()"
+                     ValueColor="Color.Info"
+                     Icon="@Icons.Material.Filled.Map" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <KpiCard Label="Drill Candidates"
+                     Value="@_drillCandidates.ToString()"
+                     ValueColor="Color.Primary"
+                     Icon="@Icons.Material.Filled.OilBarrel" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Exploratory Wells (YTD)"
+                     Value="@_exploratoryWells.ToString()"
+                     ValueColor="Color.Warning"
+                     Icon="@Icons.Material.Filled.Engineering" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Success Rate"
+                     Value="@_successRate.ToString("F0")"
+                     Unit="%"
+                     ValueColor="@(_successRate >= 30 ? Color.Success : Color.Error)"
+                     Icon="@Icons.Material.Filled.Stars"
+                     TrendText="discoveries / wells drilled" />
+        </MudItem>
+    </MudGrid>
+
+    @* ── Pending Decisions + Upcoming Programs ────────────────────────────── *@
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudIcon Icon="@Icons.Material.Filled.PendingActions" Color="Color.Warning" />
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Pending Decisions</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Gate reviews requiring action</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_pendingDecisions.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No pending decisions</MudText>
+                    }
+                    else
+                    {
+                        <MudList T="PendingDecision" Dense="true">
+                            @foreach (var d in _pendingDecisions)
+                            {
+                                <MudListItem T="PendingDecision">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.body2">@d.Name</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@d.Description</MudText>
+                                        </MudStack>
+                                        <StatusBadge Status="@d.Status" />
+                                    </MudStack>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Primary" />
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Upcoming Well Programs</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Programs pending approval or scheduling</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_upcomingPrograms.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No upcoming well programs</MudText>
+                    }
+                    else
+                    {
+                        <MudList T="WellProgramSummary" Dense="true">
+                            @foreach (var p in _upcomingPrograms)
+                            {
+                                <MudListItem T="WellProgramSummary">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                        <MudStack Spacing="0">
+                                            <MudText Typo="Typo.body2">@p.Name</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@p.TargetDate</MudText>
+                                        </MudStack>
+                                        <StatusBadge Status="@p.Status" />
+                                    </MudStack>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    @* ── Quick Actions ────────────────────────────────────────────────────── *@
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.ViewKanban"
+                   OnClick='() => NavigationManager.NavigateTo("/exploration/prospect-board")'>
+            Open Prospect Board
+        </MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Default"
+                   StartIcon="@Icons.Material.Filled.SatelliteAlt"
+                   OnClick='() => NavigationManager.NavigateTo("/exploration/seismic")'>
+            Seismic Surveys
+        </MudButton>
+    </MudStack>
+
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private int _leads = 8;
+    private int _prospects = 5;
+    private int _drillCandidates = 2;
+    private int _exploratoryWells = 4;
+    private double _successRate = 25;
+
+    private List<PendingDecision> _pendingDecisions = new();
+    private List<WellProgramSummary> _upcomingPrograms = new();
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with API call GET /api/exploration/dashboard-summary
+        _pendingDecisions = new List<PendingDecision>
+        {
+            new("Eagle Ford South Prospect", "Awaiting ranking committee", "REVIEW"),
+            new("Permian Basin Lead 3", "Screening criteria pending", "IN PROGRESS"),
+            new("North Sea Block 15", "Well program awaiting approval", "REVIEW"),
+        };
+
+        _upcomingPrograms = new List<WellProgramSummary>
+        {
+            new("EX-2026-001 / Eagle Ford S-1", "Q3 2026"),
+            new("EX-2026-002 / Permian Wildcat", "Q4 2026"),
+        };
+    }
+
+    private record PendingDecision(string Name, string Description, string Status);
+    private record WellProgramSummary(string Name, string TargetDate, string Status = "PLANNED");
+}

@@ -1,0 +1,324 @@
+@page "/ppdm39/seed-reference-data"
+@using Beep.OilandGas.Client.App
+@using Beep.OilandGas.Models.Core.Interfaces
+@using Beep.OilandGas.PPDM39.DataManagement.SeedData
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<PageTitle>Seed Reference Data</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+
+    <!-- Header -->
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Seed Reference Data</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Populate PPDM39 reference tables with standard values. All operations are idempotent — existing rows are never overwritten.
+            </MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   Href="/ppdm39/database-management">
+            Back to Connections
+        </MudButton>
+    </MudStack>
+
+    <!-- Status cards -->
+    @if (_status != null)
+    {
+        <MudGrid Class="mb-4">
+            <MudItem xs="12" sm="6" md="2">
+                <MudPaper Elevation="1" Class="pa-3">
+                    <MudStack Spacing="1">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">R_WELL_STATUS_TYPE</MudText>
+                        <MudText Typo="Typo.h5">@_status.FacetTypeCount</MudText>
+                        <MudText Typo="Typo.caption">rows</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudPaper Elevation="1" Class="pa-3">
+                    <MudStack Spacing="1">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">R_WELL_STATUS</MudText>
+                        <MudText Typo="Typo.h5">@_status.FacetValueCount</MudText>
+                        <MudText Typo="Typo.caption">rows</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudPaper Elevation="1" Class="pa-3">
+                    <MudStack Spacing="1">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">R_WELL_STATUS_QUAL</MudText>
+                        <MudText Typo="Typo.h5">@_status.QualifierCount</MudText>
+                        <MudText Typo="Typo.caption">rows</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudPaper Elevation="1" Class="pa-3">
+                    <MudStack Spacing="1">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">R_WELL_STATUS_QUAL_VALUE</MudText>
+                        <MudText Typo="Typo.h5">@_status.QualifierValueCount</MudText>
+                        <MudText Typo="Typo.caption">rows</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudPaper Elevation="1" Class="pa-3">
+                    <MudStack Spacing="1">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">RA_WELL_STATUS_TYPE</MudText>
+                        <MudText Typo="Typo.h5">@_status.RaFacetTypeCount</MudText>
+                        <MudText Typo="Typo.caption">rows</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudPaper Elevation="1" Class="pa-3">
+                    <MudStack Spacing="1">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">RA_WELL_STATUS</MudText>
+                        <MudText Typo="Typo.h5">@_status.RaFacetValueCount</MudText>
+                        <MudText Typo="Typo.caption">rows</MudText>
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+
+    <!-- Progress -->
+    @if (_busy)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    <!-- Seed category cards -->
+    <MudGrid Class="mb-4">
+
+        <!-- WSC v3 Facets -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.h6">WSC v3 Well Status Facets</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                Seeds all four R_WELL_STATUS* tables from the embedded WSC Release 3 catalog.
+                                Covers 13 STATUS_TYPE facets and their qualifier hierarchies.
+                            </MudText>
+                        </MudStack>
+                        @if (_status?.IsSeeded == true)
+                        {
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.CheckCircle">Seeded</MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Warning" Size="Size.Small" Icon="@Icons.Material.Filled.Warning">Not Seeded</MudChip>
+                        }
+                    </MudStack>
+                    <MudDivider />
+                    <MudStack Row="true" Spacing="1">
+                        <MudText Typo="Typo.caption">Tables: </MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">R_WELL_STATUS_TYPE · R_WELL_STATUS · R_WELL_STATUS_QUAL · R_WELL_STATUS_QUAL_VALUE</MudText>
+                    </MudStack>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.CloudUpload"
+                               Disabled="_busy"
+                               OnClick="SeedWellStatusFacetsAsync">
+                        Seed WSC v3 Facets
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Enum Reference Data -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudStack Spacing="2">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6">Standard Reference Enums</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            Seeds all enum-backed R_* reference tables (well type, fluid type, unit of measure, etc.)
+                            using the standard PPDM value set.
+                        </MudText>
+                    </MudStack>
+                    <MudDivider />
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Populates: all R_* LOV / reference tables</MudText>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.CloudUpload"
+                               Disabled="_busy"
+                               OnClick="SeedEnumReferenceDataAsync">
+                        Seed Enum Reference Data
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Seed All button -->
+    <MudPaper Elevation="1" Class="pa-4 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.subtitle1">Seed All Reference Data</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Runs both seeding operations in sequence.</MudText>
+            </MudStack>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       StartIcon="@Icons.Material.Filled.RocketLaunch"
+                       Disabled="_busy"
+                       OnClick="SeedAllReferenceDataAsync">
+                Seed All Reference Data
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+
+    <!-- Results panel -->
+    @if (_lastResult != null)
+    {
+        <MudExpansionPanels>
+            <MudExpansionPanel Text="@($"Last Operation: {(_lastResult.Success ? "Success" : "Partial/Failed")} — {_lastResult.TotalInserted} rows inserted")"
+                               IsInitiallyExpanded="@(!_lastResult.Success)">
+                @if (_lastResult.Details?.Count > 0)
+                {
+                    <MudText Typo="Typo.subtitle2" Class="mb-2">Details</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var detail in _lastResult.Details)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Info">@detail</MudListItem>
+                        }
+                    </MudList>
+                }
+                @if (_lastResult.Errors?.Count > 0)
+                {
+                    <MudText Typo="Typo.subtitle2" Color="Color.Error" Class="mt-2 mb-2">Errors</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var error in _lastResult.Errors)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Error" IconColor="Color.Error">@error</MudListItem>
+                        }
+                    </MudList>
+                }
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    }
+
+</MudContainer>
+
+@code {
+    private FacetSeedStatus? _status;
+    private SeedingOperationResult? _lastResult;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStatusAsync();
+    }
+
+    private async Task LoadStatusAsync()
+    {
+        try
+        {
+            _status = await ApiClient.GetAsync<FacetSeedStatus>(
+                "/api/ppdm39/setup/seed/well-status-facets/status");
+        }
+        catch
+        {
+            // Status endpoint is optional; silently skip if unavailable.
+        }
+    }
+
+    private async Task SeedWellStatusFacetsAsync()
+    {
+        _busy = true;
+        _lastResult = null;
+        StateHasChanged();
+        try
+        {
+            var raw = await ApiClient.PostAsync<object, FacetSeedResult>(
+                "/api/ppdm39/setup/seed/well-status-facets", new { });
+
+            _lastResult = raw == null ? null : new SeedingOperationResult
+            {
+                Success       = raw.Success,
+                Message       = raw.Message,
+                TotalInserted = raw.TotalInserted,
+                Details       = new List<string>
+                {
+                    $"R_WELL_STATUS_TYPE:       {raw.FacetTypeRows} rows",
+                    $"R_WELL_STATUS:            {raw.FacetValueRows} rows",
+                    $"R_WELL_STATUS_QUAL:       {raw.FacetQualifierRows} rows",
+                    $"R_WELL_STATUS_QUAL_VALUE: {raw.FacetQualValueRows} rows"
+                },
+                Errors = raw.Errors ?? new()
+            };
+
+            if (raw?.Success == true)
+                Snackbar.Add($"WSC v3 facets seeded — {raw.TotalInserted} rows inserted.", Severity.Success);
+            else
+                Snackbar.Add(raw?.Message ?? "Seeding failed.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+            await LoadStatusAsync();
+        }
+    }
+
+    private async Task SeedEnumReferenceDataAsync()
+    {
+        _busy = true;
+        _lastResult = null;
+        StateHasChanged();
+        try
+        {
+            _lastResult = await ApiClient.PostAsync<object, SeedingOperationResult>(
+                "/api/ppdm39/setup/seed/enum-reference-data", new { });
+
+            if (_lastResult?.Success == true)
+                Snackbar.Add($"Enum reference data seeded — {_lastResult.TotalInserted} rows inserted.", Severity.Success);
+            else
+                Snackbar.Add(_lastResult?.Message ?? "Seeding failed.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task SeedAllReferenceDataAsync()
+    {
+        _busy = true;
+        _lastResult = null;
+        StateHasChanged();
+        try
+        {
+            _lastResult = await ApiClient.PostAsync<object, SeedingOperationResult>(
+                "/api/ppdm39/setup/seed/all-reference-data", new { });
+
+            if (_lastResult?.Success == true)
+                Snackbar.Add($"All reference data seeded — {_lastResult.TotalInserted} rows inserted.", Severity.Success);
+            else
+                Snackbar.Add(_lastResult?.Message ?? "Seeding partially failed — check details.", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+            await LoadStatusAsync();
+        }
+    }
+}

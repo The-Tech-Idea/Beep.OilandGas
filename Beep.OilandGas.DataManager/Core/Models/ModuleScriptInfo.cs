@@ -26,6 +26,8 @@ namespace Beep.OilandGas.DataManager.Core.Models
         /// Whether this script contains multiple tables (consolidated script)
         /// </summary>
         public bool IsConsolidated { get; set; }
+
+        public string? ModuleName { get; set; }
         
         public int ExecutionOrder { get; set; }
         public List<string> Dependencies { get; set; } = new List<string>();

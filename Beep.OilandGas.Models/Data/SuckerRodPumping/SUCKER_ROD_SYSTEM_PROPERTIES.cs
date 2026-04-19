@@ -128,5 +128,12 @@ namespace Beep.OilandGas.Models.Data.SuckerRodPumping
 
         // Standard PPDM columns
 
+        private Decimal PUMP_SETTING_DEPTHValue;
+        public Decimal PUMP_SETTING_DEPTH
+        {
+            get { return this.PUMP_SETTING_DEPTHValue; }
+            set { SetProperty(ref PUMP_SETTING_DEPTHValue, value); }
+        }
+
     }
 }

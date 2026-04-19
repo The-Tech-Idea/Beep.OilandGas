@@ -2,6 +2,7 @@
 @using System.Collections.Generic
 @using System.Linq
 @using MudBlazor
+@using Microsoft.AspNetCore.Components.Rendering
 @using Beep.OilandGas.PPDM39.Core.Metadata
 
 <EditForm Model="@Entity" OnValidSubmit="@OnValidSubmit" OnInvalidSubmit="@OnInvalidSubmit">
@@ -80,13 +81,14 @@
     private void ApplyDefaultValues()
     {
         if (Entity == null) return;
+        if (DefaultValues == null) return;
         
         foreach (var defaultValue in DefaultValues)
         {
-            var currentValue = GetPropertyValue(Entity, defaultValue.Key);
+            var currentValue = GetPropertyValue(Entity!, defaultValue.Key);
             if (currentValue == null || (currentValue is string str && string.IsNullOrWhiteSpace(str)))
             {
-                SetPropertyValue(Entity, defaultValue.Key, defaultValue.Value);
+                SetPropertyValue(Entity!, defaultValue.Key, defaultValue.Value);
             }
         }
     }
@@ -132,7 +134,7 @@
             !string.IsNullOrWhiteSpace(TableMetadata.PrimaryKeyColumn) &&
             TableMetadata.PrimaryKeyColumn.Equals(fieldName, StringComparison.OrdinalIgnoreCase))
         {
-            var idValue = GetPropertyValue(Entity, fieldName);
+            var idValue = GetPropertyValue(Entity!, fieldName);
             return idValue != null && !string.IsNullOrWhiteSpace(idValue.ToString());
         }
         
@@ -155,7 +157,7 @@
             var label = GetFieldLabel(fieldName);
             var placeholder = GetFieldPlaceholder(fieldName);
             var helpText = GetFieldHelpText(fieldName);
-            var currentValue = GetPropertyValue(Entity, fieldName);
+            var currentValue = GetPropertyValue(Entity!, fieldName);
             
             // Check if this field has predefined options (dropdown)
             if (FieldOptions != null && FieldOptions.ContainsKey(fieldName))

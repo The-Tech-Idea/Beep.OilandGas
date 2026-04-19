@@ -5,10 +5,10 @@
 
 <PageTitle>External Logins - Beep Oil & Gas</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-2" Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-text-primary);">
-    <span style="color: var(--mud-palette-success);">$</span> auth --external
+<MudText Typo="Typo.h4" Class="og-terminal-heading mb-2">
+    <span class="og-terminal-success">$</span> auth --external
 </MudText>
-<MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+<MudText Typo="Typo.body2" Class="mb-6" Color="Color.Secondary">
     Manage your linked external login providers
 </MudText>
 
@@ -16,27 +16,26 @@
 {
     <MudStack AlignItems="AlignItems.Center" Class="pa-8">
         <MudProgressCircular Color="Color.Success" Indeterminate="true" />
-        <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); font-family: 'JetBrains Mono', monospace;" Class="mt-4">
+        <MudText Typo="Typo.body2" Class="og-terminal-code mt-4" Color="Color.Secondary">
             Loading external logins...
         </MudText>
     </MudStack>
 }
 else if (loginsInfo == null)
 {
-    <MudPaper Elevation="0" Class="pa-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-error); border-radius: 8px;">
+    <MudPaper Elevation="0" Class="og-terminal-card-error pa-6">
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
             <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
             <div>
-                <MudText Typo="Typo.h6" Style="color: var(--mud-palette-error); font-family: 'JetBrains Mono', monospace;">
+                <MudText Typo="Typo.h6" Class="og-terminal-code" Color="Color.Error">
                     // Error: EXTERNAL_LOGINS_FAILED
                 </MudText>
-                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
                     Failed to load external logins. Please try again.
                 </MudText>
             </div>
         </MudStack>
-        <MudButton Variant="Variant.Outlined" Color="Color.Error" Class="mt-4" OnClick="LoadLoginsAsync"
-                   Style="font-family: 'JetBrains Mono', monospace;">
+        <MudButton Variant="Variant.Outlined" Color="Color.Error" Class="mt-4 og-terminal-code" OnClick="LoadLoginsAsync">
             retry()
         </MudButton>
     </MudPaper>
@@ -44,9 +43,9 @@ else if (loginsInfo == null)
 else
 {
     <!-- Current Logins -->
-    <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
-        <MudText Typo="Typo.subtitle1" Class="mb-4" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
-            <MudIcon Icon="@Icons.Material.Filled.Link" Class="mr-2" Style="vertical-align: middle;" />
+    <MudPaper Elevation="0" Class="og-terminal-card pa-4 mb-4">
+        <MudText Typo="Typo.subtitle1" Class="mb-4 og-terminal-code">
+            <MudIcon Icon="@Icons.Material.Filled.Link" Class="mr-2 og-vertical-middle" />
             Linked Accounts
         </MudText>
         
@@ -56,18 +55,18 @@ else
                 @foreach (var login in loginsInfo.CurrentLogins)
                 {
                     <MudItem xs="12" md="6">
-                        <MudPaper Elevation="0" Class="pa-3" Style="background: var(--mud-palette-dark); border: 1px solid var(--mud-palette-divider); border-radius: 6px;">
+                        <MudPaper Elevation="0" Class="og-ext-login-card pa-3">
                             <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                                    <MudAvatar Style="background: var(--mud-palette-surface);">
+                                    <MudAvatar Class="og-avatar-surface">
                                         <MudIcon Icon="@GetProviderIcon(login.Provider)" Color="Color.Info" />
                                     </MudAvatar>
                                     <div>
-                                        <MudText Typo="Typo.subtitle2" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
+                                        <MudText Typo="Typo.subtitle2" Class="og-terminal-code">
                                             @login.DisplayName
                                         </MudText>
-                                        <MudText Typo="Typo.caption" Style="color: var(--mud-palette-success);">
-                                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Style="vertical-align: middle;" />
+                                        <MudText Typo="Typo.caption" Color="Color.Success">
+                                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" Class="og-vertical-middle" />
                                             connected
                                         </MudText>
                                     </div>
@@ -76,7 +75,8 @@ else
                                 @if (loginsInfo.ShowRemoveButton)
                                 {
                                     <MudTooltip Text="unlink()">
-                                        <MudIconButton Icon="@Icons.Material.Filled.LinkOff" 
+                                        <MudIconButton Icon="@Icons.Material.Filled.LinkOff"
+                                                       Title="Remove external login"
                                                        Color="Color.Error" 
                                                        Size="Size.Small"
                                                        OnClick="@(() => RemoveLoginAsync(login))"
@@ -91,10 +91,10 @@ else
         }
         else
         {
-            <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-dark); border: 1px dashed var(--mud-palette-divider); border-radius: 6px;">
+            <MudPaper Elevation="0" Class="og-ext-login-empty pa-4">
                 <MudStack AlignItems="AlignItems.Center">
-                    <MudIcon Icon="@Icons.Material.Filled.LinkOff" Size="Size.Large" Style="color: var(--mud-palette-text-secondary);" />
-                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary); font-family: 'JetBrains Mono', monospace;">
+                    <MudIcon Icon="@Icons.Material.Filled.LinkOff" Size="Size.Large" Color="Color.Secondary" />
+                    <MudText Typo="Typo.body2" Class="og-terminal-code" Color="Color.Secondary">
                         // No external logins linked
                     </MudText>
                 </MudStack>
@@ -105,12 +105,12 @@ else
     <!-- Available Providers -->
     @if (loginsInfo.AvailableProviders.Any())
     {
-        <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
-            <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: var(--mud-palette-text-primary); font-family: 'JetBrains Mono', monospace;">
-                <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-2" Style="vertical-align: middle;" />
+        <MudPaper Elevation="0" Class="og-terminal-card pa-4">
+            <MudText Typo="Typo.subtitle1" Class="mb-2 og-terminal-code">
+                <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-2 og-vertical-middle" />
                 Available Providers
             </MudText>
-            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
                 Link additional login providers for easier access to your account.
             </MudText>
             
@@ -121,16 +121,16 @@ else
                         <MudButton Variant="Variant.Outlined" 
                                    FullWidth="true"
                                    StartIcon="@GetProviderIcon(provider.Name)"
-                                   Style="border-color: var(--mud-palette-divider); color: var(--mud-palette-text-primary); justify-content: flex-start; font-family: 'JetBrains Mono', monospace; text-transform: none;">
+                                   Class="og-terminal-code og-ext-provider-btn">
                             link_@(provider.Name.ToLower())()
                         </MudButton>
                     </MudItem>
                 }
             </MudGrid>
             
-            <MudPaper Elevation="0" Class="pa-3 mt-4" Style="background: var(--mud-palette-dark); border-left: 3px solid var(--mud-palette-info); border-radius: 4px;">
-                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-info);">
-                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-2" Style="vertical-align: middle;" />
+            <MudPaper Elevation="0" Class="og-terminal-info-section pa-3 mt-4">
+                <MudText Typo="Typo.body2" Color="Color.Info">
+                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Class="mr-2 og-vertical-middle" />
                     To link a new provider, you'll be redirected to their login page.
                 </MudText>
             </MudPaper>
@@ -139,9 +139,9 @@ else
     
     @if (!loginsInfo.ShowRemoveButton && loginsInfo.CurrentLogins.Any())
     {
-        <MudPaper Elevation="0" Class="pa-3 mt-4" Style="background: var(--mud-palette-dark); border-left: 3px solid var(--mud-palette-warning); border-radius: 4px;">
-            <MudText Typo="Typo.body2" Style="color: var(--mud-palette-warning);">
-                <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-2" Style="vertical-align: middle;" />
+        <MudPaper Elevation="0" Class="og-terminal-warning-section pa-3 mt-4">
+            <MudText Typo="Typo.body2" Color="Color.Warning">
+                <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="mr-2 og-vertical-middle" />
                 You cannot remove your only login method. Set a password or add another external login first.
             </MudText>
         </MudPaper>

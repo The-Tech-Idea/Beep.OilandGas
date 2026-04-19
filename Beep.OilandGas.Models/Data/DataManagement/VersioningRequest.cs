@@ -51,5 +51,16 @@ namespace Beep.OilandGas.Models.Data.DataManagement
             set { SetProperty(ref UserIdValue, value); }
 
         }
+        private string? VersionLabelValue;
+
+        public string? VersionLabel
+
+        {
+
+            get { return this.VersionLabelValue; }
+
+            set { SetProperty(ref VersionLabelValue, value); }
+
+        }
     }
 }

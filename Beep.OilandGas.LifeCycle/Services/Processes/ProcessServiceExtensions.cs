@@ -353,9 +353,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 .Where(s => s.SequenceNumber < stepInstance.SequenceNumber)
                 .ToList();
 
-            // For now, allow execution if step is pending
-            // More complex logic can be added here based on step dependencies
-            return true;
+            // All preceding steps must be completed before this step can run
+            return previousSteps.All(s => s.Status == StepStatus.COMPLETED);
         }
 
         #endregion

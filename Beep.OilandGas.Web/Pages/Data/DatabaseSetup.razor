@@ -39,7 +39,7 @@
         var dialog = await DialogService.ShowAsync<PPDM39DatabaseWizard>("PPDM39 Database Setup Wizard", parameters, options);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (result?.Canceled == false)
         {
             Snackbar.Add("Database setup completed successfully", Severity.Success);
         }

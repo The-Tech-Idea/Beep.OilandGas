@@ -143,14 +143,71 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         /// <summary>
         /// Retrieves flash conditions from PPDM for a well or facility
         /// </summary>
-        private Task<FLASH_CONDITIONS> GetFlashConditionsFromPPDMAsync(string wellId, string facilityId)
+        private async Task<FLASH_CONDITIONS> GetFlashConditionsFromPPDMAsync(string wellId, string facilityId)
         {
-            _logger?.LogWarning("Flash conditions retrieval from PPDM is not implemented. " +
-                "Provide Pressure, Temperature, and FeedComposition in the request.");
+            var conditions = new FLASH_CONDITIONS
+            {
+                PRESSURE = 1000m,        // default 1000 psi
+                TEMPERATURE = 150m,      // default 150 °F
+                FEED_COMPOSITION = new List<Beep.OilandGas.Models.Data.FlashCalculations.FLASH_COMPONENT>()
+            };
 
-            return Task.FromException<FLASH_CONDITIONS>(new InvalidOperationException(
-                "Flash conditions retrieval from PPDM is not implemented. " +
-                "Provide Pressure, Temperature, and FeedComposition in the request."));
+            try
+            {
+                if (!string.IsNullOrEmpty(wellId))
+                {
+                    // Try WELL_PRESSURE_BH for wellhead pressure and bottom-hole temperature
+                    var bhMeta = await _metadata.GetTableMetadataAsync("WELL_PRESSURE_BH");
+                    if (bhMeta != null)
+                    {
+                        var bhType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{bhMeta.EntityTypeName}") ?? typeof(WELL_PRESSURE_BH);
+                        var bhRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, bhType, _connectionName, "WELL_PRESSURE_BH");
+                        var bhFilters = new List<AppFilter>
+                        {
+                            new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
+                            new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                        };
+                        var bhResults = await bhRepo.GetAsync(bhFilters);
+                        var bhRecord = bhResults?.OfType<WELL_PRESSURE_BH>().OrderByDescending(r => r.SURVEY_DATE).FirstOrDefault();
+                        if (bhRecord != null)
+                        {
+                            if (bhRecord.WELL_HEAD_PRESSURE > 0) conditions.PRESSURE = bhRecord.WELL_HEAD_PRESSURE;
+                            if (bhRecord.RUN_DEPTH_TEMPERATURE > 0) conditions.TEMPERATURE = bhRecord.RUN_DEPTH_TEMPERATURE;
+                        }
+                    }
+
+                    // Fall back to WELL_TEST for temperature/pressure if BH data missing
+                    if (conditions.PRESSURE == 1000m || conditions.TEMPERATURE == 150m)
+                    {
+                        var wtMeta = await _metadata.GetTableMetadataAsync("WELL_TEST");
+                        if (wtMeta != null)
+                        {
+                            var wtType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{wtMeta.EntityTypeName}") ?? typeof(WELL_TEST);
+                            var wtRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, wtType, _connectionName, "WELL_TEST");
+                            var wtFilters = new List<AppFilter>
+                            {
+                                new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
+                                new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                            };
+                            var wtResults = await wtRepo.GetAsync(wtFilters);
+                            var wtRecord = wtResults?.OfType<WELL_TEST>().OrderByDescending(t => t.TEST_DATE).FirstOrDefault();
+                            if (wtRecord != null)
+                            {
+                                if (conditions.PRESSURE == 1000m && wtRecord.FLOW_PRESSURE > 0) conditions.PRESSURE = wtRecord.FLOW_PRESSURE;
+                                if (conditions.TEMPERATURE == 150m && wtRecord.FLOW_TEMPERATURE > 0) conditions.TEMPERATURE = wtRecord.FLOW_TEMPERATURE;
+                            }
+                        }
+                    }
+                }
+
+                _logger?.LogInformation("Flash conditions retrieved for WellId: {WellId}, P={Pressure}, T={Temperature}", wellId, conditions.PRESSURE, conditions.TEMPERATURE);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Could not retrieve flash conditions from PPDM for WellId: {WellId}; using defaults", wellId);
+            }
+
+            return conditions;
         }
 
         /// <summary>

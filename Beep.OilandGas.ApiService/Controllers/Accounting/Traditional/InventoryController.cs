@@ -3,11 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data.Accounting;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.ProductionAccounting.GeneralLedger;
+using Beep.OilandGas.Models.Data.Inventory;
+using Beep.OilandGas.Accounting.Services;
 using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.ApiService.Exceptions;
-using Beep.OilandGas.Models.Data.Accounting.Traditional;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
@@ -50,7 +51,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
                 var transaction = _service.TraditionalAccounting.Inventory.CreateTransaction(
                     request.InventoryItemId,
                     request.TransactionType,
-                    request.TransactionDate ?? DateTime.UtcNow,
+                    request.TransactionDate,
                     request.Quantity,
                     request.UnitCost,
                     request.Description ?? "",

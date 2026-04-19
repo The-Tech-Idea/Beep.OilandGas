@@ -6,6 +6,18 @@ namespace Beep.OilandGas.Models.Data.Storage
 {
     public class CreateStorageFacilityRequest : ModelEntityBase
     {
+        private string? FacilityIdValue;
+
+        public string? FacilityId
+
+        {
+
+            get { return this.FacilityIdValue; }
+
+            set { SetProperty(ref FacilityIdValue, value); }
+
+        }
+
         private string FacilityNameValue;
 
         public string FacilityName

@@ -68,7 +68,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                     try
                     {
                         _progressTracking?.UpdateProgress(operationId!, 20, "Fetching production data...");
-                        var dcaResult = await _calculationService.PerformDCAAnalysisAsync(request, operationId, _progressTracking);
+                        var dcaResult = await _calculationService.PerformDCAAnalysisAsync(request);
                         _progressTracking?.UpdateProgress(operationId!, 90, "Saving calculation results...");
                         return dcaResult;
                     }

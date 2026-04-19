@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,7 +17,7 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
     /// Provides design, performance analysis, efficiency analysis, maintenance prediction,
     /// pressure-flow analysis, and power analysis for both centrifugal and reciprocating compressors.
     /// </summary>
-    public class CompressorAnalysisService
+    public partial class CompressorAnalysisService
     {
         private readonly ILogger<CompressorAnalysisService>? _logger;
 

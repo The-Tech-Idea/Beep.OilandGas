@@ -1,0 +1,591 @@
+@page "/ppdm39/well/classify"
+@using Beep.OilandGas.PPDM39.Models
+@using Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Classify Well Status</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Classify Well Status</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Assign WSC v3 faceted taxonomy — one STATUS_TYPE per tab
+            </MudText>
+        </MudStack>
+        @if (_well != null)
+        {
+            <MudChip T="string" Color="Color.Primary" Icon="@Icons.Material.Filled.OilBarrel" Size="Size.Medium">
+                @_well.UWI — @(_well.WELL_NAME ?? "Unnamed")
+            </MudChip>
+        }
+    </MudStack>
+
+    @* ── UWI Search ──────────────────────────────────────────────────────── *@
+    <MudCard Elevation="1" Class="mb-4">
+        <MudCardContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudTextField @bind-Value="_searchUwi"
+                              Label="Well UWI"
+                              Placeholder="Enter unique well identifier"
+                              Variant="Variant.Outlined"
+                              Immediate="true"
+                              OnKeyDown="OnSearchKeyDown"
+                              Class="flex-grow-1" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Search"
+                           Disabled="@(_isLoading || string.IsNullOrWhiteSpace(_searchUwi))"
+                           OnClick="LoadWellAsync">
+                    Load Well
+                </MudButton>
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ── No well loaded yet ──────────────────────────────────────────────── *@
+    @if (_facets == null && !_isLoading)
+    {
+        <MudPaper Elevation="0" Class="pa-8 d-flex flex-column align-center justify-center">
+            <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Color="Color.Secondary" Size="Size.Large" Class="mb-3" />
+            <MudText Typo="Typo.h6">Enter a UWI to begin classifying</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-1">
+                Each tab corresponds to one PPDM WSC v3 STATUS_TYPE facet.
+            </MudText>
+        </MudPaper>
+    }
+
+    @* ── Facet tabs ──────────────────────────────────────────────────────── *@
+    @if (_facets != null && _facets.Count > 0)
+    {
+        <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true"
+                 @bind-ActivePanelIndex="_activeTab" Color="Color.Primary"
+                 TabHeaderClass="pa-2" KeepPanelsAlive="true">
+
+            @for (int i = 0; i < _facets.Count; i++)
+            {
+                var facet = _facets[i];
+                var tabIndex = i;
+                var currentVal = facet.CurrentValue;
+                var hasCurrent = currentVal != null;
+
+                <MudTabPanel Text="@facet.StatusType"
+                             Icon="@GetFacetIcon(facet.StatusType)"
+                             BadgeData="@(hasCurrent ? "✓" : null)"
+                             BadgeColor="Color.Success">
+
+                    <MudStack Spacing="3" Class="pa-4">
+
+                        @* ── Facet type description ───────────────────────────────── *@
+                        <MudPaper Elevation="0" Class="pa-3 mud-background-gray rounded">
+                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Start">
+                                <MudIcon Icon="@Icons.Material.Outlined.Info" Color="Color.Info" Size="Size.Small" Class="mt-1" />
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.subtitle2">@facet.StatusType
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Class="ml-2">
+                                            Scope: @(facet.Scope ?? "Well")
+                                        </MudChip>
+                                    </MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@facet.LongName</MudText>
+                                </MudStack>
+                            </MudStack>
+                        </MudPaper>
+
+                        @* ── Current value chip ───────────────────────────────────── *@
+                        @if (hasCurrent)
+                        {
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-1">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Current:</MudText>
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small"
+                                         Icon="@Icons.Material.Filled.CheckCircle">
+                                    @currentVal.StatusName
+                                    @if (!string.IsNullOrWhiteSpace(currentVal.WellStatus?.STATUS_QUALIFIER))
+                                    {
+                                        <text> — @currentVal.WellStatus.STATUS_QUALIFIER</text>
+                                    }
+                                </MudChip>
+                                @if (currentVal.EffectiveDate.HasValue)
+                                {
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        since @currentVal.EffectiveDate.Value.ToString("dd MMM yyyy")
+                                        @if (currentVal.DaysInCurrentStatus > 0)
+                                        {
+                                            <text> (@currentVal.DaysInCurrentStatus d)</text>
+                                        }
+                                    </MudText>
+                                }
+                                @if (currentVal.ExpiryDate.HasValue)
+                                {
+                                    <MudChip T="string" Color="Color.Warning" Size="Size.Small">
+                                        expires @currentVal.ExpiryDate.Value.ToString("dd MMM yyyy")
+                                    </MudChip>
+                                }
+                            </MudStack>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Default" Size="Size.Small"
+                                     Icon="@Icons.Material.Filled.RadioButtonUnchecked">
+                                Not yet assigned
+                            </MudChip>
+                        }
+
+                        <MudDivider />
+
+                        @* ── Assignment form ──────────────────────────────────────── *@
+                        <MudForm @ref="_forms[tabIndex]" @bind-IsValid="_formValid[tabIndex]">
+                            <MudGrid>
+                                @* STATUS value *@
+                                <MudItem xs="12" md="6">
+                                    <MudSelect T="string"
+                                               Value="_requests[tabIndex].Status"
+                                               Label="@($"Select {facet.StatusType}")"
+                                               Variant="Variant.Outlined"
+                                               Required="true" RequiredError="A status value is required"
+                                               AnchorOrigin="Origin.BottomLeft"
+                                               Clearable="true"
+                                               HelperText="Choose from the valid WSC v3 values"
+                                               ValueChanged="s => OnStatusChanged(tabIndex, facet, s)">
+                                        @foreach (var val in facet.Values)
+                                        {
+                                            <MudSelectItem T="string" Value="@val.Status">
+                                                <MudStack Spacing="0">
+                                                    <MudText Typo="Typo.body2">
+                                                        <b>@val.Status</b>
+                                                        @if (!string.IsNullOrWhiteSpace(val.Abbreviation))
+                                                        {
+                                                            <text> (@val.Abbreviation)</text>
+                                                        }
+                                                    </MudText>
+                                                    @if (!string.IsNullOrWhiteSpace(val.LongName))
+                                                    {
+                                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                            @val.LongName
+                                                        </MudText>
+                                                    }
+                                                </MudStack>
+                                            </MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+
+                                @* STATUS_QUALIFIER — only shown when available for the selected status *@
+                                @if (_qualifiers.TryGetValue(tabIndex, out var quals) && quals.Count > 0)
+                                {
+                                    <MudItem xs="12" md="6">
+                                        <MudSelect T="string"
+                                                   @bind-Value="_requests[tabIndex].StatusQualifier"
+                                                   Label="Qualifier"
+                                                   Variant="Variant.Outlined"
+                                                   AnchorOrigin="Origin.BottomLeft"
+                                                   Clearable="true"
+                                                   HelperText="Optional — refines the selected status">
+                                            @foreach (var q in quals)
+                                            {
+                                                <MudSelectItem T="string" Value="@q.Qualifier">
+                                                    <MudStack Spacing="0">
+                                                        <MudText Typo="Typo.body2"><b>@q.Qualifier</b></MudText>
+                                                        @if (!string.IsNullOrWhiteSpace(q.LongName))
+                                                        {
+                                                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                                @q.LongName
+                                                            </MudText>
+                                                        }
+                                                    </MudStack>
+                                                </MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudItem>
+                                }
+
+                                @* EFFECTIVE_DATE *@
+                                <MudItem xs="12" sm="6" md="3">
+                                    <MudDatePicker @bind-Date="_effectiveDates[tabIndex]"
+                                                   Label="Effective Date"
+                                                   Variant="Variant.Outlined"
+                                                   DateFormat="dd/MM/yyyy"
+                                                   HelperText="Date this status becomes active" />
+                                </MudItem>
+
+                                @* EXPIRY_DATE *@
+                                <MudItem xs="12" sm="6" md="3">
+                                    <MudDatePicker @bind-Date="_expiryDates[tabIndex]"
+                                                   Label="Expiry Date"
+                                                   Variant="Variant.Outlined"
+                                                   DateFormat="dd/MM/yyyy"
+                                                   Clearable="true"
+                                                   HelperText="Leave blank for open-ended (currently active)" />
+                                </MudItem>
+
+                                @* PERCENT_CAPABILITY *@
+                                <MudItem xs="12" sm="6" md="3">
+                                    <MudNumericField T="decimal?"
+                                                     @bind-Value="_requests[tabIndex].PercentCapability"
+                                                     Label="Capability %"
+                                                     Variant="Variant.Outlined"
+                                                     Min="0" Max="100"
+                                                     HelperText="Optional — operational capability (0–100)" />
+                                </MudItem>
+
+                                @* REMARK *@
+                                <MudItem xs="12">
+                                    <MudTextField @bind-Value="_requests[tabIndex].Remark"
+                                                  Label="Remark"
+                                                  Variant="Variant.Outlined"
+                                                  Lines="2"
+                                                  MaxLength="2000"
+                                                  Counter="2000"
+                                                  HelperText="Optional free-text note stored in WELL_STATUS.REMARK" />
+                                </MudItem>
+                            </MudGrid>
+                        </MudForm>
+
+                        @* ── History table for this facet ─────────────────────────── *@
+                        @{
+                            var history = _statusHistory
+                                .Where(h => string.Equals(h.STATUS_TYPE, facet.StatusType, StringComparison.OrdinalIgnoreCase))
+                                .OrderByDescending(h => h.EFFECTIVE_DATE)
+                                .ToList();
+                        }
+                        @if (history.Any())
+                        {
+                            <MudExpansionPanels Elevation="0">
+                                <MudExpansionPanel Text="@($"History ({history.Count} records)")"
+                                                   Icon="@Icons.Material.Filled.History"
+                                                   Dense="true">
+                                    <MudSimpleTable Dense="true" Hover="true" Class="mt-2">
+                                        <thead>
+                                            <tr>
+                                                <th>Status</th>
+                                                <th>Qualifier</th>
+                                                <th>Effective</th>
+                                                <th>Expiry</th>
+                                                <th>Source</th>
+                                                <th>Remark</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var h in history)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <StatusBadge Status="@(h.STATUS ?? h.STATUS_ID ?? "—")" />
+                                                    </td>
+                                                    <td>
+                                                        <MudText Typo="Typo.caption">
+                                                            @(h.STATUS_QUALIFIER ?? "—")
+                                                            @if (!string.IsNullOrWhiteSpace(h.STATUS_QUALIFIER_VALUE))
+                                                            {
+                                                                <text> / @h.STATUS_QUALIFIER_VALUE</text>
+                                                            }
+                                                        </MudText>
+                                                    </td>
+                                                    <td><MudText Typo="Typo.caption">@(h.EFFECTIVE_DATE?.ToString("dd MMM yyyy") ?? "—")</MudText></td>
+                                                    <td>
+                                                        @if (h.EXPIRY_DATE.HasValue)
+                                                        {
+                                                            <MudText Typo="Typo.caption" Color="@(h.EXPIRY_DATE < DateTime.Now ? Color.Default : Color.Warning)">
+                                                                @h.EXPIRY_DATE.Value.ToString("dd MMM yyyy")
+                                                            </MudText>
+                                                        }
+                                                        else
+                                                        {
+                                                            <MudChip T="string" Size="Size.Small" Color="Color.Success">Active</MudChip>
+                                                        }
+                                                    </td>
+                                                    <td><MudText Typo="Typo.caption">@(h.SOURCE ?? "—")</MudText></td>
+                                                    <td><MudText Typo="Typo.caption">@(h.REMARK ?? "—")</MudText></td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </MudSimpleTable>
+                                </MudExpansionPanel>
+                            </MudExpansionPanels>
+                        }
+
+                        @* ── Save button ──────────────────────────────────────────── *@
+                        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-2">
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Default"
+                                       StartIcon="@Icons.Material.Filled.Refresh"
+                                       Disabled="@_isLoading"
+                                       OnClick="() => ResetTab(tabIndex, facet)">
+                                Reset
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Save"
+                                       Disabled="@(_isLoading || string.IsNullOrWhiteSpace(_requests[tabIndex].Status))"
+                                       OnClick="() => SaveFacetAsync(tabIndex, facet.StatusType)">
+                                Save @facet.StatusType
+                            </MudButton>
+                        </MudStack>
+
+                    </MudStack>
+                </MudTabPanel>
+            }
+
+        </MudTabs>
+
+        @* ── Save all changed ─────────────────────────────────────────────── *@
+        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-4">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Success"
+                       Size="Size.Large"
+                       StartIcon="@Icons.Material.Filled.LibraryAddCheck"
+                       Disabled="@(_isLoading || !_requests.Any(r => !string.IsNullOrWhiteSpace(r?.Status)))"
+                       OnClick="SaveAllAsync">
+                Save All Assigned Facets
+            </MudButton>
+        </MudStack>
+    }
+
+</MudContainer>
+
+@code {
+    // ── State ────────────────────────────────────────────────────────────────
+    private string _searchUwi = string.Empty;
+    private bool _isLoading;
+    private int _activeTab;
+
+    private WELL _well;
+    private List<WellServices.FacetTypeDto> _facets;
+    private List<WELL_STATUS> _statusHistory = new();
+
+    // Per-tab form state (allocated once facets are loaded)
+    private MudForm[] _forms = Array.Empty<MudForm>();
+    private bool[] _formValid = Array.Empty<bool>();
+    private WellServices.SetFacetRequest[] _requests = Array.Empty<WellServices.SetFacetRequest>();
+    private DateTime?[] _effectiveDates = Array.Empty<DateTime?>();
+    private DateTime?[] _expiryDates = Array.Empty<DateTime?>();
+
+    // Qualifiers per tab (populated when a STATUS is selected)
+    private Dictionary<int, List<WellServices.FacetQualifierDto>> _qualifiers = new();
+
+    // ── Event handlers ───────────────────────────────────────────────────────
+
+    private async Task OnSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await LoadWellAsync();
+    }
+
+    private async Task OnStatusChanged(int tabIndex, WellServices.FacetTypeDto facet, string newStatus)
+    {
+        _requests[tabIndex].Status = newStatus;
+        _requests[tabIndex].StatusQualifier = null;
+        _requests[tabIndex].StatusQualifierValue = null;
+
+        if (string.IsNullOrWhiteSpace(newStatus))
+        {
+            _qualifiers[tabIndex] = new();
+            return;
+        }
+
+        // Load qualifiers for this STATUS (may come from DB or catalog).
+        try
+        {
+            var quals = await ApiClient.GetAsync<List<WellServices.FacetQualifierDto>>(
+                $"/api/wellstatus/reference/{Uri.EscapeDataString(facet.StatusType)}/qualifiers/{Uri.EscapeDataString(newStatus)}");
+            _qualifiers[tabIndex] = quals ?? new();
+        }
+        catch
+        {
+            // Fall back to qualifiers already embedded in the facet DTO.
+            if (facet.Qualifiers.TryGetValue(newStatus, out var embedded))
+                _qualifiers[tabIndex] = embedded;
+            else if (facet.Qualifiers.TryGetValue("*", out var global))
+                _qualifiers[tabIndex] = global;
+            else
+                _qualifiers[tabIndex] = new();
+        }
+    }
+
+    // ── Load well ────────────────────────────────────────────────────────────
+
+    private async Task LoadWellAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_searchUwi)) return;
+        _isLoading = true;
+        _facets = null;
+        _well = null;
+        _statusHistory = new();
+
+        try
+        {
+            // Load page data — all 13 facets enriched with current WELL_STATUS values.
+            _facets = await ApiClient.GetAsync<List<WellServices.FacetTypeDto>>(
+                $"/api/wellstatus/{Uri.EscapeDataString(_searchUwi)}/page-data");
+
+            if (_facets == null || _facets.Count == 0)
+            {
+                Snackbar.Add($"No facet data returned for UWI '{_searchUwi}'.", Severity.Warning);
+                _facets = null;
+                return;
+            }
+
+            // Load well header for display.
+            try
+            {
+                _well = await ApiClient.GetAsync<WELL>($"/api/ppdm39/data/well/{Uri.EscapeDataString(_searchUwi)}");
+            }
+            catch { /* non-critical */ }
+
+            // Load full status history for the history expansion panels.
+            try
+            {
+                _statusHistory = await ApiClient.GetAsync<List<WELL_STATUS>>(
+                    $"/api/wellstatus/{Uri.EscapeDataString(_searchUwi)}/history") ?? new();
+            }
+            catch { _statusHistory = new(); }
+
+            // Allocate per-tab form state.
+            var count = _facets.Count;
+            _forms         = new MudForm[count];
+            _formValid     = new bool[count];
+            _requests      = Enumerable.Range(0, count).Select(i => new WellServices.SetFacetRequest { UWI = _searchUwi }).ToArray();
+            _effectiveDates = Enumerable.Repeat(DateTime.Today, count).Cast<DateTime?>().ToArray();
+            _expiryDates    = new DateTime?[count];
+            _qualifiers     = new Dictionary<int, List<WellServices.FacetQualifierDto>>();
+            for (int i = 0; i < count; i++)
+                _qualifiers[i] = new();
+
+            _activeTab = 0;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading well data: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    // ── Save individual facet ────────────────────────────────────────────────
+
+    private async Task SaveFacetAsync(int tabIndex, string statusType)
+    {
+        if (_forms[tabIndex] != null)
+        {
+            await _forms[tabIndex].Validate();
+            if (!_formValid[tabIndex]) return;
+        }
+
+        var req = _requests[tabIndex];
+        req.UWI         = _searchUwi;
+        req.StatusType  = statusType;
+        req.EffectiveDate = _effectiveDates[tabIndex];
+        req.ExpiryDate    = _expiryDates[tabIndex];
+
+        _isLoading = true;
+        try
+        {
+            var result = await ApiClient.PutAsync<WellServices.SetFacetRequest, WELL_STATUS>(
+                $"/api/wellstatus/{Uri.EscapeDataString(_searchUwi)}/facet", req);
+
+            if (result != null)
+            {
+                Snackbar.Add($"{statusType} set to '{req.Status}' successfully.", Severity.Success);
+                // Reload to refresh current values and history.
+                await LoadWellAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error saving {statusType}: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    // ── Save all assigned facets ─────────────────────────────────────────────
+
+    private async Task SaveAllAsync()
+    {
+        var toSave = _requests
+            .Select((r, i) => (Request: r, Index: i, StatusType: _facets[i].StatusType))
+            .Where(x => !string.IsNullOrWhiteSpace(x.Request.Status))
+            .ToList();
+
+        if (!toSave.Any())
+        {
+            Snackbar.Add("No facets have a new value selected.", Severity.Info);
+            return;
+        }
+
+        _isLoading = true;
+        int saved = 0, failed = 0;
+        try
+        {
+            foreach (var (req, idx, statusType) in toSave)
+            {
+                req.UWI           = _searchUwi;
+                req.StatusType    = statusType;
+                req.EffectiveDate = _effectiveDates[idx];
+                req.ExpiryDate    = _expiryDates[idx];
+                try
+                {
+                    await ApiClient.PutAsync<WellServices.SetFacetRequest, WELL_STATUS>(
+                        $"/api/wellstatus/{Uri.EscapeDataString(_searchUwi)}/facet", req);
+                    saved++;
+                }
+                catch
+                {
+                    failed++;
+                }
+            }
+
+            if (failed == 0)
+                Snackbar.Add($"All {saved} facet(s) saved successfully.", Severity.Success);
+            else
+                Snackbar.Add($"{saved} saved, {failed} failed. Check individual tabs for details.", Severity.Warning);
+
+            await LoadWellAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    // ── Reset tab ────────────────────────────────────────────────────────────
+
+    private void ResetTab(int tabIndex, WellServices.FacetTypeDto facet)
+    {
+        _requests[tabIndex] = new WellServices.SetFacetRequest { UWI = _searchUwi };
+        _effectiveDates[tabIndex] = DateTime.Today;
+        _expiryDates[tabIndex] = null;
+        _qualifiers[tabIndex] = new();
+        _forms[tabIndex]?.ResetAsync();
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private static string GetFacetIcon(string statusType) => statusType switch
+    {
+        "Life Cycle"         => Icons.Material.Filled.Timeline,
+        "Role"               => Icons.Material.Filled.Engineering,
+        "Condition"          => Icons.Material.Filled.MonitorHeart,
+        "Business Interest"  => Icons.Material.Filled.Business,
+        "Business Intention" => Icons.Material.Filled.Flag,
+        "Outcome"            => Icons.Material.Filled.CheckCircle,
+        "Play Type"          => Icons.Material.Filled.Layers,
+        "Well Structure"     => Icons.Material.Filled.AccountTree,
+        "Profile Type"       => Icons.Material.Filled.LinearScale,
+        "Product Type"       => Icons.Material.Filled.Science,
+        "Product Significance" => Icons.Material.Filled.Stars,
+        "Fluid Direction"    => Icons.Material.Filled.SwapVert,
+        "Regulatory Approval"=> Icons.Material.Filled.Gavel,
+        _                    => Icons.Material.Filled.Label
+    };
+}

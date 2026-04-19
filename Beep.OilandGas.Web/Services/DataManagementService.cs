@@ -1,4 +1,4 @@
-using Beep.OilandGas.ApiService.Models;
+using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Web.Services;
 using System.Collections.ObjectModel;
@@ -8,14 +8,6 @@ using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.Web.Services
 {
-    /// <summary>
-    /// Response model for current connection endpoint
-    /// </summary>
-    public class CurrentConnectionResponse
-    {
-        public string? ConnectionName { get; set; }
-    }
-
     /// <summary>
     /// Service for managing data sources and connections in the web application.
     /// Provides centralized access to current data source, available connections, and related settings.
@@ -132,7 +124,7 @@ namespace Beep.OilandGas.Web.Services
         /// <summary>
         /// Export data to CSV file
         /// </summary>
-        Task<Stream> ExportToCsvAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null, Action<ProgressUpdate>? onProgress = null);
+        Task<Stream?> ExportToCsvAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null, Action<ProgressUpdate>? onProgress = null);
 
         // ============================================
         // Validation Operations
@@ -218,7 +210,6 @@ namespace Beep.OilandGas.Web.Services
         private readonly TimeSpan _cacheTimeout = TimeSpan.FromMinutes(5);
         
         // Retry configuration
-        private readonly int _maxRetries = 3;
         private readonly TimeSpan _retryDelay = TimeSpan.FromSeconds(1);
 
         public DataManagementService(
@@ -541,7 +532,7 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
-        public async Task<Stream> ExportToCsvAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null, Action<ProgressUpdate>? onProgress = null)
+        public async Task<Stream?> ExportToCsvAsync(string tableName, List<AppFilter>? filters = null, string? connectionName = null, Action<ProgressUpdate>? onProgress = null)
         {
             try
             {

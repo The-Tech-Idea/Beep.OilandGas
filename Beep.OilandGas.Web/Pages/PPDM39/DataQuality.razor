@@ -3,100 +3,122 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<PageTitle>Data Quality - PPDM39</PageTitle>
+<PageTitle>Assess Data Quality</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudText Typo="Typo.h4" Class="mb-4">Data Quality Dashboard</MudText>
-    
-    <MudGrid>
-        <MudItem xs="12" md="6">
-            <MudSelect @bind-Value="_selectedTable" 
-                      Label="Select Table" 
-                      Variant="Variant.Outlined"
-                      T="string">
-                <MudSelectItem Value="@("WELL")">WELL</MudSelectItem>
-                <MudSelectItem Value="@("WELL_STATUS")">WELL_STATUS</MudSelectItem>
-                <MudSelectItem Value="@("WELL_XREF")">WELL_XREF</MudSelectItem>
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="12" md="6">
-            <MudButton Variant="Variant.Filled" 
-                      Color="Color.Primary" 
-                      StartIcon="@Icons.Material.Filled.Assessment"
-                      OnClick="LoadQualityDashboard"
-                      Class="mt-4"
-                      Disabled="@_isLoading">
-                Load Dashboard
-            </MudButton>
-        </MudItem>
-    </MudGrid>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ─── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Assess Data Quality</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Completeness and quality metrics per PPDM table</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Secondary"
+                         Icon="@Icons.Material.Filled.FactCheck">Data Management</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    @* ─── Table Selector *@
+    <MudCard Elevation="1" Class="mb-4">
+        <MudCardContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                <MudSelect @bind-Value="_selectedTable"
+                           Label="Select Table"
+                           Variant="Variant.Outlined"
+                           T="string" Class="og-grow">
+                    <MudSelectItem Value="@("WELL")">WELL</MudSelectItem>
+                    <MudSelectItem Value="@("WELL_STATUS")">WELL_STATUS</MudSelectItem>
+                    <MudSelectItem Value="@("WELL_XREF")">WELL_XREF</MudSelectItem>
+                </MudSelect>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Assessment"
+                           OnClick="LoadQualityDashboard"
+                           Disabled="@_isLoading">Load Dashboard</MudButton>
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
     
     @if (_isLoading)
     {
-        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
     }
-    
+
     @if (_dashboard != null)
     {
-        <MudGrid Class="mt-4">
+        @* ─── Quality KPI Cards ─── *@
+        <MudGrid Class="mb-4" Spacing="3">
             <MudItem xs="12" md="4">
-                <MudCard>
+                <MudCard Elevation="2">
                     <MudCardContent>
-                        <MudText Typo="Typo.h6">Overall Quality</MudText>
-                        <MudProgressCircular Value="@_dashboard.OverallQualityScore" 
-                                           Size="Size.Large" 
-                                           Color="@GetQualityColor(_dashboard.OverallQualityScore)">
-                            @_dashboard.OverallQualityScore.ToString("F1")%
-                        </MudProgressCircular>
+                        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Overall Quality</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-2">
+                            <MudProgressCircular Value="@_dashboard.OverallQualityScore"
+                                               Size="Size.Large"
+                                               Color="@GetQualityColor(_dashboard.OverallQualityScore)" />
+                            <MudText Typo="Typo.h5">@_dashboard.OverallQualityScore.ToString("F1")%</MudText>
+                        </MudStack>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
-            
+
             <MudItem xs="12" md="4">
-                <MudCard>
+                <MudCard Elevation="2">
                     <MudCardContent>
-                        <MudText Typo="Typo.h6">Completeness</MudText>
-                        <MudText Typo="Typo.h4">@_dashboard.CurrentMetrics.CompletenessScore.ToString("F1")%</MudText>
-                        <MudText>Complete: @_dashboard.CurrentMetrics.CompleteRecords / @_dashboard.CurrentMetrics.TotalRecords</MudText>
+                        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Completeness</MudText>
+                        <MudText Typo="Typo.h4" Class="mt-2">@(_dashboard.CurrentMetrics.COMPLETENESS_SCORE?.ToString("F1") ?? "0.0")%</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Complete: @_dashboard.CurrentMetrics.CompleteRecords / @_dashboard.CurrentMetrics.TotalRecords</MudText>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
-            
+
             <MudItem xs="12" md="4">
-                <MudCard>
+                <MudCard Elevation="2">
                     <MudCardContent>
-                        <MudText Typo="Typo.h6">Active Alerts</MudText>
-                        <MudText Typo="Typo.h4">@_dashboard.ActiveAlerts.Count</MudText>
-                        @if (_dashboard.ActiveAlerts.Any(a => a.Severity == QualityAlertSeverity.Critical))
-                        {
-                            <MudChip T="string" Color="Color.Error" Size="Size.Small">Critical</MudChip>
-                        }
+                        <MudText Typo="Typo.subtitle2" Color="Color.Secondary">Active Alerts</MudText>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mt-2">
+                            <MudText Typo="Typo.h4">@_dashboard.ActiveAlerts.Count</MudText>
+                            @if (_dashboard.ActiveAlerts.Any(a => a.Severity == QualityAlertSeverity.Critical))
+                            {
+                                <MudChip T="string" Color="Color.Error" Size="Size.Small">Critical</MudChip>
+                            }
+                        </MudStack>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
         </MudGrid>
-        
+
+        @* ─── Alerts Grid ─── *@
         @if (_dashboard.ActiveAlerts.Any())
         {
-            <MudCard Class="mt-4">
-                <MudCardContent>
-                    <MudText Typo="Typo.h6" Class="mb-4">Quality Alerts</MudText>
-                    <MudTable Items="@_dashboard.ActiveAlerts" Hover="true" Dense="true">
-                        <HeaderContent>
-                            <MudTh>Severity</MudTh>
-                            <MudTh>Field</MudTh>
-                            <MudTh>Message</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="Severity">
-                                <MudChip T="string" Color="@GetSeverityColor(context.Severity)" Size="Size.Small">
-                                    @context.Severity
-                                </MudChip>
-                            </MudTd>
-                            <MudTd DataLabel="Field">@context.FieldName</MudTd>
-                            <MudTd DataLabel="Message">@context.AlertMessage</MudTd>
-                        </RowTemplate>
-                    </MudTable>
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6">Quality Alerts</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="QualityAlert" Items="@_dashboard.ActiveAlerts" Dense="true" Hover="true" Striped="true"
+                                 SortMode="SortMode.Multiple" Filterable="true">
+                        <Columns>
+                            <TemplateColumn Title="Severity" SortBy="a => a.Severity">
+                                <CellTemplate>
+                                    <MudChip T="string" Color="@GetSeverityColor(context.Item.Severity)" Size="Size.Small">
+                                        @context.Item.Severity
+                                    </MudChip>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <PropertyColumn Property="a => a.FieldName" Title="Field" />
+                            <PropertyColumn Property="a => a.AlertMessage" Title="Message" />
+                        </Columns>
+                        <NoRecordsContent>
+                            <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Class="og-icon-xl" />
+                                <MudText Typo="Typo.body1">No alerts — all quality checks pass</MudText>
+                            </MudStack>
+                        </NoRecordsContent>
+                    </MudDataGrid>
                 </MudCardContent>
             </MudCard>
         }

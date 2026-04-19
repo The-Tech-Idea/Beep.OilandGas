@@ -21,7 +21,7 @@ namespace Beep.OilandGas.OilProperties.Services
     /// Service for oil property calculations.
     /// Uses PPDMGenericRepository for data persistence following LifeCycle patterns.
     /// </summary>
-    public class OilPropertiesService : IOilPropertiesService
+    public partial class OilPropertiesService : IOilPropertiesService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;

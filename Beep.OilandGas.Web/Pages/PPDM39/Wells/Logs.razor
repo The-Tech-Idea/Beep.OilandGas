@@ -1,19 +1,33 @@
 @page "/ppdm39/wells/logs"
-@inject ApiClient ApiClient
-@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
 
-<PageTitle>Well Logs - PPDM39</PageTitle>
+<PageTitle>Well Logs</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudText Typo="Typo.h4" Class="mb-4">Well Logs</MudText>
-    
-    <MudPaper Class="pa-4">
-        <MudText Typo="Typo.body1">Well Logs management interface coming soon...</MudText>
+<MudContainer MaxWidth="MaxWidth.Small" Class="pa-8">
+    <MudPaper Elevation="2" Class="pa-6">
+        <MudStack Spacing="3" AlignItems="AlignItems.Center">
+            <MudIcon Icon="@Icons.Material.Filled.Description" Color="Color.Primary" Size="Size.Large" />
+            <MudText Typo="Typo.h5" Align="Align.Center">Well log data has moved</MudText>
+            <MudText Typo="Typo.body1" Color="Color.Secondary" Align="Align.Center">
+                Well log review and interpretation is now part of the Reservoir Characterization module.
+            </MudText>
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Science"
+                           OnClick='() => NavigationManager.NavigateTo("/reservoir/characterization")'>
+                    Characterization Summary
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Dashboard"
+                           OnClick='() => NavigationManager.NavigateTo("/reservoir")'>
+                    Reservoir Overview
+                </MudButton>
+            </MudStack>
+        </MudStack>
     </MudPaper>
 </MudContainer>
 
-@code {
-}
+@code { }
 
 
 

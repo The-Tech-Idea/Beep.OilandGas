@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.ProductionAccounting;
 
 namespace Beep.OilandGas.Models.Data.Trading
 {

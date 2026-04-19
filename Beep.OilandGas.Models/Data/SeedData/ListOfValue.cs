@@ -138,5 +138,15 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref ChildrenValue, value); }
 
         }
+
+        public string? Source
+
+        {
+
+            get { return this.ModuleValue; }
+
+            set { SetProperty(ref ModuleValue, value); }
+
+        }
     }
 }

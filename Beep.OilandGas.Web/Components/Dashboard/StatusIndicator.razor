@@ -1,7 +1,7 @@
 @using MudBlazor
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="@Class">
-    <MudChip Size="@Size" 
+    <MudChip T="string" Size="@Size" 
              Color="@GetStatusColor()" 
              Variant="Variant.Filled"
              Icon="@GetStatusIcon()">
@@ -51,4 +51,5 @@
         };
     }
 }
+
 

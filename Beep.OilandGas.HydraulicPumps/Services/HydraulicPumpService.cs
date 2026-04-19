@@ -14,7 +14,7 @@ namespace Beep.OilandGas.HydraulicPumps.Services
     /// Service for hydraulic pump operations.
     /// Implements all required methods from IHydraulicPumpService interface.
     /// </summary>
-    public class HydraulicPumpService : IHydraulicPumpService
+    public partial class HydraulicPumpService : IHydraulicPumpService, Beep.OilandGas.Models.Core.Interfaces.IHydraulicPumpService
     {
         private readonly ICommonColumnHandler _commonColumnHandler;
         private readonly IPPDM39DefaultsRepository _defaults;

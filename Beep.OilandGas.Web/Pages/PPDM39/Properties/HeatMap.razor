@@ -1,16 +1,26 @@
 @page "/ppdm39/properties/heatmap"
 @using Beep.OilandGas.HeatMap
-@using Beep.OilandGas.HeatMap.Configuration
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.HeatMap
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IPropertiesServiceClient PropertiesService
 
-<PageTitle>Heat Map</PageTitle>
+<PageTitle>Generate Field Heat Map</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Heat Map Generation</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Generate Field Heat Map</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Spatial property visualisation from data points</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Secondary" Icon="@Icons.Material.Filled.Map">Visualisation</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
 
     <MudGrid>
         <MudItem xs="12" md="6">
@@ -57,12 +67,13 @@
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private string _fieldId = string.Empty;
     private DateTime? _startDate = DateTime.Now.AddMonths(-6);
     private DateTime? _endDate = DateTime.Now;
     private bool _isGenerating = false;
     private bool _isLoading = false;
-    private HeatMapResultDto? _heatMapResult;
+    private HeatMapResult? _heatMapResult;
     private string? _currentUserId = "system";
 
     private async Task GenerateHeatMap()
@@ -71,19 +82,17 @@
         try
         {
             // Create sample data points
-            var dataPoints = new List<HeatMapDataPoint>
+            var dataPoints = new List<HEAT_MAP_DATA_POINT>
             {
-                new HeatMapDataPoint { X = 0, Y = 0, Value = 100 },
-                new HeatMapDataPoint { X = 1, Y = 0, Value = 150 },
-                new HeatMapDataPoint { X = 0, Y = 1, Value = 120 },
-                new HeatMapDataPoint { X = 1, Y = 1, Value = 180 }
+                new HEAT_MAP_DATA_POINT { X = 0, Y = 0, Value = 100 },
+                new HEAT_MAP_DATA_POINT { X = 1, Y = 0, Value = 150 },
+                new HEAT_MAP_DATA_POINT { X = 0, Y = 1, Value = 120 },
+                new HEAT_MAP_DATA_POINT { X = 1, Y = 1, Value = 180 }
             };
 
-            var configuration = new HeatMapConfiguration
+            var configuration = new HEAT_MAP_CONFIGURATION
             {
-                Width = 800,
-                Height = 600,
-                ColorScheme = "Viridis"
+                Name = "Production HeatMap"
             };
 
             _heatMapResult = await PropertiesService.GenerateHeatMapAsync(dataPoints, configuration);
@@ -135,11 +144,8 @@
         {
             var configuration = new HeatMapConfigurationRecord
             {
-                HeatMapId = Guid.NewGuid().ToString(),
-                ConfigurationName = "Production Heat Map",
-                Width = 800,
-                Height = 600,
-                ColorScheme = "Viridis"
+                ConfigurationId = Guid.NewGuid().ToString(),
+                ConfigurationName = "Production Heat Map"
             };
 
             var heatMapId = await PropertiesService.SaveHeatMapConfigurationAsync(configuration, _currentUserId);
@@ -151,4 +157,5 @@
         }
     }
 }
+
 

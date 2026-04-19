@@ -4,7 +4,7 @@
 @using MudBlazor
 @using Beep.OilandGas.PPDM39.Core.Metadata
 
-<MudDataGrid Items="@Items" 
+<MudDataGrid T="object" Items="@Items" 
              Hover="@Hover" 
              Dense="@Dense"
              FilterMode="@FilterMode"
@@ -14,34 +14,34 @@
              QuickFilter="@QuickFilter"
              Loading="@IsLoading"
              LoadingProgressColor="@LoadingColor">
-    @if (!string.IsNullOrWhiteSpace(Title))
-    {
-        <ToolBarContent>
+    <ToolBarContent>
+        @if (!string.IsNullOrWhiteSpace(Title))
+        {
             <MudText Typo="Typo.h6">@Title</MudText>
             <MudSpacer />
-            @if (ShowSearch)
-            {
-                <MudTextField @bind-Value="_searchString" 
-                             Placeholder="Search..." 
-                             Adornment="Adornment.Start" 
-                             AdornmentIcon="@Icons.Material.Filled.Search"
-                             Immediate="true" 
-                             Variant="Variant.Outlined"
-                             Class="mr-2" />
-            }
-            @ToolbarActions
-            @if (ShowExport && Items != null && Items.Any())
-            {
-                <MudButton Variant="Variant.Text" 
-                           Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.FileDownload"
-                           OnClick="OnExport"
-                           Title="Export to CSV">
-                    Export
-                </MudButton>
-            }
-        </ToolBarContent>
-    }
+        }
+        @if (ShowSearch)
+        {
+            <MudTextField @bind-Value="_searchString" 
+                         Placeholder="Search..." 
+                         Adornment="Adornment.Start" 
+                         AdornmentIcon="@Icons.Material.Filled.Search"
+                         Immediate="true" 
+                         Variant="Variant.Outlined"
+                         Class="mr-2" />
+        }
+        @ToolbarActions
+        @if (ShowExport && Items != null && Items.Any())
+        {
+            <MudButton Variant="Variant.Text" 
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.FileDownload"
+                       OnClick="OnExport"
+                       Title="Export to CSV">
+                Export
+            </MudButton>
+        }
+    </ToolBarContent>
     <Columns>
         @foreach (var column in GetColumns())
         {
@@ -51,12 +51,12 @@
                 <CellTemplate>
                     @RenderCellContent(context, column)
                 </CellTemplate>
-                @if (EditMode == DataGridEditMode.Cell && IsColumnEditable(column))
-                {
-                    <EditTemplate>
+                <EditTemplate>
+                    @if (EditMode == DataGridEditMode.Cell && IsColumnEditable(column))
+                    {
                         @RenderEditCell(context, column)
-                    </EditTemplate>
-                }
+                    }
+                </EditTemplate>
             </TemplateColumn>
         }
         @if (ShowActions)
@@ -67,34 +67,35 @@
                              Size="Size.Small"
                              Dense="true"
                              Color="Color.Inherit">
-                        <ActivatorContent>
+                        <ActivatorContent Context="menuActivator">
                             <MudIconButton Icon="@Icons.Material.Filled.MoreVert" 
                                          Size="Size.Small" 
                                          Color="Color.Default"
-                                         Variant="Variant.Text" />
+                                         Variant="Variant.Text"
+                                         Title="Row actions" />
                         </ActivatorContent>
                         <ChildContent>
-                            @if (OnEdit != null)
+                            @if (OnEdit.HasDelegate)
                             {
-                                <MudMenuItem OnClick="@(() => OnEdit.InvokeAsync(context))">
+                                <MudMenuItem OnClick="@(() => OnEdit.InvokeAsync(context.Item))">
                                     <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Class="mr-2" />
                                     Edit
                                 </MudMenuItem>
                             }
-                            @if (OnView != null)
+                            @if (OnView.HasDelegate)
                             {
-                                <MudMenuItem OnClick="@(() => OnView.InvokeAsync(context))">
+                                <MudMenuItem OnClick="@(() => OnView.InvokeAsync(context.Item))">
                                     <MudIcon Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Class="mr-2" />
                                     View
                                 </MudMenuItem>
                             }
-                            @if (OnEdit != null || OnView != null)
+                            @if (OnEdit.HasDelegate || OnView.HasDelegate)
                             {
                                 <MudDivider />
                             }
-                            @if (OnDelete != null)
+                            @if (OnDelete.HasDelegate)
                             {
-                                <MudMenuItem OnClick="@(() => OnDelete.InvokeAsync(context))" Color="Color.Error">
+                                <MudMenuItem OnClick="@(() => OnDelete.InvokeAsync(context.Item))" Color="Color.Error">
                                     <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Class="mr-2" />
                                     Delete
                                 </MudMenuItem>
@@ -106,20 +107,17 @@
             </TemplateColumn>
         }
     </Columns>
-    @if (ShowPagination && Items != null && Items.Any())
-    {
-        <PagerContent>
+    <PagerContent>
+        @if (ShowPagination)
+        {
             <MudDataGridPager T="object" />
-        </PagerContent>
-    }
-    @if (Items == null || !Items.Any())
-    {
-        <NoRecordsContent>
-            <MudText Typo="Typo.body1" Class="pa-4">
-                @(EmptyMessage ?? "No records found.")
-            </MudText>
-        </NoRecordsContent>
-    }
+        }
+    </PagerContent>
+    <NoRecordsContent>
+        <MudText Typo="Typo.body1" Class="pa-4">
+            @(EmptyMessage ?? "No records found.")
+        </MudText>
+    </NoRecordsContent>
 </MudDataGrid>
 
 @code {
@@ -130,7 +128,7 @@
     [Parameter] public DataGridFilterMode FilterMode { get; set; } = DataGridFilterMode.ColumnFilterRow;
     [Parameter] public bool ReadOnly { get; set; } = false;
     [Parameter] public bool CanCancelEdit { get; set; } = true;
-    [Parameter] public DataGridEditMode EditMode { get; set; } = DataGridEditMode.None;
+    [Parameter] public DataGridEditMode EditMode { get; set; } = DataGridEditMode.Cell;
     [Parameter] public bool ShowSearch { get; set; } = true;
     [Parameter] public bool ShowExport { get; set; } = true;
     [Parameter] public bool ShowPagination { get; set; } = true;
@@ -157,7 +155,7 @@
     // Render fragments for customization
     [Parameter] public RenderFragment? ToolbarActions { get; set; }
     [Parameter] public RenderFragment<object>? ActionMenuItems { get; set; }
-    [Parameter] public RenderFragment<CellContext>? CustomCellTemplate { get; set; }
+    [Parameter] public RenderFragment<CellContext<object>>? CustomCellTemplate { get; set; }
     
     private string _searchString = string.Empty;
     
@@ -311,7 +309,7 @@
             }
             else if (propType == typeof(bool) || propType == typeof(bool?))
             {
-                builder.OpenComponent<MudSwitch>(3);
+                builder.OpenComponent<MudSwitch<bool?>>(3);
                 builder.AddAttribute(4, "T", typeof(bool?));
                 builder.AddAttribute(5, "Checked", value as bool?);
                 builder.AddAttribute(6, "Variant", Variant.Outlined);
@@ -319,7 +317,7 @@
             }
             else
             {
-                builder.OpenComponent<MudTextField>(7);
+                builder.OpenComponent<MudTextField<string>>(7);
                 builder.AddAttribute(8, "T", typeof(string));
                 builder.AddAttribute(9, "Value", value?.ToString() ?? string.Empty);
                 builder.AddAttribute(10, "Variant", Variant.Outlined);
@@ -340,3 +338,4 @@
         return prop?.PropertyType ?? typeof(string);
     }
 }
+

@@ -1,0 +1,211 @@
+@page "/decommissioning/facility"
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Facility Decommissioning</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Decommission Field Facilities</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Facility decommissioning project management</MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Download"
+                   OnClick='@(() => Snackbar.Add("Report export queued", Severity.Success))'>
+            Export Report
+        </MudButton>
+    </MudStack>
+
+    @* KPIs *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Total Facilities" Value="@_facilities.Count.ToString()" Unit="units"
+                     ValueColor="Color.Default" Icon="@Icons.Material.Filled.Apartment"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="In programme" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="In Execution" Value="@_facilities.Count(f => f.Phase == "EXECUTION").ToString()" Unit="units"
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.BuildCircle"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Active" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Total DECOM Cost" Value="@_totalCostMm.ToString("N0")" Unit="$MM"
+                     ValueColor="Color.Info" Icon="@Icons.Material.Filled.AttachMoney"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Committed + est." />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Regulatory Submissions" Value="@_facilities.Count(f => f.Phase is "APPROVAL" or "PLANNING").ToString()" Unit="pending"
+                     ValueColor="Color.Error" Icon="@Icons.Material.Filled.Policy"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Awaiting approval" />
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+
+        @* Facilities table *@
+        <MudItem xs="12" md="8">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderContent><MudText Typo="Typo.subtitle1">Facility Decommissioning Projects</MudText></CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="FacilityItem" Items="@_facilities" Dense="true" Hover="true" Striped="true"
+                                 RowClick="OnFacilitySelected">
+                        <Columns>
+                            <PropertyColumn Property="f => f.FacilityId"   Title="Facility" />
+                            <PropertyColumn Property="f => f.FacilityType" Title="Type" />
+                            <PropertyColumn Property="f => f.DecomStart"   Title="DECOM Start" />
+                            <PropertyColumn Property="f => f.DecomEnd"     Title="Target Complete" />
+                            <PropertyColumn Property="f => f.CostMm"       Title="Cost ($MM)" Format="N1" />
+                            <TemplateColumn Title="Phase">
+                                <CellTemplate><StatusBadge Status="@context.Item.Phase" /></CellTemplate>
+                            </TemplateColumn>
+                            <PropertyColumn Property="f => f.PctComplete"  Title="% Done" Format="N0" />
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* Right panel — cost chart / detail *@
+        <MudItem xs="12" md="4">
+            <MudStack Spacing="3">
+
+                @if (_selectedFacility is not null)
+                {
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.subtitle1">@_selectedFacility.FacilityId</MudText>
+                                    <StatusBadge Status="@_selectedFacility.Phase" />
+                                </MudStack>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="2">
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">Overall Progress</MudText>
+                                    <MudProgressLinear Value="@_selectedFacility.PctComplete"
+                                                       Color="Color.Primary" Class="mb-1" />
+                                    <MudText Typo="Typo.body2">@_selectedFacility.PctComplete.ToString("N0")% Complete</MudText>
+                                </MudStack>
+                                @foreach (var act in _decomActivities)
+                                {
+                                    <MudStack Spacing="0">
+                                        <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                            <MudText Typo="Typo.caption">@act.Name</MudText>
+                                            <StatusBadge Status="@act.Status" />
+                                        </MudStack>
+                                        <MudProgressLinear Value="@act.Pct"
+                                                           Color="@ActivityColor(act.Status)" />
+                                    </MudStack>
+                                }
+                            </MudStack>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Outlined" FullWidth="true"
+                                       OnClick='@(() => _selectedFacility = null)'>
+                                Back to List
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                }
+                else
+                {
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent><MudText Typo="Typo.subtitle1">Cost by Phase ($MM)</MudText></CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudChart T="double" ChartType="ChartType.Bar"
+                                      Series="@_costSeries"
+                                      XAxisLabels="@_phaseLabels"
+                                      Width="100%" Height="200px" />
+                        </MudCardContent>
+                    </MudCard>
+                }
+
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent><MudText Typo="Typo.subtitle1">Regulatory Submissions</MudText></CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-2">
+                        <MudList T="string" Dense="true">
+                            @foreach (var sub in _regulatoryItems)
+                            {
+                                <MudListItem T="string">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.body2">@sub.Name</MudText>
+                                        <StatusBadge Status="@sub.Status" />
+                                    </MudStack>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    </MudCardContent>
+                </MudCard>
+
+            </MudStack>
+        </MudItem>
+
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private FacilityItem? _selectedFacility;
+    private double _totalCostMm = 142.0;
+
+    private record FacilityItem(string FacilityId, string FacilityType, string DecomStart,
+        string DecomEnd, double CostMm, string Phase, double PctComplete);
+
+    private List<FacilityItem> _facilities = new()
+    {
+        new("FPSO-Apex",       "FPSO",             "Q1 2026", "Q4 2028", 68.0, "EXECUTION",  28),
+        new("CPF-North",       "Central Proc. Fac.","Q3 2026", "Q2 2029", 42.0, "PLANNING",    5),
+        new("PLT-A1",          "Pipeline Terminal", "Q2 2027", "Q1 2029", 12.0, "PLANNING",    0),
+        new("GAS-COMP-001",    "Gas Compressor",    "Q1 2026", "Q3 2027",  8.5, "EXECUTION",  55),
+        new("WATER-INJ-SYST",  "Water Injection",   "Q2 2027", "Q4 2027",  6.2, "APPROVAL",    0),
+        new("JETTY-02",        "Jetty/Mooring",     "Q4 2026", "Q2 2028",  5.3, "APPROVAL",    0),
+    };
+
+    private record DecomActivity(string Name, string Status, double Pct);
+    private List<DecomActivity> _decomActivities = new()
+    {
+        new("Isolate & Depressure",    "COMPLETE",    100),
+        new("Clean & Flush Lines",     "COMPLETE",    100),
+        new("Remove Equipment",        "IN PROGRESS",  55),
+        new("Structural Demolition",   "PLANNED",       0),
+        new("Site Remediation",        "PLANNED",       0),
+        new("Final Survey",            "PLANNED",       0),
+    };
+
+    private record RegulatorySubmission(string Name, string Status);
+    private List<RegulatorySubmission> _regulatoryItems = new()
+    {
+        new("DECOM Programme (FPSO)", "APPROVED"),
+        new("DECOM Programme (CPF)",  "IN PROGRESS"),
+        new("Marine Survey Permit",   "IN PROGRESS"),
+        new("Waste Disposal Plan",    "ACTIVE"),
+        new("Final Closure Report",   "PLANNED"),
+    };
+
+    private List<ChartSeries<double>> _costSeries = new()
+    {
+        new ChartSeries<double> { Name = "Budget",  Data = new double[] { 25, 18, 35, 42, 22 } },
+        new ChartSeries<double> { Name = "Actuals", Data = new double[] { 22, 16, 30,  0,  0 } },
+    };
+    private string[] _phaseLabels = { "Planning", "Regulatory", "Engineering", "Execution", "Restoration" };
+
+    private void OnFacilitySelected(DataGridRowClickEventArgs<FacilityItem> args) =>
+        _selectedFacility = args.Item;
+
+    private Color ActivityColor(string status) => status switch
+    {
+        "COMPLETE"    => Color.Success,
+        "IN PROGRESS" => Color.Primary,
+        _             => Color.Default,
+    };
+}

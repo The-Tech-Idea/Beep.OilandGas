@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
-using Beep.OilandGas.Models.Data.ProspectIdentification;
 
 namespace Beep.OilandGas.Models.Data.Calculations
 {

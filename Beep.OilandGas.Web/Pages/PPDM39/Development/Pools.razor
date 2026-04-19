@@ -4,59 +4,136 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
-<PageTitle>Pools - Development</PageTitle>
+<PageTitle>Plan Reservoir Development Pools</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Development Pools</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
-    <MudPaper Class="pa-4">
-        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
-            <MudText Typo="Typo.h6">Pools for Current Field</MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
-                Add Pool
-            </MudButton>
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Plan Reservoir Development Pools</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Pool inventory</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning"
+                         Icon="@Icons.Material.Filled.Construction">Development</MudChip>
+            </MudStack>
         </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+            Add Pool
+        </MudButton>
+    </MudStack>
 
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-        }
-        else if (_pools != null && _pools.Any())
-        {
-            <MudTable Items="@_pools" Hover="true" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh>Pool ID</MudTh>
-                    <MudTh>Pool Name</MudTh>
-                    <MudTh>Pool Type</MudTh>
-                    <MudTh>Status</MudTh>
-                    <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Pool ID">@GetPropertyValue(context, "POOL_ID")</MudTd>
-                    <MudTd DataLabel="Pool Name">@GetPropertyValue(context, "POOL_NAME")</MudTd>
-                    <MudTd DataLabel="Pool Type">@GetPropertyValue(context, "POOL_TYPE")</MudTd>
-                    <MudTd DataLabel="Status">@GetPropertyValue(context, "POOL_STATUS")</MudTd>
-                    <MudTd DataLabel="Actions">
-                        <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
-                            <MudButton StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => OpenEditDialog(context))">
-                                Edit
-                            </MudButton>
-                        </MudButtonGroup>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Info">No pools found for the current field.</MudAlert>
-        }
-    </MudPaper>
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ── KPI Row ─────────────────────────────────────────────────────── *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Total Pools" Value="@((_pools?.Count ?? 0).ToString())"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Layers"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="All pools" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Active"
+                     Value="@((_pools?.Count(p => GetPropertyValue(p, "POOL_STATUS") == "ACTIVE") ?? 0).ToString())"
+                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.CheckCircle"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Success"
+                     TrendText="Producing" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="In Design"
+                     Value="@((_pools?.Count(p => GetPropertyValue(p, "POOL_STATUS") == "DESIGN") ?? 0).ToString())"
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Architecture"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Warning"
+                     TrendText="Planning phase" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Inactive"
+                     Value="@((_pools?.Count(p => GetPropertyValue(p, "POOL_STATUS") == "INACTIVE" || GetPropertyValue(p, "POOL_STATUS") == "ABANDONED") ?? 0).ToString())"
+                     ValueColor="Color.Default" Icon="@Icons.Material.Filled.DoNotDisturb"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="Not active" />
+        </MudItem>
+    </MudGrid>
+
+    @* ── Pools Grid ──────────────────────────────────────────────────── *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_pools != null && _pools.Any())
+            {
+                <MudDataGrid T="POOL" Items="@_pools" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <TemplateColumn Title="Pool ID">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "POOL_ID")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Pool Name">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2" Color="Color.Primary">
+                                    @GetPropertyValue(context.Item, "POOL_NAME")
+                                </MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Type">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "POOL_TYPE")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <StatusBadge Status="@GetPropertyValue(context.Item, "POOL_STATUS")" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Actions" Sortable="false">
+                            <CellTemplate>
+                                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Edit"
+                                           OnClick="@(() => OpenEditDialog(context.Item))">
+                                    Edit
+                                </MudButton>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Layers" Color="Color.Secondary"
+                                     Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No pools match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.Layers" Color="Color.Secondary"
+                             Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No pools defined</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Define the first reservoir pool for this field.
+                    </MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="OpenCreateDialog" Class="mt-2">
+                        Add First Pool
+                    </MudButton>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private List<POOL>? _pools;
     private bool _isLoading = false;
-    private string? _currentUserId = "system"; // TODO: Get from authentication context
 
     protected override async Task OnInitializedAsync()
     {
@@ -87,14 +164,13 @@
         var dialog = await DialogService.ShowAsync<PoolEditDialog>("Create Pool", options);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is Dictionary<string, object> poolData)
+        if (result?.Canceled == false && result.Data is Dictionary<string, object> poolData)
         {
             try
             {
                 var created = await ApiClient.PostAsync<object, Dictionary<string, object>>(
                     "/api/field/current/development/pools",
-                    poolData,
-                    new { userId = _currentUserId });
+                    poolData);
                 
                 Snackbar.Add("Pool created successfully", Severity.Success);
                 await LoadPools();
@@ -117,14 +193,13 @@
         var dialog = await DialogService.ShowAsync<PoolEditDialog>("Edit Pool", parameters, options);
         var result = await dialog.Result;
 
-        if (!result.Canceled && result.Data is Dictionary<string, object> poolData)
+        if (result?.Canceled == false && result.Data is Dictionary<string, object> poolData)
         {
             try
             {
                 var updated = await ApiClient.PutAsync<object, Dictionary<string, object>>(
                     $"/api/field/current/development/pools/{poolId}",
-                    poolData,
-                    new { userId = _currentUserId });
+                    poolData);
                 
                 Snackbar.Add("Pool updated successfully", Severity.Success);
                 await LoadPools();

@@ -5,10 +5,10 @@
 
 <PageTitle>Two-Factor Authentication - Beep Oil & Gas</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-2" Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-text-primary);">
-    <span style="color: var(--mud-palette-success);">$</span> security --2fa
+<MudText Typo="Typo.h4" Class="og-terminal-heading mb-2">
+    <span class="og-terminal-success">$</span> security --2fa
 </MudText>
-<MudText Typo="Typo.body2" Class="mb-6" Style="color: var(--mud-palette-text-secondary);">
+<MudText Typo="Typo.body2" Class="mb-6" Color="Color.Secondary">
     Add an extra layer of security to your account
 </MudText>
 
@@ -23,25 +23,25 @@ else if (status == null)
 else
 {
     <!-- Current Status -->
-    <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+    <MudPaper Elevation="0" Class="og-terminal-card pa-4 mb-4">
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
                 <MudIcon Icon="@Icons.Material.Filled.Security" 
                          Size="Size.Large" 
                          Color="@(status.Is2faEnabled ? Color.Success : Color.Warning)" />
                 <div>
-                    <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-primary);">
+                    <MudText Typo="Typo.h6">
                         Two-Factor Authentication
                     </MudText>
-                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
                         @if (status.Is2faEnabled)
                         {
-                            <span style="color: var(--mud-palette-success);">Enabled</span>
+                            <span class="og-terminal-success">Enabled</span>
                             <text> - Your account is protected</text>
                         }
                         else
                         {
-                            <span style="color: var(--mud-palette-warning);">Disabled</span>
+                            <span class="og-terminal-warning">Disabled</span>
                             <text> - Enable for better security</text>
                         }
                     </MudText>
@@ -79,12 +79,12 @@ else
         <!-- Management Options -->
         <MudGrid>
             <MudItem xs="12" md="6">
-                <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px; height: 100%;">
-                    <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: var(--mud-palette-text-primary);">
+                <MudPaper Elevation="0" Class="og-terminal-card pa-4 og-h-full">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">
                         <MudIcon Icon="@Icons.Material.Filled.Key" Class="mr-2" />
                         Recovery Codes
                     </MudText>
-                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
                         Recovery codes can be used to access your account if you lose your authenticator device.
                         @status.RecoveryCodesLeft codes remaining.
                     </MudText>
@@ -93,19 +93,19 @@ else
                                OnClick="GenerateRecoveryCodesAsync"
                                Disabled="@isProcessing"
                                FullWidth="true"
-                               Style="font-family: 'JetBrains Mono', monospace;">
+                               Class="og-terminal-code">
                         generate_codes()
                     </MudButton>
                 </MudPaper>
             </MudItem>
             
             <MudItem xs="12" md="6">
-                <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px; height: 100%;">
-                    <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: var(--mud-palette-text-primary);">
+                <MudPaper Elevation="0" Class="og-terminal-card pa-4 og-h-full">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">
                         <MudIcon Icon="@Icons.Material.Filled.PhoneAndroid" Class="mr-2" />
                         Authenticator App
                     </MudText>
-                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
                         Reset your authenticator app if you've switched devices or need to reconfigure.
                     </MudText>
                     <MudButton Variant="Variant.Outlined" 
@@ -113,19 +113,19 @@ else
                                OnClick="ResetAuthenticatorAsync"
                                Disabled="@isProcessing"
                                FullWidth="true"
-                               Style="font-family: 'JetBrains Mono', monospace;">
+                               Class="og-terminal-code">
                         reset_authenticator()
                     </MudButton>
                 </MudPaper>
             </MudItem>
             
             <MudItem xs="12" md="6">
-                <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px; height: 100%;">
-                    <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: var(--mud-palette-text-primary);">
+                <MudPaper Elevation="0" Class="og-terminal-card pa-4 og-h-full">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">
                         <MudIcon Icon="@Icons.Material.Filled.Computer" Class="mr-2" />
                         Trusted Browser
                     </MudText>
-                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
                         @if (status.IsMachineRemembered)
                         {
                             <text>This browser is remembered. You won't be asked for 2FA here.</text>
@@ -140,19 +140,19 @@ else
                                OnClick="ForgetBrowserAsync"
                                Disabled="@isProcessing"
                                FullWidth="true"
-                               Style="font-family: 'JetBrains Mono', monospace;">
+                               Class="og-terminal-code">
                         forget_browser()
                     </MudButton>
                 </MudPaper>
             </MudItem>
             
             <MudItem xs="12" md="6">
-                <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-error); border-radius: 8px; height: 100%;">
-                    <MudText Typo="Typo.subtitle1" Class="mb-2" Style="color: var(--mud-palette-error);">
+                <MudPaper Elevation="0" Class="og-terminal-card-error pa-4 og-h-full">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2" Color="Color.Error">
                         <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" />
                         Disable 2FA
                     </MudText>
-                    <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
                         This will make your account less secure. Only disable if absolutely necessary.
                     </MudText>
                     <MudButton Variant="Variant.Outlined" 
@@ -160,7 +160,7 @@ else
                                OnClick="Disable2faAsync"
                                Disabled="@isProcessing"
                                FullWidth="true"
-                               Style="font-family: 'JetBrains Mono', monospace;">
+                               Class="og-terminal-code">
                         disable_2fa()
                     </MudButton>
                 </MudPaper>
@@ -172,36 +172,36 @@ else
         <!-- Enable 2FA -->
         @if (showSetup && authenticatorSetup != null)
         {
-            <MudPaper Elevation="0" Class="pa-4 mb-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
-                <MudText Typo="Typo.h6" Class="mb-4" Style="color: var(--mud-palette-text-primary);">
+            <MudPaper Elevation="0" Class="og-terminal-card pa-4 mb-4">
+                <MudText Typo="Typo.h6" Class="mb-4">
                     Step 1: Scan QR Code
                 </MudText>
-                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
                     Scan this QR code with your authenticator app (Google Authenticator, Microsoft Authenticator, Authy, etc.)
                 </MudText>
                 
                 <!-- QR Code placeholder -->
-                <MudPaper Elevation="0" Class="pa-4 mb-4 d-flex justify-center" Style="background: white; border-radius: 8px;">
-                    <MudText Style="color: #0d1117; font-family: 'JetBrains Mono', monospace; word-break: break-all;">
+                <MudPaper Elevation="0" Class="og-qr-paper d-flex justify-center pa-4 mb-4">
+                    <MudText Class="og-qr-text">
                         @authenticatorSetup.AuthenticatorUri
                     </MudText>
                 </MudPaper>
                 
-                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-2">
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-2">
                     Or enter this key manually:
                 </MudText>
-                <MudPaper Elevation="0" Class="pa-3 mb-4" Style="background: var(--mud-palette-dark); border: 1px solid var(--mud-palette-divider); border-radius: 4px;">
-                    <MudText Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-success); letter-spacing: 2px;">
+                <MudPaper Elevation="0" Class="og-ext-login-card pa-3 mb-4">
+                    <MudText Class="og-shared-key">
                         @authenticatorSetup.SharedKey
                     </MudText>
                 </MudPaper>
                 
                 <MudDivider Class="my-4" />
                 
-                <MudText Typo="Typo.h6" Class="mb-4" Style="color: var(--mud-palette-text-primary);">
+                <MudText Typo="Typo.h6" Class="mb-4">
                     Step 2: Verify Code
                 </MudText>
-                <MudText Typo="Typo.body2" Style="color: var(--mud-palette-text-secondary);" Class="mb-4">
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
                     Enter the 6-digit code from your authenticator app to complete setup.
                 </MudText>
                 
@@ -209,8 +209,7 @@ else
                               Label="Verification Code" 
                               Variant="Variant.Outlined"
                               Placeholder="000000"
-                              Style="background: var(--mud-palette-dark);"
-                              Class="mb-4"
+                              Class="og-terminal-dark mb-4"
                               MaxLength="6" />
                 
                 <MudButton Variant="Variant.Filled" 
@@ -218,7 +217,7 @@ else
                            OnClick="Enable2faAsync"
                            Disabled="@(isProcessing || string.IsNullOrWhiteSpace(verificationCode))"
                            StartIcon="@Icons.Material.Filled.Security"
-                           Style="font-family: 'JetBrains Mono', monospace;">
+                           Class="og-terminal-code">
                     @if (isProcessing)
                     {
                         <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -229,13 +228,13 @@ else
         }
         else
         {
-            <MudPaper Elevation="0" Class="pa-6" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+            <MudPaper Elevation="0" Class="og-terminal-card pa-6">
                 <MudStack AlignItems="AlignItems.Center" Spacing="4">
                     <MudIcon Icon="@Icons.Material.Filled.PhonelinkLock" Size="Size.Large" Color="Color.Info" />
-                    <MudText Typo="Typo.h6" Style="color: var(--mud-palette-text-primary);">
+                    <MudText Typo="Typo.h6">
                         Protect Your Account
                     </MudText>
-                    <MudText Typo="Typo.body1" Style="color: var(--mud-palette-text-secondary); text-align: center; max-width: 500px;">
+                    <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary">
                         Two-factor authentication adds an extra layer of security by requiring a code from your phone in addition to your password.
                     </MudText>
                     <MudButton Variant="Variant.Filled" 
@@ -244,7 +243,7 @@ else
                                Disabled="@isProcessing"
                                Size="Size.Large"
                                StartIcon="@Icons.Material.Filled.Security"
-                               Style="font-family: 'JetBrains Mono', monospace;">
+                               Class="og-terminal-code">
                         @if (isProcessing)
                         {
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
@@ -259,7 +258,7 @@ else
     <!-- Recovery Codes Dialog -->
     <MudDialog @bind-Visible="showRecoveryCodes">
         <TitleContent>
-            <MudText Typo="Typo.h6" Style="font-family: 'JetBrains Mono', monospace;">
+            <MudText Typo="Typo.h6" Class="og-terminal-heading">
                 <MudIcon Icon="@Icons.Material.Filled.Key" Class="mr-2" />
                 Recovery Codes
             </MudText>
@@ -269,14 +268,14 @@ else
                 <strong>Save these codes in a safe place!</strong> You can use them to access your account if you lose your authenticator device.
                 Each code can only be used once.
             </MudAlert>
-            <MudPaper Elevation="0" Class="pa-4" Style="background: var(--mud-palette-surface); border: 1px solid var(--mud-palette-divider); border-radius: 8px;">
+            <MudPaper Elevation="0" Class="og-terminal-card pa-4">
                 @if (recoveryCodes != null)
                 {
                     <MudGrid>
                         @foreach (var recoveryCode in recoveryCodes)
                         {
                             <MudItem xs="6">
-                                <MudText Style="font-family: 'JetBrains Mono', monospace; color: var(--mud-palette-success);">
+                                <MudText Class="og-terminal-success og-terminal-code">
                                     @recoveryCode
                                 </MudText>
                             </MudItem>

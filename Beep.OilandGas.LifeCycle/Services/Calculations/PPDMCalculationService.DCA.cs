@@ -157,54 +157,54 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
             var filters = new List<AppFilter>();
 
-            // Apply filters based on request
+            // Apply filters based on request.
+            // PDEN_VOL_SUMMARY uses PDEN_ID as the production entity key (well, pool, or field).
             if (!string.IsNullOrEmpty(request.WellId))
             {
-                filters.Add(new AppFilter 
-                { 
-                    FieldName = "WELL_ID", 
-                    Operator = "=", 
-                    FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", request.WellId) 
+                filters.Add(new AppFilter
+                {
+                    FieldName = "PDEN_ID",
+                    Operator = "=",
+                    FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", request.WellId)
                 });
             }
             else if (!string.IsNullOrEmpty(request.PoolId))
             {
-                filters.Add(new AppFilter 
-                { 
-                    FieldName = "POOL_ID", 
-                    Operator = "=", 
-                    FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", request.PoolId) 
+                filters.Add(new AppFilter
+                {
+                    FieldName = "PDEN_ID",
+                    Operator = "=",
+                    FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", request.PoolId)
                 });
             }
             else if (!string.IsNullOrEmpty(request.FieldId))
             {
-                // For field, we might need to join through wells or pools
-                // For now, try direct FIELD_ID if it exists in PDEN_VOL_SUMMARY table
-                filters.Add(new AppFilter 
-                { 
-                    FieldName = "FIELD_ID", 
-                    Operator = "=", 
-                    FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", request.FieldId) 
+                // Field-level PDEN record: PDEN_ID holds the field identifier.
+                filters.Add(new AppFilter
+                {
+                    FieldName = "PDEN_ID",
+                    Operator = "=",
+                    FilterValue = _defaults.FormatIdForTable("PDEN_VOL_SUMMARY", request.FieldId)
                 });
             }
 
-            // Apply date range filters
+            // Apply date range filters. PDEN_VOL_SUMMARY uses EFFECTIVE_DATE (primary) or VOLUME_DATE.
             if (request.StartDate.HasValue)
             {
-                filters.Add(new AppFilter 
-                { 
-                    FieldName = "PRODUCTION_DATE", 
-                    Operator = ">=", 
-                    FilterValue = request.StartDate.Value.ToString("yyyy-MM-dd") 
+                filters.Add(new AppFilter
+                {
+                    FieldName = "EFFECTIVE_DATE",
+                    Operator = ">=",
+                    FilterValue = request.StartDate.Value.ToString("yyyy-MM-dd")
                 });
             }
             if (request.EndDate.HasValue)
             {
-                filters.Add(new AppFilter 
-                { 
-                    FieldName = "PRODUCTION_DATE", 
-                    Operator = "<=", 
-                    FilterValue = request.EndDate.Value.ToString("yyyy-MM-dd") 
+                filters.Add(new AppFilter
+                {
+                    FieldName = "EFFECTIVE_DATE",
+                    Operator = "<=",
+                    FilterValue = request.EndDate.Value.ToString("yyyy-MM-dd")
                 });
             }
 
@@ -218,10 +218,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
             var productionData = await repo.GetAsync(filters);
             
-            // Sort by production date - cast to PDEN_VOL_SUMMARY and access property directly
+            // Sort by EFFECTIVE_DATE (preferred) falling back to VOLUME_DATE
             var sortedData = productionData
                 .Cast<PDEN_VOL_SUMMARY>()
-                .OrderBy(item => GetDateValue(item, "PRODUCTION_DATE") ?? DateTime.MinValue)
+                .OrderBy(item => item.EFFECTIVE_DATE ?? item.VOLUME_DATE ?? DateTime.MinValue)
                 .ToList();
 
             return sortedData;
@@ -240,9 +240,10 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
 
             foreach (var point in productionDataPoints)
             {
-                var date = GetDateValue(point, "PRODUCTION_DATE");
+                // Use EFFECTIVE_DATE first; VOLUME_DATE is the fallback
+                var date = point.EFFECTIVE_DATE ?? point.VOLUME_DATE;
                 if (!date.HasValue)
-                    continue; 
+                    continue;
 
                 // Extract production volume/rate based on fluid type
                 double? volume = null;

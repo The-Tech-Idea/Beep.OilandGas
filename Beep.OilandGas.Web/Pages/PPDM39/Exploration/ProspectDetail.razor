@@ -1,0 +1,291 @@
+@page "/exploration/prospect/{Id}"
+@page "/exploration/prospect/new"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>@_prospect.Name — Prospect Detail</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       OnClick='() => NavigationManager.NavigateTo("/exploration/prospect-board")'
+                       Title="Back to Board" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">@_prospect.Name</MudText>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — @_prospect.Basin · @_prospect.PlayType</MudText>
+                <StatusBadge Status="@_prospect.Status" />
+            </MudStack>
+        </MudStack>
+    </MudStack>
+
+    @* ── Two-column layout ────────────────────────────────────────────────── *@
+    <MudGrid Spacing="3">
+
+        @* LEFT — Detail tabs (8 cols) *@
+        <MudItem xs="12" md="8">
+            <MudTabs Elevation="1" Rounded="true" ApplyEffectsToContainer="true" @bind-ActivePanelIndex="_activeTab">
+
+                @* Tab 1: Summary *@
+                <MudTabPanel Text="Summary" Icon="@Icons.Material.Filled.Summarize">
+                    <MudGrid Spacing="3" Class="pa-4">
+                        <MudItem xs="12" sm="6" md="4">
+                            <KpiCard Label="Resource P90" Value="@_prospect.ResourceP90.ToString("N0")" Unit="@_prospect.ResourceUnit" ValueColor="Color.Error" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="4">
+                            <KpiCard Label="Resource P50" Value="@_prospect.ResourceP50.ToString("N0")" Unit="@_prospect.ResourceUnit" ValueColor="Color.Primary" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6" md="4">
+                            <KpiCard Label="Resource P10" Value="@_prospect.ResourceP10.ToString("N0")" Unit="@_prospect.ResourceUnit" ValueColor="Color.Success" />
+                        </MudItem>
+                        <MudItem xs="12">
+                            <MudPaper Elevation="0" Class="pa-3">
+                                <MudText Typo="Typo.subtitle2" Class="mb-2">Description</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">@_prospect.Description</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudTabPanel>
+
+                @* Tab 2: Geology *@
+                <MudTabPanel Text="Geology" Icon="@Icons.Material.Filled.Landscape">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        <MudStack Spacing="2">
+                            <MudStack Row="true" Spacing="2">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Play Type</MudText>
+                                <MudText Typo="Typo.body2">@_prospect.PlayType</MudText>
+                            </MudStack>
+                            <MudStack Row="true" Spacing="2">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Basin</MudText>
+                                <MudText Typo="Typo.body2">@_prospect.Basin</MudText>
+                            </MudStack>
+                            <MudStack Row="true" Spacing="2">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Target Formation</MudText>
+                                <MudText Typo="Typo.body2">@_prospect.TargetFormation</MudText>
+                            </MudStack>
+                            <MudStack Row="true" Spacing="2">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Structural Style</MudText>
+                                <MudText Typo="Typo.body2">@_prospect.StructuralStyle</MudText>
+                            </MudStack>
+                            <MudStack Row="true" Spacing="2">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Seismic Coverage</MudText>
+                                <MudText Typo="Typo.body2">@_prospect.SeismicCoverage</MudText>
+                            </MudStack>
+                            <MudStack Row="true" Spacing="2">
+                                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Vintage</MudText>
+                                <MudText Typo="Typo.body2">@_prospect.SeismicVintage</MudText>
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper>
+                </MudTabPanel>
+
+                @* Tab 3: Risk *@
+                <MudTabPanel Text="Risk" Icon="@Icons.Material.Filled.Warning">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        <MudText Typo="Typo.subtitle2" Class="mb-3">Chance of Success Breakdown</MudText>
+                        <MudDataGrid T="RiskElement" Items="@_prospect.RiskElements" Dense="true" Hover="true" Striped="true">
+                            <Columns>
+                                <PropertyColumn Property="r => r.Element" Title="Risk Element" />
+                                <TemplateColumn Title="Probability" SortBy="r => r.Probability">
+                                    <CellTemplate>
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                            <MudProgressLinear Value="@context.Item.Probability"
+                                                               Color="@(context.Item.Probability >= 60 ? Color.Success : context.Item.Probability >= 40 ? Color.Warning : Color.Error)"
+                                                               Class="flex-grow-1" />
+                                            <MudText Typo="Typo.caption">@context.Item.Probability%</MudText>
+                                        </MudStack>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <PropertyColumn Property="r => r.Confidence" Title="Confidence" />
+                            </Columns>
+                        </MudDataGrid>
+                        <MudDivider Class="my-3" />
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudText Typo="Typo.subtitle2">Overall Pg (Chance of Success):</MudText>
+                            <MudText Typo="Typo.h5" Color="@((_prospect.RiskElements.Aggregate(1.0, (acc, r) => acc * r.Probability / 100) * 100) >= 25 ? Color.Success : Color.Warning)">
+                                @((_prospect.RiskElements.Aggregate(1.0, (acc, r) => acc * r.Probability / 100) * 100).ToString("F1"))%
+                            </MudText>
+                        </MudStack>
+                    </MudPaper>
+                </MudTabPanel>
+
+                @* Tab 4: History *@
+                <MudTabPanel Text="History" Icon="@Icons.Material.Filled.History">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        <ProcessTimeline Steps="@_stageHistory" />
+                    </MudPaper>
+                </MudTabPanel>
+
+                @* Tab 5: Related Wells *@
+                <MudTabPanel Text="Related Wells" Icon="@Icons.Material.Filled.OilBarrel">
+                    <MudPaper Elevation="0" Class="pa-4">
+                        @if (_prospect.RelatedWells.Count == 0)
+                        {
+                            <MudAlert Severity="Severity.Info">No wells drilled on this prospect yet.</MudAlert>
+                        }
+                        else
+                        {
+                            <MudDataGrid T="WellReference" Items="@_prospect.RelatedWells" Dense="true" Hover="true" Striped="true">
+                                <Columns>
+                                    <PropertyColumn Property="w => w.Uwi" Title="UWI" />
+                                    <PropertyColumn Property="w => w.Name" Title="Well Name" />
+                                    <PropertyColumn Property="w => w.Type" Title="Type" />
+                                    <TemplateColumn Title="Status">
+                                        <CellTemplate><StatusBadge Status="@context.Item.Status" /></CellTemplate>
+                                    </TemplateColumn>
+                                    <PropertyColumn Property="w => w.Td" Title="TD (m)" />
+                                </Columns>
+                            </MudDataGrid>
+                        }
+                    </MudPaper>
+                </MudTabPanel>
+
+            </MudTabs>
+        </MudItem>
+
+        @* RIGHT — Stage & Actions (4 cols) *@
+        <MudItem xs="12" md="4">
+            <MudStack Spacing="3">
+
+                @* Stage timeline *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Maturation Stage</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <ProcessTimeline Steps="@_stageHistory" />
+                    </MudCardContent>
+                </MudCard>
+
+                @* Actions *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Actions</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudStack Spacing="2">
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.TrendingUp"
+                                       FullWidth="true"
+                                       OnClick="AdvanceStage">
+                                Advance Stage
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Assignment"
+                                       FullWidth="true"
+                                       OnClick='() => NavigationManager.NavigateTo($"/exploration/well-program/new?prospectId={Id}")'>
+                                Request Well Program
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Error"
+                                       StartIcon="@Icons.Material.Filled.Archive"
+                                       FullWidth="true"
+                                       OnClick="DropProspect">
+                                Drop Prospect
+                            </MudButton>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+
+</MudContainer>
+
+@code {
+    [Parameter] public string? Id { get; set; }
+
+    private string _fieldName = "Current Field";
+    private int _activeTab;
+    private ProspectViewModel _prospect = new();
+    private List<ProcessStep> _stageHistory = new();
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/exploration/prospects/{Id}
+        _prospect = new ProspectViewModel
+        {
+            Name = "Eagle Ford South Prospect",
+            Basin = "Eagle Ford",
+            PlayType = "Clastic",
+            Status = "ACTIVE",
+            Description = "Large structural-stratigraphic trap in the Lower Eagle Ford Shale. Primary target is oil window with gas cap potential.",
+            TargetFormation = "Lower Eagle Ford Shale",
+            StructuralStyle = "Structural-stratigraphic",
+            SeismicCoverage = "3D — 250 km²",
+            SeismicVintage = "2022",
+            ResourceP90 = 45,  ResourceP50 = 120, ResourceP10 = 280, ResourceUnit = "MMBO",
+            RiskElements = new()
+            {
+                new("Trap Integrity",        75, "High"),
+                new("Reservoir Quality",     65, "Medium"),
+                new("Seal Effectiveness",    80, "High"),
+                new("Charge / Migration",    55, "Low"),
+            },
+            RelatedWells = new()
+        };
+
+        _stageHistory = new List<ProcessStep>
+        {
+            new("Lead Identified",  "Jan 2024", IsCompleted: true,  IsActive: false),
+            new("Screening",        "Mar 2024", IsCompleted: true,  IsActive: false),
+            new("Prospect",         "Jul 2024", IsCompleted: true,  IsActive: false),
+            new("Ranking",          "Nov 2024", IsCompleted: false, IsActive: true),
+            new("Drill Candidate",  "",         IsCompleted: false, IsActive: false),
+            new("Drilled",          "",         IsCompleted: false, IsActive: false),
+        };
+    }
+
+    private async Task AdvanceStage()
+    {
+        var parameters = new DialogParameters<StageAdvanceDialog>
+        {
+            { x => x.ProspectName, _prospect.Name },
+            { x => x.ToStageName, "Drill Candidate" }
+        };
+        var dialog = await DialogService.ShowAsync<StageAdvanceDialog>("Advance Stage", parameters);
+        var result = await dialog.Result;
+        if (result is { Canceled: false })
+            Snackbar.Add("Prospect advanced to Drill Candidate", Severity.Success);
+    }
+
+    private void DropProspect()
+    {
+        _prospect.Status = "ARCHIVED";
+        Snackbar.Add($"'{_prospect.Name}' has been dropped and archived.", Severity.Warning);
+        NavigationManager.NavigateTo("/exploration/prospect-board");
+    }
+
+    private class ProspectViewModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Basin { get; set; } = string.Empty;
+        public string PlayType { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string TargetFormation { get; set; } = string.Empty;
+        public string StructuralStyle { get; set; } = string.Empty;
+        public string SeismicCoverage { get; set; } = string.Empty;
+        public string SeismicVintage { get; set; } = string.Empty;
+        public double ResourceP90 { get; set; }
+        public double ResourceP50 { get; set; }
+        public double ResourceP10 { get; set; }
+        public string ResourceUnit { get; set; } = "MMBO";
+        public List<RiskElement> RiskElements { get; set; } = new();
+        public List<WellReference> RelatedWells { get; set; } = new();
+    }
+
+    private record RiskElement(string Element, double Probability, string Confidence);
+    internal record WellReference(string Uwi, string Name, string Type, string Status, string Td);
+}

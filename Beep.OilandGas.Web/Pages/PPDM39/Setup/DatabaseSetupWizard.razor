@@ -1,0 +1,316 @@
+@page "/ppdm39/setup"
+@using Beep.OilandGas.Web.Services
+@inject IFirstRunService FirstRunService
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+
+<PageTitle>Database Setup — Beep Oil &amp; Gas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="4">
+
+        <MudStack Row="false" AlignItems="AlignItems.Center" Class="mb-4">
+            <MudIcon Icon="@Icons.Material.Filled.Storage"
+                     Color="Color.Primary"
+                     Size="Size.Large" />
+            <MudText Typo="Typo.h5" Class="mt-2">Database Setup</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Configure your PPDM39 database to get started.
+            </MudText>
+        </MudStack>
+
+        <MudStepper @bind-ActiveIndex="_step" Linear="true" Color="Color.Primary">
+
+            <!-- ─────────────── Step 0 — Choose database type ─────────────── -->
+            <MudStep Title="Choose Database" Icon="@Icons.Material.Filled.Storage">
+                <MudText Typo="Typo.body1" Class="mb-4">
+                    Select the database type for your PPDM39 data store.
+                </MudText>
+
+                <MudRadioGroup @bind-Value="_dbType" T="string" Class="mb-4">
+                    <MudRadio Value="@("sqlite")" Color="Color.Primary">
+                        <MudStack Row="true" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Size="Size.Small" />
+                            <MudText>SQLite — local file-based database (recommended for development)</MudText>
+                        </MudStack>
+                    </MudRadio>
+                    <MudRadio Value="@("external")" Color="Color.Primary" Disabled="true">
+                        <MudStack Row="true" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.Dns" Size="Size.Small" />
+                            <MudText>External — SQL Server / PostgreSQL (coming soon)</MudText>
+                        </MudStack>
+                    </MudRadio>
+                </MudRadioGroup>
+
+                <MudDivider Class="mb-4" />
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           EndIcon="@Icons.Material.Filled.ArrowForward"
+                           OnClick="GoToStep1"
+                           Disabled="@string.IsNullOrEmpty(_dbType)">
+                    Next
+                </MudButton>
+            </MudStep>
+
+            <!-- ─────────────── Step 1 — Configure SQLite ─────────────────── -->
+            <MudStep Title="Configure" Icon="@Icons.Material.Filled.Settings">
+                <MudText Typo="Typo.body1" Class="mb-4">
+                    Enter connection details for your SQLite database.
+                </MudText>
+
+                <MudTextField @bind-Value="_connectionName"
+                              Label="Connection Name"
+                              HelperText="Internal name used to identify this database"
+                              Required="true"
+                              Class="mb-3" />
+
+                <MudTextField @bind-Value="_fileName"
+                              Label="Database File Name"
+                              HelperText="e.g. ppdm39.db — the .db extension will be added automatically"
+                              Required="true"
+                              Class="mb-3" />
+
+                <MudTextField @bind-Value="_savePath"
+                              Label="Save Path (optional)"
+                              HelperText="Leave blank to use the default application data folder"
+                              Class="mb-4" />
+
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Text"
+                               StartIcon="@Icons.Material.Filled.ArrowBack"
+                               OnClick="() => _step = 0">
+                        Back
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               EndIcon="@Icons.Material.Filled.ArrowForward"
+                               OnClick="CreateSqliteAsync"
+                               Disabled="@(_isBusy || string.IsNullOrWhiteSpace(_connectionName) || string.IsNullOrWhiteSpace(_fileName))">
+                        @if (_isBusy && _step == 1)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        Create Database
+                    </MudButton>
+                </MudStack>
+            </MudStep>
+
+            <!-- ─────────────── Step 2 — Create Schema ────────────────────── -->
+            <MudStep Title="Create Schema" Icon="@Icons.Material.Filled.TableChart">
+                <MudText Typo="Typo.body1" Class="mb-4">
+                    Apply the PPDM39 schema to your new database. This will create all required tables.
+                </MudText>
+
+                @if (!string.IsNullOrEmpty(_createDbMessage))
+                {
+                    <MudAlert Severity="@_createDbSeverity" Class="mb-4" Dense="true">
+                        @_createDbMessage
+                    </MudAlert>
+                }
+
+                <MudText Typo="Typo.body2" Class="mb-4">
+                    Connection: <strong>@_connectionName</strong>
+                </MudText>
+
+                <MudStack Row="true" Spacing="2">
+                    <MudButton Variant="Variant.Text"
+                               StartIcon="@Icons.Material.Filled.ArrowBack"
+                               OnClick="() => _step = 1"
+                               Disabled="@_isBusy">
+                        Back
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               EndIcon="@Icons.Material.Filled.PlayArrow"
+                               OnClick="CreateSchemaAsync"
+                               Disabled="@_isBusy">
+                        @if (_isBusy && _step == 2)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                        }
+                        Apply Schema
+                    </MudButton>
+                </MudStack>
+
+                @if (_schemaProgress > 0)
+                {
+                    <MudProgressLinear Value="@_schemaProgress" Color="Color.Primary" Striped="true" Class="mt-4" />
+                    <MudText Typo="Typo.caption" Class="mt-1">@_schemaStatusText</MudText>
+                }
+            </MudStep>
+
+            <!-- ─────────────── Step 3 — Ready ───────────────────────────── -->
+            <MudStep Title="Ready"
+                     Icon="@Icons.Material.Filled.CheckCircle"
+                     CompletedIcon="@Icons.Material.Filled.CheckCircle">
+                <MudStack AlignItems="AlignItems.Center" Class="pa-4">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                             Color="Color.Success"
+                             Style="font-size:4rem;" />
+                    <MudText Typo="Typo.h6" Class="mt-2">Setup Complete!</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
+                        Your PPDM39 database is ready. Tables created: <strong>@_tablesCreated</strong>
+                    </MudText>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Success"
+                               StartIcon="@Icons.Material.Filled.Home"
+                               OnClick="FinishAndNavigate">
+                        Go to Dashboard
+                    </MudButton>
+                </MudStack>
+            </MudStep>
+
+        </MudStepper>
+
+    </MudPaper>
+</MudContainer>
+
+@code {
+    // ── State ─────────────────────────────────────────────────────────────────
+    private int _step = 0;
+    private bool _isBusy = false;
+
+    // Step 0 — DB type
+    private string _dbType = "sqlite";
+
+    // Step 1 — Connection config
+    private string _connectionName = "PPDM39";
+    private string _fileName = "ppdm39";
+    private string _savePath = "";
+
+    // Step 2 — Schema progress
+    private string? _createDbMessage;
+    private Severity _createDbSeverity = Severity.Info;
+    private double _schemaProgress = 0;
+    private string _schemaStatusText = "";
+    private int _tablesCreated = 0;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        // If setup already done, redirect away
+        var required = await FirstRunService.IsSetupRequiredAsync();
+        if (!required)
+        {
+            NavigationManager.NavigateTo("/", forceLoad: false);
+        }
+    }
+
+    // ── Step navigation ───────────────────────────────────────────────────────
+    private void GoToStep1() => _step = 1;
+
+    // ── Create SQLite database ────────────────────────────────────────────────
+    private async Task CreateSqliteAsync()
+    {
+        _isBusy = true;
+        StateHasChanged();
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/ppdm39/setup/create-sqlite", new
+            {
+                connectionName = _connectionName,
+                fileName = _fileName,
+                savePath = string.IsNullOrWhiteSpace(_savePath) ? null : _savePath
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                _createDbMessage = $"Database created for connection '{_connectionName}'.";
+                _createDbSeverity = Severity.Success;
+                _step = 2;
+            }
+            else
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                _createDbMessage = $"Failed to create database: {err}";
+                _createDbSeverity = Severity.Error;
+                Snackbar.Add(_createDbMessage, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _createDbMessage = $"Error: {ex.Message}";
+            _createDbSeverity = Severity.Error;
+            Snackbar.Add(_createDbMessage, Severity.Error);
+        }
+        finally
+        {
+            _isBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    // ── Apply PPDM39 schema via MigrationManager ──────────────────────────────
+    private async Task CreateSchemaAsync()
+    {
+        _isBusy = true;
+        _schemaProgress = 10;
+        _schemaStatusText = "Building migration plan…";
+        StateHasChanged();
+
+        try
+        {
+            _schemaProgress = 40;
+            _schemaStatusText = "Applying schema…";
+            StateHasChanged();
+
+            var response = await Http.PostAsJsonAsync("api/ppdm39/setup/create-schema-from-migration", new
+            {
+                connectionName = _connectionName
+            });
+
+            _schemaProgress = 90;
+            StateHasChanged();
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<CreateSchemaResultDto>();
+                _tablesCreated = result?.TablesCreated ?? 0;
+                _schemaProgress = 100;
+                _schemaStatusText = result?.Message ?? "Schema created successfully";
+                StateHasChanged();
+
+                // Mark setup complete and advance
+                await FirstRunService.MarkSetupCompleteAsync(_connectionName);
+                _step = 3;
+            }
+            else
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                _schemaProgress = 0;
+                _schemaStatusText = "";
+                _createDbMessage = $"Schema migration failed: {err}";
+                _createDbSeverity = Severity.Error;
+                Snackbar.Add(_createDbMessage, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            _schemaProgress = 0;
+            _schemaStatusText = "";
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isBusy = false;
+            StateHasChanged();
+        }
+    }
+
+    // ── Finish ────────────────────────────────────────────────────────────────
+    private void FinishAndNavigate()
+    {
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+
+    // ── Local DTO ─────────────────────────────────────────────────────────────
+    private class CreateSchemaResultDto
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public int TablesCreated { get; set; }
+        public int TotalEntities { get; set; }
+    }
+}

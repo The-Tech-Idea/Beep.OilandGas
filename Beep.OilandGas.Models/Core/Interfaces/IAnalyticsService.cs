@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.Analytics;
-using Beep.OilandGas.Models.Data.Analytics;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

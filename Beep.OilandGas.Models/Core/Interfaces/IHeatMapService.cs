@@ -1,51 +1,22 @@
-﻿//using System.Collections.Generic;
-//using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Beep.OilandGas.Models.Data.HeatMap;
 
-//using Beep.OilandGas.Models.Data;
-//using Beep.OilandGas.Models.Data.HeatMap;
-
-//namespace Beep.OilandGas.Models.Core.Interfaces
-//{
-//    /// <summary>
-//    /// Service interface for heat map generation and management.
-//    /// Provides heat map creation, persistence, and integration with field data.
-//    /// </summary>
-//    public interface IHeatMapService
-//    {
-//        /// <summary>
-//        /// Generates a heat map from data points.
-//        /// </summary>
-//        /// <param name="dataPoints">Data points for heat map</param>
-//        /// <param name="configuration">Heat map configuration</param>
-//        /// <returns>Generated heat map</returns>
-//        Task<HeatMapResult> GenerateHeatMapAsync(List<HEAT_MAP_DATA_POINT> dataPoints, HeatMapConfigurationRecord configuration);
-
-//        /// <summary>
-//        /// Saves heat map configuration to database.
-//        /// </summary>
-//        /// <param name="configuration">Heat map configuration</param>
-//        /// <param name="userId">User ID for audit</param>
-//        /// <returns>Heat map identifier</returns>
-//        Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationRecord configuration, string userId);
-
-//        /// <summary>
-//        /// Gets heat map configuration from database.
-//        /// </summary>
-//        /// <param name="heatMapId">Heat map identifier</param>
-//        /// <returns>Heat map configuration</returns>
-//        Task<HeatMapConfigurationRecord?> GetHeatMapConfigurationAsync(string heatMapId);
-
-//        /// <summary>
-//        /// Generates heat map from field production data.
-//        /// </summary>
-//        /// <param name="fieldId">Field identifier</param>
-//        /// <param name="startDate">Start date</param>
-//        /// <param name="endDate">End date</param>
-//        /// <returns>Generated heat map</returns>
-//        Task<HeatMapResult> GenerateProductionHeatMapAsync(string fieldId, System.DateTime startDate, System.DateTime endDate);
-//    }
-//}
-
-
-
-
+namespace Beep.OilandGas.Models.Core.Interfaces
+{
+    public interface IHeatMapService
+    {
+        Task<HeatMapResult> GenerateHeatMapAsync(List<HEAT_MAP_DATA_POINT> dataPoints, HeatMapConfigurationRecord configuration);
+        Task<string> SaveHeatMapConfigurationAsync(HeatMapConfigurationRecord configuration, string userId);
+        Task<HeatMapConfigurationRecord?> GetHeatMapConfigurationAsync(string heatMapId);
+        Task<HeatMapResult> GenerateProductionHeatMapAsync(string fieldId, DateTime startDate, DateTime endDate);
+        Task<ThermalAnalysisResult> AnalyzeThermalPatternAsync(string locationId, List<HEAT_MAP_DATA_POINT> dataPoints);
+        Task<List<ThermalAnomaly>> DetectThermalAnomaliesAsync(string locationId, List<HEAT_MAP_DATA_POINT> dataPoints, decimal stdDevThreshold = 2.0m);
+        Task<ThermalTrendAnalysis> AnalyzeTemperatureTrendAsync(string locationId, List<decimal> historicalTemperatures, int forecastMonths = 6);
+        Task<TemperatureGradientAnalysis> AnalyzeTemperatureGradientAsync(string locationId, List<HEAT_MAP_DATA_POINT> dataPoints);
+        Task<List<TemperatureZone>> IdentifyTemperatureZonesAsync(string locationId, List<HEAT_MAP_DATA_POINT> dataPoints);
+        Task<ThermalImageQuality> AssessThermalImageQualityAsync(string imageId, List<HEAT_MAP_DATA_POINT> dataPoints);
+        Task<ThermalComparisonResult> CompareThermalDataAsync(string locationId, List<HEAT_MAP_DATA_POINT> baselineData, List<HEAT_MAP_DATA_POINT> currentData);
+    }
+}

@@ -1,0 +1,44 @@
+@* ProcessStepTimeline — step sequence for a process instance *@
+<MudTimeline TimelineOrientation="TimelineOrientation.Vertical"
+             TimelinePosition="TimelinePosition.Left"
+             Class="pt-2">
+    @foreach (var step in Steps)
+    {
+        var isActive  = step.StepId == CurrentStepId;
+        var isDone    = CompletedStepIds.Contains(step.StepId);
+        var color     = isDone ? Color.Success : isActive ? Color.Primary : Color.Default;
+        var icon      = isDone  ? Icons.Material.Filled.CheckCircle
+                      : isActive ? Icons.Material.Filled.PlayCircle
+                                 : Icons.Material.Outlined.Circle;
+
+        <MudTimelineItem Color="@color" Icon="@icon" Size="Size.Small">
+            <ItemOpposite>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@step.StepType</MudText>
+            </ItemOpposite>
+            <ItemContent>
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body2"
+                             Color="@(isActive ? Color.Primary : Color.Default)">
+                        @step.StepName
+                    </MudText>
+                    @if (step.RequiresApproval)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Warning"
+                                 Icon="@Icons.Material.Filled.HowToReg"
+                                 Variant="Variant.Outlined">
+                            Approval required
+                        </MudChip>
+                    }
+                </MudStack>
+            </ItemContent>
+        </MudTimelineItem>
+    }
+</MudTimeline>
+
+@using Beep.OilandGas.LifeCycle.Models.Processes
+
+@code {
+    [Parameter] public List<ProcessStepDefinition> Steps { get; set; } = new();
+    [Parameter] public string CurrentStepId { get; set; } = string.Empty;
+    [Parameter] public HashSet<string> CompletedStepIds { get; set; } = new();
+}

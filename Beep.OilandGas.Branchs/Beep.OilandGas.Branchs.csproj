@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Beep.OilandGas.Branchs</RootNamespace>
+    <!-- IBranch interface properties are runtime-populated; suppress uninitialized property warnings -->
+    <NoWarn>$(NoWarn);CS8618</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -64,15 +66,30 @@
     <EmbeddedResource Include="GFX\well-logs.svg" />
     <EmbeddedResource Include="GFX\wells.svg" />
     <EmbeddedResource Include="GFX\work-orders.svg" />
+    <!-- Business Process branch icons -->
+    <EmbeddedResource Include="GFX\business-process.svg" />
+    <EmbeddedResource Include="GFX\exploration-workflow.svg" />
+    <EmbeddedResource Include="GFX\development-workflow.svg" />
+    <EmbeddedResource Include="GFX\production-workflow.svg" />
+    <EmbeddedResource Include="GFX\decommissioning-workflow.svg" />
+    <EmbeddedResource Include="GFX\work-order-workflow.svg" />
+    <EmbeddedResource Include="GFX\approval-gate.svg" />
+    <EmbeddedResource Include="GFX\hse-workflow.svg" />
+    <EmbeddedResource Include="GFX\compliance-workflow.svg" />
+    <EmbeddedResource Include="GFX\well-lifecycle.svg" />
+    <EmbeddedResource Include="GFX\facility-lifecycle.svg" />
+    <EmbeddedResource Include="GFX\reservoir-workflow.svg" />
+    <EmbeddedResource Include="GFX\pipeline-workflow.svg" />
+    <EmbeddedResource Include="GFX\process-step.svg" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="TheTechIdea.Beep.TreeNodes" Version="1.0.16" />
-    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.86">
+    <PackageReference Include="TheTechIdea.Beep.DataManagementEngine" Version="2.0.87">
       <ExcludeAssets>contentFiles</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.139" />
-    <PackageReference Include="TheTechIdea.Beep.Vis.Modules" Version="2.0.38" />
+    <PackageReference Include="TheTechIdea.Beep.DataManagementModels" Version="2.0.140" />
+    <PackageReference Include="TheTechIdea.Beep.Vis.Modules" Version="2.0.39" />
   </ItemGroup>
 
 </Project>

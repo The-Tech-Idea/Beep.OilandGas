@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Drilling;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 

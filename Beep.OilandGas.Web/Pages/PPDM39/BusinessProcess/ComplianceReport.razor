@@ -1,0 +1,145 @@
+@page "/ppdm39/compliance/report"
+@attribute [Authorize(Roles = "Compliance,Manager,Admin")]
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Submit Compliance Report</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       OnClick='() => NavigationManager.NavigateTo("/ppdm39/compliance")' />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Submit Compliance Report</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Submit regulatory obligation report to jurisdiction authority</MudText>
+        </MudStack>
+    </MudStack>
+
+    <MudForm @ref="_form">
+        <MudCard Elevation="2" Class="mb-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.subtitle1">Jurisdiction &amp; Obligation</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="string" @bind-Value="_jurisdictionTag" Label="Jurisdiction" Required="true"
+                                   Variant="Variant.Outlined" RequiredError="Jurisdiction is required">
+                            <MudSelectItem Value='"USA"'>USA — ONRR / State</MudSelectItem>
+                            <MudSelectItem Value='"CAN"'>Canada — CAPP / AER / NEB</MudSelectItem>
+                            <MudSelectItem Value='"INTL"'>International — Country-specific</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="string" @bind-Value="_obligationType" Label="Obligation Type" Required="true"
+                                   Variant="Variant.Outlined" RequiredError="Type is required">
+                            <MudSelectItem Value='"PRODUCTION_REPORT"'>Monthly Production Report</MudSelectItem>
+                            <MudSelectItem Value='"ROYALTY_RETURN"'>Royalty Return</MudSelectItem>
+                            <MudSelectItem Value='"FLARING_DECLARATION"'>Flaring Volume Declaration</MudSelectItem>
+                            <MudSelectItem Value='"ENVIRONMENTAL_REPORT"'>Environmental Compliance</MudSelectItem>
+                            <MudSelectItem Value='"WELL_INTEGRITY"'>Annual Well Integrity</MudSelectItem>
+                            <MudSelectItem Value='"OTHER"'>Other</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker @bind-Date="_periodStart" Label="Period Start" Required="true"
+                                       Variant="Variant.Outlined" RequiredError="Period start is required" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker @bind-Date="_periodEnd" Label="Period End" Required="true"
+                                       Variant="Variant.Outlined" RequiredError="Period end is required" />
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+
+        <MudCard Elevation="2" Class="mb-4">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.subtitle1">Report Content</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid Spacing="3">
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_reportData" Label="Report Data / Reference (JSON or Reference Number)"
+                                      Lines="5" Variant="Variant.Outlined"
+                                      HelperText="Enter JSON data, report reference number, or summary text" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="_submissionReference" Label="Submission Reference (optional)"
+                                      Variant="Variant.Outlined"
+                                      HelperText="External reference assigned by regulatory authority" />
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+
+        <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+            <MudButton Variant="Variant.Outlined"
+                       OnClick='() => NavigationManager.NavigateTo("/ppdm39/compliance")'>
+                Cancel
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Send"
+                       Disabled="@_submitting"
+                       OnClick="SubmitReportAsync">
+                @(_submitting ? "Submitting…" : "Submit Report")
+            </MudButton>
+        </MudStack>
+    </MudForm>
+
+</MudContainer>
+
+@using Microsoft.AspNetCore.Authorization
+@using Beep.OilandGas.Models.Data
+
+@code {
+    private string    _fieldName           = "Current Field";
+    private string    _jurisdictionTag     = string.Empty;
+    private string    _obligationType      = string.Empty;
+    private DateTime? _periodStart         = null;
+    private DateTime? _periodEnd           = null;
+    private string    _reportData          = string.Empty;
+    private string    _submissionReference = string.Empty;
+    private bool      _submitting          = false;
+
+    private MudForm _form = null!;
+
+    private async Task SubmitReportAsync()
+    {
+        await _form.Validate();
+        if (!_form.IsValid) return;
+
+        _submitting = true;
+        try
+        {
+            var request = new ComplianceReportRequest
+            {
+                JurisdictionTag      = _jurisdictionTag,
+                ObligationType       = _obligationType,
+                PeriodStart          = _periodStart ?? DateTime.Today,
+                PeriodEnd            = _periodEnd   ?? DateTime.Today,
+                ReportData           = _reportData,
+                SubmissionReference  = _submissionReference
+            };
+            await ApiClient.PostAsync<ComplianceReportRequest, object>(
+                "/api/field/current/compliance/reports", request);
+            Snackbar.Add("Compliance report submitted successfully.", Severity.Success);
+            NavigationManager.NavigateTo("/ppdm39/compliance");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Submission failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+}

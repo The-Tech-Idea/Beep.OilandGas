@@ -1,9 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Beep.OilandGas.ProductionAccounting.Allocation;
+using Beep.OilandGas.Models.Data.Allocation;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.ProductionAccounting.Services;
@@ -79,7 +75,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
                         IssueType = i.IssueType,
                         Description = i.Description,
                         Severity = i.Severity
-                    }) ?? new List<object>()
+                    }).Cast<object>().ToList() ?? new List<object>()
                 });
             }
             catch (Exception ex)

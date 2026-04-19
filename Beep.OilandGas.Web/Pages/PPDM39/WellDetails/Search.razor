@@ -4,10 +4,16 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<PageTitle>Wells - PPDM39</PageTitle>
+<PageTitle>Search Wells</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudText Typo="Typo.h4" Class="mb-4">Wells Management</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Search Wells</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Look up wells by UWI</MudText>
+        </MudStack>
+    </MudStack>
     
     <MudPaper Class="pa-4">
         <MudText Typo="Typo.h6" Class="mb-4">Search Wells</MudText>
@@ -52,6 +58,7 @@
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private string _searchUwi = string.Empty;
     private WELL? _well;
     private bool _isLoading = false;

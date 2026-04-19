@@ -37,5 +37,9 @@ namespace Beep.OilandGas.Models.Data.NodalAnalysis
 
         // Standard PPDM columns
 
+        // Alias for calculator compatibility
+        public Decimal PRESSURE { get => FLOWING_BOTTOMHOLE_PRESSURE; set => FLOWING_BOTTOMHOLE_PRESSURE = value; }
+
     }
 }
+

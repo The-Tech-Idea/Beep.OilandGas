@@ -3,6 +3,15 @@ namespace Beep.OilandGas.Models.Data.EconomicAnalysis
 {
     public class CashFlow : ModelEntityBase
     {
+        public CashFlow() { }
+
+        public CashFlow(int period, double amount, string? description = null)
+        {
+            Period = period;
+            Amount = amount;
+            Description = description;
+        }
+
         /// <summary>
         /// Time period (0, 1, 2, ...)
         /// </summary>

@@ -50,5 +50,15 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref SeverityValue, value); }
 
         }
+
+        public string ErrorCode
+
+        {
+
+            get { return this.RuleNameValue; }
+
+            set { SetProperty(ref RuleNameValue, value); }
+
+        }
     }
 }

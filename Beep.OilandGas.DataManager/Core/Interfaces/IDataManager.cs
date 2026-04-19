@@ -3,6 +3,7 @@ using Beep.OilandGas.DataManager.Core.State;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Models.DatabaseCreation;
 using TheTechIdea.Beep;
 using TheTechIdea.Beep.Editor;
+using ValidationResult = Beep.OilandGas.DataManager.Core.Models.ValidationResult;
 
 namespace Beep.OilandGas.DataManager.Core.Interfaces
 {

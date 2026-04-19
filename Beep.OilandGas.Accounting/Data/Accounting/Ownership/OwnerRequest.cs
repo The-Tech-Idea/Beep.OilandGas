@@ -1,0 +1,51 @@
+using System;
+using Beep.OilandGas.Models.Data;
+
+namespace Beep.OilandGas.Models.Data.Accounting.Ownership
+{
+    public class OwnerRequest : ModelEntityBase
+    {
+        private string OwnerNameValue = string.Empty;
+
+        public string OwnerName
+
+        {
+
+            get { return this.OwnerNameValue; }
+
+            set { SetProperty(ref OwnerNameValue, value); }
+
+        }
+        private string? TaxIdValue;
+
+        public string? TaxId
+
+        {
+
+            get { return this.TaxIdValue; }
+
+            set { SetProperty(ref TaxIdValue, value); }
+
+        }
+
+        public string OWNER_NAME
+
+        {
+
+            get { return this.OwnerNameValue; }
+
+            set { SetProperty(ref OwnerNameValue, value); }
+
+        }
+
+        public string? TAX_ID
+
+        {
+
+            get { return this.TaxIdValue; }
+
+            set { SetProperty(ref TaxIdValue, value); }
+
+        }
+    }
+}

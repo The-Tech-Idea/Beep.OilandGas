@@ -1,0 +1,167 @@
+@page "/ppdm39/process/definitions/{Id}"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Process Definition — @_def?.ProcessName</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       OnClick='() => NavigationManager.NavigateTo("/ppdm39/process/definitions")' />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">@(_def?.ProcessName ?? "Loading…")</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary">@_def?.ProcessType</MudChip>
+                <MudChip T="string" Size="Size.Small" Color="Color.Info">@_def?.EntityType</MudChip>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@_fieldName</MudText>
+            </MudStack>
+        </MudStack>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                   OnClick="StartInstanceAsync">
+            Start Instance
+        </MudButton>
+    </MudStack>
+
+    <MudDivider Class="mb-4" />
+
+    @if (_def == null)
+    {
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" />
+    }
+    else
+    {
+        <MudGrid Spacing="3">
+
+            @* ── Overview ─────────────────────────────────────────────── *@
+            <MudItem xs="12" md="4">
+                <MudCard Elevation="2" Class="h-100">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Overview</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText Typo="Typo.body2" Class="mb-3">@_def.Description</MudText>
+                        <MudSimpleTable Dense="true">
+                            <tbody>
+                                <tr><td><MudText Typo="Typo.caption">Process ID</MudText></td>
+                                    <td><MudText Typo="Typo.body2">@_def.ProcessId</MudText></td></tr>
+                                <tr><td><MudText Typo="Typo.caption">Type</MudText></td>
+                                    <td><MudText Typo="Typo.body2">@_def.ProcessType</MudText></td></tr>
+                                <tr><td><MudText Typo="Typo.caption">Entity</MudText></td>
+                                    <td><MudText Typo="Typo.body2">@_def.EntityType</MudText></td></tr>
+                                <tr><td><MudText Typo="Typo.caption">Steps</MudText></td>
+                                    <td><MudText Typo="Typo.body2">@_def.Steps.Count</MudText></td></tr>
+                                <tr><td><MudText Typo="Typo.caption">Created</MudText></td>
+                                    <td><MudText Typo="Typo.body2">@_def.CreatedDate.ToString("dd-MMM-yyyy")</MudText></td></tr>
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+            @* ── Step list ─────────────────────────────────────────────── *@
+            <MudItem xs="12" md="8">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Process Steps</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MudDataGrid T="StepRow" Items="@_steps" Dense="true" Hover="true" Striped="true">
+                            <Columns>
+                                <PropertyColumn Property="s => s.Seq"      Title="#" />
+                                <PropertyColumn Property="s => s.StepName" Title="Step" />
+                                <PropertyColumn Property="s => s.StepType" Title="Type" />
+                                <TemplateColumn Title="PPDM Tables" Sortable="false">
+                                    <CellTemplate>
+                                        @foreach (var tbl in context.Item.PpdmTables)
+                                        {
+                                            <PPDMTableLink TableName="@tbl" />
+                                            <MudText Typo="Typo.caption"> </MudText>
+                                        }
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Approval" Sortable="false">
+                                    <CellTemplate>
+                                        @if (context.Item.RequiresApproval)
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.HowToReg"
+                                                     Color="Color.Warning" Size="Size.Small" />
+                                        }
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+
+        </MudGrid>
+    }
+
+</MudContainer>
+
+@using Beep.OilandGas.LifeCycle.Models.Processes
+
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+
+    private string _fieldName = "Current Field";
+    private ProcessDefinition? _def;
+    private List<StepRow> _steps = new();
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/field/current/process/definitions/{Id}
+        _def = new ProcessDefinition
+        {
+            ProcessId   = Id,
+            ProcessName = "Exploratory Well Drilling Approval",
+            ProcessType = "EXPLORATION",
+            EntityType  = "WELL",
+            Description = "End-to-end approval workflow for exploratory well drilling, from prospect selection through AFE approval, regulatory permits, and spud authorization.",
+            CreatedDate = DateTime.Today.AddDays(-180),
+            CreatedBy   = "admin",
+            Steps = new List<ProcessStepDefinition>
+            {
+                new() { StepId = "S1", StepName = "Prospect Selection & Ranking", SequenceNumber = 1, StepType = "ACTION" },
+                new() { StepId = "S2", StepName = "Geological & Geophysical Review", SequenceNumber = 2, StepType = "VALIDATION" },
+                new() { StepId = "S3", StepName = "Gate 1: Drill/No-Drill Decision", SequenceNumber = 3, StepType = "APPROVAL", RequiresApproval = true },
+                new() { StepId = "S4", StepName = "AFE Preparation", SequenceNumber = 4, StepType = "ACTION" },
+                new() { StepId = "S5", StepName = "Gate 2: AFE Approval", SequenceNumber = 5, StepType = "APPROVAL", RequiresApproval = true },
+                new() { StepId = "S6", StepName = "Regulatory Permit Application", SequenceNumber = 6, StepType = "ACTION" },
+                new() { StepId = "S7", StepName = "Well Design Finalization", SequenceNumber = 7, StepType = "ACTION" },
+                new() { StepId = "S8", StepName = "Gate 3: Spud Authorization", SequenceNumber = 8, StepType = "APPROVAL", RequiresApproval = true },
+            }
+        };
+
+        _steps = _def.Steps.OrderBy(s => s.SequenceNumber).Select(s => new StepRow(
+            s.SequenceNumber, s.StepName, s.StepType, s.RequiresApproval,
+            GetPpdmTablesForStepType(s.StepType)
+        )).ToList();
+    }
+
+    private async Task StartInstanceAsync()
+    {
+        // TODO: open dialog to enter EntityId and EntityType before calling POST /api/field/current/process/instances
+        Snackbar.Add("Use 'Start New Process' from the dashboard with entity context.", Severity.Info);
+    }
+
+    private static List<string> GetPpdmTablesForStepType(string stepType) =>
+        stepType switch
+        {
+            "APPROVAL" => new() { "PROJECT_STEP_BA", "BA_AUTHORITY" },
+            "ACTION"   => new() { "PROJECT_STEP", "PROJECT_PLAN" },
+            _          => new() { "PROJECT_STEP" }
+        };
+
+    private record StepRow(int Seq, string StepName, string StepType, bool RequiresApproval, List<string> PpdmTables);
+}

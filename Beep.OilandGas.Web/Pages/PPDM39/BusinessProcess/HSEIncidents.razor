@@ -1,0 +1,147 @@
+@page "/ppdm39/hse/incidents"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Manage HSE Incidents</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Manage HSE Incidents</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Report, track, and close-out field incidents</MudText>
+        </MudStack>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Error"
+                   StartIcon="@Icons.Material.Filled.AddAlert"
+                   OnClick="OpenReportDialogAsync">
+            Report Incident
+        </MudButton>
+    </MudStack>
+
+    @* ── KPI chips ───────────────────────────────────────────────────── *@
+    <MudStack Row="true" Spacing="2" Class="mb-4" Wrap="Wrap.Wrap">
+        <MudChip T="string" Color="Color.Error"    Icon="@Icons.Material.Filled.Error">Tier 1: @_tier1Count fatal/PTD</MudChip>
+        <MudChip T="string" Color="Color.Warning"  Icon="@Icons.Material.Filled.Warning">Tier 2: @_tier2Count LTI</MudChip>
+        <MudChip T="string" Color="Color.Info"     Icon="@Icons.Material.Filled.Info">Tier 3: @_tier3Count MTC/RWC</MudChip>
+        <MudChip T="string" Color="Color.Success"  Icon="@Icons.Material.Filled.CheckCircle">Tier 4: @_tier4Count First Aid</MudChip>
+        <MudDivider Vertical="true" FlexItem="true" />
+        <MudChip T="string" Color="Color.Default">Open: @_openCount</MudChip>
+        <MudChip T="string" Color="Color.Success">Closed: @_closedCount</MudChip>
+    </MudStack>
+
+    @* ── Severity filter ─────────────────────────────────────────────── *@
+    <MudPaper Elevation="1" Class="pa-3 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Wrap="Wrap.Wrap">
+            <MudTextField @bind-Value="_search" Placeholder="Search incidents…"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true" Style="min-width:220px" />
+            <MudSelect T="string" @bind-Value="_tierFilter" Label="API RP 754 Tier" Style="min-width:140px">
+                <MudSelectItem Value='""'>All Tiers</MudSelectItem>
+                <MudSelectItem Value='"1"'>Tier 1 — Fatal/PTD</MudSelectItem>
+                <MudSelectItem Value='"2"'>Tier 2 — LTI</MudSelectItem>
+                <MudSelectItem Value='"3"'>Tier 3 — MTC/RWC</MudSelectItem>
+                <MudSelectItem Value='"4"'>Tier 4 — First Aid</MudSelectItem>
+            </MudSelect>
+            <MudSelect T="string" @bind-Value="_statusFilter" Label="Status" Style="min-width:140px">
+                <MudSelectItem Value='""'>All</MudSelectItem>
+                <MudSelectItem Value='"OPEN"'>Open</MudSelectItem>
+                <MudSelectItem Value='"UNDER INVESTIGATION"'>Under Investigation</MudSelectItem>
+                <MudSelectItem Value='"RCA IN PROGRESS"'>RCA In Progress</MudSelectItem>
+                <MudSelectItem Value='"CLOSED"'>Closed</MudSelectItem>
+            </MudSelect>
+        </MudStack>
+    </MudPaper>
+
+    @* ── Grid ────────────────────────────────────────────────────────── *@
+    <MudDataGrid T="IncidentRow"
+                 Items="@FilteredIncidents"
+                 Dense="true"
+                 Hover="true"
+                 Striped="true"
+                 Sortable="true"
+                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{e.Item.IncidentId}"))">
+        <Columns>
+            <PropertyColumn Property="r => r.IncidentDate" Title="Date"         Format="dd-MMM-yy" />
+            <PropertyColumn Property="r => r.IncidentType" Title="Type" />
+            <PropertyColumn Property="r => r.Description"  Title="Description" />
+            <PropertyColumn Property="r => r.Location"     Title="Location" />
+            <TemplateColumn Title="Tier" Sortable="false">
+                <CellTemplate>
+                    <HSEIncidentSeverityBadge Tier="@context.Item.Tier" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Status" Sortable="false">
+                <CellTemplate>
+                    <StatusBadge Status="@context.Item.Status" />
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="r => r.ReportedBy"  Title="Reported By" />
+            <TemplateColumn Title="" Sortable="false">
+                <CellTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                   Size="Size.Small" Color="Color.Primary"
+                                   OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{context.Item.IncidentId}"))' />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager T="IncidentRow" />
+        </PagerContent>
+    </MudDataGrid>
+
+</MudContainer>
+
+@code {
+    private string _fieldName    = "Current Field";
+    private string _search       = string.Empty;
+    private string _tierFilter   = string.Empty;
+    private string _statusFilter = string.Empty;
+
+    private int _tier1Count = 0;
+    private int _tier2Count = 1;
+    private int _tier3Count = 2;
+    private int _tier4Count = 3;
+    private int _openCount  = 2;
+    private int _closedCount = 4;
+
+    private List<IncidentRow> _incidents = new();
+
+    private IEnumerable<IncidentRow> FilteredIncidents => _incidents.Where(i =>
+        (string.IsNullOrWhiteSpace(_search) ||
+            i.Description.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+            i.IncidentType.Contains(_search, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrWhiteSpace(_tierFilter)   || i.Tier   == _tierFilter) &&
+        (string.IsNullOrWhiteSpace(_statusFilter) || i.Status.Equals(_statusFilter, StringComparison.OrdinalIgnoreCase)));
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/field/current/hse/incidents
+        _incidents = new List<IncidentRow>
+        {
+            new("INC-001", DateTime.Today.AddDays(-3),  "Personnel Injury",    "Slip/trip on rig floor",          "Rig Floor Level 2", "2", "OPEN",                "john.doe"),
+            new("INC-002", DateTime.Today.AddDays(-8),  "Process Safety",      "Minor hydrocarbon release",        "Manifold Area",     "1", "RCA IN PROGRESS",     "ops.manager"),
+            new("INC-003", DateTime.Today.AddDays(-14), "Personnel Injury",    "Hand laceration during maintenance","Workshop",         "3", "UNDER INVESTIGATION", "jane.smith"),
+            new("INC-004", DateTime.Today.AddDays(-30), "Environmental",       "Diesel spill — contained",         "Laydown Yard",      "3", "CLOSED",              "ops.manager"),
+            new("INC-005", DateTime.Today.AddDays(-45), "Personnel Injury",    "Strain lifting equipment",         "Pipe Deck",         "4", "CLOSED",              "john.doe"),
+            new("INC-006", DateTime.Today.AddDays(-60), "Property Damage",     "Vehicle collision in yard",        "Vehicle Gate",      "3", "CLOSED",              "security"),
+        };
+    }
+
+    private async Task OpenReportDialogAsync()
+    {
+        // TODO: open QuickReportDialog with HSEIncidentReportRequest form
+        // For now navigate to a new incident form
+        Snackbar.Add("Quick report dialog not yet wired. Use API directly.", Severity.Info);
+        await Task.CompletedTask;
+    }
+
+    private record IncidentRow(
+        string IncidentId, DateTime IncidentDate, string IncidentType,
+        string Description, string Location, string Tier,
+        string Status, string ReportedBy);
+}

@@ -1,0 +1,46 @@
+@* Dialog: confirm advancing a prospect to the next maturation stage *@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Class="mr-2" />
+            Advance Prospect Stage
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body1" Class="mb-4">
+            You are advancing <strong>@ProspectName</strong> to <strong>@ToStageName</strong>.
+        </MudText>
+        <MudTextField @bind-Value="_rationale"
+                      Label="Decision Rationale"
+                      Lines="3"
+                      Variant="Variant.Outlined"
+                      Required="true"
+                      Placeholder="Describe the technical or commercial basis for this decision…" />
+        <MudDatePicker @bind-Date="_decisionDate"
+                       Label="Decision Date"
+                       Class="mt-3"
+                       Variant="Variant.Outlined" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Disabled="@string.IsNullOrWhiteSpace(_rationale)"
+                   OnClick="Confirm">
+            Advance Stage
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string ProspectName { get; set; } = string.Empty;
+    [Parameter] public string ToStageName { get; set; } = string.Empty;
+
+    private string _rationale = string.Empty;
+    private DateTime? _decisionDate = DateTime.Today;
+
+    private void Confirm() => MudDialog.Close(DialogResult.Ok(true));
+    private void Cancel() => MudDialog.Cancel();
+}

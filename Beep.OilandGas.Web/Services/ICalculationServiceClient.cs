@@ -5,6 +5,7 @@ using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Calculations;
 
 namespace Beep.OilandGas.Web.Services
 {

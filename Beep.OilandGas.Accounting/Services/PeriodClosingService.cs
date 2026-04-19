@@ -158,7 +158,7 @@ namespace Beep.OilandGas.Accounting.Services
         /// 4. (Optional) Create reversal entries for accruals
         /// 5. Mark period as closed
         /// </summary>
-        public async Task<PeriodCloseResult> ClosePeriodAsync(
+        public async Task<Beep.OilandGas.Models.Data.Accounting.PeriodCloseResult> ClosePeriodAsync(
             DateTime periodEndDate,
             string periodName,
             string userId = "SYSTEM",
@@ -167,7 +167,7 @@ namespace Beep.OilandGas.Accounting.Services
         {
             _logger?.LogInformation("Closing period {PeriodName} ending {PeriodEnd}", periodName, periodEndDate);
 
-            var closeResult = new PeriodCloseResult
+            var closeResult = new Beep.OilandGas.Models.Data.Accounting.PeriodCloseResult
             {
                 //PeriodEndDate = periodEndDate,
                 //PeriodName = periodName,

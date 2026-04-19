@@ -1,0 +1,289 @@
+@page "/production/forecasting"
+@inject ISnackbar Snackbar
+
+<PageTitle>Production Forecasting</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Forecast Field Production</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — DCA-based decline curves and scenario planning</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.TrendingDown">Production</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                   StartIcon="@Icons.Material.Filled.Download"
+                   OnClick="ExportForecast">
+            Export
+        </MudButton>
+    </MudStack>
+
+    @* ── Scenario selector + DCA parameters ─────────────────────────────── *@
+    <MudPaper Elevation="1" Class="pa-3 mb-4">
+        <MudGrid Spacing="2" AlignItems="AlignItems.Center">
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string" Label="Active Scenario" @bind-Value="_activeScenario"
+                           Variant="Variant.Outlined">
+                    <MudSelectItem Value="@("Base")">Base Case</MudSelectItem>
+                    <MudSelectItem Value="@("High")">High Case (+15%)</MudSelectItem>
+                    <MudSelectItem Value="@("Low")">Low Case (-20%)</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="string" Label="Decline Type" @bind-Value="_declineType"
+                           Variant="Variant.Outlined">
+                    <MudSelectItem Value="@("Hyperbolic")">Hyperbolic</MudSelectItem>
+                    <MudSelectItem Value="@("Exponential")">Exponential</MudSelectItem>
+                    <MudSelectItem Value="@("Harmonic")">Harmonic</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudNumericField @bind-Value="_di" Label="Di (%/yr)" Variant="Variant.Outlined" Min="1" Max="100" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudNumericField @bind-Value="_bFactor" Label="b factor" Variant="Variant.Outlined" Min="0" Max="2" Step="0.1" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+                           StartIcon="@Icons.Material.Filled.Calculate"
+                           OnClick="RunForecast">
+                    Run Forecast
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @* ── Scenario KPIs ────────────────────────────────────────────────────── *@
+    <MudGrid Spacing="3" Class="mb-4">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="1P EUR (Oil)" Value="@_kpi1PEUR.ToString("N0")" Unit="MBBL"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Storage"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Proven" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="2P EUR (Oil)" Value="@_kpi2PEUR.ToString("N0")" Unit="MBBL"
+                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.Inventory"
+                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="+8% vs 2P last yr" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Forecast Rate (2yr)" Value="@_kpiForecastRate.ToString("N0")" Unit="BOPD"
+                     ValueColor="Color.Default" Icon="@Icons.Material.Filled.Timeline"
+                     TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Warning" TrendText="-14% decline" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Economic Limit" Value="@_kpiEconLimit" Unit=""
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.AttachMoney"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="At $50/bbl Opex" />
+        </MudItem>
+    </MudGrid>
+
+    @* ── Main Content ─────────────────────────────────────────────────────── *@
+    <MudGrid Spacing="3">
+
+        @* LEFT — Forecast charts (8 cols) *@
+        <MudItem xs="12" lg="8">
+            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true">
+
+                <MudTabPanel Text="Field Rate Forecast">
+                    <MudPaper Elevation="0" Class="pa-3">
+                        <MudChart ChartType="ChartType.Line"
+                                  ChartSeries="@_rateForecastSeries"
+                                  XAxisLabels="@_forecastLabels"
+                                  Width="100%"
+                                  Height="280px" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                            Field oil rate (BOPD) — Historical (solid) + Forecast (dashed) — Base / High / Low cases
+                        </MudText>
+                    </MudPaper>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Cumulative Production">
+                    <MudPaper Elevation="0" Class="pa-3">
+                        <MudChart ChartType="ChartType.Line"
+                                  ChartSeries="@_cumProductionSeries"
+                                  XAxisLabels="@_forecastLabels"
+                                  Width="100%"
+                                  Height="280px" />
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
+                            Cumulative oil production (MBBl) — Actual + Forecast by scenario
+                        </MudText>
+                    </MudPaper>
+                </MudTabPanel>
+
+                <MudTabPanel Text="Well-by-Well Forecast">
+                    <MudPaper Elevation="0" Class="pa-3">
+                        <MudDataGrid T="WellForecastRow" Items="@_wellForecasts" Dense="true" ReadOnly="true" Hover="true">
+                            <Columns>
+                                <PropertyColumn Property="w => w.WellName" Title="Well" />
+                                <PropertyColumn Property="w => w.CurrentRate" Title="Today (BOPD)" Format="N0" />
+                                <PropertyColumn Property="w => w.Rate1Yr" Title="1Y (BOPD)" Format="N0" />
+                                <PropertyColumn Property="w => w.Rate2Yr" Title="2Y (BOPD)" Format="N0" />
+                                <PropertyColumn Property="w => w.RemainingEur" Title="Rem. EUR (MBBL)" Format="N0" />
+                                <PropertyColumn Property="w => w.EconLimitYr" Title="Econ Limit (yr)" />
+                                <TemplateColumn Title="DCA Fit">
+                                    <CellTemplate>
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@(context.Item.DcaQuality == "Good" ? Color.Success : context.Item.DcaQuality == "Fair" ? Color.Warning : Color.Error)">
+                                            @context.Item.DcaQuality
+                                        </MudChip>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    </MudPaper>
+                </MudTabPanel>
+
+            </MudTabs>
+        </MudItem>
+
+        @* RIGHT — Reserves reconciliation + scenario summary (4 cols) *@
+        <MudItem xs="12" lg="4">
+            <MudStack Spacing="3">
+
+                @* Scenario comparison *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Scenario Comparison</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MudDataGrid T="ScenarioRow" Items="@_scenarios" Dense="true" Hover="true" Striped="true">
+                            <Columns>
+                                <PropertyColumn Property="s => s.Name" Title="Scenario" />
+                                <TemplateColumn Title="EUR (MBBL)">
+                                    <CellTemplate><MudText Typo="Typo.body2">@context.Item.EurMbbl.ToString("N0")</MudText></CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="2Y Rate">
+                                    <CellTemplate><MudText Typo="Typo.body2">@context.Item.TwoYrRate.ToString("N0")</MudText></CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="NPV">
+                                    <CellTemplate><MudText Typo="Typo.body2">$@context.Item.NpvMm.ToString("N0")MM</MudText></CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                @* Reserves reconciliation *@
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Reserves Reconciliation (2P)</MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-0">
+                        <MudList T="ReconItem" Dense="true">
+                            @foreach (var r in _reconciliation)
+                            {
+                                <MudListItem T="ReconItem" Value="r">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                        <MudText Typo="Typo.body2">@r.Label</MudText>
+                                        <MudText Typo="Typo.body2"
+                                                 Color="@(r.Value >= 0 ? Color.Default : Color.Error)">
+                                            <strong>@r.Value.ToString("+N0;-N0") MBBL</strong>
+                                        </MudText>
+                                    </MudStack>
+                                </MudListItem>
+                                <MudDivider />
+                            }
+                        </MudList>
+                    </MudCardContent>
+                </MudCard>
+
+                @* Actions *@
+                <MudCard Elevation="2">
+                    <MudCardContent>
+                        <MudStack Spacing="2">
+                            <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Save"
+                                       OnClick="SaveForecast">
+                                Save Forecast Revision
+                            </MudButton>
+                            <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Secondary"
+                                       StartIcon="@Icons.Material.Filled.BarChart"
+                                       Href="/reservoir/reserves">
+                                Update Reserves Estimate
+                            </MudButton>
+                        </MudStack>
+                    </MudCardContent>
+                </MudCard>
+
+            </MudStack>
+        </MudItem>
+
+    </MudGrid>
+
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private string _activeScenario = "Base";
+    private string _declineType = "Hyperbolic";
+    private double _di = 18;
+    private double _bFactor = 0.5;
+
+    private double _kpi1PEUR = 8_400;
+    private double _kpi2PEUR = 11_200;
+    private double _kpiForecastRate = 10_800;
+    private string _kpiEconLimit = "2034";
+
+    private List<ScenarioRow> _scenarios = new()
+    {
+        new("High",  13_200, 12_400, 480),
+        new("Base",  11_200, 10_800, 410),
+        new("Low",    8_900,  8_600, 310),
+    };
+
+    private List<ReconItem> _reconciliation = new()
+    {
+        new("Opening 2P (Jan 2026)",     +11_500),
+        new("Production YTD",              -680),
+        new("Technical revision",          +380),
+        new("Closing 2P (Apr 2026)",     +11_200),
+    };
+
+    private List<WellForecastRow> _wellForecasts = new()
+    {
+        new("DEV-A1", 3_420, 2_950, 2_540, 4_800, "2031", "Good"),
+        new("DEV-A2", 2_980, 2_590, 2_240, 4_200, "2030", "Good"),
+        new("DEV-A3",    0,    250,   380, 1_800, "2029", "Fair"),
+        new("DEV-B1", 4_150, 3_500, 2_950, 5_600, "2032", "Good"),
+        new("DEV-B2", 1_200, 2_100, 1_850, 3_800, "2030", "Fair"),
+        new("DEV-C1", 2_530, 2_200, 1_900, 3_500, "2031", "Good"),
+    };
+
+    private List<ChartSeries<double>> _rateForecastSeries = new()
+    {
+        new ChartSeries<double> { Name = "Actual",    Data = new double[] { 16000, 15800, 15400, 15100, 14800, 14500, 14280, 0,    0,    0,    0,    0    } },
+        new ChartSeries<double> { Name = "Base",      Data = new double[] { 0,    0,    0,    0,    0,    0,    14280, 13800, 13200, 12600, 12000, 11400 } },
+        new ChartSeries<double> { Name = "High",      Data = new double[] { 0,    0,    0,    0,    0,    0,    14280, 14300, 13900, 13400, 12900, 12400 } },
+        new ChartSeries<double> { Name = "Low",       Data = new double[] { 0,    0,    0,    0,    0,    0,    14280, 13200, 12400, 11600, 10800, 10200 } },
+    };
+
+    private List<ChartSeries<double>> _cumProductionSeries = new()
+    {
+        new ChartSeries<double> { Name = "Actual",    Data = new double[] { 0,    2900, 5700, 8400, 11100, 13600, 15200, 0,     0,     0,     0,     0     } },
+        new ChartSeries<double> { Name = "Base",      Data = new double[] { 0,    0,    0,    0,    0,     0,     15200, 17300, 19300, 21200, 23000, 24700  } },
+        new ChartSeries<double> { Name = "High",      Data = new double[] { 0,    0,    0,    0,    0,     0,     15200, 17600, 19800, 21900, 23800, 25700  } },
+        new ChartSeries<double> { Name = "Low",       Data = new double[] { 0,    0,    0,    0,    0,     0,     15200, 17000, 18800, 20500, 22100, 23700  } },
+    };
+
+    private string[] _forecastLabels = { "Oct'25", "", "", "", "Feb'26", "", "Apr'26", "", "", "", "", "Oct'26" };
+
+    private void RunForecast() =>
+        Snackbar.Add($"Forecast updated — {_declineType} decline, Di={_di}%/yr, b={_bFactor}", Severity.Success);
+
+    private void SaveForecast() =>
+        Snackbar.Add("Forecast revision saved", Severity.Success);
+
+    private void ExportForecast() =>
+        Snackbar.Add("Export initiated — check Downloads", Severity.Info);
+
+    private record ScenarioRow(string Name, double EurMbbl, double TwoYrRate, double NpvMm);
+    private record ReconItem(string Label, double Value);
+    private record WellForecastRow(string WellName, double CurrentRate, double Rate1Yr, double Rate2Yr, double RemainingEur, string EconLimitYr, string DcaQuality);
+}

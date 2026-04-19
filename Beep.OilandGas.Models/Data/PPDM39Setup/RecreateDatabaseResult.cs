@@ -52,5 +52,15 @@ namespace Beep.OilandGas.Models.Data
             set { SetProperty(ref BackupFileValue, value); }
 
         }
+
+        public string? ErrorDetails
+
+        {
+
+            get { return this.ErrorMessageValue; }
+
+            set { SetProperty(ref ErrorMessageValue, value); }
+
+        }
     }
 }

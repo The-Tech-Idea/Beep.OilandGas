@@ -1,20 +1,23 @@
 @page "/ppdm39/create-database"
+@implements IDisposable
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
 @inject IProgressTrackingClient ProgressClient
 @using Beep.OilandGas.Web.Components
-@using Beep.OilandGas.ApiService.Models
+@using Beep.OilandGas.Models.Data.DataManagement
 @using Beep.OilandGas.Models.Data
 @using System.Net.Http.Json
 
 <PageTitle>Create PPDM Database</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Create PPDM39 Database</MudText>
-    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mb-4">
-        Follow the steps below to create a new PPDM39 database and add it to your connections
-    </MudText>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Create PPDM39 Database</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Follow the steps below to create a new PPDM39 database and add it to your connections</MudText>
+        </MudStack>
+    </MudStack>
 
     <MudStepper @bind-ActiveStep="@_activeStep" Variant="Variant.Outlined" Color="Color.Primary" Class="mb-4">
         <!-- Step 1: Database Type Selection -->
@@ -199,7 +202,7 @@
                         <MudExpansionPanel Text="Script Types" Icon="@Icons.Material.Filled.Code">
                             <MudText Typo="Typo.body2" Class="mb-2">Filter by script type:</MudText>
                             <MudStack Spacing="2">
-                                @foreach (var scriptType in _availableScriptTypes)
+                                @foreach (var scriptType in _availableScriptTypes ?? [])
                                 {
                                     <MudCheckBox T="bool" 
                                                 @bind-Value="@scriptType.IsSelected" 
@@ -241,7 +244,7 @@
                 {
                     <MudStack Spacing="3">
                         <MudProgressLinear Color="Color.Primary" 
-                                         Value="@_creationProgress" 
+                                         Value="@((double)_creationProgress)" 
                                          Variant="Variant.Determinate"
                                          Class="mb-2" />
                         <MudText Typo="Typo.body1">
@@ -255,15 +258,15 @@
                             </MudText>
                         }
                         <MudText Typo="Typo.body2">
-                            Successful: <MudChip Size="Size.Small" Color="Color.Success">@_successfulScripts</MudChip>
-                            Failed: <MudChip Size="Size.Small" Color="Color.Error">@_failedScripts</MudChip>
+                            Successful: <MudChip T="string" Size="Size.Small" Color="Color.Success">@_successfulScripts</MudChip>
+                            Failed: <MudChip T="string" Size="Size.Small" Color="Color.Error">@_failedScripts</MudChip>
                         </MudText>
 
                         @if (!string.IsNullOrEmpty(_creationLog))
                         {
                             <MudExpansionPanels Elevation="0" Variant="Variant.Outlined" Class="mt-4">
                                 <MudExpansionPanel Text="Execution Log" Icon="@Icons.Material.Filled.Description">
-                                    <MudText Typo="Typo.body2" Style="white-space: pre-wrap; font-family: monospace; max-height: 400px; overflow-y: auto;">
+                                    <MudText Typo="Typo.body2" Class="og-code-block">
                                         @_creationLog
                                     </MudText>
                                 </MudExpansionPanel>
@@ -402,7 +405,7 @@
 
     // Step 3: Scripts
     private bool _isLoadingScripts = false;
-    private List<ScriptInfoDto>? _discoveredScripts;
+    private List<ScriptInfo>? _discoveredScripts;
     private bool _executeAllScripts = true;
     private bool _executeConsolidatedScripts = true;
     private bool _executeIndividualScripts = true;
@@ -421,7 +424,7 @@
     private int _successfulScripts = 0;
     private int _failedScripts = 0;
     private string _creationLog = string.Empty;
-    private DatabaseCreationResultDto? _creationResult;
+    private DatabaseCreationResult? _creationResult;
     private string? _executionId;
     private System.Threading.Timer? _progressTimer;
 
@@ -436,10 +439,9 @@
         InitializeScriptTypes();
     }
 
-    protected override void Dispose()
+    void IDisposable.Dispose()
     {
         _progressTimer?.Dispose();
-        base.Dispose();
     }
 
     private async Task LoadDatabaseTypes()
@@ -539,7 +541,7 @@
         _isLoadingScripts = true;
         try
         {
-            _discoveredScripts = await ApiClient.GetAsync<List<ScriptInfoDto>>(
+            _discoveredScripts = await ApiClient.GetAsync<List<ScriptInfo>>(
                 $"/api/ppdm39/setup/discover-scripts/{_selectedDatabaseType}");
 
             if (_discoveredScripts != null && _discoveredScripts.Any())
@@ -618,11 +620,10 @@
 
             var request = new CreateDatabaseRequest
             {
-                Connection = config,
-                Options = new DatabaseCreationOptionsDto
+                Connection = config.ToConnectionProperties(),
+                Options = new DatabaseCreationOptions
                 {
                     DatabaseType = _selectedDatabaseType ?? string.Empty,
-                    ExecuteAllScripts = _executeAllScripts,
                     ExecuteConsolidatedScripts = _executeConsolidatedScripts,
                     ExecuteIndividualScripts = _executeIndividualScripts,
                     ExecuteOptionalScripts = _executeOptionalScripts,
@@ -638,7 +639,7 @@
             _progressTimer = new System.Threading.Timer(async _ => await PollProgress(), null, 1000, 2000);
 
             // Start creation (this will run asynchronously)
-            _creationResult = await ApiClient.PostAsync<CreateDatabaseRequest, DatabaseCreationResultDto>(
+            _creationResult = await ApiClient.PostAsync<CreateDatabaseRequest, DatabaseCreationResult>(
                 "/api/ppdm39/setup/create-database", request);
 
             _progressTimer?.Dispose();
@@ -659,7 +660,7 @@
             _progressTimer?.Dispose();
             _progressTimer = null;
             Snackbar.Add($"Error creating database: {ex.Message}", Severity.Error);
-            _creationResult = new DatabaseCreationResultDto
+            _creationResult = new DatabaseCreationResult
             {
                 Success = false,
                 ErrorMessage = ex.Message
@@ -715,7 +716,7 @@
             var config = BuildConnectionConfig();
             var saveRequest = new SaveConnectionRequest
             {
-                Connection = config,
+                Connection = config.ToConnectionProperties(),
                 TestAfterSave = false,
                 OpenAfterSave = _setAsCurrent
             };
@@ -809,6 +810,8 @@
         public bool IsSelected { get; set; }
     }
 }
+
+
 
 
 

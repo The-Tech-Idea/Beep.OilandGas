@@ -3,34 +3,81 @@
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<PageTitle>Production Reporting - PPDM39</PageTitle>
+<PageTitle>Compile Production Volume Reports</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge">
-    <MudText Typo="Typo.h4" Class="mb-4">Production Reporting</MudText>
-    
-    <MudPaper Class="pa-4">
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-4" />
-        }
-        
-        @if (_reporting != null && _reporting.Any())
-        {
-            <MudTable Items="@_reporting" Hover="true" Dense="true">
-                <HeaderContent>
-                    <MudTh>Report ID</MudTh>
-                    <MudTh>Report Date</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Report ID">@GetPropertyValue(context, "REPORT_ID")</MudTd>
-                    <MudTd DataLabel="Report Date">@GetPropertyValue(context, "REPORT_DATE")</MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-    </MudPaper>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Compile Production Volume Reports</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — PDEN volume summary records</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Success"
+                         Icon="@Icons.Material.Filled.Assessment">Production</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.FileDownload">Export Report</MudButton>
+    </MudStack>
+
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ── KPI Row *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Total Reports" Value="@((_reporting?.Count ?? 0).ToString())"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Assessment"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="All volume summaries" />
+        </MudItem>
+    </MudGrid>
+
+    @* ── Reports Grid *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_reporting != null && _reporting.Any())
+            {
+                <MudDataGrid T="PDEN_VOL_SUMMARY" Items="@_reporting" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <TemplateColumn Title="Report ID">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "REPORT_ID")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Report Date">
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "REPORT_DATE")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Assessment" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No records match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.Assessment" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No volume reports loaded</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">No PDEN volume summary records found for this field.</MudText>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private List<PDEN_VOL_SUMMARY>? _reporting;
     private bool _isLoading = false;
 

@@ -4,12 +4,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Models;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.WellTestAnalysis;
 using Beep.OilandGas.WellTestAnalysis.Calculations;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Microsoft.Extensions.Logging;
+using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.LifeCycle.Services.Calculations
 {
@@ -87,9 +89,15 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
                 else
                 {
-                    // Drawdown analysis - would need DrawdownAnalysis class if available
-                    // For now, use build-up method
-                    analysisResult = WellTestAnalyzer.AnalyzeBuildUp(WELL_TEST_DATA);
+                    // Drawdown analysis using MDH-based drawdown method
+                    if (analysisMethod == "MDH")
+                    {
+                        analysisResult = WellTestAnalyzer.AnalyzeDrawdown(WELL_TEST_DATA);
+                    }
+                    else
+                    {
+                        analysisResult = WellTestAnalyzer.AnalyzeDrawdown(WELL_TEST_DATA);
+                    }
                 }
 
                 // Step 3: Calculate derivative for diagnostic plots
@@ -156,16 +164,89 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         #region Well Test Analysis Helper Methods
 
         /// <summary>
-        /// Retrieves well test data from PPDM for a well
+        /// Retrieves well test data from PPDM by assembling WELL_TEST header and WELL_TEST_PRESS_MEAS time-pressure series.
         /// </summary>
-        private Task<WELL_TEST_DATA> GetWellTestDataFromPPDMAsync(string wellId, string testId)
+        private async Task<WELL_TEST_DATA> GetWellTestDataFromPPDMAsync(string wellId, string testId)
         {
-            _logger?.LogWarning("Well test data retrieval from PPDM is not implemented. " +
-                "Provide PressureTimeData and well properties in the request.");
+            var data = new WELL_TEST_DATA
+            {
+                WELL_TEST_DATA_ID = Guid.NewGuid().ToString(),
+                FLOW_RATE = 0m,
+                FORMATION_THICKNESS = 50m,
+                WELLBORE_RADIUS = 0.25m,
+                RESERVOIR_TEMPERATURE = 150m,
+                TEST_TYPE = "BUILDUP"
+            };
 
-            return Task.FromException<WELL_TEST_DATA>(new InvalidOperationException(
-                "Well test data retrieval from PPDM is not implemented. " +
-                "Provide PressureTimeData and well properties in the request."));
+            try
+            {
+                // Query WELL_TEST header for flow rate and test metadata
+                var testMetadata = await _metadata.GetTableMetadataAsync("WELL_TEST");
+                if (testMetadata != null)
+                {
+                    var testEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{testMetadata.EntityTypeName}") ?? typeof(WELL_TEST);
+                    var testRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, testEntityType, _connectionName, "WELL_TEST");
+
+                    var testFilters = new List<AppFilter>
+                    {
+                        new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
+                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    };
+                    if (!string.IsNullOrEmpty(testId))
+                        testFilters.Add(new AppFilter { FieldName = "TEST_NUM", Operator = "=", FilterValue = testId });
+
+                    var testResults = await testRepo.GetAsync(testFilters);
+                    var testRecord = testResults?.OfType<WELL_TEST>().OrderByDescending(t => t.EFFECTIVE_DATE).FirstOrDefault();
+                    if (testRecord != null)
+                    {
+                        data.FLOW_RATE = testRecord.MAX_OIL_FLOW_RATE > 0 ? testRecord.MAX_OIL_FLOW_RATE
+                            : testRecord.MAX_GAS_FLOW_RATE > 0 ? testRecord.MAX_GAS_FLOW_RATE : 0m;
+                        data.RESERVOIR_TEMPERATURE = testRecord.FLOW_TEMPERATURE > 0 ? testRecord.FLOW_TEMPERATURE : 150m;
+                        data.TEST_TYPE = testRecord.TEST_TYPE ?? "BUILDUP";
+                    }
+                }
+
+                // Query WELL_TEST_PRESS_MEAS for time-pressure series
+                var measMetadata = await _metadata.GetTableMetadataAsync("WELL_TEST_PRESS_MEAS");
+                if (measMetadata != null)
+                {
+                    var measEntityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{measMetadata.EntityTypeName}") ?? typeof(WELL_TEST_PRESS_MEAS);
+                    var measRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, measEntityType, _connectionName, "WELL_TEST_PRESS_MEAS");
+
+                    var measFilters = new List<AppFilter>
+                    {
+                        new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellId },
+                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    };
+                    if (!string.IsNullOrEmpty(testId))
+                        measFilters.Add(new AppFilter { FieldName = "TEST_NUM", Operator = "=", FilterValue = testId });
+
+                    var measResults = await measRepo.GetAsync(measFilters);
+                    var measurements = measResults?.OfType<WELL_TEST_PRESS_MEAS>()
+                        .OrderBy(m => m.MEASUREMENT_TIME_ELAPSED)
+                        .ToList();
+
+                    if (measurements != null && measurements.Count > 0)
+                    {
+                        data.Time = measurements.Select(m => (double)m.MEASUREMENT_TIME_ELAPSED).ToList();
+                        data.Pressure = measurements.Select(m => (double)m.MEASUREMENT_PRESSURE).ToList();
+                        return data;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Error retrieving well test data from PPDM for well {WellId}. Provide PressureTimeData in the request.", wellId);
+            }
+
+            if (data.Time.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    $"No pressure-time measurements found in PPDM for well '{wellId}'. " +
+                    "Provide PressureTimeData in the request.");
+            }
+
+            return data;
         }
 
         /// <summary>

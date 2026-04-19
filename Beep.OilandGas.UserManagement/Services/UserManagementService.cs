@@ -5,53 +5,59 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces.Security;
+using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Security;
-using TheTechIdea.Beep.Utilities;
 using TheTechIdea.Beep.Editor;
-using TheTechIdea.Beep.Addin;
-using TheTechIdea.Beep.ConfigUtil;
-using TheTechIdea.Beep.DataBase;
+using TheTechIdea.Beep.Report;
+using TheTechIdea.Beep.Report;
+using Beep.OilandGas.PPDM39.Repositories;
+using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM39.DataManagement.Core;
+using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.UserManagement.Services
 {
     public class UserManagementService : IUserService
     {
         private readonly IDMEEditor _editor;
-        private readonly IRuleDefaults _defaults;
-        
-        // We'll use a specific connection for Security/User data, often shared or same as main
-        public string ConnectionName { get; set; } = "OilandGasDB"; 
+        private readonly ICommonColumnHandler _commonColumnHandler;
+        private readonly IPPDM39DefaultsRepository _defaults;
+        private readonly IPPDMMetadataRepository _metadata;
+        private readonly string _connectionName;
+        private readonly ILogger<UserManagementService>? _logger;
 
-        public UserManagementService(IDMEEditor editor, IRuleDefaults defaults)
+        public UserManagementService(
+            IDMEEditor editor,
+            ICommonColumnHandler commonColumnHandler,
+            IPPDM39DefaultsRepository defaults,
+            IPPDMMetadataRepository metadata,
+            string connectionName,
+            ILogger<UserManagementService>? logger = null)
         {
             _editor = editor;
+            _commonColumnHandler = commonColumnHandler;
             _defaults = defaults;
+            _metadata = metadata;
+            _connectionName = connectionName;
+            _logger = logger;
         }
 
-        private async Task<PPDMGenericRepository> GetRepoAsync<T>(string tableName)
+        private PPDMGenericRepository GetRepo<T>(string tableName)
         {
-            var ds = _editor.GetDataSource(ConnectionName);
-            if (ds == null) throw new InvalidOperationException($"Connection {ConnectionName} not found.");
-            
-            var CommonColumnHandler = new PPDMCommonColumnHandler(_defaults);
-            
-            // Ensure metadata is loaded
-            await ds.GetEntitesListAsync();
-
             return new PPDMGenericRepository(
-                _editor, CommonColumnHandler, _defaults, ds,
-                 typeof(T), ConnectionName, tableName);
+                _editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(T), _connectionName, tableName, null);
         }
 
         public async Task<USER?> GetByIdAsync(string id)
         {
-            var repo = await GetRepoAsync<USER>("USER");
-            return await repo.GetEntityAsync(id) as USER;
+            var repo = GetRepo<USER>("USER");
+            return await repo.GetByIdAsync(id) as USER;
         }
 
         public async Task<USER?> GetByUsernameAsync(string username)
         {
-            var repo = await GetRepoAsync<USER>("USER");
+            var repo = GetRepo<USER>("USER");
             var result = await repo.GetAsync(new List<AppFilter> 
             { 
                 new AppFilter { FieldName = "USERNAME", Operator = "=", FilterValue = username } 
@@ -61,13 +67,13 @@ namespace Beep.OilandGas.UserManagement.Services
 
         public async Task<IEnumerable<USER>> GetAllAsync()
         {
-            var repo = await GetRepoAsync<USER>("USER");
+            var repo = GetRepo<USER>("USER");
             return (await repo.GetAsync(new List<AppFilter>())).Cast<USER>();
         }
 
         public async Task<USER> CreateAsync(USER user, string password)
         {
-            var repo = await GetRepoAsync<USER>("USER");
+            var repo = GetRepo<USER>("USER");
             
             if (string.IsNullOrEmpty(user.USER_ID)) 
                 user.USER_ID = Guid.NewGuid().ToString();
@@ -75,23 +81,23 @@ namespace Beep.OilandGas.UserManagement.Services
             // Hash password
             user.PASSWORD_HASH = HashPassword(password);
             
-            await repo.UpdateEntityAsync(user); // Insert/Update
+            await repo.InsertAsync(user, "system"); // Insert/Update
             return user;
         }
 
         public async Task<bool> UpdateAsync(USER user)
         {
-            var repo = await GetRepoAsync<USER>("USER");
-            // Don't update password here, use separate method if needed or assume caller handles hash
-            return await repo.UpdateEntityAsync(user);
+            var repo = GetRepo<USER>("USER");
+            await repo.InsertAsync(user, "system");
+            return true;
         }
 
         public async Task<bool> DeleteAsync(string id)
         {
-            var repo = await GetRepoAsync<USER>("USER");
+            var repo = GetRepo<USER>("USER");
             // Hard delete or Soft delete? PPDM usually soft delete via Active Ind
             // Assuming hard delete for now or repo handles it
-             return await repo.DeleteEntityAsync(new USER { USER_ID = id }); 
+             await repo.SoftDeleteAsync(id, "system"); return true; 
         }
 
         public async Task<bool> CheckPasswordAsync(USER user, string password)
@@ -106,7 +112,7 @@ namespace Beep.OilandGas.UserManagement.Services
         public async Task<bool> AddToRoleAsync(string userId, string rName)
         {
            // 1. Get Role ID
-           var roleRepo = await GetRepoAsync<ROLE>("ROLE");
+           var roleRepo = GetRepo<ROLE>("ROLE");
            var role = (await roleRepo.GetAsync(new List<AppFilter> { new AppFilter { FieldName = "ROLE_NAME", Operator = "=", FilterValue = rName } }))
                       .Cast<ROLE>().FirstOrDefault();
            
@@ -149,9 +155,9 @@ namespace Beep.OilandGas.UserManagement.Services
 
             // 2. Get Permissions for Roles
             // Join ROLE -> ROLE_PERMISSION -> PERMISSION
-            var permRepo = await GetRepoAsync<PERMISSION>("PERMISSION");
-            var rpRepo = await GetRepoAsync<ROLE_PERMISSION>("ROLE_PERMISSION");
-            var roleRepo = await GetRepoAsync<ROLE>("ROLE");
+            var permRepo = GetRepo<PERMISSION>("PERMISSION");
+            var rpRepo = GetRepo<ROLE_PERMISSION>("ROLE_PERMISSION");
+            var roleRepo = GetRepo<ROLE>("ROLE");
 
             // Optimizing: This needs a joined query or cached lookup.
             // For now, explicit fetch.
@@ -169,7 +175,7 @@ namespace Beep.OilandGas.UserManagement.Services
                 
                 foreach (var rp in rolePerms)
                 {
-                    var perm = await permRepo.GetEntityAsync(rp.PERMISSION_ID) as PERMISSION;
+                    var perm = await permRepo.GetByIdAsync(rp.PERMISSION_ID) as PERMISSION;
                     if (perm != null && perm.PERMISSION_CODE == permissionCode)
                     {
                         return true;
@@ -182,7 +188,7 @@ namespace Beep.OilandGas.UserManagement.Services
 
         public async Task SeedDefaultPermissionsAsync()
         {
-             var permRepo = await GetRepoAsync<PERMISSION>("PERMISSION");
+             var permRepo = GetRepo<PERMISSION>("PERMISSION");
              var existing = (await permRepo.GetAsync(new List<AppFilter>())).Cast<PERMISSION>().ToList();
              
              var defaults = new List<string> 
@@ -197,12 +203,12 @@ namespace Beep.OilandGas.UserManagement.Services
              {
                  if (!existing.Any(p => p.PERMISSION_CODE == code))
                  {
-                     await permRepo.UpdateEntityAsync(new PERMISSION
+                     await permRepo.InsertAsync(new PERMISSION
                      {
                          PERMISSION_ID = Guid.NewGuid().ToString(),
                          PERMISSION_CODE = code,
                          DESCRIPTION = $"Auto-seeded permission: {code}"
-                     });
+                     }, "system");
                  }
              }
         }

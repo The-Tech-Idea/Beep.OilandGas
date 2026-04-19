@@ -4,64 +4,103 @@
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject IOperationsServiceClient OperationsService
 
-<PageTitle>Lease Acquisition</PageTitle>
+<PageTitle>Manage Lease Acquisitions</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Lease Acquisition</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
-    <MudPaper Class="pa-4">
-        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
-            <MudText Typo="Typo.h6">Available Leases</MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
-                Create Lease Acquisition
-            </MudButton>
+    @* ─── Header *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Manage Lease Acquisitions</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Lease portfolio</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning"
+                         Icon="@Icons.Material.Filled.Assignment">Operations</MudChip>
+            </MudStack>
         </MudStack>
+        <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="OpenCreateDialog">Create Lease Acquisition</MudButton>
+    </MudStack>
 
-        @if (_isLoading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-        }
-        else if (_leases != null && _leases.Any())
-        {
-            <MudTable Items="@_leases" Hover="true" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh>Lease Number</MudTh>
-                    <MudTh>Lease Name</MudTh>
-                    <MudTh>Lease Type</MudTh>
-                    <MudTh>Effective Date</MudTh>
-                    <MudTh>Expiration Date</MudTh>
-                    <MudTh>Status</MudTh>
-                    <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>@context.LeaseNumber</MudTd>
-                    <MudTd>@context.LeaseName</MudTd>
-                    <MudTd>@context.LeaseType</MudTd>
-                    <MudTd>@context.EffectiveDate.ToString("yyyy-MM-dd")</MudTd>
-                    <MudTd>@(context.ExpirationDate?.ToString("yyyy-MM-dd") ?? "N/A")</MudTd>
-                    <MudTd>@(context.IsActive ? "Active" : "Inactive")</MudTd>
-                    <MudTd>
-                        <MudButtonGroup Variant="Variant.Text" Size="Size.Small">
-                            <MudButton StartIcon="@Icons.Material.Filled.Info" OnClick="@(() => EvaluateLease(context.LeaseId))">
-                                Evaluate
-                            </MudButton>
-                            <MudButton StartIcon="@Icons.Material.Filled.Edit" OnClick="@(() => UpdateLeaseStatus(context.LeaseId))">
-                                Update Status
-                            </MudButton>
-                        </MudButtonGroup>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Info">No available leases found.</MudAlert>
-        }
-    </MudPaper>
+    @if (_isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    }
+
+    @* ─── KPI Row *@
+    <MudGrid Class="mb-4" Spacing="3">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Total Leases" Value="@((_leases?.Count ?? 0).ToString())"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Assignment"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="All lease records" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Active"
+                     Value="@((_leases?.Count(l => l.Status == "Active" || l.Status == "ACTIVE") ?? 0).ToString())"
+                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.CheckCircle"
+                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default"
+                     TrendText="Active leases" />
+        </MudItem>
+    </MudGrid>
+
+    @* ─── Leases Grid *@
+    <MudCard Elevation="2">
+        <MudCardContent Class="pa-0">
+            @if (_leases != null && _leases.Any())
+            {
+                <MudDataGrid T="LeaseSummary" Items="@_leases" Dense="true" Hover="true" Striped="true"
+                             SortMode="SortMode.Multiple" Filterable="true">
+                    <Columns>
+                        <PropertyColumn Property="l => l.LeaseNumber" Title="Lease Number" />
+                        <PropertyColumn Property="l => l.LeaseName" Title="Lease Name" />
+                        <TemplateColumn Title="Status">
+                            <CellTemplate>
+                                <StatusBadge Status="@(context.Item.Status ?? "Unknown")" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="" Sortable="false">
+                            <CellTemplate>
+                                <MudStack Row="true" Spacing="1">
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Info"
+                                               StartIcon="@Icons.Material.Filled.Info"
+                                               OnClick="@(() => EvaluateLease(context.Item.LeaseId))">Evaluate</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Warning"
+                                               StartIcon="@Icons.Material.Filled.Edit"
+                                               OnClick="@(() => UpdateLeaseStatus(context.Item.LeaseId))">Update Status</MudButton>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <NoRecordsContent>
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-6">
+                            <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Secondary" Class="og-icon-xl" />
+                            <MudText Typo="Typo.body1">No leases match the current filter</MudText>
+                        </MudStack>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else if (!_isLoading)
+            {
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                    <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Secondary" Class="og-icon-xl" />
+                    <MudText Typo="Typo.h6">No leases found</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">Create the first lease acquisition for this field.</MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="OpenCreateDialog" Class="mt-2">Create Lease Acquisition</MudButton>
+                </MudStack>
+            }
+        </MudCardContent>
+    </MudCard>
+
 </MudContainer>
 
 @code {
+    private string _fieldName = "Current Field";
     private List<LeaseSummary>? _leases;
     private bool _isLoading = false;
     private string? _currentUserId = "system";
@@ -91,35 +130,28 @@
 
     private async Task OpenCreateDialog()
     {
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<MudDialog>("Create Lease Acquisition", options);
-        var result = await dialog.Result;
-
-        if (!result.Canceled)
+        // Create lease acquisition using service client
+        try
         {
-            // Create lease acquisition using service client
-            try
+            var leaseRequest = new CreateLeaseAcquisition
             {
-                var leaseRequest = new CreateLeaseAcquisitionDto
-                {
-                    PropertyId = Guid.NewGuid().ToString(), // Would come from dialog
-                    LeaseNumber = "L-" + DateTime.Now.ToString("yyyyMMdd"),
-                    LeaseName = "New Lease",
-                    EffectiveDate = DateTime.Now,
-                    ExpirationDate = DateTime.Now.AddYears(5),
-                    WorkingInterest = 100,
-                    NetRevenueInterest = 75,
-                    RoyaltyRate = 12.5m
-                };
+                PropertyId = Guid.NewGuid().ToString(), // Would come from dialog
+                LeaseNumber = "L-" + DateTime.Now.ToString("yyyyMMdd"),
+                LeaseName = "New Lease",
+                EffectiveDate = DateTime.Now,
+                ExpirationDate = DateTime.Now.AddYears(5),
+                WorkingInterest = 100,
+                NetRevenueInterest = 75,
+                RoyaltyRate = 12.5m
+            };
 
-                var leaseId = await OperationsService.CreateLeaseAcquisitionAsync(leaseRequest, _currentUserId);
-                Snackbar.Add("Lease acquisition created successfully", Severity.Success);
-                await LoadLeases();
-            }
-            catch (Exception ex)
-            {
-                Snackbar.Add($"Error creating lease acquisition: {ex.Message}", Severity.Error);
-            }
+            var leaseId = await OperationsService.CreateLeaseAcquisitionAsync(leaseRequest, _currentUserId);
+            Snackbar.Add("Lease acquisition created successfully", Severity.Success);
+            await LoadLeases();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating lease acquisition: {ex.Message}", Severity.Error);
         }
     }
 
@@ -138,7 +170,7 @@
 
     private async Task UpdateLeaseStatus(string leaseId)
     {
-        var result = await DialogService.ShowMessageBox(
+        var result = await DialogService.ShowMessageBoxAsync(
             "Update Lease Status",
             "Enter new status:",
             yesText: "Update", cancelText: "Cancel");

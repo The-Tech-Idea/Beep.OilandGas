@@ -55,6 +55,26 @@ namespace Beep.OilandGas.Models.Data.Calculations
 
         }
 
+        public decimal GAS_INJECTION_PRESSURE
+
+        {
+
+            get { return this.GasInjectionPressureValue; }
+
+            set { SetProperty(ref GasInjectionPressureValue, value); }
+
+        }
+
+        public int NUMBER_OF_VALVES
+
+        {
+
+            get { return this.NumberOfValvesValue; }
+
+            set { SetProperty(ref NumberOfValvesValue, value); }
+
+        }
+
         /// <summary>
         /// Whether to use SI units (false = use field units)
         /// </summary>

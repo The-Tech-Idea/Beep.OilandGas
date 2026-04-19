@@ -5,6 +5,7 @@ using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using ConnectionInfo = Beep.OilandGas.Models.Data.DataManagement.ConnectionInfo;
 
 namespace Beep.OilandGas.ApiService.Controllers
 {

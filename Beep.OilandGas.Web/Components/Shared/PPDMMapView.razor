@@ -5,7 +5,7 @@
 
 <MudCard Class="pa-4" Elevation="2">
     <MudCardContent>
-        <MudStack Row="true" AlignItems="Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
             <MudText Typo="Typo.h6">@Title</MudText>
             <MudButtonGroup>
                 @if (ShowZoomControls)
@@ -36,16 +36,16 @@
                                ValueChanged="@((string value) => _mapType = value)"
                                Variant="Variant.Outlined"
                                Dense="true"
-                               Style="width: 120px;">
-                        <MudSelectItem T="string" Value="roadmap">Roadmap</MudSelectItem>
-                        <MudSelectItem T="string" Value="satellite">Satellite</MudSelectItem>
-                        <MudSelectItem T="string" Value="terrain">Terrain</MudSelectItem>
+                               Class="og-map-select">
+                        <MudSelectItem T="string" Value="@("roadmap")">Roadmap</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("satellite")">Satellite</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("terrain")">Terrain</MudSelectItem>
                     </MudSelect>
                 }
             </MudButtonGroup>
         </MudStack>
         
-        <div id="@_mapContainerId" style="width: 100%; height: @Height; border: 1px solid #ccc; border-radius: 4px;">
+        <div id="@_mapContainerId" style="width: 100%; height: @Height; border: 1px solid var(--mud-palette-divider); border-radius: 4px;">
             @if (!string.IsNullOrWhiteSpace(NoDataMessage) && (Items == null || !Items.Any()))
             {
                 <MudAlert Severity="Severity.Info" Class="ma-4">@NoDataMessage</MudAlert>
@@ -54,14 +54,14 @@
         
         @if (ShowLegend && LegendItems != null && LegendItems.Any())
         {
-            <MudCard Class="mt-4" Elevation="0" Style="background-color: rgba(255,255,255,0.9);">
+            <MudCard Class="mt-4 og-map-glass" Elevation="0">
                 <MudCardContent>
                     <MudText Typo="Typo.subtitle2" Class="mb-2">Legend</MudText>
                     <MudStack Spacing="1">
                         @foreach (var item in LegendItems)
                         {
-                            <MudStack Row="true" Spacing="2" AlignItems="Center">
-                                <div style="width: 20px; height: 20px; background-color: @item.Color; border: 1px solid #ccc;"></div>
+                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                <div style="width: 20px; height: 20px; background-color: @item.Color; border: 1px solid var(--mud-palette-divider);"></div>
                                 <MudText Typo="Typo.body2">@item.Label</MudText>
                             </MudStack>
                         }
@@ -291,19 +291,22 @@
             }
         }
     }
+
+    // Supporting classes
+    public class MapLocation
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public string? Label { get; set; }
+        public object? Data { get; set; }
+    }
+
+    public class MapLegendItem
+    {
+        public string Color { get; set; } = "#000000";
+        public string Label { get; set; } = string.Empty;
+    }
 }
 
-// Supporting classes
-public class MapLocation
-{
-    public double Latitude { get; set; }
-    public double Longitude { get; set; }
-    public string? Label { get; set; }
-    public object? Data { get; set; }
-}
 
-public class MapLegendItem
-{
-    public string Color { get; set; } = "#000000";
-    public string Label { get; set; } = string.Empty;
-}
+

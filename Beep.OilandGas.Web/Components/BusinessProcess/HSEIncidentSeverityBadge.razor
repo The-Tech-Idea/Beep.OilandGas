@@ -1,0 +1,27 @@
+@* HSEIncidentSeverityBadge — API RP 754 / IOGP Tier badge *@
+<MudChip T="string"
+         Color="@_color"
+         Variant="Variant.Filled"
+         Size="@Size"
+         Icon="@Icons.Material.Filled.HealthAndSafety">
+    Tier @Tier
+</MudChip>
+
+@code {
+    [Parameter] public string Tier { get; set; } = string.Empty;
+    [Parameter] public Size Size { get; set; } = Size.Small;
+
+    private Color _color = Color.Default;
+
+    protected override void OnParametersSet()
+    {
+        _color = Tier switch
+        {
+            "1" => Color.Error,    // Fatality / Permanent total disability
+            "2" => Color.Warning,  // Permanent partial disability / LTI
+            "3" => Color.Info,     // Restricted work / Medical treatment
+            "4" => Color.Success,  // First aid
+            _   => Color.Default
+        };
+    }
+}

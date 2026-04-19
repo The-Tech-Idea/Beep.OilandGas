@@ -1,0 +1,238 @@
+@page "/ppdm39/process"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Business Process Dashboard</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-6">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Manage Business Processes</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Active instances, gate reviews, HSE &amp; compliance</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Icon="@Icons.Material.Filled.AccountTree">Processes</MudChip>
+            </MudStack>
+        </MudStack>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PlayArrow"
+                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/process/definitions")'>
+            Start New Process
+        </MudButton>
+    </MudStack>
+
+    @* ── KPI Row ─────────────────────────────────────────────────────── *@
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Active Instances"
+                     Value="@_activeInstances.ToString()"
+                     ValueColor="Color.Primary"
+                     Icon="@Icons.Material.Filled.RunCircle"
+                     TrendText="across all lifecycle phases" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Pending Gate Reviews"
+                     Value="@_pendingGates.ToString()"
+                     ValueColor="@(_pendingGates > 0 ? Color.Warning : Color.Success)"
+                     Icon="@Icons.Material.Filled.ChecklistRtl"
+                     TrendText="awaiting approver action" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Open HSE Incidents"
+                     Value="@_openIncidents.ToString()"
+                     ValueColor="@(_openIncidents > 0 ? Color.Error : Color.Success)"
+                     Icon="@Icons.Material.Filled.HealthAndSafety"
+                     TrendText="requiring investigation / RCA" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <KpiCard Label="Compliance Due (30d)"
+                     Value="@_obligationsDue.ToString()"
+                     ValueColor="@(_obligationsDue > 0 ? Color.Warning : Color.Success)"
+                     Icon="@Icons.Material.Filled.EventNote"
+                     TrendText="obligations due within 30 days" />
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="3">
+
+        @* ── Active Instances ─────────────────────────────────────────── *@
+        <MudItem xs="12" md="7">
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudIcon Icon="@Icons.Material.Filled.RunCircle" Color="Color.Primary" />
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Active Process Instances</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Most recently started, all types</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudButton Size="Size.Small" Variant="Variant.Text"
+                                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/process/instances")'>
+                            All Instances
+                        </MudButton>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent Class="pa-0">
+                    <MudDataGrid T="InstanceRow" Items="@_instances" Dense="true" Hover="true"
+                                 Striped="true" RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/instances/{e.Item.InstanceId}"))">
+                        <Columns>
+                            <PropertyColumn Property="r => r.ProcessName" Title="Process" />
+                            <PropertyColumn Property="r => r.EntityId"    Title="Entity" />
+                            <TemplateColumn Title="Status" Sortable="false">
+                                <CellTemplate>
+                                    <ProcessStatusBadge Status="@context.Item.Status" />
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <PropertyColumn Property="r => r.StartedAt" Title="Started" Format="dd-MMM-yy" />
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+        @* ── Right column: gates + HSE ───────────────────────────────── *@
+        <MudItem xs="12" md="5">
+
+            @* Overdue gate reviews *@
+            <MudCard Elevation="2" Class="mb-3">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudIcon Icon="@Icons.Material.Filled.PendingActions" Color="Color.Warning" />
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Pending Gate Reviews</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudButton Size="Size.Small" Variant="Variant.Text"
+                                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/process/gates")'>
+                            View All
+                        </MudButton>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_pendingGateList.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No pending gate reviews.</MudText>
+                    }
+                    else
+                    {
+                        @foreach (var g in _pendingGateList.Take(4))
+                        {
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+                                <MudText Typo="Typo.body2">@g.Name</MudText>
+                                <MudChip T="string" Size="Size.Small" Color="Color.Warning">@g.State</MudChip>
+                            </MudStack>
+                        }
+                    }
+                </MudCardContent>
+            </MudCard>
+
+            @* Open HSE incidents *@
+            <MudCard Elevation="2">
+                <MudCardHeader>
+                    <CardHeaderAvatar>
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Error" />
+                    </CardHeaderAvatar>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.subtitle1">Open HSE Incidents</MudText>
+                    </CardHeaderContent>
+                    <CardHeaderActions>
+                        <MudButton Size="Size.Small" Variant="Variant.Text"
+                                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/hse/incidents")'>
+                            View All
+                        </MudButton>
+                    </CardHeaderActions>
+                </MudCardHeader>
+                <MudCardContent>
+                    @if (_openIncidentList.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No open HSE incidents.</MudText>
+                    }
+                    else
+                    {
+                        @foreach (var inc in _openIncidentList.Take(4))
+                        {
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+                                <MudStack Spacing="0">
+                                    <MudText Typo="Typo.body2">@inc.Description</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">@inc.Date.ToString("dd-MMM-yy")</MudText>
+                                </MudStack>
+                                <HSEIncidentSeverityBadge Tier="@inc.Tier" />
+                            </MudStack>
+                        }
+                    }
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+
+    </MudGrid>
+
+    @* ── Quick actions row ────────────────────────────────────────────── *@
+    <MudStack Row="true" Spacing="2" Class="mt-6" Wrap="Wrap.Wrap">
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.List"
+                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/process/definitions")'>
+            Browse Definitions
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.ChecklistRtl"
+                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/process/gates")'>
+            Gate Reviews
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.HealthAndSafety"
+                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/hse/incidents")'>
+            Report Incident
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.EventNote"
+                   OnClick='() => NavigationManager.NavigateTo("/ppdm39/compliance")'>
+            Compliance Calendar
+        </MudButton>
+    </MudStack>
+
+</MudContainer>
+
+@code {
+    private string _fieldName = "Current Field";
+    private int _activeInstances = 12;
+    private int _pendingGates    = 3;
+    private int _openIncidents   = 2;
+    private int _obligationsDue  = 5;
+
+    private List<InstanceRow>   _instances       = new();
+    private List<GateRow>       _pendingGateList  = new();
+    private List<IncidentRow>   _openIncidentList = new();
+
+    protected override void OnInitialized()
+    {
+        // TODO: replace with GET /api/field/current/process/instances
+        _instances = new List<InstanceRow>
+        {
+            new("PI-001", "Exploratory Well Drilling Approval",    "W-001", "IN_PROGRESS", DateTime.Today.AddDays(-5)),
+            new("PI-002", "Reservoir Development Planning",        "RES-012", "IN_PROGRESS", DateTime.Today.AddDays(-12)),
+            new("PI-003", "Facility Decommissioning Authorization","FAC-003", "SUSPENDED",   DateTime.Today.AddDays(-30)),
+            new("PI-004", "Well P&A Authorization",                "W-045", "IN_PROGRESS", DateTime.Today.AddDays(-2)),
+            new("PI-005", "Production Allocation Approval",        "FIELD-001", "NOT_STARTED", DateTime.Today),
+        };
+
+        // TODO: replace with GET /api/field/current/gates/pending
+        _pendingGateList = new List<GateRow>
+        {
+            new("Eagle Ford S-1 — Gate 2", "AWAITING APPROVAL"),
+            new("FDP Approval Gate",       "SUBMITTED"),
+            new("P&A Gate 1 Review",       "REVIEW"),
+        };
+
+        // TODO: replace with GET /api/field/current/hse/incidents?status=open
+        _openIncidentList = new List<IncidentRow>
+        {
+            new("Slip/trip on rig floor",      "2", DateTime.Today.AddDays(-3)),
+            new("Hydrocarbon release — minor", "1", DateTime.Today.AddDays(-8)),
+        };
+    }
+
+    private record InstanceRow(string InstanceId, string ProcessName, string EntityId, string Status, DateTime StartedAt);
+    private record GateRow(string Name, string State);
+    private record IncidentRow(string Description, string Tier, DateTime Date);
+}

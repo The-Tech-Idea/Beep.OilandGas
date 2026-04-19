@@ -1,21 +1,30 @@
 @page "/ppdm39/accounting/cost-allocation"
 @using Beep.OilandGas.Models.Data
+@using Beep.OilandGas.Models.Data.Accounting
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
-<PageTitle>Cost Allocation - Accounting</PageTitle>
+<PageTitle>Allocate Field Operating Costs</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Cost Allocation</MudText>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Allocate Field Operating Costs</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center" Class="mt-1">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">@_fieldName — Allocate and attribute costs to wells and facilities</MudText>
+                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.AccountBalance">Accounting</MudChip>
+            </MudStack>
+        </MudStack>
+    </MudStack>
 
     <MudPaper Class="pa-4">
         <MudStack Spacing="3" Class="mb-4">
             <MudSelect T="CostAllocationMethod" @bind-Value="@_allocationMethod" Label="Allocation Method" Variant="Variant.Outlined">
-                <MudSelectItem Value="@CostAllocationMethod.VolumeBased">Volume Based</MudSelectItem>
-                <MudSelectItem Value="@CostAllocationMethod.RevenueBased">Revenue Based</MudSelectItem>
-                <MudSelectItem Value="@CostAllocationMethod.FixedPercentage">Fixed Percentage</MudSelectItem>
-                <MudSelectItem Value="@CostAllocationMethod.EqualShare">Equal Share</MudSelectItem>
-                <MudSelectItem Value="@CostAllocationMethod.Manual">Manual</MudSelectItem>
+                <MudSelectItem Value="@CostAllocationMethod.DirectAllocation">Direct Allocation</MudSelectItem>
+                <MudSelectItem Value="@CostAllocationMethod.ActivityBasedCosting">Activity Based Costing</MudSelectItem>
+                <MudSelectItem Value="@CostAllocationMethod.StepDown">Step Down</MudSelectItem>
+                <MudSelectItem Value="@CostAllocationMethod.Reciprocal">Reciprocal</MudSelectItem>
             </MudSelect>
 
             <MudDatePicker @bind-Date="@_allocationDate" Label="Allocation Date" Variant="Variant.Outlined" Required="true" />
@@ -48,32 +57,22 @@
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <MudSimpleTable Dense="true" Hover="true">
-                                <tbody>
-                                    <tr>
-                                        <td><strong>Allocation Method:</strong></td>
-                                        <td>@_allocationResult.AllocationMethod</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Total Operating Costs:</strong></td>
-                                        <td>@FormatCurrency(_allocationResult.TotalOperatingCosts?.ToString())</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Total Capital Costs:</strong></td>
-                                        <td>@FormatCurrency(_allocationResult.TotalCapitalCosts?.ToString())</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Total Costs:</strong></td>
-                                        <td>@FormatCurrency(_allocationResult.TotalCosts?.ToString())</td>
-                                    </tr>
-                                </tbody>
-                            </MudSimpleTable>
+                            <MudStack Spacing="2">
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Allocation Method</MudText>
+                                    <MudText Typo="Typo.body2">@_allocationResult.AllocationMethod</MudText>
+                                </MudStack>
+                                <MudStack Row="true" Spacing="2">
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="og-label-lg">Total Allocated</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Warning">@FormatCurrency(_allocationResult.TotalAllocated.ToString())</MudText>
+                                </MudStack>
+                            </MudStack>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
             </MudGrid>
 
-            @if (_allocationResult.AllocationDetails != null && _allocationResult.AllocationDetails.Any())
+            @if (_allocationResult.AllocationEntries != null && _allocationResult.AllocationEntries.Any())
             {
                 <MudCard Elevation="2" Class="mt-4">
                     <MudCardHeader>
@@ -82,24 +81,24 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudTable Items="@_allocationResult.AllocationDetails" Hover="true" Dense="true" Striped="true">
-                            <HeaderContent>
-                                <MudTh>Entity Type</MudTh>
-                                <MudTh>Entity Name</MudTh>
-                                <MudTh>Allocated Operating Cost</MudTh>
-                                <MudTh>Allocated Capital Cost</MudTh>
-                                <MudTh>Total Allocated Cost</MudTh>
-                                <MudTh>Allocation %</MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                <MudTd DataLabel="Entity Type">@context.EntityType</MudTd>
-                                <MudTd DataLabel="Entity Name">@context.EntityName</MudTd>
-                                <MudTd DataLabel="Allocated Operating Cost">@FormatCurrency(context.AllocatedOperatingCost?.ToString())</MudTd>
-                                <MudTd DataLabel="Allocated Capital Cost">@FormatCurrency(context.AllocatedCapitalCost?.ToString())</MudTd>
-                                <MudTd DataLabel="Total Allocated Cost">@FormatCurrency(context.TotalAllocatedCost?.ToString())</MudTd>
-                                <MudTd DataLabel="Allocation %">@FormatDecimal(context.AllocationPercentage?.ToString())%</MudTd>
-                            </RowTemplate>
-                        </MudTable>
+                        <MudDataGrid T="AllocationEntry" Items="@_allocationResult.AllocationEntries" Dense="true" Hover="true" Striped="true"
+                                     SortMode="SortMode.Multiple">
+                            <Columns>
+                                <PropertyColumn Property="e => e.SourceCostCenter" Title="Source Cost Centre" />
+                                <PropertyColumn Property="e => e.TargetCostCenter" Title="Target Cost Centre" />
+                                <PropertyColumn Property="e => e.AllocationBasis" Title="Allocation Basis" />
+                                <TemplateColumn Title="Allocated Amount">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatCurrency(context.Item.AllocationAmount.ToString())</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn Title="Allocation %">
+                                    <CellTemplate>
+                                        <MudText Typo="Typo.body2">@FormatDecimal(context.Item.AllocationPercent.ToString())%</MudText>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
                     </MudCardContent>
                 </MudCard>
             }
@@ -112,7 +111,8 @@
 </MudContainer>
 
 @code {
-    private CostAllocationMethod _allocationMethod = CostAllocationMethod.VolumeBased;
+    private string _fieldName = "Current Field";
+    private CostAllocationMethod _allocationMethod = CostAllocationMethod.DirectAllocation;
     private DateTime? _allocationDate = DateTime.Today;
     private decimal? _totalOperatingCosts;
     private decimal? _totalCapitalCosts;
@@ -142,7 +142,7 @@
             if (_totalCapitalCosts.HasValue)
                 request["TotalCapitalCosts"] = _totalCapitalCosts.Value;
 
-            _allocationResult = await ApiClient.PostAsync<CostAllocationResult, Dictionary<string, object>>(
+            _allocationResult = await ApiClient.PostAsync<Dictionary<string, object>, CostAllocationResult>(
                 "/api/accounting/cost/allocations/allocate",
                 request);
 

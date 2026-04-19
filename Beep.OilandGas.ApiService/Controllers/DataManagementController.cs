@@ -11,9 +11,12 @@ using System.Text.Json;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM.Models;
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.DataManagement;
+using ValidationResult = Beep.OilandGas.Models.Data.ValidationResult;
 
 namespace Beep.OilandGas.ApiService.Controllers
 {
@@ -522,6 +525,35 @@ namespace Beep.OilandGas.ApiService.Controllers
         }
 
         // ============================================
+        // METADATA ENDPOINT
+        // ============================================
+
+        /// <summary>
+        /// Get metadata for a specific table
+        /// GET /api/datamanagement/metadata/{tableName}
+        /// </summary>
+        [HttpGet("metadata/{tableName}")]
+        public async Task<ActionResult<PPDMTableMetadata>> GetTableMetadata(string tableName)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(tableName))
+                    return BadRequest(new { error = "Table name is required" });
+
+                var meta = await _metadata.GetTableMetadataAsync(tableName);
+                if (meta == null)
+                    return NotFound(new { error = $"Metadata not found for table '{tableName}'" });
+
+                return Ok(meta);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting metadata for table: {TableName}", tableName);
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        // ============================================
         // HELPER METHODS
         // ============================================
 
@@ -640,7 +672,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         {
             try
             {
-                var tableMetadata = _metadata.GetTableMetadataAsync(repository.TABLE_NAME).GetAwaiter().GetResult();
+                var tableMetadata = _metadata.GetTableMetadataAsync(repository.TableName).GetAwaiter().GetResult();
                 if (tableMetadata?.PrimaryKeyColumn == null)
                     return null;
 

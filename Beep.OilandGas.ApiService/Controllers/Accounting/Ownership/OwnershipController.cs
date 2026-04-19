@@ -2,10 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Beep.OilandGas.ProductionAccounting.Ownership;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
-using Beep.OilandGas.ProductionAccounting.Services;
 using Beep.OilandGas.Models.Data.Accounting.Ownership;
+using Beep.OilandGas.ProductionAccounting.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership

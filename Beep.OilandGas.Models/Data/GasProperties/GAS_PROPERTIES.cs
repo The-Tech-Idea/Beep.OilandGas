@@ -122,5 +122,16 @@ namespace Beep.OilandGas.Models.Data.GasProperties
             set { SetProperty(ref BUSINESS_ASSOCIATE_IDValue, value); }
         }
 
+        // Aliases for direct critical properties (map to pseudo-critical values)
+        public Decimal? CRITICAL_PRESSURE { get => PSEUDO_CRITICAL_PRESSURE; set => PSEUDO_CRITICAL_PRESSURE = value; }
+        public Decimal? CRITICAL_TEMPERATURE { get => PSEUDO_CRITICAL_TEMPERATURE; set => PSEUDO_CRITICAL_TEMPERATURE = value; }
+
+        private Decimal? GAS_FVFValue;
+        public Decimal? GAS_FVF
+        {
+            get { return this.GAS_FVFValue; }
+            set { SetProperty(ref GAS_FVFValue, value); }
+        }
+
     }
 }

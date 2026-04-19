@@ -1,0 +1,195 @@
+@page "/ppdm39/analytics/reserves"
+@using Microsoft.AspNetCore.Authorization
+@using Beep.OilandGas.Models.Data.Analytics
+@using Beep.OilandGas.Web.Services
+@attribute [Authorize(Roles = "ReservesEngineer,Manager,Admin")]
+@inject ApiClient ApiClient
+
+<PageTitle>Reserves Maturation Report</PageTitle>
+
+<MudStack Spacing="3">
+
+    @* ── Page header ──────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Reserves Maturation Report</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                @(_data?.FieldId ?? "Current Field") —
+                NI 51-101 / SPE PRMS Funnel
+            </MudText>
+        </MudStack>
+        <MudStack Row="true" Spacing="1">
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Refresh"
+                       OnClick="LoadAsync" Disabled="_loading">
+                Refresh
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+    else if (_data is null)
+    {
+        <MudAlert Severity="Severity.Warning">No reserves data available for this field.</MudAlert>
+    }
+    else
+    {
+        @* ── As-of date ──────────────────────────────────────────────────── *@
+        <MudText Typo="Typo.caption" Color="Color.Tertiary">
+            As of @_data.AsOfDate.ToString("yyyy-MM-dd HH:mm") UTC
+        </MudText>
+
+        @* ── SPE PRMS category labels ─────────────────────────────────────── *@
+        <MudAlert Severity="Severity.Info" Dense="true">
+            SPE PRMS categories: <strong>Proved</strong> (1P/2P/3P) →
+            <strong>Contingent</strong> (1C/2C/3C) →
+            <strong>Prospective</strong> (Low/Best/High estimate).
+            Volumes in MMBOE.
+        </MudAlert>
+
+        @* ── Maturation rate KPI ─────────────────────────────────────────── *@
+        <MudGrid>
+            <MudItem xs="12" sm="4">
+                <KpiCard Label="Maturation Rate"
+                         Value="@($"{_data.MaturationRatePct:F1}")"
+                         Unit="%"
+                         Icon="@Icons.Material.Filled.TrendingUp"
+                         ValueColor="@MaturationColor(_data.MaturationRatePct)"
+                         TrendText="(Contingent + Proved) ÷ Total" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <KpiCard Label="Total Resources"
+                         Value="@($"{(_data.ProspectiveMMBOE + _data.ContingentMMBOE + _data.ProvedMMBOE):F2}")"
+                         Unit="MMBOE"
+                         Icon="@Icons.Material.Filled.Layers"
+                         ValueColor="Color.Info" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <KpiCard Label="Proved Reserves"
+                         Value="@($"{_data.ProvedMMBOE:F2}")"
+                         Unit="MMBOE"
+                         Icon="@Icons.Material.Filled.CheckCircle"
+                         ValueColor="Color.Success" />
+            </MudItem>
+        </MudGrid>
+
+        @* ── Funnel table ─────────────────────────────────────────────────── *@
+        <MudCard Elevation="2">
+            <MudCardContent Class="pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">Reserves Funnel (MMBOE)</MudText>
+                <MudTable Items="@FunnelRows" Dense="true" Hover="true" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>SPE PRMS Category</MudTh>
+                        <MudTh>NI 51-101 Designation</MudTh>
+                        <MudTh Style="text-align:right">Volume (MMBOE)</MudTh>
+                        <MudTh Style="text-align:right">% of Total</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Category</MudTd>
+                        <MudTd>@context.Ni51101</MudTd>
+                        <MudTd Style="text-align:right">@($"{context.Volume:F2}")</MudTd>
+                        <MudTd Style="text-align:right">@($"{context.SharePct:F1}%")</MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudCardContent>
+        </MudCard>
+
+        @* ── Stacked bar chart ────────────────────────────────────────────── *@
+        <MudCard Elevation="2">
+            <MudCardContent Class="pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3">Volume Distribution</MudText>
+                <MudChart ChartType="ChartType.Bar"
+                          ChartSeries="@_chartSeries"
+                          XAxisLabels="@_chartLabels"
+                          Width="100%" Height="300px"
+                          ChartOptions="@_chartOptions" />
+            </MudCardContent>
+        </MudCard>
+
+        @* ── NI 51-101 disclosure note ────────────────────────────────────── *@
+        <MudExpansionPanels>
+            <MudExpansionPanel Text="NI 51-101 Disclosure Notes" Icon="@Icons.Material.Filled.Info">
+                <MudText Typo="Typo.body2" Class="pa-2">
+                    This report presents reserves and resource estimates in accordance with
+                    <strong>National Instrument 51-101 Standards of Disclosure for Oil and Gas Activities</strong>
+                    and the <strong>SPE Petroleum Resources Management System (SPE PRMS)</strong>.
+                    <br /><br />
+                    All volumetric estimates are qualified persons' estimates (QP) as defined under NI 51-101.
+                    Proved reserves (1P/2P/3P) represent quantities that geological and engineering data demonstrate
+                    with reasonable certainty to be recoverable. Contingent and Prospective resources are unrisked
+                    estimates subject to commercial and technical uncertainty.
+                    <br /><br />
+                    BOE conversions are calculated at 6 Mcf = 1 BOE and may be misleading if used in isolation.
+                </MudText>
+            </MudExpansionPanel>
+        </MudExpansionPanels>
+    }
+
+</MudStack>
+
+@code {
+    private ReservesMaturationSummary? _data;
+    private bool _loading = false;
+
+    private List<ChartSeries<double>> _chartSeries = new();
+    private string[]                  _chartLabels = Array.Empty<string>();
+    private ChartOptions              _chartOptions = new();
+
+    private record FunnelRow(string Category, string Ni51101, double Volume, double SharePct);
+    private List<FunnelRow> FunnelRows { get; set; } = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            _data = await ApiClient.GetAsync<ReservesMaturationSummary>(
+                "/api/field/current/process/analytics/reserves/maturation");
+
+            if (_data is not null) BuildChartData();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Reserves maturation load error: {ex.Message}");
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void BuildChartData()
+    {
+        if (_data is null) return;
+
+        double total = _data.ProspectiveMMBOE + _data.ContingentMMBOE + _data.ProvedMMBOE;
+        if (total == 0) total = 1;
+
+        FunnelRows = new List<FunnelRow>
+        {
+            new("Proved",       "Proved Reserves (1P/2P/3P)", _data.ProvedMMBOE,       _data.ProvedMMBOE       / total * 100),
+            new("Contingent",   "Contingent Resources (2C)", _data.ContingentMMBOE,    _data.ContingentMMBOE   / total * 100),
+            new("Prospective",  "Prospective Resources (Best)", _data.ProspectiveMMBOE, _data.ProspectiveMMBOE / total * 100),
+        };
+
+        _chartLabels = new[] { "Proved", "Contingent", "Prospective" };
+        _chartSeries = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double>
+            {
+                Name = "MMBOE",
+                Data = new[] { _data.ProvedMMBOE, _data.ContingentMMBOE, _data.ProspectiveMMBOE }
+            }
+        };
+    }
+
+    private static Color MaturationColor(double rate) =>
+        rate >= 50 ? Color.Success : rate >= 25 ? Color.Warning : Color.Error;
+}

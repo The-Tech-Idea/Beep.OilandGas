@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.GasLift;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Calculations;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.Web.Services
@@ -103,12 +104,12 @@ namespace Beep.OilandGas.Web.Services
             {
                 var result = await _apiClient.GetAsync<GAS_LIFT_PERFORMANCE>(
                     $"/api/gaslift/performance/{Uri.EscapeDataString(wellUWI)}");
-                return result ?? new GAS_LIFT_PERFORMANCE { WellUWI = wellUWI };
+                return result ?? new GAS_LIFT_PERFORMANCE { WELL_UWI = wellUWI };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting gas lift performance for well {WellUWI}", wellUWI);
-                return new GAS_LIFT_PERFORMANCE { WellUWI = wellUWI };
+                return new GAS_LIFT_PERFORMANCE { WELL_UWI = wellUWI };
             }
         }
 
@@ -446,4 +447,5 @@ namespace Beep.OilandGas.Web.Services
         #endregion
     }
 }
+
 

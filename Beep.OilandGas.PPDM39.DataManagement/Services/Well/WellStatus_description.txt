@@ -1,0 +1,99 @@
+3© Copyright 2020, PPDM Association. All Rights Reserved • www.PPDM.org
+Introduction
+Clear, well-defined reference value lists which convey
+information with precision and clarity are essential to
+unambiguous communication, integration and interoperability.
+Members of the PPDM Association expend considerable
+energy and attention to identifying and resolving key areas
+where current reference lists are conflicting or unclear.
+Well status and classification reference lists used today
+usually combine many kinds of information in one list, to
+the extent that one value in a list may explicitly convey
+more than one kind of information in a complex code, imply
+(but not state) critical information, or even leave important
+information out entirely.
+FACETED TAXONOMY
+One approach to creating useful reference lists is to assemble
+various relevant properties into a logical set as has been
+done in “Well Status and Classification”. The set is a faceted
+taxonomy, and each list is one facet in the taxonomy.
+Each facet is constructed according to some simple
+rules:
+• Each facet describes one property of an object or description,
+and therefore contains only one kind of information.
+• The facets work together to tell a complete story about
+a well and its components from multiple points of view.
+• The values in each facet should be mutually exclusive
+with values in other facets of the taxonomy.
+• Values in a facet may be hierarchical. Users should be
+able to select at any level of the hierarchy that is relevant
+to their purpose. Data retrieval or reporting may leverage
+the hierarchies.
+• Unambiguous criteria must be used for the selection
+of any facet value. If more than one value may be
+appropriate to a business purpose, the business rules for
+selection should be reviewed, or the design of the facet
+may be flawed. Local criteria may be used to choose the
+best level in the case of a hierarchal facet.
+A faceted taxonomy offers some powerful
+functionality:
+• Objects can be retrieved from one or more datasets
+according to their value in a single facet.
+• By combining information from many facets, users can
+group objects for many business purposes.
+• A properly constructed set of facets allows rapid retrieval
+of data objects according to criteria that are familiar to
+users, without requiring complex queries or knowledge
+of the data structure. While this information is derivable
+from a good data store, facets can be helpful shortcuts.
+• Facets can be used to develop symbol sets or dashboard
+displays as appropriate.
+Well Status &
+Classification v3
+Overview
+A faceted taxonomy was created by the PPDM Association
+to deal with the multitude of values describing wells in the
+global petroleum industry. This is an evolving product,
+responding to changes in data management needs and
+practices. Version 2 (2016) is in wide use but a survey of
+members in 2018 showed opportunities for enhancements.
+A work group of member volunteers began in 2019 and
+finalized Version 3 in March 2020. The process uses The
+PPDM Way — priorities, expertise and resources are
+provided by our members, supported by the Association’s
+staff.
+The facets are designed and arranged according to life
+cycle, stakeholder perspectives and significant events or
+conditions.
+The changes from Version 2 are documented
+separately. In summary, the main changes are:
+• Simplify the phases of the well life cycle.
+• Show the different perspectives of the stakeholders in
+the context of the life cycle.
+• Distinguish the life cycle of a permit (regulatory
+authorization) from the life cycle of a well.
+• Recognize that well status and wellbore status may be
+different, even at the same time.
+• Reword some facet names and facet values to improve
+clarity.
+• Combine or split some facets to improve the logic of the
+taxonomy.
+• Eliminate facets for Lahee Class and Well Reporting
+Class.
+
+
+5© Copyright 2020, PPDM Association. All Rights Reserved • www.PPDM.org
+Well Status & Classification v3
+Life Cycle
+Life Cycle is a set of major phases that are significant to regulators and/or business stakeholders.
+Life Cycle may apply to a well or its components.
+Facet Value Facet Value Definition
+Planning Planning is all the activities of the Life Cycle before construction has commenced. It
+includes designing a well and obtaining management and regulatory approvals.
+Constructing Constructing is the approved activities of the Life Cycle prior to operation.
+Operating Operating is the activities of the Life Cycle while the well or component is capable of
+performing its intended Role. It includes periods where the well is temporarily shut in.
+Closing Closing is the set of activities of the Life Cycle to make the well or component
+permanently incapable of any Role.
+Closed Closed is the phase of the Life Cycle when the well or component is permanently
+incapable of performing any Role
