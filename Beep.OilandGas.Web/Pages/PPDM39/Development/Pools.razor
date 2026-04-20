@@ -1,4 +1,4 @@
-@page "/ppdm39/development/pools"
+﻿@page "/ppdm39/development/pools"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -131,12 +131,20 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<POOL>? _pools;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
         await LoadPools();
     }
 
@@ -145,11 +153,10 @@
         _isLoading = true;
         try
         {
-            _pools = await ApiClient.GetAsync<List<POOL>>("/api/field/current/development/pools");
-        }
-        catch (Exception ex)
+            _pools = await ApiClient.GetAsync<List<POOL>>("/api/field/current/development/pools") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading pools: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading pools.", Severity.Error);
             _pools = new List<POOL>();
         }
         finally
@@ -175,9 +182,9 @@
                 Snackbar.Add("Pool created successfully", Severity.Success);
                 await LoadPools();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Snackbar.Add($"Error creating pool: {ex.Message}", Severity.Error);
+                Snackbar.Add("Error creating pool.", Severity.Error);
             }
         }
     }
@@ -204,9 +211,9 @@
                 Snackbar.Add("Pool updated successfully", Severity.Success);
                 await LoadPools();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Snackbar.Add($"Error updating pool: {ex.Message}", Severity.Error);
+                Snackbar.Add("Error updating pool.", Severity.Error);
             }
         }
     }

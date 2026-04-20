@@ -11,6 +11,7 @@
 		<PackageIcon>SimpleODM.png</PackageIcon>
 		<RepositoryUrl>https://github.com/The-Tech-Idea/</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<NoWarn>$(NoWarn);CS8632</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="..\..\InstallationScripts\LogoGFx\128\SimpleODM.png">

@@ -1,8 +1,10 @@
-@page "/ppdm39/decommissioning/well-abandonment"
+﻿@page "/ppdm39/decommissioning/well-abandonment"
 @using Beep.OilandGas.PPDM39.Models
+@using System.Security.Claims
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Record Well Abandonments</PageTitle>
 
@@ -97,13 +99,23 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<WELL>? _abandonedWells;
     private bool _isLoading = false;
-    private string? _currentUserId = "system"; // TODO: Get from authentication context
+    private string? _currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
         await LoadAbandonedWells();
     }
 
@@ -112,11 +124,10 @@
         _isLoading = true;
         try
         {
-            _abandonedWells = await ApiClient.GetAsync<List<WELL>>("/api/field/current/decommissioning/wells-abandoned");
-        }
-        catch (Exception ex)
+            _abandonedWells = await ApiClient.GetAsync<List<WELL>>("/api/field/current/decommissioning/wells-abandoned") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading abandoned wells: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading abandoned wells.", Severity.Error);
             _abandonedWells = new List<WELL>();
         }
         finally
@@ -147,15 +158,15 @@
                 }
 
                 var created = await ApiClient.PostAsync<object, Dictionary<string, object>>(
-                    $"/api/field/current/decommissioning/abandon-well?wellId={wellId}&userId={_currentUserId}",
+                    $"/api/field/current/decommissioning/abandon-well?wellId={Uri.EscapeDataString(wellId)}&userId={_currentUserId}",
                     abandonmentData);
                 
                 Snackbar.Add("Well abandonment recorded successfully", Severity.Success);
                 await LoadAbandonedWells();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Snackbar.Add($"Error recording well abandonment: {ex.Message}", Severity.Error);
+                Snackbar.Add("Error recording well abandonment.", Severity.Error);
             }
         }
     }

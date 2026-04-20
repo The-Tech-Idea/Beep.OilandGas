@@ -1,0 +1,326 @@
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+@* ── Reference Values Manager ─────────────────────────────────────────────── *@
+@* Browse and seed R_* / RA_* reference tables for a database connection.       *@
+
+<MudStack Spacing="3">
+
+    @* Header toolbar *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+        <MudText Typo="Typo.subtitle1">
+            <MudIcon Icon="@Icons.Material.Filled.LibraryBooks" Class="mr-1" />
+            Reference Values — @(ConnectionName ?? "no connection")
+        </MudText>
+        <MudSpacer />
+        @if (_loading)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+        }
+        <MudButton StartIcon="@Icons.Material.Filled.Refresh"
+                   Variant="Variant.Outlined" Size="Size.Small"
+                   OnClick="RefreshAsync">Refresh</MudButton>
+        <MudButton StartIcon="@Icons.Material.Filled.CloudDownload"
+                   Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Small"
+                   Disabled="@(_seeding || _loading || string.IsNullOrWhiteSpace(ConnectionName))"
+                   OnClick="SeedAllAsync">
+            @(_seeding ? "Seeding…" : "Seed All Reference Data")
+        </MudButton>
+    </MudStack>
+
+    @* Category filter chips *@
+    <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+        <MudChip T="string" Color="@(_filter == null ? Color.Primary : Color.Default)"
+                 Variant="@(_filter == null ? Variant.Filled : Variant.Outlined)"
+                 Size="Size.Small" OnClick="@(() => _filter = null)">All</MudChip>
+        @foreach (var cat in _categories)
+        {
+            <MudChip T="string"
+                     Color="@(_filter == cat ? Color.Primary : Color.Default)"
+                     Variant="@(_filter == cat ? Variant.Filled : Variant.Outlined)"
+                     Size="Size.Small"
+                     OnClick="@(() => _filter = cat)">@cat</MudChip>
+        }
+    </MudStack>
+
+    @if (string.IsNullOrWhiteSpace(ConnectionName))
+    {
+        <MudAlert Severity="Severity.Info">Select a database connection to manage reference values.</MudAlert>
+    }
+    else if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Secondary" />
+    }
+    else
+    {
+        @* Reference table list *@
+        <MudGrid Spacing="2">
+            @foreach (var grp in FilteredGroups)
+            {
+                <MudItem xs="12">
+                    <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="mb-1">@grp.Category</MudText>
+                    <MudDivider Class="mb-2" />
+                </MudItem>
+                @foreach (var tbl in grp.Tables)
+                {
+                    var isSeedingThis = _seedingTable == tbl.TableName;
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCard Elevation="1">
+                            <MudCardContent Class="pa-3">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudStack Spacing="0" Style="flex:1;min-width:0">
+                                        <MudText Typo="Typo.body2" Style="font-family:monospace;overflow:hidden;text-overflow:ellipsis;">
+                                            @tbl.TableName
+                                        </MudText>
+                                        @if (!string.IsNullOrWhiteSpace(tbl.Description))
+                                        {
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@tbl.Description</MudText>
+                                        }
+                                    </MudStack>
+                                    <MudStack Row="true" Spacing="0" AlignItems="AlignItems.Center">
+                                        @if (isSeedingThis)
+                                        {
+                                            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                        }
+                                        else
+                                        {
+                                            <MudIconButton Size="Size.Small"
+                                                           Icon="@Icons.Material.Filled.CloudDownload"
+                                                           Title="Seed this table"
+                                                           Color="Color.Secondary"
+                                                           Disabled="@_seeding"
+                                                           OnClick="@(() => SeedTableAsync(tbl.TableName))" />
+                                            <MudIconButton Size="Size.Small"
+                                                           Icon="@Icons.Material.Filled.TableView"
+                                                           Title="Browse data"
+                                                           Color="Color.Primary"
+                                                           OnClick="@(() => BrowseTable(tbl.TableName))" />
+                                        }
+                                    </MudStack>
+                                </MudStack>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                }
+            }
+        </MudGrid>
+
+        @if (!FilteredGroups.Any())
+        {
+            <MudAlert Severity="Severity.Info">No reference tables found for the selected filter.</MudAlert>
+        }
+    }
+</MudStack>
+
+@code {
+    [Parameter] public string? ConnectionName { get; set; }
+
+    private List<RefTableGroup> _allGroups = new();
+    private bool _loading;
+    private bool _seeding;
+    private string? _seedingTable;
+    private string? _filter;
+
+    private IEnumerable<string> _categories =>
+        _allGroups.Select(g => g.Category).Distinct();
+
+    private IEnumerable<RefTableGroup> FilteredGroups =>
+        _filter == null
+            ? _allGroups
+            : _allGroups.Where(g => g.Category == _filter);
+
+    protected override async Task OnInitializedAsync()
+        => await RefreshAsync();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(ConnectionName))
+            await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            // Load module definitions to get R_/RA_ tables from the REFERENCE module metadata
+            var modules = await ApiClient.GetAsync<List<ModuleStatusModel>>(
+                $"api/ppdm39/schema/{Uri.EscapeDataString(ConnectionName ?? "PPDM39")}/status");
+
+            // Build groups from well-known reference table prefixes
+            _allGroups = BuildReferenceGroups();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading reference tables: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SeedAllAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ConnectionName)) return;
+        _seeding = true;
+        StateHasChanged();
+        try
+        {
+            var result = await ApiClient.PostAsync<SeedRefRequest, SeedResult>(
+                $"api/ppdm39/schema/{Uri.EscapeDataString(ConnectionName)}/seed/reference",
+                new SeedRefRequest { SkipExisting = true, UserId = "SYSTEM" });
+
+            if (result?.Success == true)
+                Snackbar.Add(result.Message, Severity.Success);
+            else
+                Snackbar.Add(result?.Message ?? "Seeding completed with errors", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Seed error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _seeding = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SeedTableAsync(string tableName)
+    {
+        if (string.IsNullOrWhiteSpace(ConnectionName)) return;
+        _seedingTable = tableName;
+        StateHasChanged();
+        try
+        {
+            // Use the existing setup endpoint for single-table seeding
+            var result = await ApiClient.PostAsync<object, SeedResult>(
+                "api/ppdm39/setup/seed/reference",
+                new { ConnectionName = ConnectionName, TableNames = new[] { tableName }, SkipExisting = true, UserId = "SYSTEM" });
+
+            if (result?.Success == true)
+                Snackbar.Add($"Seeded {tableName}", Severity.Success);
+            else
+                Snackbar.Add($"Could not seed {tableName}", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Seed error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _seedingTable = null;
+            StateHasChanged();
+        }
+    }
+
+    private void BrowseTable(string tableName)
+    {
+        NavigationManager.NavigateTo($"/ppdm39/data-management/table/{tableName}");
+    }
+
+    // ── Build reference table catalogue from known prefixes ───────────────────
+
+    private static List<RefTableGroup> BuildReferenceGroups()
+    {
+        return new List<RefTableGroup>
+        {
+            new RefTableGroup("Well Reference", new[]
+            {
+                new RefTableEntry("R_WELL_STATUS", "Well status codes"),
+                new RefTableEntry("R_WELL_CLASS", "Well classification codes"),
+                new RefTableEntry("R_WELL_PROFILE_TYPE", "Directional profile types"),
+                new RefTableEntry("R_WELL_PURPOSE", "Drilling purpose codes"),
+                new RefTableEntry("R_FLUID_TYPE", "Fluid type codes"),
+                new RefTableEntry("R_WELL_ACTIVITY_TYPE", "Activity type codes"),
+                new RefTableEntry("R_WELL_EQUIPMENT_TYPE", "Equipment type codes"),
+                new RefTableEntry("R_TUBULAR_TYPE", "Tubular type codes"),
+            }),
+            new RefTableGroup("Business Associate Reference", new[]
+            {
+                new RefTableEntry("R_BA_TYPE", "Business associate types"),
+                new RefTableEntry("R_ADDR_TYPE", "Address types"),
+                new RefTableEntry("R_BA_ROLE", "Business associate roles"),
+                new RefTableEntry("R_RELATIONSHIP_TYPE", "Relationship types"),
+            }),
+            new RefTableGroup("Production & Reserves Reference", new[]
+            {
+                new RefTableEntry("R_PROD_ENTITY_TYPE", "Production entity types"),
+                new RefTableEntry("R_RESERVES_CAT", "Reserves category codes"),
+                new RefTableEntry("R_PDEN_TYPE", "Density type codes"),
+                new RefTableEntry("R_FLUID_COMPONENT", "Fluid component codes"),
+            }),
+            new RefTableGroup("Exploration Reference", new[]
+            {
+                new RefTableEntry("R_PROSPECT_TYPE", "Prospect type codes"),
+                new RefTableEntry("R_PLAY_TYPE", "Play type codes"),
+                new RefTableEntry("R_SEIS_SURVEY_TYPE", "Seismic survey types"),
+                new RefTableEntry("R_ZONE_TYPE", "Zone type codes"),
+            }),
+            new RefTableGroup("Facility Reference", new[]
+            {
+                new RefTableEntry("R_FACILITY_TYPE", "Facility type codes"),
+                new RefTableEntry("R_FACILITY_STATUS", "Facility status codes"),
+                new RefTableEntry("RA_FACILITY_COMPONENT", "Facility component attributes"),
+            }),
+            new RefTableGroup("Units & Measurements", new[]
+            {
+                new RefTableEntry("R_UOM", "Units of measure"),
+                new RefTableEntry("R_UOM_CONVERSION", "Unit conversion factors"),
+                new RefTableEntry("R_SEVERITY", "Severity / risk codes"),
+                new RefTableEntry("R_CURRENCY_CODE", "Currency codes"),
+            }),
+            new RefTableGroup("Regulatory & Compliance", new[]
+            {
+                new RefTableEntry("R_REGULATORY_AGENCY", "Regulatory agencies"),
+                new RefTableEntry("R_PERMIT_TYPE", "Permit type codes"),
+                new RefTableEntry("R_HSE_INCIDENT_TYPE", "HSE incident types"),
+            }),
+            new RefTableGroup("LOV / List of Values", new[]
+            {
+                new RefTableEntry("LIST_OF_VALUE", "Generic list-of-values store"),
+            }),
+        };
+    }
+
+    // ── Local model types ─────────────────────────────────────────────────────
+
+    private sealed record RefTableEntry(string TableName, string Description);
+
+    private sealed class RefTableGroup
+    {
+        public string Category { get; }
+        public IReadOnlyList<RefTableEntry> Tables { get; }
+
+        public RefTableGroup(string category, IEnumerable<RefTableEntry> tables)
+        {
+            Category = category;
+            Tables = tables.ToList();
+        }
+    }
+
+    private sealed class ModuleStatusModel
+    {
+        public string ModuleName { get; set; } = string.Empty;
+        public string Status { get; set; } = "NotInstalled";
+        public int TotalTables { get; set; }
+        public int InstalledTables { get; set; }
+    }
+
+    private sealed class SeedRefRequest
+    {
+        public bool SkipExisting { get; set; } = true;
+        public string? UserId { get; set; }
+    }
+
+    private sealed class SeedResult
+    {
+        public bool Success { get; set; }
+        public int TotalSeeded { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+}

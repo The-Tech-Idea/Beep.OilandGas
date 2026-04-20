@@ -1,0 +1,183 @@
+﻿@page "/ppdm39/compliance/obligation/{ObligationId}"
+@using Beep.OilandGas.Models.Data.Compliance
+@inject Beep.OilandGas.Web.Services.ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<PageTitle>Obligation Detail</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else if (_detail is null)
+{
+    <MudAlert Severity="Severity.Warning">Obligation not found.</MudAlert>
+}
+else
+{
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/compliance"))" />
+        <MudText Typo="Typo.h5">Obligation: @_detail.ObligationId</MudText>
+        <MudSpacer />
+        <MudChip T="string" Color="@StatusColor(_detail.ObligStatus)" Size="Size.Medium">
+            @_detail.ObligStatus
+        </MudChip>
+    </MudStack>
+
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-2"><b>Details</b></MudText>
+                <MudSimpleTable Dense="true" Hover="true">
+                    <tbody>
+                        <tr><td><b>Type</b></td><td>@_detail.ObligType</td></tr>
+                        <tr><td><b>Jurisdiction</b></td><td>@_detail.JurisdictionCode</td></tr>
+                        <tr><td><b>Due Date</b></td><td>@_detail.DueDate.ToString("yyyy-MM-dd")</td></tr>
+                        <tr><td><b>Fulfilled</b></td><td>@(_detail.FulfillDate?.ToString("yyyy-MM-dd") ?? "—")</td></tr>
+                        <tr><td><b>Reporting Period</b></td>
+                            <td>@(_detail.ReportingPeriodStart?.ToString("yyyy-MM-dd") ?? "—") → @(_detail.ReportingPeriodEnd?.ToString("yyyy-MM-dd") ?? "—")</td></tr>
+                        <tr><td><b>Created By</b></td><td>@(_detail.CreatedByProcess ?? "manual")</td></tr>
+                        <tr><td><b>Description</b></td><td>@_detail.Description</td></tr>
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudText Typo="Typo.subtitle1" Class="mb-3"><b>Actions</b></MudText>
+                <MudStack Spacing="2">
+                    @if (_detail.ObligStatus == ObligationStatus.Pending)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Success"
+                                   StartIcon="@Icons.Material.Filled.CheckCircle"
+                                   OnClick="@OnSubmit">Mark Submitted</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.RemoveCircle"
+                                   OnClick="@OnWaive">Waive Obligation</MudButton>
+                    }
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Payment"
+                               OnClick="@OnRecordPayment">Record Payment</MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.subtitle1" Class="mb-2"><b>Payment History</b></MudText>
+        @if (!_detail.Payments.Any())
+        {
+            <MudText Color="Color.Default">No payments recorded.</MudText>
+        }
+        else
+        {
+            <MudDataGrid T="ObligationPayment" Items="@_detail.Payments" Dense="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.PaymentDate"    Title="Date" Format="yyyy-MM-dd" />
+                    <PropertyColumn Property="x => x.PaymentType"    Title="Type" />
+                    <PropertyColumn Property="x => x.PaymentCurrency" Title="Currency" />
+                    <PropertyColumn Property="x => x.GrossAmt"       Title="Gross" />
+                    <PropertyColumn Property="x => x.ActualAmt"      Title="Actual" />
+                    <PropertyColumn Property="x => x.VarianceAmt"    Title="Variance" />
+                    <PropertyColumn Property="x => x.PaymentNotes"   Title="Notes" />
+                </Columns>
+            </MudDataGrid>
+        }
+    </MudPaper>
+}
+
+@if (!string.IsNullOrEmpty(_error))
+{
+    <MudAlert Severity="Severity.Error" Class="mt-2">@_error</MudAlert>
+}
+
+@code {
+    [Parameter] public string ObligationId { get; set; } = string.Empty;
+
+    private string           _loadedId = string.Empty;
+    private bool             _loading = true;
+    private string?          _error;
+    private ObligationDetailModel? _detail;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loadedId = ObligationId;
+        await LoadAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ObligationId == _loadedId) return;
+        _loadedId = ObligationId;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error   = null;
+        try
+        {
+            _detail = await ApiClient.GetAsync<ObligationDetailModel>(
+                          $"/api/field/current/compliance/obligations/{Uri.EscapeDataString(ObligationId)}");
+        }
+        catch (Exception)
+        {
+            _error = "Failed to load obligation.";
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task OnSubmit()
+    {
+        try
+        {
+            await ApiClient.PostAsync<object>($"/api/field/current/compliance/obligations/{Uri.EscapeDataString(ObligationId)}/submit?submitDate={DateTime.UtcNow:O}", null!);
+            Snackbar.Add("Obligation marked as submitted.", Severity.Success);
+            await LoadAsync();
+        }
+        catch (Exception) { _error = "Submit failed."; Snackbar.Add(_error, Severity.Error); }
+    }
+
+    private async Task OnWaive()
+    {
+        var result = await DialogService.ShowMessageBoxAsync(
+            "Waive Obligation",
+            "Enter reason (this cannot be undone).",
+            "Waive", cancelText: "Cancel");
+        if (result != true) return;
+
+        try
+        {
+            await ApiClient.PostAsync<object>(
+                $"/api/field/current/compliance/obligations/{ObligationId}/waive?reason=User+waived", null!);
+            Snackbar.Add("Obligation waived.", Severity.Info);
+            await LoadAsync();
+        }
+        catch (Exception) { _error = "Waive failed."; Snackbar.Add(_error, Severity.Error); }
+    }
+
+    private async Task OnRecordPayment()
+    {
+        var parameters = new DialogParameters<PaymentDialog>
+        {
+            { x => x.ObligationId, ObligationId }
+        };
+        var dialog = await DialogService.ShowAsync<PaymentDialog>("Record Payment", parameters);
+        var dr     = await dialog.Result;
+        if (!dr!.Canceled) await LoadAsync();
+    }
+
+    private static Color StatusColor(string status) => status switch
+    {
+        ObligationStatus.Submitted       => Color.Success,
+        ObligationStatus.Overdue         => Color.Error,
+        ObligationStatus.VarianceFlagged => Color.Warning,
+        ObligationStatus.Waived          => Color.Default,
+        _                                => Color.Info,
+    };
+}

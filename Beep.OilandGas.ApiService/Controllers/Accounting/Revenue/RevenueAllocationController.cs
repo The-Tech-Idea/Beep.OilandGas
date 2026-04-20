@@ -92,7 +92,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Revenue
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error allocating revenue");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

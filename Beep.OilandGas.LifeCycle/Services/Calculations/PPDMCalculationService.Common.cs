@@ -114,9 +114,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
         private static bool TryResolveResultPropertyAlias(
             string normalizedEntityProperty,
             IReadOnlyDictionary<string, PropertyInfo> resultPropertyMap,
-            out PropertyInfo resultProperty)
+            out PropertyInfo? resultProperty)
         {
-            resultProperty = null!;
+            resultProperty = null;
 
             if (normalizedEntityProperty.EndsWith("ANALYSISID", StringComparison.OrdinalIgnoreCase) ||
                 normalizedEntityProperty.EndsWith("CALCULATIONID", StringComparison.OrdinalIgnoreCase) ||
@@ -186,7 +186,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     }
                 }
 
-                var value = resultProperty.GetValue(result);
+                var value = resultProperty!.GetValue(result);
                 TrySetPropertyValue(entity, entityProperty.Value, value);
             }
 

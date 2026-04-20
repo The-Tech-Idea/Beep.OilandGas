@@ -1,4 +1,4 @@
-@page "/ppdm39/production/fields"
+﻿@page "/ppdm39/production/fields"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -88,12 +88,20 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<FIELD>? _fields;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
         await LoadFields();
     }
 
@@ -102,11 +110,10 @@
         _isLoading = true;
         try
         {
-            _fields = await ApiClient.GetAsync<List<FIELD>>("/api/production/fields");
-        }
-        catch (Exception ex)
+            _fields = await ApiClient.GetAsync<List<FIELD>>("/api/production/fields") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading fields: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading fields.", Severity.Error);
         }
         finally
         {

@@ -1,0 +1,757 @@
+@using System.Reflection
+@using System.Text.Json
+@using MudBlazor
+@using Beep.OilandGas.PPDM39.Core.Metadata
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.Web.Components.Shared
+@using Beep.OilandGas.Models.Data.DataManagement
+@using TheTechIdea.Beep.Report
+
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject NavigationManager Nav
+
+@* ─── Breadcrumb ─────────────────────────────────────────────────────────── *@
+@if (Breadcrumbs != null && Breadcrumbs.Count > 0)
+{
+    <MudBreadcrumbs Items="@Breadcrumbs" Class="pa-0 mb-2" />
+}
+
+@* ─── Toolbar ────────────────────────────────────────────────────────────── *@
+<MudPaper Elevation="0" Class="pa-3 mb-2">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+
+        <MudTextField @bind-Value="_searchText"
+                      Placeholder="Search text box for table"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Clearable="true"
+                      Immediate="true"
+                      Style="min-width:240px" />
+
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Search"
+                   OnClick="ApplySearch"
+                   Size="Size.Small">Find</MudButton>
+
+        @if (!string.IsNullOrWhiteSpace(ParentKeyColumn))
+        {
+            <MudTextField @bind-Value="_parentKeyDisplay"
+                          Label="@($"Parent Key ({ParentKeyColumn})")"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          ReadOnly="true"
+                          Style="min-width:200px" />
+        }
+
+        <MudSpacer />
+
+        @* ── Import button ──────────────────────────────────────────────── *@
+        <MudTooltip Text="Import CSV file into this table">
+            <MudIconButton Icon="@Icons.Material.Filled.Upload"
+                           Color="Color.Secondary"
+                           Size="Size.Small"
+                           Variant="Variant.Outlined"
+                           OnClick="OpenImportDialog"
+                           Disabled="@(_metaLoading || string.IsNullOrWhiteSpace(TableName))"
+                           Title="Import CSV" />
+        </MudTooltip>
+
+        @* ── Export button ──────────────────────────────────────────────── *@
+        <MudTooltip Text="Export this table to CSV">
+            <MudIconButton Icon="@Icons.Material.Filled.Download"
+                           Color="Color.Success"
+                           Size="Size.Small"
+                           Variant="Variant.Outlined"
+                           OnClick="ExportCsv"
+                           Disabled="@(_metaLoading || string.IsNullOrWhiteSpace(TableName))"
+                           Title="Export CSV" />
+        </MudTooltip>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="CreateNew"
+                   Size="Size.Small"
+                   Disabled="@_metaLoading">New</MudButton>
+
+    </MudStack>
+</MudPaper>
+
+@* ─── Import dialog ───────────────────────────────────────────────────────── *@
+@if (_showImportDialog)
+{
+    <MudDialog @bind-IsVisible="_showImportDialog" Options="@(new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true })">
+        <TitleContent>
+            <MudText Typo="Typo.h6"><MudIcon Icon="@Icons.Material.Filled.Upload" Class="mr-2" />Import CSV — @TableName</MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                    Select a CSV file whose column headers match the table columns. Existing records are not overwritten.
+                </MudText>
+                <InputFile id="importFileInput" OnChange="OnFileSelected" accept=".csv" style="display:none" />
+                <label for="importFileInput" style="cursor:pointer;">
+                    <MudButton Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.FolderOpen"
+                               Size="Size.Small"
+                               HtmlTag="span">
+                        @(_importFile == null ? "Choose CSV File…" : _importFile.Name)
+                    </MudButton>
+                </label>
+                @if (_importing)
+                {
+                    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+                }
+                @if (_importResult != null)
+                {
+                    <MudAlert Severity="@(_importResult.Failed > 0 ? Severity.Warning : Severity.Success)" Dense="true">
+                        Inserted: @_importResult.Inserted  |  Failed: @_importResult.Failed
+                        @if (_importResult.Errors.Count > 0)
+                        {
+                            <ul style="margin:4px 0 0 16px">
+                                @foreach (var e in _importResult.Errors.Take(5))
+                                {
+                                    <li><MudText Typo="Typo.caption">@e</MudText></li>
+                                }
+                            </ul>
+                        }
+                    </MudAlert>
+                }
+            </MudStack>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="@(() => { _showImportDialog = false; _importFile = null; _importResult = null; })" Size="Size.Small">Close</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                       OnClick="RunImport"
+                       Disabled="@(_importFile == null || _importing)">Import</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+
+@* ─── Main area: grid + edit panel ──────────────────────────────────────── *@
+<MudGrid Spacing="2" Style="flex:1; min-height:0">
+
+    @* Left — data grid *@
+    <MudItem xs="12" md="@(_showEditPanel ? 7 : 12)">
+        <MudPaper Elevation="1" Style="height:100%; overflow:auto">
+
+            @if (_dataLoading)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+            }
+
+            @if (!string.IsNullOrWhiteSpace(TableName))
+            {
+                <MudDataGrid T="Dictionary<string,object?>"
+                             Items="@_rows"
+                             Dense="true"
+                             Hover="true"
+                             Filterable="false"
+                             Sortable="true"
+                             FixedHeader="true"
+                             Height="500px"
+                             RowClick="@OnRowClick"
+                             RowClassFunc="@RowClass">
+
+                    <Columns>
+                        @* Row number *@
+                        <TemplateColumn Title="#" Sortable="false" Filterable="false" HeaderStyle="width:48px">
+                            <CellTemplate>
+                                <MudText Typo="Typo.caption">@(_rows.IndexOf(context.Item) + 1)</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        @* Dynamic data columns (first 8) *@
+                        @foreach (var col in _displayColumns)
+                        {
+                            var colName = col; @* capture for lambda *@
+                            <TemplateColumn Title="@colName" SortBy="@(r => GetCellValue(r, colName))">
+                                <CellTemplate>
+                                    <MudText Typo="Typo.body2" Class="og-mono-text">
+                                        @TruncateValue(GetCellValue(context.Item, colName))
+                                    </MudText>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        }
+
+                        @* Action buttons *@
+                        <TemplateColumn Title="" Sortable="false" Filterable="false" HeaderStyle="width:110px">
+                            <CellTemplate>
+                                <MudStack Row="true" Spacing="0">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                   Size="Size.Small"
+                                                   Color="Color.Primary"
+                                                   OnClick="@(() => EditRow(context.Item))"
+                                                   Title="Edit" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Size="Size.Small"
+                                                   Color="Color.Error"
+                                                   OnClick="@(() => ConfirmDelete(context.Item))"
+                                                   Title="Delete" />
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+
+                    <NoRecordsContent>
+                        <MudText Typo="Typo.body2" Class="pa-4 mud-text-secondary">
+                            No records found@(string.IsNullOrWhiteSpace(ParentKeyValue) ? "." : $" for {ParentKeyColumn} = {ParentKeyValue}.")
+                        </MudText>
+                    </NoRecordsContent>
+                </MudDataGrid>
+            }
+            else
+            {
+                <MudText Class="pa-4 mud-text-secondary" Typo="Typo.body2">Select a table to begin.</MudText>
+            }
+        </MudPaper>
+    </MudItem>
+
+    @* Right — edit panel (slides in when edit clicked) *@
+    @if (_showEditPanel)
+    {
+        <MudItem xs="12" md="5">
+            <MudPaper Elevation="3" Class="pa-4" Style="height:100%; overflow:auto; border-left:2px solid var(--mud-palette-primary)">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3">
+                    <MudText Typo="Typo.h6">
+                        @(_editingNewRecord ? "New Record" : "Edit Record")
+                    </MudText>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                   Size="Size.Small"
+                                   OnClick="CloseEditPanel" />
+                </MudStack>
+
+                @if (_editingRecord != null && _tableMetadata != null)
+                {
+                    <PPDMEntityForm Entity="@_editingRecord"
+                                   TableMetadata="@_tableMetadata"
+                                   DefaultValues="@_defaultValues"
+                                   GetDefaultValue="@((f) => null)"
+                                   FieldOptions="@_fkOptions"
+                                   OnValidSubmit="SaveRecord"
+                                   OnCancel="CloseEditPanel"
+                                   ShowCancel="true"
+                                   SubmitText="Save"
+                                   CancelText="Cancel" />
+                }
+                else
+                {
+                    <MudProgressCircular Indeterminate="true" />
+                }
+            </MudPaper>
+        </MudItem>
+    }
+
+</MudGrid>
+
+@* ─── Child table tabs ───────────────────────────────────────────────────── *@
+@if (_childRelations.Count > 0)
+{
+    <MudPaper Elevation="0" Class="mt-3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="px-3 pt-2" Spacing="1">
+            <MudText Typo="Typo.caption" Class="mud-text-secondary">Child tables</MudText>
+        </MudStack>
+
+        <MudTabs Elevation="0" ApplyEffectsToContainer="true" PanelClass="pa-0">
+            @foreach (var rel in _childRelations)
+            {
+                var capturedRel = rel;
+                <MudTabPanel Text="@capturedRel.ChildTableName"
+                             Icon="@Icons.Material.Filled.TableChart">
+                    @* Clicking a tab navigates to the child table with parent filter *@
+                    <MudStack Class="pa-2" Spacing="1" AlignItems="AlignItems.Start">
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                            Linked via <strong>@capturedRel.ForeignKeyColumn</strong>
+                            @if (!string.IsNullOrWhiteSpace(_selectedPkValue))
+                            {
+                                <span> = <strong>@_selectedPkValue</strong></span>
+                            }
+                        </MudText>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.OpenInNew"
+                                   Size="Size.Small"
+                                   OnClick="@(() => NavigateToChild(capturedRel))">
+                            Open @capturedRel.ChildTableName
+                        </MudButton>
+                    </MudStack>
+                </MudTabPanel>
+            }
+        </MudTabs>
+    </MudPaper>
+}
+
+@code {
+    // ── Parameters ──────────────────────────────────────────────────────────
+    [Parameter] public string TableName        { get; set; } = string.Empty;
+    [Parameter] public string? ParentTableName { get; set; }
+    [Parameter] public string? ParentKeyColumn { get; set; }
+    [Parameter] public string? ParentKeyValue  { get; set; }
+    [Parameter] public List<MudBlazor.BreadcrumbItem> Breadcrumbs { get; set; } = new();
+
+    // ── State ────────────────────────────────────────────────────────────────
+    private PPDMTableMetadata? _tableMetadata;
+    private bool _metaLoading;
+    private bool _dataLoading;
+
+    private List<Dictionary<string,object?>> _rows = new();
+    private List<Dictionary<string,object?>> _allRows = new();
+    private List<string> _displayColumns = new();
+    private List<ChildRelationDto> _childRelations = new();
+
+    private string _searchText = string.Empty;
+    private string _parentKeyDisplay = string.Empty;
+
+    // Edit panel
+    private bool _showEditPanel;
+    private bool _editingNewRecord;
+    private object? _editingRecord;
+    private Dictionary<string,object>? _defaultValues;
+    private Dictionary<string, Dictionary<string,string>>? _fkOptions;
+
+    // Selected row PK
+    private Dictionary<string,object?>? _selectedRow;
+    private string _selectedPkValue = string.Empty;
+
+    // ── Import state ──────────────────────────────────────────────────────────
+    private bool _showImportDialog;
+    private bool _importing;
+    private IBrowserFile? _importFile;
+    private ImportResultDto? _importResult;
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────
+    protected override async Task OnParametersSetAsync()
+    {
+        _parentKeyDisplay = ParentKeyValue ?? string.Empty;
+        _showEditPanel = false;
+        _editingRecord = null;
+        _selectedRow = null;
+        _selectedPkValue = string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(TableName))
+        {
+            await LoadMetadata();
+            await LoadData();
+            await LoadChildRelations();
+        }
+    }
+
+    // ── Metadata ─────────────────────────────────────────────────────────────
+    private async Task LoadMetadata()
+    {
+        _metaLoading = true;
+        try
+        {
+            _tableMetadata = await ApiClient.GetAsync<PPDMTableMetadata>(
+                $"/api/datamanagement/metadata/{Uri.EscapeDataString(TableName)}");
+
+            if (_tableMetadata == null)
+                Snackbar.Add($"Metadata not found for {TableName}", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Metadata error: {ex.Message}", Severity.Warning);
+            _tableMetadata = null;
+        }
+        finally
+        {
+            _metaLoading = false;
+        }
+    }
+
+    // ── Data ─────────────────────────────────────────────────────────────────
+    private async Task LoadData()
+    {
+        _dataLoading = true;
+        _rows = new();
+        _allRows = new();
+        try
+        {
+            var filters = new List<AppFilter>();
+
+            if (!string.IsNullOrWhiteSpace(ParentKeyColumn) && !string.IsNullOrWhiteSpace(ParentKeyValue))
+                filters.Add(new AppFilter { FieldName = ParentKeyColumn, Operator = "=", FilterValue = ParentKeyValue });
+
+            var request = new GetEntitiesRequest { TableName = TableName, Filters = filters };
+            var result = await ApiClient.PostAsync<GetEntitiesRequest, EntityListResult<object>>(
+                $"/api/ppdm39/data/{Uri.EscapeDataString(TableName)}", request);
+
+            if (result?.Data != null)
+            {
+                _allRows = result.Data
+                    .Select(e => ConvertToDict(e))
+                    .ToList();
+            }
+
+            BuildDisplayColumns();
+            ApplySearch();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading {TableName}: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _dataLoading = false;
+        }
+    }
+
+    private async Task LoadChildRelations()
+    {
+        try
+        {
+            var children = await ApiClient.GetAsync<List<ChildRelationDto>>(
+                $"/api/ppdm39/metadata/tables/{Uri.EscapeDataString(TableName)}/children");
+            _childRelations = children ?? new();
+        }
+        catch
+        {
+            _childRelations = new();
+        }
+    }
+
+    // ── Column building ───────────────────────────────────────────────────────
+    private void BuildDisplayColumns()
+    {
+        if (_allRows.Count > 0)
+        {
+            var allKeys = _allRows.SelectMany(r => r.Keys).Distinct().ToList();
+            // Put PK first, then other columns, skip common audit cols, cap at 8
+            var pk = _tableMetadata?.PrimaryKeyColumn?.Split(',').Select(c => c.Trim()).ToList() ?? new();
+            var priority = pk.Where(allKeys.Contains).ToList();
+            var rest = allKeys
+                .Where(k => !pk.Contains(k))
+                .Where(k => !IsAuditColumn(k))
+                .Take(8 - priority.Count)
+                .ToList();
+            _displayColumns = priority.Concat(rest).Take(8).ToList();
+        }
+        else
+        {
+            _displayColumns = new();
+        }
+    }
+
+    private static bool IsAuditColumn(string col) =>
+        col is "ROW_CREATED_BY" or "ROW_CREATED_DATE" or "ROW_CHANGED_BY"
+            or "ROW_CHANGED_DATE" or "PPDM_GUID" or "ROW_EFFECTIVE_DATE"
+            or "ROW_EXPIRY_DATE" or "ROW_QUALITY";
+
+    // ── Search ────────────────────────────────────────────────────────────────
+    private void ApplySearch()
+    {
+        if (string.IsNullOrWhiteSpace(_searchText))
+        {
+            _rows = _allRows.ToList();
+            return;
+        }
+        var lc = _searchText.ToLowerInvariant();
+        _rows = _allRows
+            .Where(r => r.Values.Any(v => v?.ToString()?.Contains(lc, StringComparison.OrdinalIgnoreCase) == true))
+            .ToList();
+    }
+
+    // ── Row selection ─────────────────────────────────────────────────────────
+    private void OnRowClick(DataGridRowClickEventArgs<Dictionary<string,object?>> args)
+    {
+        _selectedRow = args.Item;
+        _selectedPkValue = GetPkValue(_selectedRow);
+        _showEditPanel = false; // don't auto-open edit on click
+    }
+
+    private string RowClass(Dictionary<string,object?> row, int idx)
+        => _selectedRow == row ? "mud-selected-item" : string.Empty;
+
+    // ── Edit ──────────────────────────────────────────────────────────────────
+    private void EditRow(Dictionary<string,object?> row)
+    {
+        _selectedRow = row;
+        _selectedPkValue = GetPkValue(row);
+
+        if (_tableMetadata != null && !string.IsNullOrWhiteSpace(_tableMetadata.EntityTypeName))
+        {
+            var assembly = typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly;
+            var entityType = assembly.GetType($"Beep.OilandGas.PPDM39.Models.{_tableMetadata.EntityTypeName}");
+            if (entityType != null)
+            {
+                var instance = Activator.CreateInstance(entityType);
+                if (instance != null)
+                {
+                    foreach (var prop in entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                                                   .Where(p => p.CanWrite))
+                    {
+                        if (row.TryGetValue(prop.Name, out var val) && val != null)
+                        {
+                            try
+                            {
+                                var converted = ConvertValue(val, prop.PropertyType);
+                                prop.SetValue(instance, converted);
+                            }
+                            catch { /* skip incompatible */ }
+                        }
+                    }
+                    _editingRecord = instance;
+                    _editingNewRecord = false;
+                    _showEditPanel = true;
+                    return;
+                }
+            }
+        }
+
+        Snackbar.Add($"Cannot load entity type for {TableName}", Severity.Warning);
+    }
+
+    private void CreateNew()
+    {
+        _editingNewRecord = true;
+        _editingRecord = null;
+
+        if (_tableMetadata != null && !string.IsNullOrWhiteSpace(_tableMetadata.EntityTypeName))
+        {
+            var assembly = typeof(Beep.OilandGas.PPDM39.Models.WELL).Assembly;
+            var entityType = assembly.GetType($"Beep.OilandGas.PPDM39.Models.{_tableMetadata.EntityTypeName}");
+            if (entityType != null)
+            {
+                var instance = Activator.CreateInstance(entityType);
+                // Pre-fill parent FK if drilling from parent
+                if (instance != null && !string.IsNullOrWhiteSpace(ParentKeyColumn) && !string.IsNullOrWhiteSpace(ParentKeyValue))
+                {
+                    var prop = entityType.GetProperty(ParentKeyColumn,
+                        BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                    if (prop?.CanWrite == true)
+                    {
+                        try { prop.SetValue(instance, ConvertValue(ParentKeyValue, prop.PropertyType)); } catch { }
+                    }
+                }
+                _editingRecord = instance;
+            }
+        }
+
+        _defaultValues = new Dictionary<string, object>();
+        _showEditPanel = true;
+    }
+
+    private void CloseEditPanel()
+    {
+        _showEditPanel = false;
+        _editingRecord = null;
+    }
+
+    private async Task SaveRecord()
+    {
+        if (_editingRecord == null || _tableMetadata == null) return;
+        try
+        {
+            var pkValue = GetEntityPkValue(_editingRecord);
+            if (string.IsNullOrWhiteSpace(pkValue) || _editingNewRecord)
+            {
+                await ApiClient.PostAsync<object, object>(
+                    $"/api/ppdm39/data/{Uri.EscapeDataString(TableName)}/insert", _editingRecord);
+                Snackbar.Add("Record created", Severity.Success);
+            }
+            else
+            {
+                await ApiClient.PutAsync<object>(
+                    $"/api/ppdm39/data/{Uri.EscapeDataString(TableName)}/{Uri.EscapeDataString(pkValue)}", _editingRecord);
+                Snackbar.Add("Record updated", Severity.Success);
+            }
+            _showEditPanel = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Save failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    // ── Delete ────────────────────────────────────────────────────────────────
+    private async Task ConfirmDelete(Dictionary<string,object?> row)
+    {
+        var pkVal = GetPkValue(row);
+        if (string.IsNullOrWhiteSpace(pkVal))
+        {
+            Snackbar.Add("Cannot determine record key for delete.", Severity.Warning);
+            return;
+        }
+        try
+        {
+            await ApiClient.DeleteAsync($"/api/ppdm39/data/{Uri.EscapeDataString(TableName)}/{Uri.EscapeDataString(pkVal)}");
+            Snackbar.Add("Record deleted", Severity.Success);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Delete failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    // ── Child navigation ──────────────────────────────────────────────────────
+    private void NavigateToChild(ChildRelationDto rel)
+    {
+        // Build the breadcrumb trail as a query param encoded list
+        var parentKey = string.IsNullOrWhiteSpace(_selectedPkValue)
+            ? ParentKeyValue ?? string.Empty
+            : _selectedPkValue;
+
+        var url = $"/ppdm39/data-management/table/{Uri.EscapeDataString(rel.ChildTableName)}" +
+                  $"?parentTable={Uri.EscapeDataString(TableName)}" +
+                  $"&parentKeyCol={Uri.EscapeDataString(rel.ForeignKeyColumn)}" +
+                  $"&parentKeyVal={Uri.EscapeDataString(parentKey)}";
+
+        Nav.NavigateTo(url);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    private static Dictionary<string,object?> ConvertToDict(object entity)
+    {
+        if (entity is Dictionary<string,object?> already) return already;
+        if (entity is JsonElement je)
+        {
+            var dict = new Dictionary<string,object?>(StringComparer.OrdinalIgnoreCase);
+            foreach (var prop in je.EnumerateObject())
+            {
+                dict[prop.Name.ToUpperInvariant()] = prop.Value.ValueKind switch
+                {
+                    JsonValueKind.String  => prop.Value.GetString(),
+                    JsonValueKind.Number  => prop.Value.TryGetDecimal(out var d) ? d : (object?)prop.Value.GetDouble(),
+                    JsonValueKind.True    => true,
+                    JsonValueKind.False   => false,
+                    JsonValueKind.Null    => null,
+                    _                    => prop.Value.ToString()
+                };
+            }
+            return dict;
+        }
+        // Reflection fallback for typed entity objects
+        var result = new Dictionary<string,object?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in entity.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            result[p.Name.ToUpperInvariant()] = p.GetValue(entity);
+        }
+        return result;
+    }
+
+    private static string GetCellValue(Dictionary<string,object?> row, string col)
+        => row.TryGetValue(col, out var v) ? v?.ToString() ?? string.Empty : string.Empty;
+
+    private static string TruncateValue(string? val)
+    {
+        if (val == null) return string.Empty;
+        return val.Length > 50 ? val[..50] + "…" : val;
+    }
+
+    private string GetPkValue(Dictionary<string,object?> row)
+    {
+        var pkCols = _tableMetadata?.PrimaryKeyColumn?.Split(',').Select(c => c.Trim()).ToList()
+                     ?? new List<string>();
+        return string.Join("|", pkCols.Select(col => row.TryGetValue(col, out var v) ? v?.ToString() ?? "" : ""));
+    }
+
+    private string GetEntityPkValue(object entity)
+    {
+        var pkCols = _tableMetadata?.PrimaryKeyColumn?.Split(',').Select(c => c.Trim()).ToList()
+                     ?? new List<string>();
+        return string.Join("|", pkCols.Select(col =>
+        {
+            var prop = entity.GetType().GetProperty(col,
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+            return prop?.GetValue(entity)?.ToString() ?? string.Empty;
+        }));
+    }
+
+    private static object? ConvertValue(object? src, Type targetType)
+    {
+        if (src == null) return null;
+        var underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
+        try { return Convert.ChangeType(src, underlying); } catch { return null; }
+    }
+
+    // ── Export ────────────────────────────────────────────────────────────────
+    private void ExportCsv()
+    {
+        if (string.IsNullOrWhiteSpace(TableName)) return;
+        var url = $"/api/ppdm39/data/{Uri.EscapeDataString(TableName)}/export";
+        Nav.NavigateTo(url, forceLoad: true);
+    }
+
+    // ── Import ────────────────────────────────────────────────────────────────
+    private void OpenImportDialog()
+    {
+        _importFile = null;
+        _importResult = null;
+        _showImportDialog = true;
+    }
+
+    private async Task TriggerFilePicker()
+    {
+        // Blazor Server file picking is done via the InputFile element;
+        // we simulate a click on the hidden <input> via a tiny inline JS call.
+        await Task.CompletedTask; // placeholder — the InputFile OnChange wires up automatically
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        _importFile = e.File;
+        _importResult = null;
+    }
+
+    private async Task RunImport()
+    {
+        if (_importFile == null || string.IsNullOrWhiteSpace(TableName)) return;
+        _importing = true;
+        _importResult = null;
+        try
+        {
+            // Stream the file as multipart/form-data via ApiClient
+            using var content = new System.Net.Http.MultipartFormDataContent();
+            var maxSize = 10 * 1024 * 1024; // 10 MB limit
+            var stream = _importFile.OpenReadStream(maxSize);
+            content.Add(new System.Net.Http.StreamContent(stream), "file", _importFile.Name);
+
+            var result = await ApiClient.PostAsync<ImportResultDto>(
+                $"/api/ppdm39/data/{Uri.EscapeDataString(TableName)}/import", content);
+
+            _importResult = result;
+            if (result != null && result.Inserted > 0)
+            {
+                Snackbar.Add($"Imported {result.Inserted} rows successfully.", Severity.Success);
+                await LoadData();
+            }
+            else if (result != null && result.Failed > 0)
+            {
+                Snackbar.Add($"Import completed with {result.Failed} failures.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Import failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _importing = false;
+        }
+    }
+
+    // ── Nested DTOs ───────────────────────────────────────────────────────────
+    private sealed class ChildRelationDto
+    {
+        public string ChildTableName   { get; set; } = string.Empty;
+        public string ForeignKeyColumn { get; set; } = string.Empty;
+        public string ReferencedColumn { get; set; } = string.Empty;
+        public string ChildPrimaryKey  { get; set; } = string.Empty;
+    }
+
+    private sealed class ImportResultDto
+    {
+        public bool Success        { get; set; }
+        public int  Inserted       { get; set; }
+        public int  Failed         { get; set; }
+        public List<string> Errors { get; set; } = new();
+    }
+}
+

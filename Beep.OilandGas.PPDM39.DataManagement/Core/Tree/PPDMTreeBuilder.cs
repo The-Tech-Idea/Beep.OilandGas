@@ -19,7 +19,6 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Tree
     {
         private readonly IPPDMMetadataRepository _metadataRepository;
         private Dictionary<string, SubjectAreaInfo> _subjectAreasCache;
-        private Dictionary<string, Dictionary<string, List<string>>> _tableToModuleMappingCache;
         private readonly object _lockObject = new object();
 
         public PPDMTreeBuilder(IPPDMMetadataRepository metadataRepository)

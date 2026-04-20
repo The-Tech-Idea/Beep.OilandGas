@@ -14,7 +14,6 @@ using ValidationResult = Beep.OilandGas.Models.Data.ValidationResult;
 
 using Microsoft.Extensions.Logging;
 using TheTechIdea.Beep.Report;
-using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.LifeCycle;
 
 namespace Beep.OilandGas.LifeCycle.Services.FieldLifecycle

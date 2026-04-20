@@ -1,8 +1,9 @@
-@page "/ppdm39/workorder"
+﻿@page "/ppdm39/workorder"
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 
 <PageTitle>Work Order Dashboard</PageTitle>
 
@@ -172,7 +173,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        try { _fieldName = (await ApiClient.GetAsync<dynamic>("/api/field/fields/active"))?.FieldName; }
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldNameDto>("/api/field/current/summary");
+            _fieldName = summary?.FieldName;
+        }
         catch { }
         await LoadWorkOrders();
     }
@@ -187,7 +192,7 @@
             _workOrders = await ApiClient.GetAsync<List<WorkOrderSummary>>(
                 $"/api/field/current/workorder{qs}") ?? new();
         }
-        catch (Exception ex) { _error = $"Failed to load work orders: {ex.Message}"; }
+        catch (Exception) { _error = "Failed to load work orders."; Snackbar.Add(_error, Severity.Error); }
         finally { _loading = false; }
     }
 
@@ -195,7 +200,7 @@
         _workOrders.Where(w => string.Equals(w.State, state, StringComparison.OrdinalIgnoreCase)).ToList();
 
     private void OpenDetail(string instanceId) =>
-        NavigationManager.NavigateTo($"/ppdm39/workorder/{instanceId}");
+        NavigationManager.NavigateTo($"/ppdm39/workorder/{Uri.EscapeDataString(instanceId)}");
 
     private void OpenCreateDialog()
     {
@@ -205,7 +210,7 @@
 
     private async Task SubmitCreateAsync()
     {
-        if (_createForm is not null) await _createForm.Validate();
+        if (_createForm is not null) await _createForm.ValidateAsync();
         if (!_createValid) return;
         try
         {
@@ -214,7 +219,7 @@
             _showCreate = false;
             await LoadWorkOrders();
         }
-        catch (Exception ex) { _error = $"Failed to create work order: {ex.Message}"; }
+        catch (Exception) { _error = "Failed to create work order."; Snackbar.Add(_error, Severity.Error); }
     }
 
     private static Color SubTypeColor(string subType) => subType switch
@@ -236,4 +241,10 @@
         WorkOrderSubType.Turnaround        => "TAR",
         _                                  => subType
     };
+
+    private sealed class FieldNameDto
+    {
+        public string? FieldId   { get; set; }
+        public string? FieldName { get; set; }
+    }
 }

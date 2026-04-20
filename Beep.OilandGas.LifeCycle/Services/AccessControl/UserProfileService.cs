@@ -75,8 +75,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                     PrimaryRole = GetPropertyValue(profile, "PRIMARY_ROLE")?.ToString(),
                     PreferredLayout = GetPropertyValue(profile, "PREFERRED_LAYOUT")?.ToString(),
                     UserPreferences = GetPropertyValue(profile, "USER_PREFERENCES")?.ToString(),
-                    LastLoginDate = GetPropertyValue(profile, "LAST_LOGIN_DATE") != null ? 
-                        DateTime.Parse(GetPropertyValue(profile, "LAST_LOGIN_DATE").ToString()) : null,
+                    LastLoginDate = GetPropertyValue(profile, "LAST_LOGIN_DATE") is { } lld ? DateTime.Parse(lld.ToString()!) : null,
                     Active = GetPropertyValue(profile, "ACTIVE_IND")?.ToString() == "Y",
                     Roles = roles
                 };

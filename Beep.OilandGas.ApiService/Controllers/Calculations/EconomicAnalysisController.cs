@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.EconomicAnalysis;
 using Beep.OilandGas.Models.Data.Calculations;
@@ -35,7 +35,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating NPV");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -50,7 +50,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating IRR");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -69,7 +69,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing economic analysis");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -88,7 +88,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating NPV profile");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -103,13 +103,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving economic analysis result");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
         [HttpGet("result/{analysisId}")]
         public async Task<ActionResult<EconomicResult>> GetResult(string analysisId)
         {
+            if (string.IsNullOrWhiteSpace(analysisId)) return BadRequest(new { error = "Analysis ID is required." });
             try
             {
                 var result = await _service.GetAnalysisResultAsync(analysisId);
@@ -120,7 +121,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting economic analysis result {AnalysisId}", analysisId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.FlashCalculations;
 using Beep.OilandGas.Models.Data.Calculations;
@@ -35,7 +35,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing isothermal flash calculation");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -44,13 +44,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             try
             {
+                if (request.Conditions == null)
+                    return BadRequest(new { error = "Conditions are required" });
                 var result = _service.PerformMultiStageFlash(request.Conditions, request.Stages);
                 return Ok(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing multi-stage flash calculation");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -65,7 +67,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving flash calculation result");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -80,7 +82,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting flash calculation history");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

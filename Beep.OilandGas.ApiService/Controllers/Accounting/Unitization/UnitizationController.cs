@@ -51,7 +51,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting units");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -86,7 +86,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Unitization
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating unit agreement");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

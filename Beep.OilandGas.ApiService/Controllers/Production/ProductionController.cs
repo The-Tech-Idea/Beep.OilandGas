@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Report;
 
 namespace Beep.OilandGas.ApiService.Controllers.Production
@@ -25,13 +26,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
     public class ProductionController : ControllerBase
     {
         private readonly IFieldOrchestrator? _fieldOrchestrator;
+        private readonly IPPDMProductionService _productionService;
         private readonly ILogger<ProductionController> _logger;
 
         public ProductionController(
             IFieldOrchestrator fieldOrchestrator,
+            IPPDMProductionService productionService,
             ILogger<ProductionController> logger)
         {
             _fieldOrchestrator = fieldOrchestrator;
+            _productionService = productionService ?? throw new ArgumentNullException(nameof(productionService));
             _logger = logger;
         }
 
@@ -65,12 +69,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting production forecasts for current field");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -107,12 +111,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating production forecast for current field");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -142,12 +146,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting production for current field");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -177,12 +181,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting production by pool for current field");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -192,6 +196,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
         [HttpGet("field/wells/{wellId}/tests")]
         public async Task<ActionResult<List<WellTestResponse>>> GetWellTests(string wellId, [FromQuery] List<AppFilter>? filters = null)
         {
+            if (string.IsNullOrWhiteSpace(wellId)) return BadRequest(new { error = "Well ID is required." });
             try
             {
                 if (_fieldOrchestrator == null)
@@ -212,12 +217,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting well tests for well {WellId} in current field", wellId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -247,16 +252,81 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting facility production for current field");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+        // ============================================
+        // PPDM Reference Browse Endpoints
+        // ============================================
+
+        /// <summary>GET /api/production/fields — browse all FIELD records</summary>
+        [HttpGet("fields")]
+        public async Task<ActionResult<List<FIELD>>> GetFieldsAsync([FromQuery] List<AppFilter>? filters = null)
+        {
+            try
+            {
+                var fields = await _productionService.GetFieldsAsync(filters);
+                return Ok(fields);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching fields");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>GET /api/production/pools — browse all POOL records</summary>
+        [HttpGet("pools")]
+        public async Task<ActionResult<List<POOL>>> GetPoolsAsync([FromQuery] List<AppFilter>? filters = null)
+        {
+            try
+            {
+                var pools = await _productionService.GetPoolsAsync(filters);
+                return Ok(pools);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching pools");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>GET /api/production/reserves — browse all RESERVE_ENTITY records</summary>
+        [HttpGet("reserves")]
+        public async Task<ActionResult<List<RESERVE_ENTITY>>> GetReservesAsync([FromQuery] List<AppFilter>? filters = null)
+        {
+            try
+            {
+                var reserves = await _productionService.GetReservesAsync(filters);
+                return Ok(reserves);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching reserves");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>GET /api/production/reporting — browse PDEN_VOL_SUMMARY for reporting</summary>
+        [HttpGet("reporting")]
+        public async Task<ActionResult<List<PDEN_VOL_SUMMARY>>> GetProductionReportingAsync([FromQuery] List<AppFilter>? filters = null)
+        {
+            try
+            {
+                var reporting = await _productionService.GetProductionReportingAsync(filters);
+                return Ok(reporting);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching production reporting");
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }
 }
-
-
 

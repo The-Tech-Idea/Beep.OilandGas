@@ -139,6 +139,54 @@ namespace Beep.OilandGas.HeatMap.Interpolation
         }
 
         /// <summary>
+        /// Performs bilinear interpolation using the four nearest surrounding data points.
+        /// Falls back to inverse-distance weighting when a regular grid cannot be formed.
+        /// </summary>
+        public static double BilinearInterpolation(
+            List<HEAT_MAP_DATA_POINT> dataPoints,
+            double targetX,
+            double targetY)
+        {
+            if (dataPoints == null || dataPoints.Count == 0)
+                throw new ArgumentException("Data points list cannot be null or empty.");
+
+            if (dataPoints.Count < 4)
+                return InverseDistanceWeighting(dataPoints, targetX, targetY);
+
+            // Find the four enclosing grid points (left/right in X, below/above in Y)
+            var leftPoints  = dataPoints.Where(p => p.X <= targetX).OrderByDescending(p => p.X).ToList();
+            var rightPoints = dataPoints.Where(p => p.X >= targetX).OrderBy(p => p.X).ToList();
+            var belowPoints = dataPoints.Where(p => p.Y <= targetY).OrderByDescending(p => p.Y).ToList();
+            var abovePoints = dataPoints.Where(p => p.Y >= targetY).OrderBy(p => p.Y).ToList();
+
+            if (leftPoints.Count == 0 || rightPoints.Count == 0 ||
+                belowPoints.Count == 0 || abovePoints.Count == 0)
+                return InverseDistanceWeighting(dataPoints, targetX, targetY);
+
+            double x1 = leftPoints[0].X;
+            double x2 = rightPoints[0].X;
+            double y1 = belowPoints[0].Y;
+            double y2 = abovePoints[0].Y;
+
+            // Degenerate case: points coincide — fall back to IDW
+            if (Math.Abs(x2 - x1) < 1e-10 || Math.Abs(y2 - y1) < 1e-10)
+                return InverseDistanceWeighting(dataPoints, targetX, targetY);
+
+            // Nearest value at each corner
+            double q11 = dataPoints.OrderBy(p => Math.Pow(p.X - x1, 2) + Math.Pow(p.Y - y1, 2)).First().Value;
+            double q12 = dataPoints.OrderBy(p => Math.Pow(p.X - x1, 2) + Math.Pow(p.Y - y2, 2)).First().Value;
+            double q21 = dataPoints.OrderBy(p => Math.Pow(p.X - x2, 2) + Math.Pow(p.Y - y1, 2)).First().Value;
+            double q22 = dataPoints.OrderBy(p => Math.Pow(p.X - x2, 2) + Math.Pow(p.Y - y2, 2)).First().Value;
+
+            double tx = (targetX - x1) / (x2 - x1);
+            double ty = (targetY - y1) / (y2 - y1);
+
+            double r1 = q11 * (1 - tx) + q21 * tx;
+            double r2 = q12 * (1 - tx) + q22 * tx;
+            return r1 * (1 - ty) + r2 * ty;
+        }
+
+        /// <summary>
         /// Performs simplified Kriging interpolation (using exponential variogram model).
         /// </summary>
         /// <param name="dataPoints">List of data points with known values.</param>
@@ -332,7 +380,7 @@ namespace Beep.OilandGas.HeatMap.Interpolation
                 InterpolationMethodType.Spline => 
                     EnhancedInterpolation.SplineInterpolation(dataPoints, targetX, targetY, splineTension),
                 InterpolationMethodType.Bilinear => 
-                    throw new NotImplementedException("Bilinear interpolation not yet implemented."),
+                    BilinearInterpolation(dataPoints, targetX, targetY),
                 _ => InverseDistanceWeighting(dataPoints, targetX, targetY, power, maxDistance)
             };
         }

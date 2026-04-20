@@ -38,7 +38,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating production forecast");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -56,7 +56,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing decline curve analysis for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -71,7 +71,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving production forecast");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

@@ -1,4 +1,4 @@
-@page "/ppdm39/production/well-tests"
+﻿@page "/ppdm39/production/well-tests"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -157,11 +157,24 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<WELL_TEST>? _wellTests;
     private bool _isLoading = false;
     private string? _wellIdFilter;
     private string? _selectedWellId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        await LoadWellTests();
+    }
 
     private async Task LoadWellTests()
     {
@@ -175,15 +188,14 @@
         _isLoading = true;
         try
         {
-            _wellTests = await ApiClient.GetAsync<List<WELL_TEST>>($"/api/production/field/wells/{_selectedWellId}/tests");
-            if (_wellTests == null || !_wellTests.Any())
+            _wellTests = await ApiClient.GetAsync<List<WELL_TEST>>($"/api/production/field/wells/{Uri.EscapeDataString(_selectedWellId!)}/tests") ?? new();            if (_wellTests == null || !_wellTests.Any())
             {
                 Snackbar.Add($"No well tests found for well {_selectedWellId}", Severity.Info);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading well tests: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading well tests.", Severity.Error);
             _wellTests = new List<WELL_TEST>();
         }
         finally

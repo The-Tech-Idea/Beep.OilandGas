@@ -531,6 +531,7 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
             var results = await repo.GetAsync(filters);
             return results?
                 .Select(r => GetPropertyValue(r, "PERMISSION_ID")?.ToString())
+                .OfType<string>()
                 .Where(p => !string.IsNullOrEmpty(p))
                 .ToList() ?? new List<string>();
         }

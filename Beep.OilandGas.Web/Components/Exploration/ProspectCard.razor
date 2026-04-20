@@ -1,0 +1,81 @@
+@* ProspectCard — Kanban card for the Prospect Maturation Board *@
+<MudPaper Elevation="2" Class="prospect-card pa-3 mb-2" Style="cursor:pointer;"
+          @onclick="@(() => OnClick.InvokeAsync(ProspectId))">
+
+    <MudStack Spacing="1">
+        <!-- Title row -->
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudText Typo="Typo.subtitle2">@ProspectName</MudText>
+            <StatusBadge Status="@Status" Size="Size.Small" />
+        </MudStack>
+
+        <!-- Play type + UoM -->
+        @if (!string.IsNullOrWhiteSpace(PlayType))
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.Layers" Size="Size.Small" Color="Color.Secondary" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@PlayType</MudText>
+            </MudStack>
+        }
+
+        <!-- Risked resource estimate -->
+        @if (RiskedResourceMmboe.HasValue)
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Size="Size.Small" Color="Color.Primary" />
+                <MudText Typo="Typo.caption">
+                    <strong>@RiskedResourceMmboe.Value.ToString("N0")</strong> MMboe (risked)
+                </MudText>
+            </MudStack>
+        }
+
+        <!-- POS pill -->
+        @if (PosPercent.HasValue)
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">POS:</MudText>
+                <MudChip T="string" Size="Size.Small"
+                         Color="@(PosPercent >= 50 ? Color.Success : PosPercent >= 25 ? Color.Warning : Color.Error)"
+                         Variant="Variant.Outlined">
+                    @PosPercent.Value.ToString("N0")%
+                </MudChip>
+            </MudStack>
+        }
+
+        <!-- Priority indicator -->
+        @if (!string.IsNullOrWhiteSpace(Priority))
+        {
+            <MudDivider Class="mt-1 mb-1" />
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@_priorityIcon" Size="Size.Small" Color="@_priorityColor" />
+                <MudText Typo="Typo.caption" Color="@_priorityColor">@Priority priority</MudText>
+            </MudStack>
+        }
+    </MudStack>
+
+</MudPaper>
+
+@code {
+    [Parameter] public string ProspectId { get; set; } = string.Empty;
+    [Parameter] public string ProspectName { get; set; } = string.Empty;
+    [Parameter] public string Status { get; set; } = string.Empty;
+    [Parameter] public string PlayType { get; set; } = string.Empty;
+    [Parameter] public double? RiskedResourceMmboe { get; set; }
+    [Parameter] public double? PosPercent { get; set; }
+    [Parameter] public string Priority { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> OnClick { get; set; }
+
+    private Color _priorityColor;
+    private string _priorityIcon = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        (_priorityColor, _priorityIcon) = Priority?.ToUpperInvariant() switch
+        {
+            "HIGH"   => (Color.Error,   Icons.Material.Filled.KeyboardArrowUp),
+            "MEDIUM" => (Color.Warning, Icons.Material.Filled.Remove),
+            "LOW"    => (Color.Default, Icons.Material.Filled.KeyboardArrowDown),
+            _        => (Color.Default, Icons.Material.Filled.FiberManualRecord)
+        };
+    }
+}

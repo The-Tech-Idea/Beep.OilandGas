@@ -1,9 +1,10 @@
-@page "/ppdm39/calculations/economicanalysis"
+﻿@page "/ppdm39/calculations/economicanalysis"
 @using Beep.OilandGas.Models.Data.EconomicAnalysis
 @using Beep.OilandGas.Client.App
 @inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
+@inject ApiClient ApiClient
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Run Economic Analysis</PageTitle>
 
@@ -78,7 +79,7 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private double _discountRate = 10.0;
     private double _initialGuess = 10.0;
     private bool _isCalculating = false;
@@ -87,20 +88,62 @@
     private double? _irr;
     private EconomicResult? _economicResult;
     private CashFlow[] _cashFlows = Array.Empty<CashFlow>();
-    private string? _currentUserId = "system";
+    private string? _currentUserId;
+
+    private sealed class AccountingSummaryDto
+    {
+        public decimal GrossRevenue { get; set; }
+        public decimal TotalOpex { get; set; }
+        public decimal NetRevenue { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        // Initialize with sample cash flows or load from API
-        _cashFlows = new CashFlow[]
+        _isLoading = true;
+        try
         {
-            new CashFlow { Period = 0, Amount = -1000000 }, // Initial investment
-            new CashFlow { Period = 1, Amount = 300000 },
-            new CashFlow { Period = 2, Amount = 400000 },
-            new CashFlow { Period = 3, Amount = 500000 },
-            new CashFlow { Period = 4, Amount = 400000 },
-            new CashFlow { Period = 5, Amount = 300000 }
-        };
+            try
+            {
+                var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+                if (summary != null)
+                    _fieldName = summary.FieldName ?? _fieldName;
+            }
+            catch { /* field name is non-critical */ }
+
+            try
+            {
+                var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+                _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+
+                var summary = await ApiClient.GetAsync<AccountingSummaryDto>("api/field/current/accounting/production-summary");
+                if (summary != null && summary.NetRevenue > 0)
+                {
+                    // Net revenue covers last 6 months; annualise and build a 5-year project model
+                    var annualRevenue = (double)(summary.NetRevenue * 2);
+                    var annualOpex    = annualRevenue * 0.30;
+                    var annualNcf     = annualRevenue - annualOpex;
+                    var capex         = annualRevenue * 3.0;  // 3-year payback estimate
+
+                    _cashFlows = new CashFlow[]
+                    {
+                        new CashFlow { Period = 0, Amount = -capex },
+                        new CashFlow { Period = 1, Amount = annualNcf },
+                        new CashFlow { Period = 2, Amount = annualNcf * 0.90 },
+                        new CashFlow { Period = 3, Amount = annualNcf * 0.81 },
+                        new CashFlow { Period = 4, Amount = annualNcf * 0.73 },
+                        new CashFlow { Period = 5, Amount = annualNcf * 0.66 },
+                    };
+                }
+            }
+            catch (Exception)
+            {
+                Snackbar.Add("Error loading production data.", Severity.Warning);
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
     private async Task CalculateNPV()
@@ -117,9 +160,9 @@
             var cashFlowList = _cashFlows.ToList();
             _npv = (double)await BeepApp.Calculations.CalculateNPVAsync(cashFlowList);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error calculating NPV: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error calculating NPV.", Severity.Error);
         }
         finally
         {
@@ -141,9 +184,9 @@
             var cashFlowList = _cashFlows.ToList();
             _irr = (double)await BeepApp.Calculations.CalculateIRRAsync(cashFlowList);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error calculating IRR: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error calculating IRR.", Severity.Error);
         }
         finally
         {
@@ -178,9 +221,9 @@
             
             Snackbar.Add("Economic analysis completed and saved", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error performing economic analysis: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error performing economic analysis.", Severity.Error);
         }
         finally
         {

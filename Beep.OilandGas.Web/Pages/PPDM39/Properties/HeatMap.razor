@@ -1,12 +1,12 @@
-@page "/ppdm39/properties/heatmap"
+﻿@page "/ppdm39/properties/heatmap"
 @using Beep.OilandGas.HeatMap
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.HeatMap
 @using Beep.OilandGas.Client.App
-@inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 @inject IPropertiesServiceClient PropertiesService
+@inject ApiClient ApiClient
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Generate Field Heat Map</PageTitle>
 
@@ -67,40 +67,70 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _fieldId = string.Empty;
     private DateTime? _startDate = DateTime.Now.AddMonths(-6);
     private DateTime? _endDate = DateTime.Now;
     private bool _isGenerating = false;
     private bool _isLoading = false;
     private HeatMapResult? _heatMapResult;
-    private string? _currentUserId = "system";
+    private string? _currentUserId;
+
+    private sealed class FieldResponse
+    {
+        public string? FieldId { get; set; }
+        public string? FieldName { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+
+            var field = await ApiClient.GetAsync<FieldResponse>("api/field/current");
+            if (field != null)
+            {
+                _fieldId = field.FieldId ?? string.Empty;
+                _fieldName = field.FieldName ?? string.Empty;
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error loading field.", Severity.Warning);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
 
     private async Task GenerateHeatMap()
     {
+        if (string.IsNullOrEmpty(_fieldId))
+        {
+            Snackbar.Add("No active field loaded. Please set an active field first.", Severity.Warning);
+            return;
+        }
+
+        if (!_startDate.HasValue || !_endDate.HasValue)
+        {
+            Snackbar.Add("Please select start and end dates", Severity.Warning);
+            return;
+        }
+
         _isGenerating = true;
         try
         {
-            // Create sample data points
-            var dataPoints = new List<HEAT_MAP_DATA_POINT>
-            {
-                new HEAT_MAP_DATA_POINT { X = 0, Y = 0, Value = 100 },
-                new HEAT_MAP_DATA_POINT { X = 1, Y = 0, Value = 150 },
-                new HEAT_MAP_DATA_POINT { X = 0, Y = 1, Value = 120 },
-                new HEAT_MAP_DATA_POINT { X = 1, Y = 1, Value = 180 }
-            };
-
-            var configuration = new HEAT_MAP_CONFIGURATION
-            {
-                Name = "Production HeatMap"
-            };
-
-            _heatMapResult = await PropertiesService.GenerateHeatMapAsync(dataPoints, configuration);
+            _heatMapResult = await PropertiesService.GenerateProductionHeatMapAsync(
+                _fieldId, _startDate.Value, _endDate.Value);
             Snackbar.Add("Heat map generated successfully", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error generating heat map: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error generating heat map.", Severity.Error);
         }
         finally
         {
@@ -128,9 +158,9 @@
             _heatMapResult = await PropertiesService.GenerateProductionHeatMapAsync(_fieldId, _startDate.Value, _endDate.Value);
             Snackbar.Add("Production heat map generated successfully", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error generating production heat map: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error generating production heat map.", Severity.Error);
         }
         finally
         {
@@ -145,15 +175,15 @@
             var configuration = new HeatMapConfigurationRecord
             {
                 ConfigurationId = Guid.NewGuid().ToString(),
-                ConfigurationName = "Production Heat Map"
+                ConfigurationName = $"Production Heat Map — {_fieldName}"
             };
 
             var heatMapId = await PropertiesService.SaveHeatMapConfigurationAsync(configuration, _currentUserId);
             Snackbar.Add("Heat map configuration saved successfully", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error saving configuration: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error saving configuration.", Severity.Error);
         }
     }
 }

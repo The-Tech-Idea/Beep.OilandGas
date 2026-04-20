@@ -90,6 +90,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             _ihsStandardValueImporter = ihsStandardValueImporter;
             _standardValueMapper = standardValueMapper;
             _referenceDataSeeder = referenceDataSeeder;
+            _demoDataSeeder = demoDataSeeder;
             _wellStatusFacetSeeder = wellStatusFacetSeeder;
 
             // Pass progress tracking to service if available
@@ -113,7 +114,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting database types");
-                return StatusCode(500, new { error = "Failed to get database types", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get database types"});
             }
         }
 
@@ -125,13 +126,15 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(databaseType))
+                    return BadRequest(new { error = "Database type is required." });
                 var driverInfo = _setupService.CheckDriver(databaseType);
                 return Ok(driverInfo);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting driver info for {DatabaseType}", databaseType);
-                return StatusCode(500, new { error = "Failed to get driver info", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get driver info"});
             }
         }
 
@@ -177,7 +180,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = false,
                     Message = "Connection test failed",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -201,7 +204,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking driver for {DatabaseType}", request?.DatabaseType);
-                return StatusCode(500, new { error = "Failed to check driver", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to check driver"});
             }
         }
 
@@ -213,13 +216,15 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(databaseType))
+                    return BadRequest(new { error = "Database type is required." });
                 var scripts = _setupService.GetAvailableScripts(databaseType);
                 return Ok(scripts);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting scripts for {DatabaseType}", databaseType);
-                return StatusCode(500, new { error = "Failed to get scripts", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get scripts"});
             }
         }
 
@@ -325,7 +330,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = false,
                     Message = "Failed to save connection",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -344,7 +349,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting all connections");
-                return StatusCode(500, new { error = "Failed to get connections", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get connections"});
             }
         }
 
@@ -356,6 +361,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(connectionName))
+                    return BadRequest(new { error = "Connection name is required." });
                 var connection = _setupService.GetConnectionByName(connectionName);
                 if (connection == null)
                 {
@@ -366,7 +373,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting connection {ConnectionName}", connectionName);
-                return StatusCode(500, new { error = "Failed to get connection", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get connection"});
             }
         }
 
@@ -384,7 +391,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current connection");
-                return StatusCode(500, new { error = "Failed to get current connection", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get current connection"});
             }
         }
 
@@ -411,7 +418,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = false,
                     Message = "Failed to set current connection",
-                    ErrorDetails = ex.Message,
+                    ErrorDetails = "An internal error occurred.",
                     RequiresLogout = false
                 });
             }
@@ -443,7 +450,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = false,
                     Message = "Failed to update connection",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -471,7 +478,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     HasCreatePrivilege = false,
                     Message = "Error checking schema privileges",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -499,7 +506,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = false,
                     Message = "Error creating schema",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -527,7 +534,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = false,
                     Message = "Error dropping database",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -555,7 +562,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = false,
                     Message = "Error recreating database",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -597,17 +604,17 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         _logger.LogError(ex, "Error copying database");
                         if (!string.IsNullOrEmpty(operationId) && _progressTracking != null)
                         {
-                            _progressTracking.CompleteOperation(operationId, false, "Database copy failed", ex.Message);
+                            _progressTracking.CompleteOperation(operationId, false, "Database copy failed", "See server logs for details.");
                         }
                     }
                 });
 
-                return Ok(new OperationStartResponse { OperationId = operationId, Message = "Database copy started" });
+                return Ok(new OperationStartResponse { OperationId = operationId ?? string.Empty, Message = "Database copy started" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error starting database copy");
-                return StatusCode(500, new { error = "Failed to start database copy", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to start database copy"});
             }
         }
 
@@ -617,6 +624,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("progress/{operationId}")]
         public ActionResult<ProgressUpdate> GetProgress(string operationId)
         {
+            if (string.IsNullOrWhiteSpace(operationId)) return BadRequest(new { error = "Operation ID is required." });
             try
             {
                 if (_progressTracking == null)
@@ -635,7 +643,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting progress for operation {OperationId}", operationId);
-                return StatusCode(500, new { error = "Failed to get progress", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get progress"});
             }
         }
 
@@ -666,7 +674,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = false,
                     Message = "Failed to delete connection",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -715,7 +723,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = false,
                     Message = "Driver installation failed",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -728,6 +736,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(databaseType))
+                    return BadRequest(new { error = "Database type is required." });
                 // Get all modules from registry
                 var allModules = ModuleDataRegistry.GetAllModules();
                 var allScripts = new List<ModuleScriptInfo>();
@@ -764,7 +774,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error discovering scripts for {DatabaseType}", databaseType);
-                return StatusCode(500, new { error = "Failed to discover scripts", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to discover scripts"});
             }
         }
 
@@ -918,7 +928,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new DatabaseCreationResult
                 {
                     Success = false,
-                    ErrorMessage = $"Database creation failed: {ex.Message}"
+                    ErrorMessage = $"Database creation failed: See server logs for details."
                 });
             }
         }
@@ -930,6 +940,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("creation-progress/{executionId}")]
         public async Task<ActionResult<ScriptExecutionProgressInfo>> GetCreationProgress(string executionId)
         {
+            if (string.IsNullOrWhiteSpace(executionId)) return BadRequest(new { error = "Execution ID is required." });
             try
             {
                 if (_dataManager == null)
@@ -969,7 +980,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting creation progress for {ExecutionId}", executionId);
-                return StatusCode(500, new { error = "Failed to get progress", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get progress"});
             }
         }
 
@@ -1010,7 +1021,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new SeedDataResponse
                 {
                     Success = false,
-                    Message = $"Failed to seed reference data: {ex.Message}"
+                    Message = $"Failed to seed reference data: See server logs for details."
                 });
             }
         }
@@ -1051,7 +1062,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new SeedDataResponse
                 {
                     Success = false,
-                    Message = $"Failed to seed full demo dataset: {ex.Message}"
+                    Message = $"Failed to seed full demo dataset: See server logs for details."
                 });
             }
         }
@@ -1062,6 +1073,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("seed/category/{category}")]
         public async Task<ActionResult<SeedDataResponse>> SeedByCategory(string category, [FromBody] SeedDataRequest request)
         {
+            if (string.IsNullOrWhiteSpace(category)) return BadRequest(new { error = "Category is required." });
             try
             {
                 if (request == null)
@@ -1094,7 +1106,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new SeedDataResponse
                 {
                     Success = false,
-                    Message = $"Failed to seed data for category {category}: {ex.Message}"
+                    Message = $"Failed to seed data for category {category}: See server logs for details."
                 });
             }
         }
@@ -1113,7 +1125,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting seed data categories");
-                return StatusCode(500, new { error = "Failed to get seed data categories", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get seed data categories"});
             }
         }
 
@@ -1164,7 +1176,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new SeedDataResponse
                 {
                     Success = false,
-                    Message = $"Failed to validate seed data: {ex.Message}"
+                    Message = $"Failed to validate seed data: See server logs for details."
                 });
             }
         }
@@ -1175,6 +1187,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("seed/workflow/{workflowName}")]
         public async Task<ActionResult<SeedDataResponse>> SeedWorkflowData(string workflowName, [FromBody] SeedDataRequest request)
         {
+            if (string.IsNullOrWhiteSpace(workflowName)) return BadRequest(new { error = "Workflow name is required." });
             try
             {
                 if (request == null)
@@ -1218,7 +1231,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new SeedDataResponse
                 {
                     Success = false,
-                    Message = $"Failed to seed data for workflow {workflowName}: {ex.Message}"
+                    Message = $"Failed to seed data for workflow {workflowName}: See server logs for details."
                 });
             }
         }
@@ -1437,7 +1450,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                                     ScriptType = "ALL",
                                     DatabaseType = dbType.ToString(),
                                     Success = false,
-                                    ErrorMessage = ex.Message
+                                    ErrorMessage = "An internal error occurred."
                                 });
                             }
                         }
@@ -1449,7 +1462,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     {
                         _logger.LogError(ex, "Error processing entity {EntityName}", entityType.Name);
                         entityResult.Success = false;
-                        entityResult.ErrorMessage = ex.Message;
+                        entityResult.ErrorMessage = "An internal error occurred.";
                         response.Errors++;
                     }
 
@@ -1465,7 +1478,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new ScriptGenerationResponse
                 {
                     Success = false,
-                    Message = $"Failed to generate scripts: {ex.Message}"
+                    Message = $"Failed to generate scripts: See server logs for details."
                 });
             }
         }
@@ -1495,7 +1508,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 catch (Exception ex)
                 {
                     result.Success = false;
-                    result.ErrorMessage = ex.Message;
+                    result.ErrorMessage = "An internal error occurred.";
                 }
             }
 
@@ -1565,7 +1578,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting LOV types");
-                return StatusCode(500, new { error = "Failed to get LOV types", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get LOV types"});
             }
         }
 
@@ -1575,6 +1588,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("lov/{valueType}")]
         public async Task<ActionResult<LOVResponse>> GetLOVByType(string valueType, [FromQuery] string? category = null, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(valueType)) return BadRequest(new { error = "Value type is required." });
             try
             {
                 if (_lovManagementService == null)
@@ -1594,7 +1608,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting LOVs by type {ValueType}", valueType);
-                return StatusCode(500, new LOVResponse { Success = false, Message = ex.Message });
+                return StatusCode(500, new LOVResponse { Success = false, Message = "An internal error occurred." });
             }
         }
 
@@ -1604,6 +1618,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("lov/category/{category}")]
         public async Task<ActionResult<LOVResponse>> GetLOVByCategory(string category, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(category)) return BadRequest(new { error = "Category is required." });
             try
             {
                 if (_lovManagementService == null)
@@ -1623,7 +1638,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting LOVs by category {Category}", category);
-                return StatusCode(500, new LOVResponse { Success = false, Message = ex.Message });
+                return StatusCode(500, new LOVResponse { Success = false, Message = "An internal error occurred." });
             }
         }
 
@@ -1633,6 +1648,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("lov/module/{module}")]
         public async Task<ActionResult<LOVResponse>> GetLOVByModule(string module, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(module)) return BadRequest(new { error = "Module is required." });
             try
             {
                 if (_lovManagementService == null)
@@ -1652,7 +1668,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting LOVs by module {Module}", module);
-                return StatusCode(500, new LOVResponse { Success = false, Message = ex.Message });
+                return StatusCode(500, new LOVResponse { Success = false, Message = "An internal error occurred." });
             }
         }
 
@@ -1662,6 +1678,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("lov/source/{source}")]
         public async Task<ActionResult<LOVResponse>> GetLOVBySource(string source, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(source)) return BadRequest(new { error = "Source is required." });
             try
             {
                 if (_lovManagementService == null)
@@ -1681,7 +1698,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting LOVs by source {Source}", source);
-                return StatusCode(500, new LOVResponse { Success = false, Message = ex.Message });
+                return StatusCode(500, new LOVResponse { Success = false, Message = "An internal error occurred." });
             }
         }
 
@@ -1691,6 +1708,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("lov/hierarchical/{valueType}")]
         public async Task<ActionResult<LOVResponse>> GetHierarchicalLOV(string valueType, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(valueType)) return BadRequest(new { error = "Value type is required." });
             try
             {
                 if (_lovManagementService == null)
@@ -1710,7 +1728,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting hierarchical LOVs for {ValueType}", valueType);
-                return StatusCode(500, new LOVResponse { Success = false, Message = ex.Message });
+                return StatusCode(500, new LOVResponse { Success = false, Message = "An internal error occurred." });
             }
         }
 
@@ -1748,7 +1766,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error searching LOVs");
-                return StatusCode(500, new LOVResponse { Success = false, Message = ex.Message });
+                return StatusCode(500, new LOVResponse { Success = false, Message = "An internal error occurred." });
             }
         }
 
@@ -1776,14 +1794,14 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     VALUE_TYPE = lovDto.ValueType,
                     VALUE_CODE = lovDto.ValueCode,
                     VALUE_NAME = lovDto.ValueName,
-                    DESCRIPTION = lovDto.Description,
-                    CATEGORY = lovDto.Category,
-                    MODULE = lovDto.Module,
+                    DESCRIPTION = lovDto.Description ?? string.Empty,
+                    CATEGORY = lovDto.Category ?? string.Empty,
+                    MODULE = lovDto.Module ?? string.Empty,
                     SORT_ORDER = lovDto.SortOrder,
-                    PARENT_VALUE_ID = lovDto.ParentValueId,
-                    IS_DEFAULT = lovDto.IsDefault,
+                    PARENT_VALUE_ID = lovDto.ParentValueId ?? string.Empty,
+                    IS_DEFAULT = lovDto.IsDefault ?? string.Empty,
                     ACTIVE_IND = lovDto.ActiveInd,
-                    SOURCE = lovDto.Source
+                    SOURCE = lovDto.Source ?? string.Empty
                 };
 
                 var result = await _lovManagementService.AddLOVAsync(lov, userId ?? "SYSTEM", connectionName ?? "PPDM39");
@@ -1798,7 +1816,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding LOV");
-                return StatusCode(500, new LOVResponse { Success = false, Message = ex.Message });
+                return StatusCode(500, new LOVResponse { Success = false, Message = "An internal error occurred." });
             }
         }
 
@@ -1808,6 +1826,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPut("lov/{id}")]
         public async Task<ActionResult<LOVResponse>> UpdateLOV(string id, [FromBody] ListOfValue lovDto, [FromQuery] string? userId = null, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "LOV ID is required." });
             try
             {
                 if (_lovManagementService == null)
@@ -1826,14 +1845,14 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                     VALUE_TYPE = lovDto.ValueType,
                     VALUE_CODE = lovDto.ValueCode,
                     VALUE_NAME = lovDto.ValueName,
-                    DESCRIPTION = lovDto.Description,
-                    CATEGORY = lovDto.Category,
-                    MODULE = lovDto.Module,
+                    DESCRIPTION = lovDto.Description ?? string.Empty,
+                    CATEGORY = lovDto.Category ?? string.Empty,
+                    MODULE = lovDto.Module ?? string.Empty,
                     SORT_ORDER = lovDto.SortOrder,
-                    PARENT_VALUE_ID = lovDto.ParentValueId,
-                    IS_DEFAULT = lovDto.IsDefault,
+                    PARENT_VALUE_ID = lovDto.ParentValueId ?? string.Empty,
+                    IS_DEFAULT = lovDto.IsDefault ?? string.Empty,
                     ACTIVE_IND = lovDto.ActiveInd,
-                    SOURCE = lovDto.Source
+                    SOURCE = lovDto.Source ?? string.Empty
                 };
 
                 var result = await _lovManagementService.UpdateLOVAsync(lov, userId ?? "SYSTEM", connectionName ?? "PPDM39");
@@ -1848,7 +1867,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating LOV {Id}", id);
-                return StatusCode(500, new LOVResponse { Success = false, Message = ex.Message });
+                return StatusCode(500, new LOVResponse { Success = false, Message = "An internal error occurred." });
             }
         }
 
@@ -1858,6 +1877,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpDelete("lov/{id}")]
         public async Task<ActionResult<LOVResponse>> DeleteLOV(string id, [FromQuery] string? userId = null, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "LOV ID is required." });
             try
             {
                 if (_lovManagementService == null)
@@ -1883,7 +1903,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting LOV {Id}", id);
-                return StatusCode(500, new LOVResponse { Success = false, Message = ex.Message });
+                return StatusCode(500, new LOVResponse { Success = false, Message = "An internal error occurred." });
             }
         }
 
@@ -1941,7 +1961,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error importing LOVs");
-                return StatusCode(500, new { error = "Failed to import LOVs", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to import LOVs"});
             }
         }
 
@@ -1958,7 +1978,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var extractor = new ExtractRATablesCompatibility();
+                var extractor = new ExtractRATablesCompatibility(_metadata);
                 var tableNames = await extractor.ExtractRATableNamesAsync();
                 var categories = extractor.CategorizeRATables(tableNames);
 
@@ -1985,7 +2005,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new RATablesExtractResponse
                 {
                     Success = false,
-                    Message = $"Failed to extract RA_* tables: {ex.Message}",
+                    Message = $"Failed to extract RA_* tables: See server logs for details.",
                     ExtractionDate = DateTime.UtcNow
                 });
             }
@@ -1999,7 +2019,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var extractor = new ExtractRATablesCompatibility();
+                var extractor = new ExtractRATablesCompatibility(_metadata);
                 var tableNames = await extractor.ExtractRATableNamesAsync();
                 var categories = extractor.CategorizeRATables(tableNames);
 
@@ -2026,7 +2046,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new RATablesExtractResponse
                 {
                     Success = false,
-                    Message = $"Failed to categorize RA_* tables: {ex.Message}",
+                    Message = $"Failed to categorize RA_* tables: See server logs for details.",
                     ExtractionDate = DateTime.UtcNow
                 });
             }
@@ -2040,7 +2060,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
-                var extractor = new ExtractRATablesCompatibility();
+                var extractor = new ExtractRATablesCompatibility(_metadata);
                 var tableNames = await extractor.ExtractRATableNamesAsync();
                 var categories = extractor.CategorizeRATables(tableNames);
 
@@ -2077,7 +2097,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new RATablesExtractResponse
                 {
                     Success = false,
-                    Message = $"Failed to export RA_* tables: {ex.Message}",
+                    Message = $"Failed to export RA_* tables: See server logs for details.",
                     ExtractionDate = DateTime.UtcNow
                 });
             }
@@ -2138,42 +2158,224 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             public List<SeedDataCategory> GetSeedDataCategories()
             {
-                return new List<SeedDataCategory>();
+                return new List<SeedDataCategory>
+                {
+                    new SeedDataCategory
+                    {
+                        CategoryName = "PPDM",
+                        Description = "Core PPDM 3.9 reference tables (R_WELL_STATUS, R_FACILITY_TYPE, etc.)",
+                        TableNames = new List<string> { "R_WELL_STATUS", "R_FACILITY_TYPE", "R_PPDM_SYSTEM", "R_RECORD_QUALITY" },
+                        EstimatedRecords = 500
+                    },
+                    new SeedDataCategory
+                    {
+                        CategoryName = "ACCOUNTING",
+                        Description = "Accounting reference data (cost codes, chart of accounts, currencies)",
+                        TableNames = new List<string> { "R_COST_TYPE", "R_ACCOUNT_TYPE", "R_CURRENCY" },
+                        EstimatedRecords = 150
+                    },
+                    new SeedDataCategory
+                    {
+                        CategoryName = "LIFECYCLE",
+                        Description = "Field lifecycle phase reference data (exploration, development, production, decommissioning)",
+                        TableNames = new List<string> { "R_BUSINESS_LIFE_CYCLE", "R_INTENT", "R_OUTCOME" },
+                        EstimatedRecords = 80
+                    },
+                    new SeedDataCategory
+                    {
+                        CategoryName = "ANALYSIS",
+                        Description = "Engineering analysis reference data (fluid types, test types, methods)",
+                        TableNames = new List<string> { "R_FLUID_TYPE", "R_TEST_TYPE", "R_ANALYSIS_METHOD" },
+                        EstimatedRecords = 200
+                    },
+                    new SeedDataCategory
+                    {
+                        CategoryName = "CUSTOM",
+                        Description = "Custom list-of-values (LIST_OF_VALUE table)",
+                        TableNames = new List<string> { "LIST_OF_VALUE" },
+                        EstimatedRecords = 300
+                    },
+                    new SeedDataCategory
+                    {
+                        CategoryName = "IHS",
+                        Description = "IHS Markit industry standard reference values",
+                        TableNames = new List<string>(),
+                        EstimatedRecords = 1000
+                    },
+                    new SeedDataCategory
+                    {
+                        CategoryName = "INDUSTRYSTANDARDS",
+                        Description = "Industry standard codes and classification reference data",
+                        TableNames = new List<string>(),
+                        EstimatedRecords = 400
+                    }
+                };
             }
         }
 
         private sealed class PPDMScriptGenerator
         {
+            private readonly DatabaseTypeMapper.DatabaseType _dbType;
+            private readonly IPPDMMetadataRepository? _metadata;
+
             public PPDMScriptGenerator(object databaseType, object? metadata)
             {
+                _dbType  = databaseType is DatabaseTypeMapper.DatabaseType dt ? dt : DatabaseTypeMapper.DatabaseType.SqlServer;
+                _metadata = metadata as IPPDMMetadataRepository;
             }
 
             public Task<string> GenerateTableScriptAsync(Type entityType)
             {
-                return Task.FromResult(string.Empty);
+                var tableName = entityType.Name.ToUpperInvariant();
+                var props = entityType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+                    .Where(p => p.CanRead && p.CanWrite && p.Name != "Item" && !IsNavigationProp(p))
+                    .ToArray();
+
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine($"CREATE TABLE {QuoteId(tableName)} (");
+
+                var colDefs = props.Select(p => $"    {QuoteId(p.Name.ToUpperInvariant())} {MapType(p.PropertyType)}").ToList();
+                sb.AppendLine(string.Join($",{Environment.NewLine}", colDefs));
+                sb.AppendLine(");");
+
+                return Task.FromResult(sb.ToString());
             }
 
             public Task<string> GeneratePrimaryKeyScriptAsync(Type entityType)
             {
-                return Task.FromResult(string.Empty);
+                var tableName = entityType.Name.ToUpperInvariant();
+                var pk = FindPrimaryKey(entityType);
+                if (string.IsNullOrEmpty(pk))
+                    return Task.FromResult(string.Empty);
+
+                var constraintName = $"PK_{tableName}";
+                string sql = _dbType switch
+                {
+                    DatabaseTypeMapper.DatabaseType.Oracle =>
+                        $"ALTER TABLE {QuoteId(tableName)} ADD CONSTRAINT {constraintName} PRIMARY KEY ({QuoteId(pk)});",
+                    _ =>
+                        $"ALTER TABLE {QuoteId(tableName)} ADD CONSTRAINT {constraintName} PRIMARY KEY ({QuoteId(pk)});"
+                };
+                return Task.FromResult(sql + Environment.NewLine);
             }
 
             public Task<string> GenerateForeignKeyScriptsAsync(Type entityType)
             {
-                return Task.FromResult(string.Empty);
+                var tableName = entityType.Name.ToUpperInvariant();
+                var props = entityType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+                    .Where(p => p.CanRead && p.CanWrite && p.PropertyType == typeof(string)
+                                && p.Name.EndsWith("_ID", StringComparison.OrdinalIgnoreCase)
+                                && !p.Name.Equals(FindPrimaryKey(entityType), StringComparison.OrdinalIgnoreCase))
+                    .ToArray();
+
+                if (props.Length == 0)
+                    return Task.FromResult(string.Empty);
+
+                var sb = new System.Text.StringBuilder();
+                int idx = 1;
+                foreach (var p in props)
+                {
+                    var fkCol = p.Name.ToUpperInvariant();
+                    // Derive referenced table: strip trailing _ID, e.g. FIELD_ID → FIELD
+                    var refTable = fkCol.Length > 3 ? fkCol[..^3] : fkCol;
+                    var constraintName = $"FK_{tableName}_{refTable}_{idx++}";
+                    sb.AppendLine($"ALTER TABLE {QuoteId(tableName)} ADD CONSTRAINT {constraintName}");
+                    sb.AppendLine($"    FOREIGN KEY ({QuoteId(fkCol)}) REFERENCES {QuoteId(refTable)} ({QuoteId(fkCol)});");
+                }
+                return Task.FromResult(sb.ToString());
             }
 
             public Task<string> GenerateIndexScriptsAsync(Type entityType)
             {
-                return Task.FromResult(string.Empty);
+                var tableName = entityType.Name.ToUpperInvariant();
+                var pk = FindPrimaryKey(entityType);
+                if (string.IsNullOrEmpty(pk))
+                    return Task.FromResult(string.Empty);
+
+                // Index on PK column (unique) and ACTIVE_IND for soft-delete queries
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine($"CREATE UNIQUE INDEX IX_{tableName}_{pk} ON {QuoteId(tableName)} ({QuoteId(pk)});");
+
+                var hasActiveInd = entityType.GetProperty("ACTIVE_IND") != null;
+                if (hasActiveInd)
+                    sb.AppendLine($"CREATE INDEX IX_{tableName}_ACTIVE_IND ON {QuoteId(tableName)} ({QuoteId("ACTIVE_IND")});");
+
+                return Task.FromResult(sb.ToString());
             }
+
+            // ── Helpers ────────────────────────────────────────────────────────
+
+            private static bool IsNavigationProp(System.Reflection.PropertyInfo p)
+            {
+                var t = p.PropertyType;
+                if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(System.Collections.Generic.List<>)) return true;
+                if (typeof(System.ComponentModel.INotifyPropertyChanged).IsAssignableFrom(t) && t != typeof(string)) return true;
+                return false;
+            }
+
+            private string MapType(Type clrType)
+            {
+                var underlying = Nullable.GetUnderlyingType(clrType) ?? clrType;
+                bool nullable = Nullable.GetUnderlyingType(clrType) != null || clrType == typeof(string);
+
+                string sqlType = (_dbType, underlying) switch
+                {
+                    (_, _) when underlying == typeof(string)          => _dbType == DatabaseTypeMapper.DatabaseType.Oracle ? "VARCHAR2(240)" : "NVARCHAR(240)",
+                    (_, _) when underlying == typeof(decimal)         => "DECIMAL(20,6)",
+                    (_, _) when underlying == typeof(double)          => "FLOAT",
+                    (_, _) when underlying == typeof(float)           => "REAL",
+                    (_, _) when underlying == typeof(int)             => "INTEGER",
+                    (_, _) when underlying == typeof(long)            => "BIGINT",
+                    (_, _) when underlying == typeof(bool)            => _dbType == DatabaseTypeMapper.DatabaseType.Oracle ? "NUMBER(1)" : "BIT",
+                    (_, _) when underlying == typeof(DateTime)        => _dbType == DatabaseTypeMapper.DatabaseType.Oracle ? "DATE" : "DATETIME",
+                    (_, _) when underlying == typeof(DateTimeOffset)  => "DATETIMEOFFSET",
+                    _                                                  => "NVARCHAR(240)"
+                };
+
+                return nullable ? $"{sqlType} NULL" : $"{sqlType} NOT NULL";
+            }
+
+            private static string FindPrimaryKey(Type entityType)
+            {
+                var name = entityType.Name.ToUpperInvariant();
+                // Convention: {TABLENAME}_ID, or UWI for WELL
+                var candidates = new[] { $"{name}_ID", "UWI", "FACILITY_ID", "PDEN_ID", "PPDM_GUID" };
+                foreach (var candidate in candidates)
+                {
+                    if (entityType.GetProperty(candidate) != null)
+                        return candidate;
+                }
+                // Fall back to first property ending in _ID
+                var prop = entityType.GetProperties().FirstOrDefault(p => p.Name.EndsWith("_ID", StringComparison.OrdinalIgnoreCase));
+                return prop?.Name.ToUpperInvariant() ?? string.Empty;
+            }
+
+            private string QuoteId(string identifier) => _dbType switch
+            {
+                DatabaseTypeMapper.DatabaseType.Oracle     => $"\"{identifier}\"",
+                DatabaseTypeMapper.DatabaseType.PostgreSQL => $"\"{identifier}\"",
+                DatabaseTypeMapper.DatabaseType.MySQL      => $"`{identifier}`",
+                DatabaseTypeMapper.DatabaseType.MariaDB    => $"`{identifier}`",
+                _                                          => $"[{identifier}]"   // SQL Server / SQLite
+            };
         }
 
         private sealed class ExtractRATablesCompatibility
         {
-            public Task<List<string>> ExtractRATableNamesAsync()
+            private readonly IPPDMMetadataRepository? _metadata;
+
+            public ExtractRATablesCompatibility(IPPDMMetadataRepository? metadata = null)
             {
-                return Task.FromResult(new List<string>());
+                _metadata = metadata;
+            }
+
+            public async Task<List<string>> ExtractRATableNamesAsync()
+            {
+                if (_metadata == null)
+                    return new List<string>();
+
+                var tables = await _metadata.GetTablesByPatternAsync("R_*");
+                return tables.Select(t => t.TableName).OrderBy(n => n).ToList();
             }
 
             public Dictionary<string, List<string>> CategorizeRATables(IEnumerable<string> tableNames)
@@ -2242,7 +2444,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting well-status facet seed status");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -2266,7 +2468,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error seeding well-status facets");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -2288,7 +2490,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error seeding enum reference data");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -2310,7 +2512,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error seeding all reference data");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -2341,7 +2543,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting setup status");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -2425,7 +2627,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = false,
                     Message = "Failed to create SQLite database",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -2490,7 +2692,190 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 {
                     Success = false,
                     Message = "Schema migration failed",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
+                });
+            }
+        }
+
+        // ── Generate Demo Data ────────────────────────────────────────────────
+
+        /// <summary>
+        /// POST /api/ppdm39/setup/generate-dummy-data
+        /// Seeds realistic PPDM39 sample data (fields, wells, production, etc.)
+        /// into the currently configured database connection.
+        /// </summary>
+        [HttpPost("generate-dummy-data")]
+        public async Task<ActionResult<GenerateDummyDataResponse>> GenerateDummyDataAsync(
+            [FromBody] GenerateDummyDataRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Generate dummy data request: option={Option}, user={User}",
+                    request.SeedOption, request.UserId);
+
+                // Resolve connection name from first registered connection (wizard already saved it)
+                var connectionName = _editor.ConfigEditor?.DataConnections?.FirstOrDefault()?.ConnectionName;
+                if (string.IsNullOrWhiteSpace(connectionName))
+                    return BadRequest(new GenerateDummyDataResponse
+                    {
+                        Success = false,
+                        Message = "No database connection is configured. Complete the setup wizard first."
+                    });
+
+                // Build the generator — WellServices is required, create it inline
+                var wellServices = new Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL.WellServices(
+                    _editor, _commonColumnHandler, _defaults, _metadata, connectionName);
+
+                var generator = new Beep.OilandGas.PPDM39.DataManagement.SeedData.DummyData.PPDM39DummyDataGenerator(
+                    _editor, _commonColumnHandler, _defaults, _metadata,
+                    wellServices, connectionName,
+                    _logger as Microsoft.Extensions.Logging.ILogger<Beep.OilandGas.PPDM39.DataManagement.SeedData.DummyData.PPDM39DummyDataGenerator>);
+
+                var result = await generator.GenerateAsync(request.SeedOption, request.UserId ?? "SETUP");
+
+                var response = new GenerateDummyDataResponse
+                {
+                    Success           = result.Success,
+                    Message           = result.Message,
+                    SeedOption        = result.SeedOption,
+                    FieldsCreated     = result.FieldsCreated,
+                    WellsCreated      = result.WellsCreated,
+                    ProductionRecords = result.ProductionRecords,
+                    FacilitiesCreated = result.FacilitiesCreated,
+                    WellTestsCreated  = result.WellTestsCreated,
+                    ActivitiesCreated = result.ActivitiesCreated
+                };
+
+                return result.Success ? Ok(response) : StatusCode(500, response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating dummy data");
+                return StatusCode(500, new GenerateDummyDataResponse
+                {
+                    Success = false,
+                    Message = $"Generation failed: See server logs for details."
+                });
+            }
+        }
+
+        // ── Dummy Data Status ─────────────────────────────────────────────────
+
+        /// <summary>
+        /// GET /api/ppdm39/setup/dummy-data/status
+        /// Reports whether demo seed data is already present.
+        /// </summary>
+        [HttpGet("dummy-data/status")]
+        public ActionResult<DummyDataStatusResponse> GetDummyDataStatus()
+        {
+            try
+            {
+                var connectionName = _editor.ConfigEditor?.DataConnections?.FirstOrDefault()?.ConnectionName;
+                if (string.IsNullOrWhiteSpace(connectionName))
+                    return Ok(new DummyDataStatusResponse { HasDummyData = false, Reason = "No connection configured." });
+
+                var ds = _editor.GetDataSource(connectionName);
+                if (ds == null)
+                    return Ok(new DummyDataStatusResponse { HasDummyData = false, Reason = "Connection not found." });
+
+                // Fetch all FIELD records and check for the sentinel DEMO_FLD_001
+                var allFields = ds.GetEntity("FIELD", null);
+                var hasDemoField = allFields?.Any(r =>
+                    r?.GetType().GetProperty("FIELD_ID")?.GetValue(r)?.ToString()
+                        ?.StartsWith("DEMO_FLD_", StringComparison.OrdinalIgnoreCase) == true) == true;
+
+                return Ok(new DummyDataStatusResponse
+                {
+                    HasDummyData = hasDemoField,
+                    Reason = hasDemoField ? "Demo data is present (DEMO_FLD_ records found)." : "No demo data found."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking dummy data status");
+                return StatusCode(500, new DummyDataStatusResponse
+                {
+                    HasDummyData = false,
+                    Reason = $"Status check failed: See server logs for details."
+                });
+            }
+        }
+
+        // ── Delete Dummy Data ─────────────────────────────────────────────────
+
+        /// <summary>
+        /// DELETE /api/ppdm39/setup/dummy-data
+        /// Removes all DEMO_ prefixed seeded records (fields, wells, production, facilities).
+        /// </summary>
+        [HttpDelete("dummy-data")]
+        public async Task<ActionResult<DummyDataDeleteResponse>> DeleteDummyDataAsync()
+        {
+            await Task.CompletedTask; // satisfy async signature; all ops are sync on IDataSource
+            try
+            {
+                var connectionName = _editor.ConfigEditor?.DataConnections?.FirstOrDefault()?.ConnectionName;
+                if (string.IsNullOrWhiteSpace(connectionName))
+                    return BadRequest(new DummyDataDeleteResponse { Success = false, Message = "No connection configured." });
+
+                var ds = _editor.GetDataSource(connectionName);
+                if (ds == null)
+                    return BadRequest(new DummyDataDeleteResponse { Success = false, Message = "Connection not found." });
+
+                int deleted = 0;
+
+                // Tables seeded with DEMO_ prefixed PKs — delete in FK-safe order
+                var deletePlan = new[]
+                {
+                    ("WELL_ACTIVITY",    "UWI",         "DEMO_"),
+                    ("WELL_TEST",        "UWI",         "DEMO_"),
+                    ("PDEN_VOL_SUMMARY", "PDEN_ID",     "PDEN_DEMO_"),
+                    ("WELL",             "UWI",         "DEMO_"),
+                    ("FACILITY",         "FACILITY_ID", "DEMO_FAC_"),
+                    ("FIELD",            "FIELD_ID",    "DEMO_FLD_"),
+                };
+
+                foreach (var (table, pkCol, prefix) in deletePlan)
+                {
+                    try
+                    {
+                        var rows = ds.GetEntity(table, null);
+                        if (rows == null || !rows.Any()) continue;
+
+                        var demoRows = rows
+                            .Where(r => r?.GetType().GetProperty(pkCol)?.GetValue(r)?.ToString()
+                                ?.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) == true)
+                            .ToList();
+
+                        foreach (var row in demoRows)
+                        {
+                            var pkVal = row?.GetType().GetProperty(pkCol)?.GetValue(row)?.ToString();
+                            if (!string.IsNullOrWhiteSpace(pkVal))
+                            {
+                                ds.DeleteEntity(table, pkVal);
+                                deleted++;
+                            }
+                        }
+                    }
+                    catch (Exception tableEx)
+                    {
+                        _logger.LogWarning(tableEx, "Could not delete demo records from {Table}", table);
+                    }
+                }
+
+                return Ok(new DummyDataDeleteResponse
+                {
+                    Success = true,
+                    RecordsDeleted = deleted,
+                    Message = $"Removed {deleted} demo records successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting dummy data");
+                return StatusCode(500, new DummyDataDeleteResponse
+                {
+                    Success = false,
+                    Message = $"Delete failed: See server logs for details."
                 });
             }
         }
@@ -2541,5 +2926,38 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public int TablesCreated { get; set; }
         public int TotalEntities { get; set; }
         public string? ErrorDetails { get; set; }
+    }
+
+    public class GenerateDummyDataRequest
+    {
+        /// <summary>minimal | standard | full</summary>
+        public string SeedOption { get; set; } = "standard";
+        public string UserId { get; set; } = "SYSTEM";
+    }
+
+    public class GenerateDummyDataResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string SeedOption { get; set; } = string.Empty;
+        public int FieldsCreated { get; set; }
+        public int WellsCreated { get; set; }
+        public int ProductionRecords { get; set; }
+        public int FacilitiesCreated { get; set; }
+        public int WellTestsCreated { get; set; }
+        public int ActivitiesCreated { get; set; }
+    }
+
+    public class DummyDataStatusResponse
+    {
+        public bool HasDummyData { get; set; }
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class DummyDataDeleteResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public int RecordsDeleted { get; set; }
     }
 }

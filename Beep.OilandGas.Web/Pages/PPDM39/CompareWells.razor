@@ -1,4 +1,4 @@
-@page "/ppdm39/wells/compare"
+﻿@page "/ppdm39/wells/compare"
 @using Beep.OilandGas.Models.Data
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -88,12 +88,23 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _well1Uwi = string.Empty;
     private string _well2Uwi = string.Empty;
     private string _well3Uwi = string.Empty;
     private WellComparisonData? _comparison;
     private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+    }
 
     private async Task PerformComparison()
     {
@@ -119,9 +130,9 @@
                 Snackbar.Add($"Compared {_comparison.Wells.Count} wells", Severity.Success);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error comparing wells: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error comparing wells.", Severity.Error);
         }
         finally
         {

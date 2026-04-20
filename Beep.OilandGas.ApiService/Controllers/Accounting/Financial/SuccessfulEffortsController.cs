@@ -65,12 +65,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for acquisition {PropertyId}", property?.PropertyId);
-                return StatusCode(500, new { error = "Transaction created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording acquisition");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -106,12 +106,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for exploration costs {PropertyId}", costs?.PropertyId);
-                return StatusCode(500, new { error = "Transaction created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording exploration costs");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -146,12 +146,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for development costs {PropertyId}", costs?.PropertyId);
-                return StatusCode(500, new { error = "Transaction created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording development costs");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -186,12 +186,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for production costs {PropertyId}", costs?.PropertyId);
-                return StatusCode(500, new { error = "Transaction created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording production costs");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -226,12 +226,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for dry hole {PropertyId}", costs?.PropertyId);
-                return StatusCode(500, new { error = "Transaction created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording dry hole");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -266,12 +266,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for impairment {PropertyId}", request?.PropertyId);
-                return StatusCode(500, new { error = "Transaction created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording impairment");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

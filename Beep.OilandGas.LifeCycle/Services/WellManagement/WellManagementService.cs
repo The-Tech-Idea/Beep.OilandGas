@@ -84,10 +84,10 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
 
                 // Create WELL entity
                 var well = new WELL();
-                well.WELL_NAME = request.WellName;
+                well.WELL_NAME = request.WellName ?? string.Empty;
                 well.FIELD_ID = _defaults.FormatIdForTable("WELL", request.FieldId);
-                well.WELL_TYPE = request.WellType;
-                well.WELL_PURPOSE = request.WellPurpose;
+                well.WELL_TYPE = request.WellType ?? string.Empty;
+                well.WELL_PURPOSE = request.WellPurpose ?? string.Empty;
                 
                 if (request.SurfaceLatitude.HasValue)
                     well.SURFACE_LATITUDE = request.SurfaceLatitude.Value;
@@ -242,7 +242,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
                         ACTIVITY_TYPE_ID = request.OperationType,
                         START_DATE = request.OperationDate,
                         EVENT_DATE = request.OperationDate,
-                        REMARK = request.Description,
+                        REMARK = request.Description ?? string.Empty,
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };
@@ -290,7 +290,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
                         ACTIVITY_TYPE_ID = "MAINT_" + request.MaintenanceType,
                         START_DATE = request.ScheduledDate,
                         END_DATE = request.CompletedDate,
-                        REMARK = request.Description,
+                        REMARK = request.Description ?? string.Empty,
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };
@@ -338,8 +338,8 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
                         ACTIVITY_TYPE_ID = "INSP_" + request.InspectionType,
                         EVENT_DATE = request.InspectionDate,
                         START_DATE = request.InspectionDate,
-                        REPORTED_CODE = request.Inspector,
-                        REMARK = string.IsNullOrEmpty(request.Findings) ? request.Inspector : $"{request.Inspector}: {request.Findings}",
+                        REPORTED_CODE = request.Inspector ?? string.Empty,
+                        REMARK = string.IsNullOrEmpty(request.Findings) ? (request.Inspector ?? string.Empty) : $"{request.Inspector ?? string.Empty}: {request.Findings}",
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };
@@ -385,10 +385,10 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
 
                     var equipment = new WELL_EQUIPMENT();
                     equipment.WELL_ID = _defaults.FormatIdForTable("WELL_EQUIPMENT", request.WellId);
-                    equipment.EQUIPMENT_TYPE = request.EquipmentType;
-                    equipment.EQUIPMENT_NAME = request.EquipmentName;
-                    equipment.MANUFACTURER = request.Manufacturer;
-                    equipment.MODEL = request.Model;
+                    equipment.EQUIPMENT_TYPE = request.EquipmentType ?? string.Empty;
+                    equipment.EQUIPMENT_NAME = request.EquipmentName ?? string.Empty;
+                    equipment.MANUFACTURER = request.Manufacturer ?? string.Empty;
+                    equipment.MODEL = request.Model ?? string.Empty;
                     if (request.InstallationDate.HasValue)
                         equipment.INSTALLATION_DATE = request.InstallationDate.Value;
 
@@ -572,7 +572,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
                 WorkOrderNumber = request.WorkOrderNumber,
                 WorkOrderType = "TESTING",
                 EntityType = "WELL",
-                EntityId = request.WellId,
+                EntityId = request.WellId ?? string.Empty,
                 FieldId = request.FieldId,
                 PropertyId = request.PropertyId,
                 Instructions = request.Instructions,
@@ -805,7 +805,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WellManagement
             return null;
         }
 
-        private static List<string> ToStringListNullable(object value)
+        private static List<string>? ToStringListNullable(object value)
         {
             if (value == null) return null;
             if (value is List<string> list) return list;

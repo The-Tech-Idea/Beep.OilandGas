@@ -2,6 +2,7 @@
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@using Beep.OilandGas.LifeCycle.Models.Processes
 
 <PageTitle>Browse Process Definitions</PageTitle>
 
@@ -49,7 +50,7 @@
                  Hover="true"
                  Striped="true"
                  Sortable="true"
-                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/definitions/{e.Item.ProcessId}"))">
+                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/definitions/{Uri.EscapeDataString(e.Item.ProcessId)}"))">
         <ToolBarContent>
             <MudText Typo="Typo.subtitle2">@FilteredDefinitions.Count() definitions</MudText>
         </ToolBarContent>
@@ -69,7 +70,7 @@
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
                     <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary"
-                               OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/process/definitions/{context.Item.ProcessId}"))'>
+                               OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/process/definitions/{Uri.EscapeDataString(context.Item.ProcessId)}"))'>
                         View
                     </MudButton>
                 </CellTemplate>
@@ -83,7 +84,7 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _search = string.Empty;
     private string _categoryFilter = string.Empty;
     private string _jurisdiction = "ALL";
@@ -95,24 +96,35 @@
         (string.IsNullOrWhiteSpace(_categoryFilter) || d.ProcessType.Equals(_categoryFilter, StringComparison.OrdinalIgnoreCase)) &&
         (_jurisdiction == "ALL" || d.Jurisdiction == _jurisdiction));
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with GET /api/field/current/process/definitions
-        _definitions = new List<DefinitionRow>
+        try
         {
-            new("EXPL-001",  "Exploratory Well Drilling Approval",         "EXPLORATION",    "WELL",       12, "ALL",  true),
-            new("EXPL-002",  "Seismic Survey Authorization",               "EXPLORATION",    "SURVEY",     8,  "ALL",  true),
-            new("EXPL-003",  "Prospect Ranking & Gate Review",             "EXPLORATION",    "PROSPECT",   6,  "ALL",  true),
-            new("DEV-001",   "Field Development Plan Approval",            "DEVELOPMENT",    "FIELD",      15, "ALL",  true),
-            new("DEV-002",   "Development Well Drilling Authorization",    "DEVELOPMENT",    "WELL",       14, "ALL",  true),
-            new("PROD-001",  "Production Optimization Workflow",           "PRODUCTION",     "WELL",       7,  "ALL",  true),
-            new("PROD-002",  "Well Intervention Authorization",            "PRODUCTION",     "WELL",       9,  "ALL",  true),
-            new("DECO-001",  "Well P&A Authorization",                     "DECOMMISSIONING","WELL",       18, "ALL",  true),
-            new("DECO-002",  "Facility Decommissioning Authorization",     "DECOMMISSIONING","FACILITY",   22, "ALL",  true),
-            new("HSE-001",   "HSE Incident Investigation",                 "HSE",            "INCIDENT",   10, "ALL",  true),
-            new("COMPL-001", "Regulatory Compliance Reporting (USA)",      "COMPLIANCE",     "OBLIGATION", 5,  "USA",  true),
-            new("COMPL-002", "Regulatory Compliance Reporting (Canada)",   "COMPLIANCE",     "OBLIGATION", 5,  "CAN",  true),
-        };
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        try
+        {
+            var data = await ApiClient.GetAsync<List<ProcessDefinition>>("/api/field/current/process/definitions") ?? new();            if (data != null)
+            {
+                _definitions = data.Select(d => new DefinitionRow(
+                    d.ProcessId,
+                    d.ProcessName,
+                    d.ProcessType,
+                    d.EntityType,
+                    d.Steps?.Count ?? 0,
+                    d.Configuration != null && d.Configuration.TryGetValue("JurisdictionTag", out var j) ? j?.ToString() ?? "ALL" : "ALL",
+                    d.IsActive
+                )).ToList();
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Could not load process definitions.", Severity.Warning);
+        }
     }
 
     private record DefinitionRow(

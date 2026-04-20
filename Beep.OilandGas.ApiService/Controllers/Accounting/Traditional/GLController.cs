@@ -58,7 +58,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting GL accounts");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -70,6 +70,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             string id,
             [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "Account ID is required." });
             try
             {
                 var account = _service.TraditionalAccounting.GeneralLedger.GetAccount(id);
@@ -95,7 +97,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting GL account {AccountId}", id);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -134,7 +136,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating GL account");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -173,7 +175,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating journal entry");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -186,6 +188,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             [FromQuery] string? userId = null,
             [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "Journal entry ID is required." });
             try
             {
                 _service.TraditionalAccounting.JournalEntry.PostJournalEntry(id, userId ?? "system");
@@ -194,7 +198,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error posting journal entry {EntryId}", id);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -206,6 +210,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             string id,
             [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "Journal entry ID is required." });
             try
             {
                 var entry = _service.TraditionalAccounting.JournalEntry.GetJournalEntry(id);
@@ -238,7 +244,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting journal entry {EntryId}", id);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

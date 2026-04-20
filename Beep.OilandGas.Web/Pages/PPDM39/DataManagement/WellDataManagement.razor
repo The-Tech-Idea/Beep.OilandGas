@@ -1,0 +1,130 @@
+@page "/ppdm39/data-management/well"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@using Beep.OilandGas.Web.Components.Data
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.PPDM39.Core.Tree
+@using MudBlazor
+
+<PageTitle>Well Data Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Page header ─────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Spacing="2">
+        <MudIcon Icon="@Icons.Material.Filled.OilBarrel" Color="Color.Primary" Style="font-size:2rem;" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Well Data Management</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Browse and manage PPDM39 well-related tables: wells, wellbores, logs, tests, status and more.
+            </MudText>
+        </MudStack>
+        <MudSpacer />
+        <MudButtonGroup Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">
+            <MudButton StartIcon="@Icons.Material.Filled.ArrowBack"
+                       OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/data-management"))">
+                All Categories
+            </MudButton>
+            <MudButton StartIcon="@Icons.Material.Filled.OpenInNew"
+                       OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/data-management?table=WELL"))">
+                Open WELL Table
+            </MudButton>
+        </MudButtonGroup>
+    </MudStack>
+
+    <MudGrid Spacing="4">
+
+        @* ── Left: table browser ─────────────────────────────────────────── *@
+        <MudItem xs="12" md="4" lg="3">
+            <MudPaper Elevation="2" Class="pa-3" Style="height: calc(100vh - 200px); overflow-y: auto;">
+                <CategoryTableBrowser CategoryId="WELL"
+                                      CategoryName="Wells"
+                                      CategoryIcon="@Icons.Material.Filled.OilBarrel"
+                                      OnTableSelected="OnTableChosen" />
+            </MudPaper>
+        </MudItem>
+
+        @* ── Right: data grid / CRUD ──────────────────────────────────────── *@
+        <MudItem xs="12" md="8" lg="9">
+            <MudPaper Elevation="2" Style="height: calc(100vh - 200px); overflow-y: auto;">
+
+                @if (string.IsNullOrWhiteSpace(_activeTable))
+                {
+                    @* ── Welcome panel ────────────────────────────────────── *@
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center"
+                              Style="height:100%;" Class="pa-8" Spacing="3">
+                        <MudIcon Icon="@Icons.Material.Filled.OilBarrel"
+                                 Style="font-size:5rem;" Color="Color.Primary" />
+                        <MudText Typo="Typo.h5">Well Life Cycle Data</MudText>
+                        <MudText Typo="Typo.body1" Color="Color.Secondary" Align="Align.Center">
+                            Select a table from the left panel to view, search and edit records.
+                        </MudText>
+
+                        @* ── Quick-access cards for the most-used well tables ─ *@
+                        <MudGrid Class="mt-2">
+                            @foreach (var qt in _quickTables)
+                            {
+                                <MudItem xs="12" sm="6" md="4">
+                                    <MudCard Elevation="1" Class="cursor-pointer"
+                                             @onclick="@(() => OnTableChosen(qt.TableName))">
+                                        <MudCardContent Class="pa-3">
+                                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                                <MudIcon Icon="@qt.Icon" Color="Color.Primary" Size="Size.Small" />
+                                                <MudStack Spacing="0">
+                                                    <MudText Typo="Typo.body2" Style="font-family:monospace;">
+                                                        @qt.TableName
+                                                    </MudText>
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                        @qt.Label
+                                                    </MudText>
+                                                </MudStack>
+                                            </MudStack>
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudStack>
+                }
+                else
+                {
+                    @* ── Generic CRUD grid ────────────────────────────────── *@
+                    <GenericCrudPage @key="@_gridKey"
+                                     TableNode="@_activeNode" />
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string?     _activeTable;
+    private PPDMTreeNode? _activeNode;
+    private string      _gridKey = "init";
+
+    private static readonly List<(string TableName, string Label, string Icon)> _quickTables = new()
+    {
+        ("WELL",              "Core well record",      Icons.Material.Filled.OilBarrel),
+        ("WELL_STATUS",       "Status facets",         Icons.Material.Filled.Flag),
+        ("WELL_XREF",         "Well cross-references", Icons.Material.Filled.CompareArrows),
+        ("WELL_TEST",         "Well tests",            Icons.Material.Filled.Science),
+        ("WELL_LOG",          "Well logs",             Icons.Material.Filled.StackedLineChart),
+        ("WELL_ACTIVITY",     "Activities",            Icons.Material.Filled.Timeline),
+        ("WELL_TUBULAR",      "Tubulars",              Icons.Material.Filled.LinearScale),
+        ("WELL_EQUIPMENT",    "Equipment",             Icons.Material.Filled.Build),
+        ("WELLBORE",          "Wellbores",             Icons.Material.Filled.AltRoute),
+    };
+
+    private void OnTableChosen(string tableName)
+    {
+        _activeTable = tableName;
+        _activeNode  = new PPDMTreeNode
+        {
+            Id       = tableName,
+            Text     = tableName,
+            NodeType = PPDMTreeNodeType.Table,
+            IsSelected = true
+        };
+        _gridKey = tableName + "_" + DateTime.Now.Ticks;
+    }
+}

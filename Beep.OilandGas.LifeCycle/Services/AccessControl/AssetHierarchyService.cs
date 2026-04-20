@@ -61,9 +61,8 @@ namespace Beep.OilandGas.LifeCycle.Services.AccessControl
                 // Build hierarchy based on configuration
                 return await BuildConfiguredHierarchyAsync(organizationId, config, rootAssetId, rootAssetType);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Log error
                 return null;
             }
         }

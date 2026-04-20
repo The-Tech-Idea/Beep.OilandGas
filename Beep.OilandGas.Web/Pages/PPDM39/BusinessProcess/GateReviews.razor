@@ -41,7 +41,7 @@
                  Hover="true"
                  Striped="true"
                  Sortable="true"
-                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/gates/{e.Item.GateId}"))">
+                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/gates/{Uri.EscapeDataString(e.Item.GateId)}"))">
         <ToolBarContent>
             <MudText Typo="Typo.subtitle2">@FilteredGates.Count() gate reviews</MudText>
             <MudSpacer />
@@ -72,7 +72,7 @@
             <TemplateColumn Title="" Sortable="false">
                 <CellTemplate>
                     <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary"
-                               OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/process/gates/{context.Item.GateId}"))'>
+                               OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/process/gates/{Uri.EscapeDataString(context.Item.GateId)}"))'>
                         Review
                     </MudButton>
                 </CellTemplate>
@@ -88,7 +88,7 @@
 @using Microsoft.AspNetCore.Authorization
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _filter    = "ALL";
     private string _search    = string.Empty;
 
@@ -100,17 +100,37 @@
             g.GateName.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
             g.EntityId.Contains(_search, StringComparison.OrdinalIgnoreCase)));
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with GET /api/field/current/gates
-        _gates = new List<GateRow>
+        try
         {
-            new("G-001", "Eagle Ford S-1 — Gate 2: AFE Approval",       "W-001",   "EXPLORATION",    "john.doe",    DateTime.Today.AddDays(-3),  "AWAITING APPROVAL", 3),
-            new("G-002", "FDP Approval Gate — Field Development",        "FIELD-1", "DEVELOPMENT",    "jane.smith",  DateTime.Today.AddDays(-1),  "SUBMITTED",         0),
-            new("G-003", "Well P&A Gate 1 Review",                       "W-045",   "DECOMMISSIONING","ops.manager", DateTime.Today.AddDays(-10), "AWAITING APPROVAL", 10),
-            new("G-004", "Reservoir Characterization Gate",               "RES-012", "DEVELOPMENT",    "geo.team",    DateTime.Today.AddDays(-20), "DEFERRED",          0),
-            new("G-005", "Exploratory Well Spud Authorization",           "W-002",   "EXPLORATION",    "john.doe",    DateTime.Today.AddDays(-7),  "APPROVED",          0),
-        };
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        try
+        {
+            var data = await ApiClient.GetAsync<List<ProcessInstanceSummary>>("/api/field/current/gates") ?? new();            if (data != null)
+            {
+                var today = DateTime.Today;
+                _gates = data.Select(g => new GateRow(
+                    g.InstanceId,
+                    string.IsNullOrWhiteSpace(g.ProcessName) ? g.ProcessId : g.ProcessName,
+                    g.EntityId,
+                    g.ProcessType,
+                    g.StartedBy,
+                    g.StartedAt,
+                    g.Status,
+                    (int)(today - g.StartedAt).TotalDays
+                )).ToList();
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Could not load gate reviews.", Severity.Warning);
+        }
     }
 
     private record GateRow(

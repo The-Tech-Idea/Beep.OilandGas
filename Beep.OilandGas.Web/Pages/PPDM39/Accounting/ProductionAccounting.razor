@@ -1,10 +1,13 @@
-@page "/accounting/production"
+﻿@page "/accounting/production"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
 
 <PageTitle>Track Production Revenue</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
@@ -63,10 +66,7 @@
                             <CardHeaderContent><MudText Typo="Typo.subtitle1">Revenue by Product</MudText></CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <MudChart T="double" ChartType="ChartType.Bar"
-                                      Series="@_revenueSeries"
-                                      XAxisLabels="@_revenueMonths"
-                                      Width="100%" Height="200px" />
+                            <MudAlert Severity="Severity.Info" Dense="true">Revenue trend chart will display after transactions are loaded from the accounting system.</MudAlert>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -76,14 +76,7 @@
                             <CardHeaderContent><MudText Typo="Typo.subtitle1">Revenue Split</MudText></CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <MudChart T="double" ChartType="ChartType.Donut"
-                                      Series="@_revenueSplit"
-                                      Width="100%" Height="200px" />
-                            <MudStack Row="true" Justify="Justify.SpaceEvenly" Class="mt-2">
-                                <MudText Typo="Typo.caption">Oil</MudText>
-                                <MudText Typo="Typo.caption">Gas</MudText>
-                                <MudText Typo="Typo.caption">NGL</MudText>
-                            </MudStack>
+                            <MudAlert Severity="Severity.Info" Dense="true">Revenue split chart will display once product-level sales data is available.</MudAlert>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -147,10 +140,7 @@
                             <CardHeaderContent><MudText Typo="Typo.subtitle1">Operating Cost Breakdown</MudText></CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <MudChart T="double" ChartType="ChartType.Bar"
-                                      Series="@_opexSeries"
-                                      XAxisLabels="@_opexCategories"
-                                      Width="100%" Height="200px" />
+                            <MudAlert Severity="Severity.Info" Dense="true">OPEX breakdown chart will display once operating cost data is available.</MudAlert>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -186,60 +176,83 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
-    private string _period = "2026-03";
+    private string _fieldName = string.Empty;
+    private string _period = DateTime.UtcNow.ToString("yyyy-MM");
     private string _closeStatus = "OPEN";
+    private bool _loading = true;
 
-    private double _grossRevenue = 24.8;
-    private double _netRevenue => _grossRevenue * (1 - 0.175);
-    private double _totalOpex = 5.6;
-    private double _operatingMargin => (_netRevenue - _totalOpex) / _netRevenue * 100;
-
-    private List<ChartSeries<double>> _revenueSeries = new()
-    {
-        new ChartSeries<double> { Name = "Oil ($MM)",  Data = new double[] { 17.2, 18.4, 19.8, 20.1, 21.4, 20.8 } },
-        new ChartSeries<double> { Name = "Gas ($MM)",  Data = new double[] {  2.8,  3.1,  3.4,  3.2,  3.0,  3.2 } },
-        new ChartSeries<double> { Name = "NGL ($MM)",  Data = new double[] {  0.9,  1.0,  1.1,  1.1,  1.2,  1.1 } },
-    };
-    private string[] _revenueMonths = { "Oct", "Nov", "Dec", "Jan", "Feb", "Mar" };
-    private double[] _revenueSplit = { 83.5, 12.9, 3.6 };
+    private double _grossRevenue;
+    private double _totalOpex;
+    private double _netRevenue => _grossRevenue - _totalOpex;
+    private double _operatingMargin => _grossRevenue > 0 ? _netRevenue / _grossRevenue * 100 : 0;
 
     private record RevenueLineItem(string Description, string Product, double Volume, string Unit, double Price, double AmountUsd, string Type);
-    private List<RevenueLineItem> _revenueLines = new()
-    {
-        new("Crude oil sales — Tanker A",  "Oil", 245_800, "BBL", 72.40,  17_796_000, "ACTIVE"),
-        new("Crude oil sales — Tanker B",  "Oil",  62_000, "BBL", 73.10,   4_532_200, "ACTIVE"),
-        new("Gas sales — Pipeline export", "Gas", 520_000, "MSCF",  6.15,   3_198_000, "ACTIVE"),
-        new("NGL condensate",              "NGL",  42_000, "BBL",  38.50,   1_617_000, "ACTIVE"),
-        new("CO2 credit",                  "Other",    0,  "T",     8.20,      84_000, "ACTIVE"),
-    };
+    private List<RevenueLineItem> _revenueLines = new();
 
     private record DeductionItem(string Description, string Rate, double BaseAmount, double DeductionUsd, string Category);
-    private List<DeductionItem> _deductions = new()
-    {
-        new("Government Royalty",     "12.5%", 27_227_200, 3_403_400, "ACTIVE"),
-        new("Corporation Tax (30%)",  "30%",   23_823_800, 7_147_100, "ACTIVE"),
-        new("Production Bonus",       "Fixed",          0,   250_000, "ACTIVE"),
-        new("Pipeline Tariff",        "$/MCF",  3_198_000,   128_000, "ACTIVE"),
-        new("Transportation (crude)", "$/BBL",  22_328_200,  614_000, "ACTIVE"),
-    };
-
-    private List<ChartSeries<double>> _opexSeries = new()
-    {
-        new ChartSeries<double> { Name = "Budget ($k)", Data = new double[] { 1400, 900, 650, 500, 1200, 350 } },
-        new ChartSeries<double> { Name = "Actual ($k)", Data = new double[] { 1380, 920, 610, 490, 1250, 320 } },
-    };
-    private string[] _opexCategories = { "Lifting", "Maintenance", "Chemicals", "Power", "Well Work", "G&A" };
+    private List<DeductionItem> _deductions = new();
 
     private record OpexVarianceItem(string Category, double Variance, double ActualPct);
-    private List<OpexVarianceItem> _opexVariance = new()
+    private List<OpexVarianceItem> _opexVariance = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        new("Well Workover",   50, 104),
-        new("Maintenance",     20, 102),
-        new("Chemicals",      -40,  94),
-        new("Lifting",        -20,  99),
-        new("Power",          -10,  98),
-    };
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        _loading = true;
+        try
+        {
+            var summary = await ApiClient.GetAsync<ProductionSummaryDto>("api/field/current/accounting/production-summary");
+            if (summary != null)
+            {
+                _grossRevenue = (double)summary.GrossRevenue;
+                _totalOpex    = (double)summary.TotalOpex;
+                if (summary.OutstandingUsd > 0)
+                    _deductions.Add(new DeductionItem("Outstanding Receivables", "Balance", (double)summary.OutstandingUsd, (double)summary.OutstandingUsd, "RECEIVABLE"));
+            }
+
+            var lines = await ApiClient.GetAsync<List<RevenueLineApiDto>>("api/field/current/accounting/revenue-lines") ?? new();            if (lines != null)
+                _revenueLines = lines.Select(l => new RevenueLineItem(
+                    l.Description ?? "Sales Transaction",
+                    l.Product ?? "Oil",
+                    (double)l.Volume,
+                    l.Unit ?? "BBL",
+                    (double)l.Price,
+                    (double)l.AmountUsd,
+                    l.Type ?? "ACTIVE")).ToList();
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load accounting data.", Severity.Warning);
+        }
+        finally { _loading = false; }
+    }
+
+    private class ProductionSummaryDto
+    {
+        public decimal GrossRevenue   { get; set; }
+        public decimal TotalOpex      { get; set; }
+        public decimal NetRevenue     { get; set; }
+        public int     OpenInvoices   { get; set; }
+        public decimal OutstandingUsd { get; set; }
+    }
+
+    private class RevenueLineApiDto
+    {
+        public string?  Description { get; set; }
+        public string?  Product     { get; set; }
+        public string?  Unit        { get; set; }
+        public decimal  Volume      { get; set; }
+        public decimal  Price       { get; set; }
+        public decimal  AmountUsd   { get; set; }
+        public string?  Type        { get; set; }
+    }
 
     private void ClosePeriod()
     {

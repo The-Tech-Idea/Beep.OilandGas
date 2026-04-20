@@ -1,4 +1,4 @@
-@page "/ppdm39/exploration/seismic-surveys"
+﻿@page "/ppdm39/exploration/seismic-surveys"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -143,12 +143,20 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<SEIS_ACQTN_SURVEY>? _surveys;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
         await LoadSurveys();
     }
 
@@ -157,11 +165,10 @@
         _isLoading = true;
         try
         {
-            _surveys = await ApiClient.GetAsync<List<SEIS_ACQTN_SURVEY>>("/api/field/current/exploration/seismic-surveys");
-        }
-        catch (Exception ex)
+            _surveys = await ApiClient.GetAsync<List<SEIS_ACQTN_SURVEY>>("/api/field/current/exploration/seismic-surveys") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading seismic surveys: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading seismic surveys.", Severity.Error);
             _surveys = new List<SEIS_ACQTN_SURVEY>();
         }
         finally
@@ -187,9 +194,9 @@
                 Snackbar.Add("Seismic survey created successfully", Severity.Success);
                 await LoadSurveys();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Snackbar.Add($"Error creating seismic survey: {ex.Message}", Severity.Error);
+                Snackbar.Add("Error creating seismic survey.", Severity.Error);
             }
         }
     }
@@ -218,7 +225,7 @@
         if (string.IsNullOrEmpty(surveyId))
             return;
 
-        NavigationManager.NavigateTo($"/ppdm39/exploration/seismic-surveys/{surveyId}/lines");
+        NavigationManager.NavigateTo($"/ppdm39/exploration/seismic-surveys/{Uri.EscapeDataString(surveyId)}/lines");
     }
 
     private string GetPropertyValue(object obj, string propertyName)

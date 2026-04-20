@@ -1,4 +1,4 @@
-@page "/ppdm39/compliance"
+@page "/ppdm39/compliance/obligations"
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
@@ -103,7 +103,7 @@
 @using Beep.OilandGas.Models.Data
 
 @code {
-    private string _fieldName    = "Current Field";
+    private string _fieldName = string.Empty;
     private string _jurisdiction = "ALL";
     private int    _overdueCount = 1;
 
@@ -113,32 +113,31 @@
     private IEnumerable<ObligationRow> FilteredObligations => _obligations.Where(o =>
         _jurisdiction == "ALL" || o.JurisdictionTag == _jurisdiction);
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with GET /api/field/current/compliance/obligations
-        _obligations = new List<ObligationRow>
+        try
         {
-            new("OBL-001", "Monthly Production Report",       "USA", DateTime.Today.AddDays(-2),  "OPEN",     "compl.manager",  -2),
-            new("OBL-002", "Flaring Volume Declaration",      "USA", DateTime.Today.AddDays(5),   "IN PROGRESS","compl.manager",  5),
-            new("OBL-003", "Royalty Return Filing",           "USA", DateTime.Today.AddDays(12),  "OPEN",     "acct.manager",   12),
-            new("OBL-004", "Environmental Compliance Report", "CAN", DateTime.Today.AddDays(18),  "OPEN",     "env.officer",    18),
-            new("OBL-005", "Annual Well Integrity Report",    "INTL",DateTime.Today.AddDays(45),  "OPEN",     "wng.engineer",   45),
-            new("OBL-006", "Quarterly Production Return",     "CAN", DateTime.Today.AddDays(25),  "IN PROGRESS","compl.manager", 25),
-        };
-
-        // Due within 30 days for calendar
-        _dueSoon = _obligations
-            .Where(o => o.DaysUntilDue <= 30)
-            .Select(o => new ComplianceObligationSummary
+            var data = await ApiClient.GetAsync<List<ComplianceObligationSummary>>("/api/field/current/process/compliance/obligations") ?? new();            if (data != null)
             {
-                ObligationId     = o.ObligationId,
-                ObligationType   = o.ObligationType,
-                JurisdictionTag  = o.JurisdictionTag,
-                DueDate          = o.DueDate,
-                Status           = o.Status,
-                AssignedTo       = o.AssignedTo,
-                DaysUntilDue     = o.DaysUntilDue
-            }).ToList();
+                var today = DateTime.Today;
+                _obligations = data.Select(o => new ObligationRow(
+                    o.ObligationId,
+                    o.ObligationType,
+                    o.JurisdictionTag,
+                    o.DueDate,
+                    o.Status,
+                    o.AssignedTo,
+                    o.DaysUntilDue
+                )).ToList();
+
+                _overdueCount = _obligations.Count(o => o.DaysUntilDue < 0);
+                _dueSoon = data.Where(o => o.DaysUntilDue >= 0 && o.DaysUntilDue <= 30).ToList();
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Could not load compliance obligations.", Severity.Warning);
+        }
     }
 
     private record ObligationRow(

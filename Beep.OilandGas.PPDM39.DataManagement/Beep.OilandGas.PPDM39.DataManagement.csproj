@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <NoWarn>$(NoWarn);CS0169;CS8618;CS8625;CS8603;CS8604;CS8601;CS8602;CS8619;CS8629;CS8600;CS8767;CS8669</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,4 +1,4 @@
-@page "/ppdm39/well-details/search"
+﻿@page "/ppdm39/well-details/search"
 @using Beep.OilandGas.PPDM39.Models
 @using Beep.OilandGas.Models.Data
 @inject ApiClient ApiClient
@@ -58,10 +58,21 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _searchUwi = string.Empty;
     private WELL? _well;
     private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+    }
 
     private async Task SearchWells()
     {
@@ -74,15 +85,15 @@
         _isLoading = true;
         try
         {
-            _well = await ApiClient.GetAsync<WELL>($"/api/well/uwi/{_searchUwi}");
+            _well = await ApiClient.GetAsync<WELL>($"/api/well/uwi/{Uri.EscapeDataString(_searchUwi)}");
             if (_well == null)
             {
                 Snackbar.Add($"Well with UWI '{_searchUwi}' not found", Severity.Info);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error searching well: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error searching well.", Severity.Error);
         }
         finally
         {

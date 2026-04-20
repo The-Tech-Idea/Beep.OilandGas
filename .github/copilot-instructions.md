@@ -2,6 +2,15 @@
 
 Purpose: orient GitHub Copilot to write code that aligns with Beep.OilandGas architecture, DI patterns, and PPDM39 data access conventions.
 
+## Absolute Rules (Never Violate)
+
+- **No mock data, no TODO stubs, no hardcoded lists**: Every page must load from a live API endpoint. If an endpoint does not exist yet, create it.
+- **No `protected override void OnInitialized()` for data loading**: All data loading uses `protected override async Task OnInitializedAsync()` with `ApiClient`.
+- **No hardcoded local `List<T>` field-initializers** for entities that come from the database. Field initializers are only allowed for empty defaults (e.g. `= new()`).
+- **No `// TODO` comments in committed code**: Either implement it fully or remove the comment.
+- **No half-implemented API methods that return empty lists or throw `NotImplementedException`**: Every endpoint must call through to `PPDMGenericRepository` or the appropriate service.
+- **Production-ready means**: correct error handling (`try/catch` → `Snackbar`), correct PPDM entity mapping, correct DI registration, build-clean after every change.
+
 ## Essential Reading (Start Here)
 
 1. **Architecture**: Three layers: Web (Blazor) → API (ASP.NET Core) → Data (Beep Framework + PPDM39).

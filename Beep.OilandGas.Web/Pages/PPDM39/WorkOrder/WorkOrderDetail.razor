@@ -1,7 +1,8 @@
-@page "/ppdm39/workorder/{Id}"
+﻿@page "/ppdm39/workorder/{Id}"
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
+@inject ISnackbar Snackbar
 
 <PageTitle>Work Order @Id</PageTitle>
 
@@ -271,6 +272,8 @@
 @code {
     [Parameter] public string Id { get; set; } = string.Empty;
 
+    private string _loadedId = string.Empty;
+
     private WorkOrderDetailModel?         _detail;
     private List<string>                _transitions  = new();
     private List<InspectionCondition>   _checklist    = new();
@@ -284,7 +287,18 @@
     private string  _pendingTransition = string.Empty;
     private string? _transitionNotes;
 
-    protected override async Task OnParametersSetAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        _loadedId = Id;
+        await LoadAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id == _loadedId) return;
+        _loadedId = Id;
+        await LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -292,13 +306,13 @@
         _error   = null;
         try
         {
-            _detail      = await ApiClient.GetAsync<WorkOrderDetailModel>($"/api/field/current/workorder/{Id}");
-            _transitions = await ApiClient.GetAsync<List<string>>($"/api/field/current/workorder/{Id}/transitions") ?? new();
-            _checklist   = await ApiClient.GetAsync<List<InspectionCondition>>($"/api/field/current/workorder/{Id}/checklist") ?? new();
-            _costs       = await ApiClient.GetAsync<List<CostVarianceLine>>($"/api/field/current/workorder/{Id}/costs") ?? new();
-            _contractors = await ApiClient.GetAsync<List<ContractorAssignment>>($"/api/field/current/workorder/{Id}/contractors") ?? new();
+            _detail      = await ApiClient.GetAsync<WorkOrderDetailModel>($"/api/field/current/workorder/{Uri.EscapeDataString(Id)}");
+            _transitions = await ApiClient.GetAsync<List<string>>($"/api/field/current/workorder/{Uri.EscapeDataString(Id)}/transitions") ?? new();
+            _checklist   = await ApiClient.GetAsync<List<InspectionCondition>>($"/api/field/current/workorder/{Uri.EscapeDataString(Id)}/checklist") ?? new();
+            _costs       = await ApiClient.GetAsync<List<CostVarianceLine>>($"/api/field/current/workorder/{Uri.EscapeDataString(Id)}/costs") ?? new();
+            _contractors = await ApiClient.GetAsync<List<ContractorAssignment>>($"/api/field/current/workorder/{Uri.EscapeDataString(Id)}/contractors") ?? new();
         }
-        catch (Exception ex) { _error = $"Failed to load work order: {ex.Message}"; }
+        catch (Exception) { _error = "Failed to load work order."; Snackbar.Add(_error, Severity.Error); }
         finally { _loading = false; }
     }
 
@@ -323,7 +337,7 @@
             _showTransition = false;
             await LoadAsync();
         }
-        catch (Exception ex) { _error = $"Transition failed: {ex.Message}"; }
+        catch (Exception) { _error = "Transition failed."; Snackbar.Add(_error, Severity.Error); }
     }
 
     private async Task RecordConditionAsync(int condSeq, string result)
@@ -336,7 +350,7 @@
             _checklist = await ApiClient.GetAsync<List<InspectionCondition>>(
                 $"/api/field/current/workorder/{Id}/checklist") ?? new();
         }
-        catch (Exception ex) { _error = $"Failed to record result: {ex.Message}"; }
+        catch (Exception) { _error = "Failed to record result."; Snackbar.Add(_error, Severity.Error); }
     }
 
     private static Color StateColor(string state) => state switch

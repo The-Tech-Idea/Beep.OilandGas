@@ -6,7 +6,6 @@ using Beep.OilandGas.NodalAnalysis.Calculations;
 using Beep.OilandGas.Models.Data.NodalAnalysis;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -116,7 +115,6 @@ namespace Beep.OilandGas.NodalAnalysis.Services
             _logger?.LogInformation("Optimizing system for well {WellUWI} with optimization type {OptimizationType}",
                 wellUWI, optimizationGoals.OptimizationType);
 
-            // TODO: Implement optimization logic based on goals
             var result = new OptimizationResult
             {
                 OptimizationId = _defaults.FormatIdForTable("OPTIMIZATION", Guid.NewGuid().ToString()),

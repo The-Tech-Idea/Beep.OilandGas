@@ -1,4 +1,4 @@
-@page "/data/validation"
+﻿@page "/data/validation"
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
@@ -121,19 +121,45 @@
         _lastTable = _selectedTable;
         _results.Clear();
         StateHasChanged();
-        await Task.Delay(800); // simulate async validation
-        // Sample results — real impl calls PPDMDataValidationService
-        _rowsChecked = Random.Shared.Next(50, 500);
-        if (Random.Shared.NextDouble() > 0.4)
+        try
         {
-            _results.Add(new ValidationIssue("Completeness", "ROW_QUALITY", "NULL value in required column", "Warning", Random.Shared.Next(1, 10)));
-            _results.Add(new ValidationIssue("Reference", "ACTIVE_IND", "Value not in allowed set", "Error", Random.Shared.Next(1, 5)));
+            var payload = new
+            {
+                CheckCompleteness = _checkCompleteness,
+                CheckConstraints  = _checkConstraints,
+                CheckReferences   = _checkReferences
+            };
+            var response = await ApiClient.PostAsync<object, TableValidationResponse>(
+                $"api/datamanagement/validate-table/{Uri.EscapeDataString(_selectedTable)}", payload);
+            _rowsChecked = response?.RowsChecked ?? 0;
+            _results = response?.Issues?
+                .Select(i => new ValidationIssue(i.Rule ?? "General", i.Column ?? string.Empty, i.Message ?? i.Rule ?? string.Empty, i.Severity ?? "Warning", i.RowCount))
+                .ToList() ?? new();
         }
-        _running = false;
+        catch (Exception)
+        {
+            Snackbar.Add("Validation failed.", Severity.Error);
+        }
+        finally { _running = false; }
         if (_results.Count == 0)
             Snackbar.Add($"{_lastTable}: all {_rowsChecked:N0} rows passed validation.", Severity.Success);
         else
-            Snackbar.Add($"{_results.Count} issues found in {_lastTable}.", Severity.Warning);
+            Snackbar.Add($"{_results.Count} issue type(s) found in {_lastTable}.", Severity.Warning);
+    }
+
+    private class TableValidationResponse
+    {
+        public int RowsChecked { get; set; }
+        public List<IssueDto>? Issues { get; set; }
+    }
+
+    private class IssueDto
+    {
+        public string? Rule     { get; set; }
+        public string? Column   { get; set; }
+        public string? Message  { get; set; }
+        public string? Severity { get; set; }
+        public int RowCount     { get; set; }
     }
 
     private static Color GetSeverityColor(string s) => s switch

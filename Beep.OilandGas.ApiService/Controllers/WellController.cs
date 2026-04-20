@@ -53,7 +53,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error comparing wells");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -73,7 +73,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error comparing wells from multiple sources");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -91,7 +91,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting comparison fields");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

@@ -1,4 +1,4 @@
-@page "/first-login"
+﻿@page "/first-login"
 @using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Web.Components.Connection
 @using Beep.OilandGas.Web.Components.Demo
@@ -107,9 +107,9 @@
                 _currentConnectionName = currentConnection.ConnectionName;
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error checking connection: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error checking connection.", Severity.Error);
         }
         finally
         {

@@ -78,7 +78,7 @@ namespace Beep.OilandGas.Branchs.PPDM39
 
         public IBranch CreateCategoryNode(CategoryFolder p)
         {
-            return null;
+            return null!;
         }
 
         public IErrorsInfo ExecuteBranchAction(string ActionName)

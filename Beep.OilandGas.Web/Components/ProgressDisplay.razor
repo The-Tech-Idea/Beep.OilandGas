@@ -4,6 +4,7 @@
 @implements IAsyncDisposable
 @inject IProgressTrackingClient ProgressClient
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
 
 @if (ShowProgress && CurrentProgress != null)
 {
@@ -176,7 +177,11 @@
 
     private async Task HandleCancel()
     {
-        // TODO: Implement actual cancellation via API if needed
+        if (!string.IsNullOrWhiteSpace(OperationId))
+        {
+            try { await ApiClient.PostAsync<object>($"api/operations/{OperationId}/cancel", new { }); }
+            catch { /* cancellation is best-effort */ }
+        }
         await OnCancel.InvokeAsync();
         await DisposeAsync();
     }

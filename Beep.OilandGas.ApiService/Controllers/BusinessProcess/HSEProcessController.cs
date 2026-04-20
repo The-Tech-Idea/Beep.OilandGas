@@ -13,11 +13,12 @@ using Beep.OilandGas.LifeCycle.Models.Processes;
 namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 {
     /// <summary>
-    /// HSE incident and safety process endpoints.
+    /// HSE incident and safety PROCESS WORKFLOW endpoints (IProcessService layer).
+    /// Separate from the domain HSEController at api/field/current/hse.
     /// RCA submission and incident close require SafetyOfficer or Manager role.
     /// </summary>
     [ApiController]
-    [Route("api/field/current/hse")]
+    [Route("api/field/current/process/hse")]
     [Authorize]
     public class HSEProcessController : ControllerBase
     {
@@ -49,7 +50,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(request.Severity))
                 return BadRequest("Severity (API RP 754 tier) is required.");
 
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -102,7 +103,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromQuery] string? severity = null,
             [FromQuery] string? status = null)
         {
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
                 return BadRequest("No active field selected.");
 

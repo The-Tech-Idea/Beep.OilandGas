@@ -27,6 +27,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         [HttpPost("evaluate/{prospectId}")]
         public async Task<ActionResult<ProspectEvaluation>> EvaluateProspect(string prospectId)
         {
+            if (string.IsNullOrWhiteSpace(prospectId)) return BadRequest(new { error = "Prospect ID is required." });
             try
             {
                 var result = await _service.EvaluateProspectAsync(prospectId);
@@ -35,7 +36,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error evaluating prospect {ProspectId}", prospectId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -50,7 +51,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting prospects");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -65,7 +66,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating prospect");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -80,7 +81,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error ranking prospects");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

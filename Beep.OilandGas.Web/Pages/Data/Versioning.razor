@@ -1,4 +1,4 @@
-@page "/data/versioning"
+﻿@page "/data/versioning"
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
@@ -6,6 +6,8 @@
 <PageTitle>Manage Data Versions</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
@@ -71,26 +73,66 @@
     private List<string> _tables = new() { "WELL", "WELL_STATUS", "FACILITY", "POOL", "PDEN", "PROSPECT" };
     private string _selectedTable = "WELL";
     private string _snapshotLabel = string.Empty;
-    private List<SnapshotRow> _snapshots = new()
-    {
-        new("Pre-migration baseline", "WELL", "admin", new DateTime(2026, 4, 1, 09, 30, 0), 1240),
-        new("Q1 2026 close", "PDEN", "prod.engineer", new DateTime(2026, 3, 31, 17, 0, 0), 8800),
-        new("Before EOR screen", "POOL", "res.engineer", new DateTime(2026, 3, 15, 11, 0, 0), 45)
-    };
+    private bool   _loading = false;
+    private List<SnapshotRow> _snapshots = new();
 
-    private void CreateSnapshot()
+    protected override async Task OnInitializedAsync() => await LoadSnapshotsAsync();
+
+    private async Task LoadSnapshotsAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedTable)) return;
+        _loading = true;
+        try
+        {
+            var data = await ApiClient.GetAsync<List<SnapshotApiDto>>(
+                $"api/ppdm39/versioning/snapshots?table={Uri.EscapeDataString(_selectedTable)}");
+            _snapshots = data?
+                .Select(s => new SnapshotRow(s.Label ?? s.Table, s.Table, s.CreatedBy, s.CreatedAt, s.RowCount))
+                .ToList() ?? new();
+        }
+        catch (Exception) { Snackbar.Add("Could not load snapshots.", Severity.Error); }
+        finally { _loading = false; }
+    }
+
+    private async Task CreateSnapshot()
     {
         if (string.IsNullOrWhiteSpace(_selectedTable)) return;
         var label = string.IsNullOrWhiteSpace(_snapshotLabel)
             ? $"{_selectedTable} — {DateTime.Now:dd MMM yyyy HH:mm}"
             : _snapshotLabel;
-        _snapshots.Insert(0, new(label, _selectedTable, "current.user", DateTime.Now, Random.Shared.Next(100, 5000)));
-        _snapshotLabel = string.Empty;
-        Snackbar.Add($"Snapshot '{label}' created.", Severity.Success);
+        try
+        {
+            var payload = new { TableName = _selectedTable, Label = label };
+            var result  = await ApiClient.PostAsync<object, SnapshotResultDto>(
+                "api/ppdm39/versioning/snapshots", payload);
+            if (result != null)
+            {
+                _snapshots.Insert(0, new SnapshotRow(label, _selectedTable, "current.user", DateTime.Now, 0));
+                _snapshotLabel = string.Empty;
+                Snackbar.Add($"Snapshot '{label}' created.", Severity.Success);
+            }
+        }
+        catch (Exception) { Snackbar.Add("Snapshot failed.", Severity.Error); }
     }
 
     private void CompareSnapshot(SnapshotRow row) =>
         Snackbar.Add($"Comparing '{row.Label}' with current {row.Table} data…", Severity.Info);
+
+    private class SnapshotApiDto
+    {
+        public string? Label     { get; set; }
+        public string  Table     { get; set; } = string.Empty;
+        public string  CreatedBy { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public int     RowCount  { get; set; }
+    }
+
+    private class SnapshotResultDto
+    {
+        public bool    Success   { get; set; }
+        public string? VersionId { get; set; }
+        public string? Message   { get; set; }
+    }
 
     internal record SnapshotRow(string Label, string Table, string CreatedBy, DateTime CreatedAt, int RowCount);
 }

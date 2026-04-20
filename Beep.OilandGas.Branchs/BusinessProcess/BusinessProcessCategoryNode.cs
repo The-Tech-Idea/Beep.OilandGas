@@ -88,7 +88,7 @@ namespace Beep.OilandGas.Branchs.BusinessProcess
             try
             {
                 var processNames = GetProcessNamesForCategory(MiscID);
-                if (processNames.Count == 0) return DMEEditor?.ErrorObject;
+                if (processNames.Count == 0) return DMEEditor?.ErrorObject!;
 
                 var existingNames = new HashSet<string>(
                     ChildBranchs.Select(b => b.BranchText),
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.Branchs.BusinessProcess
                     $"Error creating BusinessProcess child nodes for {BranchText}",
                     DateTime.Now, -1, "BusinessProcessCategoryNode.CreateChildNodes", Errors.Failed);
             }
-            return DMEEditor?.ErrorObject;
+            return DMEEditor?.ErrorObject!;
         }
 
         /// <summary>
@@ -251,10 +251,10 @@ namespace Beep.OilandGas.Branchs.BusinessProcess
             _ => new List<string>()
         };
 
-        public IBranch CreateCategoryNode(CategoryFolder p) => null;
-        public IErrorsInfo ExecuteBranchAction(string ActionName) => DMEEditor?.ErrorObject;
-        public IErrorsInfo MenuItemClicked(string ActionName) => DMEEditor?.ErrorObject;
-        public IErrorsInfo RemoveChildNodes() => DMEEditor?.ErrorObject;
+        public IBranch CreateCategoryNode(CategoryFolder p) => null!;
+        public IErrorsInfo ExecuteBranchAction(string ActionName) => DMEEditor?.ErrorObject!;
+        public IErrorsInfo MenuItemClicked(string ActionName) => DMEEditor?.ErrorObject!;
+        public IErrorsInfo RemoveChildNodes() => DMEEditor?.ErrorObject!;
 
         public IErrorsInfo SetConfig(
             ITree pTreeEditor, IDMEEditor pDMEEditor,
@@ -277,7 +277,7 @@ namespace Beep.OilandGas.Branchs.BusinessProcess
                 DMEEditor?.AddLogMessage(ex.Message, "Could not Set Config",
                     DateTime.Now, -1, "BusinessProcessCategoryNode.SetConfig", Errors.Failed);
             }
-            return DMEEditor?.ErrorObject;
+            return DMEEditor?.ErrorObject!;
         }
     }
 }

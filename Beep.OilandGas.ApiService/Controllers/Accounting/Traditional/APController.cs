@@ -42,6 +42,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             string id,
             [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "Invoice ID is required." });
             try
             {
                 var invoice = _service.TraditionalAccounting.AccountsPayable.GetAPInvoice(id);
@@ -63,7 +65,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting AP invoice {InvoiceId}", id);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -116,12 +118,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for AP invoice");
-                return StatusCode(500, new { error = "AP invoice created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "AP invoice created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating AP invoice");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

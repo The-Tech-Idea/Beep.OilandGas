@@ -104,7 +104,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error allocating costs");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

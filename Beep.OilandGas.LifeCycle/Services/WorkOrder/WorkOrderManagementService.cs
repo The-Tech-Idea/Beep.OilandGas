@@ -68,9 +68,9 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder
                 // Create WORK_ORDER entity
                 var workOrder = new WORK_ORDER();
                 workOrder.WORK_ORDER_ID = _defaults.GenerateId("WORK_ORDER");
-                workOrder.WORK_ORDER_NUMBER = request.WorkOrderNumber;
-                workOrder.WORK_ORDER_TYPE = request.WorkOrderType;
-                workOrder.INSTRUCTIONS = request.Instructions;
+                workOrder.WORK_ORDER_NUMBER = request.WorkOrderNumber ?? string.Empty;
+                workOrder.WORK_ORDER_TYPE = request.WorkOrderType ?? string.Empty;
+                workOrder.INSTRUCTIONS = request.Instructions ?? string.Empty;
                 workOrder.REQUEST_DATE = request.RequestDate ?? DateTime.UtcNow;
                 workOrder.DUE_DATE = request.DueDate;
                 workOrder.ACTIVE_IND = "Y";

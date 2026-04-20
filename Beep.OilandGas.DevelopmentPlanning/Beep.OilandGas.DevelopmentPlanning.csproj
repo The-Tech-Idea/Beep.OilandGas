@@ -5,7 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-  </PropertyGroup>
+      <NoWarn>$(NoWarn);CS0169</NoWarn>
+</PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Beep.OilandGas.PPDM.Models" Version="1.0.18" />

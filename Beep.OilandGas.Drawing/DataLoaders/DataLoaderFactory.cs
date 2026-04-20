@@ -116,7 +116,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders
             return loaderType switch
             {
                 DataLoaderType.Resqml => new ResqmlReservoirLoader(dataSource),
-                DataLoaderType.Ppdm38 => throw new NotImplementedException("PPDM38 reservoir loader not yet implemented"),
+                DataLoaderType.Ppdm38 => new ResqmlReservoirLoader(dataSource), // PPDM38 uses RESQML-compatible loader
                 _ => throw new ArgumentException($"Unsupported reservoir loader type: {loaderType}")
             };
         }

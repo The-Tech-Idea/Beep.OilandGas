@@ -1,0 +1,49 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Beep.Foundation.IdentityServer.Shared -> C:\Users\f_ald\source\repos\fahadTheTechIdea\MyWebSite\TheTechIdeaWeb\Beep.Foundation.IdentityServer.Shared\bin\Debug\net10.0\Beep.Foundation.IdentityServer.Shared.dll
+  Beep.OilandGas.DCA -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.DCA\bin\Debug\net10.0\Beep.OilandGas.DCA.dll
+  Beep.OilandGas.Models -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Models\bin\Debug\net10.0\Beep.OilandGas.Models.dll
+  Beep.OilandGas.PPDM.Models -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM.Models\bin\Debug\net10.0\Beep.OilandGas.PPDM.Models.dll
+  Beep.OilandGas.Branchs -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Branchs\bin\Debug\net10.0\Beep.OilandGas.Branchs.dll
+  Beep.OilandGas.WellTestAnalysis -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.WellTestAnalysis\bin\Debug\net10.0\Beep.OilandGas.WellTestAnalysis.dll
+  Beep.OilandGas.Drawing -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Drawing\bin\Debug\net10.0\Beep.OilandGas.Drawing.dll
+  Beep.OilandGas.PPDM39 -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM39\bin\Debug\net10.0\Beep.OilandGas.PPDM39.dll
+  Beep.OilandGas.PPDM39.DataManagement -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM39.DataManagement\bin\Debug\net10.0\Beep.OilandGas.PPDM39.DataManagement.dll
+  Beep.OilandGas.GasProperties -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.GasProperties\bin\Debug\net10.0\Beep.OilandGas.GasProperties.dll
+  Beep.OilandGas.PumpPerformance -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PumpPerformance\bin\Debug\net10.0\Beep.OilandGas.PumpPerformance.dll
+  Beep.OilandGas.ProspectIdentification -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ProspectIdentification\bin\Debug\net10.0\Beep.OilandGas.ProspectIdentification.dll
+  Beep.OilandGas.SuckerRodPumping -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.SuckerRodPumping\bin\Debug\net10.0\Beep.OilandGas.SuckerRodPumping.dll
+  Beep.OilandGas.ChokeAnalysis -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ChokeAnalysis\bin\Debug\net10.0\Beep.OilandGas.ChokeAnalysis.dll
+  Beep.OilandGas.Accounting -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Accounting\bin\Debug\net10.0\Beep.OilandGas.Accounting.dll
+  Beep.OilandGas.HydraulicPumps -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.HydraulicPumps\bin\Debug\net10.0\Beep.OilandGas.HydraulicPumps.dll
+  Beep.OilandGas.OilProperties -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.OilProperties\bin\Debug\net10.0\Beep.OilandGas.OilProperties.dll
+  Beep.OilandGas.CompressorAnalysis -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.CompressorAnalysis\bin\Debug\net10.0\Beep.OilandGas.CompressorAnalysis.dll
+  Beep.OilandGas.ProductionForecasting -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ProductionForecasting\bin\Debug\net10.0\Beep.OilandGas.ProductionForecasting.dll
+  Beep.OilandGas.GasLift -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.GasLift\bin\Debug\net10.0\Beep.OilandGas.GasLift.dll
+  Beep.OilandGas.PlungerLift -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PlungerLift\bin\Debug\net10.0\Beep.OilandGas.PlungerLift.dll
+  Beep.OilandGas.NodalAnalysis -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.NodalAnalysis\bin\Debug\net10.0\Beep.OilandGas.NodalAnalysis.dll
+  Beep.OilandGas.PipelineAnalysis -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PipelineAnalysis\bin\Debug\net10.0\Beep.OilandGas.PipelineAnalysis.dll
+  Beep.OilandGas.HeatMap -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.HeatMap\bin\Debug\net10.0\Beep.OilandGas.HeatMap.dll
+  Beep.OilandGas.EconomicAnalysis -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.EconomicAnalysis\bin\Debug\net10.0\Beep.OilandGas.EconomicAnalysis.dll
+  Beep.OilandGas.DataManager -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.DataManager\bin\Debug\net10.0\Beep.OilandGas.DataManager.dll
+  Beep.OilandGas.FlashCalculations -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.FlashCalculations\bin\Debug\net10.0\Beep.OilandGas.FlashCalculations.dll
+  Beep.OilandGas.ProductionOperations -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ProductionOperations\bin\Debug\net10.0\Beep.OilandGas.ProductionOperations.dll
+  Beep.OilandGas.EnhancedRecovery -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.EnhancedRecovery\bin\Debug\net10.0\Beep.OilandGas.EnhancedRecovery.dll
+  Beep.OilandGas.DrillingAndConstruction -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.DrillingAndConstruction\bin\Debug\net10.0\Beep.OilandGas.DrillingAndConstruction.dll
+  Beep.OilandGas.Decommissioning -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Decommissioning\bin\Debug\net10.0\Beep.OilandGas.Decommissioning.dll
+  Beep.OilandGas.LeaseAcquisition -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.LeaseAcquisition\bin\Debug\net10.0\Beep.OilandGas.LeaseAcquisition.dll
+  Beep.OilandGas.PermitsAndApplications -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PermitsAndApplications\bin\Debug\net10.0\Beep.OilandGas.PermitsAndApplications.dll
+  Beep.OilandGas.ProductionAccounting -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ProductionAccounting\bin\Debug\net10.0\Beep.OilandGas.ProductionAccounting.dll
+  Beep.OilandGas.DevelopmentPlanning -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.DevelopmentPlanning\bin\Debug\net10.0\Beep.OilandGas.DevelopmentPlanning.dll
+  Beep.OilandGas.LifeCycle -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.LifeCycle\bin\Debug\net10.0\Beep.OilandGas.LifeCycle.dll
+  Beep.OilandGas.Client -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Client\bin\Debug\net10.0\Beep.OilandGas.Client.dll
+  Beep.OilandGas.ApiService -> C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ApiService\bin\Debug\net10.0\Beep.OilandGas.ApiService.dll
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\obj\Debug\net10.0\Microsoft.CodeAnalysis.Razor.Compiler\Microsoft.NET.Sdk.Razor.SourceGenerators.RazorSourceGenerator\Pages\PPDM39\DataManagement_razor.g.cs(223,26): error CS0101: The namespace 'Beep.OilandGas.Web.Pages.PPDM39' already contains a definition for 'DataManagement' [C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Beep.OilandGas.Web.csproj::TargetFramework=net10.0]
+
+Build FAILED.
+
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\obj\Debug\net10.0\Microsoft.CodeAnalysis.Razor.Compiler\Microsoft.NET.Sdk.Razor.SourceGenerators.RazorSourceGenerator\Pages\PPDM39\DataManagement_razor.g.cs(223,26): error CS0101: The namespace 'Beep.OilandGas.Web.Pages.PPDM39' already contains a definition for 'DataManagement' [C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Beep.OilandGas.Web.csproj::TargetFramework=net10.0]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:18.26

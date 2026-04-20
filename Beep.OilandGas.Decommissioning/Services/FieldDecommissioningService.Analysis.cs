@@ -71,8 +71,6 @@ namespace Beep.OilandGas.Decommissioning.Services
                 _logger?.LogError(ex, "Error analyzing plugging requirements for well {Well}", wellUWI);
                 throw;
             }
-
-            await Task.CompletedTask; // satisfies async signature
         }
 
         // ---------------------------------------------------------------------------
@@ -138,8 +136,6 @@ namespace Beep.OilandGas.Decommissioning.Services
                 _logger?.LogError(ex, "Error analyzing decommissioning costs for well {Well}", wellUWI);
                 throw;
             }
-
-            await Task.CompletedTask;
         }
 
         // ---------------------------------------------------------------------------
@@ -190,8 +186,6 @@ namespace Beep.OilandGas.Decommissioning.Services
                 _logger?.LogError(ex, "Error analyzing environmental remediation for well {Well}", wellUWI);
                 throw;
             }
-
-            await Task.CompletedTask;
         }
 
         // ---------------------------------------------------------------------------
@@ -247,8 +241,6 @@ namespace Beep.OilandGas.Decommissioning.Services
                 _logger?.LogError(ex, "Error analyzing regulatory compliance for well {Well}", wellUWI);
                 throw;
             }
-
-            await Task.CompletedTask;
         }
 
         // ---------------------------------------------------------------------------

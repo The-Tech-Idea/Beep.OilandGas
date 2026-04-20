@@ -1,11 +1,11 @@
-@page "/ppdm39/database-management"
+﻿@page "/ppdm39/database-management"
+@implements IAsyncDisposable
 @using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Models.Data.DataManagement
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
-@inject IBeepOilandGasApp BeepApp
 @inject IProgressTrackingClient ProgressClient
 @inject IDataManagementService DataManagementService
 @using System.Net.Http.Json
@@ -331,9 +331,9 @@
             // Get current connection using DataManagementService
             _currentConnectionName = await DataManagementService.GetCurrentConnectionNameAsync();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading connections: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading connections.", Severity.Error);
         }
         finally
         {
@@ -383,9 +383,9 @@
                 await LoadConnections();
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading connection: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading connection.", Severity.Error);
         }
     }
 
@@ -415,9 +415,9 @@
                 Snackbar.Add($"Failed to set current connection: {result?.Message}", Severity.Error);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error setting current connection: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error setting current connection.", Severity.Error);
         }
     }
 
@@ -433,7 +433,7 @@
             try
             {
                 // Make DELETE request using ApiClient
-                var deleteResult = await ApiClient.DeleteAsync<DeleteConnectionResult>($"/api/ppdm39/setup/connection/{connectionName}");
+                var deleteResult = await ApiClient.DeleteAsync<DeleteConnectionResult>($"/api/ppdm39/setup/connection/{Uri.EscapeDataString(connectionName)}");
 
                 if (deleteResult?.Success == true)
                 {
@@ -445,9 +445,9 @@
                     Snackbar.Add($"Failed to delete connection: {deleteResult?.Message}", Severity.Error);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Snackbar.Add($"Error deleting connection: {ex.Message}", Severity.Error);
+                Snackbar.Add("Error deleting connection.", Severity.Error);
             }
         }
     }
@@ -491,9 +491,9 @@
                     Snackbar.Add($"Failed to drop database: {dropResult?.Message}", Severity.Error);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Snackbar.Add($"Error dropping database: {ex.Message}", Severity.Error);
+                Snackbar.Add("Error dropping database.", Severity.Error);
             }
             finally
             {
@@ -541,9 +541,9 @@
                     Snackbar.Add($"Failed to recreate database: {recreateResult?.Message}", Severity.Error);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Snackbar.Add($"Error recreating database: {ex.Message}", Severity.Error);
+                Snackbar.Add("Error recreating database.", Severity.Error);
             }
             finally
             {
@@ -605,9 +605,9 @@
                 Snackbar.Add("Operation started", Severity.Info);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error starting database copy: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error starting database copy.", Severity.Error);
             _isCopying = false;
             _currentOperationId = null;
         }
@@ -658,5 +658,15 @@
         _currentOperationId = null;
         _currentProgress = null;
         await LoadConnections(); // Refresh connection list if needed
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!string.IsNullOrEmpty(_currentOperationId))
+        {
+            ProgressClient.OnProgressUpdate -= HandleProgressUpdate;
+            try { await ProgressClient.LeaveOperationAsync(_currentOperationId); } catch { }
+            _currentOperationId = null;
+        }
     }
 }

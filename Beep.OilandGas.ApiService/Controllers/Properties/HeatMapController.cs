@@ -31,13 +31,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         {
             try
             {
+                if (request.Configuration == null)
+                    return BadRequest(new { error = "Configuration is required" });
                 var result = await _service.GenerateHeatMapAsync(request.DataPoints, request.Configuration);
                 return Ok(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating heat map");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -52,13 +54,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving heat map configuration");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
         [HttpGet("configuration/{heatMapId}")]
         public async Task<ActionResult<HeatMapConfigurationRecord>> GetConfiguration(string heatMapId)
         {
+            if (string.IsNullOrWhiteSpace(heatMapId)) return BadRequest(new { error = "Heat map ID is required." });
             try
             {
                 var result = await _service.GetHeatMapConfigurationAsync(heatMapId);
@@ -69,7 +72,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting heat map configuration {HeatMapId}", heatMapId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -86,7 +89,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating production heat map for field {FieldId}", request.FieldId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

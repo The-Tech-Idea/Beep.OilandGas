@@ -118,12 +118,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for inventory transaction");
-                return StatusCode(500, new { error = "Transaction created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating inventory transaction");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -135,6 +135,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             string id,
             [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "Transaction ID is required." });
             try
             {
                 var transaction = _service.TraditionalAccounting.Inventory.GetTransaction(id);
@@ -155,7 +157,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting inventory transaction {TransactionId}", id);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

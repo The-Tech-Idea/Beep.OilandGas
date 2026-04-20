@@ -9,7 +9,6 @@ using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.Security;
 using TheTechIdea.Beep.Editor;
 using TheTechIdea.Beep.Report;
-using TheTechIdea.Beep.Report;
 using Beep.OilandGas.PPDM39.Repositories;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;

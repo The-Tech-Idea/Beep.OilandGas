@@ -1,11 +1,12 @@
-@page "/ppdm39/pumps/hydraulicpump"
+﻿@page "/ppdm39/pumps/hydraulicpump"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.HydraulicPumps
 @using Beep.OilandGas.Client.App
-@inject IBeepOilandGasApp BeepApp
+@using System.Security.Claims
+@inject ApiClient ApiClient
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 @inject IPumpServiceClient PumpService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Design Hydraulic Pump System</PageTitle>
 
@@ -84,7 +85,7 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _wellUWI = string.Empty;
     private string _pumpType = "JetPump";
     private decimal _wellDepth = 5000;
@@ -95,7 +96,29 @@
     private bool _isLoading = false;
     private HydraulicPumpDesign? _pumpDesign;
     private PumpPerformanceAnalysis? _performanceAnalysis;
-    private string? _currentUserId = "system";
+    private string? _currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            try
+            {
+                var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+                if (summary != null)
+                    _fieldName = summary.FieldName ?? _fieldName;
+            }
+            catch { /* field name is non-critical */ }
+
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
 
     private async Task DesignPump()
     {
@@ -111,9 +134,9 @@
             _pumpDesign = await PumpService.DesignHydraulicPumpSystemAsync(_wellUWI, _pumpType, _wellDepth, _desiredFlowRate);
             Snackbar.Add("Pump design completed", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error designing pump: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error designing pump.", Severity.Error);
         }
         finally
         {
@@ -137,9 +160,9 @@
                 Snackbar.Add("Pump design saved successfully", Severity.Success);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error saving pump design: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error saving pump design.", Severity.Error);
         }
     }
 
@@ -157,9 +180,9 @@
             _performanceAnalysis = await PumpService.AnalyzeHydraulicPumpPerformanceAsync(_pumpId);
             Snackbar.Add("Performance analysis completed", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error analyzing performance: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error analyzing performance.", Severity.Error);
         }
         finally
         {

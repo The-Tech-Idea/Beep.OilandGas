@@ -1,4 +1,4 @@
-@page "/ppdm39/accounting/volume-reconciliation"
+﻿@page "/ppdm39/accounting/volume-reconciliation"
 @using Beep.OilandGas.Models.Data.Accounting
 @using Beep.OilandGas.Models.Data
 @inject ApiClient ApiClient
@@ -131,11 +131,22 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private DateTime? _startDate = DateTime.Today.AddMonths(-1);
     private DateTime? _endDate = DateTime.Today;
     private bool _isLoading = false;
     private VolumeReconciliationResult? _reconciliationResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+    }
 
     private async Task ReconcileVolumes()
     {
@@ -160,9 +171,9 @@
 
             Snackbar.Add("Volume reconciliation completed", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error reconciling volumes: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error reconciling volumes.", Severity.Error);
         }
         finally
         {

@@ -61,10 +61,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
         /// <summary>
         /// Gets quality dashboard data for a table
         /// </summary>
-        public async Task<QualityDashboardData> GetDashboardDataAsync(string tableName)
+        public async Task<QualityDashboardData> GetDashboardDataAsync(string? tableName)
         {
             if (string.IsNullOrWhiteSpace(tableName))
-                throw new ArgumentException("Table name cannot be null or empty", nameof(tableName));
+                return new QualityDashboardData { TableName = "ALL", LastUpdated = DateTime.UtcNow };
 
             // Get current quality metrics
             var metrics = await _qualityService.CalculateTableQualityMetricsAsync(tableName);

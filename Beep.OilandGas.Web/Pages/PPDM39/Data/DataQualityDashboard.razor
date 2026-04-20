@@ -1,10 +1,13 @@
-@page "/data/quality-dashboard"
+﻿@page "/data/quality-dashboard"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
 
 <PageTitle>Assess Data Quality</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_isLoading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
@@ -93,10 +96,7 @@
                         <CardHeaderContent><MudText Typo="Typo.subtitle1">Quality Score Trend</MudText></CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudChart T="double" ChartType="ChartType.Line"
-                                  Series="@_trendSeries"
-                                  XAxisLabels="@_trendMonths"
-                                  Width="100%" Height="180px" />
+                        <MudAlert Severity="Severity.Info" Dense="true">Historical trend data requires a scheduled quality scan. Run <strong>Recalculate Scores</strong> over multiple periods to build the trend.</MudAlert>
                     </MudCardContent>
                 </MudCard>
 
@@ -138,40 +138,87 @@
 </MudContainer>
 
 @code {
-    private double _overallScore = 87.4;
+    private double _overallScore = 0;
+    private bool _isLoading = false;
 
-    private record TableQuality(string TableName, int RecordCount, double Completeness, double OverallScore);
-    private List<TableQuality> _tables = new()
-    {
-        new("WELL",                  2_847, 96.2, 94.1),
-        new("WELL_TEST",             8_401, 88.5, 86.3),
-        new("WELL_TUBULAR",          5_233, 79.4, 77.0),
-        new("FACILITY",                 42, 98.1, 97.6),
-        new("PDEN_VOL_SUMMARY",     12_500, 91.3, 89.8),
-        new("POOL",                     28, 95.7, 95.7),
-        new("BUSINESS_ASSOCIATE",      315, 72.0, 68.4),
-        new("CONTRACT",                 87, 83.6, 80.2),
-        new("PROSPECT",                 64, 88.0, 85.5),
-    };
+    private sealed record TableQuality(string TableName, int RecordCount, double Completeness, double OverallScore);
+    private List<TableQuality> _tables = new();
 
-    private record DataIssue(string TableName, string Description, string Severity, int RecordsAffected, bool Resolved);
-    private List<DataIssue> _issues = new()
-    {
-        new("WELL",               "Missing FINAL_TD value",          "HIGH",     312, false),
-        new("BUSINESS_ASSOCIATE", "Duplicate BA records",            "CRITICAL",  18, false),
-        new("WELL_TEST",          "Invalid FLOW_RATE_OIL values",    "HIGH",      84, false),
-        new("CONTRACT",           "Missing EXPIRY_DATE",             "MEDIUM",    23, false),
-        new("PDEN_VOL_SUMMARY",   "Null REPORT_PERIOD values",       "MEDIUM",   156, false),
-        new("WELL_TUBULAR",       "CASING_OD out of range",          "LOW",       11, false),
-        new("WELL",               "Missing COUNTRY_NAME",            "LOW",       44, true),
-    };
+    private sealed record DataIssue(string TableName, string Description, string Severity, int RecordsAffected, bool Resolved);
+    private List<DataIssue> _issues = new();
 
-    private List<ChartSeries<double>> _trendSeries = new()
+    // DTOs matching api/ppdm39/quality/dashboard response
+    private sealed class DashboardResultDto
     {
-        new ChartSeries<double> { Name = "Overall Score %", Data = new double[] { 81, 83, 84, 85, 86, 87.4 } },
-        new ChartSeries<double> { Name = "Completeness %", Data = new double[] { 85, 86, 87, 88, 88, 89   } },
-    };
-    private string[] _trendMonths = { "Nov", "Dec", "Jan", "Feb", "Mar", "Apr" };
+        public double OverallQualityScore { get; set; }
+        public int TotalTables { get; set; }
+        public int TablesWithIssues { get; set; }
+        public Dictionary<string, TableResultDto> TableQualityResults { get; set; } = new();
+    }
+
+    private sealed class TableResultDto
+    {
+        public string? TableName { get; set; }
+        public double OverallQualityScore { get; set; }
+        public int TotalRows { get; set; }
+        public int CompleteRows { get; set; }
+        public List<string> QualityIssues { get; set; } = new();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadQualityDataAsync();
+    }
+
+    private async Task LoadQualityDataAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var dashboard = await ApiClient.GetAsync<DashboardResultDto>("api/ppdm39/quality/dashboard");
+            if (dashboard == null) return;
+
+            _overallScore = dashboard.OverallQualityScore;
+
+            _tables = dashboard.TableQualityResults.Values.Select(t => new TableQuality(
+                t.TableName ?? "—",
+                t.TotalRows,
+                t.TotalRows > 0 ? Math.Round((double)t.CompleteRows / t.TotalRows * 100, 1) : 0,
+                Math.Round(t.OverallQualityScore, 1)
+            )).ToList();
+
+            _issues = dashboard.TableQualityResults
+                .SelectMany(kvp => kvp.Value.QualityIssues.Select(issue => new DataIssue(
+                    kvp.Value.TableName ?? kvp.Key,
+                    issue,
+                    GuessIssueSeverity(issue),
+                    0,
+                    false)))
+                .ToList();
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error loading quality data.", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string GuessIssueSeverity(string issue)
+    {
+        var lower = issue.ToLowerInvariant();
+        if (lower.Contains("critical") || lower.Contains("duplicate") || lower.Contains("corrupt"))
+            return "CRITICAL";
+        if (lower.Contains("missing") || lower.Contains("null") || lower.Contains("invalid"))
+            return "HIGH";
+        if (lower.Contains("out of range") || lower.Contains("format"))
+            return "MEDIUM";
+        return "LOW";
+    }
+
+    private List<DataIssue> _resolvedOverrides = new();
 
     private void ResolveIssue(DataIssue issue)
     {
@@ -181,7 +228,12 @@
         Snackbar.Add($"Issue in {issue.TableName} marked resolved", Severity.Success);
     }
 
-    private void RecalculateScores() => Snackbar.Add("Quality recalculation started", Severity.Info);
+    private async Task RecalculateScores()
+    {
+        Snackbar.Add("Quality recalculation started", Severity.Info);
+        await LoadQualityDataAsync();
+    }
+
     private void ExportReport() => Snackbar.Add("Quality report export queued", Severity.Success);
 
     private Color ScoreColor(double score) => score switch

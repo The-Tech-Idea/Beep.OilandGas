@@ -166,6 +166,31 @@ namespace Beep.OilandGas.LifeCycle.Services.Exploration
             }
         }
 
+        /// <summary>
+        /// Updates only the PROSPECT_STATUS column for a given prospect in the given field.
+        /// Used to record approval gate decisions (Approved / Deferred / Rejected).
+        /// </summary>
+        public async Task UpdateProspectStatusAsync(string fieldId, string prospectId, string newStatus, string userId)
+        {
+            try
+            {
+                var existing = await GetProspectForFieldAsync(fieldId, prospectId);
+                if (existing == null)
+                    throw new InvalidOperationException($"Prospect {prospectId} not found in field {fieldId}");
+
+                existing.PROSPECT_STATUS = newStatus;
+
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(PROSPECT), _connectionName, "PROSPECT", null);
+                await repo.UpdateAsync(existing, userId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error updating status for prospect {ProspectId} in field {FieldId}", prospectId, fieldId);
+                throw;
+            }
+        }
+
         public async Task<PROSPECT?> GetProspectForFieldAsync(string fieldId, string prospectId)
         {
             try

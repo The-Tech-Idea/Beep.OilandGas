@@ -124,8 +124,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Maintenance
                         MAINTAIN_ID = Guid.NewGuid().ToString("N").Substring(0, 16),
                         MAINTAIN_TYPE = "EXECUTION",
                         ACTUAL_END_DATE = request.ExecutionDate,
-                        MAINTAIN_BA_ID = request.ExecutedBy,
-                        REMARK = request.WorkPerformed ?? request.Status,
+                        MAINTAIN_BA_ID = request.ExecutedBy ?? string.Empty,
+                        REMARK = request.WorkPerformed ?? request.Status ?? string.Empty,
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };

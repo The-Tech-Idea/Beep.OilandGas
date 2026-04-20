@@ -1,10 +1,14 @@
-@page "/hse/compliance"
+﻿@page "/hse/compliance"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
+@using Beep.OilandGas.Models.Data.Compliance
 
 <PageTitle>Compliance Calendar</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
@@ -41,7 +45,7 @@
                      TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="vs 95% target" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Open Permits" Value="@_obligations.Count(o => o.Type == "Permit" && o.Status != "COMPLETE").ToString()"
+            <KpiCard Label="Open Permits" Value="@_obligations.Count(o => o.ObligationType == "Permit" && o.Status != "COMPLETE").ToString()"
                      ValueColor="Color.Info" Icon="@Icons.Material.Filled.Badge"
                      TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Active" />
         </MudItem>
@@ -70,28 +74,19 @@
                     </CardHeaderActions>
                 </MudCardHeader>
                 <MudCardContent Class="pa-0">
-                    <MudDataGrid T="ComplianceObligation" Items="@FilteredObligations" Dense="true" Hover="true"
+                    <MudDataGrid T="ObligationDto" Items="@FilteredObligations" Dense="true" Hover="true"
                                  SortMode="SortMode.Single">
                         <Columns>
-                            <PropertyColumn Property="o => o.Title" Title="Obligation" />
-                            <PropertyColumn Property="o => o.Type" Title="Type" />
-                            <PropertyColumn Property="o => o.Regulator" Title="Regulator" />
+                            <PropertyColumn Property="o => o.ObligationId" Title="Obligation ID" />
+                            <PropertyColumn Property="o => o.ObligationType" Title="Type" />
+                            <PropertyColumn Property="o => o.JurisdictionTag" Title="Jurisdiction" />
                             <PropertyColumn Property="o => o.DueDate" Title="Due Date" Sortable="true" />
                             <TemplateColumn Title="Status">
                                 <CellTemplate>
                                     <StatusBadge Status="@context.Item.Status" />
                                 </CellTemplate>
                             </TemplateColumn>
-                            <PropertyColumn Property="o => o.Owner" Title="Owner" />
-                            <TemplateColumn Title="" Sortable="false">
-                                <CellTemplate>
-                                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
-                                                   Title="Mark as complete"
-                                                   Color="Color.Success" Size="Size.Small"
-                                                   Disabled="@(context.Item.Status == "COMPLETE")"
-                                                   OnClick="@(() => CompleteObligation(context.Item))" />
-                                </CellTemplate>
-                            </TemplateColumn>
+                            <PropertyColumn Property="o => o.AssignedTo" Title="Assigned To" />
                         </Columns>
                     </MudDataGrid>
                 </MudCardContent>
@@ -108,13 +103,13 @@
                     </MudCardHeader>
                     <MudCardContent Class="pa-0">
                         <MudTimeline TimelineAlign="TimelineAlign.Start" TimelinePosition="TimelinePosition.Start">
-                            @foreach (var ev in _calendarEvents)
+                            @foreach (var ev in UpcomingEvents)
                             {
-                                <MudTimelineItem Color="@ev.Color" Variant="Variant.Filled" Size="Size.Small">
+                                <MudTimelineItem Color="@ObligationColor(ev.Status)" Variant="Variant.Filled" Size="Size.Small">
                                     <ItemContent>
                                         <MudStack Spacing="0">
-                                            <MudText Typo="Typo.body2"><strong>@ev.Date</strong> — @ev.Title</MudText>
-                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@ev.Category</MudText>
+                                            <MudText Typo="Typo.body2"><strong>@ev.DueDate</strong> — @ev.ObligationId</MudText>
+                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@ev.ObligationType</MudText>
                                         </MudStack>
                                     </ItemContent>
                                 </MudTimelineItem>
@@ -129,7 +124,7 @@
                     </MudCardHeader>
                     <MudCardContent>
                         <MudChart T="double" ChartType="ChartType.Donut"
-                                  Series="@_complianceSplit"
+                                  Series="@(new double[] { _obligations.Count(o => o.Status == "Complete"), _obligations.Count(o => o.Status != "Complete" && o.Status != "Overdue"), _obligations.Count(o => o.Status == "Overdue") })"
                                   Width="100%" Height="180px" />
                         <MudStack Row="true" Justify="Justify.SpaceEvenly" Class="mt-1">
                             <MudText Typo="Typo.caption">Complete</MudText>
@@ -145,54 +140,172 @@
     </MudGrid>
 </MudContainer>
 
+@* ── Add Obligation dialog ────────────────────────────────────────────────── *@
+<MudDialog @bind-IsVisible="_showAddObligationDialog">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.AddTask" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">New Compliance Obligation</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudSelect @bind-Value="_newObligType" Label="Obligation Type" Variant="Variant.Outlined" Required="true">
+                <MudSelectItem Value="@ObligationType.OnrrProductionReport">ONRR Production Report</MudSelectItem>
+                <MudSelectItem Value="@ObligationType.OnrrRoyaltyPayment">ONRR Royalty Payment</MudSelectItem>
+                <MudSelectItem Value="@ObligationType.BseeSemsAudit">BSEE SEMS Audit</MudSelectItem>
+                <MudSelectItem Value="@ObligationType.BseeIncidentReport">BSEE Incident Report</MudSelectItem>
+                <MudSelectItem Value="@ObligationType.EpaGhgReportFlare">EPA GHG Report (Flare)</MudSelectItem>
+                <MudSelectItem Value="@ObligationType.AerSt39Report">AER ST39 Report</MudSelectItem>
+                <MudSelectItem Value="@ObligationType.AlbertaCrownRoyalty">Alberta Crown Royalty</MudSelectItem>
+                <MudSelectItem Value="@ObligationType.NrcReport">NRC Report</MudSelectItem>
+                <MudSelectItem Value="@ObligationType.OsparReport">OSPAR Report</MudSelectItem>
+            </MudSelect>
+            <MudTextField @bind-Value="_newObligJurisdiction" Label="Jurisdiction" Variant="Variant.Outlined" Required="true" />
+            <MudTextField @bind-Value="_newObligDescription" Label="Description" Variant="Variant.Outlined" Lines="2" />
+            <MudDatePicker @bind-Date="_newObligDueDate" Label="Due Date" Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showAddObligationDialog = false)" Disabled="@_addingObligation">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Disabled="@_addingObligation"
+                   OnClick="SubmitObligationAsync">
+            @(_addingObligation ? "Saving…" : "Add Obligation")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _filter = "All";
-    private int _dueThisMonth = 6;
-    private double _complianceRate = 96.8;
+    private bool _loading = true;
 
-    private record ComplianceObligation(string Title, string Type, string Regulator, string DueDate,
-        string Status, string Owner);
+    private List<ObligationDto> _obligations = new();
 
-    private List<ComplianceObligation> _obligations = new()
+    private record ObligationDto(
+        string ObligationId, string ObligationType, string JurisdictionTag,
+        string DueDate, string Status, string AssignedTo);
+
+    private IEnumerable<ObligationDto> FilteredObligations => _filter switch
     {
-        new("Monthly Production Report",         "Reporting", "NUPRC",      "30 Apr 2026", "IN PROGRESS", "R. Sheikh"),
-        new("Flaring Monitoring Report",          "Reporting", "DPR",        "15 Apr 2026", "IN PROGRESS", "P. Obi"),
-        new("Well Integrity Inspection (DEV-A1)", "Permit",    "NUPRC",      "22 Apr 2026", "IN PROGRESS", "S. Ahmed"),
-        new("Environmental Discharge Report",     "Reporting", "NESREA",     "30 Apr 2026", "IN PROGRESS", "T. Wu"),
-        new("Annual Safety Case Review",          "Audit",     "NUPRC",      "30 Jun 2026", "ACTIVE",      "D. Thompson"),
-        new("OSPAR Emission Report",              "Reporting", "OSPAR",      "31 Mar 2026", "OVERDUE",     "P. Obi"),
-        new("Permit to Operate Renewal (Compr.)", "Permit",    "State Env.", "05 May 2026", "ACTIVE",      "J. Smith"),
-        new("Q1 HSE Performance Report",          "Reporting", "NUPRC",      "15 Apr 2026", "COMPLETE",    "D. Thompson"),
-        new("Pipeline Pigging Record",            "Inspection","NUPRC",      "20 Apr 2026", "IN PROGRESS", "S. Ahmed"),
-    };
-
-    private IEnumerable<ComplianceObligation> FilteredObligations => _filter switch
-    {
-        "Overdue"   => _obligations.Where(o => o.Status == "OVERDUE"),
-        "Due Soon"  => _obligations.Where(o => o.Status == "IN PROGRESS"),
-        "Permit"    => _obligations.Where(o => o.Type == "Permit"),
-        "Reporting" => _obligations.Where(o => o.Type == "Reporting"),
+        "Overdue"   => _obligations.Where(o => o.Status == "Overdue"),
+        "Due Soon"  => _obligations.Where(o => o.Status == "Active" || o.Status == "Open"),
+        "Permit"    => _obligations.Where(o => o.ObligationType == "Permit"),
+        "Reporting" => _obligations.Where(o => o.ObligationType == "Reporting"),
         _           => _obligations,
     };
 
-    private record CalendarEvent(string Date, string Title, string Category, Color Color);
-    private List<CalendarEvent> _calendarEvents = new()
+    private int _dueThisMonth => _obligations.Count(o =>
     {
-        new("15 Apr", "Flaring Monitoring Report", "Reporting", Color.Warning),
-        new("15 Apr", "Q1 HSE Report",             "Reporting", Color.Success),
-        new("20 Apr", "Pipeline Pigging",          "Inspection",Color.Info),
-        new("22 Apr", "Well Integrity Insp.",       "Permit",    Color.Warning),
-        new("30 Apr", "Monthly Prod. Report",       "Reporting", Color.Warning),
-        new("30 Apr", "Environmental Discharge",    "Reporting", Color.Warning),
-        new("05 May", "Permit to Operate Renewal",  "Permit",    Color.Primary),
+        if (DateTime.TryParse(o.DueDate, out var dt))
+            return dt.Year == DateTime.Today.Year && dt.Month == DateTime.Today.Month;
+        return false;
+    });
+
+    private double _complianceRate => _obligations.Count == 0 ? 100 :
+        Math.Round(_obligations.Count(o => o.Status == "Complete") * 100.0 / _obligations.Count, 1);
+
+    private IEnumerable<ObligationDto> UpcomingEvents => _obligations
+        .Where(o => DateTime.TryParse(o.DueDate, out _))
+        .OrderBy(o => DateTime.Parse(o.DueDate))
+        .Take(8);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        _loading = true;
+        try
+        {
+            var raw = await ApiClient.GetAsync<List<ObligationApiDto>>("api/field/current/compliance/obligations") ?? new();            if (raw != null)
+                _obligations = raw.Select(r => new ObligationDto(
+                    r.ObligationId,
+                    r.ObligationType,
+                    r.JurisdictionTag,
+                    r.DueDate.ToLocalTime().ToString("dd MMM yyyy"),
+                    r.Status,
+                    r.AssignedTo)).ToList();
+        }
+        catch (Exception) { Snackbar.Add("Failed to load obligations.", Severity.Warning); }
+        finally { _loading = false; }
+    }
+
+    private class ObligationApiDto
+    {
+        public string   ObligationId   { get; set; } = string.Empty;
+        public string   ObligationType { get; set; } = string.Empty;
+        public string   JurisdictionTag{ get; set; } = string.Empty;
+        public DateTime DueDate        { get; set; } = DateTime.UtcNow;
+        public string   Status         { get; set; } = string.Empty;
+        public string   AssignedTo     { get; set; } = string.Empty;
+    }
+
+    private Color ObligationColor(string status) => status switch
+    {
+        "Overdue"  => Color.Error,
+        "Active" or "Open" => Color.Warning,
+        "Complete" => Color.Success,
+        _          => Color.Default,
     };
 
-    private double[] _complianceSplit = { 68, 24, 8 };
+    // ── Add Obligation dialog state ─────────────────────────────────────────────
+    private bool      _showAddObligationDialog = false;
+    private bool      _addingObligation        = false;
+    private string    _newObligType            = ObligationType.OnrrProductionReport;
+    private string    _newObligJurisdiction    = string.Empty;
+    private string    _newObligDescription     = string.Empty;
+    private DateTime? _newObligDueDate         = DateTime.Today.AddMonths(1);
 
-    private void CompleteObligation(ComplianceObligation item) =>
-        Snackbar.Add($"'{item.Title}' marked complete", Severity.Success);
+    private void AddObligation()
+    {
+        _newObligType         = ObligationType.OnrrProductionReport;
+        _newObligJurisdiction = string.Empty;
+        _newObligDescription  = string.Empty;
+        _newObligDueDate      = DateTime.Today.AddMonths(1);
+        _showAddObligationDialog = true;
+    }
 
-    private void AddObligation() => Snackbar.Add("Add obligation form coming soon", Severity.Info);
-    private void ExportCalendar() => Snackbar.Add("Calendar export queued", Severity.Success);
+    private async Task SubmitObligationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newObligJurisdiction))
+        {
+            Snackbar.Add("Jurisdiction is required.", Severity.Warning);
+            return;
+        }
+        _addingObligation = true;
+        try
+        {
+            var fieldInfo = await ApiClient.GetAsync<FieldInfoDto>("/api/field/current");
+            var req = new CreateObligationRequest(
+                FieldId:     fieldInfo?.FieldId ?? string.Empty,
+                ObligType:   _newObligType,
+                DueDate:     _newObligDueDate ?? DateTime.Today.AddMonths(1),
+                Jurisdiction: _newObligJurisdiction,
+                Description: _newObligDescription);
+            var id = await ApiClient.PostAsync<CreateObligationRequest, string>(
+                "/api/field/current/compliance/obligations", req);
+            var newRow = new ObligationDto(
+                id ?? Guid.NewGuid().ToString(),
+                _newObligType, _newObligJurisdiction,
+                (_newObligDueDate ?? DateTime.Today.AddMonths(1)).ToString("dd MMM yyyy"),
+                "PENDING", string.Empty);
+            _obligations.Add(newRow);
+            _showAddObligationDialog = false;
+            Snackbar.Add("Obligation added.", Severity.Success);
+        }
+        catch (Exception) { Snackbar.Add("Error adding obligation.", Severity.Error); }
+        finally { _addingObligation = false; }
+    }
+
+    private record FieldInfoDto(string FieldId, string FieldName);
+
+    private void ExportCalendar()  => Snackbar.Add("Calendar export queued", Severity.Success);
 }

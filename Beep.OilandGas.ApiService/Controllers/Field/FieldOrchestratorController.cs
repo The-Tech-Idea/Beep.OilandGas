@@ -98,7 +98,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting all fields");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -134,7 +134,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 return StatusCode(500, new SetActiveFieldResponse 
                 { 
                     Success = false, 
-                    ErrorMessage = ex.Message 
+                    ErrorMessage = "An internal error occurred." 
                 });
             }
         }
@@ -151,7 +151,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
                 
                 if (field == null)
                 {
-                    return NotFound(new FieldResponse { FieldId = null });
+                    return NotFound(new FieldResponse { FieldId = string.Empty });
                 }
 
                 string? fieldId = null;
@@ -159,21 +159,21 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 if (field is FIELD fieldEntity)
                 {
-                    fieldId = fieldEntity.FIELD_ID;
-                    fieldName = fieldEntity.FIELD_NAME;
+                    fieldId = fieldEntity.FIELD_ID ?? string.Empty;
+                    fieldName = fieldEntity.FIELD_NAME ?? string.Empty;
                 }
 
                 return Ok(new FieldResponse 
                 { 
                     Field = field,
-                    FieldId = fieldId,
-                    FieldName = fieldName
+                    FieldId = fieldId ?? string.Empty,
+                    FieldName = fieldName ?? string.Empty
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current field");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -190,12 +190,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current field summary");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -212,12 +212,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current field wells");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -234,12 +234,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current field statistics");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -256,12 +256,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current field timeline");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -278,12 +278,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current field dashboard");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

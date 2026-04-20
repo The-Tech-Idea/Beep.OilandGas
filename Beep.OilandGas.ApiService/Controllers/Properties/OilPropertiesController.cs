@@ -35,7 +35,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating formation volume factor");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -51,7 +51,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating oil density");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -67,7 +67,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating oil viscosity");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -82,7 +82,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating oil properties");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -97,7 +97,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving oil composition");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -106,6 +106,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(compositionId))
+                    return BadRequest(new { error = "Composition ID is required." });
                 var result = await _service.GetOilCompositionAsync(compositionId);
                 if (result == null)
                     return NotFound(new { error = $"Composition {compositionId} not found" });
@@ -114,7 +116,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting oil composition");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -123,13 +125,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(compositionId))
+                    return BadRequest(new { error = "Composition ID is required." });
                 var result = await _service.GetOilPropertyHistoryAsync(compositionId);
                 return Ok(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting oil property history");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -144,7 +148,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving oil property result");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

@@ -88,7 +88,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Inspection
                         STATUS = request.Status ?? "COMPLETED",
                         STATUS_TYPE = "INSPECTION_RESULT",
                         START_TIME = request.ExecutionDate,
-                        REMARK = string.IsNullOrEmpty(request.Findings) ? request.Inspector : $"{request.Inspector}: {request.Findings}",
+                        REMARK = string.IsNullOrEmpty(request.Findings) ? request.Inspector ?? string.Empty : $"{request.Inspector ?? string.Empty}: {request.Findings}",
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };
@@ -123,8 +123,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Inspection
                         STATUS = request.Severity ?? "INFO",
                         STATUS_TYPE = "FINDING_" + request.FindingType,
                         REMARK = string.IsNullOrEmpty(request.RecommendedAction)
-                            ? request.Description
-                            : $"{request.Description} | Action: {request.RecommendedAction}",
+                            ? request.Description ?? string.Empty
+                            : $"{request.Description ?? string.Empty} | Action: {request.RecommendedAction}",
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };

@@ -1,8 +1,10 @@
-@page "/ppdm39/hse/incidents"
+﻿@page "/ppdm39/hse/incidents"
+@using Beep.OilandGas.Models.Data.HSE
+@using System.Security.Claims
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Manage HSE Incidents</PageTitle>
 
@@ -64,7 +66,7 @@
                  Hover="true"
                  Striped="true"
                  Sortable="true"
-                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{e.Item.IncidentId}"))">
+                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{Uri.EscapeDataString(e.Item.IncidentId)}"))">
         <Columns>
             <PropertyColumn Property="r => r.IncidentDate" Title="Date"         Format="dd-MMM-yy" />
             <PropertyColumn Property="r => r.IncidentType" Title="Type" />
@@ -85,7 +87,7 @@
                 <CellTemplate>
                     <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
                                    Size="Size.Small" Color="Color.Primary"
-                                   OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{context.Item.IncidentId}"))' />
+                                   OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{Uri.EscapeDataString(context.Item.IncidentId)}"))' />
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -96,18 +98,61 @@
 
 </MudContainer>
 
+@* ── Report Incident dialog ───────────────────────────────────────────────── *@
+<MudDialog @bind-IsVisible="_showReportDialog">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.AddAlert" Color="Color.Error" />
+            <MudText Typo="Typo.h6">Report Incident</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudSelect @bind-Value="_rIncidentType" Label="Incident Type" Variant="Variant.Outlined" Required="true">
+                <MudSelectItem Value='"SPILL"'>Spill / Release</MudSelectItem>
+                <MudSelectItem Value='"FIRE"'>Fire / Explosion</MudSelectItem>
+                <MudSelectItem Value='"INJURY"'>Personal Injury</MudSelectItem>
+                <MudSelectItem Value='"NEAR_MISS"'>Near Miss</MudSelectItem>
+                <MudSelectItem Value='"ENVIRONMENTAL"'>Environmental</MudSelectItem>
+                <MudSelectItem Value='"PROPERTY_DAMAGE"'>Property Damage</MudSelectItem>
+                <MudSelectItem Value='"PROCESS_SAFETY"'>Process Safety</MudSelectItem>
+            </MudSelect>
+            <MudSelect @bind-Value="_rTier" T="int" Label="API RP 754 Tier" Variant="Variant.Outlined">
+                <MudSelectItem Value="1">Tier 1 — Fatality / PTD</MudSelectItem>
+                <MudSelectItem Value="2">Tier 2 — Lost Time Injury</MudSelectItem>
+                <MudSelectItem Value="3">Tier 3 — MTC / RWC</MudSelectItem>
+                <MudSelectItem Value="4">Tier 4 — First Aid / Near Miss</MudSelectItem>
+            </MudSelect>
+            <MudDatePicker @bind-Date="_rIncidentDateNullable" Label="Incident Date" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_rLocation" Label="Location" Variant="Variant.Outlined" Required="true" />
+            <MudTextField @bind-Value="_rDescription" Label="Description" Variant="Variant.Outlined"
+                          Lines="3" Required="true" />
+            <MudTextField @bind-Value="_rJurisdiction" Label="Jurisdiction" Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showReportDialog = false)" Disabled="@_reporting">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error"
+                   StartIcon="@Icons.Material.Filled.Send"
+                   Disabled="@_reporting"
+                   OnClick="SubmitReportAsync">
+            @(_reporting ? "Submitting…" : "Submit Report")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 @code {
-    private string _fieldName    = "Current Field";
+    private string _fieldName = string.Empty;
     private string _search       = string.Empty;
     private string _tierFilter   = string.Empty;
     private string _statusFilter = string.Empty;
 
     private int _tier1Count = 0;
-    private int _tier2Count = 1;
-    private int _tier3Count = 2;
-    private int _tier4Count = 3;
-    private int _openCount  = 2;
-    private int _closedCount = 4;
+    private int _tier2Count = 0;
+    private int _tier3Count = 0;
+    private int _tier4Count = 0;
+    private int _openCount  = 0;
+    private int _closedCount = 0;
 
     private List<IncidentRow> _incidents = new();
 
@@ -118,27 +163,103 @@
         (string.IsNullOrWhiteSpace(_tierFilter)   || i.Tier   == _tierFilter) &&
         (string.IsNullOrWhiteSpace(_statusFilter) || i.Status.Equals(_statusFilter, StringComparison.OrdinalIgnoreCase)));
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with GET /api/field/current/hse/incidents
-        _incidents = new List<IncidentRow>
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+        try
         {
-            new("INC-001", DateTime.Today.AddDays(-3),  "Personnel Injury",    "Slip/trip on rig floor",          "Rig Floor Level 2", "2", "OPEN",                "john.doe"),
-            new("INC-002", DateTime.Today.AddDays(-8),  "Process Safety",      "Minor hydrocarbon release",        "Manifold Area",     "1", "RCA IN PROGRESS",     "ops.manager"),
-            new("INC-003", DateTime.Today.AddDays(-14), "Personnel Injury",    "Hand laceration during maintenance","Workshop",         "3", "UNDER INVESTIGATION", "jane.smith"),
-            new("INC-004", DateTime.Today.AddDays(-30), "Environmental",       "Diesel spill — contained",         "Laydown Yard",      "3", "CLOSED",              "ops.manager"),
-            new("INC-005", DateTime.Today.AddDays(-45), "Personnel Injury",    "Strain lifting equipment",         "Pipe Deck",         "4", "CLOSED",              "john.doe"),
-            new("INC-006", DateTime.Today.AddDays(-60), "Property Damage",     "Vehicle collision in yard",        "Vehicle Gate",      "3", "CLOSED",              "security"),
-        };
+            var data = await ApiClient.GetAsync<List<HSEIncidentRecord>>("/api/field/current/hse/incidents") ?? new();            if (data != null)
+            {
+                _incidents = data.Select(i => new IncidentRow(
+                    i.IncidentId,
+                    i.IncidentDate,
+                    i.IncidentType,
+                    i.Description,
+                    i.Location,
+                    i.Tier.ToString(),
+                    i.CurrentState,
+                    i.InvestigatorId ?? string.Empty
+                )).ToList();
+
+                _tier1Count = _incidents.Count(i => i.Tier == "1");
+                _tier2Count = _incidents.Count(i => i.Tier == "2");
+                _tier3Count = _incidents.Count(i => i.Tier == "3");
+                _tier4Count = _incidents.Count(i => i.Tier == "4");
+                _openCount   = _incidents.Count(i => !string.Equals(i.Status, "CLOSED", StringComparison.OrdinalIgnoreCase));
+                _closedCount = _incidents.Count(i => string.Equals(i.Status, "CLOSED", StringComparison.OrdinalIgnoreCase));
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Could not load HSE incidents.", Severity.Warning);
+        }
+    }
+
+    // ── Report-incident dialog state ─────────────────────────────────────
+    private bool     _showReportDialog  = false;
+    private bool     _reporting         = false;
+    private string   _currentUserId     = string.Empty;
+    private string   _rIncidentType     = "SPILL";
+    private int      _rTier             = 4;
+    private DateTime _rIncidentDate     = DateTime.Today;
+    private string   _rLocation         = string.Empty;
+    private string   _rDescription      = string.Empty;
+    private string   _rJurisdiction     = "USA";
+
+    // MudDatePicker requires DateTime?
+    private DateTime? _rIncidentDateNullable
+    {
+        get => _rIncidentDate;
+        set => _rIncidentDate = value ?? DateTime.Today;
     }
 
     private async Task OpenReportDialogAsync()
     {
-        // TODO: open QuickReportDialog with HSEIncidentReportRequest form
-        // For now navigate to a new incident form
-        Snackbar.Add("Quick report dialog not yet wired. Use API directly.", Severity.Info);
+        _rIncidentType = "SPILL";
+        _rTier         = 4;
+        _rIncidentDate = DateTime.Today;
+        _rLocation     = string.Empty;
+        _rDescription  = string.Empty;
+        _rJurisdiction = "USA";
+        _showReportDialog = true;
         await Task.CompletedTask;
     }
+
+    private async Task SubmitReportAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_rDescription) || string.IsNullOrWhiteSpace(_rLocation))
+        {
+            Snackbar.Add("Description and location are required.", Severity.Warning);
+            return;
+        }
+        _reporting = true;
+        try
+        {
+            var fieldInfo = await ApiClient.GetAsync<FieldInfoDto>("api/field/current");
+            var request = new ReportIncidentRequest(
+                FieldId:      fieldInfo?.FieldId ?? string.Empty,
+                IncidentType: _rIncidentType,
+                Tier:         _rTier,
+                IncidentDate: _rIncidentDate,
+                Location:     _rLocation,
+                Description:  _rDescription,
+                Jurisdiction: _rJurisdiction);
+            var result = await ApiClient.PostAsync<ReportIncidentRequest, HSEIncidentRecord>(
+                "/api/field/current/hse/incidents", request);
+            _showReportDialog = false;
+            Snackbar.Add("Incident reported.", Severity.Success);
+            if (result != null)
+                NavigationManager.NavigateTo($"/ppdm39/hse/incidents/{Uri.EscapeDataString(result.IncidentId)}");
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to report incident.", Severity.Error);
+        }
+        finally { _reporting = false; }
+    }
+
+    private class FieldInfoDto { public string? FieldId { get; set; } }
 
     private record IncidentRow(
         string IncidentId, DateTime IncidentDate, string IncidentType,

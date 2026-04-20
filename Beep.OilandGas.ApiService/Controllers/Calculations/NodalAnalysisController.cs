@@ -29,13 +29,15 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
         {
             try
             {
+                if (request.AnalysisParameters == null)
+                    return BadRequest(new { error = "AnalysisParameters are required" });
                 var result = await _service.PerformNodalAnalysisAsync(request.WellUWI, request.AnalysisParameters);
                 return Ok(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing nodal analysis for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -50,7 +52,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error optimizing system for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -65,13 +67,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving nodal analysis result");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
         [HttpGet("history/{wellUWI}")]
         public async Task<ActionResult<List<NodalAnalysisRunResult>>> GetHistory(string wellUWI)
         {
+            if (string.IsNullOrWhiteSpace(wellUWI)) return BadRequest(new { error = "Well UWI is required." });
             try
             {
                 var result = await _service.GetAnalysisHistoryAsync(wellUWI);
@@ -80,7 +83,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting nodal analysis history for well {WellUWI}", wellUWI);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

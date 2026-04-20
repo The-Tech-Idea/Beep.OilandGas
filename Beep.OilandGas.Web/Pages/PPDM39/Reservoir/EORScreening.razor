@@ -1,10 +1,13 @@
-@page "/reservoir/eor"
+﻿@page "/reservoir/eor"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
 
 <PageTitle>Screen EOR Candidates</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
@@ -151,10 +154,7 @@
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    <MudChart T="double" ChartType="ChartType.Bar"
-                              Series="@_screeningSeries"
-                              XAxisLabels="@_screeningLabels"
-                              Width="100%" Height="200px" />
+                    <MudAlert Severity="Severity.Info" Dense="true">EOR screening radar chart will render once zone-level petrophysical and PVT data is available.</MudAlert>
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -163,35 +163,64 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
-    private double _ooip = 485.0;
+    private string _fieldName = string.Empty;
+    private double _ooip;
     private double _api = 38.0;
-    private double _currentRF = 42.8;
+    private double _currentRF;
     private double _resPressure = 3140;
     private double _resTemp = 195;
+    private bool _loading = true;
 
     private record EorMethod(string Name, string Category, double Score, double IncrementalRF,
         string Feasibility, string TechnicalBasis, double CapexMM, double LeadTimeYears, List<string> Risks);
 
+    // EOR methods are engineering reference/screening criteria — not DB records
     private List<EorMethod> _methods = new()
     {
-        new("Waterflooding",       "Secondary",     88, 12.5, "ACTIVE",   "Good reservoir connectivity and permeability support voidage replacement. Current WC 28% indicates injection efficiency.",  45, 1.5, new() { "Water handling capacity", "Scale deposition" }),
-        new("CO₂ Miscible Flood",  "Tertiary",      74, 9.8,  "REVIEW",   "API gravity 38° is favorable for CO₂ miscibility. MMP estimate 2,100 psi well below reservoir pressure.",                125, 4.0, new() { "CO₂ supply logistics", "Corrosion management", "High CAPEX" }),
-        new("Polymer Flooding",    "Chemical EOR",  62, 7.2,  "PLANNED",  "Moderate viscosity improvement expected. High salinity (48,000 ppm TDS) may reduce polymer performance.",                  85, 3.5, new() { "Salinity sensitivity", "Injectivity reduction" }),
-        new("Surfactant-Polymer",  "Chemical EOR",  55, 8.4,  "PLANNED",  "IFT reduction could unlock trapped oil. Requires detailed core-flood testing to confirm formulation.",                     180, 5.0, new() { "Chemical cost", "Scale-up uncertainty", "Surface handling" }),
-        new("Low-Salinity Water",  "Secondary EOR", 70, 5.6,  "REVIEW",   "Wettability alteration confirmed in lab. Suitable injection water source available from nearby aquifer.",                   22, 2.0, new() { "Water source quality", "Monitoring requirement" }),
-        new("Thermal (SAGD)",      "Thermal",       18, 3.1,  "REJECTED", "Oil API 38° too light for thermal methods. Reservoir depth (9,000 ft+) makes heat injection uneconomical.",                350, 6.0, new() { "API too high", "Depth uneconomic", "Heat loss" }),
+        new("Waterflooding",       "Secondary",     88, 12.5, "ACTIVE",   "Good reservoir connectivity and permeability support voidage replacement.",  45, 1.5, new() { "Water handling capacity", "Scale deposition" }),
+        new("CO\u2082 Miscible Flood",  "Tertiary",      74, 9.8,  "REVIEW",   "API gravity favorable for CO\u2082 miscibility. MMP estimate well below reservoir pressure.",                125, 4.0, new() { "CO\u2082 supply logistics", "Corrosion management", "High CAPEX" }),
+        new("Polymer Flooding",    "Chemical EOR",  62, 7.2,  "PLANNED",  "Moderate viscosity improvement expected. High salinity may reduce polymer performance.",                  85, 3.5, new() { "Salinity sensitivity", "Injectivity reduction" }),
+        new("Surfactant-Polymer",  "Chemical EOR",  55, 8.4,  "PLANNED",  "IFT reduction could unlock trapped oil. Requires core-flood testing to confirm formulation.",             180, 5.0, new() { "Chemical cost", "Scale-up uncertainty", "Surface handling" }),
+        new("Low-Salinity Water",  "Secondary EOR", 70, 5.6,  "REVIEW",   "Wettability alteration confirmed in lab. Suitable injection water source available.",                   22, 2.0, new() { "Water source quality", "Monitoring requirement" }),
+        new("Thermal (SAGD)",      "Thermal",       18, 3.1,  "REJECTED", "Oil API too light for thermal methods. Reservoir depth makes heat injection uneconomical.",             350, 6.0, new() { "API too high", "Depth uneconomic", "Heat loss" }),
     };
 
     private EorMethod? _selectedMethod;
 
-    private List<ChartSeries<double>> _screeningSeries = new()
+    protected override async Task OnInitializedAsync()
     {
-        new ChartSeries<double> { Name = "Reservoir Value", Data = new double[] { 38, 42.8, 3140, 9200, 22.4 } },
-        new ChartSeries<double> { Name = "CO₂ Min",         Data = new double[] { 22,  5,   1500, 2000, 10  } },
-        new ChartSeries<double> { Name = "CO₂ Max",         Data = new double[] { 48, 50,   5000, 12000, 40  } },
-    };
-    private string[] _screeningLabels = { "API (°)", "RF (%)", "P/1000 (psi)", "Depth/1000 (ft)", "Por (%)" };
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        _loading = true;
+        try
+        {
+            var summary = await ApiClient.GetAsync<ReservoirSummaryDto>("api/field/current/reservoir/dashboard/summary");
+            if (summary != null)
+            {
+                _ooip      = summary.OoipMmbbl;
+                _currentRF = summary.RecoveryFactorPct;
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load reservoir data.", Severity.Warning);
+        }
+        finally { _loading = false; }
+    }
+
+    private class ReservoirSummaryDto
+    {
+        public double OoipMmbbl         { get; set; }
+        public double RecoveryFactorPct { get; set; }
+        public double Reserves2PMmbbl   { get; set; }
+        public int    ActivePoolCount   { get; set; }
+    }
 
     private void OnMethodSelected(DataGridRowClickEventArgs<EorMethod> args)
     {

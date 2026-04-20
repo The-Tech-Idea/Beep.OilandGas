@@ -49,16 +49,6 @@ namespace Beep.OilandGas.Web.Services
     }
 
     /// <summary>
-    /// Field lifecycle summary
-    /// </summary>
-    public class FieldLifecycleSummary
-    {
-        public string? CurrentPhase { get; set; }
-        public Dictionary<string, int>? PhaseCounts { get; set; }
-        public Dictionary<string, object>? PhaseSummaries { get; set; }
-    }
-
-    /// <summary>
     /// Work order cost request
     /// </summary>
     public class WorkOrderCostRequest

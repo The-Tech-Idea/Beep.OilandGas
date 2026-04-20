@@ -1,13 +1,12 @@
-@page "/ppdm39/pumps/suckerrodpumping"
+﻿@page "/ppdm39/pumps/suckerrodpumping"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.Pumps
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Client.App
-@inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 @inject IPumpServiceClient PumpService
-
+@inject ApiClient ApiClient
+@inject AuthenticationStateProvider AuthStateProvider
 <PageTitle>Design Sucker Rod Pump System</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
@@ -83,7 +82,7 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _wellUWI = string.Empty;
     private decimal _wellDepth = 5000;
     private decimal _tubingDiameter = 2.5m;
@@ -96,7 +95,51 @@
     private bool _isLoading = false;
     private SuckerRodPumpDesign? _pumpDesign;
     private SuckerRodPumpPerformance? _performance;
-    private string? _currentUserId = "system";
+    private string? _currentUserId;
+
+    private sealed class WellDto
+    {
+        public string UWI { get; set; } = string.Empty;
+        public string? WELL_NAME { get; set; }
+        public decimal? FINAL_TD { get; set; }
+        public string? ASSIGNED_FIELD { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            try
+            {
+                var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+                if (summary != null)
+                    _fieldName = summary.FieldName ?? _fieldName;
+            }
+            catch { /* field name is non-critical */ }
+
+            try
+            {
+                var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+                _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+
+                var wells = await ApiClient.GetAsync<List<WellDto>>("api/field/current/development/wells") ?? new();                if (wells != null && wells.Count > 0)
+                {
+                    _fieldName = wells[0].ASSIGNED_FIELD ?? _fieldName;
+                    _wellUWI = wells[0].UWI;
+                    _wellDepth = wells[0].FINAL_TD ?? _wellDepth;
+                }
+            }
+            catch (Exception)
+            {
+                Snackbar.Add("Error loading wells.", Severity.Warning);
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
 
     private async Task DesignPump()
     {
@@ -119,9 +162,9 @@
             _pumpDesign = await PumpService.DesignSuckerRodPumpSystemAsync(_wellUWI, wellProperties);
             Snackbar.Add("Pump design completed", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error designing pump: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error designing pump.", Severity.Error);
         }
         finally
         {
@@ -145,9 +188,9 @@
                 Snackbar.Add("Pump design saved successfully", Severity.Success);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error saving design: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error saving design.", Severity.Error);
         }
     }
 
@@ -165,9 +208,9 @@
             _performance = await PumpService.AnalyzeSuckerRodPumpPerformanceAsync(_pumpId);
             Snackbar.Add("Performance analysis completed", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error analyzing performance: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error analyzing performance.", Severity.Error);
         }
         finally
         {

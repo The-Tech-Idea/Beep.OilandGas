@@ -48,7 +48,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (request == null || string.IsNullOrWhiteSpace(request.EntityId))
                 return BadRequest("EntityId is required in the request body.");
 
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -204,6 +204,136 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             {
                 _logger.LogError(ex, "Error deferring gate {GateId}", gateId);
                 return StatusCode(500, "Error deferring gate.");
+            }
+        }
+
+        /// <summary>List all gate review process instances for the current field.</summary>
+        [HttpGet]
+        [ProducesResponseType(typeof(List<ProcessInstanceSummary>), 200)]
+        [ProducesResponseType(400)]
+        public async Task<ActionResult<List<ProcessInstanceSummary>>> GetGatesAsync(
+            [FromQuery] string? status = null)
+        {
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+            if (string.IsNullOrEmpty(fieldId))
+                return BadRequest("No active field selected.");
+
+            try
+            {
+                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "GATE_REVIEW");
+                var summaries = new List<ProcessInstanceSummary>();
+                if (instances != null)
+                {
+                    foreach (var inst in instances)
+                    {
+                        var s = new ProcessInstanceSummary
+                        {
+                            InstanceId     = inst.InstanceId,
+                            ProcessId      = inst.ProcessId,
+                            ProcessType    = inst.EntityType,
+                            EntityId       = inst.EntityId,
+                            EntityType     = inst.EntityType,
+                            CurrentStepId  = inst.CurrentStepId,
+                            Status         = inst.Status.ToString(),
+                            StartedAt      = inst.StartDate,
+                            StartedBy      = inst.StartedBy
+                        };
+                        if (!string.IsNullOrWhiteSpace(status) &&
+                            !string.Equals(s.Status, status, StringComparison.OrdinalIgnoreCase))
+                            continue;
+                        summaries.Add(s);
+                    }
+                }
+                return Ok(summaries);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error listing gate reviews for field {FieldId}", fieldId);
+                return StatusCode(500, "Error retrieving gate reviews.");
+            }
+        }
+
+        /// <summary>Get a specific gate review process instance by ID.</summary>
+        [HttpGet("{gateId}")]
+        [ProducesResponseType(typeof(ProcessInstanceSummary), 200)]
+        [ProducesResponseType(404)]
+        public async Task<ActionResult<ProcessInstanceSummary>> GetGateAsync(string gateId)
+        {
+            if (string.IsNullOrWhiteSpace(gateId))
+                return BadRequest("gateId is required.");
+
+            try
+            {
+                var instance = await _processService.GetProcessInstanceAsync(gateId);
+                if (instance == null)
+                    return NotFound($"Gate review '{gateId}' not found.");
+
+                var summary = new ProcessInstanceSummary
+                {
+                    InstanceId    = instance.InstanceId,
+                    ProcessId     = instance.ProcessId,
+                    ProcessType   = instance.EntityType,
+                    EntityId      = instance.EntityId,
+                    EntityType    = instance.EntityType,
+                    CurrentStepId = instance.CurrentStepId,
+                    Status        = instance.Status.ToString(),
+                    StartedAt     = instance.StartDate,
+                    StartedBy     = instance.StartedBy,
+                    CompletedAt   = instance.CompletionDate
+                };
+                return Ok(summary);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving gate {GateId}", gateId);
+                return StatusCode(500, "Error retrieving gate review.");
+            }
+        }
+
+        /// <summary>List gate reviews that are pending approval for the current field.</summary>
+        [HttpGet("pending")]
+        [ProducesResponseType(typeof(List<ProcessInstanceSummary>), 200)]
+        [ProducesResponseType(400)]
+        public async Task<ActionResult<List<ProcessInstanceSummary>>> GetPendingGatesAsync()
+        {
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+            if (string.IsNullOrEmpty(fieldId))
+                return BadRequest("No active field selected.");
+
+            try
+            {
+                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "GATE_REVIEW");
+                var pending   = new List<ProcessInstanceSummary>();
+                if (instances != null)
+                {
+                    foreach (var inst in instances)
+                    {
+                        var statusStr = inst.Status.ToString();
+                        if (!string.Equals(statusStr, "IN_PROGRESS", StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(statusStr, "SUBMITTED",   StringComparison.OrdinalIgnoreCase) &&
+                            !string.Equals(statusStr, "NOT_STARTED", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        pending.Add(new ProcessInstanceSummary
+                        {
+                            InstanceId    = inst.InstanceId,
+                            ProcessId     = inst.ProcessId,
+                            ProcessType   = inst.EntityType,
+                            EntityId      = inst.EntityId,
+                            EntityType    = inst.EntityType,
+                            CurrentStepId = inst.CurrentStepId,
+                            Status        = statusStr,
+                            StartedAt     = inst.StartDate,
+                            StartedBy     = inst.StartedBy
+                        });
+                    }
+                }
+                return Ok(pending);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving pending gates for field {FieldId}", fieldId);
+                return StatusCode(500, "Error retrieving pending gate reviews.");
             }
         }
 

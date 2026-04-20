@@ -1,13 +1,14 @@
-@page "/ppdm39/exploration/prospects"
+﻿@page "/ppdm39/exploration/prospects"
 @using Beep.OilandGas.Models.Data.ProspectIdentification
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Client.App
-@inject IBeepOilandGasApp BeepApp
+@using System.Security.Claims
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject NavigationManager NavigationManager
 @inject IOperationsServiceClient OperationsService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Evaluate Exploration Prospects</PageTitle>
 
@@ -135,13 +136,23 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<Prospect>? _prospects;
     private bool _isLoading = false;
-    private string? _currentUserId = "system"; // TODO: Get from authentication context
+    private string? _currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
         await LoadProspects();
     }
 
@@ -152,9 +163,9 @@
         {
             _prospects = await OperationsService.GetProspectsAsync();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading prospects: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading prospects.", Severity.Error);
             _prospects = new List<Prospect>();
         }
         finally
@@ -187,9 +198,9 @@
                 Snackbar.Add("Prospect created successfully", Severity.Success);
                 await LoadProspects();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Snackbar.Add($"Error creating prospect: {ex.Message}", Severity.Error);
+                Snackbar.Add("Error creating prospect.", Severity.Error);
             }
         }
     }
@@ -210,9 +221,9 @@
                 Snackbar.Add("Prospect evaluation updated successfully", Severity.Success);
                 await LoadProspects();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Snackbar.Add($"Error updating prospect: {ex.Message}", Severity.Error);
+                Snackbar.Add("Error updating prospect.", Severity.Error);
             }
         }
     }
@@ -229,13 +240,13 @@
             try
             {
                 // Delete via API server
-                await ApiClient.DeleteAsync($"/api/prospectidentification/{prospect.ProspectId}?userId={_currentUserId}");
+                await ApiClient.DeleteAsync($"/api/prospectidentification/{Uri.EscapeDataString(prospect.ProspectId)}?userId={_currentUserId}");
                 Snackbar.Add("Prospect deleted successfully", Severity.Success);
                 await LoadProspects();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Snackbar.Add($"Error deleting prospect: {ex.Message}", Severity.Error);
+                Snackbar.Add("Error deleting prospect.", Severity.Error);
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -80,12 +80,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for royalty payment");
-                return StatusCode(500, new { error = "Royalty payment created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Royalty payment created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating royalty payment");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating royalties");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -187,7 +187,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting royalty calculations");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -209,7 +209,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Royalty
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting royalty payments");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

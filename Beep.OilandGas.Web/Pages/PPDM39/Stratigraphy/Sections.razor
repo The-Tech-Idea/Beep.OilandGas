@@ -1,4 +1,4 @@
-@page "/ppdm39/stratigraphy/sections"
+﻿@page "/ppdm39/stratigraphy/sections"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -93,7 +93,7 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _searchUwi = string.Empty;
     private List<STRAT_WELL_SECTION>? _sections;
     private Dictionary<string, string> _stratUnitNames = new();
@@ -101,6 +101,14 @@
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
         await LoadStratUnits();
         await LoadSections();
     }
@@ -109,8 +117,7 @@
     {
         try
         {
-            var units = await ApiClient.GetAsync<List<STRAT_UNIT>>("/api/stratigraphy/units");
-            if (units != null)
+            var units = await ApiClient.GetAsync<List<STRAT_UNIT>>("/api/stratigraphy/units") ?? new();            if (units != null)
             {
                 _stratUnitNames = units.ToDictionary(
                     u => u.STRAT_UNIT_ID ?? string.Empty,
@@ -131,11 +138,10 @@
         _isLoading = true;
         try
         {
-            _sections = await ApiClient.GetAsync<List<STRAT_WELL_SECTION>>("/api/stratigraphy/well-sections");
-        }
-        catch (Exception ex)
+            _sections = await ApiClient.GetAsync<List<STRAT_WELL_SECTION>>("/api/stratigraphy/well-sections") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading sections: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading sections.", Severity.Error);
         }
         finally
         {
@@ -154,11 +160,10 @@
         _isLoading = true;
         try
         {
-            _sections = await ApiClient.GetAsync<List<STRAT_WELL_SECTION>>($"/api/stratigraphy/well-sections/well/{_searchUwi}");
-        }
-        catch (Exception ex)
+            _sections = await ApiClient.GetAsync<List<STRAT_WELL_SECTION>>($"/api/stratigraphy/well-sections/well/{Uri.EscapeDataString(_searchUwi)}") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error searching sections: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error searching sections.", Severity.Error);
         }
         finally
         {

@@ -37,7 +37,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -51,6 +51,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             [FromQuery] string? organizationId = null,
             [FromQuery] bool includeInherited = true)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { error = "User ID is required." });
             try
             {
                 var assets = await _accessControlService.GetUserAccessibleAssetsAsync(
@@ -59,7 +61,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -71,6 +73,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string userId, 
             [FromQuery] string? organizationId = null)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { error = "User ID is required." });
             try
             {
                 var roles = await _accessControlService.GetUserRolesAsync(userId, organizationId);
@@ -78,7 +82,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -91,6 +95,10 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string permissionId, 
             [FromQuery] string? organizationId = null)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { error = "User ID is required." });
+            if (string.IsNullOrWhiteSpace(permissionId))
+                return BadRequest(new { error = "Permission ID is required." });
             try
             {
                 var hasPermission = await _accessControlService.HasPermissionAsync(userId, permissionId, organizationId);
@@ -98,7 +106,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -121,7 +129,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -141,7 +149,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -153,6 +161,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string roleId, 
             [FromQuery] string? organizationId = null)
         {
+            if (string.IsNullOrWhiteSpace(roleId))
+                return BadRequest(new { error = "Role ID is required." });
             try
             {
                 var permissions = await _accessControlService.GetRolePermissionsAsync(roleId, organizationId);
@@ -160,7 +170,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -173,6 +183,10 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string permissionId, 
             [FromQuery] string? organizationId = null)
         {
+            if (string.IsNullOrWhiteSpace(roleId))
+                return BadRequest(new { error = "Role ID is required." });
+            if (string.IsNullOrWhiteSpace(permissionId))
+                return BadRequest(new { error = "Permission ID is required." });
             try
             {
                 var result = await _accessControlService.AssignPermissionToRoleAsync(roleId, permissionId, organizationId);
@@ -180,7 +194,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -193,6 +207,10 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string permissionId, 
             [FromQuery] string? organizationId = null)
         {
+            if (string.IsNullOrWhiteSpace(roleId))
+                return BadRequest(new { error = "Role ID is required." });
+            if (string.IsNullOrWhiteSpace(permissionId))
+                return BadRequest(new { error = "Permission ID is required." });
             try
             {
                 var result = await _accessControlService.RemovePermissionFromRoleAsync(roleId, permissionId, organizationId);
@@ -200,7 +218,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

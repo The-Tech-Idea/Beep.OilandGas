@@ -1,10 +1,14 @@
-@page "/production/well-performance"
+﻿@page "/production/well-performance"
+@inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@using System.Security.Claims
 
 <PageTitle>Optimise Well Performance</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     @* ── Header ──────────────────────────────────────────────────────────── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
@@ -171,11 +175,11 @@
                     </MudCardHeader>
                     <MudCardContent>
                         <MudAlert Severity="Severity.Warning" Class="mb-3">
-                            <strong>@_recommendation.Action</strong><br/>
-                            @_recommendation.Rationale
+                            <strong>@_recommendation?.Action</strong><br/>
+                            @_recommendation?.Rationale
                         </MudAlert>
                         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
-                            Estimated uplift: <strong>@_recommendation.UpliftBopd BOPD</strong>
+                            Estimated uplift: <strong>@_recommendation?.UpliftBopd BOPD</strong>
                         </MudText>
                         <MudStack Spacing="2">
                             <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary"
@@ -229,85 +233,214 @@
     [SupplyParameterFromQuery(Name = "wellId")]
     public string? WellId { get; set; }
 
-    private string _fieldName = "Current Field";
-    private string _selectedWellId = "W-B2";
+    private string _fieldName = string.Empty;
+    private string _selectedWellId = string.Empty;
     private string _period = "30d";
     private string _dcaDi = "18";
     private string _dcaB = "0.5";
-    private string _dcaEur = "2,140";
+    private string _dcaEur = "—";
+    private bool   _loading = true;
 
     private record WellOption(string Id, string Name);
-    private List<WellOption> _wellOptions = new()
-    {
-        new("W-A1", "DEV-A1"), new("W-A2", "DEV-A2"), new("W-A3", "DEV-A3"),
-        new("W-B1", "DEV-B1"), new("W-B2", "DEV-B2"), new("W-C1", "DEV-C1"),
-    };
+    private List<WellOption> _wellOptions = new();
 
     private record WellDetail(string WellId, string Status, double OilRate, double PotentialRate, double CumOil);
-    private WellDetail _selectedWell = new("W-B2", "TESTING", 1_200, 2_500, 145);
+    private WellDetail _selectedWell = new(string.Empty, "UNKNOWN", 0, 0, 0);
 
-    private List<PerformanceFinding> _findings = new()
-    {
-        new("Rate 52% below potential",    "Current rate 1,200 BOPD vs 2,500 BOPD potential. Likely ESP issue.", "HIGH"),
-        new("Rising ESP amp draw",         "Amp draw increased 12% over past 7 days — possible gas ingestion.", "HIGH"),
-        new("GOR trending up",             "GOR increased from 400 to 580 scf/bbl over 30 days.",              "MEDIUM"),
-        new("Water cut stable",            "No significant water cut change. Not a water channelling issue.",   "LOW"),
-    };
+    private List<PerformanceFinding> _findings   = new();
+    private Recommendation?          _recommendation;
 
     private record Recommendation(string Action, string Rationale, int UpliftBopd);
-    private Recommendation _recommendation = new(
-        "ESP Pull & Replacement",
-        "High amp draw and rising GOR suggest impeller wear or gas lock. Pull ESP, inspect, and replace with upsized unit.",
-        1_300);
+    private List<WellHistoryItem> _history = new();
 
-    private List<WellHistoryItem> _history = new()
-    {
-        new("Well test performed — potential confirmed at 2,500 BOPD", "10 Mar 2026", "S. Lee"),
-        new("Choke adjusted from 48/64\" to 56/64\"",                  "15 Feb 2026", "J. Smith"),
-        new("ESP installed — Unit Model Y-4500",                       "20 Jan 2026", "M. Torres"),
-        new("Well brought on production",                              "05 Jan 2026", "J. Smith"),
-    };
+    private List<ChartSeries<double>> _rateSeries     = new();
+    private string[]                  _rateLabels      = Array.Empty<string>();
+    private List<ChartSeries<double>> _pressureSeries  = new();
+    private List<ChartSeries<double>> _dcaSeries       = new();
+    private string[]                  _dcaLabels       = Array.Empty<string>();
+    private List<ChartSeries<double>> _wcSeries        = new();
 
-    private List<ChartSeries<double>> _rateSeries = new()
+    protected override async Task OnInitializedAsync()
     {
-        new ChartSeries<double> { Name = "Actual",    Data = new double[] { 2200, 2150, 2100, 2050, 1950, 1900, 1800, 1700, 1600, 1500, 1400, 1300, 1200 } },
-        new ChartSeries<double> { Name = "Potential", Data = new double[] { 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500 } },
-    };
-    private string[] _rateLabels = { "W1", "", "", "", "W5", "", "", "", "W9", "", "", "", "W13" };
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
 
-    private List<ChartSeries<double>> _pressureSeries = new()
-    {
-        new ChartSeries<double> { Name = "WHP (psi/10)", Data = new double[] { 180, 178, 175, 172, 168, 163, 159, 155, 150, 145, 141, 138, 135 } },
-        new ChartSeries<double> { Name = "GOR (scf/10)", Data = new double[] { 40,  41,  43,  44,  46,  48,  50,  53,  55,  56,  57,  57,  58  } },
-    };
+        _loading = true;
+        try
+        {
+            // Load well list for the selector
+            var wells = await ApiClient.GetAsync<List<WellListDto>>("api/field/current/development/wells") ?? new();            if (wells != null && wells.Count > 0)
+            {
+                _wellOptions = wells
+                    .Select(w => new WellOption(w.UWI ?? string.Empty, w.WellName ?? w.UWI ?? "Unknown"))
+                    .Where(o => !string.IsNullOrEmpty(o.Id))
+                    .ToList();
+            }
 
-    private List<ChartSeries<double>> _dcaSeries = new()
-    {
-        new ChartSeries<double> { Name = "Actual",   Data = new double[] { 2200, 2100, 1950, 1800, 1600, 1400, 1200 } },
-        new ChartSeries<double> { Name = "DCA Fit",  Data = new double[] { 2200, 2070, 1940, 1820, 1710, 1610, 1520 } },
-        new ChartSeries<double> { Name = "Forecast", Data = new double[] {    0,    0,    0,    0,    0,    0, 1520, 1440, 1360, 1290, 1220, 1160 } },
-    };
-    private string[] _dcaLabels = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+            // Use query-string wellId, or first well in list
+            _selectedWellId = !string.IsNullOrWhiteSpace(WellId)
+                ? WellId
+                : _wellOptions.FirstOrDefault()?.Id ?? string.Empty;
 
-    private List<ChartSeries<double>> _wcSeries = new()
-    {
-        new ChartSeries<double> { Name = "Water Cut %", Data = new double[] { 20, 21, 22, 21, 22, 23, 24, 25, 25, 26, 27, 27, 28 } },
-    };
-
-    protected override void OnInitialized()
-    {
-        if (!string.IsNullOrWhiteSpace(WellId))
-            _selectedWellId = WellId;
+            if (!string.IsNullOrEmpty(_selectedWellId))
+                await LoadWellPerformanceAsync(_selectedWellId);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load well list.", Severity.Warning);
+        }
+        finally { _loading = false; }
     }
 
-    private void OnWellChanged(string wellId)
+    private async Task OnWellChanged(string wellId)
     {
         _selectedWellId = wellId;
-        // TODO: GET /api/production/wells/{wellId}/performance
+        await LoadWellPerformanceAsync(wellId);
+    }
+
+    private async Task LoadWellPerformanceAsync(string wellId)
+    {
+        if (string.IsNullOrEmpty(wellId)) return;
+        try
+        {
+            var perf = await ApiClient.GetAsync<WellPerformanceSummaryDto>(
+                $"api/field/current/production/wells/{Uri.EscapeDataString(wellId)}/performance");
+            if (perf == null) return;
+
+            _selectedWell = new WellDetail(perf.WellId, perf.Status,
+                perf.OilRate, perf.PotentialRate, perf.CumOil);
+
+            // ── Derive findings from performance numbers ──────────────────
+            _findings = new();
+            if (perf.PotentialRate > 0 && perf.OilRate < perf.PotentialRate * 0.9)
+            {
+                var gap = (int)(perf.PotentialRate - perf.OilRate);
+                var pct = (int)(100 - perf.OilRate / perf.PotentialRate * 100);
+                _findings.Add(new($"Rate {pct}% below potential",
+                    $"Current rate {perf.OilRate:N0} BOPD vs {perf.PotentialRate:N0} BOPD potential. Gap of {gap:N0} BOPD.",
+                    pct >= 40 ? "HIGH" : "MEDIUM"));
+            }
+            if (perf.WaterRate > 0 && perf.OilRate > 0)
+            {
+                var wc = perf.WaterRate / (perf.OilRate + perf.WaterRate) * 100;
+                if (wc > 60)
+                    _findings.Add(new($"High water cut ({wc:N0}%)",
+                        $"Water rate {perf.WaterRate:N0} BWPD against oil rate {perf.OilRate:N0} BOPD.",
+                        wc > 80 ? "HIGH" : "MEDIUM"));
+            }
+            if (perf.GasRate > 0 && perf.OilRate > 0)
+            {
+                var gor = perf.GasRate * 1000 / perf.OilRate; // scf/bbl
+                if (gor > 1000)
+                    _findings.Add(new($"Elevated GOR ({gor:N0} scf/bbl)",
+                        $"Gas-oil ratio suggests possible gas breakthrough or reservoir depletion.", "MEDIUM"));
+            }
+            if (_findings.Count == 0)
+                _findings.Add(new("Well performing within expected range",
+                    "No significant deviations detected. Continue routine monitoring.", "LOW"));
+
+            // ── Derive recommendation ─────────────────────────────────────
+            var highFindings = _findings.Where(f => f.Severity == "HIGH").ToList();
+            if (highFindings.Count > 0)
+            {
+                var uplift = (int)(perf.PotentialRate - perf.OilRate);
+                _recommendation = new("Well Intervention Required",
+                    string.Join(" ", highFindings.Select(f => f.Detail)),
+                    uplift > 0 ? uplift : 0);
+            }
+            else
+            {
+                _recommendation = new("Continue Production Monitoring",
+                    "Well is operating within expected parameters. Maintain current settings and review at next scheduled test.",
+                    0);
+            }
+
+            // ── Build history from well tests ─────────────────────────────
+            _history = (perf.WellTests ?? new())
+                .OrderByDescending(t => t.TestDate ?? DateTime.MinValue)
+                .Select(t => new WellHistoryItem(
+                    string.IsNullOrWhiteSpace(t.TestName)
+                        ? $"Well test — {t.TestType ?? "routine"}"
+                        : t.TestName,
+                    (t.TestDate ?? t.TestStartDate)?.ToString("dd MMM yyyy") ?? "—",
+                    t.CreateUser ?? "—"))
+                .ToList();
+
+            // ── Build chart series from well tests ────────────────────────
+            var orderedTests = (perf.WellTests ?? new())
+                .Where(t => t.TestDate.HasValue)
+                .OrderBy(t => t.TestDate)
+                .ToList();
+
+            if (orderedTests.Count >= 2)
+            {
+                _rateLabels = orderedTests.Select(t => t.TestDate!.Value.ToString("MMM''yy")).ToArray();
+                // Rate series: actual vs potential (no per-test rate in WellTestResponse; show 0-based)
+                _rateSeries = new()
+                {
+                    new ChartSeries<double> { Name = "Potential",
+                        Data = Enumerable.Repeat(perf.PotentialRate, orderedTests.Count).ToArray() },
+                };
+                _dcaLabels = _rateLabels;
+                _dcaSeries = new()
+                {
+                    new ChartSeries<double> { Name = "Tests", Data = Enumerable.Repeat(perf.OilRate, orderedTests.Count).ToArray() },
+                };
+            }
+            else
+            {
+                _rateSeries    = new();
+                _rateLabels    = Array.Empty<string>();
+                _pressureSeries= new();
+                _dcaSeries     = new();
+                _dcaLabels     = Array.Empty<string>();
+                _wcSeries      = new();
+            }
+
+            // Update DCA display fields
+            if (perf.PotentialRate > 0)
+                _dcaEur = $"{perf.PotentialRate * 365 / 1_000:N0} MBBL/yr";
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load performance data.", Severity.Warning);
+        }
+    }
+
+    private class WellListDto
+    {
+        public string? UWI      { get; set; }
+        public string? WellName { get; set; }
+    }
+
+    private class WellPerformanceSummaryDto
+    {
+        public string  WellId        { get; set; } = string.Empty;
+        public string  Status        { get; set; } = string.Empty;
+        public double  OilRate       { get; set; }
+        public double  GasRate       { get; set; }
+        public double  WaterRate     { get; set; }
+        public double  PotentialRate { get; set; }
+        public double  CumOil        { get; set; }
+        public List<WellTestDto> WellTests { get; set; } = new();
+    }
+
+    private class WellTestDto
+    {
+        public string?   TestName      { get; set; }
+        public string?   TestType      { get; set; }
+        public DateTime? TestDate      { get; set; }
+        public DateTime? TestStartDate { get; set; }
+        public string?   CreateUser    { get; set; }
     }
 
     private void CreateInterventionFromRecommendation() =>
-        NavigationManager.NavigateTo($"/production/intervention?wellId={_selectedWellId}&type=ESP");
+        NavigationManager.NavigateTo($"/production/intervention?wellId={Uri.EscapeDataString(_selectedWellId)}&type=INTERVENTION");
 
     private void LogDeviation() =>
         Snackbar.Add("Deviation logged for review", Severity.Success);

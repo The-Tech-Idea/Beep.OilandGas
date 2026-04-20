@@ -1,10 +1,13 @@
-@page "/decommissioning/well-pa"
+﻿@page "/decommissioning/well-pa"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
 
 <PageTitle>Execute Well P&amp;A Programme</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
@@ -13,7 +16,7 @@
         </MudStack>
         <MudStack Row="true" Spacing="2">
             <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add"
-                       OnClick='@(() => Snackbar.Add("New P&A campaign wizard coming soon", Severity.Info))'>
+                       OnClick='@(() => NavigationManager.NavigateTo("/ppdm39/decommissioning/well-abandonment"))'>
                 New Campaign
             </MudButton>
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
@@ -132,10 +135,9 @@
                         <CardHeaderContent><MudText Typo="Typo.subtitle1">P&amp;A Cost Trend</MudText></CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudChart T="double" ChartType="ChartType.Bar"
-                                  Series="@_paCostSeries"
-                                  XAxisLabels="@_paYears"
-                                  Width="100%" Height="180px" />
+                        <MudAlert Severity="Severity.Info" Dense="true">
+                            Cost trend data loads from the Accounting module once cost records are linked to these wells.
+                        </MudAlert>
                         <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
                             Click a well to view its P&amp;A programme detail.
                         </MudText>
@@ -148,63 +150,99 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private PAWell? _selectedWell;
-    private int _paCompleted = 3;
-    private double _paCostMm = 19.4;
+    private bool _loading = true;
+
+    private int _paCompleted;
+    private double _paCostMm;
 
     private record PAWell(string WellId, string WellType, string SpudDate, string PlannedPA,
         double EstCostUsd, string Phase);
 
-    private List<PAWell> _wells = new()
-    {
-        new("EXP-01",  "Exploration",  "Mar 2008", "Q2 2026",  3_800_000, "APPROVAL"),
-        new("EXP-02",  "Exploration",  "Jun 2009", "Q3 2026",  4_200_000, "PLANNING"),
-        new("DEV-A3",  "Development",  "Nov 2012", "Q2 2026",  5_100_000, "EXECUTION"),
-        new("DEV-A4",  "Development",  "Feb 2013", "Q4 2026",  5_400_000, "PLANNING"),
-        new("INJTW-01","Water Injector","Aug 2014", "Q1 2027",  4_600_000, "PLANNED"),
-        new("OBS-01",  "Observation",  "Dec 2010", "Q3 2026",  2_900_000, "PLANNING"),
-    };
+    private List<PAWell> _wells = new();
 
     private record PAStep(string Name, string Details, bool IsComplete, bool IsActive);
     private List<PAStep> _paSteps = new()
     {
-        new("Preliminary Assessment",   "Well history review, hazard identification", true,  false),
-        new("Engineering Design",       "P&A programme & procedures written",         true,  false),
-        new("Regulatory Submission",    "NUPRC permit application submitted",          true,  false),
-        new("Regulatory Approval",      "Awaiting permit — ETA 30 Apr 2026",           false, true ),
-        new("Mobilise Rig",             "Jack-up secured for Q2 2026",                false, false),
-        new("Execute P&A Operations",   "Cement plugs, tubing retrieval, wellhead removal", false, false),
-        new("Site Restoration",         "Location clean-up and verification",          false, false),
-        new("Final Documentation",      "As-left well records submitted",              false, false),
+        new("Preliminary Assessment", "Well history review, hazard identification",           true,  false),
+        new("Engineering Design",     "P&A programme & procedures written",                   true,  false),
+        new("Regulatory Submission",  "Permit application submitted",                          true,  false),
+        new("Regulatory Approval",    "Awaiting permit",                                      false, true ),
+        new("Mobilise Rig",           "Rig mobilisation",                                     false, false),
+        new("Execute P&A Operations", "Cement plugs, tubing retrieval, wellhead removal",     false, false),
+        new("Site Restoration",       "Location clean-up and verification",                   false, false),
+        new("Final Documentation",    "As-left well records submitted to regulator",          false, false),
     };
 
-    private List<ChartSeries<double>> _paCostSeries = new()
+    protected override async Task OnInitializedAsync()
     {
-        new ChartSeries<double> { Name = "Budget ($MM)",  Data = new double[] { 6, 8, 10, 14, 28, 22 } },
-        new ChartSeries<double> { Name = "Actuals ($MM)", Data = new double[] { 5, 7, 9,  12, 0,  0  } },
-    };
-    private string[] _paYears = { "2021", "2022", "2023", "2024", "2025", "2026" };
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
 
-    private void OnWellSelected(DataGridRowClickEventArgs<PAWell> args)
-    {
-        _selectedWell = args.Item;
-        // Update timeline based on selected well phase
+        _loading = true;
+        try
+        {
+            var raw = await ApiClient.GetAsync<List<WellAbandonmentDto>>("api/field/current/decommissioning/wells-abandoned") ?? new();            if (raw != null)
+            {
+                _wells = raw.Select(r => new PAWell(
+                    r.WellId ?? r.AbandonmentId,
+                    r.AbandonmentType ?? "Well",
+                    r.AbandonmentStartDate?.ToLocalTime().ToString("MMM yyyy") ?? "—",
+                    r.AbandonmentEndDate?.ToLocalTime().ToString("MMM yyyy") ?? "TBD",
+                    0,
+                    r.Status ?? "PLANNED")).ToList();
+
+                _paCompleted = _wells.Count(w =>
+                    w.Phase.Equals("Complete", StringComparison.OrdinalIgnoreCase) ||
+                    w.Phase.Equals("COMPLETE", StringComparison.OrdinalIgnoreCase));
+                _paCostMm = 0;
+            }
+        }
+        catch (Exception) { Snackbar.Add("Failed to load wells.", Severity.Warning); }
+        finally { _loading = false; }
     }
 
-    private void ApprovePA()
+    private class WellAbandonmentDto
     {
-        Snackbar.Add($"{_selectedWell?.WellId} P&A programme approved", Severity.Success);
-        _selectedWell = null;
+        public string    AbandonmentId       { get; set; } = string.Empty;
+        public string?   WellId              { get; set; }
+        public string?   AbandonmentType     { get; set; }
+        public string?   Status              { get; set; }
+        public DateTime? AbandonmentStartDate{ get; set; }
+        public DateTime? AbandonmentEndDate  { get; set; }
+    }
+
+    private void OnWellSelected(DataGridRowClickEventArgs<PAWell> args) =>
+        _selectedWell = args.Item;
+
+    private async Task ApprovePA()
+    {
+        if (_selectedWell == null) return;
+        try
+        {
+            await ApiClient.PatchAsync<object, object>(
+                $"/api/field/current/decommissioning/wells-abandoned/{_selectedWell.WellId}/approve", new { });
+            Snackbar.Add($"{_selectedWell.WellId} P&A programme approved", Severity.Success);
+            _selectedWell = null;
+        }
+        catch (Exception) { Snackbar.Add("Approval failed.", Severity.Error); }
     }
 
     private void UpdateProgress() =>
-        Snackbar.Add("Progress updated", Severity.Success);
+        NavigationManager.NavigateTo(_selectedWell != null
+            ? $"/ppdm39/decommissioning/well-abandonment?wellId={Uri.EscapeDataString(_selectedWell.WellId)}"
+            : "/ppdm39/decommissioning/well-abandonment");
 
     private Color StepColor(bool complete, bool active) => (complete, active) switch
     {
-        (true, _)    => Color.Success,
-        (_, true)    => Color.Primary,
-        _            => Color.Default,
+        (true, _) => Color.Success,
+        (_, true) => Color.Primary,
+        _         => Color.Default,
     };
 }

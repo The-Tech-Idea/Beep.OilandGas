@@ -1,0 +1,317 @@
+﻿@page "/ppdm39/hse"
+@using Beep.OilandGas.Models.Data.HSE
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>HSE Dashboard</PageTitle>
+
+<MudStack Spacing="3">
+
+    @* ── Header ───────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">HSE Dashboard</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                API RP 754 · IOGP 2022e · OSHA 29 CFR 1910
+            </MudText>
+        </MudStack>
+        <MudButton StartIcon="@Icons.Material.Outlined.ReportProblem"
+                   Variant="Variant.Filled" Color="Color.Error"
+                   OnClick="OpenReportDialog">Report Incident</MudButton>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+
+    @* ── KPI Cards ─────────────────────────────────────────────────────────── *@
+    @if (_kpi is not null)
+    {
+        <MudGrid Spacing="2">
+            <MudItem xs="6" md="2">
+                <MudPaper Elevation="2" Class="pa-3 text-center">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Tier 1 PSE Rate</MudText>
+                    <MudText Typo="Typo.h6" Color="@(_kpi.Tier1PSERate > 0.5 ? Color.Error : Color.Success)">
+                        @_kpi.Tier1PSERate.ToString("F3")
+                    </MudText>
+                    <MudText Typo="Typo.caption">per MM hrs</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6" md="2">
+                <MudPaper Elevation="2" Class="pa-3 text-center">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Tier 2 PSE Rate</MudText>
+                    <MudText Typo="Typo.h6" Color="@(_kpi.Tier2PSERate > 1.0 ? Color.Warning : Color.Success)">
+                        @_kpi.Tier2PSERate.ToString("F3")
+                    </MudText>
+                    <MudText Typo="Typo.caption">per MM hrs</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6" md="2">
+                <MudPaper Elevation="2" Class="pa-3 text-center">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">TRIR</MudText>
+                    <MudText Typo="Typo.h6" Color="@(_kpi.TRIR > 0.5 ? Color.Error : Color.Success)">
+                        @_kpi.TRIR.ToString("F2")
+                    </MudText>
+                    <MudText Typo="Typo.caption">per MM hrs</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6" md="2">
+                <MudPaper Elevation="2" Class="pa-3 text-center">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">LTIF</MudText>
+                    <MudText Typo="Typo.h6">@_kpi.LTIF.ToString("F2")</MudText>
+                    <MudText Typo="Typo.caption">per MM hrs</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6" md="2">
+                <MudPaper Elevation="2" Class="pa-3 text-center">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Exposure Hours</MudText>
+                    <MudText Typo="Typo.h6">@_kpi.ExposureHours.ToString("N0")</MudText>
+                    <MudText Typo="Typo.caption">YTD</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6" md="2">
+                <MudPaper Elevation="2" Class="pa-3 text-center">
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">CA On-Time %</MudText>
+                    <MudText Typo="Typo.h6" Color="@(_kpi.CAOnTimeRate < 80 ? Color.Warning : Color.Success)">
+                        @_kpi.CAOnTimeRate.ToString("F0")%
+                    </MudText>
+                    <MudText Typo="Typo.caption">YTD</MudText>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+
+    @* ── Incidents Table ───────────────────────────────────────────────────── *@
+    <MudPaper Elevation="1" Class="pa-3">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+            <MudText Typo="Typo.subtitle1">Active Incidents</MudText>
+            <MudStack Row="true" Spacing="1">
+                @foreach (var tier in new[] { 1, 2, 3, 4 })
+                {
+                    <MudChip T="int" Size="Size.Small"
+                             Color="@TierColor(tier)"
+                             Value="tier"
+                             OnClick="@(() => ToggleTierFilter(tier))">
+                        T@(tier): @_incidents.Count(i => i.Tier == tier)
+                    </MudChip>
+                }
+            </MudStack>
+        </MudStack>
+
+        @if (_incidents.Count == 0 && !_loading)
+        {
+            <MudText Color="Color.Secondary" Class="pa-4 text-center">
+                No active incidents for this field.
+            </MudText>
+        }
+        else
+        {
+            <MudTable T="HSEIncidentRecord" Items="FilteredIncidents" Dense="true" Hover="true"
+                      Elevation="0" OnRowClick="@(args => NavigateToIncident(args.Item!))">
+                <HeaderContent>
+                    <MudTh>ID</MudTh>
+                    <MudTh>Type</MudTh>
+                    <MudTh>Tier</MudTh>
+                    <MudTh>Date</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Location</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd><MudText Typo="Typo.caption" Color="Color.Primary">@context.IncidentId</MudText></MudTd>
+                    <MudTd>@context.IncidentType</MudTd>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Color="@TierColor(context.Tier)"
+                                 Value="@($"Tier {context.Tier}")">
+                            Tier @context.Tier
+                        </MudChip>
+                    </MudTd>
+                    <MudTd>@context.IncidentDate.ToString("dd-MMM-yyyy")</MudTd>
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Color="@StateColor(context.CurrentState)"
+                                 Value="@context.CurrentState">
+                            @context.CurrentState.Replace("_", " ")
+                        </MudChip>
+                    </MudTd>
+                    <MudTd>@context.Location</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <MudAlert Severity="Severity.Error" ShowCloseIcon="true"
+                  CloseIconClicked="@(() => _error = null)">@_error</MudAlert>
+    }
+
+</MudStack>
+
+@* ── Report Incident Dialog ────────────────────────────────────────────────── *@
+<MudDialog @bind-IsVisible="_showReport"
+           Options="@(new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Report Incident</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_reportForm">
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="6">
+                    <MudSelect T="string" Label="Incident Type" @bind-Value="_report.IncidentType"
+                               Required="true">
+                        <MudSelectItem Value="@IncidentType.PseTier1">PSE Tier 1</MudSelectItem>
+                        <MudSelectItem Value="@IncidentType.PseTier2">PSE Tier 2</MudSelectItem>
+                        <MudSelectItem Value="@IncidentType.NearMiss">Near Miss</MudSelectItem>
+                        <MudSelectItem Value="@IncidentType.Injury">Injury</MudSelectItem>
+                        <MudSelectItem Value="@IncidentType.Spill">Spill</MudSelectItem>
+                        <MudSelectItem Value="@IncidentType.Fire">Fire</MudSelectItem>
+                        <MudSelectItem Value="@IncidentType.Explosion">Explosion</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="int" Label="API RP 754 Tier" @bind-Value="_report.Tier" Required="true">
+                        <MudSelectItem Value="1">Tier 1 — PSE (most severe)</MudSelectItem>
+                        <MudSelectItem Value="2">Tier 2 — PSE</MudSelectItem>
+                        <MudSelectItem Value="3">Tier 3 — Near Miss</MudSelectItem>
+                        <MudSelectItem Value="4">Tier 4 — Near Miss (minor)</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudDatePicker Label="Incident Date" @bind-Date="_reportDate"
+                                   Required="true" DateFormat="dd-MMM-yyyy" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSelect T="string" Label="Jurisdiction" @bind-Value="_report.Jurisdiction">
+                        <MudSelectItem Value="@("USA")">USA (BSEE/OSHA)</MudSelectItem>
+                        <MudSelectItem Value="@("CANADA")">Canada (AER/NEB)</MudSelectItem>
+                        <MudSelectItem Value="@("INTERNATIONAL")">International (OSPAR)</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_report.Location" Label="Location"
+                                  Required="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_report.Description" Label="Description"
+                                  Lines="4" Required="true" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showReport = false)">Cancel</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled"
+                   OnClick="SubmitReportAsync" Disabled="_submitting">
+            @if (_submitting) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" /> }
+            Submit Report
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<HSEIncidentRecord> _incidents  = new();
+    private HSEKPISet?              _kpi;
+    private bool                    _loading    = true;
+    private string?                 _error;
+    private int?                    _tierFilter;
+
+    // Report dialog
+    private bool               _showReport  = false;
+    private bool               _submitting  = false;
+    private MudForm?           _reportForm;
+    private DateTime?          _reportDate  = DateTime.Today;
+    private CreateReportModel  _report      = new();
+
+    private class CreateReportModel
+    {
+        public string IncidentType { get; set; } = Beep.OilandGas.Models.Data.HSE.IncidentType.NearMiss;
+        public int    Tier         { get; set; } = 4;
+        public string Location     { get; set; } = string.Empty;
+        public string Description  { get; set; } = string.Empty;
+        public string Jurisdiction { get; set; } = "USA";
+    }
+
+    private IEnumerable<HSEIncidentRecord> FilteredIncidents =>
+        _tierFilter.HasValue
+            ? _incidents.Where(i => i.Tier == _tierFilter.Value)
+            : _incidents;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _error   = null;
+        try
+        {
+            _incidents = await ApiClient.GetAsync<List<HSEIncidentRecord>>(
+                "/api/field/current/hse/incidents") ?? new();
+            _kpi = await ApiClient.GetAsync<HSEKPISet>("/api/field/current/hse/kpi");
+        }
+        catch (Exception) { _error = "Failed to load HSE data."; Snackbar.Add(_error, Severity.Error); }
+        finally { _loading = false; }
+    }
+
+    private void ToggleTierFilter(int tier)
+        => _tierFilter = _tierFilter == tier ? null : tier;
+
+    private void OpenReportDialog()
+    {
+        _report    = new CreateReportModel();
+        _reportDate = DateTime.Today;
+        _showReport = true;
+    }
+
+    private async Task SubmitReportAsync()
+    {
+        if (_reportForm is null) return;
+        await _reportForm.ValidateAsync();
+        if (!_reportForm.IsValid) return;
+
+        _submitting = true;
+        try
+        {
+            var request = new ReportIncidentRequest(
+                FieldId:      string.Empty,  // server fills from IFieldOrchestrator
+                IncidentType: _report.IncidentType,
+                Tier:         _report.Tier,
+                IncidentDate: _reportDate ?? DateTime.Today,
+                Location:     _report.Location,
+                Description:  _report.Description,
+                Jurisdiction: _report.Jurisdiction);
+
+            await ApiClient.PostAsync<ReportIncidentRequest, HSEIncidentRecord>(
+                "/api/field/current/hse/incidents", request);
+
+            _showReport = false;
+            await LoadAsync();
+        }
+        catch (Exception) { _error = "Failed to submit report."; Snackbar.Add(_error, Severity.Error); }
+        finally { _submitting = false; }
+    }
+
+    private void NavigateToIncident(HSEIncidentRecord incident)
+        => NavigationManager.NavigateTo($"/ppdm39/hse/incident/{Uri.EscapeDataString(incident.IncidentId)}");
+
+    private static Color TierColor(int tier) => tier switch
+    {
+        1 => Color.Error,
+        2 => Color.Warning,
+        3 => Color.Info,
+        _ => Color.Default,
+    };
+
+    private static Color StateColor(string state) => state switch
+    {
+        IncidentState.Reported                => Color.Default,
+        IncidentState.UnderInvestigation      => Color.Warning,
+        IncidentState.PendingRCA              => Color.Info,
+        IncidentState.PendingCorrectiveAction => Color.Secondary,
+        IncidentState.PendingCloseOut         => Color.Primary,
+        IncidentState.Closed                  => Color.Success,
+        IncidentState.Cancelled               => Color.Error,
+        _                                     => Color.Default,
+    };
+}

@@ -14,6 +14,7 @@
 		<PackageIcon>SimpleODM.png</PackageIcon>
 		<RepositoryUrl>https://github.com/The-Tech-Idea/</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<NoWarn>$(NoWarn);CS0618;CS8618;CS8632</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>

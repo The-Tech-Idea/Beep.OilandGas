@@ -323,7 +323,6 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
         {
             // Enhanced subsonic flow rate equation with gas-specific properties
             decimal k = CalculateSpecificHeatRatio(gasProperties.GAS_SPECIFIC_GRAVITY);
-            decimal g = ChokeConstants.GravitationalAcceleration;
             decimal R = ChokeConstants.UniversalGasConstant;
 
             decimal area = choke.CHOKE_AREA / ChokeConstants.SquareInchesToSquareFeet;
@@ -429,7 +428,6 @@ namespace Beep.OilandGas.ChokeAnalysis.Calculations
         {
             // Reverse of subsonic flow rate equation
             decimal k = 1.3m;
-            decimal g = 32.174m;
             decimal R = 10.7316m;
 
             decimal term1 = (decimal)Math.Pow((double)pressureRatio, (double)(2m / k));

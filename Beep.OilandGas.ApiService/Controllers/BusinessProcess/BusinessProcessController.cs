@@ -43,7 +43,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         [ProducesResponseType(400)]
         public async Task<ActionResult<List<ProcessDefinition>>> GetDefinitionsAsync()
         {
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -164,7 +164,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(request.EntityId))
                 return BadRequest("EntityId is required.");
 
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -192,7 +192,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         [ProducesResponseType(typeof(List<ProcessInstanceSummary>), 200)]
         public async Task<ActionResult<List<ProcessInstanceSummary>>> GetInstancesAsync()
         {
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
                 return BadRequest("No active field selected.");
 

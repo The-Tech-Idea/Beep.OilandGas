@@ -40,7 +40,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting production data");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -55,7 +55,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording production data");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -64,6 +64,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             [FromQuery] string wellUWI,
             [FromBody] Dictionary<string, object> optimizationGoals)
         {
+            if (string.IsNullOrWhiteSpace(wellUWI)) return BadRequest(new { error = "Well UWI is required." });
             try
             {
                 var result = await _service.OptimizeProductionAsync(wellUWI, optimizationGoals);
@@ -72,7 +73,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Production
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error optimizing production");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

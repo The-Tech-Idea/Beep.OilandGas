@@ -1,4 +1,4 @@
-@page "/exploration"
+﻿@page "/exploration"
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
@@ -156,33 +156,64 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
-    private int _leads = 8;
-    private int _prospects = 5;
-    private int _drillCandidates = 2;
-    private int _exploratoryWells = 4;
-    private double _successRate = 25;
+    private string _fieldName = string.Empty;
+    private int _leads;
+    private int _prospects;
+    private int _drillCandidates;
+    private int _exploratoryWells;
+    private double _successRate;
 
     private List<PendingDecision> _pendingDecisions = new();
     private List<WellProgramSummary> _upcomingPrograms = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with API call GET /api/exploration/dashboard-summary
-        _pendingDecisions = new List<PendingDecision>
+        try
         {
-            new("Eagle Ford South Prospect", "Awaiting ranking committee", "REVIEW"),
-            new("Permian Basin Lead 3", "Screening criteria pending", "IN PROGRESS"),
-            new("North Sea Block 15", "Well program awaiting approval", "REVIEW"),
-        };
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
 
-        _upcomingPrograms = new List<WellProgramSummary>
+        try
         {
-            new("EX-2026-001 / Eagle Ford S-1", "Q3 2026"),
-            new("EX-2026-002 / Permian Wildcat", "Q4 2026"),
-        };
+            var summary = await ApiClient.GetAsync<ExplorationDashboardSummaryDto>(
+                "/api/field/current/exploration/dashboard-summary");
+            if (summary != null)
+            {
+                _leads              = summary.LeadCount;
+                _prospects          = summary.ProspectCount;
+                _exploratoryWells   = summary.WellCount;
+                _drillCandidates    = summary.SurveyCount;
+                _successRate        = summary.SuccessRatePct;
+                _pendingDecisions   = summary.PendingDecisions
+                    .Select(d => new PendingDecision(d.Name, d.Description, d.Status))
+                    .ToList();
+                _upcomingPrograms   = summary.UpcomingPrograms
+                    .Select(p => new WellProgramSummary(p.Name, p.TargetDate, p.Status))
+                    .ToList();
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load exploration summary.", Severity.Warning);
+        }
     }
 
     private record PendingDecision(string Name, string Description, string Status);
     private record WellProgramSummary(string Name, string TargetDate, string Status = "PLANNED");
+
+    private class ExplorationDashboardSummaryDto
+    {
+        public int LeadCount       { get; set; }
+        public int ProspectCount   { get; set; }
+        public int WellCount       { get; set; }
+        public int SurveyCount     { get; set; }
+        public double SuccessRatePct { get; set; }
+        public List<PendingDecisionDto> PendingDecisions  { get; set; } = new();
+        public List<WellProgramDto>     UpcomingPrograms  { get; set; } = new();
+    }
+    private record PendingDecisionDto(string Name, string Description, string Status);
+    private record WellProgramDto(string Name, string TargetDate, string Status);
 }

@@ -25,6 +25,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         [HttpGet("{userId}")]
         public async Task<ActionResult<UserProfile>> GetUserProfile(string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { error = "User ID is required." });
             try
             {
                 var profile = await _userProfileService.GetUserProfileAsync(userId);
@@ -36,7 +38,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -48,6 +50,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string userId,
             [FromQuery] string? organizationId = null)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { error = "User ID is required." });
             try
             {
                 var roles = await _userProfileService.GetUserRolesAsync(userId, organizationId);
@@ -55,7 +59,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -65,6 +69,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         [HttpGet("{userId}/default-layout")]
         public async Task<ActionResult<string>> GetUserDefaultLayout(string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { error = "User ID is required." });
             try
             {
                 var layout = await _userProfileService.GetUserDefaultLayoutAsync(userId);
@@ -72,7 +78,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -84,6 +90,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string userId,
             [FromBody] UpdatePreferencesRequest request)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { error = "User ID is required." });
             try
             {
                 var result = await _userProfileService.UpdateUserPreferencesAsync(userId, request.PreferencesJson);
@@ -91,7 +99,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -103,6 +111,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string userId,
             [FromBody] UpdatePrimaryRoleRequest request)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { error = "User ID is required." });
             try
             {
                 var result = await _userProfileService.UpdateUserPrimaryRoleAsync(userId, request.PrimaryRole);
@@ -110,7 +120,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -122,6 +132,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             string userId,
             [FromBody] UpdatePreferredLayoutRequest request)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { error = "User ID is required." });
             try
             {
                 var result = await _userProfileService.UpdateUserPreferredLayoutAsync(userId, request.PreferredLayout);
@@ -129,7 +141,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -139,6 +151,8 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
         [HttpPost("{userId}/login")]
         public async Task<ActionResult> RecordUserLogin(string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { error = "User ID is required." });
             try
             {
                 await _userProfileService.RecordUserLoginAsync(userId);
@@ -146,7 +160,7 @@ namespace Beep.OilandGas.ApiService.Controllers.AccessControl
             }
             catch (System.Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

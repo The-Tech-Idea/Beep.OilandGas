@@ -22,6 +22,7 @@ namespace Beep.OilandGas.DataManager.Services
         private readonly ILogger<DataManager>? _logger;
         private readonly ScriptValidator _scriptValidator;
         private readonly DataManagerLogger? _dataManagerLogger;
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, ExecutionState> _stateStore = new();
 
         public DataManager(
             ILogger<DataManager>? logger = null,
@@ -114,7 +115,8 @@ namespace Beep.OilandGas.DataManager.Services
                 executionState.IsCompleted = !cancellationToken.IsCancellationRequested && result.FailedScripts == 0;
                 executionState.LastCheckpoint = DateTime.UtcNow;
 
-                // Save checkpoint if enabled
+                // Save checkpoint — always persist to in-memory store; delegate to external store if configured
+                _stateStore[executionState.ExecutionId] = executionState;
                 if (options.EnableCheckpointing && options.StateStore != null)
                 {
                     await options.StateStore.SaveStateAsync(executionState);
@@ -276,17 +278,45 @@ namespace Beep.OilandGas.DataManager.Services
                 throw new DataManagerException($"Execution state not found: {executionId}");
             }
 
-            // Create a module data implementation that uses the saved state
-            // For now, we'll need to reconstruct the module data
-            // This is a simplified approach - in practice, you'd want to store module info in state
-            throw new NotImplementedException("Resume functionality requires module data reconstruction. This will be implemented based on specific module implementations.");
+            // Resume by re-executing the pending scripts recorded in the saved state
+            _logger?.LogInformation("Resuming execution {ExecutionId}: {Count} scripts pending", executionId, state.PendingScripts.Count);
+
+            var pendingScriptInfos = state.PendingScripts
+                .Select((fileName, idx) => new ModuleScriptInfo
+                {
+                    FileName      = fileName,
+                    FullPath      = fileName, // stored path (absolute or relative)
+                    ModuleName    = state.ModuleName,
+                    ExecutionOrder = idx
+                })
+                .ToList();
+
+            var newResults = await ExecuteScriptsAsync(pendingScriptInfos, dataSource, state, options, cancellationToken);
+            var allResults = state.ScriptResults.Values.ToList();
+            allResults.AddRange(newResults);
+
+            return new ModuleExecutionResult
+            {
+                ModuleName        = state.ModuleName,
+                ExecutionId       = executionId,
+                Success           = newResults.All(r => r.Success),
+                IsCompleted       = !cancellationToken.IsCancellationRequested,
+                StartTime         = state.StartTime,
+                EndTime           = DateTime.UtcNow,
+                TotalScripts      = state.CompletedScripts.Count + pendingScriptInfos.Count,
+                SuccessfulScripts = state.CompletedScripts.Count + newResults.Count(r => r.Success),
+                FailedScripts     = state.FailedScripts.Count  + newResults.Count(r => !r.Success),
+                ScriptResults     = allResults,
+                Checkpoint        = state
+            };
         }
 
         public async Task<ExecutionState?> GetExecutionStateAsync(string executionId)
         {
-            // This requires a state store to be configured
-            // For now, return null - actual implementation will use IExecutionStateStore
-            return await Task.FromResult<ExecutionState?>(null);
+            if (string.IsNullOrWhiteSpace(executionId))
+                return null;
+            _stateStore.TryGetValue(executionId, out var state);
+            return await Task.FromResult(state);
         }
 
         public async Task<ValidationResult> ValidateScriptsAsync(

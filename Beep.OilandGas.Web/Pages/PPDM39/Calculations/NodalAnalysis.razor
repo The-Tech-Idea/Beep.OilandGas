@@ -1,11 +1,12 @@
-@page "/ppdm39/calculations/nodalanalysis"
+﻿@page "/ppdm39/calculations/nodalanalysis"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.NodalAnalysis
 @using Beep.OilandGas.Client.App
-@inject IBeepOilandGasApp BeepApp
+@using System.Security.Claims
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 @inject ICalculationServiceClient CalculationService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ApiClient ApiClient
 
 <PageTitle>Perform Nodal Analysis</PageTitle>
 
@@ -92,15 +93,42 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<NodalAnalysisRunResult>? _analysisHistory;
     private bool _isLoading = false;
-    private string? _currentUserId = "system";
-    private string? _selectedWellUWI = null;
+    private string? _currentUserId;
+    private string? _selectedWellUWI;
+    private List<WellOptionDto> _wells = new();
+
+    private class WellOptionDto
+    {
+        public string? UWI      { get; set; }
+        public string? WellName { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        // Load analysis history if well is selected
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+        try
+        {
+            var wells = await ApiClient.GetAsync<List<WellOptionDto>>("api/field/current/development/wells") ?? new();            _wells = wells ?? new();
+            _selectedWellUWI = _wells.FirstOrDefault()?.UWI;
+            if (!string.IsNullOrEmpty(_selectedWellUWI))
+                _analysisHistory = await CalculationService.GetNodalAnalysisHistoryAsync(_selectedWellUWI);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load wells.", Severity.Warning);
+        }
     }
 
     private async Task OpenAnalysisDialog()
@@ -131,9 +159,9 @@
             // Reload history
             _analysisHistory = await CalculationService.GetNodalAnalysisHistoryAsync(_selectedWellUWI);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error performing nodal analysis: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error performing nodal analysis.", Severity.Error);
         }
         finally
         {

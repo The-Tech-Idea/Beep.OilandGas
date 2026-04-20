@@ -299,5 +299,59 @@ namespace Beep.OilandGas.LifeCycle.Services.Development.Processes
         }
 
         #endregion
+
+        #region FDP Gate Review Process
+
+        /// <summary>
+        /// Starts the GATE_FDP_REVIEW process for the current field.
+        /// The field ID is used as the entity ID since FDP is a field-level document.
+        /// </summary>
+        public async Task<ProcessInstance> StartFdpGateProcessAsync(string fieldId, string userId)
+        {
+            try
+            {
+                var processDefs = await _processService.GetProcessDefinitionsByTypeAsync("DEVELOPMENT");
+                var fdpProcess  = processDefs.FirstOrDefault(p => p.ProcessId == "GATE_FDP_REVIEW")
+                               ?? processDefs.FirstOrDefault(p => p.ProcessName == "FDPGateReview");
+
+                if (fdpProcess == null)
+                    throw new InvalidOperationException("GATE_FDP_REVIEW process definition not found. Ensure process definitions have been initialised.");
+
+                return await _processService.StartProcessAsync(
+                    fdpProcess.ProcessId,
+                    fieldId,
+                    "FIELD",
+                    fieldId,
+                    userId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error starting FDP Gate Review process for field {FieldId}", fieldId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Returns the most recent GATE_FDP_REVIEW process instance for the given field, or null if none exists.
+        /// Entity type stored by StartFdpGateProcessAsync is "FIELD".
+        /// </summary>
+        public async Task<ProcessInstance?> GetCurrentFdpStatusAsync(string fieldId)
+        {
+            try
+            {
+                var instances = await _processService.GetProcessInstancesForEntityAsync(fieldId, "FIELD");
+                return instances
+                    .Where(i => i.ProcessId == "GATE_FDP_REVIEW")
+                    .OrderByDescending(i => i.StartDate)
+                    .FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error fetching FDP status for field {FieldId}", fieldId);
+                throw;
+            }
+        }
+
+        #endregion
     }
 }

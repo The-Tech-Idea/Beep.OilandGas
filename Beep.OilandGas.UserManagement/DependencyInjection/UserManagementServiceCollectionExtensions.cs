@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Authorization;
 using Beep.OilandGas.UserManagement.Security;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Core.Interfaces.Security;
@@ -20,7 +21,9 @@ namespace Beep.OilandGas.UserManagement.DependencyInjection
 
         public static IServiceCollection AddPermissionPolicy(this IServiceCollection services, string policyName, string permission)
         {
-            // TODO: Implement permission policy registration when AspNetCore.Authorization is available
+            services.AddAuthorization(options =>
+                options.AddPolicy(policyName, policy =>
+                    policy.RequireClaim("permission", permission)));
             return services;
         }
     }

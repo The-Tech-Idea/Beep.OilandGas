@@ -1,9 +1,12 @@
-@page "/production/allocation"
+﻿@page "/production/allocation"
+@inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
 <PageTitle>Allocate Production Volumes</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     @* ── Header ──────────────────────────────────────────────────────────── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
@@ -238,33 +241,23 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
-    private string _selectedPeriod = "Mar 2026";
-    private string _allocationMethod = "Well Test";
-    private string _allocationStatus = "DRAFT";
-    private double _fieldTotal = 14_280;
+    private string _fieldName = string.Empty;
+    private string _selectedPeriod    = DateTime.Now.ToString("MMM yyyy");
+    private string _allocationMethod  = "Well Test";
+    private string _allocationStatus  = "DRAFT";
+    private double _fieldTotal        = 0;
+    private bool   _loading           = true;
 
-    private List<WellAllocation> _allocations = new()
-    {
-        new("DEV-A1", 3_600, 0.95, 0.253, 3_420, 5.21, 2_120),
-        new("DEV-A2", 3_200, 0.93, 0.221, 2_980, 4.54, 2_050),
-        new("DEV-B1", 4_300, 0.97, 0.309, 4_150, 6.33, 1_890),
-        new("DEV-B2", 2_600, 0.46, 0.089, 1_200, 1.83,   490),
-        new("DEV-C1", 2_800, 0.90, 0.187, 2_530, 3.86, 2_240),
-    };
-
-    private List<AllocationRecord> _history = new()
-    {
-        new("February 2026", "S. Lee",    "APPROVED"),
-        new("January 2026",  "J. Smith",  "APPROVED"),
-        new("December 2025", "M. Torres", "APPROVED"),
-    };
+    private List<WellAllocation> _allocations = new();
+    private List<AllocationRecord> _history   = new();
 
     private double _allocatedTotal => _allocations.Sum(a => a.AllocatedOilBopd);
-    private bool _isBalanced => Math.Abs(_allocatedTotal - _fieldTotal) < 50;
+    private bool   _isBalanced     => _fieldTotal <= 0 || Math.Abs(_allocatedTotal - _fieldTotal) < 50;
     private double WaterCutPct =>
-        (_allocations.Sum(a => a.AllocatedWaterBopd) /
-         (_allocatedTotal + _allocations.Sum(a => a.AllocatedWaterBopd))) * 100;
+        (_allocations.Sum(a => a.AllocatedOilBopd + a.AllocatedWaterBopd)) > 0
+            ? _allocations.Sum(a => a.AllocatedWaterBopd) /
+              _allocations.Sum(a => a.AllocatedOilBopd + a.AllocatedWaterBopd) * 100
+            : 0;
 
     private List<ChartSeries<double>> _contributionSeries =>
         new() { new ChartSeries<double> { Data = _allocations.Select(a => a.AllocatedOilBopd).ToArray() } };
@@ -274,16 +267,100 @@
 
     private string AllocationBannerClass => $"pa-3 mb-4 {(_isBalanced ? "allocation-balanced" : "allocation-unbalanced")}";
 
-    private Task OnAllocationChanged(WellAllocation item)
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: PATCH /api/production/allocation/{period}/wells/{wellId}
-        return Task.CompletedTask;
+        _loading = true;
+        try
+        {
+            // Load development wells
+            var wells = await ApiClient.GetAsync<List<WellDto>>("api/field/current/development/wells") ?? new();            if (wells == null || wells.Count == 0)
+            {
+                _loading = false;
+                return;
+            }
+
+            // Load performance for all wells in parallel
+            var perfTasks = wells.Select(w => LoadWellPerfAsync(w.UWI ?? string.Empty)).ToList();
+            var perfs = await Task.WhenAll(perfTasks);
+
+            // Build allocation rows
+            _allocations = wells
+                .Select((w, i) =>
+                {
+                    var perf = perfs[i];
+                    return new WellAllocation(
+                        wellName: w.WellName ?? w.UWI ?? "Unknown",
+                        uwi:      w.UWI ?? string.Empty,
+                        testRate: perf?.OilRate ?? 0,
+                        uptime:   1.0,
+                        factor:   0,
+                        oil:      perf?.OilRate ?? 0,
+                        gas:      perf?.GasRate ?? 0,
+                        water:    perf?.WaterRate ?? 0);
+                })
+                .Where(a => !string.IsNullOrEmpty(a.Uwi))
+                .ToList();
+
+            // Compute field total as sum of well rates; allocation factor from ratios
+            _fieldTotal = _allocations.Sum(a => a.TestRateBopd);
+            RecalculateAllocation();
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load allocation data.", Severity.Warning);
+        }
+        finally { _loading = false; }
+    }
+
+    private async Task<WellPerfDto?> LoadWellPerfAsync(string uwi)
+    {
+        if (string.IsNullOrEmpty(uwi)) return null;
+        try
+        {
+            return await ApiClient.GetAsync<WellPerfDto>(
+                $"api/field/current/production/wells/{Uri.EscapeDataString(uwi)}/performance");
+        }
+        catch { return null; }
+    }
+
+    private async Task OnAllocationChanged(WellAllocation item)
+    {
+        try
+        {
+            await ApiClient.PatchAsync<AllocationPatchRequest, object>(
+                $"api/field/current/production/allocation/{Uri.EscapeDataString(_selectedPeriod)}/wells/{Uri.EscapeDataString(item.Uwi)}",
+                new AllocationPatchRequest
+                {
+                    AllocatedOilBopd   = item.AllocatedOilBopd,
+                    AllocatedGasMmscfd = item.AllocatedGasMmscfd,
+                    AllocatedWaterBopd = item.AllocatedWaterBopd,
+                });
+        }
+        catch
+        {
+            // non-critical: allocation changes are local until Submit
+        }
+    }
+
+    private class AllocationPatchRequest
+    {
+        public double AllocatedOilBopd   { get; set; }
+        public double AllocatedGasMmscfd { get; set; }
+        public double AllocatedWaterBopd { get; set; }
     }
 
     private void RecalculateAllocation()
     {
+        var totalTestWeighted = _allocations.Sum(a => a.TestRateBopd * a.UptimeFraction);
         foreach (var a in _allocations)
-            a.AllocatedOilBopd = Math.Round(a.TestRateBopd * a.UptimeFraction * (_fieldTotal / _allocations.Sum(x => x.TestRateBopd * x.UptimeFraction)));
+        {
+            a.AllocationFactor = totalTestWeighted > 0
+                ? a.TestRateBopd * a.UptimeFraction / totalTestWeighted
+                : 0;
+            a.AllocatedOilBopd = _fieldTotal > 0
+                ? Math.Round(a.AllocationFactor * _fieldTotal)
+                : a.TestRateBopd;
+        }
         Snackbar.Add("Allocation recalculated from well test ratios", Severity.Info);
     }
 
@@ -293,22 +370,36 @@
         Snackbar.Add($"Allocation for {_selectedPeriod} submitted for approval", Severity.Success);
     }
 
+    private class WellDto
+    {
+        public string? UWI      { get; set; }
+        public string? WellName { get; set; }
+    }
+
+    private class WellPerfDto
+    {
+        public double OilRate   { get; set; }
+        public double GasRate   { get; set; }
+        public double WaterRate { get; set; }
+    }
+
     private class WellAllocation
     {
-        public string WellName { get; set; }
-        public double TestRateBopd { get; set; }
-        public double UptimeFraction { get; set; }
-        public double AllocationFactor { get; set; }
-        public double AllocatedOilBopd { get; set; }
+        public string WellName           { get; set; }
+        public string Uwi                { get; set; }
+        public double TestRateBopd       { get; set; }
+        public double UptimeFraction     { get; set; }
+        public double AllocationFactor   { get; set; }
+        public double AllocatedOilBopd   { get; set; }
         public double AllocatedGasMmscfd { get; set; }
         public double AllocatedWaterBopd { get; set; }
 
-        public WellAllocation(string well, double test, double uptime, double factor,
-            double oil, double gas, double water)
+        public WellAllocation(string wellName, string uwi, double testRate, double uptime,
+            double factor, double oil, double gas, double water)
         {
-            WellName = well; TestRateBopd = test; UptimeFraction = uptime;
-            AllocationFactor = factor; AllocatedOilBopd = oil;
-            AllocatedGasMmscfd = gas; AllocatedWaterBopd = water;
+            WellName = wellName; Uwi = uwi; TestRateBopd = testRate;
+            UptimeFraction = uptime; AllocationFactor = factor;
+            AllocatedOilBopd = oil; AllocatedGasMmscfd = gas; AllocatedWaterBopd = water;
         }
     }
 

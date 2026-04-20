@@ -333,7 +333,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
             public string LongName { get; set; }
 
             /// <summary>PPDM scope: Well | Wellbore | Wellhead Stream | Component.</summary>
-            public string Scope { get; set; }
+            public string? Scope { get; set; }
 
             /// <summary>Valid STATUS values (from R_WELL_STATUS or FACET_CATALOG).</summary>
             public List<FacetValueDto> Values { get; set; } = new();

@@ -1,9 +1,8 @@
-@page "/ppdm39/well/classify"
+﻿@page "/ppdm39/well/classify"
 @using Beep.OilandGas.PPDM39.Models
 @using Beep.OilandGas.PPDM39.DataManagement.Repositories.WELL
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 
 <PageTitle>Classify Well Status</PageTitle>
 
@@ -106,13 +105,13 @@
                                 <MudText Typo="Typo.caption" Color="Color.Secondary">Current:</MudText>
                                 <MudChip T="string" Color="Color.Success" Size="Size.Small"
                                          Icon="@Icons.Material.Filled.CheckCircle">
-                                    @currentVal.StatusName
-                                    @if (!string.IsNullOrWhiteSpace(currentVal.WellStatus?.STATUS_QUALIFIER))
+                                    @currentVal!.StatusName
+                                    @if (!string.IsNullOrWhiteSpace(currentVal!.WellStatus?.STATUS_QUALIFIER))
                                     {
                                         <text> — @currentVal.WellStatus.STATUS_QUALIFIER</text>
                                     }
                                 </MudChip>
-                                @if (currentVal.EffectiveDate.HasValue)
+                                @if (currentVal!.EffectiveDate.HasValue)
                                 {
                                     <MudText Typo="Typo.caption" Color="Color.Secondary">
                                         since @currentVal.EffectiveDate.Value.ToString("dd MMM yyyy")
@@ -356,8 +355,8 @@
     private bool _isLoading;
     private int _activeTab;
 
-    private WELL _well;
-    private List<WellServices.FacetTypeDto> _facets;
+    private WELL? _well;
+    private List<WellServices.FacetTypeDto>? _facets;
     private List<WELL_STATUS> _statusHistory = new();
 
     // Per-tab form state (allocated once facets are loaded)
@@ -380,8 +379,8 @@
     private async Task OnStatusChanged(int tabIndex, WellServices.FacetTypeDto facet, string newStatus)
     {
         _requests[tabIndex].Status = newStatus;
-        _requests[tabIndex].StatusQualifier = null;
-        _requests[tabIndex].StatusQualifierValue = null;
+        _requests[tabIndex].StatusQualifier = string.Empty;
+        _requests[tabIndex].StatusQualifierValue = string.Empty;
 
         if (string.IsNullOrWhiteSpace(newStatus))
         {
@@ -459,9 +458,9 @@
 
             _activeTab = 0;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading well data: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading well data.", Severity.Error);
         }
         finally
         {
@@ -475,7 +474,7 @@
     {
         if (_forms[tabIndex] != null)
         {
-            await _forms[tabIndex].Validate();
+            await _forms[tabIndex].ValidateAsync();
             if (!_formValid[tabIndex]) return;
         }
 
@@ -498,9 +497,9 @@
                 await LoadWellAsync();
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error saving {statusType}: {ex.Message}", Severity.Error);
+            Snackbar.Add($"Error saving {statusType}.", Severity.Error);
         }
         finally
         {
@@ -513,7 +512,7 @@
     private async Task SaveAllAsync()
     {
         var toSave = _requests
-            .Select((r, i) => (Request: r, Index: i, StatusType: _facets[i].StatusType))
+            .Select((r, i) => (Request: r, Index: i, StatusType: _facets![i].StatusType))
             .Where(x => !string.IsNullOrWhiteSpace(x.Request.Status))
             .ToList();
 

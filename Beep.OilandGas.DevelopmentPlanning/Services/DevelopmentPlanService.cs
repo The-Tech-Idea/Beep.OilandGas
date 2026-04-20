@@ -51,21 +51,21 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
         private async Task<PPDMGenericRepository> GetApplicationRepositoryAsync()
         {
             var meta = await _metadata.GetTableMetadataAsync("APPLICATION");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}")!;
             return new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, entityType, _connectionName, "APPLICATION");
         }
 
         private async Task<PPDMGenericRepository> GetWellRepositoryAsync()
         {
             var meta = await _metadata.GetTableMetadataAsync("WELL");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}")!;
             return new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, entityType, _connectionName, "WELL");
         }
 
         private async Task<PPDMGenericRepository> GetFacilityRepositoryAsync()
         {
             var meta = await _metadata.GetTableMetadataAsync("FACILITY");
-            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}");
+            var entityType = Type.GetType($"Beep.OilandGas.PPDM39.Models.{meta.EntityTypeName}")!;
             return new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata, entityType, _connectionName, "FACILITY");
         }
 

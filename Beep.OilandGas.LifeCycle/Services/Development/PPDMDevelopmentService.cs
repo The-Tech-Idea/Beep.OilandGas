@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Core.Interfaces;
+using Beep.OilandGas.Models.Data.Production;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Services;
@@ -1689,6 +1690,113 @@ namespace Beep.OilandGas.LifeCycle.Services.Development
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error constructing facility: {FacilityId}", facilityId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Dashboard
+
+        /// <summary>Returns well count summary for the Development dashboard KPI row.</summary>
+        public async Task<DevelopmentDashboardSummary> GetDevelopmentDashboardSummaryAsync(string fieldId)
+        {
+            try
+            {
+                var wells = await GetDevelopmentWellsForFieldAsync(fieldId);
+                return new DevelopmentDashboardSummary
+                {
+                    FieldId        = fieldId,
+                    TotalWells     = wells.Count,
+                    DrillingWells  = wells.Count(w => w.CURRENT_STATUS != null &&
+                                                      w.CURRENT_STATUS.Equals("DRILLING", StringComparison.OrdinalIgnoreCase)),
+                    CompletedWells = wells.Count(w => w.CURRENT_STATUS != null &&
+                                                      (w.CURRENT_STATUS.Equals("COMPLETE", StringComparison.OrdinalIgnoreCase) ||
+                                                       w.CURRENT_STATUS.Equals("PRODUCING", StringComparison.OrdinalIgnoreCase))),
+                    PlannedWells   = wells.Count(w => string.IsNullOrEmpty(w.CURRENT_STATUS) ||
+                                                      w.CURRENT_STATUS.Equals("PLANNED", StringComparison.OrdinalIgnoreCase)),
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting development dashboard summary for field {FieldId}", fieldId);
+                throw;
+            }
+        }
+
+        /// <summary>Returns per-well status rows for the Development dashboard wells grid.</summary>
+        public async Task<List<DevelopmentWellStatusDto>> GetDevelopmentWellStatusAsync(string fieldId)
+        {
+            try
+            {
+                var wells = await GetDevelopmentWellsForFieldAsync(fieldId);
+                return wells.Select(w => new DevelopmentWellStatusDto
+                {
+                    WellId         = w.UWI ?? string.Empty,
+                    WellName       = w.WELL_NAME ?? w.UWI ?? string.Empty,
+                    WellType       = w.CURRENT_CLASS ?? string.Empty,
+                    DrillingStatus = w.CURRENT_STATUS ?? "PLANNED",
+                    CurrentDepthM  = (double)(w.DRILL_TD),
+                    TargetDepthM   = (double)(w.FINAL_TD),
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting development well status for field {FieldId}", fieldId);
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Reservoir Dashboard
+
+        /// <summary>Returns pool count summary for the Reservoir Overview dashboard.</summary>
+        public async Task<ReservoirDashboardSummary> GetReservoirDashboardSummaryAsync(string fieldId)
+        {
+            try
+            {
+                var pools = await GetPoolsForFieldAsync(fieldId);
+                var activePools = pools.Where(p => string.Equals(p.POOL_STATUS, "ACTIVE",
+                                                    StringComparison.OrdinalIgnoreCase) ||
+                                                   string.IsNullOrEmpty(p.POOL_STATUS)).ToList();
+                return new ReservoirDashboardSummary
+                {
+                    FieldId                  = fieldId,
+                    ActivePoolCount          = activePools.Count,
+                    OoipMmbbl                = 0,  // Requires PDEN_VOL_SUMMARY data
+                    RecoveryFactorPct        = 0,  // Requires production volume data
+                    Reserves1PMmbbl          = 0,  // Requires reserves classification data
+                    Reserves2PMmbbl          = 0,  // Requires reserves classification data
+                    Reserves3PMmbbl          = 0,  // Requires reserves classification data
+                    ContingentResourcesMmbbl = 0,  // Requires contingent resources classification
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting reservoir dashboard summary for field {FieldId}", fieldId);
+                throw;
+            }
+        }
+
+        /// <summary>Returns pool rows for the Reservoir Overview pools grid.</summary>
+        public async Task<List<ReservoirPoolDto>> GetReservoirPoolsAsync(string fieldId)
+        {
+            try
+            {
+                var pools = await GetPoolsForFieldAsync(fieldId);
+                return pools.Select(p => new ReservoirPoolDto
+                {
+                    PoolId    = p.POOL_ID   ?? string.Empty,
+                    PoolName  = p.POOL_NAME ?? p.POOL_ID ?? string.Empty,
+                    Status    = p.POOL_STATUS ?? "UNKNOWN",
+                    AreaAcres = 0,
+                    Formation = p.STRAT_UNIT_ID ?? string.Empty,
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting reservoir pools for field {FieldId}", fieldId);
                 throw;
             }
         }

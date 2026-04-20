@@ -1,4 +1,4 @@
-@page "/ppdm39/compliance/report"
+﻿@page "/ppdm39/compliance/report"
 @attribute [Authorize(Roles = "Compliance,Manager,Admin")]
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
@@ -100,7 +100,7 @@
 @using Beep.OilandGas.Models.Data
 
 @code {
-    private string    _fieldName           = "Current Field";
+    private string _fieldName = string.Empty;
     private string    _jurisdictionTag     = string.Empty;
     private string    _obligationType      = string.Empty;
     private DateTime? _periodStart         = null;
@@ -113,7 +113,7 @@
 
     private async Task SubmitReportAsync()
     {
-        await _form.Validate();
+        await _form.ValidateAsync();
         if (!_form.IsValid) return;
 
         _submitting = true;
@@ -129,13 +129,13 @@
                 SubmissionReference  = _submissionReference
             };
             await ApiClient.PostAsync<ComplianceReportRequest, object>(
-                "/api/field/current/compliance/reports", request);
+                "/api/field/current/process/compliance/reports", request);
             Snackbar.Add("Compliance report submitted successfully.", Severity.Success);
             NavigationManager.NavigateTo("/ppdm39/compliance");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Submission failed: {ex.Message}", Severity.Error);
+            Snackbar.Add("Submission failed.", Severity.Error);
         }
         finally
         {

@@ -1,11 +1,13 @@
-@page "/production/intervention"
+﻿@page "/production/intervention"
+@inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 
 <PageTitle>Decide Well Interventions</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_isLoading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     @* ── Header ──────────────────────────────────────────────────────────── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
@@ -265,98 +267,151 @@
     [SupplyParameterFromQuery(Name = "wellId")]
     public string? WellId { get; set; }
 
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _decisionNote = "";
     private InterventionDetail? _selectedIntervention;
 
-    private List<InterventionCandidate> _candidates = new()
-    {
-        new("W-A3", "DEV-A3", "Unplanned Shut-in",   "Spontaneous shut-in — surface leak suspected",   0,    12,  "HIGH",   "REVIEW",   2_500),
-        new("W-B2", "DEV-B2", "ESP Replacement",      "ESP amp draw above threshold — gas lock/wear",   1_300, 8,  "HIGH",   "REVIEW",   1_800),
-        new("W-C1", "DEV-C1", "Acid Stimulation",     "Skin damage reducing productivity",              400,  15,  "MEDIUM", "PLANNED",  350),
-        new("W-A2", "DEV-A2", "Scale Inhibitor Squeeze","Scale build-up in tubing reducing flow area",  200,  5,   "LOW",    "PLANNED",  120),
-    };
+    private List<InterventionCandidate> _candidates = new();
+    private List<DiagnosticItem>          _diagnostics = new();
+    private List<HistoricalCase>          _historicalCases = new();
+    private List<ChartSeries<double>>     _wellRateSeries = new();
+    private string[]                      _wellRateLabels = Array.Empty<string>();
+    private bool                          _isLoading;
 
-    private List<DiagnosticItem> _diagnostics = new()
+    protected override async Task OnInitializedAsync()
     {
-        new("ESP Current Draw (A)",  "62A (limit 55A)", true),
-        new("Wellhead Pressure (psi)", "135 psi",       false),
-        new("GOR (scf/bbl)",         "580",             true),
-        new("Choke Size",            "56/64\"",         false),
-        new("Fluid Level (m)",       "450m below BFP",  true),
-    };
-
-    private List<HistoricalCase> _historicalCases = new()
-    {
-        new("DEV-A2", "ESP Replacement",  "Mar 2025", 1_100, 1_750, "Success"),
-        new("DEV-C2", "ESP Replacement",  "Sep 2024", 900,   1_600, "Partial — wrong pump size"),
-        new("DEV-B3", "ESP Replacement",  "Jan 2024", 1_400, 2_100, "Success"),
-    };
-
-    private List<ChartSeries<double>> _wellRateSeries = new()
-    {
-        new ChartSeries<double> { Name = "Oil Rate (BOPD/100)", Data = new double[] { 22, 22, 21, 21, 20, 19, 17, 15, 13, 12 } },
-    };
-    private string[] _wellRateLabels = { "D-90", "", "", "", "D-60", "", "", "", "D-30", "Today" };
-
-    protected override void OnInitialized()
-    {
-        if (!string.IsNullOrWhiteSpace(WellId))
+        try
         {
-            var match = _candidates.FirstOrDefault(c => c.WellId == WellId);
-            if (match != null) SelectCandidate(match);
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        _isLoading = true;
+        try
+        {
+            var dtos = await ApiClient.GetAsync<List<InterventionCandidateApiDto>>(
+                "api/field/current/production/intervention-candidates");
+            _candidates = (dtos ?? new())
+                .Select(d => new InterventionCandidate(
+                    d.WellId, d.WellName, d.InterventionType, d.Problem,
+                    d.DeferredBopd, d.EstDaysSinceOnset, d.Priority, d.Status, d.EstCostUsd))
+                .ToList();
+            if (!string.IsNullOrWhiteSpace(WellId))
+            {
+                var match = _candidates.FirstOrDefault(c => c.WellId == WellId);
+                if (match != null) await SelectCandidateAsync(match);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error loading candidates.", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 
     private void OnCandidateClick(DataGridRowClickEventArgs<InterventionCandidate> args) =>
-        SelectCandidate(args.Item);
+        _ = SelectCandidateAsync(args.Item);
 
-    private void SelectCandidate(InterventionCandidate c)
+    private async Task SelectCandidateAsync(InterventionCandidate c)
     {
         _selectedIntervention = new InterventionDetail(
             WellId:             c.WellId,
             WellName:           c.WellName,
             InterventionType:   c.InterventionType,
             Problem:            c.Problem,
-            ProblemDescription: $"{c.Problem}. Operator raised work request {c.EstDaysSinceOnset} days ago.",
+            ProblemDescription: $"{c.Problem}. Work request raised {c.EstDaysSinceOnset} days ago.",
             DeferredBopd:       c.DeferredBopd,
             DaysDeferred:       c.EstDaysSinceOnset,
             EstCostUsd:         c.EstCostUsd,
-            OnsetDate:          "02 Apr 2026",
-            RootCause:          "Possible ESP motor fault or gas ingestion",
+            OnsetDate:          DateTime.UtcNow.AddDays(-c.EstDaysSinceOnset).ToString("dd MMM yyyy"),
+            RootCause:          "Refer to well diagnostic data below",
             RecommendedAction:  $"Proceed with {c.InterventionType}",
-            Scope:              "Pull ESP, inspect motor and pump, replace with Y-4800 unit upsized by 15%",
+            Scope:              $"{c.InterventionType} scope to be defined by well engineer",
             EstDurationDays:    7,
             PayoutMonths:       2
         );
         _decisionNote = "";
+        _diagnostics = new();
+        _wellRateSeries = new();
+        _wellRateLabels = Array.Empty<string>();
+        try
+        {
+            var perf = await ApiClient.GetAsync<WellPerformanceSummaryApiDto>(
+                $"api/field/current/production/wells/{Uri.EscapeDataString(c.WellId)}/performance");
+            if (perf?.WellTests != null)
+            {
+                var latest = perf.WellTests.OrderByDescending(t => t.TestDate).FirstOrDefault();
+                if (latest != null)
+                {
+                    _diagnostics.Add(new("Test Date",  latest.TestDate?.ToString("yyyy-MM-dd") ?? "N/A", false));
+                    _diagnostics.Add(new("Test Type",  latest.TestType ?? "N/A", false));
+                    _diagnostics.Add(new("Well Status", perf.Status ?? "UNKNOWN", perf.Status != "ACTIVE"));
+                }
+            }
+        }
+        catch { /* diagnostics are supplemental — do not block the decision flow */ }
+        StateHasChanged();
     }
 
     private void BackToList()
     {
         _selectedIntervention = null;
         _decisionNote = "";
+        _diagnostics = new();
+        _wellRateSeries = new();
     }
 
     private void OpenNewIntervention() =>
-        Snackbar.Add("New intervention wizard coming soon", Severity.Info);
+        Snackbar.Add("Open an intervention request via the work order system.", Severity.Info);
 
-    private void ApproveIntervention()
+    private async Task ApproveIntervention()
     {
-        Snackbar.Add($"Intervention approved for {_selectedIntervention!.WellName} — work order created", Severity.Success);
-        _selectedIntervention = null;
+        if (_selectedIntervention == null) return;
+        try
+        {
+            await ApiClient.PostAsync<InterventionDecisionPayload, object>(
+                $"api/field/current/production/intervention-candidates/{Uri.EscapeDataString(_selectedIntervention.WellId)}/decision",
+                new InterventionDecisionPayload("Approved", _decisionNote));
+            Snackbar.Add($"Intervention approved for {_selectedIntervention.WellName} — work order created", Severity.Success);
+            _selectedIntervention = null;
+            await OnInitializedAsync();
+        }
+        catch (Exception) { Snackbar.Add("Approval failed.", Severity.Error); }
     }
 
-    private void DeferIntervention()
+    private async Task DeferIntervention()
     {
-        Snackbar.Add($"Intervention deferred — monitoring @{_selectedIntervention!.WellName}", Severity.Warning);
-        _selectedIntervention = null;
+        if (_selectedIntervention == null) return;
+        try
+        {
+            await ApiClient.PostAsync<InterventionDecisionPayload, object>(
+                $"api/field/current/production/intervention-candidates/{Uri.EscapeDataString(_selectedIntervention.WellId)}/decision",
+                new InterventionDecisionPayload("Deferred", _decisionNote));
+            Snackbar.Add($"Intervention deferred — monitoring {_selectedIntervention.WellName}", Severity.Warning);
+            _selectedIntervention = null;
+            await OnInitializedAsync();
+        }
+        catch (Exception) { Snackbar.Add("Deferral failed.", Severity.Error); }
     }
 
-    private void RejectIntervention()
+    private async Task RejectIntervention()
     {
-        Snackbar.Add($"Intervention closed for {_selectedIntervention!.WellName}", Severity.Info);
-        _selectedIntervention = null;
+        if (_selectedIntervention == null) return;
+        try
+        {
+            await ApiClient.PostAsync<InterventionDecisionPayload, object>(
+                $"api/field/current/production/intervention-candidates/{Uri.EscapeDataString(_selectedIntervention.WellId)}/decision",
+                new InterventionDecisionPayload("Rejected", _decisionNote));
+            Snackbar.Add($"Intervention closed for {_selectedIntervention.WellName}", Severity.Info);
+            _selectedIntervention = null;
+            await OnInitializedAsync();
+        }
+        catch (Exception) { Snackbar.Add("Rejection failed.", Severity.Error); }
     }
 
     private Color TypeColor(string t) => t switch
@@ -383,4 +438,33 @@
 
     private record DiagnosticItem(string Parameter, string Value, bool IsAbnormal);
     private record HistoricalCase(string Well, string InterventionType, string Date, int UpliftBopd, int CostUsdK, string Outcome);
+
+    // API response DTOs (local to this page)
+    private class InterventionCandidateApiDto
+    {
+        public string WellId           { get; set; } = string.Empty;
+        public string WellName         { get; set; } = string.Empty;
+        public string InterventionType { get; set; } = string.Empty;
+        public string Problem          { get; set; } = string.Empty;
+        public double DeferredBopd     { get; set; }
+        public int    EstDaysSinceOnset{ get; set; }
+        public string Priority         { get; set; } = "MEDIUM";
+        public string Status           { get; set; } = "REVIEW";
+        public double EstCostUsd       { get; set; }
+    }
+
+    private class WellTestApiDto
+    {
+        public DateTime? TestDate { get; set; }
+        public string?   TestType { get; set; }
+    }
+
+    private class WellPerformanceSummaryApiDto
+    {
+        public string              WellId    { get; set; } = string.Empty;
+        public string              Status    { get; set; } = string.Empty;
+        public List<WellTestApiDto> WellTests { get; set; } = new();
+    }
+
+    private record InterventionDecisionPayload(string Decision, string? Note);
 }

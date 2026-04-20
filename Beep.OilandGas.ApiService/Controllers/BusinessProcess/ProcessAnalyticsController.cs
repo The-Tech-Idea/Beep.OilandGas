@@ -45,7 +45,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromQuery] int days = 30,
             [FromQuery] double exposureHours = 1_000_000)
         {
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -62,7 +62,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<WorkOrderKPISet>> GetWorkOrderKPIsAsync(
             [FromQuery] int days = 30)
         {
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -78,7 +78,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<GateReviewKPISet>> GetGateReviewKPIsAsync(
             [FromQuery] int days = 30)
         {
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -97,7 +97,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromQuery] int days = 30,
             [FromQuery] double exposureHours = 1_000_000)
         {
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -114,7 +114,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<ComplianceKPISet>> GetComplianceKPIsAsync(
             [FromQuery] int days = 30)
         {
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -130,7 +130,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         public async Task<ActionResult<List<KPITrendPoint>>> GetProductionTrendAsync(
             [FromQuery] int days = 365)
         {
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -150,7 +150,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
         [ProducesResponseType(typeof(ReservesMaturationSummary), 200)]
         public async Task<ActionResult<ReservesMaturationSummary>> GetReservesMaturationAsync()
         {
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrWhiteSpace(fieldId))
                 return BadRequest("No active field selected.");
 

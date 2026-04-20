@@ -7,8 +7,8 @@ namespace Beep.OilandGas.ApiService.Exceptions
     /// </summary>
     public class GLPostingException : Exception
     {
-        public string TransactionId { get; }
-        public string SourceModule { get; }
+        public string? TransactionId { get; }
+        public string? SourceModule { get; }
         public string? GlAccountId { get; }
 
         public GLPostingException(string message) : base(message)

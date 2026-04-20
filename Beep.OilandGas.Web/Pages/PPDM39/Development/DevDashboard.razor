@@ -1,6 +1,7 @@
-@page "/development"
+﻿@page "/development"
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 
 <PageTitle>Review Development Status</PageTitle>
 
@@ -35,37 +36,37 @@
     <MudGrid Spacing="3" Class="mb-4">
         <MudItem xs="12" sm="6" md="3" lg="2">
             <MudCard Elevation="2" Class="pa-3">
-                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="kpi-label">Project Phase</MudText>
-                <MudChip T="string" Color="Color.Info" Size="Size.Medium" Class="mt-1">@_projectPhase</MudChip>
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="kpi-label">Well Summary</MudText>
+                @if (_loading)
+                {
+                    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mt-1" />
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Info" Size="Size.Medium" Class="mt-1">@_totalWells wells</MudChip>
+                }
             </MudCard>
         </MudItem>
         <MudItem xs="12" sm="6" md="3" lg="2">
-            <KpiCard Label="Wells Drilled"
-                     Value="@_wellsDrilled.ToString()"
-                     Unit="@($"/ {_wellsTotal} planned")"
+            <KpiCard Label="Drilling"
+                     Value="@_drillingWells.ToString()"
+                     Unit="wells"
                      Icon="@Icons.Material.Filled.OilBarrel"
                      ValueColor="Color.Primary" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3" lg="3">
-            <KpiCard Label="Schedule Progress"
-                     Value="@_scheduleProgress.ToString("F0")"
-                     Unit="%"
-                     Icon="@Icons.Material.Filled.Schedule"
-                     ValueColor="@(_scheduleProgress >= 80 ? Color.Success : _scheduleProgress >= 60 ? Color.Warning : Color.Error)" />
+            <KpiCard Label="Completed"
+                     Value="@_completedWells.ToString()"
+                     Unit="wells"
+                     Icon="@Icons.Material.Filled.CheckCircle"
+                     ValueColor="Color.Success" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3" lg="2">
-            <KpiCard Label="Spend vs Budget"
-                     Value="@_spendRatio.ToString("F0")"
-                     Unit="%"
-                     Icon="@Icons.Material.Filled.AttachMoney"
-                     ValueColor="@(_spendRatio <= 100 ? Color.Success : Color.Error)" />
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3" lg="3">
-            <KpiCard Label="Days to First Oil"
-                     Value="@_daysToFirstOil.ToString()"
-                     Unit="days"
-                     Icon="@Icons.Material.Filled.DateRange"
-                     ValueColor="Color.Info" />
+            <KpiCard Label="Planned"
+                     Value="@_plannedWells.ToString()"
+                     Unit="wells"
+                     Icon="@Icons.Material.Filled.Schedule"
+                     ValueColor="Color.Default" />
         </MudItem>
     </MudGrid>
 
@@ -88,27 +89,18 @@
                         </CardHeaderActions>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudTimeline TimelinePosition="TimelinePosition.Left" Class="pa-0">
-                            @foreach (var m in _milestones)
-                            {
-                                <MudTimelineItem Color="@MilestoneColor(m)"
-                                                 Icon="@MilestoneIcon(m)"
-                                                 Size="Size.Small">
-                                    <ItemOpposite>
-                                        <MudText Typo="Typo.caption" Color="Color.Secondary">@m.TargetDate</MudText>
-                                    </ItemOpposite>
-                                    <ItemContent>
-                                        <MudStack Spacing="0">
-                                            <MudText Typo="Typo.body2"><strong>@m.Name</strong></MudText>
-                                            @if (!string.IsNullOrEmpty(m.Note))
-                                            {
-                                                <MudText Typo="Typo.caption" Color="Color.Secondary">@m.Note</MudText>
-                                            }
-                                        </MudStack>
-                                    </ItemContent>
-                                </MudTimelineItem>
-                            }
-                        </MudTimeline>
+                        @if (_loading)
+                        {
+                            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Project milestone data is managed in the Field Development Plan. View the FDP for the full milestone schedule.</MudText>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="mt-2"
+                                       OnClick='() => NavigationManager.NavigateTo("/development/fdp")'>
+                                Open FDP
+                            </MudButton>
+                        }
                     </MudCardContent>
                 </MudCard>
 
@@ -120,11 +112,14 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudChart ChartType="ChartType.Bar"
-                                  ChartSeries="@_budgetSeries"
-                                  XAxisLabels="@_budgetLabels"
-                                  Width="100%"
-                                  Height="220px" />
+                        @if (_loading)
+                        {
+                            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">Budget vs Actual data is available through the Accounting module. Connect to the Economics dashboard to view spend tracking.</MudText>
+                        }
                     </MudCardContent>
                 </MudCard>
 
@@ -149,22 +144,33 @@
                         </CardHeaderActions>
                     </MudCardHeader>
                     <MudCardContent Class="pa-0">
-                        <MudList T="DevWell" Dense="true">
-                            @foreach (var w in _activeWells)
-                            {
-                                <MudListItem T="DevWell" Value="w"
-                                             OnClick='() => NavigationManager.NavigateTo($"/development/well-design/{w.Id}")'>
-                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="pr-2">
-                                        <MudStack Spacing="0">
-                                            <MudText Typo="Typo.body2"><strong>@w.WellName</strong></MudText>
-                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@w.Type · @w.CurrentDepthM m / @w.TargetDepthM m TD</MudText>
+                        @if (_loading)
+                        {
+                            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+                        }
+                        else if (_activeWells.Count == 0)
+                        {
+                            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-3">No development wells found for the active field.</MudText>
+                        }
+                        else
+                        {
+                            <MudList T="DevWellDto" Dense="true">
+                                @foreach (var w in _activeWells)
+                                {
+                                    <MudListItem T="DevWellDto" Value="w"
+                                                 OnClick='() => NavigationManager.NavigateTo($"/development/well-design/{Uri.EscapeDataString(w.WellId)}")'>
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="pr-2">
+                                            <MudStack Spacing="0">
+                                                <MudText Typo="Typo.body2"><strong>@w.WellName</strong></MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">@w.WellType · @w.CurrentDepthM.ToString("N0") m / @w.TargetDepthM.ToString("N0") m TD</MudText>
+                                            </MudStack>
+                                            <StatusBadge Status="@w.DrillingStatus" Size="Size.Small" />
                                         </MudStack>
-                                        <StatusBadge Status="@w.Status" Size="Size.Small" />
-                                    </MudStack>
-                                </MudListItem>
-                                <MudDivider />
-                            }
-                        </MudList>
+                                    </MudListItem>
+                                    <MudDivider />
+                                }
+                            </MudList>
+                        }
                     </MudCardContent>
                 </MudCard>
 
@@ -175,28 +181,17 @@
                             <MudText Typo="Typo.subtitle1">Open Action Items</MudText>
                         </CardHeaderContent>
                         <CardHeaderActions>
-                            <MudChip T="string" Color="Color.Warning" Size="Size.Small">@_punchItems.Count open</MudChip>
+                            <MudChip T="string" Color="Color.Warning" Size="Size.Small">@(_loading ? "—" : "from activities")</MudChip>
                         </CardHeaderActions>
                     </MudCardHeader>
                     <MudCardContent Class="pa-0">
-                        <MudList T="PunchItem" Dense="true">
-                            @foreach (var item in _punchItems.Take(5))
-                            {
-                                <MudListItem T="PunchItem" Value="item">
-                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="pr-2">
-                                        <MudStack Spacing="0">
-                                            <MudText Typo="Typo.body2">@item.Description</MudText>
-                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@item.Owner · Due @item.DueDate</MudText>
-                                        </MudStack>
-                                        <MudChip T="string" Size="Size.Small"
-                                                 Color="@(item.Priority == "High" ? Color.Error : item.Priority == "Medium" ? Color.Warning : Color.Default)">
-                                            @item.Priority
-                                        </MudChip>
-                                    </MudStack>
-                                </MudListItem>
-                                <MudDivider />
-                            }
-                        </MudList>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-3">
+                            Action items are tracked via Well Activities. Use the Construction Tracker to manage open punch items for this field.
+                        </MudText>
+                        <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="ma-2"
+                                   OnClick='() => NavigationManager.NavigateTo("/development/construction")'>
+                            Open Construction Tracker
+                        </MudButton>
                     </MudCardContent>
                 </MudCard>
 
@@ -207,58 +202,69 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
-    private string _projectPhase = "Execution";
-    private int _wellsDrilled = 2;
-    private int _wellsTotal = 6;
-    private double _scheduleProgress = 68;
-    private double _spendRatio = 103;
-    private int _daysToFirstOil = 247;
+    private string _fieldName = string.Empty;
+    private bool _loading = true;
 
-    private List<Milestone> _milestones = new()
+    private int _totalWells;
+    private int _drillingWells;
+    private int _completedWells;
+    private int _plannedWells;
+
+    private List<DevWellDto> _activeWells = new();
+
+    private record DevWellDto(
+        string WellId, string WellName, string WellType,
+        string DrillingStatus, double CurrentDepthM, double TargetDepthM);
+
+    protected override async Task OnInitializedAsync()
     {
-        new("FID (Final Investment Decision)", "Mar 2024", true,  false, "Approved"),
-        new("Engineering Complete",            "Sep 2024", true,  false, "Delivered on schedule"),
-        new("Procurement Complete",            "Jan 2025", true,  false, ""),
-        new("Fabrication Complete",            "Mar 2026", false, true,  "68% complete — on track"),
-        new("Installation",                    "Aug 2026", false, false, ""),
-        new("Hook-up & Commissioning",         "Nov 2026", false, false, ""),
-        new("First Oil",                       "Dec 2026", false, false, "Target date"),
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        _loading = true;
+        try
+        {
+            var summary = await ApiClient.GetAsync<DevSummaryApiDto>(
+                "api/field/current/development/dashboard/summary");
+            if (summary != null)
+            {
+                _totalWells    = summary.TotalWells;
+                _drillingWells = summary.DrillingWells;
+                _completedWells = summary.CompletedWells;
+                _plannedWells  = summary.PlannedWells;
+            }
+
+            var wells = await ApiClient.GetAsync<List<DevWellDto>>(
+                "api/field/current/development/dashboard/wells") ?? new();
+            _activeWells = wells;
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load development data.", Severity.Warning);
+        }
+        finally { _loading = false; }
+    }
+
+    private Color StatusColor(string status) => status?.ToUpperInvariant() switch
+    {
+        "DRILLING"   => Color.Primary,
+        "COMPLETE"   => Color.Success,
+        "PRODUCING"  => Color.Success,
+        "PLANNED"    => Color.Default,
+        _            => Color.Default,
     };
 
-    private List<DevWell> _activeWells = new()
+    private class DevSummaryApiDto
     {
-        new("1", "Dev-A1",  "Producer",   "DRILLING",    2_850, 3_500),
-        new("2", "Dev-A2",  "Producer",   "PLANNED",     0,     3_450),
-        new("3", "Dev-B1",  "Injector",   "COMPLETE",    3_200, 3_200),
-    };
-
-    private List<PunchItem> _punchItems = new()
-    {
-        new("Finalize manifold piping spec",       "John Smith",   "May 2026", "High"),
-        new("Submit environmental permit update",  "Sarah Lee",    "Jun 2026", "High"),
-        new("Review vendor inspection report",     "Mike Torres",  "May 2026", "Medium"),
-        new("Update project schedule baseline",    "Anna Webb",    "Jun 2026", "Medium"),
-        new("Close NCR #142 — weld repair",        "John Smith",   "Apr 2026", "High"),
-        new("Issue Rev D P&ID to contractor",      "Anna Webb",    "Jul 2026", "Low"),
-    };
-
-    private List<ChartSeries<double>> _budgetSeries = new()
-    {
-        new ChartSeries<double> { Name = "Budget",  Data = new double[] { 45, 80, 120, 180, 250, 310 } },
-        new ChartSeries<double> { Name = "Actual",  Data = new double[] { 46, 82, 118, 187, 0,   0   } },
-    };
-    private string[] _budgetLabels = { "Q2'24", "Q3'24", "Q4'24", "Q1'25", "Q2'25", "Q3'25" };
-
-    private Color MilestoneColor(Milestone m) =>
-        m.IsCompleted ? Color.Success : m.IsActive ? Color.Primary : Color.Default;
-
-    private string MilestoneIcon(Milestone m) =>
-        m.IsCompleted ? Icons.Material.Filled.CheckCircle
-        : m.IsActive  ? Icons.Material.Filled.RadioButtonChecked
-        : Icons.Material.Outlined.RadioButtonUnchecked;
-
-    private record Milestone(string Name, string TargetDate, bool IsCompleted, bool IsActive, string Note);
-    private record DevWell(string Id, string WellName, string Type, string Status, int CurrentDepthM, int TargetDepthM);
-    private record PunchItem(string Description, string Owner, string DueDate, string Priority);
+        public string FieldId        { get; set; } = string.Empty;
+        public int    TotalWells     { get; set; }
+        public int    DrillingWells  { get; set; }
+        public int    CompletedWells { get; set; }
+        public int    PlannedWells   { get; set; }
+    }
 }

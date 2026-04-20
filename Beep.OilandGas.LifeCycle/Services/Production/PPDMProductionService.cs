@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
+using Beep.OilandGas.Models.Data.Production;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.ProductionForecasting;
 using Beep.OilandGas.PPDM39.Core.Metadata;
@@ -58,7 +59,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             _logger = logger;
         }
 
-        public async Task<List<FIELD>> GetFieldsAsync(List<AppFilter> filters = null)
+        public async Task<List<FIELD>> GetFieldsAsync(List<AppFilter>? filters = null)
         {
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
@@ -68,7 +69,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             return results.Cast<FIELD>().ToList();
         }
 
-        public async Task<List<POOL>> GetPoolsAsync(List<AppFilter> filters = null)
+        public async Task<List<POOL>> GetPoolsAsync(List<AppFilter>? filters = null)
         {
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
@@ -78,7 +79,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             return results.Cast<POOL>().ToList();
         }
 
-        public async Task<List<PDEN_VOL_SUMMARY>> GetProductionAsync(List<AppFilter> filters = null)
+        public async Task<List<PDEN_VOL_SUMMARY>> GetProductionAsync(List<AppFilter>? filters = null)
         {
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
@@ -88,7 +89,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             return results.Cast<PDEN_VOL_SUMMARY>().ToList();
         }
 
-        public async Task<List<RESERVE_ENTITY>> GetReservesAsync(List<AppFilter> filters = null)
+        public async Task<List<RESERVE_ENTITY>> GetReservesAsync(List<AppFilter>? filters = null)
         {
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
@@ -98,7 +99,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             return results.Cast<RESERVE_ENTITY>().ToList();
         }
 
-        public async Task<List<PDEN_VOL_SUMMARY>> GetProductionReportingAsync(List<AppFilter> filters = null)
+        public async Task<List<PDEN_VOL_SUMMARY>> GetProductionReportingAsync(List<AppFilter>? filters = null)
         {
             var repo = new PPDMGenericRepository(
                 _editor, _commonColumnHandler, _defaults, _metadata,
@@ -236,6 +237,176 @@ namespace Beep.OilandGas.LifeCycle.Services.Production
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"Error getting reserves for field: {fieldId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Returns all WELL_ACTIVITY records for every well belonging to the given field.
+        /// Used to populate intervention candidate lists.
+        /// </summary>
+        public async Task<List<WELL_ACTIVITY>> GetWellActivitiesForFieldAsync(string fieldId)
+        {
+            try
+            {
+                var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL), _connectionName, "WELL");
+                var wellFilters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "ASSIGNED_FIELD", Operator = "=", FilterValue = fieldId },
+                    new AppFilter { FieldName = "ACTIVE_IND",     Operator = "=", FilterValue = "Y" }
+                };
+                var wellResults = await wellRepo.GetAsync(wellFilters);
+                var wells = wellResults.OfType<WELL>().ToList();
+
+                var activities = new List<WELL_ACTIVITY>();
+                var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
+
+                foreach (var well in wells)
+                {
+                    if (string.IsNullOrEmpty(well.UWI)) continue;
+                    var actFilters = new List<AppFilter>
+                    {
+                        new AppFilter { FieldName = "UWI",        Operator = "=", FilterValue = well.UWI },
+                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    };
+                    var actResults = await actRepo.GetAsync(actFilters);
+                    activities.AddRange(actResults.OfType<WELL_ACTIVITY>());
+                }
+                return activities;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error getting well activities for field {fieldId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Records a decision (Approved / Deferred / Rejected) for a well intervention
+        /// by inserting a new WELL_ACTIVITY record with the decision as REMARK.
+        /// </summary>
+        public async Task RecordInterventionDecisionAsync(string uwi, string decisionActivityTypeId,
+            string remark, string userId)
+        {
+            try
+            {
+                var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
+
+                var activity = new WELL_ACTIVITY
+                {
+                    UWI              = uwi,
+                    SOURCE           = "SYSTEM",
+                    ACTIVITY_OBS_NO  = (decimal)DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                    ACTIVITY_TYPE_ID = decisionActivityTypeId,
+                    ACTIVE_IND       = "Y",
+                    REMARK           = remark,
+                };
+                await actRepo.InsertAsync(activity, userId);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error recording intervention decision for well {uwi}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Returns a lightweight summary for the Production Dashboard:
+        /// well counts by status, latest aggregate volume, open activity count.
+        /// </summary>
+        public async Task<ProductionDashboardSummary> GetProductionDashboardSummaryAsync(string fieldId)
+        {
+            try
+            {
+                var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL), _connectionName, "WELL");
+                var wellFilters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "ASSIGNED_FIELD", Operator = "=", FilterValue = fieldId },
+                    new AppFilter { FieldName = "ACTIVE_IND",     Operator = "=", FilterValue = "Y" }
+                };
+                var wellResults = await wellRepo.GetAsync(wellFilters);
+                var wells = wellResults.OfType<WELL>().ToList();
+
+                var actRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY");
+
+                int openActivities = 0;
+                foreach (var well in wells)
+                {
+                    if (string.IsNullOrEmpty(well.UWI)) continue;
+                    var actFilters = new List<AppFilter>
+                    {
+                        new AppFilter { FieldName = "UWI",        Operator = "=", FilterValue = well.UWI },
+                        new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                    };
+                    var acts = await actRepo.GetAsync(actFilters);
+                    openActivities += acts.Count();
+                }
+
+                return new ProductionDashboardSummary
+                {
+                    TotalWells      = wells.Count,
+                    OpenWorkOrders  = openActivities,
+                    FieldId         = fieldId,
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error getting production dashboard summary for field {fieldId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Returns per-well status rows for the Production Dashboard wells grid.
+        /// Pulls WELL + latest WELL_TEST data for oil/gas rates and WELL_STATUS for status.
+        /// </summary>
+        public async Task<List<ProductionWellStatusDto>> GetProductionWellStatusAsync(string fieldId)
+        {
+            try
+            {
+                var wellRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL), _connectionName, "WELL");
+                var wellFilters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "ASSIGNED_FIELD", Operator = "=", FilterValue = fieldId },
+                    new AppFilter { FieldName = "ACTIVE_IND",     Operator = "=", FilterValue = "Y" }
+                };
+                var wellResults = await wellRepo.GetAsync(wellFilters);
+                var wells = wellResults.OfType<WELL>().ToList();
+
+                var testRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL_TEST), _connectionName, "WELL_TEST");
+
+                var dtoList = new List<ProductionWellStatusDto>();
+                foreach (var well in wells)
+                {
+                    if (string.IsNullOrEmpty(well.UWI)) continue;
+                    var testFilters = new List<AppFilter>
+                    {
+                        new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = well.UWI }
+                    };
+                    var testResults = await testRepo.GetAsync(testFilters);
+                    var latestTest = testResults.OfType<WELL_TEST>()
+                        .OrderByDescending(t => t.TEST_DATE)
+                        .FirstOrDefault();
+
+                    dtoList.Add(new ProductionWellStatusDto
+                    {
+                        WellId    = well.UWI,
+                        WellName  = well.WELL_NAME ?? well.UWI,
+                        Status    = well.CURRENT_STATUS ?? "UNKNOWN",
+                        OilRate   = latestTest != null ? (double)(latestTest.OIL_FLOW_AMOUNT) : 0,
+                        GasRate   = latestTest != null ? (double)(latestTest.GAS_FLOW_AMOUNT) : 0,
+                        WaterCut  = latestTest != null ? (double)(latestTest.WATER_CUT_PERCENT) : 0,
+                        LastTestDate = latestTest?.TEST_DATE,
+                    });
+                }
+                return dtoList;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error getting production well status for field {fieldId}", ex);
             }
         }
 

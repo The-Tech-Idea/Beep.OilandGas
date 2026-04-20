@@ -2010,7 +2010,7 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
         public virtual async Task<FileImportResult> ImportFromCsvAsync(
             string csvFilePath,
             string userId,
-            Dictionary<string, string> columnMapping = null,
+            Dictionary<string, string>? columnMapping = null,
             bool skipHeaderRow = true,
             bool validateForeignKeys = true,
             ProgressReportDelegate? onProgress = null,
@@ -2649,7 +2649,9 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core
 
         public async Task InsertAsync(NodalAnalysisResult result, object value)
         {
-            throw new NotImplementedException();
+            if (result == null) throw new ArgumentNullException(nameof(result));
+            var userId = value?.ToString() ?? "SYSTEM";
+            await InsertAsync((object)result, userId);
         }
 
         #endregion

@@ -1,0 +1,172 @@
+﻿@page "/ppdm39/setup/dummy-data"
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using System.Text.Json
+
+<PageTitle>Generate Demo Data — Beep Oil &amp; Gas</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+
+    <!-- Step header -->
+    <MudStack Spacing="0" Class="mb-4">
+        <MudText Typo="Typo.caption" Color="Color.Secondary">Setup — Step 3 of 3 (Optional)</MudText>
+        <MudText Typo="Typo.h5">Generate Demo Data</MudText>
+        <MudText Typo="Typo.body2" Color="Color.Secondary">
+            Populate the database with realistic PPDM39 sample data so you can explore all features
+            without entering real asset data. This step is optional and can be skipped.
+        </MudText>
+    </MudStack>
+
+    <!-- Options card -->
+    <MudPaper Elevation="2" Class="pa-5 mb-4">
+        <MudText Typo="Typo.subtitle1" Class="mb-3">What data should be generated?</MudText>
+
+        <MudRadioGroup @bind-Value="_seedOption" T="string" Class="mb-4">
+            <MudRadio Value="@("minimal")" Color="Color.Primary">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body1">Minimal — 1 field, 5 wells, basic production history</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Good for a quick look — generates in under 10 seconds</MudText>
+                </MudStack>
+            </MudRadio>
+            <MudRadio Value="@("standard")" Color="Color.Primary">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body1">Standard — 3 fields, 25 wells, 2 years of production + well tests</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Recommended for a realistic demo environment (~30 seconds)</MudText>
+                </MudStack>
+            </MudRadio>
+            <MudRadio Value="@("full")" Color="Color.Primary">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body1">Full — 5 fields, 50 wells, 5 years of history + facilities + activities</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Complete dataset for in-depth exploration (~2 minutes)</MudText>
+                </MudStack>
+            </MudRadio>
+        </MudRadioGroup>
+
+        @if (_result != null)
+        {
+            <MudAlert Severity="@(_result.Success ? Severity.Success : Severity.Error)"
+                      Class="mb-3"
+                      Dense="true">
+                @_result.Message
+                @if (_result.Success && _result.WellsCreated > 0)
+                {
+                    <span> — <strong>@_result.FieldsCreated</strong> fields, <strong>@_result.WellsCreated</strong> wells</span>
+                }
+            </MudAlert>
+        }
+
+        @if (_busy)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-3" />
+            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-3">@_statusText</MudText>
+        }
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.Science"
+                   Disabled="@_busy"
+                   OnClick="GenerateAsync"
+                   FullWidth="true">
+            @if (_busy)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <span>Generating…</span>
+            }
+            else
+            {
+                <span>Generate Demo Data</span>
+            }
+        </MudButton>
+    </MudPaper>
+
+    <!-- Navigation footer -->
+    <MudDivider Class="mb-4" />
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudButton Variant="Variant.Text"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   Href="/ppdm39/setup/seed">
+            ← Back to Seed Data
+        </MudButton>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Text"
+                       Color="Color.Default"
+                       OnClick="@(() => NavigationManager.NavigateTo("/dashboard"))">
+                Skip — Go to Dashboard
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Success"
+                       EndIcon="@Icons.Material.Filled.RocketLaunch"
+                       OnClick="@(() => NavigationManager.NavigateTo("/dashboard"))">
+                Launch App →
+            </MudButton>
+        </MudStack>
+    </MudStack>
+
+</MudContainer>
+
+@code {
+    private string _seedOption = "standard";
+    private bool _busy;
+    private string _statusText = "";
+    private GenerateDummyDataResponse? _result;
+
+    private async Task GenerateAsync()
+    {
+        _busy = true;
+        _result = null;
+        _statusText = "Initializing…";
+        StateHasChanged();
+
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "setup";
+
+            _statusText = "Generating assets — this may take a moment…";
+            StateHasChanged();
+
+            var request = new { SeedOption = _seedOption, UserId = userId };
+            _result = await ApiClient.PostAsync<object, GenerateDummyDataResponse>(
+                "/api/ppdm39/setup/generate-dummy-data", request);
+
+            if (_result?.Success == true)
+                Snackbar.Add("Demo data generated successfully.", Severity.Success);
+            else
+                Snackbar.Add(_result?.Message ?? "Generation failed.", Severity.Error);
+        }
+        catch (Exception)
+        {
+            _result = new GenerateDummyDataResponse
+            {
+                Success = false,
+                Message = "An error occurred generating demo data."
+            };
+            Snackbar.Add("An error occurred generating demo data.", Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+            _statusText = "";
+            StateHasChanged();
+        }
+    }
+
+    private class GenerateDummyDataResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string SeedOption { get; set; } = string.Empty;
+        public int FieldsCreated { get; set; }
+        public int WellsCreated { get; set; }
+        public int ProductionRecords { get; set; }
+        public int FacilitiesCreated { get; set; }
+        public int WellTestsCreated { get; set; }
+        public int ActivitiesCreated { get; set; }
+    }
+}

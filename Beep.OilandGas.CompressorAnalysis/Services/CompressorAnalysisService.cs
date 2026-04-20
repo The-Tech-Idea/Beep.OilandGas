@@ -389,7 +389,6 @@ namespace Beep.OilandGas.CompressorAnalysis.Services
                 decimal potentialSavings = baselineResult.MOTOR_HORSEPOWER * (1m - (1m / efficiencyImprovement));
 
                 // Analyze isentropic power
-                decimal k = CompressorConstants.StandardSpecificHeatRatio;
                 decimal molecularWeight = GasSpecificGravity * CompressorConstants.AirMolecularWeight;
                 decimal compressionRatio = requiredDischargePressure / inletPressure;
 

@@ -1,8 +1,9 @@
-@page "/ppdm39/workorder/calendar"
+﻿@page "/ppdm39/workorder/calendar"
 @using Beep.OilandGas.Models.Data.WorkOrder
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 
 <PageTitle>Work Order Calendar</PageTitle>
 
@@ -129,7 +130,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        try { _fieldName = (await ApiClient.GetAsync<dynamic>("/api/field/fields/active"))?.FieldName; }
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldNameDto>("/api/field/current/summary");
+            _fieldName = summary?.FieldName;
+        }
         catch { }
         await LoadCalendarAsync();
     }
@@ -145,7 +150,7 @@
             _slots = await ApiClient.GetAsync<List<CalendarSlot>>(
                 $"/api/field/current/workorder/calendar?from={Uri.EscapeDataString(from)}&to={Uri.EscapeDataString(to)}") ?? new();
         }
-        catch (Exception ex) { _error = $"Failed to load calendar: {ex.Message}"; }
+        catch (Exception) { _error = "Failed to load calendar."; Snackbar.Add(_error, Severity.Error); }
         finally { _loading = false; }
     }
 
@@ -168,7 +173,7 @@
     }
 
     private void NavigateToDetail(string instanceId) =>
-        NavigationManager.NavigateTo($"/ppdm39/workorder/{instanceId}");
+        NavigationManager.NavigateTo($"/ppdm39/workorder/{Uri.EscapeDataString(instanceId)}");
 
     private static string SlotColor(string state) => state switch
     {
@@ -180,4 +185,10 @@
         WorkOrderState.Cancelled   => "#f44336",
         _                          => "#9e9e9e"
     };
+
+    private sealed class FieldNameDto
+    {
+        public string? FieldId   { get; set; }
+        public string? FieldName { get; set; }
+    }
 }

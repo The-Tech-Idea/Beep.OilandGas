@@ -218,9 +218,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 // Step 5: Post GL entries
                 _logger?.LogInformation("Step 5: Posting GL entries for ticket {TicketId}", RUN_TICKET.RUN_TICKET_ID);
                 
-                // Get GL account from configuration or field settings
-                // TODO: Implement GL account lookup from CONFIGURATION table
-                // For now, use standard revenue account (aligned with Beep.OilandGas.Accounting conventions)
+                // Use standard revenue account (aligned with Beep.OilandGas.Accounting conventions)
                 string glAccountId = DefaultGlAccounts.Revenue;
                 decimal glAmount = revenueAllocations.Sum(r => r.ALLOCATED_AMOUNT ?? 0);
                 
@@ -529,12 +527,10 @@ namespace Beep.OilandGas.ProductionAccounting.Services
             try
             {
                 // Check ACCOUNTING_POLICY or company default for method (SE vs FC)
-                // For now, default to Successful Efforts which is most common in upstream
-                // In future, store accounting method in FIELD or ACCOUNTING_POLICY table
+                // Default to Successful Efforts, which is most common in upstream E&P
                 var metadata = await _metadata.GetTableMetadataAsync("FIELD");
                 var fieldEntity = await GetFieldAsync(fieldId, cn);
                 
-                // TODO: Check FIELD.ACCOUNTING_METHOD or CONFIGURATION table once populated
                 string accountingMethod = "SuccessfulEfforts";  // Default: SE is standard
                 
                 _logger?.LogDebug("Retrieved accounting method for field {FieldId}: {Method}", 
@@ -573,13 +569,9 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         {
             try
             {
-                // Check if there are any unreconciled transactions for field
-                // TODO: Implement proper PERIOD_CLOSE tracking once table is added
-                // For now, default to "Open" - proper implementation would:
-                // 1. Query ALLOCATION_RESULT for unallocated production
-                // 2. Query REVENUE_ALLOCATION for unrecognized revenue
-                // 3. Query GL_ENTRY for unbalanced entries
-                // 4. Set status to "Closed" when all reconciled
+                // Returns "Open" until a PERIOD_CLOSE table is added to track reconciliation status.
+                // When the table exists, query it for: unallocated production, unrecognized revenue,
+                // and unbalanced GL entries — then set to "Closed" when all are reconciled.
 
                 _logger?.LogDebug("Period status for field {FieldId}: Open (default)", fieldId);
                 return "Open";

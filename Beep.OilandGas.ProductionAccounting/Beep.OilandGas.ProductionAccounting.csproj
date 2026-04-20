@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>net10.0</TargetFrameworks>
@@ -12,7 +12,8 @@
 		<PackageIcon>SimpleODM.png</PackageIcon>
 		<RepositoryUrl>https://github.com/The-Tech-Idea/</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-	</PropertyGroup>
+	    <NoWarn>$(NoWarn);CS0169;CS8632;CS0618</NoWarn>
+</PropertyGroup>
 	<ItemGroup>
 		<None Include="..\..\InstallationScripts\LogoGFx\128\SimpleODM.png">
 			<Pack>True</Pack>

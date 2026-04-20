@@ -37,7 +37,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error analyzing pipeline flow for pipeline {PipelineId}", request.PipelineId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -54,7 +54,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating pressure drop for pipeline {PipelineId}", request.PipelineId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -69,7 +69,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Calculations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving pipeline analysis result");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

@@ -1,11 +1,10 @@
-@page "/ppdm39/operations/enhancedrecovery"
+﻿@page "/ppdm39/operations/enhancedrecovery"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.EnhancedRecovery
 @using Beep.OilandGas.Client.App
-@inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 @inject IOperationsServiceClient OperationsService
+@inject ApiClient ApiClient
 
 <PageTitle>Evaluate Enhanced Oil Recovery</PageTitle>
 
@@ -74,7 +73,7 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _fieldId = string.Empty;
     private string _eorMethod = "WaterFlooding";
     private string _injectionWellId = string.Empty;
@@ -84,6 +83,31 @@
     private bool _isManaging = false;
     private bool _isLoading = false;
     private EnhancedRecoveryOperation? _eorResult;
+
+    private class FieldInfoDto
+    {
+        public string? FieldId   { get; set; }
+        public string? FieldName { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var field = await ApiClient.GetAsync<FieldInfoDto>("api/field/current");
+            if (field != null)
+            {
+                _fieldId   = field.FieldId   ?? string.Empty;
+                _fieldName = field.FieldName ?? string.Empty;
+            }
+        }
+        catch { /* non-fatal — user can still enter field ID manually */ }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
 
     private async Task AnalyzeEOR()
     {
@@ -99,9 +123,9 @@
             _eorResult = await OperationsService.AnalyzeEORPotentialAsync(_fieldId, _eorMethod);
             Snackbar.Add("EOR potential analysis completed", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error analyzing EOR potential: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error analyzing EOR potential.", Severity.Error);
         }
         finally
         {
@@ -124,9 +148,9 @@
             _eorResult = await OperationsService.CalculateRecoveryFactorAsync(projectId);
             Snackbar.Add("Recovery factor calculated", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error calculating recovery factor: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error calculating recovery factor.", Severity.Error);
         }
         finally
         {
@@ -148,9 +172,9 @@
             var result = await OperationsService.ManageInjectionAsync(_injectionWellId, _injectionRate);
             Snackbar.Add("Injection operation managed successfully", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error managing injection: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error managing injection.", Severity.Error);
         }
         finally
         {

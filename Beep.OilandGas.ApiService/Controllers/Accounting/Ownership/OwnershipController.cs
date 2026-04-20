@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,7 +49,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting ownership interests");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -92,7 +92,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Ownership
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error registering ownership interest");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

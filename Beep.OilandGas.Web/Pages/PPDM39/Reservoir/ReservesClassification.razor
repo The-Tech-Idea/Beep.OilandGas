@@ -1,10 +1,13 @@
-@page "/reservoir/reserves"
+﻿@page "/reservoir/reserves"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
 
 <PageTitle>Classify Field Reserves</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
@@ -57,10 +60,7 @@
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    <MudChart T="double" ChartType="ChartType.Bar"
-                              Series="@_reservesSeries"
-                              XAxisLabels="@_reservesZones"
-                              Width="100%" Height="220px" />
+                    <MudAlert Severity="Severity.Info" Dense="true">Reserves-by-zone bar chart will render once volumetric estimates are assigned per pool.</MudAlert>
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -181,35 +181,23 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
-    private string _effectiveDate = "01 Jan 2026";
+    private string _fieldName = string.Empty;
+    private string _effectiveDate = DateTime.UtcNow.ToString("dd MMM yyyy");
     private string _auditStatus = "REVIEW";
     private string _reconciliationNote = "";
+    private bool _loading = true;
 
-    private double _r1P = 148.2;
-    private double _r2P = 207.7;
-    private double _r3P = 252.4;
-    private double _contingent = 38.5;
+    private double _r1P;
+    private double _r2P;
+    private double _r3P;
+    private double _contingent;
 
     private record ReservesRow(string Zone, string Field, double Proved1P, double Probable2P,
         double Possible3P, double Produced, string Category, string Certifier);
-
-    private List<ReservesRow> _reservesRows = new()
-    {
-        new("ZONE-A", "Main Field", 82.4, 118.6, 140.2, 105.8, "ACTIVE",  "J. Petroleum (SPE)"),
-        new("ZONE-B", "Main Field", 48.8,  68.5,  84.0,  42.2, "ACTIVE",  "J. Petroleum (SPE)"),
-        new("ZONE-C", "Main Field", 17.0,  20.6,  28.2,   4.5, "REVIEW",  "TBD"),
-    };
-
-    private List<ChartSeries<double>> _reservesSeries = new()
-    {
-        new ChartSeries<double> { Name = "1P (Proved)", Data = new double[] { 82.4, 48.8, 17.0 } },
-        new ChartSeries<double> { Name = "Probable",    Data = new double[] { 36.2, 19.7,  3.6 } },
-        new ChartSeries<double> { Name = "Possible",    Data = new double[] { 21.6, 15.5,  7.6 } },
-    };
-    private string[] _reservesZones = { "Zone A", "Zone B", "Zone C" };
+    private List<ReservesRow> _reservesRows = new();
 
     private record UncertaintyDriver(string Driver, double RangeMmbbl, double Percent, Color Color);
+    // Standard SPE-PRMS uncertainty drivers — reference data, not DB records
     private List<UncertaintyDriver> _uncertainties = new()
     {
         new("Recovery Factor",    18.5, 75, Color.Error),
@@ -220,13 +208,69 @@
     };
 
     private record AuditEntry(string Action, string Date, string User);
-    private List<AuditEntry> _auditTrail = new()
+    private List<AuditEntry> _auditTrail = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        new("Reserves submitted for external review", "20 Mar 2026", "R. Sheikh"),
-        new("Zone C reserves revised downward (seismic reinterpretation)", "12 Mar 2026", "P. Analyst"),
-        new("Annual reserves estimation completed", "28 Feb 2026", "R. Sheikh"),
-        new("Mid-year review — no material change", "15 Jul 2025", "R. Sheikh"),
-    };
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        _loading = true;
+        try
+        {
+            var summaryTask = ApiClient.GetAsync<ReservoirSummaryDto>("api/field/current/reservoir/dashboard/summary");
+            var poolsTask   = ApiClient.GetAsync<List<ReservoirPoolDto>>("api/field/current/reservoir/dashboard/pools");
+            await Task.WhenAll(summaryTask, poolsTask);
+
+            var summary = await summaryTask;
+            if (summary != null)
+            {
+                _r1P        = summary.Reserves1PMmbbl;
+                _r2P        = summary.Reserves2PMmbbl;
+                _r3P        = summary.Reserves3PMmbbl;
+                _contingent = summary.ContingentResourcesMmbbl;
+            }
+
+            var pools = await poolsTask;
+            if (pools != null)
+                _reservesRows = pools.Select(p => new ReservesRow(
+                    p.PoolName ?? p.PoolId ?? "Unknown",
+                    "Main Field",
+                    0, 0, 0, 0,
+                    p.Status ?? "REVIEW",
+                    "—")).ToList();
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load reserves data.", Severity.Warning);
+        }
+        finally { _loading = false; }
+    }
+
+    private class ReservoirSummaryDto
+    {
+        public double OoipMmbbl                { get; set; }
+        public double RecoveryFactorPct        { get; set; }
+        public double Reserves1PMmbbl          { get; set; }
+        public double Reserves2PMmbbl          { get; set; }
+        public double Reserves3PMmbbl          { get; set; }
+        public double ContingentResourcesMmbbl { get; set; }
+        public int    ActivePoolCount          { get; set; }
+    }
+
+    private class ReservoirPoolDto
+    {
+        public string? PoolId    { get; set; }
+        public string? PoolName  { get; set; }
+        public string? Status    { get; set; }
+        public double  AreaAcres { get; set; }
+        public string? Formation { get; set; }
+    }
 
     private void SubmitForCertification()
     {

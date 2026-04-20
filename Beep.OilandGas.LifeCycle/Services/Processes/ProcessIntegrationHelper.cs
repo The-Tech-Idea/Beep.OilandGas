@@ -226,7 +226,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         /// <summary>
         /// Transition field phase and start appropriate process
         /// </summary>
-        public async Task<ProcessInstance> TransitionFieldPhaseWithProcessAsync(
+        public async Task<ProcessInstance?> TransitionFieldPhaseWithProcessAsync(
             string fieldId,
             string targetPhase,
             string userId)
@@ -242,7 +242,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 }
 
                 // Start appropriate process based on phase
-                ProcessInstance processInstance = null;
+                ProcessInstance? processInstance = null;
 
                 switch (targetPhase.ToUpper())
                 {
@@ -276,7 +276,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         /// <summary>
         /// Transition reservoir state and start appropriate process
         /// </summary>
-        public async Task<ProcessInstance> TransitionReservoirStateWithProcessAsync(
+        public async Task<ProcessInstance?> TransitionReservoirStateWithProcessAsync(
             string reservoirId,
             string targetState,
             string fieldId,
@@ -293,7 +293,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                 }
 
                 // Start appropriate process based on state
-                ProcessInstance processInstance = null;
+                ProcessInstance? processInstance = null;
 
                 switch (targetState.ToUpper())
                 {

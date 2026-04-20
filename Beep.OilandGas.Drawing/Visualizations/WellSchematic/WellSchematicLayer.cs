@@ -121,8 +121,7 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic
             }
             else
             {
-                // Curved wellbore - simplified for now
-                // TODO: Implement curved wellbore rendering
+                // Curved wellbore rendered as rectangle until full deviation path is available
                 var path = new SKPath();
                 path.AddRect(new SKRect(
                     centerX - radius,

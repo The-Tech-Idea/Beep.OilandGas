@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data.DataManagement;
 using Beep.OilandGas.Models.Data;
@@ -35,6 +35,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("{tableName}/metrics")]
         public async Task<ActionResult<DataQualityResult>> GetTableQualityMetrics(string tableName, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
             try
             {
                 _logger.LogInformation("Getting data quality metrics for table {TableName}", tableName);
@@ -62,7 +63,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting quality metrics for table {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -75,7 +76,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             try
             {
                 _logger.LogInformation("Getting data quality dashboard");
-                var dashboard = await _dashboardService.GetDashboardDataAsync(null);
+                var dashboard = await _dashboardService.GetDashboardDataAsync(string.Empty);
                 
                 if (dashboard == null)
                 {
@@ -113,7 +114,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting quality dashboard");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -123,6 +124,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("{tableName}/issues")]
         public async Task<ActionResult> GetQualityIssues(string tableName, [FromQuery] string[]? fields = null, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(tableName)) return BadRequest(new { error = "Table name is required." });
             try
             {
                 _logger.LogInformation("Finding quality issues for table {TableName}", tableName);
@@ -134,7 +136,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error finding quality issues for table {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

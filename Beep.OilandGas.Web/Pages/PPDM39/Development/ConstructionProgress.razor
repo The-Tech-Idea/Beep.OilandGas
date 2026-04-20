@@ -1,10 +1,13 @@
-@page "/development/construction"
+﻿@page "/development/construction"
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
 
 <PageTitle>Track Construction Progress</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     @* ── Header ──────────────────────────────────────────────────────────── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
@@ -225,49 +228,77 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
+    private bool   _loading   = true;
 
-    private List<WorkGroup> _workGroups = new()
-    {
-        new("Platform / Facility", Icons.Material.Filled.Factory, Color.Primary, new()
-        {
-            new("Engineering Complete",           "Jan 2025", true,  false,   0, "Delivered on schedule"),
-            new("Procurement Complete",           "Jun 2025", true,  false,   0, ""),
-            new("Fabrication",                    "Mar 2026", false, true,   68, "Hull 68% complete at yard"),
-            new("Installation",                   "Aug 2026", false, false,   0, ""),
-            new("Hook-up & Commissioning",        "Nov 2026", false, false,   0, ""),
-        }),
-        new("Wells", Icons.Material.Filled.OilBarrel, Color.Info, new()
-        {
-            new("Well 1 (Dev-A1) — Drilled & Completed", "Feb 2026", true,  false,  0, ""),
-            new("Well 2 (Dev-A2) — Drilling",             "Jun 2026", false, true,  81, "At 2,850m MD of 3,500m TD"),
-            new("Well 3 (Dev-B1) — Injector",             "Sep 2026", false, false,  0, ""),
-            new("Well 4 (Dev-A3) — Planned",              "Nov 2026", false, false,  0, ""),
-        }),
-        new("Pipeline & Subsea", Icons.Material.Filled.Timeline, Color.Secondary, new()
-        {
-            new("Flowline FEED Complete",   "Apr 2025", true,  false, 0, ""),
-            new("Pipeline Procurement",     "Sep 2025", true,  false, 0, ""),
-            new("Lay Campaign",             "Jun 2026", false, false, 0, ""),
-            new("Pre-commissioning",        "Oct 2026", false, false, 0, ""),
-        }),
-    };
+    private List<WorkGroup>   _workGroups  = new();
+    private List<PunchItem>   _punchItems  = new();
+    private List<ChartSeries<double>> _costSeries = new();
+    private string[] _costLabels = Array.Empty<string>();
 
-    private List<PunchItem> _punchItems = new()
+    protected override async Task OnInitializedAsync()
     {
-        new("Manifold piping spec — Rev C",      "J. Smith",  "May 2026", "A"),
-        new("Environmental permit update",        "S. Lee",    "Jun 2026", "A"),
-        new("Vendor inspection report #44",       "M. Torres", "May 2026", "B"),
-        new("P&ID Rev D issued to contractor",    "A. Webb",   "Jul 2026", "B"),
-        new("NCR #142 — weld repair closure",     "J. Smith",  "Apr 2026", "A"),
-    };
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
 
-    private List<ChartSeries<double>> _costSeries = new()
+        _loading = true;
+        try
+        {
+            var progress = await ApiClient.GetAsync<ConstructionProgressDto>(
+                "api/field/current/development/construction-progress");
+            if (progress != null)
+            {
+                _workGroups = (progress.WorkGroups ?? new()).Select(g => new WorkGroup(
+                    g.Title ?? string.Empty,
+                    Icons.Material.Filled.Construction,
+                    Color.Primary,
+                    (g.Packages ?? new()).Select(p => new WorkPackage(
+                        p.Name, p.TargetDate, p.IsCompleted, p.IsActive, p.PercentComplete, p.Note)).ToList()
+                )).ToList();
+
+                _punchItems = (progress.PunchItems ?? new()).Select(p =>
+                    new PunchItem(p.Description, p.Owner, p.DueDate, p.Category)).ToList();
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load construction progress.", Severity.Error);
+        }
+        finally { _loading = false; }
+    }
+
+    // ── Response DTOs ─────────────────────────────────────────────────────
+    private class ConstructionProgressDto
     {
-        new ChartSeries<double> { Name = "Budget", Data = new double[] { 45, 80, 120, 180 } },
-        new ChartSeries<double> { Name = "Actual", Data = new double[] { 46, 82, 118, 187 } },
-    };
-    private string[] _costLabels = { "Q2'24", "Q3'24", "Q4'24", "Q1'25" };
+        public List<WorkGroupDto>? WorkGroups { get; set; }
+        public List<PunchItemDto>? PunchItems { get; set; }
+    }
+    private class WorkGroupDto
+    {
+        public string? Title { get; set; }
+        public List<WorkPackageDto>? Packages { get; set; }
+    }
+    private class WorkPackageDto
+    {
+        public string  Name            { get; set; } = string.Empty;
+        public string  TargetDate      { get; set; } = string.Empty;
+        public bool    IsCompleted     { get; set; }
+        public bool    IsActive        { get; set; }
+        public double  PercentComplete { get; set; }
+        public string  Note            { get; set; } = string.Empty;
+    }
+    private class PunchItemDto
+    {
+        public string Description { get; set; } = string.Empty;
+        public string Owner       { get; set; } = string.Empty;
+        public string DueDate     { get; set; } = string.Empty;
+        public string Category    { get; set; } = string.Empty;
+    }
 
     private string PkgIcon(WorkPackage p) =>
         p.IsCompleted ? Icons.Material.Filled.CheckCircle
@@ -280,7 +311,7 @@
     private Color OverallGroupColor(WorkGroup g)
     {
         if (g.Packages.All(p => p.IsCompleted)) return Color.Success;
-        if (g.Packages.Any(p => p.IsActive)) return Color.Primary;
+        if (g.Packages.Any(p => p.IsActive))    return Color.Primary;
         return Color.Default;
     }
 

@@ -1,4 +1,4 @@
-@page "/admin/access-control/hierarchy-config"
+﻿@page "/admin/access-control/hierarchy-config"
 @using Beep.OilandGas.Models.Data.AccessControl
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
@@ -79,16 +79,16 @@
 
         try
         {
-            _hierarchyConfig = await ApiClient.GetAsync<List<Beep.OilandGas.Models.Data.HierarchyConfig>>($"/api/assethierarchy/organization/{_organizationId}/config");
+            _hierarchyConfig = await ApiClient.GetAsync<List<Beep.OilandGas.Models.Data.HierarchyConfig>>($"/api/assethierarchy/organization/{Uri.EscapeDataString(_organizationId)}/config");
             
             if (_hierarchyConfig == null || !_hierarchyConfig.Any())
             {
                 Snackbar.Add("No hierarchy configuration found. You can create one.", Severity.Info);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading hierarchy configuration: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading hierarchy configuration.", Severity.Error);
         }
     }
 
@@ -115,9 +115,9 @@
                 Snackbar.Add("Failed to save hierarchy configuration", Severity.Error);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error saving hierarchy configuration: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error saving hierarchy configuration.", Severity.Error);
         }
     }
 }

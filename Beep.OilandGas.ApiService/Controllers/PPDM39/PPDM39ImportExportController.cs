@@ -65,6 +65,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(tableName))
+                    return BadRequest(new OperationStartResponse { OperationId = "", Message = "Table name is required." });
                 if (file == null || file.Length == 0)
                 {
                     return BadRequest(new OperationStartResponse { OperationId = "", Message = "No file uploaded" });
@@ -152,11 +154,11 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                             try { System.IO.File.Delete(tempFilePath); } catch { }
                         }
                         
-                        _progressTracking?.CompleteOperation(operationId!, false, errorMessage: ex.Message);
+                        _progressTracking?.CompleteOperation(operationId!, false, errorMessage: "Import failed. See server logs for details.");
                     }
                 });
 
-                return Ok(new OperationStartResponse { OperationId = operationId, Message = "Import started" });
+                return Ok(new OperationStartResponse { OperationId = operationId ?? string.Empty, Message = "Import started" });
             }
             catch (Exception ex)
             {
@@ -164,7 +166,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new OperationStartResponse 
                 { 
                     OperationId = "", 
-                    Message = $"Error starting import: {ex.Message}" 
+                    Message = "Error starting import. See server logs for details." 
                 });
             }
         }
@@ -181,6 +183,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(tableName))
+                    return BadRequest(new { error = "Table name is required." });
                 connectionName ??= request?.ConnectionName ?? _editor.ConfigEditor?.DataConnections?.FirstOrDefault()?.ConnectionName ?? "PPDM39";
                 operationId ??= _progressTracking?.StartOperation("ExportCsv", $"Exporting {tableName} to CSV");
 
@@ -238,9 +242,9 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 _logger.LogError(ex, "Error exporting CSV for table {TableName}", tableName);
                 if (!string.IsNullOrEmpty(operationId))
                 {
-                    _progressTracking?.CompleteOperation(operationId, false, errorMessage: ex.Message);
+                    _progressTracking?.CompleteOperation(operationId, false, errorMessage: "Export failed. See server logs for details.");
                 }
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -252,6 +256,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(operationId))
+                    return BadRequest(new { error = "Operation ID is required." });
                 var progress = _progressTracking?.GetProgress(operationId);
                 if (progress == null)
                 {
@@ -262,7 +268,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting progress for operation {OperationId}", operationId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

@@ -557,9 +557,9 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
                 };
 
                 // Calculate investment metrics
-                evaluation.NPV = CalculateNPV(initialCapex, projectedCashFlows, discountRate);
-                evaluation.IRR = CalculateIRR(initialCapex, projectedCashFlows);
-                evaluation.PaybackPeriod = CalculatePaybackPeriod(initialCapex, projectedCashFlows);
+                evaluation.NPV = CalculateNPV(initialCapex, evaluation.ProjectedCashFlows, discountRate);
+                evaluation.IRR = CalculateIRR(initialCapex, evaluation.ProjectedCashFlows);
+                evaluation.PaybackPeriod = CalculatePaybackPeriod(initialCapex, evaluation.ProjectedCashFlows);
                 evaluation.ProfitabilityIndex = CalculateProfitabilityIndex(evaluation.NPV, initialCapex);
                 evaluation.TotalProjectValue = initialCapex + evaluation.NPV;
                 evaluation.SensitivityAnalysis = PerformSensitivityAnalysis(evaluation);
@@ -657,13 +657,13 @@ namespace Beep.OilandGas.DevelopmentPlanning.Services
                 _logger?.LogInformation("Comparing {StrategyCount} alternative strategies for field {FieldId}",
                     strategies?.Count ?? 0, fieldId);
 
-                ValidateStrategyComparison(fieldId, strategies);
+                ValidateStrategyComparison(fieldId, strategies!);
 
                 var comparison = new StrategiesComparisonResult
                 {
                     FieldId = fieldId,
                     ComparisonDate = DateTime.UtcNow,
-                    StrategyCount = strategies.Count,
+                    StrategyCount = strategies!.Count,
                     Strategies = strategies
                 };
 

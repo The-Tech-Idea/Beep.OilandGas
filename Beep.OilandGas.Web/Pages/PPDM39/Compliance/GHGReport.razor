@@ -1,0 +1,121 @@
+﻿@page "/ppdm39/compliance/ghg"
+@using Beep.OilandGas.Models.Data.Compliance
+@inject Beep.OilandGas.Web.Services.ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<PageTitle>GHG Emission Report</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-4">GHG Emission Report</MudText>
+
+<MudPaper Elevation="2" Class="pa-4 mb-4">
+    <MudStack Row="true" Spacing="3" AlignItems="AlignItems.End">
+        <MudNumericField T="int" @bind-Value="_year" Label="Report Year" Min="2000" Max="2100" Style="width:130px" />
+        <MudSelect T="string" @bind-Value="_jurisdiction" Label="Jurisdiction" Style="width:180px">
+            <MudSelectItem Value="@("USA")">USA (40 CFR 98)</MudSelectItem>
+            <MudSelectItem Value="@("CANADA")">Canada (ECCC NIR)</MudSelectItem>
+            <MudSelectItem Value="@("INTERNATIONAL")">International (IOGP)</MudSelectItem>
+        </MudSelect>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   Disabled="@_loading"
+                   OnClick="@GenerateAsync">Generate</MudButton>
+    </MudStack>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-4" />
+}
+
+@if (_report is not null)
+{
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="2" Class="pa-4 text-center">
+                <MudIcon Icon="@Icons.Material.Outlined.Cloud" Color="Color.Warning" Size="Size.Large" />
+                <MudText Typo="Typo.h4">@_report.TotalCO2e.ToString("N1")</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default">Total t CO₂e</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="2" Class="pa-4 text-center">
+                <MudIcon Icon="@Icons.Material.Outlined.Category" Color="Color.Info" Size="Size.Large" />
+                <MudText Typo="Typo.h4">@_report.Sources.Count</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default">Emission Sources</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Elevation="2" Class="pa-4 text-center">
+                <MudIcon Icon="@Icons.Material.Outlined.EventNote" Color="Color.Secondary" Size="Size.Large" />
+                <MudText Typo="Typo.h4">@_report.Year</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Default">Report Year</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Elevation="2" Class="pa-4 mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+            <MudText Typo="Typo.subtitle1"><b>Emission Source Lines</b></MudText>
+            <MudSpacer />
+            <MudText Typo="Typo.caption" Color="Color.Default">
+                Regulation: @_jurisdiction | Generated: @_report.GeneratedAt.ToString("yyyy-MM-dd HH:mm") UTC
+            </MudText>
+        </MudStack>
+
+        <MudDataGrid T="EmissionSourceLine" Items="@_report.Sources" Dense="true" Hover="true">
+            <Columns>
+                <PropertyColumn Property="x => x.SourceCategory" Title="Source" />
+                <PropertyColumn Property="x => x.Regulation"     Title="Regulation" />
+                <PropertyColumn Property="x => x.ActivityVolume" Title="Activity Volume" Format="N2" />
+                <PropertyColumn Property="x => x.VolumeUnit"     Title="Unit" />
+                <PropertyColumn Property="x => x.EmissionFactor" Title="EF" Format="N4" />
+                <PropertyColumn Property="x => x.FactorUnit"     Title="EF Unit" />
+                <PropertyColumn Property="x => x.EmissionsCO2e"  Title="t CO₂e" Format="N2" />
+            </Columns>
+        </MudDataGrid>
+    </MudPaper>
+
+    <MudPaper Elevation="2" Class="pa-4">
+        <MudText Typo="Typo.caption" Color="Color.Default">
+            CSV export: copy the source data from the grid above. API endpoint available at
+            <code>/api/field/current/compliance/ghg/report?year=@_year&amp;jurisdiction=@_jurisdiction</code>
+        </MudText>
+    </MudPaper>
+}
+
+@if (!string.IsNullOrEmpty(_error))
+{
+    <MudAlert Severity="Severity.Error" Class="mt-2">@_error</MudAlert>
+}
+
+@code {
+    private bool              _loading      = false;
+    private string?           _error;
+    private int               _year         = DateTime.Now.Year;
+    private string            _jurisdiction = "USA";
+    private GHGEmissionReport? _report;
+
+    private async Task GenerateAsync()
+    {
+        _loading = true;
+        _error   = null;
+        _report  = null;
+        try
+        {
+            _report = await ApiClient.PostAsync<object, GHGEmissionReport>(
+                $"/api/field/current/compliance/ghg/report?year={_year}&jurisdiction={_jurisdiction}",
+                null!);
+            if (_report is null)
+                _error = "No report data returned.";
+        }
+        catch (Exception)
+        {
+            _error = "Failed to generate GHG report.";
+            Snackbar.Add(_error, Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

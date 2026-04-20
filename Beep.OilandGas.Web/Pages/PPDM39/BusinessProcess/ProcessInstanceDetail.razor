@@ -90,6 +90,7 @@
 @code {
     [Parameter] public string Id { get; set; } = string.Empty;
 
+    private string _loadedId         = string.Empty;
     private string _processName     = string.Empty;
     private string _entityId        = string.Empty;
     private string _status          = "IN_PROGRESS";
@@ -104,43 +105,61 @@
     private List<ProcessTransition>      _transitions      = new();
     private List<HistoryRow>             _history          = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with GET /api/field/current/process/instances/{Id}
-        _processName     = "Exploratory Well Drilling Approval";
-        _entityId        = "W-001";
-        _status          = "IN_PROGRESS";
-        _currentStepId   = "S3";
-        _currentStepName = "Gate 1: Drill/No-Drill Decision";
-        _currentStepType = "APPROVAL";
-        _startedAt       = DateTime.Today.AddDays(-5);
-        _startedBy       = "john.doe";
-
-        _steps = new List<ProcessStepDefinition>
-        {
-            new() { StepId = "S1", StepName = "Prospect Selection & Ranking",      SequenceNumber = 1, StepType = "ACTION" },
-            new() { StepId = "S2", StepName = "Geological & Geophysical Review",   SequenceNumber = 2, StepType = "VALIDATION" },
-            new() { StepId = "S3", StepName = "Gate 1: Drill/No-Drill Decision",   SequenceNumber = 3, StepType = "APPROVAL", RequiresApproval = true },
-            new() { StepId = "S4", StepName = "AFE Preparation",                   SequenceNumber = 4, StepType = "ACTION" },
-            new() { StepId = "S5", StepName = "Gate 2: AFE Approval",              SequenceNumber = 5, StepType = "APPROVAL", RequiresApproval = true },
-        };
-
-        _completedStepIds = new HashSet<string> { "S1", "S2" };
-
-        // TODO: replace with GET /api/field/current/process/instances/{Id}/history
-        _history = new List<HistoryRow>
-        {
-            new(DateTime.Today.AddDays(-5), "STARTED",   "Instance created",          "john.doe"),
-            new(DateTime.Today.AddDays(-4), "STEP_DONE", "S1 completed",              "john.doe"),
-            new(DateTime.Today.AddDays(-2), "STEP_DONE", "S2 Geo review completed",   "geo.team"),
-        };
+        _loadedId = Id;
+        await LoadInstanceAsync();
     }
 
-    private Task OnTransitionedAsync()
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id == _loadedId) return;
+        _loadedId = Id;
+        await LoadInstanceAsync();
+    }
+
+    private async Task LoadInstanceAsync()
+    {
+        try
+        {
+            var inst = await ApiClient.GetAsync<ProcessInstance>($"/api/field/current/process/instances/{Uri.EscapeDataString(Id)}");
+            if (inst != null)
+            {
+                _processName     = inst.ProcessId;
+                _entityId        = inst.EntityId;
+                _status          = inst.Status.ToString();
+                _currentStepId   = inst.CurrentStepId;
+                _startedAt       = inst.StartDate;
+                _startedBy       = inst.StartedBy;
+
+                if (inst.StepInstances?.Count > 0)
+                {
+                    _completedStepIds = inst.StepInstances
+                        .Where(s => s.Status == StepStatus.COMPLETED)
+                        .Select(s => s.StepId)
+                        .ToHashSet();
+                }
+
+                // Rebuild step list from definition if available via history; otherwise leave empty
+                _steps = new();
+            }
+
+            var history = await ApiClient.GetAsync<List<ProcessHistoryEntry>>($"/api/field/current/process/instances/{Uri.EscapeDataString(Id)}/history") ?? new();            if (history != null)
+            {
+                _history = history.Select(h => new HistoryRow(h.Timestamp, h.Action, h.Notes, h.PerformedBy)).ToList();
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Could not load process instance.", Severity.Warning);
+        }
+    }
+
+    private async Task OnTransitionedAsync()
     {
         Snackbar.Add("Instance updated.", Severity.Success);
-        // TODO: reload from API
-        return Task.CompletedTask;
+        await LoadInstanceAsync();
+        StateHasChanged();
     }
 
     private record HistoryRow(DateTime Timestamp, string Action, string Notes, string By);

@@ -53,7 +53,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 }
                 else
                 {
-                    throw new NotImplementedException("Connection factory must be provided.");
+                    throw new InvalidOperationException("A connection factory must be provided to DatabaseLogLoader. Pass a Func<DbConnection> via the constructor.");
                 }
 
                 if (connection.State != ConnectionState.Open)
@@ -85,7 +85,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 }
                 else
                 {
-                    throw new NotImplementedException("Connection factory must be provided.");
+                    throw new InvalidOperationException("A connection factory must be provided to DatabaseLogLoader. Pass a Func<DbConnection> via the constructor.");
                 }
 
                 if (connection.State != ConnectionState.Open)
@@ -419,8 +419,22 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 throw new InvalidOperationException("Database connection is not open.");
 
             var logNames = new List<string>();
-            // TODO: Implement query to get log names
-            // Example: SELECT DISTINCT LogName FROM LOGS WHERE WellID = @wellIdentifier
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = "SELECT DISTINCT LOG_ID FROM WELL_LOG WHERE UWI = @uwi ORDER BY LOG_ID";
+                var param = command.CreateParameter();
+                param.ParameterName = "@uwi";
+                param.Value = wellIdentifier;
+                command.Parameters.Add(param);
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
+                    if (!reader.IsDBNull(0)) logNames.Add(reader.GetString(0));
+            }
+            catch
+            {
+                // Return empty list if table doesn't exist in this database schema
+            }
             return logNames;
         }
 
@@ -460,8 +474,23 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         /// </summary>
         public List<string> GetAvailableIdentifiers()
         {
-            // TODO: Implement query to get well identifiers
-            return new List<string>();
+            if (!isConnected || connection == null || connection.State != ConnectionState.Open)
+                return new List<string>();
+
+            var identifiers = new List<string>();
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = "SELECT DISTINCT UWI FROM WELL ORDER BY UWI";
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
+                    if (!reader.IsDBNull(0)) identifiers.Add(reader.GetString(0));
+            }
+            catch
+            {
+                // Return empty list if table doesn't exist in this database schema
+            }
+            return identifiers;
         }
 
         /// <summary>

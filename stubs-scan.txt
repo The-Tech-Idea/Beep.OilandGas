@@ -1,0 +1,9 @@
+
+Path                                                                                                                LineNumber Line
+----                                                                                                                ---------- ----
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Properties\Services\GasPropertiesService.cs        196         public Task<List<GasCorrelationInfo>> GetAvailableCorrelationsAsync(string propertyType) => Task.FromResult(new
+                                                                                                                               List<GasCorrelationInfo>());
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Properties\Services\OilPropertiesService.cs        148         public Task<List<CorrelationInfo>> GetAvailableCorrelationsAsync(string propertyType) => Task.FromResult(new
+                                                                                                                               List<CorrelationInfo>());
+
+

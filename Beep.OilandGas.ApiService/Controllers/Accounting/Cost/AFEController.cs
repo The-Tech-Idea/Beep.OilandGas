@@ -28,6 +28,39 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
         }
 
         /// <summary>
+        /// List all AFEs.
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult<List<object>>> GetAFEsAsync([FromQuery] string? connectionName = null)
+        {
+            try
+            {
+                var connName = connectionName ?? _service.DefaultConnectionName;
+                var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
+                var entities = await repository.GetAsync(new List<TheTechIdea.Beep.Report.AppFilter>());
+                var afes = (entities ?? new List<object>())
+                    .OfType<AFE>()
+                    .Select(afe => (object)new
+                    {
+                        AfeId         = afe.AFE_ID,
+                        AfeNumber     = afe.AFE_NUMBER,
+                        AfeName       = afe.AFE_NAME,
+                        PropertyId    = afe.PROPERTY_ID,
+                        EstimatedCost = afe.ESTIMATED_COST,
+                        Status        = afe.ACTIVE_IND == "Y" ? "ACTIVE" : "CLOSED",
+                        EffectiveDate = afe.ROW_EFFECTIVE_DATE
+                    })
+                    .ToList();
+                return Ok(afes);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error listing AFEs");
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>
         /// Create an AFE.
         /// </summary>
         [HttpPost]
@@ -65,7 +98,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating AFE");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -77,6 +110,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             string id,
             [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "AFE ID is required." });
             try
             {
                 var connName = connectionName ?? _service.DefaultConnectionName;
@@ -99,8 +134,52 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Cost
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting AFE {AfeId}", id);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
+        }
+
+        /// <summary>Approve an AFE — sets ACTIVE_IND to 'A' (approved).</summary>
+        [HttpPatch("{id}/approve")]
+        public async Task<ActionResult> ApproveAFE(string id, [FromQuery] string? userId = null)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "AFE ID is required." });
+            try
+            {
+                var connName   = _service.DefaultConnectionName;
+                var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
+                var afe        = await repository.GetByIdAsync(id) as AFE;
+                if (afe == null) return NotFound(new { error = $"AFE {id} not found" });
+
+                afe.ACTIVE_IND        = "A";  // approved
+                afe.ROW_CHANGED_BY    = userId ?? "system";
+                afe.ROW_CHANGED_DATE  = DateTime.UtcNow;
+                await repository.UpdateAsync(afe, userId ?? "system");
+                return NoContent();
+            }
+            catch (Exception ex) { _logger.LogError(ex, "Error approving AFE {AfeId}", id); return StatusCode(500, new { error = "An internal error occurred." }); }
+        }
+
+        /// <summary>Reject an AFE — sets ACTIVE_IND to 'R' (returned for revision).</summary>
+        [HttpPatch("{id}/reject")]
+        public async Task<ActionResult> RejectAFE(string id, [FromQuery] string? userId = null)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "AFE ID is required." });
+            try
+            {
+                var connName   = _service.DefaultConnectionName;
+                var repository = _service.GetRepository(typeof(AFE), connName, "AFE");
+                var afe        = await repository.GetByIdAsync(id) as AFE;
+                if (afe == null) return NotFound(new { error = $"AFE {id} not found" });
+
+                afe.ACTIVE_IND        = "R";  // returned
+                afe.ROW_CHANGED_BY    = userId ?? "system";
+                afe.ROW_CHANGED_DATE  = DateTime.UtcNow;
+                await repository.UpdateAsync(afe, userId ?? "system");
+                return NoContent();
+            }
+            catch (Exception ex) { _logger.LogError(ex, "Error rejecting AFE {AfeId}", id); return StatusCode(500, new { error = "An internal error occurred." }); }
         }
     }
 }

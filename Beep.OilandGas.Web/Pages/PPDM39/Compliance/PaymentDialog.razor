@@ -1,0 +1,83 @@
+@using Beep.OilandGas.Models.Data.Compliance
+@inject Beep.OilandGas.Web.Services.ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">Record Payment — @ObligationId</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form">
+            <MudSelect T="string" @bind-Value="_paymentType" Label="Payment Type" Required="true">
+                <MudSelectItem Value="@PaymentType.Royalty">Royalty</MudSelectItem>
+                <MudSelectItem Value="@PaymentType.Fine">Fine</MudSelectItem>
+                <MudSelectItem Value="@PaymentType.EuEtsAllowance">EU ETS Allowance</MudSelectItem>
+                <MudSelectItem Value="@PaymentType.Filing">Filing</MudSelectItem>
+            </MudSelect>
+            <MudDatePicker @bind-Date="_paymentDate" Label="Payment Date" Required="true" />
+            <MudSelect T="string" @bind-Value="_currency" Label="Currency" Required="true">
+                <MudSelectItem Value="@("USD")">USD</MudSelectItem>
+                <MudSelectItem Value="@("CAD")">CAD</MudSelectItem>
+                <MudSelectItem Value="@("EUR")">EUR</MudSelectItem>
+                <MudSelectItem Value="@("GBP")">GBP</MudSelectItem>
+            </MudSelect>
+            <MudNumericField T="decimal" @bind-Value="_grossAmt"  Label="Gross Amount"  Format="F2" />
+            <MudNumericField T="decimal" @bind-Value="_actualAmt" Label="Actual Amount" Format="F2" />
+            <MudTextField @bind-Value="_notes" Label="Notes" Lines="2" />
+        </MudForm>
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mt-2">@_error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled"
+                   OnClick="@SubmitAsync">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string ObligationId { get; set; } = string.Empty;
+
+    private MudForm? _form;
+    private string   _paymentType = PaymentType.Royalty;
+    private DateTime? _paymentDate = DateTime.Today;
+    private string   _currency    = "USD";
+    private decimal  _grossAmt;
+    private decimal  _actualAmt;
+    private string?  _notes;
+    private string?  _error;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SubmitAsync()
+    {
+        if (_form is not null)
+            await _form.ValidateAsync();
+        if (_form?.IsValid != true) return;
+
+        try
+        {
+            var request = new RecordPaymentRequest(
+                _paymentType,
+                _paymentDate ?? DateTime.UtcNow,
+                _currency,
+                _grossAmt,
+                _actualAmt,
+                _notes);
+
+            await ApiClient.PostAsync<RecordPaymentRequest, object>(
+                $"/api/field/current/compliance/obligations/{ObligationId}/payment", request);
+
+            Snackbar.Add("Payment recorded.", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        catch (Exception)
+        {
+            _error = "Payment failed.";
+            Snackbar.Add(_error, Severity.Error);
+        }
+    }
+}

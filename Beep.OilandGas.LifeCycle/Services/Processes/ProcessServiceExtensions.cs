@@ -16,7 +16,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         /// <summary>
         /// Get process status as DTO
         /// </summary>
-        public static async Task<ProcessStatusResponse> GetProcessStatusDtoAsync(
+        public static async Task<ProcessStatusResponse?> GetProcessStatusDtoAsync(
             this IProcessService processService,
             string instanceId)
         {
@@ -57,7 +57,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         /// <summary>
         /// Get process instance as DTO
         /// </summary>
-        public static async Task<ProcessInstanceResponse> GetProcessInstanceDtoAsync(
+        public static async Task<ProcessInstanceResponse?> GetProcessInstanceDtoAsync(
             this IProcessService processService,
             string instanceId)
         {
@@ -153,7 +153,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         /// <summary>
         /// Start process from DTO request
         /// </summary>
-        public static async Task<ProcessInstanceResponse> StartProcessFromDtoAsync(
+        public static async Task<ProcessInstanceResponse?> StartProcessFromDtoAsync(
             this IProcessService processService,
             ProcessInstanceRequest request,
             string userId)

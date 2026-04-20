@@ -42,7 +42,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting all connections");
-                return StatusCode(500, new { error = "Failed to get connections", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get connections"});
             }
         }
 
@@ -52,6 +52,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("{connectionName}")]
         public ActionResult<ConnectionInfo> GetConnection(string connectionName)
         {
+            if (string.IsNullOrWhiteSpace(connectionName)) return BadRequest(new { error = "Connection name is required." });
             try
             {
                 var connection = _connectionService.GetConnection(connectionName);
@@ -64,7 +65,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting connection {ConnectionName}", connectionName);
-                return StatusCode(500, new { error = "Failed to get connection", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get connection"});
             }
         }
 
@@ -91,7 +92,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 {
                     Success = false,
                     Message = "Connection test failed",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -110,7 +111,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting current connection");
-                return StatusCode(500, new { error = "Failed to get current connection", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get current connection"});
             }
         }
 
@@ -137,7 +138,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 {
                     Success = false,
                     Message = "Failed to set current connection",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -174,7 +175,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                     Success = false,
                     ConnectionName = request?.ConnectionName ?? string.Empty,
                     Message = "Failed to create connection",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }

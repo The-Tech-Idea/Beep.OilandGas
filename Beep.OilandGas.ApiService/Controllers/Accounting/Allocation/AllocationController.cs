@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.Models.Data.Allocation;
 using Beep.OilandGas.Models.Data.ProductionAccounting;
 using Beep.OilandGas.Models.Core.Interfaces;
@@ -81,7 +81,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error reconciling volumes");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -118,7 +118,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Allocation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing allocation");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

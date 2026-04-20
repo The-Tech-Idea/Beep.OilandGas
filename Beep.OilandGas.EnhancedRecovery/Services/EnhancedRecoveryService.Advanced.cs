@@ -14,7 +14,6 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
     /// </summary>
     public partial class EnhancedRecoveryService
     {
-        private readonly ILogger<EnhancedRecoveryService>? _logger;
 
         /// <summary>
         /// Analyzes waterflooding performance with recovery factor calculations.

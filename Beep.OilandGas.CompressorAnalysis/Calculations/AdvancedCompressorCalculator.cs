@@ -75,7 +75,6 @@ namespace Beep.OilandGas.CompressorAnalysis.Calculations
             if (analysis.SuctionPressure <= 0) return;
 
             decimal r = analysis.DischargePressure / analysis.SuctionPressure; // Compression Ratio
-            decimal c = 10.0m; // Clearance percent (typically 10-15%? No, usually 0.05-0.15 as fraction. API formula uses %)
             // Actually commonly: E_v = 1 - (Cl/100) * (r^(1/k) - 1) * (Zs/Zd) ... 
             
             // Let's use the standard equation:

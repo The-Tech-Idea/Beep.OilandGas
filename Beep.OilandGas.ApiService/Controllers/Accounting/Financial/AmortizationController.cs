@@ -64,7 +64,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating amortization");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -98,7 +98,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating interest capitalization");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -121,7 +121,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error converting production to BOE");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -144,7 +144,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error converting reserves to BOE");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

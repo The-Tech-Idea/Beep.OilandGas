@@ -1,0 +1,143 @@
+@page "/ppdm39/data-management"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@using Beep.OilandGas.Web.Components.Data
+
+<PageTitle>PPDM39 Data Management</PageTitle>
+
+@* ─── Top admin bar ───────────────────────────────────────────────────────── *@
+<MudPaper Elevation="1" Class="ma-2 mb-0 pa-2">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+        <MudIcon Icon="@Icons.Material.Filled.Storage" Color="Color.Primary" />
+        <MudText Typo="Typo.h6">PPDM39 Data Management</MudText>
+        <MudSpacer />
+        <MudChip T="string"
+                 Color="Color.Secondary"
+                 Variant="Variant.Outlined"
+                 Icon="@Icons.Material.Filled.Schema"
+                 OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/data-management/schema"))"
+                 Size="Size.Small">
+            Schema Manager
+        </MudChip>
+        <MudChip T="string"
+                 Color="Color.Tertiary"
+                 Variant="Variant.Outlined"
+                 Icon="@Icons.Material.Filled.LibraryBooks"
+                 OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/database-setup"))"
+                 Size="Size.Small">
+            DB Setup
+        </MudChip>
+    </MudStack>
+</MudPaper>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="pa-0">
+    <MudGrid>
+        @* ── Left: Module tree ─────────────────────────────────────────────── *@
+        <MudItem xs="12" md="3">
+            <MudPaper Class="ma-2" Elevation="2" Style="height: calc(100vh - 120px); overflow-y: auto;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="pa-2 pb-0" Spacing="1">
+                    <MudIcon Icon="@Icons.Material.Filled.Folder" Color="Color.Primary" Size="Size.Small" />
+                    <MudText Typo="Typo.subtitle1">Modules</MudText>
+                </MudStack>
+                <DataModuleTreeView OnTableSelected="OnModuleTableSelected" />
+            </MudPaper>
+        </MudItem>
+
+        @* ── Right: PPDMTableManager ───────────────────────────────────────── *@
+        <MudItem xs="12" md="9">
+            <MudPaper Class="ma-2" Elevation="2" Style="height: calc(100vh - 120px); overflow-y: auto;">
+                @if (string.IsNullOrWhiteSpace(_selectedTableName))
+                {
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Style="height:100%;" Class="pa-8">
+                        <MudIcon Icon="@Icons.Material.Filled.TableChart" Style="font-size:4rem;" Color="Color.Default" />
+                        <MudText Typo="Typo.h6" Class="mud-text-secondary">
+                            Select a module and table from the tree
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                            Expand a module to browse its tables, then click a table to open it here.
+                        </MudText>
+                    </MudStack>
+                }
+                else
+                {
+                    <PPDMTableManager @key="@_tableManagerKey"
+                                      TableName="@_selectedTableName"
+                                      Breadcrumbs="@_breadcrumbs" />
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    // ── State ────────────────────────────────────────────────────────────────
+    private string? _selectedTableName;
+    private string _tableManagerKey = "default";
+    private List<MudBlazor.BreadcrumbItem> _breadcrumbs = new();
+
+    // kept for legacy @code that remains below
+    private List<CategorySummary> _categories = new();
+    private bool _categoriesLoading;
+    private string? _activeCategoryId;
+    private PPDMTreeNode? _selectedTable;
+    private int _selectedCategoryId;
+    private string? _selectedCategoryName;
+    private List<string>? _selectedCategoryTables;
+    private string _crudPageKey = "default";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Resolve ?table= query param from URL
+        var uri = new Uri(NavigationManager.Uri);
+        var queryParams = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (queryParams.TryGetValue("table", out var tableName) && !string.IsNullOrWhiteSpace(tableName))
+        {
+            _selectedTable = new PPDMTreeNode
+            {
+                Id = tableName,
+                Text = tableName,
+                NodeType = PPDMTreeNodeType.Table,
+                IsSelected = true
+            };
+            _selectedTableName = tableName!;
+            _tableManagerKey = tableName!;
+            BuildBreadcrumbs(tableName!);
+        }
+    }
+
+    // ── Module tree table selection ───────────────────────────────────────────
+    private void OnModuleTableSelected(string tableName)
+    {
+        _selectedTableName = tableName;
+        _tableManagerKey = tableName;
+        BuildBreadcrumbs(tableName);
+        StateHasChanged();
+    }
+
+    private void BuildBreadcrumbs(string tableName)
+    {
+        _breadcrumbs = new List<MudBlazor.BreadcrumbItem>
+        {
+            new("Data Management", "/ppdm39/data-management", icon: Icons.Material.Filled.Storage),
+            new(tableName, null, disabled: true, icon: Icons.Material.Filled.TableChart),
+        };
+    }
+
+    // ── Stubs kept to prevent compile errors from removed code ───────────────
+    private void SelectCategory(CategorySummary cat) { }
+    private void ClearCategoryFilter() { }
+    private Task OnTableSelected(PPDMTreeNode tableNode) => Task.CompletedTask;
+    private Task OnCategorySelected((int CategoryId, string CategoryName, List<string> Tables) info) => Task.CompletedTask;
+    private static string GetCategoryMudIcon(string iconName) => Icons.Material.Filled.TableChart;
+
+    private sealed class CategorySummary
+    {
+        public string Id          { get; set; } = string.Empty;
+        public string Name        { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Icon        { get; set; } = string.Empty;
+        public string Color       { get; set; } = "default";
+        public List<string> Tables { get; set; } = new();
+        public int TableCount     { get; set; }
+    }
+}

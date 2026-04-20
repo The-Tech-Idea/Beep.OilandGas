@@ -11,7 +11,8 @@
     <Authors>Beep.OilandGas.Team</Authors>
     <Description>Core Accounting System for Oil and Gas ERP - GL, AR, AP, Purchasing, Inventory</Description>
     <RepositoryUrl>https://github.com/yourusername/Beep.OilandGas</RepositoryUrl>
-  </PropertyGroup>
+      <NoWarn>$(NoWarn);CS0169;CS0618;CS8618;CS8601;CS8625;CS8629;CS8603</NoWarn>
+</PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Beep.OilandGas.Models\Beep.OilandGas.Models.csproj" />

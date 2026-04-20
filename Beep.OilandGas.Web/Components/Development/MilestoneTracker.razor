@@ -1,0 +1,66 @@
+@* MilestoneTracker — visual project milestone timeline for Development pages *@
+<MudTimeline TimelinePosition="TimelinePosition.Left">
+    @foreach (var milestone in Milestones)
+    {
+        <MudTimelineItem Color="@GetMilestoneColor(milestone.Status)"
+                         Variant="@(milestone.Status == "COMPLETE" ? Variant.Filled : Variant.Outlined)"
+                         Size="Size.Small">
+            <ItemOpposite>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    @(milestone.ActualDate?.ToString("dd MMM yyyy") ?? milestone.PlannedDate?.ToString("dd MMM yyyy"))
+                </MudText>
+            </ItemOpposite>
+            <ItemContent>
+                <MudStack Spacing="0">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                        <MudText Typo="Typo.subtitle2">@milestone.Name</MudText>
+                        @if (milestone.Status == "LATE")
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Error" Variant="Variant.Outlined">Late</MudChip>
+                        }
+                        else if (milestone.Status == "AT RISK")
+                        {
+                            <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined">At Risk</MudChip>
+                        }
+                    </MudStack>
+                    @if (!string.IsNullOrWhiteSpace(milestone.Description))
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@milestone.Description</MudText>
+                    }
+                    @if (milestone.PlannedDate.HasValue && milestone.ActualDate.HasValue &&
+                         milestone.ActualDate != milestone.PlannedDate)
+                    {
+                        var delta = (milestone.ActualDate.Value - milestone.PlannedDate.Value).Days;
+                        <MudText Typo="Typo.caption" Color="@(delta > 0 ? Color.Error : Color.Success)">
+                            @(delta > 0 ? $"+{delta}" : $"{delta}") days vs plan
+                        </MudText>
+                    }
+                </MudStack>
+            </ItemContent>
+        </MudTimelineItem>
+    }
+</MudTimeline>
+
+@code {
+    [Parameter] public List<MilestoneItem> Milestones { get; set; } = new();
+
+    private static Color GetMilestoneColor(string status) => status?.ToUpperInvariant() switch
+    {
+        "COMPLETE"  => Color.Success,
+        "IN PROGRESS" or "ACTIVE" => Color.Primary,
+        "LATE"      => Color.Error,
+        "AT RISK"   => Color.Warning,
+        "PLANNED"   => Color.Default,
+        _           => Color.Default
+    };
+
+    public class MilestoneItem
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        /// <summary>COMPLETE · IN PROGRESS · AT RISK · LATE · PLANNED</summary>
+        public string Status { get; set; } = "PLANNED";
+        public DateTime? PlannedDate { get; set; }
+        public DateTime? ActualDate { get; set; }
+    }
+}

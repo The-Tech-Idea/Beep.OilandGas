@@ -39,6 +39,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(tableName) || string.IsNullOrWhiteSpace(entityId))
+                    return BadRequest(new VersioningResult { Success = false, ErrorMessage = "Table name and entity ID are required." });
                 if (request == null)
                 {
                     return BadRequest(new VersioningResult { Success = false, ErrorMessage = "Request is required" });
@@ -68,7 +70,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new VersioningResult
                 {
                     Success = false,
-                    ErrorMessage = ex.Message
+                    ErrorMessage = "An internal error occurred."
                 });
             }
         }
@@ -81,6 +83,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(tableName) || string.IsNullOrWhiteSpace(entityId))
+                    return BadRequest(new { error = "Table name and entity ID are required." });
                 _logger.LogInformation("Getting version history for entity {EntityId} in table {TableName}", entityId, tableName);
                 var versions = await _versioningService.GetVersionsAsync(tableName, entityId);
                 
@@ -98,7 +102,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting version history for entity {EntityId} in table {TableName}", entityId, tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -110,6 +114,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(tableName) || string.IsNullOrWhiteSpace(entityId))
+                    return BadRequest(new { error = "Table name and entity ID are required." });
                 _logger.LogInformation("Getting version {VersionNumber} for entity {EntityId} in table {TableName}", versionNumber, entityId, tableName);
                 var version = await _versioningService.GetVersionAsync(tableName, entityId, versionNumber);
                 
@@ -132,7 +138,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting version {VersionNumber} for entity {EntityId} in table {TableName}", versionNumber, entityId, tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -148,6 +154,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(tableName) || string.IsNullOrWhiteSpace(entityId))
+                    return BadRequest(new VersioningResult { Success = false, ErrorMessage = "Table name and entity ID are required." });
                 if (request == null || string.IsNullOrEmpty(request.VersionId))
                 {
                     return BadRequest(new VersioningResult { Success = false, ErrorMessage = "Version ID is required" });
@@ -196,9 +204,78 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new VersioningResult
                 {
                     Success = false,
-                    ErrorMessage = ex.Message
+                    ErrorMessage = "An internal error occurred."
                 });
             }
         }
+        /// <summary>
+        /// Create a table-level snapshot labelled by the caller.
+        /// POST /api/ppdm39/versioning/snapshots
+        /// </summary>
+        [HttpPost("snapshots")]
+        public async Task<ActionResult<VersioningResult>> CreateTableSnapshot(
+            [FromBody] TableSnapshotRequest request,
+            [FromQuery] string userId = "SYSTEM")
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.TableName))
+                return BadRequest(new VersioningResult { Success = false, ErrorMessage = "TableName is required" });
+            try
+            {
+                var label = string.IsNullOrWhiteSpace(request.Label)
+                    ? $"{request.TableName} — {DateTime.UtcNow:dd MMM yyyy HH:mm}"
+                    : request.Label;
+
+                var version = await _versioningService.CreateVersionAsync(
+                    request.TableName,
+                    request.TableName,   // use table name as entity placeholder for table-level snapshots
+                    userId,
+                    label);
+
+                return Ok(new VersioningResult
+                {
+                    Success    = true,
+                    VersionId  = version.VersionNumber.ToString(),
+                    Message    = label
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating table snapshot for {TableName}", request.TableName);
+                return StatusCode(500, new VersioningResult { Success = false, ErrorMessage = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>
+        /// Get table-level snapshot history.
+        /// GET /api/ppdm39/versioning/snapshots?table=WELL
+        /// </summary>
+        [HttpGet("snapshots")]
+        public async Task<ActionResult<List<SnapshotSummary>>> GetTableSnapshots([FromQuery] string table)
+        {
+            if (string.IsNullOrWhiteSpace(table))
+                return BadRequest(new { error = "table query parameter is required" });
+            try
+            {
+                var versions = await _versioningService.GetVersionsAsync(table, table);
+                var result   = (versions ?? new System.Collections.Generic.List<VersionSnapshot>())
+                    .Select(v => new SnapshotSummary(
+                        v.VersionLabel ?? $"{table} snapshot",
+                        table,
+                        v.CreatedBy ?? "system",
+                        v.CreatedDate,
+                        v.VersionNumber))
+                    .OrderByDescending(s => s.CreatedAt)
+                    .ToList();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting snapshots for {Table}", table);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        public record TableSnapshotRequest(string TableName, string? Label);
+        public record SnapshotSummary(string Label, string Table, string CreatedBy, DateTime CreatedAt, int RowCount);
     }
 }

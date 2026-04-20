@@ -18,7 +18,9 @@ namespace Beep.OilandGas.EconomicAnalysis.Interaction
         public double ZoomSensitivity { get; set; } = 0.1;
 
         public event EventHandler ViewportChanged;
+#pragma warning disable CS0067
         public event EventHandler<PointSelectedEventArgs> PointSelected;
+#pragma warning restore CS0067
 
         public EconomicInteractionHandler(EconomicRenderer renderer)
         {

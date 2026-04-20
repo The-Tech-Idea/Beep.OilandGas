@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,7 +52,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting run tickets");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -62,6 +62,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
         [HttpGet("{id}")]
         public ActionResult<RUN_TICKET> GetRunTicket(string id, [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "Run ticket ID is required." });
             try
             {
                 var ticket = _service.ProductionManager.GetRunTicket(id);
@@ -73,7 +75,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting run ticket {TicketId}", id);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -131,12 +133,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for run ticket");
-                return StatusCode(500, new { error = "Run ticket created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Run ticket created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating run ticket");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

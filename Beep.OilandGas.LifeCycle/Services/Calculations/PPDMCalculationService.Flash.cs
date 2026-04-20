@@ -242,14 +242,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     Density = (decimal)vaporProperties.Density,
                     MolecularWeight = (decimal)vaporProperties.MolecularWeight,
                     SpecificGravity = (decimal)vaporProperties.SpecificGravity,
-                    Volume = (decimal)vaporProperties.Volume
+                    Volume = vaporProperties.Volume ?? 0.0m
                 },
                 LiquidProperties = new PhasePropertiesData
                 {
                     Density = (decimal)liquidProperties.Density,
                     MolecularWeight = (decimal)liquidProperties.MolecularWeight,
                     SpecificGravity = (decimal)liquidProperties.SpecificGravity,
-                    Volume = (decimal)liquidProperties.Volume
+                    Volume = liquidProperties.Volume ?? 0.0m
                 },
                 AdditionalResults = new FlashCalculationAdditionalResults()
             };

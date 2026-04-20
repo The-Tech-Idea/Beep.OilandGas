@@ -1,4 +1,4 @@
-@page "/ppdm39/development/facilities"
+﻿@page "/ppdm39/development/facilities"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -131,12 +131,20 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<FACILITY>? _facilities;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
         await LoadFacilities();
     }
 
@@ -145,11 +153,10 @@
         _isLoading = true;
         try
         {
-            _facilities = await ApiClient.GetAsync<List<FACILITY>>("/api/field/current/development/facilities");
-        }
-        catch (Exception ex)
+            _facilities = await ApiClient.GetAsync<List<FACILITY>>("/api/field/current/development/facilities") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading facilities: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading facilities.", Severity.Error);
             _facilities = new List<FACILITY>();
         }
         finally
@@ -175,16 +182,47 @@
                 Snackbar.Add("Facility created successfully", Severity.Success);
                 await LoadFacilities();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Snackbar.Add($"Error creating facility: {ex.Message}", Severity.Error);
+                Snackbar.Add("Error creating facility.", Severity.Error);
             }
         }
     }
 
     private async Task OpenEditDialog(object facility)
     {
-        Snackbar.Add("Edit functionality coming soon", Severity.Info);
+        if (facility is not FACILITY f) return;
+
+        var parameters = new DialogParameters<FacilityEditDialog>
+        {
+            { d => d.Facility, new Dictionary<string, object>
+                {
+                    { "FACILITY_NAME",   f.FACILITY_LONG_NAME ?? f.FACILITY_SHORT_NAME ?? string.Empty },
+                    { "FACILITY_TYPE",   f.FACILITY_TYPE ?? string.Empty },
+                    { "FACILITY_STATUS", f.ACTIVE_IND == "Y" ? "OPERATIONAL" : "PLANNED" },
+                    { "DESCRIPTION",     string.Empty }
+                }
+            }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+        var dialog = await DialogService.ShowAsync<FacilityEditDialog>("Edit Facility", parameters, options);
+        var result = await dialog.Result;
+
+        if (result?.Canceled == false && result.Data is Dictionary<string, object> updated)
+        {
+            try
+            {
+                await ApiClient.PutAsync<Dictionary<string, object>, object>(
+                    $"/api/datamanagement/FACILITY/{f.FACILITY_ID}", updated);
+                Snackbar.Add("Facility updated.", Severity.Success);
+                await LoadFacilities();
+            }
+            catch (Exception)
+            {
+                Snackbar.Add("Error updating facility.", Severity.Error);
+            }
+        }
     }
 
     private string GetPropertyValue(object obj, string propertyName)

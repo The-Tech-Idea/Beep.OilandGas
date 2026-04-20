@@ -75,9 +75,9 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
 
                 // Create FIELD entity
                 var field = new FIELD();
-                field.FIELD_NAME = request.FieldName;
-                field.FIELD_TYPE = request.FieldType;
-                field.AREA_ID = request.AreaId;
+                field.FIELD_NAME = request.FieldName ?? string.Empty;
+                field.FIELD_TYPE = request.FieldType ?? string.Empty;
+                field.AREA_ID = request.AreaId ?? string.Empty;
                 field.ACTIVE_IND = "Y";
 
                 // Set common columns
@@ -182,7 +182,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
                         SOURCE = "LIFECYCLE",
                         EFFECTIVE_DATE = request.TargetStartDate ?? DateTime.UtcNow,
                         FIELD_TYPE = "PLANNING_" + request.PlanningType,
-                        REMARK = request.Description,
+                        REMARK = request.Description ?? string.Empty,
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };
@@ -229,7 +229,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FieldManagement
                         SOURCE = "LIFECYCLE",
                         EFFECTIVE_DATE = request.OperationDate,
                         FIELD_TYPE = request.OperationType,
-                        REMARK = request.Description,
+                        REMARK = request.Description ?? string.Empty,
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };

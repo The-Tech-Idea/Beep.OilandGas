@@ -74,7 +74,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                     }
                     catch (Exception ex)
                     {
-                        _progressTracking?.CompleteOperation(operationId!, false, errorMessage: ex.Message);
+                        _progressTracking?.CompleteOperation(operationId!, false, errorMessage: "An internal error occurred.");
                         throw;
                     }
                 });
@@ -87,18 +87,18 @@ namespace Beep.OilandGas.ApiService.Controllers
                 _logger.LogWarning(ex, "Invalid DCA request");
                 if (operationId != null)
                 {
-                    _progressTracking?.CompleteOperation(operationId, false, errorMessage: ex.Message);
+                    _progressTracking?.CompleteOperation(operationId, false, errorMessage: "An internal error occurred.");
                 }
-                return BadRequest(new { error = ex.Message, OperationId = operationId });
+                return BadRequest(new { error = "An internal error occurred.", OperationId = operationId });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing DCA analysis");
                 if (operationId != null)
                 {
-                    _progressTracking?.CompleteOperation(operationId, false, errorMessage: ex.Message);
+                    _progressTracking?.CompleteOperation(operationId, false, errorMessage: "An internal error occurred.");
                 }
-                return StatusCode(500, new { error = ex.Message, OperationId = operationId });
+                return StatusCode(500, new { error = "An internal error occurred.", OperationId = operationId });
             }
         }
 
@@ -108,6 +108,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("dca/{calculationId}")]
         public async Task<ActionResult<DCAResult>> GetDCAResult(string calculationId)
         {
+            if (string.IsNullOrWhiteSpace(calculationId)) return BadRequest(new { error = "Calculation ID is required." });
             try
             {
                 var result = await _calculationService.GetCalculationResultAsync(calculationId, "DCA");
@@ -126,7 +127,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting DCA result");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -153,7 +154,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting DCA results");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -186,12 +187,12 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid Economic Analysis request");
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing Economic Analysis");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -201,6 +202,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("economic/{calculationId}")]
         public async Task<ActionResult<EconomicAnalysisResult>> GetEconomicAnalysisResult(string calculationId)
         {
+            if (string.IsNullOrWhiteSpace(calculationId)) return BadRequest(new { error = "Calculation ID is required." });
             try
             {
                 var result = await _calculationService.GetCalculationResultAsync(calculationId, "ECONOMIC");
@@ -219,7 +221,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting Economic Analysis result");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -246,7 +248,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting Economic Analysis results");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -279,12 +281,12 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Invalid Nodal Analysis request");
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing Nodal Analysis");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -294,6 +296,7 @@ namespace Beep.OilandGas.ApiService.Controllers
         [HttpGet("nodal/{calculationId}")]
         public async Task<ActionResult<NodalAnalysisResult>> GetNodalAnalysisResult(string calculationId)
         {
+            if (string.IsNullOrWhiteSpace(calculationId)) return BadRequest(new { error = "Calculation ID is required." });
             try
             {
                 var result = await _calculationService.GetCalculationResultAsync(calculationId, "NODAL");
@@ -312,7 +315,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting Nodal Analysis result");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -339,7 +342,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting Nodal Analysis results");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -371,7 +374,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting calculation results");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

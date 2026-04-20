@@ -46,7 +46,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
         }
 
         // Process Definition Management - To be implemented by derived classes
-        public abstract Task<ProcessDefinition> GetProcessDefinitionAsync(string processId);
+        public abstract Task<ProcessDefinition?> GetProcessDefinitionAsync(string processId);
         public abstract Task<List<ProcessDefinition>> GetProcessDefinitionsByTypeAsync(string processType);
         public abstract Task<ProcessDefinition> CreateProcessDefinitionAsync(ProcessDefinition definition, string userId);
         public abstract Task<ProcessDefinition> UpdateProcessDefinitionAsync(string processId, ProcessDefinition definition, string userId);
@@ -127,9 +127,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             }
         }
 
-        public abstract Task<ProcessInstance> GetProcessInstanceAsync(string instanceId);
+        public abstract Task<ProcessInstance?> GetProcessInstanceAsync(string instanceId);
         public abstract Task<List<ProcessInstance>> GetProcessInstancesForEntityAsync(string entityId, string entityType);
-        public abstract Task<ProcessInstance> GetCurrentProcessForEntityAsync(string entityId, string entityType);
+        public abstract Task<ProcessInstance?> GetCurrentProcessForEntityAsync(string entityId, string entityType);
         public abstract Task<bool> CancelProcessAsync(string instanceId, string reason, string userId);
 
         // Process Execution - Base implementation
@@ -223,7 +223,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
                 // Determine next step
                 var processDef = await GetProcessDefinitionAsync(instance.ProcessId);
-                var currentStep = processDef.Steps.FirstOrDefault(s => s.StepId == stepId);
+                var currentStep = processDef?.Steps?.FirstOrDefault(s => s.StepId == stepId);
                 if (currentStep != null && !string.IsNullOrEmpty(currentStep.NextStepId))
                 {
                     var nextStep = instance.StepInstances.FirstOrDefault(s => s.StepId == currentStep.NextStepId);
@@ -311,7 +311,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
         // Helper methods
         protected abstract Task SaveProcessInstanceAsync(ProcessInstance instance);
-        protected abstract Task<ProcessInstance> LoadProcessInstanceAsync(string instanceId);
+        protected abstract Task<ProcessInstance?> LoadProcessInstanceAsync(string instanceId);
 
         protected string GenerateInstanceId() => $"PI_{Guid.NewGuid():N}";
         protected string GenerateStepInstanceId() => $"PSI_{Guid.NewGuid():N}";

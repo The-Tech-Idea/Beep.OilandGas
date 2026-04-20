@@ -1,4 +1,4 @@
-@page "/admin/access-control/asset-access"
+﻿@page "/admin/access-control/asset-access"
 @using Beep.OilandGas.Models.Data.AccessControl
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
@@ -118,11 +118,11 @@
 
         try
         {
-            _assetAccessList = await ApiClient.GetAsync<List<Beep.OilandGas.Models.Data.AssetAccess>>($"/api/accesscontrol/user/{_userId}/assets");
+            _assetAccessList = await ApiClient.GetAsync<List<Beep.OilandGas.Models.Data.AssetAccess>>($"/api/accesscontrol/user/{Uri.EscapeDataString(_userId)}/assets");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading asset access: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading asset access.", Severity.Error);
         }
     }
 
@@ -157,9 +157,9 @@
                 Snackbar.Add("Failed to grant access", Severity.Error);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error granting access: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error granting access.", Severity.Error);
         }
     }
 
@@ -182,9 +182,9 @@
                 await LoadAssetAccess();
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error revoking access: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error revoking access.", Severity.Error);
         }
     }
 

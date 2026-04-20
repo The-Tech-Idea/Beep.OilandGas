@@ -1,10 +1,13 @@
-@page "/decommissioning/facility"
+﻿@page "/decommissioning/facility"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
 
 <PageTitle>Facility Decommissioning</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
@@ -120,10 +123,9 @@
                             <CardHeaderContent><MudText Typo="Typo.subtitle1">Cost by Phase ($MM)</MudText></CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <MudChart T="double" ChartType="ChartType.Bar"
-                                      Series="@_costSeries"
-                                      XAxisLabels="@_phaseLabels"
-                                      Width="100%" Height="200px" />
+                            <MudAlert Severity="Severity.Info" Dense="true">
+                                Cost by phase loads from the Accounting module once cost records are linked to these facilities.
+                            </MudAlert>
                         </MudCardContent>
                     </MudCard>
                 }
@@ -154,50 +156,77 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private FacilityItem? _selectedFacility;
-    private double _totalCostMm = 142.0;
+    private double _totalCostMm;
+    private bool _loading = true;
 
     private record FacilityItem(string FacilityId, string FacilityType, string DecomStart,
         string DecomEnd, double CostMm, string Phase, double PctComplete);
 
-    private List<FacilityItem> _facilities = new()
-    {
-        new("FPSO-Apex",       "FPSO",             "Q1 2026", "Q4 2028", 68.0, "EXECUTION",  28),
-        new("CPF-North",       "Central Proc. Fac.","Q3 2026", "Q2 2029", 42.0, "PLANNING",    5),
-        new("PLT-A1",          "Pipeline Terminal", "Q2 2027", "Q1 2029", 12.0, "PLANNING",    0),
-        new("GAS-COMP-001",    "Gas Compressor",    "Q1 2026", "Q3 2027",  8.5, "EXECUTION",  55),
-        new("WATER-INJ-SYST",  "Water Injection",   "Q2 2027", "Q4 2027",  6.2, "APPROVAL",    0),
-        new("JETTY-02",        "Jetty/Mooring",     "Q4 2026", "Q2 2028",  5.3, "APPROVAL",    0),
-    };
+    private List<FacilityItem> _facilities = new();
 
     private record DecomActivity(string Name, string Status, double Pct);
     private List<DecomActivity> _decomActivities = new()
     {
-        new("Isolate & Depressure",    "COMPLETE",    100),
-        new("Clean & Flush Lines",     "COMPLETE",    100),
-        new("Remove Equipment",        "IN PROGRESS",  55),
-        new("Structural Demolition",   "PLANNED",       0),
-        new("Site Remediation",        "PLANNED",       0),
-        new("Final Survey",            "PLANNED",       0),
+        new("Isolate & Depressure",  "COMPLETE",    100),
+        new("Clean & Flush Lines",   "COMPLETE",    100),
+        new("Remove Equipment",      "IN PROGRESS",  55),
+        new("Structural Demolition", "PLANNED",       0),
+        new("Site Remediation",      "PLANNED",       0),
+        new("Final Survey",          "PLANNED",       0),
     };
 
     private record RegulatorySubmission(string Name, string Status);
     private List<RegulatorySubmission> _regulatoryItems = new()
     {
-        new("DECOM Programme (FPSO)", "APPROVED"),
-        new("DECOM Programme (CPF)",  "IN PROGRESS"),
-        new("Marine Survey Permit",   "IN PROGRESS"),
-        new("Waste Disposal Plan",    "ACTIVE"),
-        new("Final Closure Report",   "PLANNED"),
+        new("DECOM Programme",      "IN PROGRESS"),
+        new("Marine Survey Permit", "IN PROGRESS"),
+        new("Waste Disposal Plan",  "ACTIVE"),
+        new("Final Closure Report", "PLANNED"),
     };
 
-    private List<ChartSeries<double>> _costSeries = new()
+    protected override async Task OnInitializedAsync()
     {
-        new ChartSeries<double> { Name = "Budget",  Data = new double[] { 25, 18, 35, 42, 22 } },
-        new ChartSeries<double> { Name = "Actuals", Data = new double[] { 22, 16, 30,  0,  0 } },
-    };
-    private string[] _phaseLabels = { "Planning", "Regulatory", "Engineering", "Execution", "Restoration" };
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        _loading = true;
+        try
+        {
+            var raw = await ApiClient.GetAsync<List<FacilityDecomDto>>("api/field/current/decommissioning/facilities") ?? new();            if (raw != null)
+            {
+                _facilities = raw.Select(r => new FacilityItem(
+                    r.FacilityId ?? r.DecommissioningId,
+                    r.DecommissioningType ?? "Facility",
+                    r.DecommissioningStartDate?.ToLocalTime().ToString("MMM yyyy") ?? "—",
+                    r.DecommissioningEndDate?.ToLocalTime().ToString("MMM yyyy") ?? "TBD",
+                    (double)(r.DecommissioningCost ?? 0m) / 1_000_000,
+                    r.Status ?? "PLANNED",
+                    0)).ToList();
+
+                _totalCostMm = _facilities.Sum(f => f.CostMm);
+            }
+        }
+        catch (Exception) { Snackbar.Add("Failed to load facilities.", Severity.Warning); }
+        finally { _loading = false; }
+    }
+
+    private class FacilityDecomDto
+    {
+        public string    DecommissioningId       { get; set; } = string.Empty;
+        public string?   FacilityId              { get; set; }
+        public string?   DecommissioningType     { get; set; }
+        public string?   Status                  { get; set; }
+        public DateTime? DecommissioningStartDate{ get; set; }
+        public DateTime? DecommissioningEndDate  { get; set; }
+        public decimal?  DecommissioningCost     { get; set; }
+    }
 
     private void OnFacilitySelected(DataGridRowClickEventArgs<FacilityItem> args) =>
         _selectedFacility = args.Item;

@@ -1,0 +1,125 @@
+@* ReservesChart — 1P / 2P / 3P reserves bar chart for a field *@
+@using MudBlazor
+
+<MudPaper Class="pa-4" Elevation="2">
+
+    <MudText Typo="Typo.h6" Class="mb-1">
+        Reserves by Category
+        @if (!string.IsNullOrWhiteSpace(FieldName))
+        {
+            <MudText Typo="Typo.caption" Class="ml-2" Style="opacity: 0.7;">@FieldName</MudText>
+        }
+    </MudText>
+
+    @if (Reserves == null || !Reserves.Any())
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">No reserves data available.</MudAlert>
+    }
+    else
+    {
+        <MudChart ChartType="ChartType.Bar"
+                  ChartSeries="@_series"
+                  XAxisLabels="@_labels"
+                  Width="100%"
+                  Height="@Height"
+                  ChartOptions="@_options" />
+
+        <MudDivider Class="my-3" />
+
+        <!-- Summary table -->
+        <MudSimpleTable Hover="true" Dense="true" Striped="true">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th style="text-align:right">1P Proved</th>
+                    <th style="text-align:right">2P Probable</th>
+                    <th style="text-align:right">3P Possible</th>
+                    <th style="text-align:right">Unit</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Reserves)
+                {
+                    <tr>
+                        <td><strong>@row.Category</strong></td>
+                        <td style="text-align:right">@row.Proved.ToString("N1")</td>
+                        <td style="text-align:right">@row.Probable.ToString("N1")</td>
+                        <td style="text-align:right">@row.Possible.ToString("N1")</td>
+                        <td style="text-align:right; opacity:0.7">@row.Unit</td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    }
+
+</MudPaper>
+
+@code {
+    /// <summary>Field or asset name shown in the header.</summary>
+    [Parameter] public string? FieldName { get; set; }
+
+    /// <summary>Reserves data — one entry per category (e.g., Oil, Gas, NGL, Total).</summary>
+    [Parameter] public List<ReservesDataPoint>? Reserves { get; set; }
+
+    /// <summary>Chart height. Defaults to 300px.</summary>
+    [Parameter] public string Height { get; set; } = "300px";
+
+    private List<ChartSeries<double>> _series = new();
+    private string[] _labels = Array.Empty<string>();
+    private ChartOptions _options = new();
+
+    protected override void OnParametersSet()
+    {
+        if (Reserves == null || !Reserves.Any())
+        {
+            _series = new();
+            _labels = Array.Empty<string>();
+            return;
+        }
+
+        _labels = Reserves.Select(r => r.Category).ToArray();
+
+        _series = new List<ChartSeries<double>>
+        {
+            new ChartSeries<double>
+            {
+                Name = "1P Proved",
+                Data = Reserves.Select(r => (double)r.Proved).ToArray()
+            },
+            new ChartSeries<double>
+            {
+                Name = "2P Probable",
+                Data = Reserves.Select(r => (double)r.Probable).ToArray()
+            },
+            new ChartSeries<double>
+            {
+                Name = "3P Possible",
+                Data = Reserves.Select(r => (double)r.Possible).ToArray()
+            }
+        };
+
+        _options = new ChartOptions
+        {
+            ChartPalette = new[] { "#1976D2", "#26A69A", "#8BC34A" }
+        };
+    }
+
+    /// <summary>A single row of reserves data for one product category.</summary>
+    public class ReservesDataPoint
+    {
+        /// <summary>Category label, e.g. Oil, Gas, NGL, Total.</summary>
+        public string Category { get; set; } = string.Empty;
+
+        /// <summary>Proved (1P) reserves volume.</summary>
+        public decimal Proved { get; set; }
+
+        /// <summary>Probable (2P) reserves volume (typically includes Proved).</summary>
+        public decimal Probable { get; set; }
+
+        /// <summary>Possible (3P) reserves volume (typically includes 1P+2P).</summary>
+        public decimal Possible { get; set; }
+
+        /// <summary>Unit of measure for this category, e.g. MMbbl, Bcf, MMboe.</summary>
+        public string Unit { get; set; } = "MMboe";
+    }
+}

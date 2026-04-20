@@ -93,9 +93,9 @@ namespace Beep.OilandGas.Branchs.BusinessProcess
         public string ObjectType { get; set; } = "Beep";
 
         // Leaf node — no children to create
-        public IErrorsInfo CreateChildNodes() => DMEEditor?.ErrorObject;
+        public IErrorsInfo CreateChildNodes() => DMEEditor?.ErrorObject!;
 
-        public IBranch CreateCategoryNode(CategoryFolder p) => null;
+        public IBranch CreateCategoryNode(CategoryFolder p) => null!;
 
         public IErrorsInfo ExecuteBranchAction(string ActionName)
         {
@@ -113,12 +113,12 @@ namespace Beep.OilandGas.Branchs.BusinessProcess
                     $"Error executing action {ActionName} on process '{MiscStringID}'",
                     DateTime.Now, -1, "BusinessProcessNode.ExecuteBranchAction", Errors.Failed);
             }
-            return DMEEditor?.ErrorObject;
+            return DMEEditor?.ErrorObject!;
         }
 
         public IErrorsInfo MenuItemClicked(string ActionName) => ExecuteBranchAction(ActionName);
 
-        public IErrorsInfo RemoveChildNodes() => DMEEditor?.ErrorObject;
+        public IErrorsInfo RemoveChildNodes() => DMEEditor?.ErrorObject!;
 
         public IErrorsInfo SetConfig(
             ITree pTreeEditor, IDMEEditor pDMEEditor,
@@ -142,7 +142,7 @@ namespace Beep.OilandGas.Branchs.BusinessProcess
                 DMEEditor?.AddLogMessage(ex.Message, "Could not Set Config",
                     DateTime.Now, -1, "BusinessProcessNode.SetConfig", Errors.Failed);
             }
-            return DMEEditor?.ErrorObject;
+            return DMEEditor?.ErrorObject!;
         }
     }
 }

@@ -1,0 +1,299 @@
+@inject ApiClient ApiClient
+@inject ISnackbar Snackbar
+
+@* ── Schema Module Manager ─────────────────────────────────────────────────── *@
+@* Shows all PPDM39 modules with installation status and per-module install buttons *@
+
+<MudStack Spacing="3">
+
+    @* Header toolbar *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+        <MudText Typo="Typo.subtitle1">
+            <MudIcon Icon="@Icons.Material.Filled.Storage" Class="mr-1" />
+            Schema Modules — @ConnectionName
+        </MudText>
+        <MudSpacer />
+        @if (_loading)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+        }
+        else
+        {
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                @_modules.Count(m => m.Status == "Complete") / @_modules.Count installed
+            </MudText>
+        }
+        <MudButton StartIcon="@Icons.Material.Filled.Refresh"
+                   Variant="Variant.Outlined" Size="Size.Small"
+                   OnClick="RefreshAsync">Refresh</MudButton>
+        <MudButton StartIcon="@Icons.Material.Filled.InstallDesktop"
+                   Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                   Disabled="@(_installingAll || _loading || string.IsNullOrWhiteSpace(ConnectionName))"
+                   OnClick="InstallAllAsync">
+            @(_installingAll ? "Installing…" : "Install All")
+        </MudButton>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudGrid Spacing="2">
+            @for (int i = 0; i < 8; i++)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Elevation="1"><MudCardContent><MudSkeleton Height="80px" /></MudCardContent></MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+    else if (string.IsNullOrWhiteSpace(ConnectionName))
+    {
+        <MudAlert Severity="Severity.Info">Select a database connection to view schema installation status.</MudAlert>
+    }
+    else
+    {
+        @* Module cards *@
+        <MudGrid Spacing="2">
+            @foreach (var mod in _modules.OrderBy(m => m.DisplayOrder))
+            {
+                var statusColor = mod.Status switch
+                {
+                    "Complete" => Color.Success,
+                    "Partial"  => Color.Warning,
+                    "Error"    => Color.Error,
+                    _          => Color.Default
+                };
+                var statusIcon = mod.Status switch
+                {
+                    "Complete" => Icons.Material.Filled.CheckCircle,
+                    "Partial"  => Icons.Material.Filled.PieChart,
+                    "Error"    => Icons.Material.Filled.Error,
+                    _          => Icons.Material.Outlined.RadioButtonUnchecked
+                };
+                var isInstalling = _installingModule == mod.ModuleName;
+                var progress = mod.TotalTables > 0
+                    ? (double)mod.InstalledTables / mod.TotalTables * 100
+                    : 0;
+
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Elevation="2" Class="@($"module-card {(mod.Status == "Complete" ? "module-card--complete" : "")}")">
+                        <MudCardHeader>
+                            <CardHeaderAvatar>
+                                <MudAvatar Color="@statusColor" Size="Size.Medium">
+                                    <MudIcon Icon="@statusIcon" />
+                                </MudAvatar>
+                            </CardHeaderAvatar>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.subtitle2">@mod.DisplayName</MudText>
+                                <MudChip T="string"
+                                         Size="Size.Small"
+                                         Color="@statusColor"
+                                         Variant="Variant.Outlined"
+                                         Class="mt-0 pa-0">
+                                    @mod.Status
+                                </MudChip>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+
+                        <MudCardContent Class="pb-1">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">
+                                @mod.Description
+                            </MudText>
+
+                            @* Progress bar *@
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-1">
+                                <MudProgressLinear Value="@progress"
+                                                   Color="@statusColor"
+                                                   Rounded="true"
+                                                   Size="Size.Small"
+                                                   Style="flex:1" />
+                                <MudText Typo="Typo.caption" Style="white-space:nowrap">
+                                    @mod.InstalledTables / @mod.TotalTables
+                                </MudText>
+                            </MudStack>
+
+                            @if (mod.LastUpdated.HasValue)
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Tertiary">
+                                    Updated @mod.LastUpdated.Value.ToLocalTime().ToString("MMM d HH:mm")
+                                </MudText>
+                            }
+                        </MudCardContent>
+
+                        <MudCardActions Class="pt-0">
+                            @if (isInstalling)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="ml-2" />
+                                <MudText Typo="Typo.caption" Class="ml-2">Installing…</MudText>
+                            }
+                            else
+                            {
+                                <MudButton Size="Size.Small"
+                                           Variant="Variant.Text"
+                                           Color="@(mod.Status == "Complete" ? Color.Default : Color.Primary)"
+                                           StartIcon="@(mod.Status == "Complete" ? Icons.Material.Filled.Refresh : Icons.Material.Filled.InstallDesktop)"
+                                           Disabled="@(_installingAll)"
+                                           OnClick="@(() => InstallModuleAsync(mod.ModuleName))">
+                                    @(mod.Status == "Complete" ? "Reinstall" : "Install")
+                                </MudButton>
+                                @if (mod.Status != "NotInstalled")
+                                {
+                                    <MudIconButton Size="Size.Small"
+                                                   Icon="@Icons.Material.Filled.RestartAlt"
+                                                   Title="Reset tracking"
+                                                   Color="Color.Default"
+                                                   OnClick="@(() => ResetModuleAsync(mod.ModuleName))" />
+                                }
+                            }
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</MudStack>
+
+@code {
+    [Parameter] public string? ConnectionName { get; set; }
+    [Parameter] public EventCallback OnInstallComplete { get; set; }
+
+    private List<ModuleStatusModel> _modules = new();
+    private bool _loading;
+    private bool _installingAll;
+    private string? _installingModule;
+
+    protected override async Task OnInitializedAsync()
+        => await RefreshAsync();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(ConnectionName))
+            await RefreshAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (string.IsNullOrWhiteSpace(ConnectionName)) return;
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            var result = await ApiClient.GetAsync<List<ModuleStatusModel>>(
+                $"api/ppdm39/schema/{Uri.EscapeDataString(ConnectionName)}/status");
+            _modules = result ?? new();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading schema status: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task InstallModuleAsync(string moduleName)
+    {
+        _installingModule = moduleName;
+        StateHasChanged();
+        try
+        {
+            var result = await ApiClient.PostAsync<object, ModuleInstallResult>(
+                $"api/ppdm39/schema/{Uri.EscapeDataString(ConnectionName!)}/install/{moduleName}",
+                new { });
+
+            if (result?.Success == true)
+                Snackbar.Add(result.Message, Severity.Success);
+            else
+                Snackbar.Add(result?.Message ?? "Installation failed", Severity.Error);
+
+            await RefreshAsync();
+            await OnInstallComplete.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Install error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _installingModule = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task InstallAllAsync()
+    {
+        _installingAll = true;
+        StateHasChanged();
+        try
+        {
+            var result = await ApiClient.PostAsync<object, AllModulesInstallResult>(
+                $"api/ppdm39/schema/{Uri.EscapeDataString(ConnectionName!)}/install-all",
+                new { });
+
+            if (result?.Success == true)
+                Snackbar.Add(result.Message, Severity.Success);
+            else
+                Snackbar.Add(result?.Message ?? "Install-all failed", Severity.Warning);
+
+            await RefreshAsync();
+            await OnInstallComplete.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Install all error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _installingAll = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ResetModuleAsync(string moduleName)
+    {
+        try
+        {
+            await ApiClient.DeleteAsync($"api/ppdm39/schema/{Uri.EscapeDataString(ConnectionName!)}/module/{moduleName}/reset");
+            Snackbar.Add($"Tracking reset for module '{moduleName}'", Severity.Info);
+            await RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Reset error: {ex.Message}", Severity.Error);
+        }
+    }
+
+    // ── Local DTOs ────────────────────────────────────────────────────────────
+
+    private sealed class ModuleStatusModel
+    {
+        public string ModuleName { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Icon { get; set; } = string.Empty;
+        public int DisplayOrder { get; set; }
+        public string Status { get; set; } = "NotInstalled";
+        public int TotalTables { get; set; }
+        public int InstalledTables { get; set; }
+        public DateTime? LastUpdated { get; set; }
+    }
+
+    private sealed class ModuleInstallResult
+    {
+        public bool Success { get; set; }
+        public string ModuleName { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public int TablesAttempted { get; set; }
+        public int TablesCreated { get; set; }
+        public string? ErrorDetails { get; set; }
+    }
+
+    private sealed class AllModulesInstallResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public int TablesCreated { get; set; }
+        public string? ErrorDetails { get; set; }
+    }
+}

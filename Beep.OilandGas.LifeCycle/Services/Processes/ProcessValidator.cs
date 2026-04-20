@@ -282,7 +282,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
                             {
                                 result.IsValid = false;
                                 result.ErrorMessage = rule.ErrorMessage ?? 
-                                    $"Field {rule.FieldName} ({fieldDate:yyyy-MM-dd}) must be {GetComparisonDescription(comparison)} {compareFieldName} ({compareDate:yyyy-MM-dd})";
+                                    $"Field {rule.FieldName} ({fieldDate:yyyy-MM-dd}) must be {GetComparisonDescription(comparison ?? "LT")} {compareFieldName} ({compareDate:yyyy-MM-dd})";
                             }
                         }
                     }

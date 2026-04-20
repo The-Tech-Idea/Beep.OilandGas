@@ -1,10 +1,9 @@
-@page "/ppdm39/operations/drillingoperations"
+﻿@page "/ppdm39/operations/drillingoperations"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.Drilling
 @using Beep.OilandGas.Client.App
-@inject IBeepOilandGasApp BeepApp
+@inject ApiClient ApiClient
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 @inject IOperationsServiceClient OperationsService
 
 <PageTitle>Monitor Drilling Operations</PageTitle>
@@ -117,12 +116,20 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<DRILLING_OPERATION>? _operations;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
         await LoadOperations();
     }
 
@@ -133,9 +140,9 @@
         {
             _operations = await OperationsService.GetDrillingOperationsAsync();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading drilling operations: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading drilling operations.", Severity.Error);
             _operations = new List<DRILLING_OPERATION>();
         }
         finally
@@ -162,9 +169,9 @@
             Snackbar.Add("Drilling operation created successfully", Severity.Success);
             await LoadOperations();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error creating drilling operation: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error creating drilling operation.", Severity.Error);
         }
     }
 
@@ -184,9 +191,9 @@
             Snackbar.Add("Drilling operation updated successfully", Severity.Success);
             await LoadOperations();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error updating drilling operation: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error updating drilling operation.", Severity.Error);
         }
     }
 
@@ -197,9 +204,9 @@
             var reports = await OperationsService.GetDrillingReportsAsync(operationId);
             Snackbar.Add($"Found {reports.Count} drilling reports", Severity.Info);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading drilling reports: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading drilling reports.", Severity.Error);
         }
     }
 }

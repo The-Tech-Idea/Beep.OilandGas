@@ -199,14 +199,14 @@ namespace Beep.OilandGas.Models.Data.PermitsAndApplications
         }
 
         private DateTime? EFFECTIVE_DATEValue;
-        public DateTime? EFFECTIVE_DATE
+        public new DateTime? EFFECTIVE_DATE
         {
             get { return this.EFFECTIVE_DATEValue; }
             set { SetProperty(ref EFFECTIVE_DATEValue, value); }
         }
 
         private DateTime? EXPIRY_DATEValue;
-        public DateTime? EXPIRY_DATE
+        public new DateTime? EXPIRY_DATE
         {
             get { return this.EXPIRY_DATEValue; }
             set { SetProperty(ref EXPIRY_DATEValue, value); }

@@ -64,12 +64,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for exploration costs");
-                return StatusCode(500, new { error = "Transaction created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording exploration costs");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -104,12 +104,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for development costs");
-                return StatusCode(500, new { error = "Transaction created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording development costs");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -152,12 +152,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for acquisition costs");
-                return StatusCode(500, new { error = "Transaction created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Transaction created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording acquisition costs");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -169,6 +169,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             string costCenterId,
             [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(costCenterId))
+                return BadRequest(new { error = "Cost center ID is required." });
             try
             {
                 var accounting = _service.CreateFullCostAccounting(connectionName);
@@ -178,7 +180,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating total capitalized costs");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -203,7 +205,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Financial
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing ceiling test");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

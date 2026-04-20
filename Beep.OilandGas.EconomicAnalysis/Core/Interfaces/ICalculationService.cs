@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.Models.Data.WellTestAnalysis;
 using Beep.OilandGas.Models.Data.Calculations;
-using Beep.OilandGas.Models.Data.WellTestAnalysis;
 
 namespace Beep.OilandGas.Models.Core.Interfaces
 {

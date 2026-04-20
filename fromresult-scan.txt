@@ -1,0 +1,22 @@
+
+Path                                                                                                                                        LineNumber Line
+----                                                                                                                                        ---------- ----
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Accounting\Services\JournalEntryService.cs                                 377             return Task.FromResult(true);
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ApiService\Controllers\PPDM39\PPDM39SetupController.cs                    2153                 return Task.FromResult(string.Empty);
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ApiService\Controllers\PPDM39\PPDM39SetupController.cs                    2158                 return Task.FromResult(string.Empty);
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ApiService\Controllers\PPDM39\PPDM39SetupController.cs                    2163                 return Task.FromResult(string.Empty);
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ApiService\Controllers\PPDM39\PPDM39SetupController.cs                    2168                 return Task.FromResult(string.Empty);
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ApiService\Controllers\PPDM39\PPDM39SetupController.cs                    2176                 return Task.FromResult(new List<string>());
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Client\Authentication\TokenProvider.cs                                     102             return Task.FromResult(false);
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.EnhancedRecovery\Services\EnhancedRecoveryService.ModelsCoreImpl.cs         13             return Task.FromResult(new EnhancedRecoveryOperation());
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.EnhancedRecovery\Services\EnhancedRecoveryService.ModelsCoreImpl.cs         19             return Task.FromResult(new EnhancedRecoveryOperation());
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.EnhancedRecovery\Services\EnhancedRecoveryService.ModelsCoreImpl.cs         25             return Task.FromResult(new InjectionOperation());
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM39.DataManagement\Core\Metadata\PPDMMetadataService.cs                 127                 return Task.FromResult(false);
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM39.DataManagement\Core\Metadata\PPDMMetadataService.cs                 216                 return Task.FromResult(false);
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM39.DataManagement\Core\Metadata\PPDMMetadataService.cs                 222                 return Task.FromResult(false);
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM39.DataManagement\Services\HSE\HSEIncidentService.cs                   175         return Task.FromResult(new List<string>());
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ProductionAccounting\Services\DrillingScenarioAccountingService.cs          58                 return Task.FromResult(false);
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ProductionAccounting\Services\ReportingService.cs                          260             return Task.FromResult(new List<ReportSchedule>());
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Properties\Services\GasPropertiesService.cs                                189              return Task.FromResult(new GasPseudoCritical());
+
+

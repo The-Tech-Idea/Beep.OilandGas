@@ -48,7 +48,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                     request.WellUWI, resolvedWellId);
 
                 // Step 1: Build reservoir properties from request or PPDM data
-                ReservoirProperties reservoirProperties;
+                ReservoirProperties? reservoirProperties;
                 if (request.ReservoirPressure.HasValue && request.ProductivityIndex.HasValue)
                 {
                     // Use values from request
@@ -76,7 +76,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 }
 
                 // Step 2: Build wellbore properties from request or PPDM data
-                WellboreProperties wellboreProperties;
+                WellboreProperties? wellboreProperties;
                 if (request.TubingDiameter.HasValue && request.WellheadPressure.HasValue)
                 {
                     // Use values from request

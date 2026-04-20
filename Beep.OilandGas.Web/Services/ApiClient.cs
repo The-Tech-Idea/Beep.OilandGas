@@ -128,6 +128,29 @@ namespace Beep.OilandGas.Web.Services
             }
         }
 
+        public async Task<TResponse?> PatchAsync<TRequest, TResponse>(
+            string endpoint,
+            TRequest data,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogDebug("PATCH {Endpoint}", endpoint);
+                var json = System.Text.Json.JsonSerializer.Serialize(data, JsonOptions);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                var request = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = content };
+                var response = await _httpClient.SendAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+                var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                return System.Text.Json.JsonSerializer.Deserialize<TResponse>(responseContent, JsonOptions);
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "HTTP error on PATCH {Endpoint}", endpoint);
+                throw;
+            }
+        }
+
         public async Task<bool> DeleteAsync(string endpoint, CancellationToken cancellationToken = default)
         {
             try

@@ -219,18 +219,25 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Services
                 }
 
                 // Seed additional data based on option
-                if (seedOption == "reference-sample" || seedOption == "full-demo")
+                if ((seedOption == "reference-sample" || seedOption == "full-demo") && _referenceDataSeeder != null)
                 {
-                    // Seed sample entities (would need additional implementation)
                     _logger.LogInformation("Seeding sample entities for demo database {ConnectionName}", connectionName);
-                    // TODO: Implement sample entity seeding
+                    var csvSeeder = new Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMCSVSeeder(
+                        _editor, _commonColumnHandler, _defaults, _metadata, connectionName);
+                    var demoSeeder = new Beep.OilandGas.PPDM39.DataManagement.SeedData.PPDMDemoDataSeeder(
+                        _editor, _commonColumnHandler, _defaults, _metadata,
+                        _referenceDataSeeder, csvSeeder, connectionName, null);
+                    var sampleResult = await demoSeeder.SeedFullDemoDatasetAsync("SYSTEM");
+                    if (!sampleResult.Success)
+                        _logger.LogWarning("Sample entity seeding had issues for {ConnectionName}: {Message}", connectionName, sampleResult.Message);
+                    else
+                        _logger.LogInformation("Sample entity seeding complete for {ConnectionName}: {Records} records", connectionName, sampleResult.RecordsInserted);
                 }
 
-                if (seedOption == "full-demo")
+                if (seedOption == "full-demo" && _referenceDataSeeder != null)
                 {
-                    // Seed full demo dataset
-                    _logger.LogInformation("Seeding full demo dataset for demo database {ConnectionName}", connectionName);
-                    // TODO: Implement full demo dataset seeding
+                    // Full demo is already covered by SeedFullDemoDatasetAsync above; log completion
+                    _logger.LogInformation("Full demo dataset seeding complete for {ConnectionName}", connectionName);
                 }
             }
             catch (Exception ex)

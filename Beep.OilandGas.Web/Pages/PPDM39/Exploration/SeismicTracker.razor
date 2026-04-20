@@ -1,4 +1,4 @@
-@page "/exploration/seismic"
+﻿@page "/exploration/seismic"
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
@@ -103,7 +103,7 @@
                                      Size="Size.Small"
                                      Color="Color.Primary"
                                      Class="ma-1"
-                                     OnClick="@(() => NavigationManager.NavigateTo($"/exploration/prospect/{p.Id}"))">
+                                     OnClick="@(() => NavigationManager.NavigateTo($"/exploration/prospect/{Uri.EscapeDataString(p.Id)}"))">
                                 @p.Name
                             </MudChip>
                         }
@@ -117,50 +117,43 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<SeismicSurveyRow> _surveys = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with GET /api/exploration/seismic-surveys?fieldId=
-        _surveys = new List<SeismicSurveyRow>
+        try
         {
-            new("S001", "Eagle Ford 3D — Block 12", "3D", "ACTIVE",  250, 2023, 2, "Eagle Ford South; Permian Deep Play",
-                new() {
-                    new("Acquisition",    "Jan 2023", true,  false),
-                    new("Processing",     "Jun 2023", true,  false),
-                    new("Interpretation", "Feb 2024", false, true),
-                    new("Prospect Gen",   "",         false, false),
-                },
-                new() { new("1","Eagle Ford South"), new("2","Permian Deep Play") }),
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
 
-            new("S002", "Gulf of Mexico 2D — Lines 40–55", "2D", "COMPLETE", 620, 2021, 0, "GOM Deepwater Alpha",
-                new() {
-                    new("Acquisition",    "Mar 2021", true, false),
-                    new("Processing",     "Aug 2021", true, false),
-                    new("Interpretation", "Dec 2021", true, false),
-                    new("Prospect Gen",   "Feb 2022", true, false),
-                },
-                new() { new("4","GOM Deepwater Alpha") }),
-
-            new("S003", "North Sea Block 15 Reprocessing", "3D", "IN PROGRESS", 180, 2022, 0, "North Sea Block 15",
-                new() {
-                    new("Acquisition",    "May 2022", true,  false),
-                    new("Processing",     "Jan 2024", false, true),
-                    new("Interpretation", "",         false, false),
-                    new("Prospect Gen",   "",         false, false),
-                },
-                new() { new("3","North Sea Block 15") }),
-
-            new("S004", "Permian Basin 3D — Phase 2", "3D", "PLANNED", 340, 2024, 0, "Permian Wolfcamp Deep",
-                new() {
-                    new("Acquisition",    "Q3 2024",  false, true),
-                    new("Processing",     "",         false, false),
-                    new("Interpretation", "",         false, false),
-                    new("Prospect Gen",   "",         false, false),
-                },
-                new() { new("7","Permian Wolfcamp Deep") }),
-        };
+        try
+        {
+            var surveys = await ApiClient.GetAsync<List<SEIS_ACQTN_SURVEY>>(
+                "/api/field/current/exploration/seismic-surveys") ?? new();
+            if (surveys.Count > 0)
+            {
+                _surveys = surveys.Select(s => new SeismicSurveyRow(
+                    id:              s.SEIS_ACQTN_SURVEY_ID ?? string.Empty,
+                    name:            s.ACQTN_SURVEY_NAME ?? s.SEIS_ACQTN_SURVEY_ID ?? "Unknown",
+                    type:            s.SEIS_SET_SUBTYPE ?? "3D",
+                    status:          s.ACTIVE_IND == "Y" ? "ACTIVE" : "COMPLETE",
+                    area:            0,
+                    vintage:         s.COMPLETED_DATE?.Year ?? 0,
+                    completionYear:  s.COMPLETED_DATE?.Year ?? 0,
+                    linkedProspects: string.Empty,
+                    stages:          new(),
+                    prospectList:    new()
+                )).ToList();
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load seismic surveys.", Severity.Warning);
+        }
     }
 
     private class SeismicSurveyRow

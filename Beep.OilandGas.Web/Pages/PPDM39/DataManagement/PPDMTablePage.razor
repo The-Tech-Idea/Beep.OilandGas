@@ -1,0 +1,49 @@
+@page "/ppdm39/data-management/table/{TableName}"
+@using MudBlazor
+@using Beep.OilandGas.Web.Components.Data
+
+
+<PageTitle>@TableName — Data Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="pa-3" Style="display:flex; flex-direction:column; height:calc(100vh - 80px)">
+
+    <PPDMTableManager TableName="@TableName"
+                      ParentTableName="@_parentTable"
+                      ParentKeyColumn="@_parentKeyCol"
+                      ParentKeyValue="@_parentKeyVal"
+                      Breadcrumbs="@_breadcrumbs" />
+
+</MudContainer>
+
+@code {
+    [Parameter] public string TableName { get; set; } = string.Empty;
+
+    [SupplyParameterFromQuery(Name = "parentTable")]  private string? _parentTable  { get; set; }
+    [SupplyParameterFromQuery(Name = "parentKeyCol")] private string? _parentKeyCol { get; set; }
+    [SupplyParameterFromQuery(Name = "parentKeyVal")] private string? _parentKeyVal { get; set; }
+
+    private List<MudBlazor.BreadcrumbItem> _breadcrumbs = new();
+
+    protected override void OnParametersSet()
+    {
+        BuildBreadcrumbs();
+    }
+
+    private void BuildBreadcrumbs()
+    {
+        _breadcrumbs = new List<MudBlazor.BreadcrumbItem>
+        {
+            new("Data Management", "/ppdm39/data-management", icon: Icons.Material.Filled.Storage)
+        };
+
+        if (!string.IsNullOrWhiteSpace(_parentTable))
+        {
+            // The parent table link — preserves no filter (top-level view of parent)
+            _breadcrumbs.Add(new(_parentTable, $"/ppdm39/data-management/table/{Uri.EscapeDataString(_parentTable)}",
+                icon: Icons.Material.Filled.TableChart));
+        }
+
+        // Current table — disabled (it's the current page)
+        _breadcrumbs.Add(new(TableName, null, disabled: true));
+    }
+}

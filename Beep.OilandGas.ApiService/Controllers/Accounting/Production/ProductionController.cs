@@ -34,6 +34,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             string id,
             [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "Inventory ID is required." });
             try
             {
                 var inventory = _service.ProductionManager.GetTankInventory(id);
@@ -54,7 +56,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting tank inventory {InventoryId}", id);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -84,7 +86,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Production
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating tank inventory");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

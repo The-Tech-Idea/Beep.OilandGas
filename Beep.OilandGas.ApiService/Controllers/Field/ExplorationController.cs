@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data.LifeCycle;
 using Microsoft.Extensions.Logging;
+using Beep.OilandGas.PPDM39.Models;
 
 namespace Beep.OilandGas.ApiService.Controllers.Field
 {
@@ -30,16 +32,130 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
     {
         private readonly IFieldOrchestrator _fieldOrchestrator;
         private readonly Beep.OilandGas.LifeCycle.Services.Exploration.Processes.ExplorationProcessService _explorationProcessService;
+        private readonly Beep.OilandGas.LifeCycle.Services.Exploration.PPDMExplorationService _explorationService;
         private readonly ILogger<ExplorationController> _logger;
 
         public ExplorationController(
             IFieldOrchestrator fieldOrchestrator,
             Beep.OilandGas.LifeCycle.Services.Exploration.Processes.ExplorationProcessService explorationProcessService,
+            Beep.OilandGas.LifeCycle.Services.Exploration.PPDMExplorationService explorationService,
             ILogger<ExplorationController> logger)
         {
             _fieldOrchestrator = fieldOrchestrator ?? throw new ArgumentNullException(nameof(fieldOrchestrator));
             _explorationProcessService = explorationProcessService ?? throw new ArgumentNullException(nameof(explorationProcessService));
+            _explorationService = explorationService ?? throw new ArgumentNullException(nameof(explorationService));
             _logger = logger;
+        }
+
+        // ============================================
+        // DATA QUERY ENDPOINTS
+        // ============================================
+
+        /// <summary>GET /api/field/current/exploration/prospects</summary>
+        [HttpGet("prospects")]
+        public async Task<ActionResult<List<PROSPECT>>> GetProspectsAsync()
+        {
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+            try
+            {
+                var prospects = await _explorationService.GetProspectsForFieldAsync(fieldId);
+                return Ok(prospects ?? new List<PROSPECT>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching prospects for field {FieldId}", fieldId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>GET /api/field/current/exploration/prospects/{id}</summary>
+        [HttpGet("prospects/{id}")]
+        public async Task<ActionResult<PROSPECT>> GetProspectAsync(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Prospect ID is required." });
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+            try
+            {
+                var prospect = await _explorationService.GetProspectForFieldAsync(fieldId, id);
+                if (prospect == null) return NotFound();
+                return Ok(prospect);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching prospect {Id}", id);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>GET /api/field/current/exploration/seismic-surveys</summary>
+        [HttpGet("seismic-surveys")]
+        public async Task<ActionResult<List<SEIS_ACQTN_SURVEY>>> GetSeismicSurveysAsync()
+        {
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+            try
+            {
+                var surveys = await _explorationService.GetSeismicSurveysForFieldAsync(fieldId);
+                return Ok(surveys ?? new List<SEIS_ACQTN_SURVEY>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching seismic surveys for field {FieldId}", fieldId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        /// <summary>GET /api/field/current/exploration/dashboard-summary</summary>
+        [HttpGet("dashboard-summary")]
+        public async Task<ActionResult<ExplorationDashboardSummary>> GetDashboardSummaryAsync()
+        {
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+            try
+            {
+                var prospects = await _explorationService.GetProspectsForFieldAsync(fieldId);
+                var surveys   = await _explorationService.GetSeismicSurveysForFieldAsync(fieldId);
+                var wells     = await _explorationService.GetExploratoryWellsForFieldAsync(fieldId);
+
+                var pending = (prospects ?? new())
+                    .Where(p => p.PROSPECT_STATUS == "REVIEW" || p.PROSPECT_STATUS == "IN_PROGRESS" || p.PROSPECT_STATUS == "SCREENING")
+                    .Select(p => new PendingDecisionDto(
+                        p.PROSPECT_NAME ?? p.PROSPECT_ID,
+                        $"Status: {p.PROSPECT_STATUS}",
+                        p.PROSPECT_STATUS ?? "UNKNOWN"))
+                    .Take(5)
+                    .ToList();
+
+                var upcoming = (prospects ?? new())
+                    .Where(p => p.ACTIVE_IND == "Y")
+                    .Take(3)
+                    .Select(p => new WellProgramDto(
+                        p.PROSPECT_NAME ?? p.PROSPECT_ID,
+                        p.DISCOVERY_DATE.HasValue ? p.DISCOVERY_DATE.Value.ToString("Q? yyyy") : "TBD",
+                        p.PROSPECT_STATUS ?? "PLANNED"))
+                    .ToList();
+
+                var summary = new ExplorationDashboardSummary
+                {
+                    LeadCount      = prospects?.Count(p => p.PROSPECT_TYPE == "LEAD") ?? 0,
+                    ProspectCount  = prospects?.Count(p => p.PROSPECT_TYPE != "LEAD") ?? 0,
+                    WellCount      = wells?.Count ?? 0,
+                    SurveyCount    = surveys?.Count ?? 0,
+                    SuccessRatePct = wells?.Count > 0
+                        ? wells.Count(w => w.CURRENT_STATUS != null && w.CURRENT_STATUS.Contains("PRODUCER", StringComparison.OrdinalIgnoreCase)) * 100.0 / wells.Count
+                        : 0,
+                    PendingDecisions = pending,
+                    UpcomingPrograms = upcoming,
+                };
+                return Ok(summary);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching exploration dashboard summary for field {FieldId}", fieldId);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
         }
 
         // ============================================
@@ -81,7 +197,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error starting Lead to Prospect process");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -113,7 +229,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error evaluating lead");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -141,7 +257,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error approving lead");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -180,7 +296,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error starting Prospect to Discovery process");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -219,9 +335,66 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error starting Discovery to Development process");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
+        /// <summary>POST /api/field/current/exploration/prospects/{id}/decision</summary>
+        /// Records an approval gate decision (Approved / Deferred / Rejected) for an exploration well program.
+        /// Updates PROSPECT_STATUS on the prospect record.
+        [HttpPost("prospects/{id}/decision")]
+        public async Task<IActionResult> PostProspectDecisionAsync(string id, [FromBody] ProspectDecisionRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "Prospect ID is required." });
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+            if (string.IsNullOrWhiteSpace(request.Decision))
+                return BadRequest(new { error = "Decision is required" });
+
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "SYSTEM";
+            try
+            {
+                var prospect = await _explorationService.GetProspectForFieldAsync(fieldId, id);
+                if (prospect == null) return NotFound(new { error = $"Prospect {id} not found in field {fieldId}" });
+
+                var newStatus = request.Decision?.ToUpperInvariant() switch
+                {
+                    "APPROVED" => "APPROVED",
+                    "DEFERRED" => "DEFERRED",
+                    "REJECTED" => "REJECTED",
+                    _          => "REVIEWED"
+                };
+
+                await _explorationService.UpdateProspectStatusAsync(fieldId, id, newStatus, userId);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error recording decision for prospect {ProspectId}", id);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+    }
+
+    // ── Response DTOs ─────────────────────────────────────────────────────────
+    public class ExplorationDashboardSummary
+    {
+        public int LeadCount       { get; set; }
+        public int ProspectCount   { get; set; }
+        public int WellCount       { get; set; }
+        public int SurveyCount     { get; set; }
+        public double SuccessRatePct { get; set; }
+        public List<PendingDecisionDto> PendingDecisions  { get; set; } = new();
+        public List<WellProgramDto>     UpcomingPrograms  { get; set; } = new();
+    }
+
+    public record PendingDecisionDto(string Name, string Description, string Status);
+    public record WellProgramDto(string Name, string TargetDate, string Status);
+
+    public class ProspectDecisionRequest
+    {
+        public string? Decision { get; set; }
+        public string? Comments { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-@page "/ppdm39/data-quality"
+﻿@page "/ppdm39/data-quality"
 @using Beep.OilandGas.Models.Data
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -141,15 +141,15 @@
         _isLoading = true;
         try
         {
-            _dashboard = await ApiClient.GetAsync<QualityDashboardData>($"/api/datamanagement/quality/{_selectedTable}/dashboard");
+            _dashboard = await ApiClient.GetAsync<QualityDashboardData>($"/api/datamanagement/quality/{Uri.EscapeDataString(_selectedTable)}/dashboard");
             if (_dashboard != null)
             {
                 Snackbar.Add("Quality dashboard loaded", Severity.Success);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading quality dashboard: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading quality dashboard.", Severity.Error);
         }
         finally
         {

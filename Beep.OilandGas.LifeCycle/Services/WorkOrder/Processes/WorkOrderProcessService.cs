@@ -63,7 +63,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
                     workOrderProcess.ProcessId,
                     workOrderId,
                     entityType,
-                    fieldId,
+                    fieldId ?? string.Empty,
                     userId);
             }
             catch (Exception ex)
@@ -100,7 +100,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
                     approvalProcess.ProcessId,
                     workOrderId,
                     workOrder.EntityType,
-                    workOrder.FieldId,
+                    workOrder.FieldId ?? string.Empty,
                     userId);
             }
             catch (Exception ex)
@@ -152,7 +152,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
                     executionProcess.ProcessId,
                     workOrderId,
                     workOrder.EntityType,
-                    workOrder.FieldId,
+                    workOrder.FieldId ?? string.Empty,
                     userId);
             }
             catch (Exception ex)
@@ -189,7 +189,7 @@ namespace Beep.OilandGas.LifeCycle.Services.WorkOrder.Processes
                     completionProcess.ProcessId,
                     workOrderId,
                     workOrder.EntityType,
-                    workOrder.FieldId,
+                    workOrder.FieldId ?? string.Empty,
                     userId);
             }
             catch (Exception ex)

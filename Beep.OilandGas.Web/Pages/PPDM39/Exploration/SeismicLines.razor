@@ -1,4 +1,4 @@
-@page "/ppdm39/exploration/seismic-surveys/{SurveyId}/lines"
+﻿@page "/ppdm39/exploration/seismic-surveys/{SurveyId}/lines"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -97,12 +97,29 @@
 @code {
     [Parameter] public string SurveyId { get; set; } = string.Empty;
 
-    private string _fieldName = "Current Field";
+    private string _loadedId  = string.Empty;
+    private string _fieldName = string.Empty;
     private List<SEIS_ACQTN_SURVEY>? _lines;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        _loadedId = SurveyId;
+        await LoadLines();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (SurveyId == _loadedId) return;
+        _loadedId = SurveyId;
         await LoadLines();
     }
 
@@ -111,11 +128,10 @@
         _isLoading = true;
         try
         {
-            _lines = await ApiClient.GetAsync<List<SEIS_ACQTN_SURVEY>>($"/api/field/current/exploration/seismic-surveys/{SurveyId}/lines");
-        }
-        catch (Exception ex)
+            _lines = await ApiClient.GetAsync<List<SEIS_ACQTN_SURVEY>>($"/api/field/current/exploration/seismic-surveys/{Uri.EscapeDataString(SurveyId)}/lines") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading seismic lines: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading seismic lines.", Severity.Error);
             _lines = new List<SEIS_ACQTN_SURVEY>();
         }
         finally

@@ -1,4 +1,4 @@
-@page "/admin/access-control/user-roles"
+﻿@page "/admin/access-control/user-roles"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.AccessControl
 @using Beep.OilandGas.Web.Services
@@ -85,11 +85,11 @@
 
         try
         {
-            _userRoles = await ApiClient.GetAsync<List<string>>($"/api/accesscontrol/user/{_selectedUserId}/roles");
+            _userRoles = await ApiClient.GetAsync<List<string>>($"/api/accesscontrol/user/{Uri.EscapeDataString(_selectedUserId)}/roles");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading user roles: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading user roles.", Severity.Error);
         }
     }
 
@@ -108,9 +108,9 @@
             Snackbar.Add($"Role {_selectedRole} assigned to user {_selectedUserId}", Severity.Success);
             await LoadUserRoles();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error assigning role: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error assigning role.", Severity.Error);
         }
     }
 
@@ -123,9 +123,9 @@
             Snackbar.Add($"Role {role} removed from user {_selectedUserId}", Severity.Success);
             await LoadUserRoles();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error removing role: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error removing role.", Severity.Error);
         }
     }
 }

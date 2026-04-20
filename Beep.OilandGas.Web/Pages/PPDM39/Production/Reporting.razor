@@ -1,4 +1,4 @@
-@page "/ppdm39/production/reporting"
+﻿@page "/ppdm39/production/reporting"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -77,12 +77,20 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<PDEN_VOL_SUMMARY>? _reporting;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
         await LoadReporting();
     }
 
@@ -91,11 +99,10 @@
         _isLoading = true;
         try
         {
-            _reporting = await ApiClient.GetAsync<List<PDEN_VOL_SUMMARY>>("/api/production/reporting");
-        }
-        catch (Exception ex)
+            _reporting = await ApiClient.GetAsync<List<PDEN_VOL_SUMMARY>>("/api/production/reporting") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading production reporting: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading production reporting.", Severity.Error);
         }
         finally
         {

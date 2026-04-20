@@ -1,7 +1,8 @@
-@page "/ppdm39/analytics"
+﻿@page "/ppdm39/analytics"
 @using Beep.OilandGas.Models.Data.Analytics
 @using Beep.OilandGas.Web.Services
 @inject ApiClient ApiClient
+@inject ISnackbar Snackbar
 
 <PageTitle>Analytics Dashboard</PageTitle>
 
@@ -235,16 +236,18 @@
                 $"/api/field/current/process/analytics/dashboard?days={_range}&exposureHours={_exposureHours}");
             var trendTask = ApiClient.GetAsync<List<KPITrendPoint>>(
                 $"/api/field/current/process/analytics/production/trend?days={_range}");
+            var fieldTask = ApiClient.GetAsync<Beep.OilandGas.Models.Data.FieldResponse>("/api/field/current");
 
-            await Task.WhenAll(summaryTask, trendTask);
+            await Task.WhenAll(summaryTask, trendTask, fieldTask);
 
             _summary         = summaryTask.Result;
             _productionTrend = trendTask.Result ?? new();
+            _fieldName       = fieldTask.Result?.FieldName;
             BuildChart();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.Error.WriteLine($"Analytics load error: {ex.Message}");
+            Snackbar.Add("Analytics load error.", Severity.Error);
         }
         finally
         {

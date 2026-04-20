@@ -1,0 +1,181 @@
+@page "/ppdm39/data-management/business-associates"
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@using Beep.OilandGas.Web.Components.Data
+@using Beep.OilandGas.Web.Services
+@using Beep.OilandGas.PPDM39.Core.Tree
+@using MudBlazor
+
+<PageTitle>Business Associate Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @* ── Page header ─────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4" Spacing="2">
+        <MudIcon Icon="@Icons.Material.Filled.Business" Color="Color.Secondary" Style="font-size:2rem;" />
+        <MudStack Spacing="0">
+            <MudText Typo="Typo.h5">Business Associate Management</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Companies, people and organisations you do business with (PPDM39 BUSINESS_ASSOCIATE module).
+            </MudText>
+        </MudStack>
+        <MudSpacer />
+        <MudButton Variant="Variant.Outlined"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/data-management"))">
+            All Categories
+        </MudButton>
+    </MudStack>
+
+    @* ── BA Type quick-filter chips ───────────────────────────────────────── *@
+    <MudPaper Elevation="1" Class="pa-3 mb-4">
+        <MudText Typo="Typo.subtitle2" Class="mb-2">Common BA Types</MudText>
+        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1">
+            @foreach (var bt in _baTypes)
+            {
+                <MudChip T="string"
+                         Color="@(_activeBaType == bt.Key ? Color.Secondary : Color.Default)"
+                         Variant="@(_activeBaType == bt.Key ? Variant.Filled : Variant.Outlined)"
+                         Icon="@bt.Icon"
+                         OnClick="@(() => SelectBaType(bt.Key, bt.Label))"
+                         Size="Size.Small">
+                    @bt.Label
+                </MudChip>
+            }
+            <MudChip T="string"
+                     Color="@(_activeBaType == null ? Color.Secondary : Color.Default)"
+                     Variant="@(_activeBaType == null ? Variant.Filled : Variant.Outlined)"
+                     Icon="@Icons.Material.Filled.GroupWork"
+                     OnClick="@ClearBaType"
+                     Size="Size.Small">
+                All Types
+            </MudChip>
+        </MudStack>
+    </MudPaper>
+
+    <MudGrid Spacing="4">
+
+        @* ── Left: table browser ─────────────────────────────────────────── *@
+        <MudItem xs="12" md="4" lg="3">
+            <MudPaper Elevation="2" Class="pa-3" Style="height: calc(100vh - 270px); overflow-y: auto;">
+                <CategoryTableBrowser CategoryId="BA"
+                                      CategoryName="Business Associates"
+                                      CategoryIcon="@Icons.Material.Filled.Business"
+                                      OnTableSelected="OnTableChosen" />
+            </MudPaper>
+        </MudItem>
+
+        @* ── Right: data grid / CRUD ──────────────────────────────────────── *@
+        <MudItem xs="12" md="8" lg="9">
+            <MudPaper Elevation="2" Style="height: calc(100vh - 270px); overflow-y: auto;">
+
+                @if (_activeNode == null)
+                {
+                    <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center"
+                              Style="height:100%;" Class="pa-8" Spacing="3">
+                        <MudIcon Icon="@Icons.Material.Filled.Business"
+                                 Style="font-size:5rem;" Color="Color.Secondary" />
+                        <MudText Typo="Typo.h5">Business Associates</MudText>
+                        <MudText Typo="Typo.body1" Color="Color.Secondary" Align="Align.Center">
+                            Select a BA type chip above, or pick a table from the left panel.
+                        </MudText>
+
+                        @* Quick access cards *@
+                        <MudGrid Class="mt-2">
+                            @foreach (var qt in _quickTables)
+                            {
+                                <MudItem xs="12" sm="6" md="4">
+                                    <MudCard Elevation="1" Class="cursor-pointer"
+                                             @onclick="@(() => OnTableChosen(qt.TableName))">
+                                        <MudCardContent Class="pa-3">
+                                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                                <MudIcon Icon="@qt.Icon" Color="Color.Secondary" Size="Size.Small" />
+                                                <MudStack Spacing="0">
+                                                    <MudText Typo="Typo.body2" Style="font-family:monospace;">
+                                                        @qt.TableName
+                                                    </MudText>
+                                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                                        @qt.Label
+                                                    </MudText>
+                                                </MudStack>
+                                            </MudStack>
+                                        </MudCardContent>
+                                    </MudCard>
+                                </MudItem>
+                            }
+                        </MudGrid>
+                    </MudStack>
+                }
+                else
+                {
+                    <MudStack Class="pa-3" Spacing="1">
+                        @if (!string.IsNullOrWhiteSpace(_activeBaTypeLabel))
+                        {
+                            <MudAlert Severity="Severity.Info" Dense="true">
+                                Showing <strong>@_activeBaTypeLabel</strong> business associates.
+                                Data is filtered by BA_TYPE = '<strong>@_activeBaType</strong>'.
+                            </MudAlert>
+                        }
+                    </MudStack>
+                    <GenericCrudPage @key="@_gridKey"
+                                     TableNode="@_activeNode" />
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private string?       _activeTable;
+    private PPDMTreeNode? _activeNode;
+    private string        _gridKey         = "init";
+    private string?       _activeBaType;
+    private string?       _activeBaTypeLabel;
+
+    private static readonly List<(string Key, string Label, string Icon)> _baTypes = new()
+    {
+        ("COMPANY",    "Companies",      Icons.Material.Filled.CorporateFare),
+        ("PERSON",     "Persons",        Icons.Material.Filled.Person),
+        ("GOVERNMENT", "Government",     Icons.Material.Filled.AccountBalance),
+        ("OPERATOR",   "Operators",      Icons.Material.Filled.Engineering),
+        ("PARTNER",    "Partners",       Icons.Material.Filled.Handshake),
+        ("VENDOR",     "Vendors",        Icons.Material.Filled.LocalShipping),
+    };
+
+    private static readonly List<(string TableName, string Label, string Icon)> _quickTables = new()
+    {
+        ("BUSINESS_ASSOCIATE",         "Core BA record",   Icons.Material.Filled.Business),
+        ("BA_AUTHORITY",               "BA Authorities",   Icons.Material.Filled.VerifiedUser),
+        ("BA_ADDRESS",                 "BA Addresses",     Icons.Material.Filled.LocationOn),
+        ("BA_ORGANIZATION",            "BA Organisations", Icons.Material.Filled.AccountTree),
+    };
+
+    private void OnTableChosen(string tableName)
+    {
+        _activeTable = tableName;
+        _activeNode  = new PPDMTreeNode
+        {
+            Id         = tableName,
+            Text       = tableName,
+            NodeType   = PPDMTreeNodeType.Table,
+            IsSelected = true
+        };
+        _gridKey = tableName + "_" + DateTime.Now.Ticks;
+    }
+
+    private void SelectBaType(string baType, string label)
+    {
+        _activeBaType      = baType;
+        _activeBaTypeLabel = label;
+        // Navigate to the core table; user can filter by BA_TYPE themselves
+        OnTableChosen("BUSINESS_ASSOCIATE");
+    }
+
+    private void ClearBaType()
+    {
+        _activeBaType      = null;
+        _activeBaTypeLabel = null;
+    }
+}

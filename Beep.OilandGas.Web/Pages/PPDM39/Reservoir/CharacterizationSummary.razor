@@ -1,10 +1,13 @@
-@page "/reservoir/characterization"
+﻿@page "/reservoir/characterization"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
 
 <PageTitle>Characterise Reservoir Properties</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
@@ -79,10 +82,7 @@
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <MudChart T="double" ChartType="ChartType.Bar"
-                                      Series="@_petrophySeries"
-                                      XAxisLabels="@_petrophyZones"
-                                      Width="100%" Height="220px" />
+                            <MudAlert Severity="Severity.Info" Dense="true">Petrophysics cross-plot will render once zone-level log data is available.</MudAlert>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -154,10 +154,7 @@
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
-                            <MudChart T="double" ChartType="ChartType.Line"
-                                      Series="@_boSeries"
-                                      XAxisLabels="@_pvtPressureLabels"
-                                      Width="100%" Height="220px" />
+                            <MudAlert Severity="Severity.Info" Dense="true">Bo vs. pressure chart will render once PVT laboratory data is entered.</MudAlert>
                         </MudCardContent>
                     </MudCard>
                 </MudItem>
@@ -201,57 +198,65 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
-    private string _lastUpdate = "15 Mar 2026";
+    private string _fieldName = string.Empty;
+    private string _lastUpdate = DateTime.UtcNow.ToString("dd MMM yyyy");
+    private bool _loading = true;
 
     private record StructParam(string Label, string Value, string Unit);
     private List<StructParam> _structuralParams = new()
     {
-        new("Closure Area",     "18,400", "acres"),
-        new("Structural Relief","580",    "ft"),
-        new("Dip Angle",        "8.4",    "degrees"),
-        new("Fault System",     "Growth", "type"),
-        new("Trap Style",       "Anticlinal", ""),
-        new("GRV",              "4,850",  "MM cu ft"),
+        new("Closure Area",      "—", "acres"),
+        new("Structural Relief", "—", "ft"),
+        new("Dip Angle",         "—", "degrees"),
+        new("Fault System",      "—", "type"),
+        new("Trap Style",        "—", ""),
+        new("GRV",               "—", "MM cu ft"),
     };
-
-    private List<ChartSeries<double>> _petrophySeries = new()
-    {
-        new ChartSeries<double> { Name = "Porosity (%)",    Data = new double[] { 22.4, 20.1, 14.5, 9.2 } },
-        new ChartSeries<double> { Name = "Sw (%)",          Data = new double[] { 18.2, 21.5, 28.0, 35.0 } },
-        new ChartSeries<double> { Name = "Net/Gross × 100", Data = new double[] { 82,   74,   55,   38  } },
-    };
-    private string[] _petrophyZones = { "Zone A", "Zone B", "Zone C", "Zone D" };
 
     private record PvtEntry(double Pressure, double Bo, double Rs, double Uo, double Bg);
-    private List<PvtEntry> _pvtData = new()
-    {
-        new(4000, 1.410, 580, 1.42, 0.0006),
-        new(3500, 1.395, 540, 1.58, 0.0007),
-        new(3000, 1.375, 495, 1.74, 0.0008),
-        new(2850, 1.360, 480, 1.80, 0.0009),
-        new(2500, 1.310, 420, 1.95, 0.0010),
-        new(2000, 1.255, 355, 2.20, 0.0013),
-        new(1500, 1.195, 290, 2.55, 0.0017),
-    };
-
-    private List<ChartSeries<double>> _boSeries = new()
-    {
-        new ChartSeries<double> { Name = "Bo", Data = new double[] { 1.195, 1.255, 1.310, 1.360, 1.375, 1.395, 1.410 } },
-    };
-    private string[] _pvtPressureLabels = { "1500", "2000", "2500", "2850", "3000", "3500", "4000" };
+    private List<PvtEntry> _pvtData = new();
 
     private record CorrelationEntry(string WellId, double TopDepth, double BaseDepth, double NetPay,
         double Porosity, string Fluid, string Quality);
-    private List<CorrelationEntry> _correlations = new()
+    private List<CorrelationEntry> _correlations = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        new("DEV-A1", 8380, 9200, 68, 22.4, "Oil",      "COMPLETE"),
-        new("DEV-A2", 8415, 9185, 62, 21.8, "Oil",      "COMPLETE"),
-        new("DEV-B1", 8440, 9240, 58, 20.4, "Oil",      "COMPLETE"),
-        new("DEV-B2", 8460, 9255, 55, 20.1, "Oil/Water","COMPLETE"),
-        new("DEV-C1", 8510, 9280, 42, 18.6, "Oil",      "IN PROGRESS"),
-        new("EXP-1",  8520, 9300, 38, 17.9, "Oil",      "REVIEW"),
-    };
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        _loading = true;
+        try
+        {
+            var wells = await ApiClient.GetAsync<List<WellDto>>("api/field/current/development/wells") ?? new();            if (wells != null)
+                _correlations = wells.Select(w => new CorrelationEntry(
+                    w.UWI ?? "Unknown",
+                    0,
+                    (double)(w.FINAL_TD ?? 0),
+                    0,
+                    0,
+                    "Oil",
+                    w.ACTIVE_IND == "Y" ? "COMPLETE" : "IN PROGRESS")).ToList();
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load well data.", Severity.Warning);
+        }
+        finally { _loading = false; }
+    }
+
+    private class WellDto
+    {
+        public string?  UWI        { get; set; }
+        public string?  WELL_NAME  { get; set; }
+        public decimal? FINAL_TD   { get; set; }
+        public string?  ACTIVE_IND { get; set; }
+    }
 
     private void ExportReport() =>
         Snackbar.Add("Characterization report export queued", Severity.Success);

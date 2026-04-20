@@ -1,4 +1,4 @@
-@page "/ppdm39/accounting/cost-allocation"
+﻿@page "/ppdm39/accounting/cost-allocation"
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Data.Accounting
 @inject ApiClient ApiClient
@@ -111,13 +111,24 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private CostAllocationMethod _allocationMethod = CostAllocationMethod.DirectAllocation;
     private DateTime? _allocationDate = DateTime.Today;
     private decimal? _totalOperatingCosts;
     private decimal? _totalCapitalCosts;
     private bool _isLoading = false;
     private CostAllocationResult? _allocationResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+    }
 
     private async Task AllocateCosts()
     {
@@ -148,9 +159,9 @@
 
             Snackbar.Add("Cost allocation completed", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error allocating costs: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error allocating costs.", Severity.Error);
         }
         finally
         {

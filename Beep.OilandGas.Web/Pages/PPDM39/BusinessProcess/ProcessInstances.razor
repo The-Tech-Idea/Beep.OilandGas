@@ -55,7 +55,7 @@
                  Hover="true"
                  Striped="true"
                  Sortable="true"
-                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/instances/{e.Item.InstanceId}"))">
+                 RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/instances/{Uri.EscapeDataString(e.Item.InstanceId)}"))">
         <Columns>
             <PropertyColumn Property="r => r.ProcessName"    Title="Process" />
             <PropertyColumn Property="r => r.ProcessType"    Title="Type" />
@@ -73,7 +73,7 @@
                     <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
                                    Size="Size.Small"
                                    Color="Color.Primary"
-                                   OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/process/instances/{context.Item.InstanceId}"))' />
+                                   OnClick='@(() => NavigationManager.NavigateTo($"/ppdm39/process/instances/{Uri.EscapeDataString(context.Item.InstanceId)}"))' />
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
@@ -85,7 +85,7 @@
 </MudContainer>
 
 @code {
-    private string _fieldName     = "Current Field";
+    private string _fieldName = string.Empty;
     private string _search        = string.Empty;
     private string _statusFilter  = string.Empty;
     private string _typeFilter    = string.Empty;
@@ -99,18 +99,28 @@
         (string.IsNullOrWhiteSpace(_statusFilter) || i.Status == _statusFilter) &&
         (string.IsNullOrWhiteSpace(_typeFilter)   || i.ProcessType == _typeFilter));
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with GET /api/field/current/process/instances
-        _instances = new List<InstanceRow>
+        try
         {
-            new("PI-001", "Exploratory Well Drilling Approval",      "EXPLORATION",    "W-001",   "S3 Gate 1 Review",    "IN_PROGRESS", DateTime.Today.AddDays(-5),  "john.doe"),
-            new("PI-002", "Reservoir Development Planning",           "DEVELOPMENT",    "RES-012", "S2 Geo Review",       "IN_PROGRESS", DateTime.Today.AddDays(-12), "jane.smith"),
-            new("PI-003", "Facility Decommissioning Authorization",   "DECOMMISSIONING","FAC-003", "S1 Screening",        "SUSPENDED",   DateTime.Today.AddDays(-30), "ops.manager"),
-            new("PI-004", "Well P&A Authorization",                   "DECOMMISSIONING","W-045",   "S5 Permit",           "IN_PROGRESS", DateTime.Today.AddDays(-2),  "john.doe"),
-            new("PI-005", "Production Allocation Approval",           "PRODUCTION",     "FIELD-1", "S1 Setup",            "NOT_STARTED", DateTime.Today,              "auto"),
-            new("PI-006", "Seismic Survey Authorization",             "EXPLORATION",    "SRV-009", "S8 Approval",         "COMPLETED",   DateTime.Today.AddDays(-45), "jane.smith"),
-        };
+            var data = await ApiClient.GetAsync<List<ProcessInstanceSummary>>("/api/field/current/process/instances") ?? new();            if (data != null)
+            {
+                _instances = data.Select(i => new InstanceRow(
+                    i.InstanceId,
+                    string.IsNullOrWhiteSpace(i.ProcessName) ? i.ProcessId : i.ProcessName,
+                    i.ProcessType,
+                    i.EntityId,
+                    i.CurrentStepName,
+                    i.Status,
+                    i.StartedAt,
+                    i.StartedBy
+                )).ToList();
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Could not load process instances.", Severity.Warning);
+        }
     }
 
     private record InstanceRow(

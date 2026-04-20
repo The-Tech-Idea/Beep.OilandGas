@@ -101,7 +101,7 @@ namespace Beep.OilandGas.Models.Data.Accounting.Ownership
 
         }
 
-        public DateTime EFFECTIVE_DATE
+        public new DateTime EFFECTIVE_DATE
 
         {
 

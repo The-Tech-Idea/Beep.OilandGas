@@ -13,8 +13,6 @@ namespace Beep.OilandGas.HeatMap
         public double Zoom { get; set; } = 1;
         public double PanX { get; set; } = 0;
         public double PanY { get; set; } = 0;
-        double centerX;
-        double centerY;
         double width;
         double height;
         double minX;
@@ -197,7 +195,6 @@ namespace Beep.OilandGas.HeatMap
         private void DrawDataPoint(SKCanvas canvas, HEAT_MAP_DATA_POINT point)
         {
             // Convert point coordinates to canvas coordinates
-            var margin = 0.01; // 5% margin
             double x = point.X;
             double y = point.Y ;
             SKColor color;

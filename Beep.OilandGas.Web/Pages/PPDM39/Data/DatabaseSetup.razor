@@ -1,158 +1,289 @@
-@page "/ppdm39/database-setup"
+﻿@page "/ppdm39/database-setup"
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@using Beep.OilandGas.Web.Components.Data
 
-<PageTitle>Set Up PPDM39 Database</PageTitle>
+<PageTitle>Database Setup Wizard</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
 
+    @* ── Page Header ──────────────────────────────────────────────────────── *@
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
-            <MudText Typo="Typo.h5">Set Up PPDM39 Database</MudText>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">Configure and initialise the PPDM39 database connection</MudText>
+            <MudText Typo="Typo.h5">
+                <MudIcon Icon="@Icons.Material.Filled.Storage" Class="mr-2" />
+                PPDM39 Database Setup Wizard
+            </MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Connect, install schema modules, seed reference data
+            </MudText>
         </MudStack>
-        <StatusBadge Status="@(_isConnected ? "ACTIVE" : "FAILED")" />
+        @if (_isConnected)
+        {
+            <MudChip T="string" Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small">
+                Connected — @(_savedConnectionName ?? _dbType)
+            </MudChip>
+        }
+        else
+        {
+            <MudChip T="string" Color="Color.Default" Icon="@Icons.Material.Outlined.RadioButtonUnchecked" Size="Size.Small">
+                Not connected
+            </MudChip>
+        }
     </MudStack>
 
-    <MudGrid Spacing="3">
+    @* ── Stepper ──────────────────────────────────────────────────────────── *@
+    <MudStepper @bind-ActiveIndex="_step" Color="Color.Primary" Linear="false">
 
-        @* Connection Settings *@
-        <MudItem xs="12" md="7">
-            <MudCard Elevation="2">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                            <MudIcon Icon="@Icons.Material.Filled.Storage" />
-                            <MudText Typo="Typo.subtitle1">Connection Configuration</MudText>
-                        </MudStack>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudGrid Spacing="2">
-                        <MudItem xs="12">
-                            <MudSelect T="string" @bind-Value="_dbType" Label="Database Type" Variant="Variant.Outlined">
-                                <MudSelectItem Value="@("SqlServer")">SQL Server</MudSelectItem>
-                                <MudSelectItem Value="@("PostgreSQL")">PostgreSQL</MudSelectItem>
-                                <MudSelectItem Value="@("SQLite")">SQLite</MudSelectItem>
-                                <MudSelectItem Value="@("Oracle")">Oracle</MudSelectItem>
-                            </MudSelect>
-                        </MudItem>
-                        <MudItem xs="12" sm="8">
-                            <MudTextField @bind-Value="_host" Label="Host / Server" Variant="Variant.Outlined"
-                                          Placeholder="localhost" />
-                        </MudItem>
-                        <MudItem xs="12" sm="4">
-                            <MudTextField @bind-Value="_port" Label="Port" Variant="Variant.Outlined"
-                                          Placeholder="1433" />
-                        </MudItem>
-                        <MudItem xs="12" sm="6">
-                            <MudTextField @bind-Value="_database" Label="Database Name" Variant="Variant.Outlined"
-                                          Placeholder="PPDM39" />
-                        </MudItem>
-                        <MudItem xs="12" sm="6">
-                            <MudTextField @bind-Value="_schema" Label="Schema" Variant="Variant.Outlined"
-                                          Placeholder="dbo" />
-                        </MudItem>
-                        <MudItem xs="12" sm="6">
-                            <MudTextField @bind-Value="_username" Label="Username" Variant="Variant.Outlined" />
-                        </MudItem>
-                        <MudItem xs="12" sm="6">
-                            <MudTextField @bind-Value="_password" Label="Password" Variant="Variant.Outlined"
-                                          InputType="InputType.Password" />
-                        </MudItem>
-                        <MudItem xs="12">
-                            <MudTextField @bind-Value="_connectionString" Label="Connection String (override)"
-                                          Variant="Variant.Outlined" Lines="2"
-                                          Placeholder="Optional — overrides fields above if provided" />
-                        </MudItem>
-                    </MudGrid>
-                </MudCardContent>
-                <MudCardActions>
-                    <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.PlayArrow"
-                               OnClick="TestConnection">
-                        Test Connection
-                    </MudButton>
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                               StartIcon="@Icons.Material.Filled.Save" OnClick="SaveConnection">
-                        Save &amp; Connect
-                    </MudButton>
-                </MudCardActions>
-            </MudCard>
-        </MudItem>
+        @* ── Step 1: Connection ──────────────────────────────────────────── *@
+        <MudStep Title="Connection" Icon="@Icons.Material.Filled.Link">
+            <MudGrid Spacing="3">
 
-        @* Status + Actions panel *@
-        <MudItem xs="12" md="5">
-            <MudStack Spacing="3">
-
-                @* Connection Status *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent><MudText Typo="Typo.subtitle1">Connection Status</MudText></CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudStack Spacing="2">
-                            @foreach (var item in _statusItems)
-                            {
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                                    <MudText Typo="Typo.body2">@item.Label</MudText>
-                                    <MudChip T="string" Size="Size.Small" Color="@item.Color">@item.Value</MudChip>
+                @* Connection form *@
+                <MudItem xs="12" md="7">
+                    <MudCard Elevation="2">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                    <MudIcon Icon="@Icons.Material.Filled.Storage" />
+                                    <MudText Typo="Typo.subtitle1">Connection Configuration</MudText>
                                 </MudStack>
-                            }
-                        </MudStack>
-                    </MudCardContent>
-                </MudCard>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudGrid Spacing="2">
+                                <MudItem xs="12">
+                                    <MudSelect T="string" @bind-Value="_dbType" Label="Database Type" Variant="Variant.Outlined">
+                                        <MudSelectItem Value="@("SqlServer")">SQL Server</MudSelectItem>
+                                        <MudSelectItem Value="@("PostgreSQL")">PostgreSQL</MudSelectItem>
+                                        <MudSelectItem Value="@("SQLite")">SQLite</MudSelectItem>
+                                        <MudSelectItem Value="@("Oracle")">Oracle</MudSelectItem>
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" sm="8">
+                                    <MudTextField @bind-Value="_host" Label="Host / Server" Variant="Variant.Outlined"
+                                                  Placeholder="localhost" />
+                                </MudItem>
+                                <MudItem xs="12" sm="4">
+                                    <MudTextField @bind-Value="_port" Label="Port" Variant="Variant.Outlined" Placeholder="1433" />
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="_database" Label="Database Name" Variant="Variant.Outlined" Placeholder="PPDM39" />
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="_schema" Label="Schema" Variant="Variant.Outlined" Placeholder="dbo" />
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="_username" Label="Username" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="_password" Label="Password" Variant="Variant.Outlined"
+                                                  InputType="InputType.Password" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudTextField @bind-Value="_connectionString" Label="Connection String (override)"
+                                                  Variant="Variant.Outlined" Lines="2"
+                                                  Placeholder="Optional — overrides fields above if provided" />
+                                </MudItem>
+                            </MudGrid>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.PlayArrow"
+                                       Disabled="@_isTesting" OnClick="TestConnection">
+                                @(_isTesting ? "Testing…" : "Test Connection")
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Save"
+                                       Disabled="@_isSaving" OnClick="SaveAndProceed">
+                                @(_isSaving ? "Saving…" : "Save & Continue →")
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
 
-                @* Database Initialisation *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent><MudText Typo="Typo.subtitle1">Database Initialisation</MudText></CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudText Typo="Typo.body2" Class="mb-3">
-                            Creates PPDM39 schema objects (tables, PKs, FKs) from the bundled DDL scripts.
-                            Only use on an empty database.
-                        </MudText>
-                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">
-                            This operation is irreversible on a populated database. Ensure you have a backup first.
-                        </MudAlert>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Warning"
-                                   StartIcon="@Icons.Material.Filled.Build"
-                                   Disabled="@(!_isConnected)"
-                                   OnClick="CreateSchema">
-                            Create PPDM39 Schema
-                        </MudButton>
-                    </MudCardActions>
-                </MudCard>
+                @* Status + saved connections panel *@
+                <MudItem xs="12" md="5">
+                    <MudStack Spacing="3">
+                        <MudCard Elevation="2">
+                            <MudCardHeader>
+                                <CardHeaderContent><MudText Typo="Typo.subtitle1">Connection Status</MudText></CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudStack Spacing="2">
+                                    @foreach (var item in _statusItems)
+                                    {
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                            <MudText Typo="Typo.body2">@item.Label</MudText>
+                                            <MudChip T="string" Size="Size.Small" Color="@item.Color">@item.Value</MudChip>
+                                        </MudStack>
+                                    }
+                                </MudStack>
+                            </MudCardContent>
+                        </MudCard>
 
-                @* Seed Data *@
-                <MudCard Elevation="2">
-                    <MudCardHeader>
-                        <CardHeaderContent><MudText Typo="Typo.subtitle1">Seed Reference Data</MudText></CardHeaderContent>
-                    </MudCardHeader>
-                    <MudCardContent>
-                        <MudText Typo="Typo.body2" Class="mb-2">
-                            Loads PPDM39 LOV (R_*) tables and standard reference data from bundled CSV files.
-                        </MudText>
-                    </MudCardContent>
-                    <MudCardActions>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Info"
-                                   StartIcon="@Icons.Material.Filled.Upload"
-                                   Disabled="@(!_isConnected)"
-                                   OnClick="SeedData">
-                            Seed Reference Data
-                        </MudButton>
-                    </MudCardActions>
-                </MudCard>
+                        @if (_existingConnections.Any())
+                        {
+                            <MudCard Elevation="1">
+                                <MudCardHeader>
+                                    <CardHeaderContent><MudText Typo="Typo.subtitle2">Saved Connections</MudText></CardHeaderContent>
+                                </MudCardHeader>
+                                <MudCardContent Class="pa-0">
+                                    <MudList T="string" Dense="true">
+                                        @foreach (var conn in _existingConnections)
+                                        {
+                                            <MudListItem Icon="@Icons.Material.Filled.Storage"
+                                                         OnClick="@(() => SelectExistingConnection(conn))">
+                                                <MudText Typo="Typo.body2">@conn.ConnectionName</MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">@conn.DatabaseType</MudText>
+                                            </MudListItem>
+                                        }
+                                    </MudList>
+                                </MudCardContent>
+                            </MudCard>
+                        }
+                    </MudStack>
+                </MudItem>
 
+            </MudGrid>
+        </MudStep>
+
+        @* ── Step 2: Schema Modules ──────────────────────────────────────── *@
+        <MudStep Title="Schema Modules" Icon="@Icons.Material.Filled.AccountTree">
+            <MudStack Spacing="3">
+                @if (!_isConnected)
+                {
+                    <MudAlert Severity="Severity.Warning">
+                        Please save a connection in Step 1 before installing schema modules.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">
+                        Select individual modules to install, or click <strong>Install All</strong> to create the full PPDM39 schema.
+                    </MudAlert>
+                    <SchemaModuleManager ConnectionName="@_savedConnectionName"
+                                         OnInstallComplete="HandleInstallComplete" />
+                }
+                <MudStack Row="true" Spacing="2" Class="mt-2">
+                    <MudButton Variant="Variant.Outlined" OnClick="@(() => _step = 0)"
+                               StartIcon="@Icons.Material.Filled.ArrowBack">Back</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               OnClick="@(() => _step = 2)"
+                               EndIcon="@Icons.Material.Filled.ArrowForward">
+                        Continue → Reference Data
+                    </MudButton>
+                </MudStack>
             </MudStack>
-        </MudItem>
+        </MudStep>
 
-    </MudGrid>
+        @* ── Step 3: Reference Data ──────────────────────────────────────── *@
+        <MudStep Title="Reference Data" Icon="@Icons.Material.Filled.LibraryBooks">
+            <MudStack Spacing="3">
+                @if (!_isConnected)
+                {
+                    <MudAlert Severity="Severity.Warning">
+                        Please save a connection in Step 1 before seeding reference data.
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">
+                        Seed the R_* and RA_* reference tables with PPDM standard values.
+                    </MudAlert>
+                    <ReferenceValuesManager ConnectionName="@_savedConnectionName" />
+                }
+                <MudStack Row="true" Spacing="2" Class="mt-2">
+                    <MudButton Variant="Variant.Outlined" OnClick="@(() => _step = 1)"
+                               StartIcon="@Icons.Material.Filled.ArrowBack">Back</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               OnClick="@(() => _step = 3)"
+                               EndIcon="@Icons.Material.Filled.ArrowForward">
+                        Continue → Summary
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        </MudStep>
+
+        @* ── Step 4: Summary ────────────────────────────────────────────── *@
+        <MudStep Title="Summary" Icon="@Icons.Material.Filled.CheckCircle">
+            <MudStack Spacing="3">
+                <MudCard Elevation="2">
+                    <MudCardHeader>
+                        <CardHeaderAvatar>
+                            <MudAvatar Color="@(_isConnected ? Color.Success : Color.Default)">
+                                <MudIcon Icon="@(_isConnected ? Icons.Material.Filled.CheckCircle : Icons.Material.Outlined.RadioButtonUnchecked)" />
+                            </MudAvatar>
+                        </CardHeaderAvatar>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.subtitle1">Setup Summary</MudText>
+                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                @(_isConnected ? "Database configured and ready" : "Connection not yet established")
+                            </MudText>
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" sm="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Connection Name</MudText>
+                                <MudText Typo="Typo.body2">@(_savedConnectionName ?? "—")</MudText>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Database Type</MudText>
+                                <MudText Typo="Typo.body2">@_dbType</MudText>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Host</MudText>
+                                <MudText Typo="Typo.body2">@(string.IsNullOrWhiteSpace(_host) ? "—" : _host)</MudText>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">Database</MudText>
+                                <MudText Typo="Typo.body2">@_database</MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+
+                <MudText Typo="Typo.subtitle2">Quick Actions</MudText>
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.AccountTree"
+                                   OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/data-management/schema"))">
+                            Schema Manager
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Default"
+                                   StartIcon="@Icons.Material.Filled.TableView"
+                                   OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/data-management"))">
+                            Data Management
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+
+                <MudStack Row="true" Spacing="2" Class="mt-2">
+                    <MudButton Variant="Variant.Outlined" OnClick="@(() => _step = 2)"
+                               StartIcon="@Icons.Material.Filled.ArrowBack">Back</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Success"
+                               StartIcon="@Icons.Material.Filled.Done"
+                               OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/data-management"))">
+                        Go to Data Management
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        </MudStep>
+
+    </MudStepper>
+
 </MudContainer>
 
 @code {
-    private bool _isConnected = false;
+    private int _step;
+    private bool _isConnected;
+    private bool _isTesting;
+    private bool _isSaving;
+    private string? _savedConnectionName;
 
     private string _dbType = "SqlServer";
     private string _host = "";
@@ -163,42 +294,166 @@
     private string _password = "";
     private string _connectionString = "";
 
+    private List<ConnectionSummaryItem> _existingConnections = new();
+
     private record StatusItem(string Label, string Value, Color Color);
     private List<StatusItem> _statusItems = new()
     {
-        new("Status",       "Not connected",  Color.Default),
-        new("PPDM Version", "—",              Color.Default),
-        new("Table Count",  "—",              Color.Default),
-        new("LOV Tables",   "—",              Color.Default),
+        new("Status",       "Not connected", Color.Default),
+        new("PPDM Version", "—",             Color.Default),
+        new("Table Count",  "—",             Color.Default),
+        new("LOV Tables",   "—",             Color.Default),
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var conns = await ApiClient.GetAsync<List<ConnectionSummaryItem>>("api/ppdm39/schema/connections") ?? new();            _existingConnections = conns ?? new();
+        }
+        catch { /* non-critical */ }
+    }
+
+    private ConnectionPropertiesDto BuildConnectionProps() => new()
+    {
+        ConnectionName   = $"{_database}_{_dbType}",
+        DatabaseType     = _dbType,
+        Server           = _host,
+        Port             = _port,
+        Database         = _database,
+        SchemaName       = _schema,
+        UserID           = _username,
+        Password         = _password,
+        ConnectionString = string.IsNullOrWhiteSpace(_connectionString) ? null : _connectionString,
     };
 
     private async Task TestConnection()
     {
+        _isTesting = true;
         Snackbar.Add("Testing connection…", Severity.Info);
-        await Task.Delay(800); // simulate async check
+        try
+        {
+            var result = await ApiClient.PostAsync<ConnectionPropertiesDto, ConnectionTestResultDto>(
+                "api/ppdm39/setup/test-connection", BuildConnectionProps());
+            if (result?.Success == true)
+            {
+                _isConnected = true;
+                _statusItems = new()
+                {
+                    new("Status",       "Connected", Color.Success),
+                    new("PPDM Version", "3.9",       Color.Success),
+                    new("Table Count",  "—",         Color.Default),
+                    new("LOV Tables",   "—",         Color.Default),
+                };
+                Snackbar.Add("Connection successful", Severity.Success);
+            }
+            else
+            {
+                _isConnected = false;
+                Snackbar.Add($"Connection failed: {result?.Message ?? result?.ErrorDetails ?? "Unknown error"}", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error testing connection.", Severity.Error);
+        }
+        finally { _isTesting = false; }
+    }
+
+    private async Task SaveAndProceed()
+    {
+        _isSaving = true;
+        try
+        {
+            var payload = new { Connection = BuildConnectionProps(), TestAfterSave = true, OpenAfterSave = false };
+            var result = await ApiClient.PostAsync<object, SaveConnectionResultDto>(
+                "api/ppdm39/setup/save-connection", payload);
+            if (result?.Success == true)
+            {
+                _savedConnectionName = result.ConnectionName ?? BuildConnectionProps().ConnectionName;
+                _isConnected = true;
+                _statusItems = new()
+                {
+                    new("Status",       "Connected",           Color.Success),
+                    new("Connection",   _savedConnectionName!, Color.Success),
+                    new("Database",     _database,             Color.Default),
+                    new("Type",         _dbType,               Color.Default),
+                };
+                Snackbar.Add("Connection saved", Severity.Success);
+                var conns = await ApiClient.GetAsync<List<ConnectionSummaryItem>>("api/ppdm39/schema/connections") ?? new();                _existingConnections = conns ?? new();
+                _step = 1;
+            }
+            else
+            {
+                Snackbar.Add($"Save failed: {result?.Message ?? "Unknown error"}", Severity.Error);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error saving connection.", Severity.Error);
+        }
+        finally { _isSaving = false; }
+    }
+
+    private void SelectExistingConnection(ConnectionSummaryItem conn)
+    {
+        _savedConnectionName = conn.ConnectionName;
+        _dbType = conn.DatabaseType ?? _dbType;
+        _host = conn.Host ?? _host;
+        _database = conn.Database ?? _database;
         _isConnected = true;
         _statusItems = new()
         {
-            new("Status",       "Connected",     Color.Success),
-            new("PPDM Version", "3.9",           Color.Success),
-            new("Table Count",  "512",           Color.Success),
-            new("LOV Tables",   "148",           Color.Success),
+            new("Status",       "Connected",              Color.Success),
+            new("Connection",   conn.ConnectionName!,     Color.Success),
+            new("Database",     conn.Database ?? "—",     Color.Default),
+            new("Type",         conn.DatabaseType ?? "—", Color.Default),
         };
-        Snackbar.Add("Connection successful", Severity.Success);
+        Snackbar.Add($"Loaded connection '{conn.ConnectionName}'", Severity.Info);
+        _step = 1;
     }
 
-    private void SaveConnection()
+    private void HandleInstallComplete()
     {
-        Snackbar.Add("Connection settings saved", Severity.Success);
+        Snackbar.Add("Schema installation updated", Severity.Info);
     }
 
-    private void CreateSchema()
+    // ── DTOs ──────────────────────────────────────────────────────────────────
+
+    private sealed class ConnectionPropertiesDto
     {
-        Snackbar.Add("PPDM39 schema creation started — check logs for progress", Severity.Warning);
+        public string? ConnectionName   { get; set; }
+        public string? ConnectionString { get; set; }
+        public string? DatabaseType     { get; set; }
+        public string? Server           { get; set; }
+        public string? Port             { get; set; }
+        public string? Database         { get; set; }
+        public string? SchemaName       { get; set; }
+        public string? UserID           { get; set; }
+        public string? Password         { get; set; }
     }
 
-    private void SeedData()
+    private sealed class ConnectionTestResultDto
     {
-        Snackbar.Add("Reference data seeding started — this may take several minutes", Severity.Info);
+        public bool    Success      { get; set; }
+        public string? Message      { get; set; }
+        public string? ErrorDetails { get; set; }
+    }
+
+    private sealed class SaveConnectionResultDto
+    {
+        public bool    Success        { get; set; }
+        public string? Message        { get; set; }
+        public string? ErrorDetails   { get; set; }
+        public string? ConnectionName { get; set; }
+    }
+
+    private sealed class ConnectionSummaryItem
+    {
+        public string? ConnectionName { get; set; }
+        public string? DatabaseType   { get; set; }
+        public string? Host           { get; set; }
+        public string? Database       { get; set; }
     }
 }
+

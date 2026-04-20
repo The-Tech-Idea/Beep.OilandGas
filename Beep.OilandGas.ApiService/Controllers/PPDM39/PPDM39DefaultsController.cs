@@ -38,6 +38,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(entityType))
+                    return BadRequest(new { error = "Entity type is required." });
                 _logger.LogInformation("Getting defaults for entity type {EntityType}", entityType);
                 
                 var result = new Dictionary<string, object>
@@ -53,7 +55,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting defaults for entity type {EntityType}", entityType);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -65,6 +67,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(statusId))
+                    return BadRequest(new { error = "Status ID is required." });
                 _logger.LogInformation("Getting well status facets for status {StatusId}", statusId);
                 var facets = await _wellServices.GetWellStatusFacetsAsync(statusId);
                 
@@ -73,7 +77,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting well status facets for status {StatusId}", statusId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -91,7 +95,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting active indicator");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -109,7 +113,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting inactive indicator");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

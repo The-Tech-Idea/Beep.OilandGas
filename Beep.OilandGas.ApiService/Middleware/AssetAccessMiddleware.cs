@@ -46,10 +46,10 @@ namespace Beep.OilandGas.ApiService.Middleware
                     context.Items["UserId"] = userId;
 
                     // For GET requests that return asset lists, inject filters automatically
-                    if (context.Request.Method == "GET" && !context.Request.Path.Value.Contains("/api/accesscontrol"))
+                    if (context.Request.Method == "GET" && !(context.Request.Path.Value?.Contains("/api/accesscontrol") ?? false))
                     {
                         // Extract asset type from path (e.g., /api/production/fields -> FIELD)
-                        var assetType = InferAssetTypeFromPath(context.Request.Path.Value);
+                        var assetType = InferAssetTypeFromPath(context.Request.Path.Value ?? string.Empty);
 
                         if (!string.IsNullOrEmpty(assetType) && assetsByType.ContainsKey(assetType))
                         {

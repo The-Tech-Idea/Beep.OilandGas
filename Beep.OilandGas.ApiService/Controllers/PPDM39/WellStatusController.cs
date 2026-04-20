@@ -66,7 +66,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         qualByStatus[key].Add(q);
                     }
 
-                    WellServices.FacetTypeDef catalog = null;
+                    WellServices.FacetTypeDef? catalog = null;
                     WellServices.FACET_CATALOG.TryGetValue(facetType, out catalog);
 
                     result.Add(new WellServices.FacetTypeDto
@@ -83,7 +83,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 Log.Error(ex, "Error loading facet reference data");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -99,7 +99,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 var values     = await _wellServices.GetFacetValuesAsync(statusType);
                 var qualifiers = await _wellServices.GetFacetQualifiersAsync(statusType);
 
-                WellServices.FacetTypeDef catalog = null;
+                WellServices.FacetTypeDef? catalog = null;
                 WellServices.FACET_CATALOG.TryGetValue(statusType, out catalog);
 
                 var qualByStatus = new Dictionary<string, List<WellServices.FacetQualifierDto>>(StringComparer.OrdinalIgnoreCase);
@@ -123,7 +123,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 Log.Error(ex, "Error loading facet reference for {StatusType}", statusType);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -142,7 +142,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 Log.Error(ex, "Error loading qualifiers for {StatusType}/{Status}", statusType, status);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -162,7 +162,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 Log.Error(ex, "Error loading qualifier values for {StatusType}/{Status}/{Qualifier}", statusType, status, qualifier);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -178,6 +178,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("{uwi}/current")]
         public async Task<ActionResult<Dictionary<string, WELL_STATUS>>> GetCurrentStatus(string uwi)
         {
+            if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
             try
             {
                 var result = await _wellServices.GetCurrentWellStatusByUwiAsync(uwi);
@@ -186,7 +187,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 Log.Error(ex, "Error loading current status for UWI {UWI}", uwi);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -198,6 +199,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("{uwi}/page-data")]
         public async Task<ActionResult<List<WellServices.FacetTypeDto>>> GetFacetPageData(string uwi)
         {
+            if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
             try
             {
                 var result = await _wellServices.GetWellFacetPageDataAsync(uwi);
@@ -206,7 +208,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 Log.Error(ex, "Error loading facet page data for UWI {UWI}", uwi);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -217,6 +219,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("{uwi}/history")]
         public async Task<ActionResult<List<WELL_STATUS>>> GetStatusHistory(string uwi)
         {
+            if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
             try
             {
                 var result = await _wellServices.GetWellStatusByUwiAsync(uwi);
@@ -225,7 +228,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 Log.Error(ex, "Error loading status history for UWI {UWI}", uwi);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -242,6 +245,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         public async Task<ActionResult<WELL_STATUS>> SetFacet(
             string uwi, [FromBody] WellServices.SetFacetRequest request)
         {
+            if (string.IsNullOrWhiteSpace(uwi)) return BadRequest(new { error = "UWI is required." });
             if (request == null)
                 return BadRequest("Request body is required");
 
@@ -262,12 +266,12 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error setting facet {StatusType} for UWI {UWI}", request.StatusType, uwi);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

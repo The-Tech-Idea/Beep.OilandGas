@@ -88,7 +88,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         _logger.LogError(ex, "Error executing workflow {WorkflowId}", request.Workflow.WorkflowId);
                         if (_progressTracking != null && operationId != null)
                         {
-                            _progressTracking.CompleteOperation(operationId, false, errorMessage: ex.Message);
+                            _progressTracking.CompleteOperation(operationId, false, errorMessage: "An internal error occurred.");
                         }
                     }
                 });
@@ -105,7 +105,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new OperationStartResponse 
                 { 
                     OperationId = "", 
-                    Message = $"Error starting workflow: {ex.Message}" 
+                    Message = $"Error starting workflow: See server logs for details." 
                 });
             }
         }
@@ -116,6 +116,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("phase/{phase}")]
         public async Task<ActionResult<List<WorkflowDefinition>>> GetWorkflowsByPhase(string phase, [FromQuery] string? fieldId = null)
         {
+            if (string.IsNullOrWhiteSpace(phase)) return BadRequest(new { error = "Phase is required." });
             try
             {
                 // Use current field if available and fieldId not specified
@@ -130,7 +131,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting workflows for phase {Phase}", phase);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -154,7 +155,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting workflows");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -187,7 +188,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving workflow definition");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -197,6 +198,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("{workflowId}/history")]
         public async Task<ActionResult<List<WorkflowExecutionResult>>> GetWorkflowHistory(string workflowId, [FromQuery] int limit = 50)
         {
+            if (string.IsNullOrWhiteSpace(workflowId)) return BadRequest(new { error = "Workflow ID is required." });
             try
             {
                 var history = await _workflowService.GetWorkflowExecutionHistoryAsync(workflowId, limit);
@@ -205,7 +207,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting workflow history for {WorkflowId}", workflowId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -215,6 +217,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpGet("{workflowId}/progress")]
         public ActionResult<WorkflowProgress> GetWorkflowProgress(string workflowId)
         {
+            if (string.IsNullOrWhiteSpace(workflowId)) return BadRequest(new { error = "Workflow ID is required." });
             try
             {
                 var progress = _progressTracking?.GetWorkflowProgress(workflowId);
@@ -227,7 +230,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting workflow progress for {WorkflowId}", workflowId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -237,6 +240,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         [HttpPost("{workflowId}/cancel")]
         public ActionResult CancelWorkflow(string workflowId)
         {
+            if (string.IsNullOrWhiteSpace(workflowId)) return BadRequest(new { error = "Workflow ID is required." });
             try
             {
                 _progressTracking?.CancelOperation(workflowId);
@@ -246,7 +250,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error cancelling workflow {WorkflowId}", workflowId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

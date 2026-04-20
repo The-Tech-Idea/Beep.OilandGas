@@ -70,7 +70,7 @@ namespace Beep.OilandGas.Branchs.PPDM39
 
         public IBranch CreateCategoryNode(CategoryFolder p)
         {
-            return null;
+            return null!;
         }
 
         public IErrorsInfo CreateChildNodes()
@@ -96,7 +96,7 @@ namespace Beep.OilandGas.Branchs.PPDM39
 
         public IBranch CreateCategoryNode(PPDM39Category category)
         {
-            PPDM39CategoryNode categoryBranch = null;
+            PPDM39CategoryNode? categoryBranch = null;
             try
             {
                 IBranch parent = this;
@@ -110,7 +110,7 @@ namespace Beep.OilandGas.Branchs.PPDM39
                 DMEEditor.AddLogMessage(ex.Message, $"Error Creating Category Node {category.Name}",
                     DateTime.Now, -1, "PPDM39RootNode.CreateCategoryNode", Errors.Failed);
             }
-            return categoryBranch;
+            return categoryBranch!;
         }
 
         private string GetCategoryIcon(string categoryName)

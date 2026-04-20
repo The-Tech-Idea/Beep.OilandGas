@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -36,6 +37,7 @@ namespace Beep.OilandGas.ProductionAccounting.Services
         private readonly IJointInterestBillingService _jibService;
         private readonly ILogger<ReportingService> _logger;
         private const string ConnectionName = "PPDM39";
+        private static readonly ConcurrentDictionary<string, ReportSchedule> _scheduleStore = new();
 
         public ReportingService(
             IDMEEditor editor,
@@ -252,12 +254,13 @@ namespace Beep.OilandGas.ProductionAccounting.Services
                 Status = "SCHEDULED"
             };
 
+            _scheduleStore[schedule.ScheduleId] = schedule;
             return Task.FromResult(schedule);
         }
 
         public Task<List<ReportSchedule>> GetScheduledReportsAsync(string? connectionName = null)
         {
-            return Task.FromResult(new List<ReportSchedule>());
+            return Task.FromResult(_scheduleStore.Values.ToList());
         }
 
         public Task<ReportDistributionResult> DistributeReportAsync(string reportId, ReportDistributionRequestAlias request, string userId, string? connectionName = null)

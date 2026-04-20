@@ -325,9 +325,9 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
             }
         }
 
-        public DateTime? EFFECTIVE_DATE { get; set; }
+        public new DateTime? EFFECTIVE_DATE { get; set; }
 
-        public DateTime? EXPIRY_DATE { get; set; }
+        public new DateTime? EXPIRY_DATE { get; set; }
     }
 
     public partial class RUN_TICKET_VALUATION

@@ -1,4 +1,4 @@
-@page "/ppdm39/process/gates/{Id}"
+﻿@page "/ppdm39/process/gates/{Id}"
 @attribute [Authorize(Roles = "GateApprover,Manager,Admin")]
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
@@ -94,6 +94,7 @@
 @code {
     [Parameter] public string Id { get; set; } = string.Empty;
 
+    private string   _loadedId    = string.Empty;
     private string   _gateName    = string.Empty;
     private string   _entityId    = string.Empty;
     private string   _status      = "AWAITING APPROVAL";
@@ -106,22 +107,47 @@
 
     private bool AllDocumentsSubmitted => _checklist.All(c => c.IsSubmitted);
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with GET /api/field/current/gates/{Id}/checklist + gate detail
-        _gateName    = "Eagle Ford S-1 — Gate 2: AFE Approval";
-        _entityId    = "W-001";
-        _submittedBy = "john.doe";
-        _submittedAt = DateTime.Today.AddDays(-3);
+        _loadedId = Id;
+        await LoadReviewAsync();
+    }
 
-        _checklist = new List<GateChecklistTable.GateChecklistItem>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id == _loadedId) return;
+        _loadedId = Id;
+        await LoadReviewAsync();
+    }
+
+    private async Task LoadReviewAsync()
+    {
+        try
         {
-            new("Geological Evaluation Report",    "RM_INFORMATION_ITEM", true),
-            new("AFE Estimate Document",           "RM_INFORMATION_ITEM", true),
-            new("Regulatory Approval Letter",      "RM_INFORMATION_ITEM", false),
-            new("Environmental Impact Assessment", "RM_INFORMATION_ITEM", false),
-            new("Signed Well Commitment",          "PROJECT_STEP_BA",     true),
-        };
+            // Load gate summary
+            var gate = await ApiClient.GetAsync<ProcessInstanceSummary>($"/api/field/current/gates/{Uri.EscapeDataString(Id)}");
+            if (gate != null)
+            {
+                _gateName    = string.IsNullOrWhiteSpace(gate.ProcessName) ? gate.ProcessId : gate.ProcessName;
+                _entityId    = gate.EntityId;
+                _status      = gate.Status;
+                _submittedBy = gate.StartedBy;
+                _submittedAt = gate.StartedAt;
+            }
+
+            // Load checklist
+            var cl = await ApiClient.GetAsync<GateChecklistResponse>($"/api/field/current/gates/{Uri.EscapeDataString(Id)}/checklist");
+            if (cl?.RequiredDocuments != null)
+            {
+                _checklist = cl.RequiredDocuments
+                    .Select(doc => new GateChecklistTable.GateChecklistItem(doc, "RM_INFORMATION_ITEM", false))
+                    .ToList();
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Could not load gate review detail.", Severity.Warning);
+        }
     }
 
     private async Task ApproveAsync()
@@ -137,11 +163,11 @@
             {
                 Decision = GateDecision.Approve, Comments = _comments
             };
-            await ApiClient.PostAsync<GateReviewDecisionRequest, object>($"/api/field/current/gates/{Id}/approve", req);
+            await ApiClient.PostAsync<GateReviewDecisionRequest, object>($"/api/field/current/gates/{Uri.EscapeDataString(Id)}/approve", req);
             Snackbar.Add("Gate approved.", Severity.Success);
             NavigationManager.NavigateTo("/ppdm39/process/gates");
         }
-        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+        catch (Exception) { Snackbar.Add("Approval failed.", Severity.Error); }
     }
 
     private async Task RejectAsync()
@@ -158,11 +184,11 @@
             {
                 Decision = GateDecision.Reject, Comments = _comments
             };
-            await ApiClient.PostAsync<GateReviewDecisionRequest, object>($"/api/field/current/gates/{Id}/reject", req);
+            await ApiClient.PostAsync<GateReviewDecisionRequest, object>($"/api/field/current/gates/{Uri.EscapeDataString(Id)}/reject", req);
             Snackbar.Add("Gate rejected.", Severity.Warning);
             NavigationManager.NavigateTo("/ppdm39/process/gates");
         }
-        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+        catch (Exception) { Snackbar.Add("Rejection failed.", Severity.Error); }
     }
 
     private async Task DeferAsync()
@@ -175,10 +201,16 @@
                 Comments        = _comments,
                 DeferTargetDate = _deferDate
             };
-            await ApiClient.PostAsync<GateReviewDecisionRequest, object>($"/api/field/current/gates/{Id}/defer", req);
+            await ApiClient.PostAsync<GateReviewDecisionRequest, object>($"/api/field/current/gates/{Uri.EscapeDataString(Id)}/defer", req);
             Snackbar.Add("Gate deferred.", Severity.Info);
             NavigationManager.NavigateTo("/ppdm39/process/gates");
         }
-        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
+        catch (Exception) { Snackbar.Add("Deferral failed.", Severity.Error); }
+    }
+
+    private class GateChecklistResponse
+    {
+        public string GateId { get; set; } = string.Empty;
+        public List<string> RequiredDocuments { get; set; } = new();
     }
 }

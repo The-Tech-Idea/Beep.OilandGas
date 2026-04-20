@@ -1,9 +1,8 @@
-@page "/development/well-design"
+﻿@page "/development/well-design"
 @page "/development/well-design/{Id}"
 @page "/development/well-design/new"
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
-@inject IDialogService DialogService
 @inject ISnackbar Snackbar
 
 <PageTitle>@(_showDetail ? $"{_well.WellName} — Well Design" : "Development Well Design")</PageTitle>
@@ -312,29 +311,79 @@
 
 </MudContainer>
 
+@* ── Assign Rig dialog ────────────────────────────────────────────────────── *@
+<MudDialog @bind-IsVisible="_showAssignRigDialog">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Engineering" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Assign Rig — @_well.WellName</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="_rigName" Label="Rig Name / Contract Number"
+                          Variant="Variant.Outlined" Required="true" />
+            <MudDatePicker @bind-Date="_rigMobDate" Label="Mobilisation Date"
+                           Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showAssignRigDialog = false)" Disabled="@_assigningRig">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Engineering"
+                   Disabled="@_assigningRig"
+                   OnClick="SubmitRigAssignmentAsync">
+            @(_assigningRig ? "Saving…" : "Assign Rig")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 @code {
     [Parameter] public string? Id { get; set; }
 
-    private string _fieldName = "Current Field";
+    private string _loadedId   = string.Empty;
+    private string _fieldName  = string.Empty;
     private bool _showDetail;
     private WellDetail _well = new();
     private List<WellDesignRow> _wells = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        _wells = new()
+        _loadedId = Id ?? string.Empty;
+        try
         {
-            new("1", "Dev-A1", "Producer", "Lower Eagle Ford", "DRILLING",    5.8m,  "Ensco 8503"),
-            new("2", "Dev-A2", "Producer", "Lower Eagle Ford", "APPROVED",    5.6m,  "TBD"),
-            new("3", "Dev-B1", "Injector", "Lower Eagle Ford", "COMPLETE",    4.2m,  "Ensco 8503"),
-            new("4", "Dev-A3", "Producer", "Upper Eagle Ford", "DRAFT",       5.5m,  "TBD"),
-            new("5", "Dev-B2", "Injector", "Lower Eagle Ford", "DRAFT",       4.0m,  "TBD"),
-        };
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        try
+        {
+            var wells = await ApiClient.GetAsync<List<WELL>>(
+                "/api/field/current/development/wells") ?? new();
+            if (wells.Count > 0)
+            {
+                _wells = wells.Select(w => new WellDesignRow(
+                    w.UWI ?? string.Empty,
+                    w.WELL_NAME ?? w.UWI ?? "Unknown",
+                    w.WELL_LEVEL_TYPE ?? "Producer",
+                    string.Empty,
+                    w.STATUS_TYPE ?? "DRAFT",
+                    (decimal)(w.FINAL_TD),
+                    string.Empty
+                )).ToList();
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load wells.", Severity.Warning);
+        }
 
         if (!string.IsNullOrEmpty(Id) && Id != "new")
         {
             _showDetail = true;
-            LoadWellDetail(Id);
+            await LoadWellDetailAsync(Id);
         }
         else if (Id == "new")
         {
@@ -343,65 +392,52 @@
         }
     }
 
-    private void LoadWellDetail(string id)
+    private async Task LoadWellDetailAsync(string id)
     {
-        // TODO: GET /api/development/wells/{id}
-        _well = new WellDetail
+        try
         {
-            Id = id,
-            WellName = "Dev-A1",
-            Type = "Producer",
-            Status = "DRILLING",
-            TargetZone = "Lower Eagle Ford",
-            SurfaceLatLon = "28.5° N, 97.8° W",
-            TargetDepthM = 3_500,
-            TrajectoryType = "Directional",
-            PlannedInclination = 72,
-            PlannedDays = 65,
-            DaysDrilling = 42,
-            CurrentDepthM = 2_850,
-            RopMPerDay = 68,
-            MudProgram = "Water-based mud to 2,000m; Synthetic oil-based mud below",
-            BhaSummary = "PDC bit 8½\", MWD/LWD, RSS, 6½\" DC, HWDP",
-            PerfInterval = "3,200–3,400m MD",
-            GravelPack = "None",
-            ArtificialLift = "Electric Submersible Pump (ESP)",
-            TubingSize = "3½\" 12.7 ppf L80",
-            PackerType = "Permanent production packer",
-            Dhsv = "SCSSV 3.5\" × 5,000 psi",
-            RigAssigned = "Ensco 8503",
-            CasingProgram = new()
+            var w = await ApiClient.GetAsync<WELL>(
+                $"/api/field/current/development/wells/{id}");
+            if (w != null)
             {
-                new("Conductor",   30m, 60,    "X-52"),
-                new("Surface",     13.375m, 600, "K-55"),
-                new("Intermediate",9.625m, 2_100,"N-80"),
-                new("Production",  7m, 3_500, "P-110"),
-            },
-            FormationTops = new()
-            {
-                new("Midway Shale",       380),
-                new("Austin Chalk",     1_200),
-                new("Eagle Ford Shale", 3_150),
-                new("Buda Limestone",   3_520),
-            },
-            AfeLines = new()
-            {
-                new("Drilling",    "Rig day rate (65 days @ $75k)",  4_875_000m),
-                new("Drilling",    "Mud & chemicals",                  780_000m),
-                new("Casing",      "Casing programme",                 640_000m),
-                new("Completion",  "ESP system",                       320_000m),
-                new("Evaluation",  "Wireline",                         210_000m),
-            },
-            NptLog = new()
-            {
-                new("12 Mar 2026", "Stuck Pipe",  18, "Differentially stuck at 2,400m. Freed with spotting fluid."),
-                new("28 Mar 2026", "Wait on Crew", 6, "Crew change delay due to weather."),
+                _well = new WellDetail
+                {
+                    Id           = w.UWI ?? id,
+                    WellName     = w.WELL_NAME ?? w.UWI ?? id,
+                    Type         = w.WELL_LEVEL_TYPE ?? "Producer",
+                    Status       = w.STATUS_TYPE ?? "DRAFT",
+                    TargetZone   = string.Empty,
+                    TargetDepthM = (int)(w.FINAL_TD),
+                };
             }
-        };
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load well detail.", Severity.Warning);
+        }
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        if ((Id ?? string.Empty) == _loadedId) return;
+        _loadedId = Id ?? string.Empty;
+        if (!string.IsNullOrEmpty(Id) && Id != "new")
+        {
+            _showDetail = true;
+            await LoadWellDetailAsync(Id);
+        }
+        else if (Id == "new")
+        {
+            _showDetail = true;
+            _well = new WellDetail { WellName = "New Well", Status = "DRAFT" };
+        }
+        else
+        {
+            _showDetail = false;
+        }
+    }
     private void OpenDetail(string id) =>
-        NavigationManager.NavigateTo($"/development/well-design/{id}");
+        NavigationManager.NavigateTo($"/development/well-design/{Uri.EscapeDataString(id)}");
 
     private void BackToList() =>
         NavigationManager.NavigateTo("/development/well-design");
@@ -418,8 +454,41 @@
         Snackbar.Add("Well design submitted for approval.", Severity.Success);
     }
 
-    private void AssignRig() =>
-        Snackbar.Add("Rig assignment dialog coming soon.", Severity.Info);
+    private void AssignRig()
+    {
+        _rigName    = string.Empty;
+        _rigMobDate = DateTime.Today;
+        _showAssignRigDialog = true;
+    }
+
+    // \u2500\u2500 Rig assignment dialog state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    private bool      _showAssignRigDialog = false;
+    private bool      _assigningRig        = false;
+    private string    _rigName             = string.Empty;
+    private DateTime? _rigMobDate          = DateTime.Today;
+
+    private async Task SubmitRigAssignmentAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_rigName))
+        {
+            Snackbar.Add("Rig name is required.", Severity.Warning);
+            return;
+        }
+        _assigningRig = true;
+        try
+        {
+            var payload = new { RigName = _rigName, MobDate = _rigMobDate };
+            await ApiClient.PutAsync<object>($"/api/field/current/development/wells/{_well.Id}/rig", payload);
+            _well.RigAssigned = _rigName;
+            _showAssignRigDialog = false;
+            Snackbar.Add($"Rig {_rigName} assigned to {_well.WellName}.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to assign rig.", Severity.Error);
+        }
+        finally { _assigningRig = false; }
+    }
 
     private void RecordSpud()
     {

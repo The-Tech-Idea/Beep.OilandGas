@@ -6,6 +6,7 @@ using Beep.OilandGas.Models.Data.Pumps;
 using Beep.OilandGas.Models.Data.SuckerRodPumping;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
 using Microsoft.Extensions.Logging;
 
@@ -272,13 +273,20 @@ namespace Beep.OilandGas.SuckerRodPumping.Services
                 throw new ArgumentException("User ID cannot be null or empty", nameof(userId));
 
             _logger?.LogInformation("Saving sucker rod pump design {DesignId} for well {WellUWI}", design.DesignId, design.WellUWI);
-            
-            // TODO: Create SRP_DESIGN table or use polymorphic DTO table
-            // For now, log the design for persistence
-            _logger?.LogInformation("Design saved: Size={Size}in, Stroke={Stroke}in, SPM={SPM}",
+            var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+            var activity = new WELL_ACTIVITY
+            {
+                UWI = design.WellUWI ?? string.Empty,
+                SOURCE = "BEEP",
+                ACTIVITY_TYPE_ID = "SUCKER_ROD_PUMP",
+                ACTIVITY_SET_ID = _defaults.FormatIdForTable("WELL_ACTIVITY", design.DesignId ?? Guid.NewGuid().ToString()),
+                ACTIVITY_OBS_NO = 1m,
+                ACTIVE_IND = "Y"
+            };
+            await repo.InsertAsync(activity, userId);
+            _logger?.LogInformation("Sucker rod pump design saved: Size={Size}in, Stroke={Stroke}in, SPM={SPM}",
                 design.PumpSize, design.StrokeLength, design.StrokesPerMinute);
-
-            await Task.CompletedTask;
         }
 
         #endregion

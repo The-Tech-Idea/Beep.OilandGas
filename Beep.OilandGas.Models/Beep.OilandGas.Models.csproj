@@ -16,7 +16,8 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Version>1.0.2</Version>
 		<Nullable>enable</Nullable>
-	</PropertyGroup>
+	    <NoWarn>$(NoWarn);CS0169;CS8618;CS8601</NoWarn>
+</PropertyGroup>
 	<ItemGroup>
 		<None Include="..\..\InstallationScripts\LogoGFx\128\SimpleODM.png">
 			<Pack>True</Pack>

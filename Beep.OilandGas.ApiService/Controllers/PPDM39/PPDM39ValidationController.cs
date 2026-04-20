@@ -40,6 +40,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(tableName))
+                    return BadRequest(new ValidationResult { IsValid = false, Errors = new List<ValidationError> { new ValidationError { ErrorMessage = "Table name is required." } } });
                 if (request == null || request.EntityData == null)
                 {
                     return BadRequest(new ValidationResult { IsValid = false, Errors = new List<ValidationError> { new ValidationError { ErrorMessage = "Entity data is required" } } });
@@ -66,7 +68,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                 return StatusCode(500, new ValidationResult
                 {
                     IsValid = false,
-                    Errors = new List<ValidationError> { new ValidationError { ErrorMessage = ex.Message } }
+                    Errors = new List<ValidationError> { new ValidationError { ErrorMessage = "An internal error occurred." } }
                 });
             }
         }
@@ -81,6 +83,8 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(tableName))
+                    return BadRequest(new List<ValidationResult>());
                 if (request == null || request.Entities == null || !request.Entities.Any())
                 {
                     return BadRequest(new List<ValidationResult>());
@@ -111,7 +115,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
                         results.Add(new ValidationResult
                         {
                             IsValid = false,
-                            Errors = new List<ValidationError> { new ValidationError { ErrorMessage = ex.Message } }
+                            Errors = new List<ValidationError> { new ValidationError { ErrorMessage = "An internal error occurred." } }
                         });
                     }
                 }
@@ -121,7 +125,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating batch entities in table {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -140,7 +144,7 @@ namespace Beep.OilandGas.ApiService.Controllers.PPDM39
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting validation rules for table {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

@@ -1,9 +1,11 @@
 @page "/dashboard"
+@inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject ISnackbar Snackbar
 @inject Beep.OilandGas.Web.Theme.IThemeProvider ThemeProvider
 @using Beep.OilandGas.Web.Theme
+@using Beep.OilandGas.Models.Data
 
 <PageTitle>Dashboard - @(_branding.AppName ?? "Beep Oil & Gas")</PageTitle>
 
@@ -156,25 +158,63 @@
             return;
         }
         
-        // Load dashboard data (placeholder - replace with actual API calls)
         await LoadDashboardData();
     }
     
     private async Task LoadDashboardData()
     {
-        // TODO: Replace with actual API calls
-        _totalWells = 1247;
-        _activeFields = 45;
-        _dailyProduction = 125000;
-        _facilities = 23;
-        
-        _recentActivities = new List<ActivityItem>
+        // Primary: single dashboard endpoint gives all KPIs
+        try
         {
-            new() { Type = "Well", Description = "New well added: WELL-2024-001", Timestamp = DateTime.Now.AddHours(-2) },
-            new() { Type = "Production", Description = "Production report generated", Timestamp = DateTime.Now.AddHours(-5) },
-            new() { Type = "Data", Description = "PPDM39 table updated: FIELD", Timestamp = DateTime.Now.AddDays(-1) },
-            new() { Type = "Field", Description = "Field status changed: ACTIVE", Timestamp = DateTime.Now.AddDays(-2) }
-        };
+            var dash = await ApiClient.GetAsync<Beep.OilandGas.Models.Data.FieldDashboard>("/api/field/current/dashboard");
+            if (dash != null)
+            {
+                // Total wells = development + production well counts
+                _totalWells  = (dash.DevelopmentSummary?.EntityCount  ?? 0)
+                             + (dash.ProductionSummary?.EntityCount    ?? 0);
+                _activeFields = dash.ProductionSummary?.EntityCountsByType
+                                   .GetValueOrDefault("ACTIVE_WELLS", 0) ?? 0;
+
+                // Daily production from performance metrics if present
+                var prodMetric = dash.PerformanceMetrics
+                    ?.FirstOrDefault(m => m.MetricName?.Contains("Production", StringComparison.OrdinalIgnoreCase) == true);
+                if (prodMetric != null)
+                    _dailyProduction = (decimal)(prodMetric.CurrentValue ?? 0);
+
+                // Facilities from development summary
+                _facilities = dash.DevelopmentSummary?.EntityCountsByType
+                                 .GetValueOrDefault("FACILITIES", 0) ?? 0;
+
+                // Recent events from the dashboard payload
+                _recentActivities = dash.RecentEvents?
+                    .Take(10)
+                    .Select(e => new ActivityItem
+                    {
+                        Type        = e.EventType ?? "Event",
+                        Description = e.EventDescription ?? $"Activity on {e.EntityType}",
+                        Timestamp   = e.EventDate
+                    })
+                    .ToList() ?? new();
+
+                return; // skip fallback
+            }
+        }
+        catch { /* no active field yet — fall through to individual calls */ }
+
+        // Fallback: individual endpoints when dashboard summary is unavailable
+        try
+        {
+            var events = await ApiClient.GetAsync<List<DataAccessEvent>>("api/ppdm39/audit/recent");
+            _recentActivities = events?
+                .Select(e => new ActivityItem
+                {
+                    Type        = e.AccessType ?? "Data",
+                    Description = $"{e.AccessType ?? "Access"}: {e.TableName}",
+                    Timestamp   = e.AccessDate
+                })
+                .ToList() ?? new();
+        }
+        catch { /* audit service may not be configured yet */ }
     }
     
     private class ActivityItem

@@ -13,7 +13,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
     public interface IProcessService
     {
         // Process Definition Management
-        Task<ProcessDefinition> GetProcessDefinitionAsync(string processId);
+        Task<ProcessDefinition?> GetProcessDefinitionAsync(string processId);
         Task<List<ProcessDefinition>> GetProcessDefinitionsByTypeAsync(string processType);
         Task<ProcessDefinition> CreateProcessDefinitionAsync(ProcessDefinition definition, string userId);
         Task<ProcessDefinition> UpdateProcessDefinitionAsync(string processId, ProcessDefinition definition, string userId);
@@ -21,9 +21,9 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
         // Process Instance Management
         Task<ProcessInstance> StartProcessAsync(string processId, string entityId, string entityType, string fieldId, string userId);
-        Task<ProcessInstance> GetProcessInstanceAsync(string instanceId);
+        Task<ProcessInstance?> GetProcessInstanceAsync(string instanceId);
         Task<List<ProcessInstance>> GetProcessInstancesForEntityAsync(string entityId, string entityType);
-        Task<ProcessInstance> GetCurrentProcessForEntityAsync(string entityId, string entityType);
+        Task<ProcessInstance?> GetCurrentProcessForEntityAsync(string entityId, string entityType);
         Task<bool> CancelProcessAsync(string instanceId, string reason, string userId);
 
         // Process Execution

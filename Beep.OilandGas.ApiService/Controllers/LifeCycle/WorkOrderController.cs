@@ -58,11 +58,11 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
             [FromQuery] string? userId = null,
             [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(workOrderId))
+                return BadRequest(new { error = "Work order ID is required." });
+
             try
             {
-                if (string.IsNullOrEmpty(workOrderId))
-                    return BadRequest(new { error = "WorkOrderId is required" });
-
                 // Get work order to convert to WorkOrderResponse
                 var connName = connectionName ?? ConnectionName;
                 var workOrderRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
@@ -108,12 +108,12 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Cannot create AFE for work order {WorkOrderId}", workOrderId);
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating/linking AFE for work order {WorkOrderId}", workOrderId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -131,13 +131,13 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
             [FromQuery] string? userId = null,
             [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(workOrderId))
+                return BadRequest(new { error = "Work order ID is required." });
+
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
-
-                if (string.IsNullOrEmpty(workOrderId))
-                    return BadRequest(new { error = "WorkOrderId is required" });
 
                 // Ensure request has the work order ID
                 request.WorkOrderId = workOrderId;
@@ -164,12 +164,12 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
             catch (InvalidOperationException ex)
             {
                 _logger.LogWarning(ex, "Cannot record cost for work order {WorkOrderId}", workOrderId);
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording cost for work order {WorkOrderId}", workOrderId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -181,11 +181,11 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
             string workOrderId,
             [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(workOrderId))
+                return BadRequest(new { error = "Work order ID is required." });
+
             try
             {
-                if (string.IsNullOrEmpty(workOrderId))
-                    return BadRequest(new { error = "WorkOrderId is required" });
-
                 var connName = connectionName ?? ConnectionName;
                 var workOrderRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
                     typeof(WORK_ORDER), connName, "WORK_ORDER", null);
@@ -225,7 +225,7 @@ namespace Beep.OilandGas.ApiService.Controllers.LifeCycle
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting AFE for work order {WorkOrderId}", workOrderId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

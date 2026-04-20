@@ -1,8 +1,7 @@
-@page "/ppdm39/process/definitions/{Id}"
+﻿@page "/ppdm39/process/definitions/{Id}"
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 
 <PageTitle>Process Definition — @_def?.ProcessName</PageTitle>
 
@@ -109,50 +108,127 @@
 
 </MudContainer>
 
+@* ── Start Instance dialog ─────────────────────────────────────────────── *@
+<MudDialog @bind-IsVisible="_showStartDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Start Process Instance</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="_startEntityId"
+                          Label="Entity ID (UWI, Facility ID, Prospect ID…)"
+                          Variant="Variant.Outlined"
+                          Required="true" />
+            <MudTextField @bind-Value="_startEntityType"
+                          Label="Entity Type"
+                          Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showStartDialog = false)">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   Disabled="@_starting"
+                   OnClick="ConfirmStartInstanceAsync">
+            @(_starting ? "Starting…" : "Start")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 @using Beep.OilandGas.LifeCycle.Models.Processes
+@using Beep.OilandGas.Models.Data
 
 @code {
     [Parameter] public string Id { get; set; } = string.Empty;
 
-    private string _fieldName = "Current Field";
+    private string _loadedId  = string.Empty;
+    private string _fieldName = string.Empty;
     private ProcessDefinition? _def;
     private List<StepRow> _steps = new();
 
-    protected override void OnInitialized()
-    {
-        // TODO: replace with GET /api/field/current/process/definitions/{Id}
-        _def = new ProcessDefinition
-        {
-            ProcessId   = Id,
-            ProcessName = "Exploratory Well Drilling Approval",
-            ProcessType = "EXPLORATION",
-            EntityType  = "WELL",
-            Description = "End-to-end approval workflow for exploratory well drilling, from prospect selection through AFE approval, regulatory permits, and spud authorization.",
-            CreatedDate = DateTime.Today.AddDays(-180),
-            CreatedBy   = "admin",
-            Steps = new List<ProcessStepDefinition>
-            {
-                new() { StepId = "S1", StepName = "Prospect Selection & Ranking", SequenceNumber = 1, StepType = "ACTION" },
-                new() { StepId = "S2", StepName = "Geological & Geophysical Review", SequenceNumber = 2, StepType = "VALIDATION" },
-                new() { StepId = "S3", StepName = "Gate 1: Drill/No-Drill Decision", SequenceNumber = 3, StepType = "APPROVAL", RequiresApproval = true },
-                new() { StepId = "S4", StepName = "AFE Preparation", SequenceNumber = 4, StepType = "ACTION" },
-                new() { StepId = "S5", StepName = "Gate 2: AFE Approval", SequenceNumber = 5, StepType = "APPROVAL", RequiresApproval = true },
-                new() { StepId = "S6", StepName = "Regulatory Permit Application", SequenceNumber = 6, StepType = "ACTION" },
-                new() { StepId = "S7", StepName = "Well Design Finalization", SequenceNumber = 7, StepType = "ACTION" },
-                new() { StepId = "S8", StepName = "Gate 3: Spud Authorization", SequenceNumber = 8, StepType = "APPROVAL", RequiresApproval = true },
-            }
-        };
+    // ── Start-instance dialog state ──────────────────────────────────────
+    private bool   _showStartDialog = false;
+    private string _startEntityId   = string.Empty;
+    private string _startEntityType = string.Empty;
+    private bool   _starting        = false;
 
-        _steps = _def.Steps.OrderBy(s => s.SequenceNumber).Select(s => new StepRow(
-            s.SequenceNumber, s.StepName, s.StepType, s.RequiresApproval,
-            GetPpdmTablesForStepType(s.StepType)
-        )).ToList();
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        _loadedId = Id;
+        await LoadDefinitionAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id == _loadedId) return;
+        _loadedId = Id;
+        await LoadDefinitionAsync();
+    }
+
+    private async Task LoadDefinitionAsync()
+    {
+        try
+        {
+            _def = await ApiClient.GetAsync<ProcessDefinition>($"/api/field/current/process/definitions/{Uri.EscapeDataString(Id)}");
+            if (_def != null)
+            {
+                _steps = (_def.Steps ?? new())
+                    .OrderBy(s => s.SequenceNumber)
+                    .Select(s => new StepRow(
+                        s.SequenceNumber, s.StepName, s.StepType, s.RequiresApproval,
+                        GetPpdmTablesForStepType(s.StepType)
+                    )).ToList();
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Could not load process definition.", Severity.Warning);
+        }
     }
 
     private async Task StartInstanceAsync()
     {
-        // TODO: open dialog to enter EntityId and EntityType before calling POST /api/field/current/process/instances
-        Snackbar.Add("Use 'Start New Process' from the dashboard with entity context.", Severity.Info);
+        _startEntityId   = string.Empty;
+        _startEntityType = _def?.EntityType ?? string.Empty;
+        _showStartDialog = true;
+    }
+
+    private async Task ConfirmStartInstanceAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_startEntityId))
+        {
+            Snackbar.Add("Entity ID is required.", Severity.Warning);
+            return;
+        }
+
+        _starting = true;
+        try
+        {
+            var request = new
+            {
+                ProcessId  = Id,
+                EntityId   = _startEntityId,
+                EntityType = _startEntityType
+            };
+            var instance = await ApiClient.PostAsync<object, ProcessInstanceSummary>(
+                "/api/field/current/process/instances", request);
+            _showStartDialog = false;
+            Snackbar.Add("Process instance started.", Severity.Success);
+            if (instance != null)
+                NavigationManager.NavigateTo($"/ppdm39/process/instances/{Uri.EscapeDataString(instance.InstanceId)}");
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to start instance.", Severity.Error);
+        }
+        finally { _starting = false; }
     }
 
     private static List<string> GetPpdmTablesForStepType(string stepType) =>

@@ -35,7 +35,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error designing plunger lift system for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -50,7 +50,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error analyzing plunger lift performance for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -65,7 +65,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving plunger lift design");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

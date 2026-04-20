@@ -1,4 +1,4 @@
-@page "/exploration/well-program"
+﻿@page "/exploration/well-program"
 @page "/exploration/well-program/new"
 @page "/exploration/well-program/{Id}"
 @inject ApiClient ApiClient
@@ -257,10 +257,21 @@
 @code {
     [Parameter] public string? Id { get; set; }
 
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private int _step;
 
     private WellProgramForm _form = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+    }
 
     private bool Step1Valid =>
         !string.IsNullOrWhiteSpace(_form.ProspectId) &&
@@ -291,14 +302,34 @@
     private void NextStep() { if (_step < 4) _step++; }
     private void PrevStep() { if (_step > 0) _step--; }
 
-    private void ApproveProgram() => SubmitDecision("Approved");
-    private void DeferProgram()   => SubmitDecision("Deferred");
-    private void RejectProgram()  => SubmitDecision("Rejected");
+    private void ApproveProgram() => _ = SubmitDecisionAsync("Approved");
+    private void DeferProgram()   => _ = SubmitDecisionAsync("Deferred");
+    private void RejectProgram()  => _ = SubmitDecisionAsync("Rejected");
 
-    private void SubmitDecision(string decision)
+    private async Task SubmitDecisionAsync(string decision)
     {
-        // TODO: POST /api/exploration/well-programs/{id}/decision
-        Snackbar.Add($"Well program {decision.ToLower()}.", decision == "Approved" ? Severity.Success : decision == "Deferred" ? Severity.Warning : Severity.Error);
+        var prospectId = string.IsNullOrWhiteSpace(Id) || string.Equals(Id, "new", StringComparison.OrdinalIgnoreCase)
+            ? _form.ProspectId
+            : Id;
+
+        if (!string.IsNullOrWhiteSpace(prospectId))
+        {
+            try
+            {
+                await ApiClient.PostAsync<ProspectDecisionPayload, object>(
+                    $"api/field/current/exploration/prospects/{Uri.EscapeDataString(prospectId)}/decision",
+                    new ProspectDecisionPayload(decision, _form.ApproverComments));
+            }
+            catch (Exception)
+            {
+                Snackbar.Add("Error submitting decision.", Severity.Error);
+                return;
+            }
+        }
+
+        Snackbar.Add(
+            $"Well program {decision.ToLower()}.",
+            decision == "Approved" ? Severity.Success : decision == "Deferred" ? Severity.Warning : Severity.Error);
         NavigationManager.NavigateTo("/exploration");
     }
 
@@ -330,4 +361,16 @@
         "Medium" => Color.Warning,
         _        => Color.Success
     };
+
+    // Local API DTOs
+    private class ProspectApiDto
+    {
+        public string? ProspectId  { get; set; }
+        public string? WellName    { get; set; }
+        public string? TargetZone  { get; set; }
+        public string? WellType    { get; set; }
+        public string? Objectives  { get; set; }
+    }
+
+    private record ProspectDecisionPayload(string Decision, string? Comments);
 }

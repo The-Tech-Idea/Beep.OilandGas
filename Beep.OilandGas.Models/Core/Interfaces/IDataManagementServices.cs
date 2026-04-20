@@ -364,7 +364,7 @@ namespace Beep.OilandGas.Models.Core.Interfaces
         /// <summary>
         /// Gets quality dashboard data for a table
         /// </summary>
-        Task<QualityDashboardData> GetDashboardDataAsync(string tableName);
+        Task<QualityDashboardData> GetDashboardDataAsync(string? tableName);
 
         /// <summary>
         /// Gets quality trends over time

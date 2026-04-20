@@ -9,6 +9,7 @@ using TheTechIdea.Beep.Editor.UOW;
 using TheTechIdea.Beep.DataBase;
 using TheTechIdea.Beep.Report;
 using TheTechIdea.Beep.ConfigUtil;
+using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.EnhancedRecovery.Services
 {
@@ -20,11 +21,13 @@ namespace Beep.OilandGas.EnhancedRecovery.Services
     {
         private readonly IDMEEditor _editor;
         private readonly string _connectionName;
+        private readonly ILogger<EnhancedRecoveryService> _logger;
 
         public EnhancedRecoveryService(IDMEEditor editor, string connectionName = "PPDM39")
         {
             _editor = editor ?? throw new ArgumentNullException(nameof(editor));
             _connectionName = connectionName;
+            _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<EnhancedRecoveryService>.Instance;
         }
 
         private List<T> ConvertToList<T>(object units) where T : class

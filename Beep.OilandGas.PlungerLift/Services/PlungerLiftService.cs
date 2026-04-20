@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
+using Beep.OilandGas.PPDM39.Models;
 using TheTechIdea.Beep.Editor;
+using TheTechIdea.Beep.Report;
 using Microsoft.Extensions.Logging;
 
 namespace Beep.OilandGas.PlungerLift.Services
@@ -845,8 +847,19 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                // TODO: Implement PPDM data persistence when table schema is finalized
-                await Task.CompletedTask;
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                var activityId = _defaults.FormatIdForTable("WELL_ACTIVITY", design.DesignId ?? Guid.NewGuid().ToString());
+                var activity = new WELL_ACTIVITY
+                {
+                    UWI = design.WellUWI ?? string.Empty,
+                    SOURCE = "BEEP",
+                    ACTIVITY_TYPE_ID = "PLUNGER_LIFT",
+                    ACTIVITY_SET_ID = activityId,
+                    ACTIVITY_OBS_NO = 1m,
+                    ACTIVE_IND = "Y"
+                };
+                await repo.InsertAsync(activity, userId);
                 _logger?.LogInformation("Plunger lift design saved successfully");
             }
             catch (Exception ex)
@@ -865,8 +878,24 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                // TODO: Implement PPDM data retrieval
-                return null;
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellUWI },
+                    new AppFilter { FieldName = "ACTIVITY_TYPE_ID", Operator = "=", FilterValue = "PLUNGER_LIFT" },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+                var results = await repo.GetAsync(filters);
+                var activity = results?.OfType<WELL_ACTIVITY>().OrderByDescending(a => a.ROW_CREATED_DATE).FirstOrDefault();
+                if (activity == null) return null;
+                return new PlungerLiftDesign
+                {
+                    DesignId = activity.ACTIVITY_SET_ID ?? string.Empty,
+                    WellUWI = activity.UWI,
+                    DesignDate = activity.ROW_CREATED_DATE ?? DateTime.UtcNow,
+                    Status = "Loaded"
+                };
             }
             catch (Exception ex)
             {
@@ -886,8 +915,17 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                // TODO: Implement PPDM data update
-                await Task.CompletedTask;
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "ACTIVITY_SET_ID", Operator = "=", FilterValue = design.DesignId },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+                var results = await repo.GetAsync(filters);
+                var activity = results?.OfType<WELL_ACTIVITY>().FirstOrDefault();
+                if (activity != null)
+                    await repo.UpdateAsync(activity, userId);
                 _logger?.LogInformation("Plunger lift design updated successfully");
             }
             catch (Exception ex)
@@ -908,8 +946,17 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                // TODO: Implement PPDM data persistence
-                await Task.CompletedTask;
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                var activity = new WELL_ACTIVITY
+                {
+                    UWI = performanceData.WellUWI ?? string.Empty,
+                    SOURCE = "BEEP",
+                    ACTIVITY_TYPE_ID = "PLUNGER_LIFT_PERF",
+                    ACTIVITY_OBS_NO = 1m,
+                    ACTIVE_IND = "Y"
+                };
+                await repo.InsertAsync(activity, userId);
                 _logger?.LogInformation("Performance data saved successfully");
             }
             catch (Exception ex)
@@ -928,8 +975,19 @@ namespace Beep.OilandGas.PlungerLift.Services
 
             try
             {
-                // TODO: Implement PPDM data retrieval with date filtering
-                return new List<PerformanceData>();
+                var repo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                    typeof(WELL_ACTIVITY), _connectionName, "WELL_ACTIVITY", null);
+                var filters = new List<AppFilter>
+                {
+                    new AppFilter { FieldName = "UWI", Operator = "=", FilterValue = wellUWI },
+                    new AppFilter { FieldName = "ACTIVITY_TYPE_ID", Operator = "=", FilterValue = "PLUNGER_LIFT_PERF" },
+                    new AppFilter { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                };
+                var results = await repo.GetAsync(filters);
+                return results?.OfType<WELL_ACTIVITY>()
+                    .Where(a => a.ROW_CREATED_DATE >= startDate && a.ROW_CREATED_DATE <= endDate)
+                    .Select(a => new PerformanceData { WellUWI = a.UWI, MeasurementDate = a.ROW_CREATED_DATE ?? DateTime.UtcNow })
+                    .ToList() ?? new List<PerformanceData>();
             }
             catch (Exception ex)
             {

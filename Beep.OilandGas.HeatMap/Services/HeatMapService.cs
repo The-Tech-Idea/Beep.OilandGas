@@ -166,8 +166,7 @@ namespace Beep.OilandGas.HeatMap.Services
              _logger?.LogInformation("Generating production heat map for field {FieldId} from {StartDate} to {EndDate}",
                  fieldId, startDate, endDate);
 
-             // TODO: Retrieve production data from database and generate heat map
-             // For now, return empty result
+             // Returns an empty result until production data integration is wired in
              var result = new HeatMapResult
              {
                  HeatMapId = _defaults.FormatIdForTable("HEAT_MAP", Guid.NewGuid().ToString()),

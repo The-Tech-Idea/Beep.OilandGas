@@ -30,14 +30,14 @@ namespace Beep.OilandGas.Models.Data.Security
         }
         
         private DateTime? EFFECTIVE_DATEValue;
-        public DateTime? EFFECTIVE_DATE
+        public new DateTime? EFFECTIVE_DATE
         {
             get => EFFECTIVE_DATEValue;
             set => SetProperty(ref EFFECTIVE_DATEValue, value);
         }
 
         private DateTime? EXPIRY_DATEValue;
-        public DateTime? EXPIRY_DATE
+        public new DateTime? EXPIRY_DATE
         {
             get => EXPIRY_DATEValue;
             set => SetProperty(ref EXPIRY_DATEValue, value);

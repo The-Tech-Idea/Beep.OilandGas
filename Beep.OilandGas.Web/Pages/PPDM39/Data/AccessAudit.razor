@@ -1,10 +1,13 @@
-@page "/data/audit"
+﻿@page "/data/audit"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
 
 <PageTitle>Review Data Access History</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_isLoading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
@@ -124,28 +127,89 @@
     private string _filterUser = "";
     private string _filterTable = "All";
     private string _filterOp = "All";
+    private bool _isLoading = false;
 
-    private int _eventsToday = 248;
-    private int _uniqueUsers = 14;
-    private int _writeOps = 1_032;
-    private int _failedAttempts = 3;
+    private int _eventsToday = 0;
+    private int _uniqueUsers = 0;
+    private int _writeOps = 0;
+    private int _failedAttempts = 0;
 
-    private record AuditEntry(string Timestamp, string UserId, string TableName, string EntityId,
+    private sealed record AuditEntry(string Timestamp, string UserId, string TableName, string EntityId,
         string Operation, int RecordsAffected, string IpAddress, string Result);
 
-    private List<AuditEntry> _entries = new()
+    private sealed class AuditStatisticsDto
     {
-        new("2026-04-15 14:32:01", "s.ahmed@field.com",    "WELL",            "DEV-A1",       "READ",   1,    "10.0.1.42",  "COMPLETE"),
-        new("2026-04-15 14:30:55", "p.obi@field.com",      "PDEN_VOL_SUMMARY","VOL-2026-03",  "WRITE",  1,    "10.0.1.55",  "COMPLETE"),
-        new("2026-04-15 14:28:12", "r.santos@field.com",   "WELL_TEST",       "WT-2026-041",  "WRITE",  1,    "10.0.2.10",  "COMPLETE"),
-        new("2026-04-15 14:15:00", "d.thompson@field.com", "CONTRACT",        "CONT-2021-04", "READ",   1,    "10.0.1.30",  "COMPLETE"),
-        new("2026-04-15 13:55:33", "t.wu@field.com",       "WELL",            "ALL",          "EXPORT", 2847, "10.0.1.66",  "COMPLETE"),
-        new("2026-04-15 13:40:18", "j.smith@field.com",    "FACILITY",        "FPSO-Apex",    "WRITE",  1,    "10.0.3.05",  "COMPLETE"),
-        new("2026-04-15 13:22:44", "unknown",               "WELL",           "DEV-A1",       "DELETE", 0,    "192.168.1.1","FAILED"),
-        new("2026-04-15 12:58:09", "s.ahmed@field.com",    "PROSPECT",        "ALL",          "READ",   64,   "10.0.1.42",  "COMPLETE"),
-        new("2026-04-15 12:45:00", "p.obi@field.com",      "BUSINESS_ASSOCIATE","ALL",        "EXPORT", 315,  "10.0.1.55",  "COMPLETE"),
-        new("2026-04-15 12:30:27", "r.santos@field.com",   "WELL_TUBULAR",    "DEV-B2",       "READ",   12,   "10.0.2.10",  "COMPLETE"),
-    };
+        public int TotalAccessEvents { get; set; }
+        public int UniqueUsers { get; set; }
+        public int ReadOperations { get; set; }
+        public int WriteOperations { get; set; }
+        public int DeleteOperations { get; set; }
+        public Dictionary<string, int> AccessByUser { get; set; } = new();
+        public Dictionary<string, int> AccessByType { get; set; } = new();
+    }
+
+    private sealed class AuditEventDto
+    {
+        public string? EventId { get; set; }
+        public string? TableName { get; set; }
+        public object? EntityId { get; set; }
+        public string? UserId { get; set; }
+        public string? AccessType { get; set; }
+        public DateTime AccessDate { get; set; }
+        public string? IpAddress { get; set; }
+    }
+
+    private List<AuditEntry> _entries = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAuditDataAsync();
+    }
+
+    private async Task LoadAuditDataAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var statsTask  = ApiClient.GetAsync<AuditStatisticsDto>("api/ppdm39/audit/statistics?from=" + Uri.EscapeDataString(DateTime.UtcNow.AddDays(-1).ToString("o")));
+            var eventsTask = ApiClient.GetAsync<List<AuditEventDto>>("api/ppdm39/audit/recent");
+
+            await Task.WhenAll(statsTask, eventsTask);
+
+            var stats  = statsTask.Result;
+            var events = eventsTask.Result;
+
+            if (stats != null)
+            {
+                _eventsToday   = stats.TotalAccessEvents;
+                _uniqueUsers   = stats.UniqueUsers;
+                _writeOps      = stats.WriteOperations + stats.DeleteOperations;
+                _failedAttempts = stats.AccessByType.TryGetValue("FAILED", out var f) ? f : 0;
+            }
+
+            if (events != null)
+            {
+                _entries = events.Select(e => new AuditEntry(
+                    e.AccessDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss"),
+                    e.UserId ?? "unknown",
+                    e.TableName ?? "—",
+                    e.EntityId?.ToString() ?? "—",
+                    (e.AccessType ?? "READ").ToUpperInvariant(),
+                    1,
+                    e.IpAddress ?? "—",
+                    "COMPLETE"
+                )).ToList();
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Error loading audit data.", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
 
     private IEnumerable<AuditEntry> FilteredEntries
     {
@@ -163,7 +227,13 @@
     }
 
     private void ApplyFilters() => StateHasChanged();
-    private void RefreshLog() => Snackbar.Add("Audit log refreshed", Severity.Info);
+
+    private async Task RefreshLog()
+    {
+        await LoadAuditDataAsync();
+        Snackbar.Add("Audit log refreshed", Severity.Info);
+    }
+
     private void ExportLog() => Snackbar.Add("Audit log export queued", Severity.Success);
 
     private Color OperationColor(string op) => op switch

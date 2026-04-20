@@ -1,4 +1,4 @@
-@page "/ppdm39/decommissioning/cost-estimation"
+﻿@page "/ppdm39/decommissioning/cost-estimation"
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
@@ -78,9 +78,20 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private object? _costEstimate;
     private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+    }
 
     private async Task EstimateCosts()
     {
@@ -90,9 +101,9 @@
             _costEstimate = await ApiClient.PostAsync<object, object>("/api/field/current/decommissioning/cost-estimation", new { });
             Snackbar.Add("Cost estimation completed successfully", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error estimating costs: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error estimating costs.", Severity.Error);
         }
         finally
         {

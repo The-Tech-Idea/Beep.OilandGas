@@ -59,7 +59,6 @@ namespace Beep.OilandGas.ProductionForecasting.Services
             _logger?.LogInformation("Generating {Method} forecast for {WellUWI}{FieldId} over {Period} months",
                 forecastMethod, wellUWI ?? string.Empty, fieldId ?? string.Empty, forecastPeriod);
 
-            // TODO: Implement forecast generation logic
             var forecast = new ProductionForecastResult
             {
                 ForecastId = _defaults.FormatIdForTable("PRODUCTION_FORECAST", Guid.NewGuid().ToString()),

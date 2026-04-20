@@ -163,7 +163,10 @@ namespace Beep.OilandGas.PPDM39.DataManagement.Core.Common
 
         public void SetCommonColumns(RECEIVABLE entity, string connName)
         {
-            throw new NotImplementedException();
+            if (entity == null)
+                throw new ArgumentNullException(nameof(entity));
+
+            PrepareForInsert(entity, string.IsNullOrWhiteSpace(connName) ? "SYSTEM" : connName);
         }
     }
 }

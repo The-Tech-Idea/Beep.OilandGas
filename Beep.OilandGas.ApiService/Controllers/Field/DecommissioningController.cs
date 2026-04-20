@@ -57,12 +57,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting abandoned wells for current field");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -72,6 +72,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpGet("wells-abandoned/{id}")]
         public async Task<ActionResult<WellAbandonmentResponse>> GetWellAbandonment(string id)
         {
+            if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "ID is required." });
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -92,12 +93,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting well abandonment {AbandonmentId} for current field", id);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -134,12 +135,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error abandoning well {WellId} for current field", wellId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -147,7 +148,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// Get all decommissioned facilities for the current field
         /// </summary>
         [HttpGet("facilities")]
-        public async Task<ActionResult<List<FACILITY>>> GetDecommissionedFacilities([FromQuery] List<AppFilter>? filters = null)
+        public async Task<ActionResult<List<FacilityDecommissioningResponse>>> GetDecommissionedFacilities([FromQuery] List<AppFilter>? filters = null)
         {
             try
             {
@@ -159,16 +160,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
                 var facilities = await decommissioningService.GetDecommissionedFacilitiesForFieldAsync(currentFieldId, filters);
-                return Ok(facilities.Cast<FACILITY>().ToList());
+                return Ok(facilities);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting decommissioned facilities for current field");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -178,6 +179,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         [HttpGet("facilities/{id}")]
         public async Task<ActionResult<FacilityDecommissioningResponse>> GetFacilityDecommissioning(string id)
         {
+            if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "ID is required." });
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -198,12 +200,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting facility decommissioning {DecommissioningId} for current field", id);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -216,6 +218,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             [FromBody] FacilityDecommissioningRequest decommissionData,
             [FromQuery] string userId)
         {
+            if (string.IsNullOrWhiteSpace(facilityId)) return BadRequest(new { error = "Facility ID is required." });
             try
             {
                 var currentFieldId = _fieldOrchestrator.CurrentFieldId;
@@ -235,12 +238,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error decommissioning facility {FacilityId} for current field", facilityId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -264,12 +267,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting environmental restorations for current field");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -300,12 +303,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating environmental restoration for current field");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -313,7 +316,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
         /// Get decommissioning costs for the current field
         /// </summary>
         [HttpGet("costs")]
-        public async Task<ActionResult<List<FIN_COST_SUMMARY>>> GetDecommissioningCosts([FromQuery] List<AppFilter>? filters = null)
+        public async Task<ActionResult<List<DecommissioningCostResponse>>> GetDecommissioningCosts([FromQuery] List<AppFilter>? filters = null)
         {
             try
             {
@@ -325,16 +328,16 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
 
                 var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
                 var costs = await decommissioningService.GetDecommissioningCostsForFieldAsync(currentFieldId, filters);
-                return Ok(costs.Cast<FIN_COST_SUMMARY>().ToList());
+                return Ok(costs);
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting decommissioning costs for current field");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -358,12 +361,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = "An internal error occurred." });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error estimating decommissioning costs for current field");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -408,7 +411,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error starting Well Abandonment process");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -440,7 +443,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error planning abandonment");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -468,7 +471,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error obtaining regulatory approval");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -500,7 +503,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error plugging well");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -532,7 +535,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error restoring site");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -560,7 +563,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error completing abandonment");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -603,7 +606,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error starting Facility Decommissioning process");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -635,7 +638,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error planning decommissioning");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -667,7 +670,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error removing equipment");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -699,7 +702,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error cleaning up site");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -727,7 +730,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error obtaining regulatory closure");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -755,10 +758,36 @@ namespace Beep.OilandGas.ApiService.Controllers.Field
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error completing decommissioning");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
         #endregion
+
+        // ── P&A Programme Approval ─────────────────────────────────────────────────────
+
+        /// <summary>PATCH wells-abandoned/{id}/approve — mark a P&A programme approved.</summary>
+        [HttpPatch("wells-abandoned/{id}/approve")]
+        public async Task<ActionResult> ApprovePAAsync(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return BadRequest(new { error = "ID is required." });
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
+            if (string.IsNullOrEmpty(fieldId)) return BadRequest(new { error = "No active field is set" });
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+            try
+            {
+                var decommissioningService = _fieldOrchestrator.GetDecommissioningService();
+                var abandonment = await decommissioningService.GetWellAbandonmentForFieldAsync(fieldId, id);
+                if (abandonment == null) return NotFound(new { error = $"P&A record {id} not found" });
+
+                _logger.LogInformation("P&A programme {Id} approved by {UserId}", id, userId);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving P&A programme {Id}", id);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
     }
 }

@@ -1,4 +1,4 @@
-@page "/ppdm39/stratigraphy/units"
+﻿@page "/ppdm39/stratigraphy/units"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -100,12 +100,20 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<STRAT_UNIT>? _units;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
         await LoadUnits();
     }
 
@@ -114,11 +122,10 @@
         _isLoading = true;
         try
         {
-            _units = await ApiClient.GetAsync<List<STRAT_UNIT>>("/api/stratigraphy/units");
-        }
-        catch (Exception ex)
+            _units = await ApiClient.GetAsync<List<STRAT_UNIT>>("/api/stratigraphy/units") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading units: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading units.", Severity.Error);
         }
         finally
         {

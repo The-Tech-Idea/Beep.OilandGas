@@ -58,7 +58,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 {
                     Success = false,
                     Message = "Failed to create demo database",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -82,7 +82,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting demo databases for user {UserId}", userId);
-                return StatusCode(500, new { error = "Failed to get demo databases", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to get demo databases"});
             }
         }
 
@@ -107,7 +107,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error listing all demo databases");
-                return StatusCode(500, new { error = "Failed to list demo databases", details = ex.Message });
+                return StatusCode(500, new { error = "Failed to list demo databases"});
             }
         }
 
@@ -142,7 +142,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 {
                     Success = false,
                     Message = "Failed to delete demo database",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }
@@ -165,7 +165,7 @@ namespace Beep.OilandGas.ApiService.Controllers
                 {
                     Success = false,
                     Message = "Failed to cleanup expired demo databases",
-                    ErrorDetails = ex.Message
+                    ErrorDetails = "An internal error occurred."
                 });
             }
         }

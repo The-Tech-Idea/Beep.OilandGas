@@ -67,7 +67,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting invoices");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -77,6 +77,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
         [HttpGet("{id}")]
         public ActionResult<object> GetInvoice(string id)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "Invoice ID is required." });
             try
             {
                 var invoice = _service.TraditionalAccounting.Invoice.GetInvoice(id);
@@ -100,7 +102,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting invoice {InvoiceId}", id);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -150,12 +152,12 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (GLPostingException ex)
             {
                 _logger.LogError(ex, "GL posting failed for invoice");
-                return StatusCode(500, new { error = "Invoice created but GL posting failed", details = ex.Message });
+                return StatusCode(500, new { error = "Invoice created but GL posting failed"});
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating invoice");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

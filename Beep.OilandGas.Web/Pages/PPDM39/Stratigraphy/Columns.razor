@@ -1,4 +1,4 @@
-@page "/ppdm39/stratigraphy/columns"
+﻿@page "/ppdm39/stratigraphy/columns"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -90,13 +90,21 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _searchColumnId = string.Empty;
     private List<STRAT_COLUMN>? _columns;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
         await LoadColumns();
     }
 
@@ -105,11 +113,10 @@
         _isLoading = true;
         try
         {
-            _columns = await ApiClient.GetAsync<List<STRAT_COLUMN>>("/api/stratigraphy/columns");
-        }
-        catch (Exception ex)
+            _columns = await ApiClient.GetAsync<List<STRAT_COLUMN>>("/api/stratigraphy/columns") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading columns: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading columns.", Severity.Error);
         }
         finally
         {
@@ -127,11 +134,10 @@
             {
                 url += $"?filters[0].FieldName=STRAT_COLUMN_ID&filters[0].Operator==&filters[0].FilterValue={_searchColumnId}";
             }
-            _columns = await ApiClient.GetAsync<List<STRAT_COLUMN>>(url);
-        }
-        catch (Exception ex)
+            _columns = await ApiClient.GetAsync<List<STRAT_COLUMN>>(url) ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error searching columns: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error searching columns.", Severity.Error);
         }
         finally
         {

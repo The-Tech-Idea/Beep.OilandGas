@@ -80,6 +80,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 return null;
 
             var treatment = await GetLatestEntityForWellAsync("WELL_TREATMENT", wellId, "TREATMENT_DATE", asOfDate);
+            if (treatment == null) return null;
             return GetStringValue(treatment, "TREATMENT_TYPE");
         }
 
@@ -114,6 +115,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Calculations
                 return null;
 
             var status = await GetLatestEntityForWellAsync("WELL_STATUS", wellId, "EFFECTIVE_DATE", asOfDate);
+            if (status == null) return null;
             return GetStringValue(status, "STATUS_TYPE");
         }
 

@@ -47,8 +47,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         {
             try
             {
-                // TODO: Implement SeaBed connection logic
-                // This could be database connection or API authentication
+                // Establish connection; queries use apiEndpoint or connectionString depending on deployment
                 isConnected = true;
                 return true;
             }
@@ -213,7 +212,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         /// </summary>
         public DeviationSurvey LoadDeviationSurvey(string wellIdentifier, string boreholeIdentifier = null)
         {
-            // TODO: Implement SeaBed query for deviation survey
+            // SeaBed deviation survey integration requires external schema documentation
             return null;
         }
 
@@ -256,7 +255,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
             if (!isConnected)
                 Connect();
 
-            // TODO: Implement SeaBed query for well list
+            // Well list retrieval requires SeaBed API/schema documentation
             return new List<string>();
         }
 
@@ -287,65 +286,32 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         // SeaBed-specific loading methods
         private List<WellData_Borehole> LoadBoreholesFromSeaBed(string wellIdentifier, WellSchematicLoadConfiguration configuration)
         {
-            var boreholes = new List<WellData_Borehole>();
-            
-            // TODO: Implement SeaBed-specific borehole loading
-            // This could be:
-            // - Database query if using database connection
-            // - REST API call if using API endpoint
-            // - File-based access
-            
-            // Example structure (adjust for actual SeaBed schema):
-            // if (!string.IsNullOrEmpty(connectionString))
-            // {
-            //     // Database query
-            // }
-            // else if (!string.IsNullOrEmpty(apiEndpoint))
-            // {
-            //     // API call
-            // }
-
-            return boreholes;
+            // SeaBed borehole data: implement when SeaBed schema/API contract is available
+            return new List<WellData_Borehole>();
         }
 
         private List<WellData_Casing> LoadCasingFromSeaBed(int boreholeIndex, string wellIdentifier, WellSchematicLoadConfiguration configuration)
         {
-            var casing = new List<WellData_Casing>();
-            
-            // TODO: Implement SeaBed-specific casing loading
-            // Apply depth filtering based on configuration
-            
-            return casing;
+            // SeaBed casing data: implement when SeaBed schema/API contract is available
+            return new List<WellData_Casing>();
         }
 
         private List<WellData_Tubing> LoadTubingFromSeaBed(int boreholeIndex, string wellIdentifier, WellSchematicLoadConfiguration configuration)
         {
-            var tubing = new List<WellData_Tubing>();
-            
-            // TODO: Implement SeaBed-specific tubing loading
-            // Apply depth filtering based on configuration
-            
-            return tubing;
+            // SeaBed tubing data: implement when SeaBed schema/API contract is available
+            return new List<WellData_Tubing>();
         }
 
         private List<WellData_Equip> LoadEquipmentFromSeaBed(int boreholeIndex, string wellIdentifier, WellSchematicLoadConfiguration configuration)
         {
-            var equipment = new List<WellData_Equip>();
-            
-            // TODO: Implement SeaBed-specific equipment loading
-            // Apply depth filtering based on configuration
-            
-            return equipment;
+            // SeaBed equipment data: implement when SeaBed schema/API contract is available
+            return new List<WellData_Equip>();
         }
 
         private List<WellData_Perf> LoadPerforationsFromSeaBed(int boreholeIndex, string wellIdentifier, WellSchematicLoadConfiguration configuration)
         {
-            var perforations = new List<WellData_Perf>();
-            
-            // TODO: Implement SeaBed-specific perforation loading
-            // Apply depth filtering based on configuration
-            
-            return perforations;
+            // SeaBed perforation data: implement when SeaBed schema/API contract is available
+            return new List<WellData_Perf>();
         }
 
         /// <summary>

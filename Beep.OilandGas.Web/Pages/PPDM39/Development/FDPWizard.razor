@@ -1,5 +1,7 @@
-@page "/development/fdp"
+﻿@page "/development/fdp"
 @page "/development/fdp/new"
+@using Beep.OilandGas.Models.Data.Development
+@using Beep.OilandGas.Models.Data
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
@@ -326,61 +328,61 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private bool _wizardMode;
     private int _step;
 
     private FDPViewModel _fdp = new();
     private FDPDraft _draft = new();
 
-    private List<ProcessStep> _fdpStatusHistory = new()
+    private FdpStatusResponse? _fdpStatus;
+    private List<ProcessStep> _fdpStatusHistory = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        new("Draft",                "Jan 2025", IsCompleted: true,  IsActive: false),
-        new("Technical Review",     "Mar 2025", IsCompleted: true,  IsActive: false),
-        new("Management Review",    "May 2025", IsCompleted: true,  IsActive: false),
-        new("Regulatory Submission","Jul 2025", IsCompleted: false, IsActive: true),
-        new("Approved",             "",         IsCompleted: false, IsActive: false),
-        new("Active",               "",         IsCompleted: false, IsActive: false),
-    };
-
-    protected override void OnInitialized()
-    {
-        // TODO: GET /api/development/fdp?fieldId=
-        _fdp = new FDPViewModel
+        try
         {
-            Status = "IN PROGRESS",
-            Version = "1.2",
-            LastUpdated = "Mar 2025",
-            StoiipMmbo = 850,
-            GiipBcf = 320,
-            RecoveryFactor = 38,
-            ReservesMmbo = 323,
-            ReservesClass = "2P — Proved+Probable",
-            SelectedConcept = "Floating Production Storage Offloading (FPSO)",
-            FacilityType = "FPSO — 100,000 bopd capacity",
-            CapexMm = 2_800,
-            OpexMmPerYear = 180,
-            Npv10Mm = 1_420,
-            Irr = 22,
-            BreakevenUsd = 38,
-        };
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* non-critical — keep default */ }
 
-        _draft.Concepts = new()
+        try
         {
-            new("FPSO Standalone",   2_800, 38, "Medium", true),
-            new("Fixed Platform",    2_100, 32, "Low",    false),
-            new("Subsea Tie-back",   1_600, 28, "High",   false),
-        };
+            _fdpStatus = await ApiClient.GetAsync<FdpStatusResponse>("/api/field/current/development/fdp");
+            if (_fdpStatus?.HasFdp == true && _fdpStatus.Steps.Count > 0)
+            {
+                _fdpStatusHistory = _fdpStatus.Steps
+                    .Select(s => new ProcessStep(s.StepName, s.CompletedDate, s.IsCompleted, s.IsActive))
+                    .ToList();
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load FDP status.", Severity.Warning);
+        }
 
-        _draft.WellProgram = new()
+        try
         {
-            new("Dev-A1", "Producer", "Lower Sand", 2026),
-            new("Dev-A2", "Producer", "Lower Sand", 2026),
-            new("Dev-B1", "Injector", "Lower Sand", 2026),
-            new("Dev-A3", "Producer", "Upper Sand", 2027),
-            new("Dev-B2", "Injector", "Lower Sand", 2027),
-            new("Dev-A4", "Producer", "Upper Sand", 2027),
-        };
+            var wells = await ApiClient.GetAsync<List<WELL>>(
+                "/api/field/current/development/wells") ?? new();
+            if (wells.Count > 0)
+            {
+                _draft.WellProgram = wells
+                    .Where(w => w.ACTIVE_IND == "Y")
+                    .Select(w => new WellRow(
+                        w.UWI ?? string.Empty,
+                        w.WELL_TYPE ?? "Producer",
+                        string.Empty,
+                        DateTime.Now.Year + 1))
+                    .ToList();
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load development wells.", Severity.Warning);
+        }
     }
 
     private void StartRevision()
@@ -396,14 +398,56 @@
         _draft.WellProgram.Add(new("New Well", "Producer", "", DateTime.Now.Year + 1));
 
     private void TrackRegulatorResponse() =>
-        Snackbar.Add("Regulator response tracker coming soon.", Severity.Info);
+        NavigationManager.NavigateTo("/ppdm39/permits-applications");
 
-    private void SubmitFDP()
+    private void SubmitFDP() => _ = SubmitFDPAsync();
+
+    private async Task SubmitFDPAsync()
     {
-        // TODO: POST /api/development/fdp
-        Snackbar.Add("FDP draft submitted for technical review.", Severity.Success);
-        _wizardMode = false;
-        NavigationManager.NavigateTo("/development/fdp");
+        try
+        {
+            var request = new SubmitFdpDraftRequest
+            {
+                StoiipMmbo           = _draft.StoiipMmbo,
+                GiipBcf              = _draft.GiipBcf,
+                RecoveryFactor       = _draft.RecoveryFactor,
+                ReservesMmbo         = _draft.ReservesMmbo,
+                ReservesClass        = _draft.ReservesClass,
+                ReservoirDescription = _draft.ReservoirDescription,
+                SelectedConcept      = _draft.SelectedConcept,
+                FacilityType         = _draft.FacilityType,
+                ConceptRationale     = _draft.ConceptRationale,
+                CapexMm              = _draft.CapexMm,
+                OpexMmPerYear        = _draft.OpexMmPerYear,
+                Npv10Mm              = _draft.Npv10Mm,
+                Irr                  = _draft.Irr,
+                BreakevenUsd         = _draft.BreakevenUsd,
+                EconomicsNotes       = _draft.EconomicsNotes,
+                Jurisdiction         = _draft.Jurisdiction,
+                PermitList           = _draft.PermitList,
+                SubmissionDate       = _draft.SubmissionDate,
+                ExpectedApprovalDate = _draft.ExpectedApprovalDate,
+                RegulatoryNotes      = _draft.RegulatoryNotes,
+                WellProgram          = (_draft.WellProgram ?? new()).Select(w => new FdpWellProgramItem
+                {
+                    WellName    = w.WellName,
+                    WellType    = w.WellType,
+                    TargetZone  = w.TargetZone,
+                    PlannedYear = w.PlannedYear
+                }).ToList()
+            };
+
+            var result = await ApiClient.PostAsync<SubmitFdpDraftRequest, SubmitFdpDraftResponse>(
+                "/api/field/current/development/fdp", request);
+
+            Snackbar.Add("FDP draft submitted for technical review.", Severity.Success);
+            _wizardMode = false;
+            NavigationManager.NavigateTo("/development/fdp");
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to submit FDP.", Severity.Error);
+        }
     }
 
     private class FDPViewModel

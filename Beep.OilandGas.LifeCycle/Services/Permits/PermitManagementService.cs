@@ -93,7 +93,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                     application.PERMIT_APPLICATION_ID, wellId);
 
                 // Map back to domain model
-                var mappedApplication = _applicationMapper.MapToDomain(result as APPLICATION);
+                var mappedApplication = _applicationMapper.MapToDomain(result as APPLICATION ?? throw new InvalidOperationException("Failed to retrieve inserted drilling permit application"));
                 // Convert to DRILLING_PERMIT_APPLICATION
                 return new DRILLING_PERMIT_APPLICATION
                 {
@@ -172,7 +172,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                     application.PERMIT_APPLICATION_ID);
 
                 // Map back to domain model
-                var mappedApplication = _applicationMapper.MapToDomain(result as APPLICATION);
+                var mappedApplication = _applicationMapper.MapToDomain(result as APPLICATION ?? throw new InvalidOperationException("Failed to retrieve inserted environmental permit application"));
                 // Convert to ENVIRONMENTAL_PERMIT_APPLICATION
                 return new ENVIRONMENTAL_PERMIT_APPLICATION
                 {
@@ -260,7 +260,8 @@ namespace Beep.OilandGas.LifeCycle.Services.Permits
                     application.INJECTION_PERMIT_APPLICATION_ID);
 
                 // Map back to domain model
-                var mappedApplication = _applicationMapper.MapToDomain(result as APPLICATION);
+                var mappedApplication = _applicationMapper.MapToDomain(
+                    insertedApplication ?? throw new InvalidOperationException("Failed to retrieve inserted permit application"));
                 // Convert to INJECTION_PERMIT_APPLICATION
                 return new INJECTION_PERMIT_APPLICATION
                 {

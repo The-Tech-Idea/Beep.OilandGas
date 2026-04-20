@@ -1,4 +1,4 @@
-@page "/ppdm39/seismic/processing"
+﻿@page "/ppdm39/seismic/processing"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -76,12 +76,20 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<SEIS_PROC_SET>? _processing;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
         await LoadProcessing();
     }
 
@@ -90,11 +98,10 @@
         _isLoading = true;
         try
         {
-            _processing = await ApiClient.GetAsync<List<SEIS_PROC_SET>>("/api/datamanagement/SEIS_PROC_SET");
-        }
-        catch (Exception ex)
+            _processing = await ApiClient.GetAsync<List<SEIS_PROC_SET>>("/api/datamanagement/SEIS_PROC_SET") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading seismic processing: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading seismic processing.", Severity.Error);
         }
         finally
         {

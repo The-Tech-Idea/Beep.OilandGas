@@ -34,7 +34,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error designing sucker rod pump system for well {WellUWI}", request.WellUWI);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -49,7 +49,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error analyzing sucker rod pump performance for pump {PumpId}", request.PumpId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -64,7 +64,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Pumps
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving sucker rod pump design");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

@@ -1,9 +1,10 @@
-@page "/ppdm39/analytics/reserves"
+﻿@page "/ppdm39/analytics/reserves"
 @using Microsoft.AspNetCore.Authorization
 @using Beep.OilandGas.Models.Data.Analytics
 @using Beep.OilandGas.Web.Services
 @attribute [Authorize(Roles = "ReservesEngineer,Manager,Admin")]
 @inject ApiClient ApiClient
+@inject ISnackbar Snackbar
 
 <PageTitle>Reserves Maturation Report</PageTitle>
 
@@ -14,7 +15,7 @@
         <MudStack Spacing="0">
             <MudText Typo="Typo.h5">Reserves Maturation Report</MudText>
             <MudText Typo="Typo.caption" Color="Color.Secondary">
-                @(_data?.FieldId ?? "Current Field") —
+                @(_data?.FieldId) —
                 NI 51-101 / SPE PRMS Funnel
             </MudText>
         </MudStack>
@@ -154,9 +155,9 @@
 
             if (_data is not null) BuildChartData();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.Error.WriteLine($"Reserves maturation load error: {ex.Message}");
+            Snackbar.Add("Reserves maturation load error.", Severity.Error);
         }
         finally
         {

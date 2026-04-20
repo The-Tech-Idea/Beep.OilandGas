@@ -196,12 +196,46 @@ namespace Beep.OilandGas.ProspectIdentification.Services
         // --- Interface stubs (simple implementations or NotImplemented placeholders) ---
         public async Task<SeismicSurvey> UpdateSeismicSurveyAsync(string surveyId, UpdateSeismicSurvey updateDto, string userId)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(surveyId)) throw new ArgumentNullException(nameof(surveyId));
+            if (updateDto == null) throw new ArgumentNullException(nameof(updateDto));
+
+            var seismicUow = await GetSeismicSurveyUnitOfWorkAsync();
+            var survey = seismicUow.Read(surveyId) as SEIS_SET;
+            if (survey == null)
+                throw new KeyNotFoundException($"Seismic survey {surveyId} not found.");
+
+            if (!string.IsNullOrWhiteSpace(updateDto.Name))
+                survey.PREFERRED_NAME = updateDto.Name;
+            if (!string.IsNullOrWhiteSpace(updateDto.Description))
+                survey.REMARK = updateDto.Description;
+            if (updateDto.SurveyDate.HasValue)
+                survey.EFFECTIVE_DATE = updateDto.SurveyDate.Value;
+            survey.ROW_CHANGED_DATE = DateTime.UtcNow;
+
+            var result = await seismicUow.UpdateDoc(survey);
+            if (result.Flag != Errors.Ok)
+                throw new InvalidOperationException($"Failed to update seismic survey {surveyId}: {result.Message}");
+            await seismicUow.Commit();
+
+            return MapToSeismicSurveyDto(survey, survey.AREA_ID ?? string.Empty);
         }
 
         public async Task DeleteSeismicSurveyAsync(string surveyId, string userId)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(surveyId)) throw new ArgumentNullException(nameof(surveyId));
+
+            var seismicUow = await GetSeismicSurveyUnitOfWorkAsync();
+            var survey = seismicUow.Read(surveyId) as SEIS_SET;
+            if (survey == null)
+                throw new KeyNotFoundException($"Seismic survey {surveyId} not found.");
+
+            survey.ACTIVE_IND = "N";
+            survey.ROW_CHANGED_DATE = DateTime.UtcNow;
+
+            var result = await seismicUow.UpdateDoc(survey);
+            if (result.Flag != Errors.Ok)
+                throw new InvalidOperationException($"Failed to soft-delete seismic survey {surveyId}: {result.Message}");
+            await seismicUow.Commit();
         }
 
         public async Task<List<StructuralFeature>> IdentifyStructuralFeaturesAsync(string surveyId, SeismicInterpretationRequest request)

@@ -1,4 +1,4 @@
-@page "/exploration/prospect/{Id}"
+﻿@page "/exploration/prospect/{Id}"
 @page "/exploration/prospect/new"
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
@@ -183,7 +183,7 @@
                                        Color="Color.Primary"
                                        StartIcon="@Icons.Material.Filled.Assignment"
                                        FullWidth="true"
-                                       OnClick='() => NavigationManager.NavigateTo($"/exploration/well-program/new?prospectId={Id}")'>
+                                       OnClick='() => NavigationManager.NavigateTo($"/exploration/well-program/new?prospectId={Uri.EscapeDataString(Id)}")'>
                                 Request Well Program
                             </MudButton>
                             <MudButton Variant="Variant.Outlined"
@@ -206,45 +206,87 @@
 @code {
     [Parameter] public string? Id { get; set; }
 
-    private string _fieldName = "Current Field";
+    private string _loadedId  = string.Empty;
+    private string _fieldName = string.Empty;
     private int _activeTab;
     private ProspectViewModel _prospect = new();
     private List<ProcessStep> _stageHistory = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with GET /api/exploration/prospects/{Id}
-        _prospect = new ProspectViewModel
+        _loadedId = Id ?? string.Empty;
+        try
         {
-            Name = "Eagle Ford South Prospect",
-            Basin = "Eagle Ford",
-            PlayType = "Clastic",
-            Status = "ACTIVE",
-            Description = "Large structural-stratigraphic trap in the Lower Eagle Ford Shale. Primary target is oil window with gas cap potential.",
-            TargetFormation = "Lower Eagle Ford Shale",
-            StructuralStyle = "Structural-stratigraphic",
-            SeismicCoverage = "3D — 250 km²",
-            SeismicVintage = "2022",
-            ResourceP90 = 45,  ResourceP50 = 120, ResourceP10 = 280, ResourceUnit = "MMBO",
-            RiskElements = new()
-            {
-                new("Trap Integrity",        75, "High"),
-                new("Reservoir Quality",     65, "Medium"),
-                new("Seal Effectiveness",    80, "High"),
-                new("Charge / Migration",    55, "Low"),
-            },
-            RelatedWells = new()
-        };
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
 
-        _stageHistory = new List<ProcessStep>
+        await LoadProspectAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if ((Id ?? string.Empty) == _loadedId) return;
+        _loadedId = Id ?? string.Empty;
+        await LoadProspectAsync();
+    }
+
+    private async Task LoadProspectAsync()
+    {
+        if (string.IsNullOrEmpty(Id) || Id == "new")
         {
-            new("Lead Identified",  "Jan 2024", IsCompleted: true,  IsActive: false),
-            new("Screening",        "Mar 2024", IsCompleted: true,  IsActive: false),
-            new("Prospect",         "Jul 2024", IsCompleted: true,  IsActive: false),
-            new("Ranking",          "Nov 2024", IsCompleted: false, IsActive: true),
-            new("Drill Candidate",  "",         IsCompleted: false, IsActive: false),
-            new("Drilled",          "",         IsCompleted: false, IsActive: false),
+            _prospect = new ProspectViewModel { Name = "New Prospect", Status = "DRAFT" };
+            return;
+        }
+        try
+        {
+            var p = await ApiClient.GetAsync<PROSPECT>(
+                $"/api/field/current/exploration/prospects/{Id}");
+            if (p != null)
+            {
+                _prospect = new ProspectViewModel
+                {
+                    Name            = p.PROSPECT_NAME ?? p.PROSPECT_ID ?? string.Empty,
+                    Basin           = p.RESPONSIBLE_BA_ID ?? string.Empty,
+                    PlayType        = p.PROSPECT_TYPE ?? string.Empty,
+                    Status          = p.PROSPECT_STATUS ?? "ACTIVE",
+                    Description     = p.REMARK ?? string.Empty,
+                    TargetFormation = string.Empty,
+                    StructuralStyle = string.Empty,
+                    SeismicCoverage = string.Empty,
+                    SeismicVintage  = string.Empty,
+                    ResourceP90     = (double)(p.AREA_SIZE ?? 0m) * 0.7,
+                    ResourceP50     = (double)(p.AREA_SIZE ?? 0m),
+                    ResourceP10     = (double)(p.AREA_SIZE ?? 0m) * 1.5,
+                    ResourceUnit    = p.AREA_SIZE_OUOM ?? "MMBO",
+                };
+                _stageHistory = BuildStageHistory(p.PROSPECT_STATUS);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load prospect.", Severity.Warning);
+        }
+    }
+
+    private static List<ProcessStep> BuildStageHistory(string? status)
+    {
+        var stages = new[] { "Lead Identified", "Screening", "Prospect", "Ranking", "Drill Candidate", "Drilled" };
+        var activeIdx = status?.ToUpperInvariant() switch
+        {
+            "LEAD"      => 0,
+            "SCREENING" => 1,
+            "REVIEW"    => 3,
+            "APPROVED"  => 4,
+            "DRILLED" or "COMPLETE" => 5,
+            _           => 2,
         };
+        return stages.Select((s, i) => new ProcessStep(
+            s, i < activeIdx ? "Completed" : string.Empty,
+            IsCompleted: i < activeIdx,
+            IsActive: i == activeIdx)).ToList();
     }
 
     private async Task AdvanceStage()

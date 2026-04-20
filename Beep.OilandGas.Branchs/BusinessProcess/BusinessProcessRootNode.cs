@@ -82,7 +82,7 @@ namespace Beep.OilandGas.Branchs.BusinessProcess
         public IBranch ParentBranch { get; set; }
         public List<Delegate> Delegates { get; set; }
 
-        public IBranch CreateCategoryNode(CategoryFolder p) => null;
+        public IBranch CreateCategoryNode(CategoryFolder p) => null!;
 
         public IErrorsInfo CreateChildNodes()
         {
@@ -103,12 +103,12 @@ namespace Beep.OilandGas.Branchs.BusinessProcess
                     "Error creating Business Process category nodes",
                     DateTime.Now, -1, "BusinessProcessRootNode.CreateChildNodes", Errors.Failed);
             }
-            return DMEEditor?.ErrorObject;
+            return DMEEditor?.ErrorObject!;
         }
 
         public IBranch CreateCategoryNode(BusinessProcessCategory category)
         {
-            BusinessProcessCategoryNode node = null;
+            BusinessProcessCategoryNode? node = null;
             try
             {
                 string icon = GetCategoryIcon(category.Name);
@@ -125,7 +125,7 @@ namespace Beep.OilandGas.Branchs.BusinessProcess
                     $"Error creating BusinessProcess category node: {category.Name}",
                     DateTime.Now, -1, "BusinessProcessRootNode.CreateCategoryNode", Errors.Failed);
             }
-            return node;
+            return node!;
         }
 
         private static string GetCategoryIcon(string categoryName) =>
@@ -146,9 +146,9 @@ namespace Beep.OilandGas.Branchs.BusinessProcess
                 _                                => "business-process.svg"
             };
 
-        public IErrorsInfo ExecuteBranchAction(string ActionName) => DMEEditor?.ErrorObject;
-        public IErrorsInfo MenuItemClicked(string ActionName) => DMEEditor?.ErrorObject;
-        public IErrorsInfo RemoveChildNodes() => DMEEditor?.ErrorObject;
+        public IErrorsInfo ExecuteBranchAction(string ActionName) => DMEEditor?.ErrorObject!;
+        public IErrorsInfo MenuItemClicked(string ActionName) => DMEEditor?.ErrorObject!;
+        public IErrorsInfo RemoveChildNodes() => DMEEditor?.ErrorObject!;
 
         public IErrorsInfo SetConfig(
             ITree pTreeEditor, IDMEEditor pDMEEditor,
@@ -170,7 +170,7 @@ namespace Beep.OilandGas.Branchs.BusinessProcess
                 DMEEditor?.AddLogMessage(ex.Message, "Could not Set Config",
                     DateTime.Now, -1, "BusinessProcessRootNode.SetConfig", Errors.Failed);
             }
-            return DMEEditor?.ErrorObject;
+            return DMEEditor?.ErrorObject!;
         }
     }
 }

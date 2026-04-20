@@ -27,6 +27,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
         [HttpGet("evaluate/{leaseId}")]
         public async Task<ActionResult<LeaseSummary>> EvaluateLease(string leaseId)
         {
+            if (string.IsNullOrWhiteSpace(leaseId)) return BadRequest(new { error = "Lease ID is required." });
             try
             {
                 var result = await _service.EvaluateLeaseAsync(leaseId);
@@ -35,7 +36,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error evaluating lease {LeaseId}", leaseId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -50,7 +51,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting available leases");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -65,13 +66,14 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating lease acquisition");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
         [HttpPut("{leaseId}/status")]
         public async Task<ActionResult> UpdateLeaseStatus(string leaseId, [FromBody] UpdateLeaseStatusRequest request, [FromQuery] string? userId = null)
         {
+            if (string.IsNullOrWhiteSpace(leaseId)) return BadRequest(new { error = "Lease ID is required." });
             try
             {
                 await _service.UpdateLeaseStatusAsync(leaseId, request.Status, userId ?? GetUserId());
@@ -80,7 +82,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Operations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating lease status for {LeaseId}", leaseId);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

@@ -2,6 +2,7 @@
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@using Beep.OilandGas.Models.Data
 
 <PageTitle>Business Process Dashboard</PageTitle>
 
@@ -78,7 +79,7 @@
                 </MudCardHeader>
                 <MudCardContent Class="pa-0">
                     <MudDataGrid T="InstanceRow" Items="@_instances" Dense="true" Hover="true"
-                                 Striped="true" RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/instances/{e.Item.InstanceId}"))">
+                                 Striped="true" RowClick="@(e => NavigationManager.NavigateTo($"/ppdm39/process/instances/{Uri.EscapeDataString(e.Item.InstanceId)}"))">
                         <Columns>
                             <PropertyColumn Property="r => r.ProcessName" Title="Process" />
                             <PropertyColumn Property="r => r.EntityId"    Title="Entity" />
@@ -194,7 +195,7 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private int _activeInstances = 12;
     private int _pendingGates    = 3;
     private int _openIncidents   = 2;
@@ -204,32 +205,56 @@
     private List<GateRow>       _pendingGateList  = new();
     private List<IncidentRow>   _openIncidentList = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with GET /api/field/current/process/instances
-        _instances = new List<InstanceRow>
+        try
         {
-            new("PI-001", "Exploratory Well Drilling Approval",    "W-001", "IN_PROGRESS", DateTime.Today.AddDays(-5)),
-            new("PI-002", "Reservoir Development Planning",        "RES-012", "IN_PROGRESS", DateTime.Today.AddDays(-12)),
-            new("PI-003", "Facility Decommissioning Authorization","FAC-003", "SUSPENDED",   DateTime.Today.AddDays(-30)),
-            new("PI-004", "Well P&A Authorization",                "W-045", "IN_PROGRESS", DateTime.Today.AddDays(-2)),
-            new("PI-005", "Production Allocation Approval",        "FIELD-001", "NOT_STARTED", DateTime.Today),
-        };
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
 
-        // TODO: replace with GET /api/field/current/gates/pending
-        _pendingGateList = new List<GateRow>
+        try
         {
-            new("Eagle Ford S-1 — Gate 2", "AWAITING APPROVAL"),
-            new("FDP Approval Gate",       "SUBMITTED"),
-            new("P&A Gate 1 Review",       "REVIEW"),
-        };
+            // Active process instances
+            var instances = await ApiClient.GetAsync<List<ProcessInstanceSummary>>("/api/field/current/process/instances") ?? new();            if (instances != null)
+            {
+                _instances = instances.Select(i => new InstanceRow(
+                    i.InstanceId,
+                    string.IsNullOrWhiteSpace(i.ProcessName) ? i.ProcessId : i.ProcessName,
+                    i.EntityId,
+                    i.Status,
+                    i.StartedAt
+                )).ToList();
+                _activeInstances = _instances.Count;
+            }
 
-        // TODO: replace with GET /api/field/current/hse/incidents?status=open
-        _openIncidentList = new List<IncidentRow>
+            // Pending gate reviews
+            var gates = await ApiClient.GetAsync<List<ProcessInstanceSummary>>("/api/field/current/gates/pending") ?? new();            if (gates != null)
+            {
+                _pendingGateList = gates.Select(g => new GateRow(
+                    string.IsNullOrWhiteSpace(g.ProcessName) ? g.ProcessId : g.ProcessName,
+                    g.Status
+                )).ToList();
+                _pendingGates = _pendingGateList.Count;
+            }
+
+            // Open HSE incidents
+            var incidents = await ApiClient.GetAsync<List<ProcessInstanceSummary>>("/api/field/current/process/hse/incidents?status=open") ?? new();            if (incidents != null)
+            {
+                _openIncidentList = incidents.Select(i => new IncidentRow(
+                    i.EntityId,
+                    string.Empty,
+                    i.StartedAt
+                )).ToList();
+                _openIncidents = _openIncidentList.Count;
+            }
+        }
+        catch
         {
-            new("Slip/trip on rig floor",      "2", DateTime.Today.AddDays(-3)),
-            new("Hydrocarbon release — minor", "1", DateTime.Today.AddDays(-8)),
-        };
+            Snackbar.Add("Could not load dashboard data.", Severity.Warning);
+        }
     }
 
     private record InstanceRow(string InstanceId, string ProcessName, string EntityId, string Status, DateTime StartedAt);

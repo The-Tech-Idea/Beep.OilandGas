@@ -1,0 +1,79 @@
+@* WellStatusCard — compact well status display for the Production Daily Ops grid *@
+<MudPaper Elevation="@(IsSelected ? 4 : 1)"
+          Class="@($"well-status-card pa-3 {(IsSelected ? "well-status-card--selected" : "")}")"
+          @onclick="@(() => OnClick.InvokeAsync(Uwi))">
+
+    <MudStack Spacing="1">
+        <!-- UWI + status -->
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudText Typo="Typo.subtitle2" Class="well-card-uwi">@(WellName ?? Uwi)</MudText>
+            <StatusBadge Status="@OperationalStatus" Size="Size.Small" />
+        </MudStack>
+
+        <!-- Current rates -->
+        @if (OilRateBopd.HasValue || GasRateMmscfd.HasValue)
+        {
+            <MudDivider />
+            <MudGrid Spacing="0">
+                @if (OilRateBopd.HasValue)
+                {
+                    <MudItem xs="6">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Oil</MudText>
+                            <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="1">
+                                <MudText Typo="Typo.body2"><strong>@OilRateBopd.Value.ToString("N0")</strong></MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">bopd</MudText>
+                            </MudStack>
+                        </MudStack>
+                    </MudItem>
+                }
+                @if (GasRateMmscfd.HasValue)
+                {
+                    <MudItem xs="6">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Gas</MudText>
+                            <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="1">
+                                <MudText Typo="Typo.body2"><strong>@GasRateMmscfd.Value.ToString("N2")</strong></MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">MMscfd</MudText>
+                            </MudStack>
+                        </MudStack>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+
+        <!-- Uptime / deferment alert -->
+        @if (UptimePercent.HasValue)
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudProgressLinear Value="@UptimePercent.Value"
+                                   Color="@(UptimePercent >= 95 ? Color.Success : UptimePercent >= 80 ? Color.Warning : Color.Error)"
+                                   Rounded="true"
+                                   Size="Size.Small" />
+                <MudText Typo="Typo.caption" Color="Color.Secondary">@UptimePercent.Value.ToString("N0")%</MudText>
+            </MudStack>
+        }
+
+        @if (HasAlarm)
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Color="Color.Error" Size="Size.Small" />
+                <MudText Typo="Typo.caption" Color="Color.Error">@AlarmMessage</MudText>
+            </MudStack>
+        }
+    </MudStack>
+
+</MudPaper>
+
+@code {
+    [Parameter] public string Uwi { get; set; } = string.Empty;
+    [Parameter] public string WellName { get; set; } = string.Empty;
+    [Parameter] public string OperationalStatus { get; set; } = "ACTIVE";
+    [Parameter] public double? OilRateBopd { get; set; }
+    [Parameter] public double? GasRateMmscfd { get; set; }
+    [Parameter] public double? UptimePercent { get; set; }
+    [Parameter] public bool HasAlarm { get; set; }
+    [Parameter] public string AlarmMessage { get; set; } = string.Empty;
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public EventCallback<string> OnClick { get; set; }
+}

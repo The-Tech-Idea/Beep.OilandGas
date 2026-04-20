@@ -83,9 +83,6 @@ namespace Beep.OilandGas.Drawing.Visualizations.WellSchematic.Rendering
                     matrix.PostConcat(SKMatrix.CreateTranslation(equipmentRect.Left, equipmentRect.Top));
 
                     canvas.DrawPicture(svg.Picture, ref matrix, paint);
-
-                    // Store for interaction (if needed)
-                    // TODO: Implement interaction tracking
                 }
             }
         }

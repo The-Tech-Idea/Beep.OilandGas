@@ -46,7 +46,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
         #region Process Definition Management
 
-        public override async Task<ProcessDefinition> GetProcessDefinitionAsync(string processId)
+        public override async Task<ProcessDefinition?> GetProcessDefinitionAsync(string processId)
         {
             try
             {
@@ -157,7 +157,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
 
         #region Process Instance Management
 
-        public override async Task<ProcessInstance> GetProcessInstanceAsync(string instanceId)
+        public override async Task<ProcessInstance?> GetProcessInstanceAsync(string instanceId)
         {
             try
             {
@@ -216,7 +216,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             }
         }
 
-        public override async Task<ProcessInstance> GetCurrentProcessForEntityAsync(string entityId, string entityType)
+        public override async Task<ProcessInstance?> GetCurrentProcessForEntityAsync(string entityId, string entityType)
         {
             try
             {
@@ -721,7 +721,7 @@ namespace Beep.OilandGas.LifeCycle.Services.Processes
             }
         }
 
-        protected override async Task<ProcessInstance> LoadProcessInstanceAsync(string instanceId)
+        protected override async Task<ProcessInstance?> LoadProcessInstanceAsync(string instanceId)
         {
             try
             {

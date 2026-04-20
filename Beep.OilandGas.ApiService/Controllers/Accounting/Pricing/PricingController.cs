@@ -70,7 +70,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting price indices");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -108,7 +108,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding price index");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -146,7 +146,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Pricing
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error valuing run ticket");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

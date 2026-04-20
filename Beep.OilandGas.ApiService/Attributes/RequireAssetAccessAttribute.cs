@@ -15,7 +15,7 @@ namespace Beep.OilandGas.ApiService.Attributes
     public class RequireAssetAccessAttribute : Attribute, IAsyncAuthorizationFilter
     {
         private readonly string _assetIdParameterName;
-        private readonly string _assetTypeParameterName;
+        private readonly string? _assetTypeParameterName;
         private readonly string? _requiredPermission;
 
         /// <summary>

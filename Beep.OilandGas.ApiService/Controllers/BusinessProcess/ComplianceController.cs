@@ -13,11 +13,12 @@ using Beep.OilandGas.LifeCycle.Models.Processes;
 namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
 {
     /// <summary>
-    /// Compliance obligation and regulatory reporting endpoints.
+    /// Compliance PROCESS WORKFLOW endpoints (IProcessService layer).
+    /// Separate from the domain ComplianceController at api/field/current/compliance.
     /// Remediation workflow initiation requires the Compliance role.
     /// </summary>
     [ApiController]
-    [Route("api/field/current/compliance")]
+    [Route("api/field/current/process/compliance")]
     [Authorize]
     public class ComplianceController : ControllerBase
     {
@@ -43,7 +44,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             [FromQuery] string? jurisdiction = null,
             [FromQuery] string? obligationType = null)
         {
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -85,7 +86,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (daysAhead < 0)
                 return BadRequest("daysAhead must be a non-negative integer.");
 
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -132,7 +133,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (request.PeriodEnd <= request.PeriodStart)
                 return BadRequest("PeriodEnd must be after PeriodStart.");
 
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
                 return BadRequest("No active field selected.");
 
@@ -230,7 +231,7 @@ namespace Beep.OilandGas.ApiService.Controllers.BusinessProcess
             if (string.IsNullOrWhiteSpace(reportId))
                 return BadRequest("reportId is required.");
 
-            var fieldId = _fieldOrchestrator.CurrentFieldId;
+            var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
             if (string.IsNullOrEmpty(fieldId))
                 return BadRequest("No active field selected.");
 

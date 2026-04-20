@@ -1,4 +1,4 @@
-@page "/exploration/prospect-board"
+﻿@page "/exploration/prospect-board"
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
@@ -121,12 +121,12 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string? _filterPlay;
     private string? _filterBasin;
     private bool _showArchived;
 
-    private List<string> _basins = new() { "Permian", "Eagle Ford", "North Sea", "Gulf of Mexico" };
+    private List<string> _basins = new();
 
     private Dictionary<string, StageInfo> _stages = new()
     {
@@ -140,21 +140,58 @@
 
     private List<ProspectItem> _allProspects = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with GET /api/exploration/prospects?fieldId=
-        _allProspects = new List<ProspectItem>
+        try
         {
-            new("1",  "Eagle Ford South",      "lead",      "Clastic",       "Eagle Ford",    120, "MMBO", 18, "ACTIVE",  45),
-            new("2",  "Permian Deep Play",      "lead",      "Clastic",       "Permian",        85, "MMBO", 12, "ACTIVE",  22),
-            new("3",  "North Sea Block 15",     "screening", "Carbonate",     "North Sea",     200, "MMBO", 32, "IN PROGRESS", 14),
-            new("4",  "GOM Deepwater Alpha",    "prospect",  "Clastic",       "Gulf of Mexico",450, "MMBO", 25, "ACTIVE",  60),
-            new("5",  "Unconventional Play A",  "prospect",  "Unconventional","Permian",        60, "BCF",  40, "ON-HOLD", 90),
-            new("6",  "Eagle Ford West",        "ranking",   "Clastic",       "Eagle Ford",    175, "MMBO", 30, "REVIEW",  21),
-            new("7",  "Permian Wolfcamp Deep",  "candidate", "Clastic",       "Permian",       320, "MMBO", 35, "APPROVED", 10),
-            new("8",  "Miocene Shelf Play",     "drilled",   "Clastic",       "Gulf of Mexico",280, "MMBO", 0,  "COMPLETE", 0),
-        };
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        try
+        {
+            var prospects = await ApiClient.GetAsync<List<PROSPECT>>(
+                "/api/field/current/exploration/prospects") ?? new();
+            if (prospects.Count > 0)
+            {
+                _allProspects = prospects.Select(p => new ProspectItem(
+                    id:          p.PROSPECT_ID ?? string.Empty,
+                    name:        p.PROSPECT_NAME ?? p.PROSPECT_ID ?? "Unknown",
+                    stage:       MapStage(p.PROSPECT_TYPE, p.PROSPECT_STATUS),
+                    playType:    p.PROSPECT_TYPE ?? "Unknown",
+                    basin:       p.RESPONSIBLE_BA_ID ?? string.Empty,
+                    resource:    (double)(p.AREA_SIZE ?? 0m),
+                    unit:        p.AREA_SIZE_OUOM ?? "MMBO",
+                    cos:         0,
+                    status:      p.PROSPECT_STATUS ?? "ACTIVE",
+                    daysInStage: 0
+                )).ToList();
+                _basins = _allProspects
+                    .Select(p => p.Basin)
+                    .Where(b => !string.IsNullOrWhiteSpace(b))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(b => b)
+                    .ToList();
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load prospects.", Severity.Warning);
+        }
     }
+
+    private static string MapStage(string? prospectType, string? status) =>
+        (prospectType?.ToUpperInvariant(), status?.ToUpperInvariant()) switch
+        {
+            ("LEAD", _)             => "lead",
+            (_, "SCREENING")        => "screening",
+            (_, "REVIEW")           => "ranking",
+            (_, "APPROVED")         => "candidate",
+            (_, "DRILLED" or "COMPLETE" or "COMPLETED") => "drilled",
+            _                       => "prospect",
+        };
 
     private List<ProspectItem> FilteredProspects(string stage)
     {
@@ -170,7 +207,7 @@
         pg >= 30 ? Color.Success : pg >= 15 ? Color.Warning : Color.Error;
 
     private void OpenProspect(string id) =>
-        NavigationManager.NavigateTo($"/exploration/prospect/{id}");
+        NavigationManager.NavigateTo($"/exploration/prospect/{Uri.EscapeDataString(id)}");
 
     private void AddLead() =>
         NavigationManager.NavigateTo("/exploration/prospect/new");

@@ -54,9 +54,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 }
                 else
                 {
-                    // Default to SQL Server (can be extended for other providers)
-                    // connection = new SqlConnection(connectionString);
-                    throw new NotImplementedException("Connection factory must be provided or implement default connection creation.");
+                    throw new InvalidOperationException("A connection factory must be provided to Ppdm38SchematicLoader. Pass a Func<DbConnection> via the constructor.");
                 }
 
                 if (connection.State != ConnectionState.Open)
@@ -88,7 +86,7 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 }
                 else
                 {
-                    throw new NotImplementedException("Connection factory must be provided.");
+                    throw new InvalidOperationException("A connection factory must be provided to Ppdm38SchematicLoader. Pass a Func<DbConnection> via the constructor.");
                 }
 
                 if (connection.State != ConnectionState.Open)
@@ -261,8 +259,36 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
         /// </summary>
         public DeviationSurvey LoadDeviationSurvey(string wellIdentifier, string boreholeIdentifier = null)
         {
-            // TODO: Implement PPDM38 query for deviation survey
-            return null;
+            if (!isConnected) Connect();
+            if (connection == null || connection.State != ConnectionState.Open) return null;
+
+            try
+            {
+                var points = new List<DeviationSurveyPoint>();
+                using var command = connection.CreateCommand();
+                command.CommandText = boreholeIdentifier != null
+                    ? "SELECT MD, DEVIATION_ANGLE, AZIMUTH FROM WELL_SURVEY_STATION WHERE UWI = @uwi AND BORE_HOLE_ID = @bore ORDER BY MD"
+                    : "SELECT MD, DEVIATION_ANGLE, AZIMUTH FROM WELL_SURVEY_STATION WHERE UWI = @uwi ORDER BY MD";
+
+                var p1 = command.CreateParameter(); p1.ParameterName = "@uwi"; p1.Value = wellIdentifier; command.Parameters.Add(p1);
+                if (boreholeIdentifier != null)
+                {
+                    var p2 = command.CreateParameter(); p2.ParameterName = "@bore"; p2.Value = boreholeIdentifier; command.Parameters.Add(p2);
+                }
+
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
+                    points.Add(new DeviationSurveyPoint
+                    {
+                        MD = reader.IsDBNull(0) ? 0 : Convert.ToDouble(reader.GetValue(0)),
+                        DEVIATION_ANGLE = reader.IsDBNull(1) ? 0 : Convert.ToDouble(reader.GetValue(1)),
+                        AZIMUTH = reader.IsDBNull(2) ? 0 : Convert.ToDouble(reader.GetValue(2))
+                    });
+
+                if (points.Count == 0) return null;
+                return new DeviationSurvey { WellIdentifier = wellIdentifier, BoreholeIdentifier = boreholeIdentifier, SurveyPoints = points };
+            }
+            catch { return null; }
         }
 
         /// <summary>
@@ -308,8 +334,18 @@ namespace Beep.OilandGas.Drawing.DataLoaders.Implementations
                 throw new InvalidOperationException("Database connection is not open.");
 
             var wells = new List<string>();
-            // TODO: Implement query to get well list from PPDM38
-            // Example: SELECT DISTINCT UWI FROM WELL
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = "SELECT DISTINCT UWI FROM WELL ORDER BY UWI";
+                using var reader = command.ExecuteReader();
+                while (reader.Read())
+                    if (!reader.IsDBNull(0)) wells.Add(reader.GetString(0));
+            }
+            catch
+            {
+                // Return empty list if table doesn't exist in this database schema
+            }
             return wells;
         }
 

@@ -1,0 +1,183 @@
+@* 
+    CategoryTableBrowser.razor
+    A reusable component that lists all tables in a given PPDM39 category.
+    Clicking a table navigates to the Data Management page pre-filtered to that table.
+*@
+@using MudBlazor
+@using Beep.OilandGas.Web.Services
+@inject NavigationManager NavigationManager
+@inject ApiClient ApiClient
+
+<MudStack Spacing="0">
+    @* Header row with search *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+        <MudIcon Icon="@_categoryIcon" Color="Color.Primary" />
+        <MudText Typo="Typo.h6">@CategoryName Tables</MudText>
+        <MudSpacer />
+        <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Size="Size.Small">
+            @_tables.Count tables
+        </MudChip>
+    </MudStack>
+
+    <MudTextField @bind-Value="_search"
+                  Placeholder="Filter tables..."
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Variant="Variant.Outlined"
+                  Clearable="true"
+                  Immediate="true"
+                  Class="mb-3" />
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" />
+    }
+
+    @if (_tables.Count == 0 && !_loading)
+    {
+        <MudAlert Severity="Severity.Info">No tables found for this category.</MudAlert>
+    }
+    else
+    {
+        var filtered = string.IsNullOrWhiteSpace(_search)
+            ? _tables
+            : _tables.Where(t => t.TableName.Contains(_search, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        <MudGrid Spacing="2">
+            @foreach (var table in filtered)
+            {
+                <MudItem xs="12" sm="6" md="4" lg="3">
+                    <MudCard Elevation="1"
+                             Class="cursor-pointer"
+                             Style="transition: box-shadow 0.2s;"
+                             @onclick="@(() => OpenTable(table.TableName))">
+                        <MudCardContent Class="pa-3">
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@GetTableIcon(table)"
+                                         Color="@GetTableColor(table)"
+                                         Size="Size.Small" />
+                                <MudStack Spacing="0" Style="min-width:0;">
+                                    <MudText Typo="Typo.body2"
+                                             Style="font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        @table.TableName
+                                    </MudText>
+                                    @if (!string.IsNullOrWhiteSpace(table.Description))
+                                    {
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary"
+                                                 Style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                            @table.Description
+                                        </MudText>
+                                    }
+                                </MudStack>
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+
+        @if (filtered.Count == 0 && !string.IsNullOrWhiteSpace(_search))
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mt-2">
+                No tables match "@_search".
+            </MudText>
+        }
+    }
+</MudStack>
+
+@code {
+    // ── Parameters ─────────────────────────────────────────────────────────────
+
+    /// <summary>Category ID passed to the metadata API (e.g. "WELL", "BA", "REFERENCE").</summary>
+    [Parameter] public string CategoryId   { get; set; } = string.Empty;
+
+    /// <summary>Display name shown in the header.</summary>
+    [Parameter] public string CategoryName { get; set; } = string.Empty;
+
+    /// <summary>MudBlazor icon name (Material.Filled.*) for the header.</summary>
+    [Parameter] public string CategoryIcon { get; set; } = Icons.Material.Filled.TableChart;
+
+    /// <summary>
+    /// Called when the user picks a table; receives the table name.
+    /// If null the component navigates directly to data-management?table=.
+    /// </summary>
+    [Parameter] public EventCallback<string> OnTableSelected { get; set; }
+
+    // ── State ───────────────────────────────────────────────────────────────────
+
+    private List<TableInfoDto> _tables = new();
+    private string _search  = string.Empty;
+    private bool   _loading = true;
+    private string _categoryIcon = Icons.Material.Filled.TableChart;
+
+    // ── Lifecycle ───────────────────────────────────────────────────────────────
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _categoryIcon = string.IsNullOrWhiteSpace(CategoryIcon)
+            ? Icons.Material.Filled.TableChart
+            : CategoryIcon;
+
+        if (!string.IsNullOrWhiteSpace(CategoryId))
+            await LoadTablesAsync();
+    }
+
+    private async Task LoadTablesAsync()
+    {
+        _loading = true;
+        _tables  = new List<TableInfoDto>();
+
+        try
+        {
+            _tables = await ApiClient.GetAsync<List<TableInfoDto>>(
+                $"/api/ppdm39/metadata/categories/{Uri.EscapeDataString(CategoryId)}/tables")
+                ?? new List<TableInfoDto>();
+        }
+        catch
+        {
+            // silently keep empty list; the caller page shows a Snackbar if needed
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task OpenTable(string tableName)
+    {
+        if (OnTableSelected.HasDelegate)
+            await OnTableSelected.InvokeAsync(tableName);
+        else
+            NavigationManager.NavigateTo($"/ppdm39/data-management?table={Uri.EscapeDataString(tableName)}");
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────────
+
+    private static string GetTableIcon(TableInfoDto t)
+    {
+        if (t.IsReferenceTable)                                      return Icons.Material.Filled.List;
+        if (t.TableName.StartsWith("WELL",   StringComparison.OrdinalIgnoreCase)) return Icons.Material.Filled.OilBarrel;
+        if (t.TableName.StartsWith("FACILITY", StringComparison.OrdinalIgnoreCase)) return Icons.Material.Filled.Factory;
+        if (t.TableName.StartsWith("SEIS_",  StringComparison.OrdinalIgnoreCase)) return Icons.Material.Filled.Waves;
+        if (t.TableName.StartsWith("BUSINESS_ASSOCIATE", StringComparison.OrdinalIgnoreCase)) return Icons.Material.Filled.Business;
+        return Icons.Material.Filled.TableChart;
+    }
+
+    private static Color GetTableColor(TableInfoDto t)
+    {
+        if (t.IsReferenceTable) return Color.Secondary;
+        if (t.TableName.StartsWith("WELL",  StringComparison.OrdinalIgnoreCase)) return Color.Primary;
+        if (t.TableName.StartsWith("FACILITY", StringComparison.OrdinalIgnoreCase)) return Color.Warning;
+        return Color.Default;
+    }
+
+    // ── Local DTO ──────────────────────────────────────────────────────────────
+
+    private sealed class TableInfoDto
+    {
+        public string TableName      { get; set; } = string.Empty;
+        public string Description    { get; set; } = string.Empty;
+        public string PrimaryKey     { get; set; } = string.Empty;
+        public bool   IsReferenceTable { get; set; }
+    }
+}

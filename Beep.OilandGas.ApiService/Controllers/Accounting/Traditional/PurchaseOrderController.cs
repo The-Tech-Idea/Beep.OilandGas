@@ -40,6 +40,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             string id,
             [FromQuery] string? connectionName = null)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { error = "Purchase order ID is required." });
             try
             {
                 var po = _service.TraditionalAccounting.PurchaseOrder.GetPurchaseOrder(id);
@@ -58,7 +60,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting purchase order {POId}", id);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -83,7 +85,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Traditional
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating purchase order");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

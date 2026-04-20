@@ -1,10 +1,13 @@
-@page "/economics/afe"
+﻿@page "/economics/afe"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
 
 <PageTitle>Manage Authorities for Expenditure</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
 
     @if (_selectedAfe is null)
     {
@@ -140,10 +143,7 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudChart T="double" ChartType="ChartType.Bar"
-                                  Series="@_costBreakdownSeries"
-                                  XAxisLabels="@_costCategories"
-                                  Width="100%" Height="180px" />
+                        <MudAlert Severity="Severity.Info" Dense="true">Cost breakdown chart will display once line-item detail is available for the selected AFE.</MudAlert>
                     </MudCardContent>
                 </MudCard>
             </MudItem>
@@ -185,58 +185,177 @@
 
 </MudContainer>
 
+@* ── New AFE dialog ─────────────────────────────────────────────────────────── *@
+<MudDialog @bind-IsVisible="_showCreateAfeDialog">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">New AFE</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="_newAfeNumber"      Label="AFE Number"    Variant="Variant.Outlined" Required="true" />
+            <MudTextField @bind-Value="_newAfeName"        Label="Description"   Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_newAfePropertyId"  Label="Well / Property ID" Variant="Variant.Outlined" />
+            <MudNumericField @bind-Value="_newAfeEstimate" Label="Estimated Budget (USD)" Variant="Variant.Outlined" Format="N0" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showCreateAfeDialog = false)" Disabled="@_savingAfe">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Disabled="@_savingAfe"
+                   OnClick="SubmitCreateAfeAsync">
+            @(_savingAfe ? "Saving…" : "Create AFE")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private AfeItem? _selectedAfe;
+    private bool _loading = true;
 
     private record AfeItem(string AfeNumber, string Description, string WellId, string Category,
         double ApprovedUsd, double CommittedUsd, string Status, string Approver);
 
-    private List<AfeItem> _afes = new()
-    {
-        new("AFE-2026-001", "DEV-A1 ESP Replacement",       "DEV-A1", "Workover",     850_000,  620_000, "ACTIVE",   "D. Thompson"),
-        new("AFE-2026-002", "DEV-B2 Perforation Additions", "DEV-B2", "Completion",   340_000,  280_000, "ACTIVE",   "D. Thompson"),
-        new("AFE-2026-003", "DEV-C1 Drill & Complete",      "DEV-C1", "Drilling",  12_400_000,  900_000, "ACTIVE",   "VP Operations"),
-        new("AFE-2026-004", "Pipeline Inspection Program",  "N/A",    "Facilities", 1_200_000,        0, "PENDING",  "D. Thompson"),
-        new("AFE-2026-005", "Seismic Reprocessing",         "N/A",    "G&G",          480_000,  480_000, "COMPLETE", "D. Thompson"),
-        new("AFE-2026-006", "EOR Feasibility Study",        "N/A",    "Studies",      220_000,   45_000, "PENDING",  "VP Reservoir"),
-    };
+    private List<AfeItem> _afes = new();
 
     private record AfeLineItem(string Code, string Description, string Vendor, double EstimatedUsd, double ActualUsd);
-    private List<AfeLineItem> _lineItems = new()
-    {
-        new("WO-001", "ESP Unit Purchase",     "Baker Hughes",  420_000, 405_000),
-        new("WO-002", "Rig Mobilization",      "Nabors Drilling",180_000, 175_000),
-        new("WO-003", "Well Services",         "Halliburton",   130_000, 125_000),
-        new("WO-004", "Contingency (10%)",     "-",              85_000,  15_000),
-        new("WO-005", "Engineering & Supervision","In-house",    35_000,  32_000),
-    };
+    private List<AfeLineItem> _lineItems = new();
 
-    private List<ChartSeries<double>> _costBreakdownSeries = new()
+    protected override async Task OnInitializedAsync()
     {
-        new ChartSeries<double> { Name = "Approved", Data = new double[] { 420_000, 180_000, 130_000, 85_000, 35_000 } },
-        new ChartSeries<double> { Name = "Actual",   Data = new double[] { 405_000, 175_000, 125_000, 15_000, 32_000 } },
-    };
-    private string[] _costCategories = { "ESP", "Rig", "Well Svc", "Contingency", "Engineering" };
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
+        _loading = true;
+        try
+        {
+            var raw = await ApiClient.GetAsync<List<AfeApiDto>>("api/accounting/cost/afe") ?? new();            if (raw != null)
+                _afes = raw.Select(r => new AfeItem(
+                    r.AfeNumber ?? r.AfeId,
+                    r.AfeName ?? r.AfeNumber ?? r.AfeId,
+                    r.PropertyId ?? "N/A",
+                    "AFE",
+                    (double)(r.EstimatedCost ?? 0m),
+                    0,
+                    r.Status ?? "ACTIVE",
+                    "")).ToList();
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load AFEs.", Severity.Warning);
+        }
+        finally { _loading = false; }
+    }
+
+    private class AfeApiDto
+    {
+        public string   AfeId         { get; set; } = string.Empty;
+        public string?  AfeNumber     { get; set; }
+        public string?  AfeName       { get; set; }
+        public string?  PropertyId    { get; set; }
+        public decimal? EstimatedCost { get; set; }
+        public string?  Status        { get; set; }
+        public DateTime? EffectiveDate { get; set; }
+    }
 
     private void OnAfeSelected(DataGridRowClickEventArgs<AfeItem> args) =>
         _selectedAfe = args.Item;
 
     private void BackToList() => _selectedAfe = null;
 
-    private void CreateAfe() =>
-        Snackbar.Add("New AFE wizard coming soon", Severity.Info);
+    // ── Create AFE dialog state ────────────────────────────────────────────────
+    private bool   _showCreateAfeDialog = false;
+    private bool   _savingAfe           = false;
+    private string _newAfeNumber        = string.Empty;
+    private string _newAfeName          = string.Empty;
+    private string _newAfePropertyId    = string.Empty;
+    private double _newAfeEstimate      = 0;
 
-    private void ApproveAfe()
+    private void CreateAfe()
     {
-        Snackbar.Add($"{_selectedAfe?.AfeNumber} approved", Severity.Success);
-        _selectedAfe = null;
+        _newAfeNumber     = string.Empty;
+        _newAfeName       = string.Empty;
+        _newAfePropertyId = string.Empty;
+        _newAfeEstimate   = 0;
+        _showCreateAfeDialog = true;
     }
 
-    private void RejectAfe()
+    private async Task SubmitCreateAfeAsync()
     {
-        Snackbar.Add($"{_selectedAfe?.AfeNumber} returned for revision", Severity.Warning);
-        _selectedAfe = null;
+        if (string.IsNullOrWhiteSpace(_newAfeNumber))
+        {
+            Snackbar.Add("AFE Number is required.", Severity.Warning);
+            return;
+        }
+        _savingAfe = true;
+        try
+        {
+            var payload = new
+            {
+                AfeNumber    = _newAfeNumber,
+                AfeName      = _newAfeName,
+                PropertyId   = _newAfePropertyId,
+                BudgetAmount = (decimal)_newAfeEstimate,
+                EffectiveDate = (DateTime?)DateTime.UtcNow
+            };
+            var result = await ApiClient.PostAsync<object, AfeCreateResult>(
+                "api/accounting/cost/afe", payload);
+            var newRow = new AfeItem(
+                result?.AfeNumber ?? _newAfeNumber,
+                _newAfeName,
+                _newAfePropertyId,
+                "AFE",
+                _newAfeEstimate,
+                0,
+                "ACTIVE",
+                string.Empty);
+            _afes.Add(newRow);
+            _showCreateAfeDialog = false;
+            Snackbar.Add($"AFE {_newAfeNumber} created.", Severity.Success);
+        }
+        catch (Exception) { Snackbar.Add("Error creating AFE.", Severity.Error); }
+        finally { _savingAfe = false; }
+    }
+
+    private class AfeCreateResult
+    {
+        public string? AfeId     { get; set; }
+        public string? AfeNumber { get; set; }
+    }
+
+    private async Task ApproveAfe()
+    {
+        if (_selectedAfe == null) return;
+        try
+        {
+            await ApiClient.PatchAsync<object, object>(
+                $"api/accounting/cost/afe/{Uri.EscapeDataString(_selectedAfe.AfeNumber)}/approve", new { });
+            Snackbar.Add($"{_selectedAfe.AfeNumber} approved", Severity.Success);
+            _selectedAfe = null;
+        }
+        catch (Exception) { Snackbar.Add("Approval failed.", Severity.Error); }
+    }
+
+    private async Task RejectAfe()
+    {
+        if (_selectedAfe == null) return;
+        try
+        {
+            await ApiClient.PatchAsync<object, object>(
+                $"api/accounting/cost/afe/{Uri.EscapeDataString(_selectedAfe.AfeNumber)}/reject", new { });
+            Snackbar.Add($"{_selectedAfe.AfeNumber} returned for revision", Severity.Warning);
+            _selectedAfe = null;
+        }
+        catch (Exception) { Snackbar.Add("Rejection failed.", Severity.Error); }
     }
 
     private double SpentPercent(AfeItem a) =>

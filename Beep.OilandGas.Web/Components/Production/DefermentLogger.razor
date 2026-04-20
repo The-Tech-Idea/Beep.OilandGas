@@ -1,0 +1,149 @@
+@* DefermentLogger — log a production deferment event for a well *@
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Report" Class="mr-2" />
+            Log Production Deferment
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudGrid Spacing="2">
+
+                <!-- Well UWI -->
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="Entry.Uwi"
+                                  Label="Well UWI"
+                                  Required="true"
+                                  RequiredError="UWI is required"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true" />
+                </MudItem>
+
+                <!-- Deferment type -->
+                <MudItem xs="12" sm="6">
+                    <MudSelect @bind-Value="Entry.DefermentType"
+                               Label="Deferment Type"
+                               Required="true"
+                               RequiredError="Select a type"
+                               Variant="Variant.Outlined"
+                               FullWidth="true">
+                        <MudSelectItem Value="@("PLANNED")">Planned Maintenance</MudSelectItem>
+                        <MudSelectItem Value="@("UNPLANNED")">Unplanned Downtime</MudSelectItem>
+                        <MudSelectItem Value="@("SURFACE")">Surface Constraint</MudSelectItem>
+                        <MudSelectItem Value="@("SUBSURFACE")">Subsurface Constraint</MudSelectItem>
+                        <MudSelectItem Value="@("REGULATORY")">Regulatory / Permit</MudSelectItem>
+                        <MudSelectItem Value="@("MARKET")">Market Curtailment</MudSelectItem>
+                        <MudSelectItem Value="@("WEATHER")">Weather / Force Majeure</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                <!-- Volume deferred -->
+                <MudItem xs="12" sm="6">
+                    <MudNumericField @bind-Value="Entry.DeferredVolumeBoepd"
+                                     Label="Deferred Volume (BOE/d)"
+                                     Min="0m"
+                                     Variant="Variant.Outlined"
+                                     FullWidth="true" />
+                </MudItem>
+
+                <!-- Fluid type -->
+                <MudItem xs="12" sm="6">
+                    <MudSelect @bind-Value="Entry.FluidType"
+                               Label="Fluid Type"
+                               Variant="Variant.Outlined"
+                               FullWidth="true">
+                        <MudSelectItem Value="@("OIL")">Oil</MudSelectItem>
+                        <MudSelectItem Value="@("GAS")">Gas</MudSelectItem>
+                        <MudSelectItem Value="@("NGL")">NGL</MudSelectItem>
+                        <MudSelectItem Value="@("MIXED")">Mixed</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+
+                <!-- Start date -->
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker @bind-Date="Entry.StartDate"
+                                   Label="Start Date / Time"
+                                   Required="true"
+                                   RequiredError="Start date is required"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="true" />
+                </MudItem>
+
+                <!-- End date (optional) -->
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker @bind-Date="Entry.EndDate"
+                                   Label="End Date (leave blank if ongoing)"
+                                   Variant="Variant.Outlined"
+                                   FullWidth="true" />
+                </MudItem>
+
+                <!-- Reason / notes -->
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="Entry.Reason"
+                                  Label="Reason / Notes"
+                                  Lines="3"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true" />
+                </MudItem>
+
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(!_isValid)"
+                   OnClick="Submit">
+            Log Deferment
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = null!;
+
+    /// <summary>Pre-fill UWI when opened from a well context.</summary>
+    [Parameter] public string? PrefilledUwi { get; set; }
+
+    public DefermentEntry Entry { get; } = new();
+
+    private MudForm _form = null!;
+    private bool _isValid;
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(PrefilledUwi))
+            Entry.Uwi = PrefilledUwi;
+    }
+
+    private async Task Submit()
+    {
+        await _form.ValidateAsync();
+        if (!_isValid) return;
+        MudDialog.Close(DialogResult.Ok(Entry));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    public class DefermentEntry
+    {
+        public string Uwi { get; set; } = string.Empty;
+        /// <summary>PLANNED | UNPLANNED | SURFACE | SUBSURFACE | REGULATORY | MARKET | WEATHER</summary>
+        public string DefermentType { get; set; } = "UNPLANNED";
+        public decimal DeferredVolumeBoepd { get; set; }
+        public string FluidType { get; set; } = "OIL";
+        public DateTime? StartDate { get; set; } = DateTime.Today;
+        public DateTime? EndDate { get; set; }
+        public string Reason { get; set; } = string.Empty;
+
+        public bool IsOngoing => EndDate == null;
+
+        public decimal TotalDeferredBoe =>
+            DeferredVolumeBoepd * (decimal)(EndDate.HasValue && StartDate.HasValue
+                ? (EndDate.Value - StartDate.Value).TotalDays
+                : 1);
+    }
+}

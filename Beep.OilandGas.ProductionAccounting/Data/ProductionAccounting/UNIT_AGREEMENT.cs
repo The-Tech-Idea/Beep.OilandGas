@@ -41,7 +41,7 @@ namespace Beep.OilandGas.Models.Data.ProductionAccounting
         }
 
         private DateTime EFFECTIVE_DATEValue;
-        public DateTime EFFECTIVE_DATE
+        public new DateTime EFFECTIVE_DATE
         {
             get { return this.EFFECTIVE_DATEValue; }
             set { SetProperty(ref EFFECTIVE_DATEValue, value); }

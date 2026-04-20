@@ -1,9 +1,8 @@
-@page "/ppdm39/hse/incidents/{Id}"
+﻿@page "/ppdm39/hse/incidents/{Id}"
 @attribute [Authorize(Roles = "SafetyOfficer,Manager,Admin,User")]
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 
 <PageTitle>HSE Incident — @Id</PageTitle>
 
@@ -149,11 +148,48 @@
 
 </MudContainer>
 
+@* ── Add Corrective Action dialog ──────────────────────────────────────────── *@
+<MudDialog @bind-IsVisible="_showAddActionDialog">
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Add Corrective Action</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="_caDescription" Label="Description"
+                          Variant="Variant.Outlined" Lines="2" Required="true" />
+            <MudSelect @bind-Value="_caType" Label="Type" Variant="Variant.Outlined">
+                <MudSelectItem Value='"CORRECTIVE"'>Corrective</MudSelectItem>
+                <MudSelectItem Value='"PREVENTIVE"'>Preventive</MudSelectItem>
+                <MudSelectItem Value='"IMMEDIATE"'>Immediate</MudSelectItem>
+                <MudSelectItem Value='"LONG_TERM"'>Long-term</MudSelectItem>
+            </MudSelect>
+            <MudDatePicker @bind-Date="_caDueDateNullable" Label="Due Date" Variant="Variant.Outlined" />
+            <MudTextField @bind-Value="_caResponsibleBaId" Label="Responsible Person / BA ID"
+                          Variant="Variant.Outlined" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showAddActionDialog = false)" Disabled="@_addingAction">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Disabled="@_addingAction"
+                   OnClick="SubmitAddActionAsync">
+            @(_addingAction ? "Saving…" : "Add Action")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
 @using Microsoft.AspNetCore.Authorization
+@using Beep.OilandGas.LifeCycle.Models.Processes
+@using Beep.OilandGas.Models.Data.HSE
 
 @code {
     [Parameter] public string Id { get; set; } = string.Empty;
 
+    private string   _loadedId     = string.Empty;
     private string   _incidentType = string.Empty;
     private string   _description  = string.Empty;
     private string   _tier         = "3";
@@ -169,61 +205,156 @@
 
     private List<ActionRow> _correctiveActions = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // TODO: replace with GET /api/field/current/hse/incidents/{Id}
-        _incidentType = "Personnel Injury";
-        _description  = "Slip/trip on rig floor";
-        _tier         = "2";
-        _status       = "RCA IN PROGRESS";
-        _location     = "Rig Floor Level 2";
-        _reportedBy   = "john.doe";
-        _incidentDate = DateTime.Today.AddDays(-3);
+        _loadedId = Id;
+        await LoadDetailAsync();
+    }
 
-        _correctiveActions = new List<ActionRow>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id == _loadedId) return;
+        _loadedId = Id;
+        await LoadDetailAsync();
+    }
+
+    private async Task LoadDetailAsync()
+    {
+        try
         {
-            new("CA-001", "Install non-slip matting on rig floor",   "safety.officer", DateTime.Today.AddDays(7),  "IN PROGRESS"),
-            new("CA-002", "Conduct rig floor HSE awareness briefing", "ops.supervisor", DateTime.Today.AddDays(3),  "PLANNED"),
-            new("CA-003", "Review PPE requirements for rig operations","hse.manager",   DateTime.Today.AddDays(14), "PLANNED"),
-        };
+            var inst = await ApiClient.GetAsync<ProcessInstance>($"/api/field/current/process/hse/incidents/{Uri.EscapeDataString(Id)}");
+            if (inst != null)
+            {
+                _incidentType = inst.EntityType;
+                _description  = inst.EntityId;
+                _status       = inst.Status.ToString();
+                _location     = inst.EntityId;
+                _reportedBy   = inst.StartedBy;
+                _incidentDate = inst.StartDate;
+                _canEditRca   = !string.Equals(inst.Status.ToString(), "CLOSED", StringComparison.OrdinalIgnoreCase);
+                _canClose     = !string.Equals(inst.Status.ToString(), "CLOSED", StringComparison.OrdinalIgnoreCase);
+
+                // Map step instances to corrective actions
+                if (inst.StepInstances?.Count > 0)
+                {
+                    _correctiveActions = inst.StepInstances.Select(s => new ActionRow(
+                        s.StepId,
+                        s.StepId,
+                        s.CompletedBy,
+                        s.CompletionDate ?? DateTime.Today.AddDays(14),
+                        s.Status.ToString()
+                    )).ToList();
+                }
+
+                // Pull RCA from history
+                var rcaEntry = inst.History?.LastOrDefault(h =>
+                    string.Equals(h.Action, "RCA_SUBMITTED", StringComparison.OrdinalIgnoreCase));
+                if (rcaEntry != null)
+                    _rcaSummary = rcaEntry.Notes;
+            }
+        }
+        catch
+        {
+            Snackbar.Add("Could not load incident detail.", Severity.Warning);
+        }
     }
 
     private async Task SubmitRcaAsync()
     {
-        // TODO: POST /api/field/current/hse/incidents/{Id}/rca
-        _rcaSummary = _rcaDraft;
-        Snackbar.Add("RCA submitted.", Severity.Success);
-        await Task.CompletedTask;
-    }
-
-    private async Task AddActionAsync()
-    {
-        // TODO: open AddCorrectiveActionDialog
-        Snackbar.Add("Add corrective action dialog not yet wired.", Severity.Info);
-        await Task.CompletedTask;
+        try
+        {
+            var req = new { Summary = _rcaDraft };
+            await ApiClient.PostAsync<object, object>($"/api/field/current/process/hse/incidents/{Uri.EscapeDataString(Id)}/rca", req);
+            _rcaSummary = _rcaDraft;
+            Snackbar.Add("RCA submitted.", Severity.Success);
+        }
+        catch { Snackbar.Add("Could not submit RCA.", Severity.Error); }
     }
 
     private async Task CloseActionAsync(string actionId)
     {
-        // TODO: PATCH /api/field/current/hse/incidents/{Id}/actions/{actionId}
-        var action = _correctiveActions.FirstOrDefault(a => a.ActionId == actionId);
-        if (action != null)
+        try
         {
-            _correctiveActions.Remove(action);
-            _correctiveActions.Add(action with { Status = "COMPLETED" });
+            var req = new { Status = "COMPLETED" };
+            await ApiClient.PatchAsync<object, object>($"/api/field/current/process/hse/incidents/{Uri.EscapeDataString(Id)}/actions/{Uri.EscapeDataString(actionId)}", req);
+            var action = _correctiveActions.FirstOrDefault(a => a.ActionId == actionId);
+            if (action != null)
+            {
+                _correctiveActions.Remove(action);
+                _correctiveActions.Add(action with { Status = "COMPLETED" });
+            }
+            Snackbar.Add("Action closed.", Severity.Success);
         }
-        Snackbar.Add("Action closed.", Severity.Success);
-        await Task.CompletedTask;
+        catch { Snackbar.Add("Could not close action.", Severity.Error); }
     }
 
     private async Task CloseIncidentAsync()
     {
-        // TODO: POST /api/field/current/hse/incidents/{Id}/close
-        _status = "CLOSED";
-        Snackbar.Add("Incident closed.", Severity.Success);
-        NavigationManager.NavigateTo("/ppdm39/hse/incidents");
-        await Task.CompletedTask;
+        try
+        {
+            var req = new { Notes = _closeNotes };
+            await ApiClient.PostAsync<object, object>($"/api/field/current/process/hse/incidents/{Uri.EscapeDataString(Id)}/close", req);
+            _status = "CLOSED";
+            Snackbar.Add("Incident closed.", Severity.Success);
+            NavigationManager.NavigateTo("/ppdm39/hse/incidents");
+        }
+        catch { Snackbar.Add("Could not close incident.", Severity.Error); }
     }
 
     private record ActionRow(string ActionId, string Description, string AssignedTo, DateTime DueDate, string Status);
+
+    // ── Add-action dialog state ─────────────────────────────────────────
+    private bool     _showAddActionDialog = false;
+    private bool     _addingAction        = false;
+    private string   _caDescription       = string.Empty;
+    private string   _caType              = "CORRECTIVE";
+    private DateTime _caDueDate           = DateTime.Today.AddDays(30);
+    private DateTime? _caDueDateNullable  { get => _caDueDate; set => _caDueDate = value ?? DateTime.Today.AddDays(30); }
+    private string   _caResponsibleBaId   = string.Empty;
+
+    private async Task AddActionAsync()
+    {
+        _caDescription     = string.Empty;
+        _caType            = "CORRECTIVE";
+        _caDueDate         = DateTime.Today.AddDays(30);
+        _caResponsibleBaId = string.Empty;
+        _showAddActionDialog = true;
+        await Task.CompletedTask;
+    }
+
+    private async Task SubmitAddActionAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_caDescription))
+        {
+            Snackbar.Add("Description is required.", Severity.Warning);
+            return;
+        }
+        _addingAction = true;
+        try
+        {
+            var request = new AddCARequest(
+                CADescription:    _caDescription,
+                CAType:           _caType,
+                DueDate:          _caDueDate,
+                ResponsibleBaId:  _caResponsibleBaId);
+
+            var actionId = await ApiClient.PostAsync<AddCARequest, string>(
+                $"/api/field/current/process/hse/incidents/{Id}/cas", request);
+
+            _correctiveActions.Add(new ActionRow(
+                actionId ?? Guid.NewGuid().ToString(),
+                _caDescription,
+                _caResponsibleBaId,
+                _caDueDate,
+                "OPEN"));
+
+            _showAddActionDialog = false;
+            Snackbar.Add("Corrective action added.", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to add action.", Severity.Error);
+        }
+        finally { _addingAction = false; }
+    }
 }

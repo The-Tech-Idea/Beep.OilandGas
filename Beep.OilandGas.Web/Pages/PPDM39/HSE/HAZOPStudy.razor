@@ -1,0 +1,310 @@
+﻿@page "/ppdm39/hse/hazop/{StudyId}"
+@using Beep.OilandGas.Models.Data.HSE
+@using Beep.OilandGas.Web.Services
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<PageTitle>HAZOP Study @StudyId</PageTitle>
+
+<MudStack Spacing="3">
+
+    @* ── Header ───────────────────────────────────────────────────────────── *@
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIconButton Icon="@Icons.Material.Outlined.ArrowBack"
+                           Href="/ppdm39/hse" Size="Size.Small" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h6">HAZOP Study</MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">IEC 61882 · @StudyId</MudText>
+            </MudStack>
+        </MudStack>
+        <MudButton StartIcon="@Icons.Material.Outlined.Add"
+                   Variant="Variant.Outlined"
+                   OnClick="OpenAddNodeDialog"
+                   Disabled="@(_summary is null)">
+            Add Node
+        </MudButton>
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    }
+
+    @* ── Summary Bar ──────────────────────────────────────────────────────── *@
+    @if (_summary is not null)
+    {
+        <MudGrid Spacing="2">
+            <MudItem xs="6" md="3">
+                <MudPaper Elevation="2" Class="pa-3 text-center">
+                    <MudText Typo="Typo.h6">@_summary.TotalNodes</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Nodes</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6" md="3">
+                <MudPaper Elevation="2" Class="pa-3 text-center">
+                    <MudText Typo="Typo.h6">@_summary.TotalDeviations</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Deviations</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6" md="3">
+                <MudPaper Elevation="2" Class="pa-3 text-center">
+                    <MudText Typo="Typo.h6" Color="Color.Warning">@_summary.OpenDeviations</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Open</MudText>
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="6" md="3">
+                <MudPaper Elevation="2" Class="pa-3 text-center">
+                    <MudText Typo="Typo.h6" Color="Color.Success">@_summary.Closed</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Closed</MudText>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+
+    @* ── Nodes + Deviations ───────────────────────────────────────────────── *@
+    @if (_nodes.Count == 0 && !_loading)
+    {
+        <MudPaper Elevation="1" Class="pa-6 text-center">
+            <MudIcon Icon="@Icons.Material.Outlined.AccountTree" Color="Color.Default" Size="Size.Large" />
+            <MudText Color="Color.Secondary" Class="mt-2">No nodes yet. Add your first HAZOP node.</MudText>
+        </MudPaper>
+    }
+    else
+    {
+        <MudExpansionPanels MultiExpansion="true" Elevation="1">
+            @foreach (var node in _nodes)
+            {
+                <MudExpansionPanel @key="node.NodeSeq" Class="mb-1">
+                    <TitleContent>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                <MudText Typo="Typo.subtitle2">Node @node.NodeSeq — @node.NodeName</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@node.Safeguard</MudText>
+                            </MudStack>
+                            <MudStack Row="true" Spacing="1">
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@(node.Deviations.Any(d => d.Status == "OPEN") ? Color.Warning : Color.Success)"
+                                         Value="@($"{node.Deviations.Count} deviation(s)")">
+                                    @node.Deviations.Count deviation(s)
+                                </MudChip>
+                                <MudIconButton Icon="@Icons.Material.Outlined.Add" Size="Size.Small"
+                                               Title="Add Deviation"
+                                               OnClick="@(async () => await OpenAddDeviationDialog(node.NodeSeq))" />
+                            </MudStack>
+                        </MudStack>
+                    </TitleContent>
+                    <ChildContent>
+                        @if (node.Deviations.Count == 0)
+                        {
+                            <MudText Color="Color.Secondary" Class="pa-2">No deviations added yet.</MudText>
+                        }
+                        else
+                        {
+                            <MudTable Items="node.Deviations" Dense="true" Hover="true" Elevation="0">
+                                <HeaderContent>
+                                    <MudTh>#</MudTh>
+                                    <MudTh>Guide Word</MudTh>
+                                    <MudTh>Deviation</MudTh>
+                                    <MudTh>Consequence</MudTh>
+                                    <MudTh>Status</MudTh>
+                                    <MudTh></MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd>@context.CondSeq</MudTd>
+                                    <MudTd>
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                                 Value="@context.GuideWord">
+                                            @context.GuideWord
+                                        </MudChip>
+                                    </MudTd>
+                                    <MudTd>@context.Deviation</MudTd>
+                                    <MudTd>@context.Consequence</MudTd>
+                                    <MudTd>
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@(context.Status == "CLOSED" ? Color.Success : Color.Warning)"
+                                                 Value="@context.Status">
+                                            @context.Status
+                                        </MudChip>
+                                    </MudTd>
+                                    <MudTd>
+                                        @if (context.Status != "CLOSED")
+                                        {
+                                            <MudIconButton Icon="@Icons.Material.Outlined.CheckCircle"
+                                                           Size="Size.Small" Color="Color.Success"
+                                                           Title="Close Deviation"
+                                                           OnClick="@(async () => await CloseDeviationAsync(node.NodeSeq, context.CondSeq))" />
+                                        }
+                                    </MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        }
+                    </ChildContent>
+                </MudExpansionPanel>
+            }
+        </MudExpansionPanels>
+    }
+
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <MudAlert Severity="Severity.Error" ShowCloseIcon="true"
+                  CloseIconClicked="@(() => _error = null)">@_error</MudAlert>
+    }
+
+</MudStack>
+
+@* ── Add Node Dialog ───────────────────────────────────────────────────────── *@
+<MudDialog @bind-IsVisible="_showAddNode"
+           Options="@(new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true })">
+    <TitleContent><MudText Typo="Typo.h6">Add HAZOP Node</MudText></TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="_newNodeName" Label="Node Name"
+                          Placeholder="e.g. Feed Inlet, Reactor, Separator" Required="true" />
+            <MudTextField @bind-Value="_newNodeSafeguard" Label="Design Intent / Safeguard"
+                          Placeholder="e.g. Pressure Relief Valve at 150 psi" Lines="2" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showAddNode = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitNodeAsync">Add Node</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@* ── Add Deviation Dialog ──────────────────────────────────────────────────── *@
+<MudDialog @bind-IsVisible="_showAddDeviation"
+           Options="@(new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true })">
+    <TitleContent><MudText Typo="Typo.h6">Add Deviation</MudText></TitleContent>
+    <DialogContent>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" md="6">
+                <MudSelect T="string" Label="IEC 61882 Guide Word" @bind-Value="_newGuideWord">
+                    <MudSelectItem Value="@("NO/NOT")">NO / NOT</MudSelectItem>
+                    <MudSelectItem Value="@("MORE")">MORE (High)</MudSelectItem>
+                    <MudSelectItem Value="@("LESS")">LESS (Low)</MudSelectItem>
+                    <MudSelectItem Value="@("AS WELL AS")">AS WELL AS</MudSelectItem>
+                    <MudSelectItem Value="@("PART OF")">PART OF</MudSelectItem>
+                    <MudSelectItem Value="@("REVERSE")">REVERSE</MudSelectItem>
+                    <MudSelectItem Value="@("OTHER THAN")">OTHER THAN</MudSelectItem>
+                    <MudSelectItem Value="@("EARLY")">EARLY</MudSelectItem>
+                    <MudSelectItem Value="@("LATE")">LATE</MudSelectItem>
+                    <MudSelectItem Value="@("BEFORE")">BEFORE</MudSelectItem>
+                    <MudSelectItem Value="@("AFTER")">AFTER</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="_newDeviation" Label="Deviation"
+                              Placeholder="e.g. No flow in feed line" Required="true" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="_newConsequence" Label="Consequence"
+                              Placeholder="e.g. Pump cavitation, high temperature alarm" Lines="2" Required="true" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showAddDeviation = false)">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitDeviationAsync">Add</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public string StudyId { get; set; } = string.Empty;
+
+    private HAZOPSummary?    _summary;
+    private List<HAZOPNode>  _nodes   = new();
+    private bool             _loading;
+    private string?          _error;
+    private string           _loadedId = string.Empty;
+
+    // Add Node
+    private bool   _showAddNode;
+    private string _newNodeName      = string.Empty;
+    private string _newNodeSafeguard = string.Empty;
+
+    // Add Deviation
+    private bool   _showAddDeviation;
+    private int    _targetNodeSeq;
+    private string _newGuideWord   = "NO/NOT";
+    private string _newDeviation   = string.Empty;
+    private string _newConsequence = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (StudyId == _loadedId) return;
+        _loadedId = StudyId;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (string.IsNullOrWhiteSpace(StudyId) || StudyId == "new") return;
+        _loading = true;
+        _error   = null;
+        try
+        {
+            _summary = await ApiClient.GetAsync<HAZOPSummary>($"/api/field/current/hse/hazop/{Uri.EscapeDataString(StudyId)}");
+            _nodes   = await ApiClient.GetAsync<List<HAZOPNode>>($"/api/field/current/hse/hazop/{Uri.EscapeDataString(StudyId)}/nodes") ?? new();
+        }
+        catch (Exception) { _error = "Failed to load HAZOP study."; Snackbar.Add(_error, Severity.Error); }
+        finally { _loading = false; }
+    }
+
+    private void OpenAddNodeDialog()
+    {
+        _newNodeName      = string.Empty;
+        _newNodeSafeguard = string.Empty;
+        _showAddNode      = true;
+    }
+
+    private async Task SubmitNodeAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newNodeName)) return;
+        try
+        {
+            await ApiClient.PostAsync<AddNodeRequest, string>(
+                $"/api/field/current/hse/hazop/{StudyId}/nodes",
+                new AddNodeRequest(_newNodeName, _newNodeSafeguard));
+            _showAddNode = false;
+            await LoadAsync();
+        }
+        catch (Exception) { _error = "Failed to add node."; Snackbar.Add(_error, Severity.Error); }
+    }
+
+    private Task OpenAddDeviationDialog(int nodeSeq)
+    {
+        _targetNodeSeq  = nodeSeq;
+        _newGuideWord   = "NO/NOT";
+        _newDeviation   = string.Empty;
+        _newConsequence = string.Empty;
+        _showAddDeviation = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task SubmitDeviationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newDeviation) || string.IsNullOrWhiteSpace(_newConsequence)) return;
+        try
+        {
+            await ApiClient.PostAsync<AddDeviationRequest, string>(
+                $"/api/field/current/hse/hazop/{StudyId}/nodes/{_targetNodeSeq}/deviations",
+                new AddDeviationRequest(_newGuideWord, _newDeviation, _newConsequence));
+            _showAddDeviation = false;
+            await LoadAsync();
+        }
+        catch (Exception) { _error = "Failed to add deviation."; Snackbar.Add(_error, Severity.Error); }
+    }
+
+    private async Task CloseDeviationAsync(int nodeSeq, int condSeq)
+    {
+        try
+        {
+            await ApiClient.PutAsync<object>(
+                $"/api/field/current/hse/hazop/{StudyId}/nodes/{nodeSeq}/deviations/{condSeq}/status?status=CLOSED",
+                new());
+            await LoadAsync();
+        }
+        catch (Exception) { _error = "Failed to close deviation."; Snackbar.Add(_error, Severity.Error); }
+    }
+}

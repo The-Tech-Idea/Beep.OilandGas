@@ -1,4 +1,4 @@
-@page "/ppdm39/well-details/status"
+﻿@page "/ppdm39/well-details/status"
 @using Beep.OilandGas.PPDM39.Models
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -87,10 +87,21 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _searchUwi = string.Empty;
     private List<WELL_STATUS>? _status;
     private bool _isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+    }
 
     private async Task SearchStatus()
     {
@@ -103,15 +114,15 @@
         _isLoading = true;
         try
         {
-            var statusDict = await ApiClient.GetAsync<Dictionary<string, WELL_STATUS>>($"/api/well/uwi/{_searchUwi}/status");
+            var statusDict = await ApiClient.GetAsync<Dictionary<string, WELL_STATUS>>($"/api/well/uwi/{Uri.EscapeDataString(_searchUwi)}/status");
             if (statusDict != null)
             {
                 _status = statusDict.Values.ToList();
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error getting well status: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error getting well status.", Severity.Error);
         }
         finally
         {

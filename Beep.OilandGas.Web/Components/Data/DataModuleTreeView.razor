@@ -1,0 +1,205 @@
+@using MudBlazor
+@using Beep.OilandGas.Web.Services
+
+@inject ApiClient ApiClient
+
+@* ─── Module-Centric Data Management Tree ─────────────────────────────── *@
+<div class="pa-2">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2">
+        <MudTextField @bind-Value="_searchText"
+                      Label="Filter tables"
+                      Variant="Variant.Outlined"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true"
+                      Margin="Margin.Dense"
+                      Class="flex-grow-1"
+                      @oninput="OnSearchInput" />
+        @if (!string.IsNullOrWhiteSpace(_searchText))
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Clear"
+                           OnClick="ClearSearch"
+                           Size="Size.Small"
+                           Color="Color.Default" />
+        }
+    </MudStack>
+
+    <MudTreeView T="string"
+                 SelectedValue="@_selectedId"
+                 SelectedValueChanged="OnSelectionChanged"
+                 SelectionMode="SelectionMode.SingleSelection"
+                 Hover="true"
+                 Dense="true">
+        @foreach (var mod in VisibleModules)
+        {
+            <MudTreeViewItem Value="@($"MODULE:{mod.ModuleName}")"
+                             Text="@mod.DisplayName"
+                             Icon="@mod.Icon"
+                             @bind-Expanded="@_expanded[mod.ModuleName]"
+                             OnExpandedChanged="@((bool expanded) => OnModuleExpandedChanged(mod, expanded))">
+                @foreach (var tbl in GetTables(mod))
+                {
+                    <MudTreeViewItem Value="@($"TABLE:{tbl}")"
+                                     Text="@tbl"
+                                     Icon="@Icons.Material.Filled.TableChart" />
+                }
+                @if (!_loadedExtra.Contains(mod.ModuleName) && string.IsNullOrWhiteSpace(_searchText))
+                {
+                    <MudTreeViewItem Value="@($"LOAD_MORE:{mod.ModuleName}")"
+                                     Text="Load all tables..."
+                                     Icon="@Icons.Material.Filled.MoreHoriz"
+                                     OnClick="@(() => LoadMoreTablesAsync(mod))" />
+                }
+            </MudTreeViewItem>
+        }
+    </MudTreeView>
+</div>
+
+@code {
+    [Parameter] public EventCallback<string> OnTableSelected { get; set; }
+
+    private string _searchText = string.Empty;
+    private string? _selectedId;
+
+    // Per-module expanded state
+    private Dictionary<string, bool> _expanded = new();
+    // Modules whose extra tables have been loaded
+    private HashSet<string> _loadedExtra = new();
+    // Extra tables loaded from API per module
+    private Dictionary<string, List<string>> _extraTables = new();
+
+    // ---- Module definitions --------------------------------------------------
+    private static readonly List<ModuleDef> Modules = new()
+    {
+        new("WELL",               "Well Model",             Icons.Material.Filled.OilBarrel,
+            new[] { "WELL", "WELL_STATUS", "WELL_XREF", "WELL_TEST",
+                    "WELL_TUBULAR", "WELL_LOG", "WELL_ACTIVITY", "WELL_EQUIPMENT" }),
+
+        new("BUSINESS_ASSOCIATE", "Business Associate",     Icons.Material.Filled.Business,
+            new[] { "BUSINESS_ASSOCIATE", "BA_ALIAS", "BA_ORGANIZATION" }),
+
+        new("REFERENCE",          "Reference Values",       Icons.Material.Filled.LibraryBooks,
+            new[] { "R_WELL_TYPE", "R_WELL_STATUS", "R_FLUID_TYPE", "R_COUNTRY",
+                    "R_PROVINCE_STATE", "R_BA_TYPE", "R_COORD_SYSTEM" }),
+
+        new("PRODUCTION",         "Production & Reserves",  Icons.Material.Filled.LocalGasStation,
+            new[] { "PDEN", "PDEN_VOL_SUMMARY", "POOL", "FIELD", "PROD_STRING" }),
+
+        new("EXPLORATION",        "Exploration",            Icons.Material.Filled.Explore,
+            new[] { "PROSPECT", "SEIS_ACQN", "PLAY", "STRAT_UNIT", "ZONE" }),
+
+        new("FACILITY",           "Facilities",             Icons.Material.Filled.Factory,
+            new[] { "FACILITY", "PIPE_NETWORK", "FACILITY_PERMIT" }),
+
+        new("AREA",               "Areas & Locations",      Icons.Material.Filled.Map,
+            new[] { "AREA", "LAND_UNIT", "SURVEY_TOWNSHIP" }),
+
+        new("SUPPORT",            "Support & Contracts",    Icons.Material.Filled.Settings,
+            new[] { "EQUIP_ITEM", "CONTRACT", "PROJECT" }),
+    };
+
+    // ---- Lifecycle ----------------------------------------------------------
+    protected override void OnInitialized()
+    {
+        foreach (var mod in Modules)
+            _expanded[mod.ModuleName] = false;
+    }
+
+    // ---- Filtered module list -----------------------------------------------
+    private IEnumerable<ModuleDef> VisibleModules =>
+        string.IsNullOrWhiteSpace(_searchText)
+            ? Modules
+            : Modules.Where(m =>
+                m.DisplayName.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+                GetTables(m).Any(t => t.Contains(_searchText, StringComparison.OrdinalIgnoreCase)));
+
+    // ---- Tables for a module (static + loaded extra, filtered) --------------
+    private IEnumerable<string> GetTables(ModuleDef mod)
+    {
+        var all = mod.Tables.AsEnumerable();
+        if (_extraTables.TryGetValue(mod.ModuleName, out var extra))
+            all = all.Union(extra, StringComparer.OrdinalIgnoreCase);
+
+        if (!string.IsNullOrWhiteSpace(_searchText))
+            all = all.Where(t => t.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+        return all.OrderBy(t => t);
+    }
+
+    // ---- Expand state -------------------------------------------------------
+    private void OnModuleExpandedChanged(ModuleDef mod, bool expanded)
+    {
+        _expanded[mod.ModuleName] = expanded;
+    }
+
+    // ---- Lazy-load extra tables from API ------------------------------------
+    private async Task LoadMoreTablesAsync(ModuleDef mod)
+    {
+        if (_loadedExtra.Contains(mod.ModuleName)) return;
+        _loadedExtra.Add(mod.ModuleName);
+
+        try
+        {
+            var prefix = mod.ModuleName.Split('_')[0];
+            // Endpoint returns List<TableInfo> {TableName, Description, PrimaryKey, IsReferenceTable}
+            var tableInfos = await ApiClient.GetAsync<List<TableInfoDto>>(
+                $"/api/ppdm39/metadata/tables/by-prefix/{Uri.EscapeDataString(prefix)}");
+
+            if (tableInfos != null)
+            {
+                _extraTables[mod.ModuleName] = tableInfos
+                    .Select(t => t.TableName)
+                    .Except(mod.Tables, StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(t => t)
+                    .ToList();
+            }
+        }
+        catch { /* static list still usable */ }
+
+        StateHasChanged();
+    }
+
+    // ---- Local DTO matching PPDM39MetadataController.TableInfo --------------
+    private sealed class TableInfoDto
+    {
+        public string TableName       { get; set; } = string.Empty;
+        public string Description     { get; set; } = string.Empty;
+        public string PrimaryKey      { get; set; } = string.Empty;
+        public bool   IsReferenceTable { get; set; }
+    }
+
+    // ---- Selection ----------------------------------------------------------
+    private async Task OnSelectionChanged(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return;
+        _selectedId = value;
+
+        if (value.StartsWith("TABLE:"))
+        {
+            var tableName = value["TABLE:".Length..];
+            await OnTableSelected.InvokeAsync(tableName);
+        }
+    }
+
+    // ---- Search -------------------------------------------------------------
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _searchText = e.Value?.ToString() ?? string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(_searchText))
+        {
+            foreach (var mod in Modules)
+                _expanded[mod.ModuleName] = GetTables(mod).Any();
+        }
+    }
+
+    private void ClearSearch()
+    {
+        _searchText = string.Empty;
+        foreach (var mod in Modules)
+            _expanded[mod.ModuleName] = false;
+    }
+
+    // ---- Record types -------------------------------------------------------
+    private record ModuleDef(string ModuleName, string DisplayName, string Icon, string[] Tables);
+}

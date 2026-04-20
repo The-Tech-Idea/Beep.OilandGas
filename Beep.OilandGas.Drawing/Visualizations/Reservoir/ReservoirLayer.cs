@@ -8,10 +8,6 @@ using Beep.OilandGas.Drawing.Layers;
 using Beep.OilandGas.Drawing.Styling;
 using Beep.OilandGas.Drawing.CoordinateSystems;
 using DepthCoordinateSystem = Beep.OilandGas.Drawing.CoordinateSystems.DepthCoordinateSystem;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using SkiaSharp;
 
 namespace Beep.OilandGas.Drawing.Visualizations.Reservoir
 {

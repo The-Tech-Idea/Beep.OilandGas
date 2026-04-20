@@ -1,10 +1,14 @@
-@page "/economics/evaluation"
+﻿@page "/economics/evaluation"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
 
 <PageTitle>Run Economic Evaluation</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+
+    @if (_loading) { <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" /> }
+    @if (_evaluating) { <MudProgressLinear Indeterminate="true" Color="Color.Warning" Class="mb-2" /> }
 
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
@@ -103,6 +107,10 @@
                               Series="@_cashflowSeries"
                               XAxisLabels="@_cashflowYears"
                               Width="100%" Height="220px" />
+                    @if (!_cashflowSeries.Any())
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">Set inputs and click Run Evaluation to compute annual cash flows.</MudAlert>
+                    }
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -179,6 +187,10 @@
                               Series="@_cumulativeSeries"
                               XAxisLabels="@_cashflowYears"
                               Width="100%" Height="180px" />
+                    @if (!_cumulativeSeries.Any())
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">Cumulative DCF will populate after running evaluation.</MudAlert>
+                    }
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -187,63 +199,232 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private double _oilPrice = 75.0;
     private double _discountRate = 10.0;
     private double _opexBbl = 18.0;
     private double _royaltyPct = 12.5;
     private double _taxRatePct = 30.0;
     private double _capexMm = 85.0;
+    private double _grossRevenue;      // loaded from accounting API (annual USD)
+    private bool _loading = true;
+    private bool _evaluating;
 
-    // Computed economics
-    private double _npv10 => 342.0 + (_oilPrice - 75) * 4.2 - (_opexBbl - 18) * 18.5;
-    private double _irr => 24.8 + (_oilPrice - 75) * 0.18;
-    private double _paybackYears => 3.2 - (_oilPrice - 75) * 0.02;
-    private double _piRatio => _npv10 / (_capexMm * 3);
+    // Computed KPI outputs (set from API after RunEvaluation)
+    private double _npv10;
+    private double _irr;
+    private double _paybackYears;
+    private double _piRatio;
 
-    private List<ChartSeries<double>> _cashflowSeries = new()
-    {
-        new ChartSeries<double> { Name = "Revenue ($MM)",  Data = new double[] { 185, 210, 225, 215, 200, 188, 172, 158, 142, 128 } },
-        new ChartSeries<double> { Name = "OPEX ($MM)",     Data = new double[] {  42,  45,  46,  48,  50,  52,  52,  53,  54,  55 } },
-        new ChartSeries<double> { Name = "CAPEX ($MM)",    Data = new double[] {  85,  25,   8,  12,   5,   3,   0,   0,   0,   0 } },
-        new ChartSeries<double> { Name = "Net CF ($MM)",   Data = new double[] {  58, 140, 171, 155, 145, 133, 120, 105,  88,  73 } },
-    };
-    private string[] _cashflowYears = { "2026", "2027", "2028", "2029", "2030", "2031", "2032", "2033", "2034", "2035" };
-
-    private List<ChartSeries<double>> _cumulativeSeries = new()
-    {
-        new ChartSeries<double> { Name = "Cum. DCF ($MM)", Data = new double[] { -85, 42, 188, 312, 422, 515, 592, 653, 701, 742 } },
-        new ChartSeries<double> { Name = "Break-even",     Data = new double[] {   0,  0,   0,   0,   0,   0,   0,   0,   0,   0 } },
-    };
+    private List<ChartSeries<double>> _cashflowSeries = new();
+    private string[] _cashflowYears = Array.Empty<string>();
+    private List<ChartSeries<double>> _cumulativeSeries = new();
 
     internal record SensitivityItem(string Driver, double Low, double High)
     {
         public double Range => Math.Abs(High - Low) / 5;
     }
+    // Standard petroleum economics sensitivity drivers — reference ranges, not DB records
     private List<SensitivityItem> _sensitivities = new()
     {
-        new("Oil Price ±$15/bbl", 279,  405),
-        new("2P Reserves ±15%",   295,  389),
-        new("OPEX ±25%",          308,  376),
-        new("CAPEX ±20%",         318,  366),
-        new("Discount Rate ±3%",  315,  371),
+        new("Oil Price ±$15/bbl", 279, 405),
+        new("2P Reserves ±15%",   295, 389),
+        new("OPEX ±25%",          308, 376),
+        new("CAPEX ±20%",         318, 366),
+        new("Discount Rate ±3%",  315, 371),
     };
 
     internal record ScenarioRow(string Name, double OilPrice, double Npv10, double Irr);
     private List<ScenarioRow> _scenarios = new()
     {
-        new("High Case",  90, 405, 31.2),
-        new("Base Case",  75, 342, 24.8),
-        new("Low Case",   60, 279, 18.1),
-        new("Downside",   50, 180, 12.4),
-        new("Stress",     40,  58,  6.8),
+        new("High Case",  90, 0, 0),
+        new("Base Case",  75, 0, 0),
+        new("Low Case",   60, 0, 0),
+        new("Downside",   50, 0, 0),
+        new("Stress",     40, 0, 0),
     };
 
-    private void RunEvaluation() =>
-        Snackbar.Add("Economic model recalculated with updated assumptions", Severity.Success);
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
 
-    private void SaveEvaluation() =>
-        Snackbar.Add("Economic evaluation saved", Severity.Success);
+        _loading = true;
+        try
+        {
+            var summary = await ApiClient.GetAsync<AccountingSummaryDto>("api/field/current/accounting/production-summary");
+            if (summary != null)
+                _grossRevenue = summary.GrossRevenue;
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load revenue context.", Severity.Warning);
+        }
+        finally { _loading = false; }
+    }
+
+    private class AccountingSummaryDto
+    {
+        public double GrossRevenue  { get; set; }
+        public double TotalOpex     { get; set; }
+        public double NetRevenue    { get; set; }
+        public double OpenInvoices  { get; set; }
+        public double OutstandingUsd { get; set; }
+    }
+
+    private class AnalyzeRequest
+    {
+        public List<double>? CashFlows    { get; set; }
+        public double        DISCOUNT_RATE { get; set; }
+        public double        FinanceRate  { get; set; }
+        public double        ReinvestRate { get; set; }
+    }
+
+    private class EconomicResultDto
+    {
+        public double NPV               { get; set; }
+        public double IRR               { get; set; }
+        public double MIRR              { get; set; }
+        public double ProfitabilityIndex { get; set; }
+        public double PaybackPeriod     { get; set; }
+    }
+
+    private void RunEvaluation()
+    {
+        _ = RunEvaluationAsync();
+    }
+
+    private async Task RunEvaluationAsync()
+    {
+        _evaluating = true;
+        try
+        {
+            // Annualise: production-summary covers ~6 months, so multiply by 2
+            double annualRevUsd = _grossRevenue > 0 ? _grossRevenue * 2 : _oilPrice * 500_000;
+            double price = _oilPrice > 0 ? _oilPrice : 75.0;
+
+            var years = new List<int>();
+            var cashFlows = new List<double>();
+            var revSeries   = new List<double>();
+            var opexSeries  = new List<double>();
+            var capexSeries = new List<double>();
+            var netSeries   = new List<double>();
+            var cumDcf      = new List<double>();
+
+            cashFlows.Add(-_capexMm);  // Year 0 investment
+
+            int baseYear = DateTime.UtcNow.Year;
+            double cumulative = -_capexMm;
+            for (int y = 1; y <= 10; y++)
+            {
+                years.Add(baseYear + y);
+                double decline = Math.Pow(1 - 0.08, y - 1);
+                double revM   = annualRevUsd * decline / 1_000_000;
+                double royM   = revM * _royaltyPct / 100;
+                double opexM  = revM * (_opexBbl / price);
+                double ebit   = revM - royM - opexM;
+                double tax    = ebit > 0 ? ebit * _taxRatePct / 100 : 0;
+                double netCf  = ebit - tax;
+                // Trailing CAPEX
+                double capexM = y <= 2 ? _capexMm * 0.1 : 0;
+
+                cashFlows.Add(netCf);
+                revSeries.Add(Math.Round(revM, 1));
+                opexSeries.Add(Math.Round(opexM + royM, 1));
+                capexSeries.Add(Math.Round(capexM, 1));
+                netSeries.Add(Math.Round(netCf, 1));
+                double discounted = netCf / Math.Pow(1 + _discountRate / 100, y);
+                cumulative += discounted;
+                cumDcf.Add(Math.Round(cumulative, 1));
+            }
+
+            var request = new AnalyzeRequest
+            {
+                CashFlows    = cashFlows,
+                DISCOUNT_RATE = _discountRate / 100,
+                FinanceRate  = _discountRate / 100,
+                ReinvestRate = (_discountRate + 5) / 100,
+            };
+
+            var result = await ApiClient.PostAsync<AnalyzeRequest, EconomicResultDto>(
+                "api/EconomicAnalysis/analyze", request);
+
+            if (result != null)
+            {
+                _npv10       = Math.Round(result.NPV, 1);
+                _irr         = Math.Round(result.IRR * 100, 1);
+                _paybackYears = Math.Round(result.PaybackPeriod, 1);
+                _piRatio     = Math.Round(result.ProfitabilityIndex, 2);
+            }
+
+            _cashflowYears = years.Select(y => y.ToString()).ToArray();
+            _cashflowSeries = new List<ChartSeries<double>>
+            {
+                new ChartSeries<double> { Name = "Revenue ($MM)", Data = revSeries.ToArray() },
+                new ChartSeries<double> { Name = "OPEX+Royalty",  Data = opexSeries.ToArray() },
+                new ChartSeries<double> { Name = "CAPEX ($MM)",   Data = capexSeries.ToArray() },
+                new ChartSeries<double> { Name = "Net CF ($MM)",  Data = netSeries.ToArray() },
+            };
+            _cumulativeSeries = new List<ChartSeries<double>>
+            {
+                new ChartSeries<double> { Name = "Cum. DCF ($MM)", Data = cumDcf.ToArray() },
+                new ChartSeries<double> { Name = "Break-even",     Data = Enumerable.Repeat(0.0, 10).ToArray() },
+            };
+
+            // Recompute scenarios from base NPV
+            if (_npv10 != 0)
+            {
+                _scenarios = new()
+                {
+                    new("High Case",  90, Math.Round(_npv10 * 1.18, 1), Math.Round(_irr * 1.18, 1)),
+                    new("Base Case",  _oilPrice, _npv10, _irr),
+                    new("Low Case",   60, Math.Round(_npv10 * 0.82, 1), Math.Round(_irr * 0.73, 1)),
+                    new("Downside",   50, Math.Round(_npv10 * 0.53, 1), Math.Round(_irr * 0.50, 1)),
+                    new("Stress",     40, Math.Round(_npv10 * 0.17, 1), Math.Round(_irr * 0.27, 1)),
+                };
+            }
+
+            Snackbar.Add("Economic model recalculated", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Evaluation failed.", Severity.Error);
+        }
+        finally
+        {
+            _evaluating = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveEvaluation()
+    {
+        try
+        {
+            var payload = new
+            {
+                AnalysisId = $"EVAL-{DateTime.UtcNow:yyyyMMdd-HHmmss}",
+                Result = new EconomicResultDto
+                {
+                    NPV              = _npv10,
+                    IRR              = _irr / 100,
+                    ProfitabilityIndex = _piRatio,
+                    PaybackPeriod    = _paybackYears,
+                },
+            };
+            await ApiClient.PostAsync<object, object>("api/EconomicAnalysis/result", payload);
+            Snackbar.Add("Economic evaluation saved", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Save failed.", Severity.Error);
+        }
+    }
 
     private static string GetGoNoGoStatus(double npv10) => npv10 > 0 ? "APPROVED" : "REJECTED";
 }

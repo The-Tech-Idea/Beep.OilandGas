@@ -122,14 +122,14 @@ namespace Beep.OilandGas.LifeCycle.Services.Accounting
             {
                 ACCOUNTING_COST_ID = Guid.NewGuid().ToString(),
                 AFE_ID = afeId ?? string.Empty,
-                WELL_ID = wellId,
-                FIELD_ID = fieldId,
-                PROPERTY_ID = propertyId,
+                WELL_ID = wellId ?? string.Empty,
+                FIELD_ID = fieldId ?? string.Empty,
+                PROPERTY_ID = propertyId ?? string.Empty,
                 COST_TYPE = request.CostType,
                 COST_CATEGORY = request.CostCategory,
                 AMOUNT = request.Amount,
                 COST_DATE = transactionDate ?? request.TransactionDate ?? DateTime.UtcNow,
-                DESCRIPTION = description ?? request.Description,
+                DESCRIPTION = description ?? request.Description ?? string.Empty,
                 IS_CAPITALIZED = request.IsCapitalized ? "Y" : "N",
                 IS_EXPENSED = request.IsExpensed ? "Y" : "N"
             };

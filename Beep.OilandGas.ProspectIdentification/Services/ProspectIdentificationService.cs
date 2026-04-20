@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Beep.OilandGas.Models.Core.Interfaces;
 using Beep.OilandGas.Models.Data;
-using Beep.OilandGas.Models.Data;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.Core.Metadata;
 using Beep.OilandGas.PPDM39.Repositories;
@@ -53,16 +52,25 @@ namespace Beep.OilandGas.ProspectIdentification.Services
 
              _logger?.LogInformation("Evaluating prospect {ProspectId}", prospectId);
 
-             // TODO: Implement prospect evaluation logic
+             // Load the prospect record for evaluation context
+             var prospectRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                 typeof(PROSPECT), _connectionName, "PROSPECT", null);
+
+             var entity = await prospectRepo.GetByIdAsync(prospectId);
+             var prospect = entity as PROSPECT;
+
              var evaluation = new ProspectEvaluation
              {
                  EvaluationId = _defaults.FormatIdForTable("EVAL", Guid.NewGuid().ToString()),
                  ProspectId = prospectId,
                  EvaluationDate = DateTime.UtcNow,
+                 EstimatedOilResources = prospect?.ESTIMATED_RESERVES,
+                 RiskScore = prospect?.RISK_FACTOR ?? 0.5m,
+                 ProbabilityOfSuccess = prospect?.RISK_FACTOR != null ? Math.Max(0.05m, 1m - prospect.RISK_FACTOR.Value) : 0.5m,
                  Recommendation = "Further evaluation recommended"
              };
 
-             _logger?.LogWarning("EvaluateProspectAsync not fully implemented - requires evaluation logic");
+             _logger?.LogInformation("Prospect evaluation completed for {ProspectId}", prospectId);
 
              await Task.CompletedTask;
              return evaluation;
@@ -153,23 +161,35 @@ namespace Beep.OilandGas.ProspectIdentification.Services
             _logger?.LogInformation("Ranking {Count} prospects using {CriteriaCount} criteria",
                 prospectIds.Count, rankingCriteria.Count);
 
-            // TODO: Implement prospect ranking logic
+            // Score each prospect by loading its PPDM record and applying weighted criteria
+            var prospectRepo = new PPDMGenericRepository(_editor, _commonColumnHandler, _defaults, _metadata,
+                typeof(PROSPECT), _connectionName, "PROSPECT", null);
+
             var rankings = new List<ProspectRanking>();
-            for (int i = 0; i < prospectIds.Count; i++)
+            foreach (var id in prospectIds)
             {
+                var entity = await prospectRepo.GetByIdAsync(id);
+                var p = entity as PROSPECT;
+
+                decimal score = 0m;
+                if (rankingCriteria.TryGetValue("EstimatedReserves", out var resWeight) && p?.ESTIMATED_RESERVES != null)
+                    score += resWeight * (p.ESTIMATED_RESERVES.Value / 1_000_000m);
+                if (rankingCriteria.TryGetValue("RiskFactor", out var riskWeight) && p?.RISK_FACTOR != null)
+                    score += riskWeight * (1m - p.RISK_FACTOR.Value);
+
                 rankings.Add(new ProspectRanking
                 {
-                    ProspectId = prospectIds[i],
-                    ProspectName = $"Prospect {prospectIds[i]}",
-                    Rank = i + 1,
-                    Score = 100 - (i * 10) // Simplified scoring
+                    ProspectId = id,
+                    ProspectName = p?.PROSPECT_NAME ?? id,
+                    Score = score
                 });
             }
 
-             _logger?.LogWarning("RankProspectsAsync not fully implemented - requires ranking logic");
+            var ordered = rankings.OrderByDescending(r => r.Score).ToList();
+            for (int i = 0; i < ordered.Count; i++) ordered[i].Rank = i + 1;
 
              await Task.CompletedTask;
-             return rankings.OrderByDescending(r => r.Score).ToList();
+             return ordered;
          }
 
          /// <summary>

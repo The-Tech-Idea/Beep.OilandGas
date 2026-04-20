@@ -28,12 +28,12 @@ namespace Beep.OilandGas.Drawing.CoordinateSystems
         /// <summary>
         /// Gets the minimum depth value.
         /// </summary>
-        public double MinValue => minDepth;
+        public new double MinValue => minDepth;
 
         /// <summary>
         /// Gets the maximum depth value.
         /// </summary>
-        public double MaxValue => maxDepth;
+        public new double MaxValue => maxDepth;
 
         /// <summary>
         /// Converts a depth value to screen Y coordinate.

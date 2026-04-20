@@ -75,10 +75,10 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
 
                 var facility = new FACILITY
                 {
-                    FACILITY_SHORT_NAME = request.FacilityName,
+                    FACILITY_SHORT_NAME = request.FacilityName ?? string.Empty,
                     PRIMARY_FIELD_ID = _defaults.FormatIdForTable("FACILITY", request.FieldId),
-                    FACILITY_TYPE = request.FacilityType,
-                    FACILITY_FUNCTION = request.FacilityPurpose
+                    FACILITY_TYPE = request.FacilityType ?? string.Empty,
+                    FACILITY_FUNCTION = request.FacilityPurpose ?? string.Empty
                 };
                 facility.ACTIVE_IND = "Y";
 
@@ -96,7 +96,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
 
                 return new FacilityResponse
                 {
-                    FacilityId = createdFacility.FACILITY_ID,
+                    FacilityId = createdFacility.FACILITY_ID ?? string.Empty,
                     FacilityName = createdFacility.FACILITY_SHORT_NAME ?? string.Empty,
                     FieldId = request.FieldId ?? string.Empty,
                     Status = "ACTIVE",
@@ -210,7 +210,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                         STATUS = request.OperationType,
                         STATUS_TYPE = "OPERATION",
                         START_TIME = request.OperationDate,
-                        REMARK = request.Description,
+                        REMARK = request.Description ?? string.Empty,
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };
@@ -256,7 +256,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                         MAINTAIN_TYPE = request.MaintenanceType,
                         SCHEDULE_START_DATE = request.ScheduledDate,
                         ACTUAL_END_DATE = request.CompletedDate,
-                        REMARK = request.Description,
+                        REMARK = request.Description ?? string.Empty,
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };
@@ -302,7 +302,7 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                         STATUS = request.Status ?? "COMPLETED",
                         STATUS_TYPE = "INSPECTION_" + request.InspectionType,
                         START_TIME = request.InspectionDate,
-                        REMARK = string.IsNullOrEmpty(request.Findings) ? request.Inspector : $"{request.Inspector}: {request.Findings}",
+                        REMARK = string.IsNullOrEmpty(request.Findings) ? (request.Inspector ?? string.Empty) : $"{request.Inspector ?? string.Empty}: {request.Findings}",
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };
@@ -438,10 +438,10 @@ namespace Beep.OilandGas.LifeCycle.Services.FacilityManagement
                     INSTALL_OBS_NO = installObsNo,
                     INSTALL_DATE = request.InstallationDate,
                     ACTIVE_IND = _defaults.GetActiveIndicatorYes(),
-                    EQUIPMENT_TYPE = request.EquipmentType,
-                    EQUIPMENT_NAME = request.EquipmentName,
-                    MANUFACTURER = request.Manufacturer,
-                    MODEL = request.Model,
+                    EQUIPMENT_TYPE = request.EquipmentType ?? string.Empty,
+                    EQUIPMENT_NAME = request.EquipmentName ?? string.Empty,
+                    MANUFACTURER = request.Manufacturer ?? string.Empty,
+                    MODEL = request.Model ?? string.Empty,
                     INSTALLATION_DATE = request.InstallationDate
                 };
 

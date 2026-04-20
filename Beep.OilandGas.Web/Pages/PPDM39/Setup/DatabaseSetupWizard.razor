@@ -1,4 +1,4 @@
-@page "/ppdm39/setup"
+﻿@page "/ppdm39/setup"
 @using Beep.OilandGas.Web.Services
 @inject IFirstRunService FirstRunService
 @inject NavigationManager NavigationManager
@@ -155,9 +155,15 @@
                     </MudText>
                     <MudButton Variant="Variant.Filled"
                                Color="Color.Success"
-                               StartIcon="@Icons.Material.Filled.Home"
+                               StartIcon="@Icons.Material.Filled.PlayArrow"
                                OnClick="FinishAndNavigate">
-                        Go to Dashboard
+                        Seed Reference Data →
+                    </MudButton>
+                    <MudButton Variant="Variant.Text"
+                               Color="Color.Default"
+                               StartIcon="@Icons.Material.Filled.Home"
+                               OnClick="SkipToApp">
+                        Skip — Go to Dashboard
                     </MudButton>
                 </MudStack>
             </MudStep>
@@ -224,14 +230,14 @@
             else
             {
                 var err = await response.Content.ReadAsStringAsync();
-                _createDbMessage = $"Failed to create database: {err}";
+                _createDbMessage = "Failed to create database.";
                 _createDbSeverity = Severity.Error;
                 Snackbar.Add(_createDbMessage, Severity.Error);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            _createDbMessage = $"Error: {ex.Message}";
+            _createDbMessage = "An error occurred.";
             _createDbSeverity = Severity.Error;
             Snackbar.Add(_createDbMessage, Severity.Error);
         }
@@ -281,16 +287,16 @@
                 var err = await response.Content.ReadAsStringAsync();
                 _schemaProgress = 0;
                 _schemaStatusText = "";
-                _createDbMessage = $"Schema migration failed: {err}";
+                _createDbMessage = "Schema migration failed.";
                 _createDbSeverity = Severity.Error;
                 Snackbar.Add(_createDbMessage, Severity.Error);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             _schemaProgress = 0;
             _schemaStatusText = "";
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add("Schema migration failed.", Severity.Error);
         }
         finally
         {
@@ -302,7 +308,12 @@
     // ── Finish ────────────────────────────────────────────────────────────────
     private void FinishAndNavigate()
     {
-        NavigationManager.NavigateTo("/", forceLoad: true);
+        NavigationManager.NavigateTo("/ppdm39/setup/seed", forceLoad: false);
+    }
+
+    private void SkipToApp()
+    {
+        NavigationManager.NavigateTo("/dashboard", forceLoad: true);
     }
 
     // ── Local DTO ─────────────────────────────────────────────────────────────

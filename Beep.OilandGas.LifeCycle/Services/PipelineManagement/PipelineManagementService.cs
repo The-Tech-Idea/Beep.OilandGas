@@ -71,9 +71,9 @@ namespace Beep.OilandGas.LifeCycle.Services.PipelineManagement
                     entityType, _connectionName, "PIPELINE", null);
 
                 var pipeline = new PIPELINE();
-                pipeline.PIPELINE_NAME = request.PipelineName;
-                pipeline.FIELD_ID = _defaults.FormatIdForTable("PIPELINE", request.FieldId);
-                pipeline.PIPELINE_TYPE = request.PipelineType;
+                pipeline.PIPELINE_NAME = request.PipelineName ?? string.Empty;
+                pipeline.FIELD_ID = _defaults.FormatIdForTable("PIPELINE", request.FieldId ?? string.Empty);
+                pipeline.PIPELINE_TYPE = request.PipelineType ?? string.Empty;
                 if (request.Diameter.HasValue)
                     pipeline.DIAMETER = request.Diameter.Value;
                 if (request.Length.HasValue)
@@ -170,7 +170,7 @@ namespace Beep.OilandGas.LifeCycle.Services.PipelineManagement
                         STATUS = request.OperationType,
                         STATUS_TYPE = "OPERATION",
                         START_TIME = request.OperationDate,
-                        REMARK = request.Description,
+                        REMARK = request.Description ?? string.Empty,
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };
@@ -215,7 +215,7 @@ namespace Beep.OilandGas.LifeCycle.Services.PipelineManagement
                         MAINTAIN_TYPE = request.MaintenanceType,
                         SCHEDULE_START_DATE = request.ScheduledDate,
                         ACTUAL_END_DATE = request.CompletedDate,
-                        REMARK = request.Description,
+                        REMARK = request.Description ?? string.Empty,
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };
@@ -260,7 +260,7 @@ namespace Beep.OilandGas.LifeCycle.Services.PipelineManagement
                         STATUS = request.Status ?? "COMPLETED",
                         STATUS_TYPE = "INSPECTION_" + request.InspectionType,
                         START_TIME = request.InspectionDate,
-                        REMARK = string.IsNullOrEmpty(request.Findings) ? request.Inspector : $"{request.Inspector}: {request.Findings}",
+                        REMARK = string.IsNullOrEmpty(request.Findings) ? request.Inspector ?? string.Empty : $"{request.Inspector ?? string.Empty}: {request.Findings}",
                         ACTIVE_IND = "Y",
                         PPDM_GUID = Guid.NewGuid().ToString()
                     };

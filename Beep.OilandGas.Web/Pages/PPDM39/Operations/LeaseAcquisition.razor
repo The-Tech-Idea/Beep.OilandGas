@@ -1,10 +1,11 @@
-@page "/ppdm39/operations/leaseacquisition"
+﻿@page "/ppdm39/operations/leaseacquisition"
 @using Beep.OilandGas.Models.Data.Lease
 @using Beep.OilandGas.Client.App
-@inject IBeepOilandGasApp BeepApp
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject IOperationsServiceClient OperationsService
+@inject ApiClient ApiClient
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Manage Lease Acquisitions</PageTitle>
 
@@ -100,13 +101,30 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<LeaseSummary>? _leases;
     private bool _isLoading = false;
-    private string? _currentUserId = "system";
+    private string? _currentUserId;
+
+    private sealed class FieldResponse
+    {
+        public string? FieldId { get; set; }
+        public string? FieldName { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "system";
+
+        try
+        {
+            var field = await ApiClient.GetAsync<FieldResponse>("api/field/current");
+            if (field != null)
+                _fieldName = field.FieldName ?? string.Empty;
+        }
+        catch { /* field name is cosmetic; swallow */ }
+
         await LoadLeases();
     }
 
@@ -117,9 +135,9 @@
         {
             _leases = await OperationsService.GetAvailableLeasesAsync();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading leases: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading leases.", Severity.Error);
             _leases = new List<LeaseSummary>();
         }
         finally
@@ -149,9 +167,9 @@
             Snackbar.Add("Lease acquisition created successfully", Severity.Success);
             await LoadLeases();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error creating lease acquisition: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error creating lease acquisition.", Severity.Error);
         }
     }
 
@@ -162,9 +180,9 @@
             var evaluation = await OperationsService.EvaluateLeaseAsync(leaseId);
             Snackbar.Add($"Lease evaluation completed for {evaluation.LeaseName}", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error evaluating lease: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error evaluating lease.", Severity.Error);
         }
     }
 
@@ -190,9 +208,9 @@
                     Snackbar.Add("Failed to update lease status", Severity.Warning);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Snackbar.Add($"Error updating lease status: {ex.Message}", Severity.Error);
+                Snackbar.Add("Error updating lease status.", Severity.Error);
             }
         }
     }

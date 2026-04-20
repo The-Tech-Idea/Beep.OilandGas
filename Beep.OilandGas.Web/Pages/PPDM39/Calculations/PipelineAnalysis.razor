@@ -1,12 +1,13 @@
-@page "/ppdm39/calculations/pipelineanalysis"
+﻿@page "/ppdm39/calculations/pipelineanalysis"
 @using Beep.OilandGas.Models.Data.Calculations
 @using Beep.OilandGas.Models.Data
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.Client.App
-@inject IBeepOilandGasApp BeepApp
+@using System.Security.Claims
+@inject ApiClient ApiClient
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
 @inject ICalculationServiceClient CalculationService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Analyse Pipeline Flow</PageTitle>
 
@@ -61,7 +62,7 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private string _pipelineId = string.Empty;
     private decimal _flowRate = 1000;
     private decimal _inletPressure = 500;
@@ -69,7 +70,29 @@
     private bool _isCalculating = false;
     private bool _isLoading = false;
     private PipelineAnalysisResult? _analysisResult;
-    private string? _currentUserId = "system";
+    private string? _currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            try
+            {
+                var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+                if (summary != null)
+                    _fieldName = summary.FieldName ?? _fieldName;
+            }
+            catch { /* field name is non-critical */ }
+
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "system";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
 
     private async Task AnalyzeFlow()
     {
@@ -89,9 +112,9 @@
             
             Snackbar.Add("Pipeline flow analysis completed", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error analyzing pipeline flow: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error analyzing pipeline flow.", Severity.Error);
         }
         finally
         {
@@ -114,9 +137,9 @@
             
             Snackbar.Add($"Pressure drop: {result.PressureDrop.ToString("F2")} PSI", Severity.Success);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error calculating pressure drop: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error calculating pressure drop.", Severity.Error);
         }
         finally
         {

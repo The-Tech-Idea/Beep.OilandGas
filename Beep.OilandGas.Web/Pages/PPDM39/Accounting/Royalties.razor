@@ -1,4 +1,4 @@
-@page "/ppdm39/accounting/royalties"
+﻿@page "/ppdm39/accounting/royalties"
 @using Beep.OilandGas.Models.Data.ProductionAccounting
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
@@ -125,7 +125,7 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
+    private string _fieldName = string.Empty;
     private List<ROYALTY_CALCULATION>? _royalties;
     private bool _isLoading = false;
     private DateTime? _filterStartDate;
@@ -133,6 +133,14 @@
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
         await LoadRoyalties();
     }
 
@@ -148,11 +156,10 @@
                 queryParams.Add($"endDate={_filterEndDate.Value:yyyy-MM-dd}");
 
             var query = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
-            _royalties = await ApiClient.GetAsync<List<ROYALTY_CALCULATION>>($"/api/accounting/royalty/calculations{query}");
-        }
-        catch (Exception ex)
+            _royalties = await ApiClient.GetAsync<List<ROYALTY_CALCULATION>>($"/api/accounting/royalty/calculations{query}") ?? new();        }
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading royalty calculations: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading royalty calculations.", Severity.Error);
             _royalties = new List<ROYALTY_CALCULATION>();
         }
         finally

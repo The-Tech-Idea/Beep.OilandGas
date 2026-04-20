@@ -57,7 +57,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting storage facilities");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -87,7 +87,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Accounting.Storage
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating storage facility");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
     }

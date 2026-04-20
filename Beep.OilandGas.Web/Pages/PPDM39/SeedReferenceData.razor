@@ -1,4 +1,5 @@
-@page "/ppdm39/seed-reference-data"
+﻿@page "/ppdm39/seed-reference-data"
+@page "/ppdm39/setup/seed"
 @using Beep.OilandGas.Client.App
 @using Beep.OilandGas.Models.Core.Interfaces
 @using Beep.OilandGas.PPDM39.DataManagement.SeedData
@@ -13,16 +14,23 @@
     <!-- Header -->
     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
         <MudStack Spacing="0">
+            @if (_isSetupFlow)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Setup — Step 2 of 3</MudText>
+            }
             <MudText Typo="Typo.h5">Seed Reference Data</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary">
                 Populate PPDM39 reference tables with standard values. All operations are idempotent — existing rows are never overwritten.
             </MudText>
         </MudStack>
-        <MudButton Variant="Variant.Outlined"
-                   StartIcon="@Icons.Material.Filled.ArrowBack"
-                   Href="/ppdm39/database-management">
-            Back to Connections
-        </MudButton>
+        @if (!_isSetupFlow)
+        {
+            <MudButton Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.ArrowBack"
+                       Href="/ppdm39/database-management">
+                Back to Connections
+            </MudButton>
+        }
     </MudStack>
 
     <!-- Status cards -->
@@ -205,15 +213,44 @@
         </MudExpansionPanels>
     }
 
+    <!-- Setup-flow navigation footer -->
+    @if (_isSetupFlow)
+    {
+        <MudDivider Class="mt-6 mb-4" />
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudButton Variant="Variant.Text"
+                       StartIcon="@Icons.Material.Filled.ArrowBack"
+                       Href="/ppdm39/setup">
+                ← Back to Database Setup
+            </MudButton>
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Text"
+                           Color="Color.Default"
+                           OnClick="@(() => NavigationManager.NavigateTo("/dashboard"))">
+                    Skip — Go to Dashboard
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           EndIcon="@Icons.Material.Filled.ArrowForward"
+                           OnClick="@(() => NavigationManager.NavigateTo("/ppdm39/setup/dummy-data"))">
+                    Continue — Generate Demo Data
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    }
+
 </MudContainer>
 
 @code {
     private FacetSeedStatus? _status;
     private SeedingOperationResult? _lastResult;
     private bool _busy;
+    private bool _isSetupFlow;
 
     protected override async Task OnInitializedAsync()
     {
+        _isSetupFlow = NavigationManager.Uri.Contains("/ppdm39/setup/seed",
+            StringComparison.OrdinalIgnoreCase);
         await LoadStatusAsync();
     }
 
@@ -260,9 +297,9 @@
             else
                 Snackbar.Add(raw?.Message ?? "Seeding failed.", Severity.Error);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add("Facet seeding failed.", Severity.Error);
         }
         finally
         {
@@ -286,9 +323,9 @@
             else
                 Snackbar.Add(_lastResult?.Message ?? "Seeding failed.", Severity.Error);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add("Enum reference data seeding failed.", Severity.Error);
         }
         finally
         {
@@ -311,9 +348,9 @@
             else
                 Snackbar.Add(_lastResult?.Message ?? "Seeding partially failed — check details.", Severity.Warning);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            Snackbar.Add("Reference data seeding failed.", Severity.Error);
         }
         finally
         {

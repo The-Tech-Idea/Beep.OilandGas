@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Beep.OilandGas.PPDM39.DataManagement.Core;
 using Beep.OilandGas.PPDM39.DataManagement.Repositories;
 using Beep.OilandGas.PPDM39.DataManagement.Core.Common;
@@ -84,7 +84,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting records for table: {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -123,7 +123,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting record {Id} from table: {TableName}", id, tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -158,7 +158,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating record in table: {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -202,7 +202,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating batch records in table: {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -239,7 +239,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating record {Id} in table: {TableName}", id, tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -273,7 +273,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating record in table: {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -312,7 +312,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting record {Id} from table: {TableName}", id, tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -338,7 +338,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating entity for table: {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -360,7 +360,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting validation rules for table: {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -405,7 +405,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating foreign keys for table: {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -451,7 +451,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating foreign keys for table: {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -477,7 +477,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting quality metrics for table: {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -499,7 +499,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting quality dashboard for table: {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -520,7 +520,7 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting quality alerts");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -549,8 +549,81 @@ namespace Beep.OilandGas.ApiService.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting metadata for table: {TableName}", tableName);
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
+        }
+
+        /// <summary>
+        /// Validate all rows in a table and return aggregated issues.
+        /// POST /api/datamanagement/validate-table/{tableName}
+        /// </summary>
+        [HttpPost("validate-table/{tableName}")]
+        public async Task<ActionResult<object>> ValidateTable(
+            string tableName,
+            [FromBody] TableValidationOptions? options = null)
+        {
+            if (string.IsNullOrWhiteSpace(tableName))
+                return BadRequest(new { error = "Table name is required" });
+            try
+            {
+                var rules = await _validationService.GetValidationRulesAsync(tableName);
+                var repo  = await GetRepositoryForTable(tableName);
+                if (repo == null)
+                    return NotFound(new { error = $"Table '{tableName}' not found or has no mapped entity type" });
+
+                var allEntities = (await repo.GetAsync(new List<AppFilter>
+                {
+                    new() { FieldName = "ACTIVE_IND", Operator = "=", FilterValue = "Y" }
+                })).ToList();
+
+                int rowsChecked  = allEntities.Count;
+                var issueGroups  = new Dictionary<string, (int Count, string Severity, string Column, string Rule)>();
+
+                foreach (var entity in allEntities)
+                {
+                        var result = await _validationService.ValidateAsync(entity, tableName);
+                        if (result?.Errors != null)
+                        {
+                            foreach (var e in result.Errors)
+                            {
+                                var key = $"Error|{e.FieldName}|{e.ErrorMessage}";
+                                if (!issueGroups.TryGetValue(key, out var g))
+                                    issueGroups[key] = (1, "Error", e.FieldName ?? string.Empty, e.ErrorMessage ?? string.Empty);
+                                else
+                                    issueGroups[key] = (g.Count + 1, g.Severity, g.Column, g.Rule);
+                            }
+                        }
+                        if (result?.Warnings != null)
+                        {
+                            foreach (var w in result.Warnings)
+                            {
+                                var key = $"Warning|{w.FieldName}|{w.WarningMessage}";
+                                if (!issueGroups.TryGetValue(key, out var g))
+                                    issueGroups[key] = (1, "Warning", w.FieldName ?? string.Empty, w.WarningMessage ?? string.Empty);
+                                else
+                                    issueGroups[key] = (g.Count + 1, g.Severity, g.Column, g.Rule);
+                            }
+                        }
+                }
+
+                var issues = issueGroups.Values
+                    .Select(x => new { x.Rule, x.Column, Message = x.Rule, x.Severity, RowCount = x.Count })
+                    .ToList();
+
+                return Ok(new { RowsChecked = rowsChecked, Issues = issues });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating table {TableName}", tableName);
+                return StatusCode(500, new { error = "An internal error occurred." });
+            }
+        }
+
+        public class TableValidationOptions
+        {
+            public bool CheckCompleteness { get; set; } = true;
+            public bool CheckConstraints  { get; set; } = true;
+            public bool CheckReferences   { get; set; } = false;
         }
 
         // ============================================

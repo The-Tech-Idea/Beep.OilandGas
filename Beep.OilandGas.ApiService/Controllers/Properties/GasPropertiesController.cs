@@ -36,7 +36,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating Z-factor");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -52,7 +52,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating gas density");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -68,7 +68,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating formation volume factor");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -83,7 +83,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving gas composition");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 
@@ -92,6 +92,8 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(compositionId))
+                    return BadRequest(new { error = "Composition ID is required." });
                 var result = await _service.GetGasCompositionAsync(compositionId);
                 if (result == null)
                     return NotFound(new { error = $"Composition {compositionId} not found" });
@@ -100,7 +102,7 @@ namespace Beep.OilandGas.ApiService.Controllers.Properties
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting gas composition");
-                return StatusCode(500, new { error = ex.Message });
+                return StatusCode(500, new { error = "An internal error occurred." });
             }
         }
 

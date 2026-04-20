@@ -1,6 +1,7 @@
-@page "/reservoir"
+﻿@page "/reservoir"
 @inject NavigationManager NavigationManager
 @inject ISnackbar Snackbar
+@inject ApiClient ApiClient
 
 <PageTitle>Review Reservoir Performance</PageTitle>
 
@@ -28,24 +29,20 @@
     @* KPI Row *@
     <MudGrid Class="mb-4" Spacing="3">
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="OOIP" Value="@_ooip.ToString("N0")" Unit="MMBbl"
-                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Layers"
-                     TrendIcon="@Icons.Material.Filled.TrendingFlat" TrendColor="Color.Default" TrendText="Geological model" />
+            <KpiCard Label="OOIP" Value="@(_summary?.OoipMmbbl > 0 ? _summary.OoipMmbbl.ToString("N0") : "\u2014")" Unit="MMBbl"
+                     ValueColor="Color.Primary" Icon="@Icons.Material.Filled.Layers" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Recovery Factor" Value="@_recoveryFactor.ToString("N1")" Unit="%"
-                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.Percent"
-                     TrendIcon="@Icons.Material.Filled.TrendingUp" TrendColor="Color.Success" TrendText="+1.2% vs plan" />
+            <KpiCard Label="Recovery Factor" Value="@(_summary?.RecoveryFactorPct > 0 ? _summary.RecoveryFactorPct.ToString("N1") : "\u2014")" Unit="%"
+                     ValueColor="Color.Success" Icon="@Icons.Material.Filled.Percent" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="2P Reserves" Value="@_reserves2P.ToString("N1")" Unit="MMBbl"
-                     ValueColor="Color.Info" Icon="@Icons.Material.Filled.Inventory"
-                     TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Warning" TrendText="Revision pending" />
+            <KpiCard Label="2P Reserves" Value="@(_summary?.Reserves2PMmbbl > 0 ? _summary.Reserves2PMmbbl.ToString("N1") : "\u2014")" Unit="MMBbl"
+                     ValueColor="Color.Info" Icon="@Icons.Material.Filled.Inventory" />
         </MudItem>
         <MudItem xs="12" sm="6" md="3">
-            <KpiCard Label="Reservoir Pressure" Value="@_resPressure.ToString("N0")" Unit="psi"
-                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Speed"
-                     TrendIcon="@Icons.Material.Filled.TrendingDown" TrendColor="Color.Warning" TrendText="-85 psi YTD" />
+            <KpiCard Label="Active Pools" Value="@(_summary?.ActivePoolCount.ToString() ?? "\u2014")" Unit="pools"
+                     ValueColor="Color.Warning" Icon="@Icons.Material.Filled.Layers" />
         </MudItem>
     </MudGrid>
 
@@ -66,21 +63,29 @@
                     </CardHeaderActions>
                 </MudCardHeader>
                 <MudCardContent Class="pa-0">
-                    <MudDataGrid T="ReservoirZone" Items="@_zones" Dense="true" Hover="true" Striped="true">
-                        <Columns>
-                            <PropertyColumn Property="z => z.ZoneId"    Title="Zone" />
-                            <PropertyColumn Property="z => z.Formation" Title="Formation" />
-                            <PropertyColumn Property="z => z.NetPay"    Title="Net Pay (ft)" Format="N0" />
-                            <PropertyColumn Property="z => z.Porosity"  Title="Por %" Format="N1" />
-                            <PropertyColumn Property="z => z.Sw"        Title="Sw %" Format="N1" />
-                            <PropertyColumn Property="z => z.Permeability" Title="Perm (mD)" Format="N1" />
-                            <TemplateColumn Title="Status">
-                                <CellTemplate>
-                                    <StatusBadge Status="@context.Item.Status" />
-                                </CellTemplate>
-                            </TemplateColumn>
-                        </Columns>
-                    </MudDataGrid>
+                    @if (_loading)
+                    {
+                        <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+                    }
+                    else if (_pools.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-3">No pools found for the active field.</MudText>
+                    }
+                    else
+                    {
+                        <MudDataGrid T="ReservoirPoolDto" Items="@_pools" Dense="true" Hover="true" Striped="true">
+                            <Columns>
+                                <PropertyColumn Property="p => p.PoolId"    Title="Pool ID" />
+                                <PropertyColumn Property="p => p.PoolName"  Title="Pool Name" />
+                                <PropertyColumn Property="p => p.Formation" Title="Formation" />
+                                <TemplateColumn Title="Status">
+                                    <CellTemplate>
+                                        <StatusBadge Status="@context.Item.Status" />
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    }
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -96,10 +101,9 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudChart T="double" ChartType="ChartType.Line"
-                                  Series="@_pressureSeries"
-                                  XAxisLabels="@_pressureLabels"
-                                  Width="100%" Height="180px" />
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            Pressure depletion history requires PDEN data. Connect production test records to view pressure trends over time.
+                        </MudText>
                     </MudCardContent>
                 </MudCard>
 
@@ -110,16 +114,9 @@
                         </CardHeaderContent>
                     </MudCardHeader>
                     <MudCardContent>
-                        <MudStack Spacing="1">
-                            @foreach (var dm in _driveMechanisms)
-                            {
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                    <MudText Typo="Typo.body2" Class="og-label-fixed">@dm.Name</MudText>
-                                    <MudProgressLinear Color="@dm.Color" Value="@dm.Percentage" Class="flex-1" />
-                                    <MudText Typo="Typo.caption">@dm.Percentage.ToString("N0")%</MudText>
-                                </MudStack>
-                            }
-                        </MudStack>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                            Drive mechanism analysis requires reservoir simulation data. Run EOR Screening to assess drive types for this field.
+                        </MudText>
                     </MudCardContent>
                 </MudCard>
 
@@ -135,13 +132,9 @@
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent>
-                    <MudDataGrid T="FluidContactRow" Items="@_fluidContacts" Dense="true" Hover="true">
-                        <Columns>
-                            <PropertyColumn Property="r => r.Parameter" Title="Parameter" />
-                            <PropertyColumn Property="r => r.ZoneA" Title="Zone A" />
-                            <PropertyColumn Property="r => r.ZoneB" Title="Zone B" />
-                        </Columns>
-                    </MudDataGrid>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Fluid contact and PVT data is managed in the Well Test module. Record PVT analyses to populate this view.
+                    </MudText>
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -155,24 +148,13 @@
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent Class="pa-0">
-                    <MudList T="StudyItem" Dense="true">
-                        @foreach (var study in _studies)
-                        {
-                            <MudListItem T="StudyItem" Value="study">
-                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="2">
-                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                        <MudIcon Icon="@study.Icon" Color="@study.Color" Size="Size.Small" />
-                                        <MudStack Spacing="0">
-                                            <MudText Typo="Typo.body2">@study.Name</MudText>
-                                            <MudText Typo="Typo.caption" Color="Color.Secondary">@study.LastUpdated</MudText>
-                                        </MudStack>
-                                    </MudStack>
-                                    <StatusBadge Status="@study.Status" />
-                                </MudStack>
-                            </MudListItem>
-                            <MudDivider />
-                        }
-                    </MudList>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pa-3">
+                        Simulation model and study records are tracked in the Reservoir Characterization module.
+                    </MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="ma-2"
+                               OnClick='@(() => NavigationManager.NavigateTo("/reservoir/characterization"))'>
+                        Open Characterization
+                    </MudButton>
                 </MudCardContent>
             </MudCard>
         </MudItem>
@@ -181,58 +163,49 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
-    private double _ooip = 485.0;
-    private double _recoveryFactor = 42.8;
-    private double _reserves2P = 207.7;
-    private double _resPressure = 3_140;
+    private string _fieldName = string.Empty;
+    private bool _loading = true;
 
-    private record ReservoirZone(string ZoneId, string Formation, double NetPay, double Porosity,
-        double Sw, double Permeability, string Status);
+    private ReservoirSummaryApiDto? _summary;
+    private List<ReservoirPoolDto> _pools = new();
 
-    private List<ReservoirZone> _zones = new()
+    private record ReservoirPoolDto(
+        string PoolId, string PoolName, string Status,
+        double AreaAcres, string Formation);
+
+    protected override async Task OnInitializedAsync()
     {
-        new("ZONE-A", "Jurassic Sand",    68,  22.4, 18.2, 245.0, "ACTIVE"),
-        new("ZONE-B", "Jurassic Sand",    42,  20.1, 21.5, 168.0, "ACTIVE"),
-        new("ZONE-C", "Cretaceous Lime",  28,  14.5, 28.0,  45.0, "PLANNED"),
-        new("ZONE-D", "Cretaceous Shale", 15,   9.2, 35.0,   8.0, "TESTING"),
-    };
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
 
-    private List<ChartSeries<double>> _pressureSeries = new()
-    {
-        new ChartSeries<double> { Name = "Reservoir Psi", Data = new double[] { 3800, 3720, 3640, 3550, 3480, 3400, 3320, 3250, 3185, 3140 } },
-        new ChartSeries<double> { Name = "Bubble Pt", Data = new double[] { 2850, 2850, 2850, 2850, 2850, 2850, 2850, 2850, 2850, 2850 } },
-    };
-    private string[] _pressureLabels = { "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025", "2026" };
+        _loading = true;
+        try
+        {
+            _summary = await ApiClient.GetAsync<ReservoirSummaryApiDto>(
+                "api/field/current/reservoir/dashboard/summary");
 
-    private record DriveMechanism(string Name, double Percentage, Color Color);
-    private List<DriveMechanism> _driveMechanisms = new()
-    {
-        new("Solution Gas Drive", 52, Color.Primary),
-        new("Water Influx",       28, Color.Info),
-        new("Gas Cap",            12, Color.Warning),
-        new("Compaction",          8, Color.Secondary),
-    };
+            var pools = await ApiClient.GetAsync<List<ReservoirPoolDto>>(
+                "api/field/current/reservoir/dashboard/pools") ?? new();
+            _pools = pools;
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to load reservoir data.", Severity.Warning);
+        }
+        finally { _loading = false; }
+    }
 
-    private record StudyItem(string Name, string LastUpdated, string Status, string Icon, Color Color);
-    private record FluidContactRow(string Parameter, string ZoneA, string ZoneB);
-
-    private readonly List<FluidContactRow> _fluidContacts = new()
+    private class ReservoirSummaryApiDto
     {
-        new("GOC (ft ss)",         "8,420",  "8,640"),
-        new("OWC (ft ss)",         "9,150",  "9,320"),
-        new("Bo (RB/STB)",         "1.38",   "1.35"),
-        new("GOR (scf/STB)",       "480",    "420"),
-        new("API Gravity",         "38°",    "36°"),
-        new("Bubble Point (psi)",  "2,850",  "2,720"),
-        new("Viscosity (cp)",      "1.8",    "2.1"),
-    };
-    private List<StudyItem> _studies = new()
-    {
-        new("Full-Field Simulation Model", "Jan 2026", "ACTIVE",   Icons.Material.Filled.Grid3x3,        Color.Success),
-        new("PVT Analysis",                "Mar 2026", "COMPLETE", Icons.Material.Filled.Science,         Color.Success),
-        new("Seismic Interpretation",      "Nov 2025", "COMPLETE", Icons.Material.Filled.GraphicEq,       Color.Success),
-        new("SCAL Study",                  "Jul 2026", "IN PROGRESS", Icons.Material.Filled.BubbleChart, Color.Info),
-        new("EOR Feasibility Study",       "Sep 2026", "PLANNED",  Icons.Material.Filled.Biotech,         Color.Default),
-    };
+        public string FieldId           { get; set; } = string.Empty;
+        public double OoipMmbbl         { get; set; }
+        public double RecoveryFactorPct { get; set; }
+        public double Reserves2PMmbbl   { get; set; }
+        public int    ActivePoolCount   { get; set; }
+    }
 }

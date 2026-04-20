@@ -1,9 +1,8 @@
-@page "/ppdm39/create-database"
+﻿@page "/ppdm39/create-database"
 @implements IDisposable
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
-@inject IProgressTrackingClient ProgressClient
 @using Beep.OilandGas.Web.Components
 @using Beep.OilandGas.Models.Data.DataManagement
 @using Beep.OilandGas.Models.Data
@@ -451,9 +450,9 @@
             _availableDatabaseTypes = await ApiClient.GetAsync<List<string>>("/api/ppdm39/setup/database-types") 
                 ?? _availableDatabaseTypes;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading database types: {ex.Message}", Severity.Warning);
+            Snackbar.Add("Error loading database types.", Severity.Warning);
         }
     }
 
@@ -518,13 +517,13 @@
                 Snackbar.Add($"Connection test failed: {_connectionTestResult?.Message}", Severity.Error);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error testing connection: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error testing connection.", Severity.Error);
             _connectionTestResult = new ConnectionTestResult
             {
                 Success = false,
-                Message = ex.Message
+                Message = "Connection test failed."
             };
         }
         finally
@@ -542,9 +541,9 @@
         try
         {
             _discoveredScripts = await ApiClient.GetAsync<List<ScriptInfo>>(
-                $"/api/ppdm39/setup/discover-scripts/{_selectedDatabaseType}");
+                $"/api/ppdm39/setup/discover-scripts/{_selectedDatabaseType}") ?? new();
 
-            if (_discoveredScripts != null && _discoveredScripts.Any())
+            if (_discoveredScripts.Any())
             {
                 // Group by category
                 _scriptCategories = _discoveredScripts
@@ -558,9 +557,9 @@
                     .ToList();
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading scripts: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error loading scripts.", Severity.Error);
         }
         finally
         {
@@ -655,15 +654,15 @@
                 Snackbar.Add($"Database creation failed: {_creationResult?.ErrorMessage}", Severity.Error);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             _progressTimer?.Dispose();
             _progressTimer = null;
-            Snackbar.Add($"Error creating database: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error creating database.", Severity.Error);
             _creationResult = new DatabaseCreationResult
             {
                 Success = false,
-                ErrorMessage = ex.Message
+                ErrorMessage = "Database creation failed."
             };
         }
         finally
@@ -680,7 +679,7 @@
         try
         {
             var progress = await ApiClient.GetAsync<ScriptExecutionProgressInfo>(
-                $"/api/ppdm39/setup/creation-progress/{_executionId}");
+                $"/api/ppdm39/setup/creation-progress/{Uri.EscapeDataString(_executionId)}");
 
             if (progress != null)
             {
@@ -697,7 +696,7 @@
                     _progressTimer = null;
                 }
 
-                StateHasChanged();
+                await InvokeAsync(StateHasChanged);
             }
         }
         catch
@@ -744,13 +743,13 @@
                 Snackbar.Add($"Failed to save connection: {_saveResult?.Message}", Severity.Error);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error saving connection: {ex.Message}", Severity.Error);
+            Snackbar.Add("Error saving connection.", Severity.Error);
             _saveResult = new SaveConnectionResult
             {
                 Success = false,
-                Message = ex.Message
+                Message = "Failed to save connection."
             };
         }
         finally

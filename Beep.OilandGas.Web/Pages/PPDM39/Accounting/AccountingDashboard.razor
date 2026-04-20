@@ -1,5 +1,4 @@
-@page "/ppdm39/accounting/dashboard"
-@using Beep.OilandGas.Models.Data.Accounting
+﻿@page "/ppdm39/accounting/dashboard"
 @inject ApiClient ApiClient
 @inject ISnackbar Snackbar
 
@@ -86,24 +85,12 @@
         <MudCardContent Class="pa-0">
             @if (_recentActivities != null && _recentActivities.Any())
             {
-                <MudDataGrid T="AllocationEntry" Items="@_recentActivities" Dense="true" Hover="true" Striped="true"
+                <MudDataGrid T="AccountingActivityDto" Items="@_recentActivities" Dense="true" Hover="true" Striped="true"
                              SortMode="SortMode.Multiple" Filterable="true">
                     <Columns>
-                        <TemplateColumn Title="Activity Type">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "ActivityType")</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-                        <TemplateColumn Title="Date">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@FormatDate(GetPropertyValue(context.Item, "Date"))</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-                        <TemplateColumn Title="Description">
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@GetPropertyValue(context.Item, "Description")</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
+                        <PropertyColumn Property="a => a.ActivityType" Title="Activity Type" />
+                        <PropertyColumn Property="a => a.Date" Title="Date" />
+                        <PropertyColumn Property="a => a.Description" Title="Description" />
                     </Columns>
                     <NoRecordsContent>
                         <MudStack AlignItems="AlignItems.Center" Class="pa-6">
@@ -127,12 +114,20 @@
 </MudContainer>
 
 @code {
-    private string _fieldName = "Current Field";
-    private List<AllocationEntry>? _recentActivities;
+    private string _fieldName = string.Empty;
+    private List<AccountingActivityDto>? _recentActivities;
     private bool _isLoading = false;
 
     protected override async Task OnInitializedAsync()
     {
+        try
+        {
+            var summary = await ApiClient.GetAsync<FieldLifecycleSummary>("/api/field/current/summary");
+            if (summary != null)
+                _fieldName = summary.FieldName ?? _fieldName;
+        }
+        catch { /* field name is non-critical */ }
+
         await LoadRecentActivities();
     }
 
@@ -141,14 +136,13 @@
         _isLoading = true;
         try
         {
-            // TODO: Implement endpoint to get recent accounting activities
-            // For now, return empty list
-            _recentActivities = new List<AllocationEntry>();
+            _recentActivities = await ApiClient.GetAsync<List<AccountingActivityDto>>(
+                "api/field/current/accounting/recent-activities") ?? new();
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Snackbar.Add($"Error loading recent activities: {ex.Message}", Severity.Error);
-            _recentActivities = new List<AllocationEntry>();
+            Snackbar.Add("Error loading recent activities.", Severity.Error);
+            _recentActivities = new();
         }
         finally
         {
@@ -156,23 +150,13 @@
         }
     }
 
-    private string GetPropertyValue(object obj, string propertyName)
+    private class AccountingActivityDto
     {
-        if (obj is IDictionary<string, object> dict && dict.ContainsKey(propertyName))
-        {
-            return dict[propertyName]?.ToString() ?? "N/A";
-        }
-        return "N/A";
-    }
-
-    private string FormatDate(string? dateStr)
-    {
-        if (string.IsNullOrEmpty(dateStr) || dateStr == "N/A")
-            return "N/A";
-
-        if (DateTime.TryParse(dateStr, out var date))
-            return date.ToString("yyyy-MM-dd");
-
-        return dateStr;
+        public string  ActivityType { get; set; } = string.Empty;
+        public string  Date         { get; set; } = string.Empty;
+        public string  Description  { get; set; } = string.Empty;
+        public decimal Amount       { get; set; }
+        public string  Status       { get; set; } = string.Empty;
+        public string  ReferenceId  { get; set; } = string.Empty;
     }
 }

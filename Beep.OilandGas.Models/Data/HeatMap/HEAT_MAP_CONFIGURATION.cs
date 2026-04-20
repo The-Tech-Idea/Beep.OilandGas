@@ -20,7 +20,7 @@ namespace Beep.OilandGas.Models.Data.HeatMap
         }
 
         private string _activeInd = "Y";
-        public string ACTIVE_IND
+        public new string ACTIVE_IND
         {
             get { return _activeInd; }
             set { SetProperty(ref _activeInd, value); }

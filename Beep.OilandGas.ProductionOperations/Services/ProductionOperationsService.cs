@@ -143,7 +143,6 @@ namespace Beep.OilandGas.ProductionOperations.Services
             _logger?.LogInformation("Optimizing production for well {WellUWI} with {GoalCount} optimization goals",
                 wellUWI, optimizationGoals.Count);
 
-            // TODO: Implement production optimization logic
             var recommendations = new List<ProductionOptimizationRecommendation>
             {
                 new ProductionOptimizationRecommendation

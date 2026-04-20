@@ -45,8 +45,8 @@ namespace Beep.OilandGas.LifeCycle.Services
         /// </summary>
         public async Task<WellComparisonData> CompareWellsAsync(
             List<string> wellIdentifiers,
-            List<string> fieldNames = null,
-            string connectionName = null)
+            List<string>? fieldNames = null,
+            string? connectionName = null)
         {
             if (wellIdentifiers == null || wellIdentifiers.Count == 0)
                 throw new ArgumentException("At least one well identifier is required", nameof(wellIdentifiers));
@@ -73,7 +73,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 throw new InvalidOperationException("No wells found for comparison");
 
             // Build comparison
-            return await BuildComparisonAsync(wells, fieldNames, connectionName);
+            return await BuildComparisonAsync(wells, fieldNames!, connectionName);
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         /// </summary>
         public async Task<WellComparisonData> CompareWellsFromMultipleSourcesAsync(
             List<WellSourceMapping> wellComparisons,
-            List<string> fieldNames = null)
+            List<string>? fieldNames = null)
         {
             if (wellComparisons == null || wellComparisons.Count == 0)
                 throw new ArgumentException("At least one well comparison is required", nameof(wellComparisons));
@@ -106,7 +106,7 @@ namespace Beep.OilandGas.LifeCycle.Services
                 throw new InvalidOperationException("No wells found for comparison");
 
             // Build comparison with data source information
-            return await BuildComparisonFromMultipleSourcesAsync(wells, fieldNames);
+            return await BuildComparisonFromMultipleSourcesAsync(wells, fieldNames!);
         }
 
         /// <summary>
@@ -223,7 +223,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         /// <summary>
         /// Gets a well by identifier (UWI or Well ID)
         /// </summary>
-        private async Task<WELL> GetWellByIdentifierAsync(PPDMGenericRepository wellRepo, string identifier)
+        private async Task<WELL?> GetWellByIdentifierAsync(PPDMGenericRepository wellRepo, string identifier)
         {
             if (string.IsNullOrWhiteSpace(identifier))
                 return null;
@@ -284,7 +284,7 @@ namespace Beep.OilandGas.LifeCycle.Services
 
                 var item = new WellComparisonItem
                 {
-                    WellIdentifier = well.UWI ?? wellId?.ToString(),
+                    WellIdentifier = well.UWI ?? wellId?.ToString() ?? string.Empty,
                     WellName = well.WELL_NAME,
                     DataSource = connectionName,
                     FieldValues = new Dictionary<string, object?>(),
@@ -353,7 +353,7 @@ namespace Beep.OilandGas.LifeCycle.Services
 
                 var item = new WellComparisonItem
                 {
-                    WellIdentifier = well.UWI ?? wellId?.ToString(),
+                    WellIdentifier = well.UWI ?? wellId?.ToString() ?? string.Empty,
                     WellName = well.WELL_NAME,
                     DataSource = dataSource,
                     FieldValues = new Dictionary<string, object?>(),
@@ -444,7 +444,7 @@ namespace Beep.OilandGas.LifeCycle.Services
         /// <summary>
         /// Gets primary key value from well entity using metadata (synchronous version)
         /// </summary>
-        private object GetPrimaryKeyValue(WELL well)
+        private object? GetPrimaryKeyValue(WELL well)
         {
             var metadata = _metadata.GetTableMetadataAsync("WELL").GetAwaiter().GetResult();
             if (metadata == null)

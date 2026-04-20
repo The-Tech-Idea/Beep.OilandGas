@@ -1,0 +1,23 @@
+
+Path                                                                                                                                                LineNumber Line
+----                                                                                                                                                ---------- ----
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Accounting\Services\GaapAccountMappingService.cs                                    43         public Task InitializeAsync(string userId) => Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ApiService\Program.cs                                                              114             return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ApiService\Program.cs                                                              123             return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ApiService\Program.cs                                                              136             return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ApiService\Program.cs                                                              148             return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.LeaseAcquisition\Services\LeaseAcquisitionService.ModelsCoreImpl.cs                 31             return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.PPDM39.DataManagement\Core\Metadata\PPDMMetadataService.cs                         242             return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.ProductionOperations\Services\ProductionOperationsService.ModelsCoreImpl.cs         20             return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.UserManagement\Security\PermissionHandler.cs                                        44             return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Pages\PPDM39\HSE\HAZOPStudy.razor                                              275         return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Services\ProgressTrackingClient.cs                                             138                     return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Services\ProgressTrackingClient.cs                                             144                     return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Services\ProgressTrackingClient.cs                                             150                     return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Program.cs                                                                     191             return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Program.cs                                                                     212             return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Program.cs                                                                     270             return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Program.cs                                                                     281             return Task.CompletedTask;
+C:\Users\f_ald\source\repos\The-Tech-Idea\Beep.OilandGas\Beep.OilandGas.Web\Program.cs                                                                     288             return Task.CompletedTask;
+
+

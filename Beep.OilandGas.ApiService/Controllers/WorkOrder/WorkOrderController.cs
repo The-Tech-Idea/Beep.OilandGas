@@ -44,7 +44,7 @@ public class WorkOrderController : ControllerBase
     public async Task<ActionResult<List<WorkOrderSummary>>> GetListAsync(
         [FromQuery] string? state = null, [FromQuery] string? woSubType = null)
     {
-        var fieldId = _fieldOrchestrator.CurrentFieldId;
+        var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
         var result = await _workOrders.GetByFieldAsync(fieldId, state, woSubType);
         return Ok(result);
@@ -54,7 +54,7 @@ public class WorkOrderController : ControllerBase
     [HttpGet("{instanceId}")]
     public async Task<ActionResult<WorkOrderDetailModel>> GetDetailAsync(string instanceId)
     {
-        var fieldId = _fieldOrchestrator.CurrentFieldId;
+        var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
         var detail = await _workOrders.GetByIdAsync(fieldId, instanceId);
         if (detail is null) return NotFound();
@@ -67,7 +67,7 @@ public class WorkOrderController : ControllerBase
         [FromBody] CreateWorkOrderRequest request)
     {
         var userId  = UserId();
-        var fieldId = _fieldOrchestrator.CurrentFieldId;
+        var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
 
         request.FieldId = fieldId;
@@ -81,7 +81,7 @@ public class WorkOrderController : ControllerBase
         string instanceId, [FromBody] TransitionWorkOrderRequest request)
     {
         var userId  = UserId();
-        var fieldId = _fieldOrchestrator.CurrentFieldId;
+        var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
 
         try
@@ -92,7 +92,7 @@ public class WorkOrderController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return UnprocessableEntity(new { error = ex.Message });
+            return UnprocessableEntity(new { error = "An internal error occurred." });
         }
     }
 
@@ -100,7 +100,7 @@ public class WorkOrderController : ControllerBase
     [HttpGet("{instanceId}/transitions")]
     public async Task<ActionResult<List<string>>> GetTransitionsAsync(string instanceId)
     {
-        var fieldId = _fieldOrchestrator.CurrentFieldId;
+        var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
         var detail = await _workOrders.GetByIdAsync(fieldId, instanceId);
         if (detail is null) return NotFound();
@@ -112,7 +112,7 @@ public class WorkOrderController : ControllerBase
     [Authorize(Roles = "Supervisor,Manager,Admin")]
     public async Task<IActionResult> DeleteAsync(string instanceId)
     {
-        var fieldId = _fieldOrchestrator.CurrentFieldId;
+        var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
         await _workOrders.DeleteAsync(fieldId, instanceId, UserId());
         return NoContent();
@@ -124,6 +124,7 @@ public class WorkOrderController : ControllerBase
     public async Task<ActionResult<ScheduleResult>> ScheduleAsync(
         string instanceId, [FromBody] ScheduleWorkOrderRequest request)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         var result = await _scheduling.ScheduleWorkOrderAsync(
             instanceId,
             request.EquipmentId,
@@ -137,6 +138,7 @@ public class WorkOrderController : ControllerBase
     public async Task<ActionResult<ScheduleResult>> RescheduleAsync(
         string instanceId, [FromBody] DateTime newStart)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         var result = await _scheduling.RescheduleAsync(instanceId, newStart, UserId());
         return Ok(result);
     }
@@ -147,7 +149,7 @@ public class WorkOrderController : ControllerBase
         [FromQuery] DateTime? from = null,
         [FromQuery] DateTime? to   = null)
     {
-        var fieldId = _fieldOrchestrator.CurrentFieldId;
+        var fieldId = _fieldOrchestrator.CurrentFieldId ?? string.Empty;
         if (string.IsNullOrWhiteSpace(fieldId)) return BadRequest("No active field selected.");
         var start  = from ?? DateTime.UtcNow.AddDays(-7);
         var end    = to   ?? DateTime.UtcNow.AddDays(30);
@@ -171,6 +173,7 @@ public class WorkOrderController : ControllerBase
     [HttpGet("{instanceId}/contractors")]
     public async Task<ActionResult<List<ContractorAssignment>>> GetContractorsAsync(string instanceId)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         var result = await _contractors.GetAssignmentsAsync(instanceId);
         return Ok(result);
     }
@@ -179,6 +182,7 @@ public class WorkOrderController : ControllerBase
     public async Task<ActionResult<ContractorAssignment>> AssignContractorAsync(
         string instanceId, [FromBody] AssignContractorRequest request)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         var result = await _contractors.AssignContractorAsync(
             instanceId, request.StepId, request.BaId, request.RoleCode, UserId());
         return Ok(result);
@@ -188,6 +192,7 @@ public class WorkOrderController : ControllerBase
     public async Task<IActionResult> RemoveContractorAsync(string instanceId, string baId,
         [FromQuery] string stepId)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         await _contractors.RemoveContractorAsync(instanceId, stepId, baId, UserId());
         return NoContent();
     }
@@ -207,6 +212,7 @@ public class WorkOrderController : ControllerBase
     [HttpGet("{instanceId}/costs")]
     public async Task<ActionResult<List<CostVarianceLine>>> GetCostsAsync(string instanceId)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         var result = await _costs.GetVarianceSummaryAsync(instanceId);
         return Ok(result);
     }
@@ -215,6 +221,7 @@ public class WorkOrderController : ControllerBase
     public async Task<IActionResult> UpsertAFEAsync(
         string instanceId, [FromBody] UpsertAFERequest request)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         await _costs.UpsertAFEAsync(instanceId, request.BudgetAmount, UserId());
         return NoContent();
     }
@@ -223,6 +230,7 @@ public class WorkOrderController : ControllerBase
     public async Task<IActionResult> AddCostLineAsync(
         string instanceId, [FromBody] AddCostLineRequest request)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         await _costs.AddCostLineAsync(
             instanceId, request.CompCode, request.BudgetAmt, request.Description, UserId());
         return NoContent();
@@ -233,6 +241,7 @@ public class WorkOrderController : ControllerBase
     [HttpGet("{instanceId}/checklist")]
     public async Task<ActionResult<List<InspectionCondition>>> GetChecklistAsync(string instanceId)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         var result = await _inspection.GetChecklistAsync(instanceId);
         return Ok(result);
     }
@@ -242,6 +251,7 @@ public class WorkOrderController : ControllerBase
         string instanceId, int condSeq,
         [FromBody] RecordInspectionResultRequest request)
     {
+        if (string.IsNullOrWhiteSpace(instanceId)) return BadRequest(new { error = "Instance ID is required." });
         await _inspection.RecordResultAsync(instanceId, condSeq, request.Result, request.Notes, UserId());
         return NoContent();
     }
